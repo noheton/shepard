@@ -1,0 +1,8 @@
+image: node:lts-alpine
+
+format-prettier:
+  stage: test
+  before_script:
+    - npm install -g prettier
+  script:
+    - npx prettier --check .
