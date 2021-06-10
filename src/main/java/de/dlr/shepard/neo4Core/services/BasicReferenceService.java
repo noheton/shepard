@@ -1,0 +1,66 @@
+package de.dlr.shepard.neo4Core.services;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
+import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.BasicReference;
+import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.QueryParamHelper;
+
+public class BasicReferenceService {
+
+	private BasicReferenceDAO basicReferenceDAO = new BasicReferenceDAO();
+	private UserDAO userDAO = new UserDAO();
+	private DateHelper dateHelper = new DateHelper();
+
+	/**
+	 * Searches the neo4j database for a BasicReference
+	 * 
+	 * @param id identifies the searched BasicReference
+	 * 
+	 * @return the BasicReference with the given id or null
+	 */
+	public BasicReference getBasicReference(long id) {
+		BasicReference basicReference = basicReferenceDAO.find(id);
+		if (basicReference == null || basicReference.isDeleted()) {
+			return null;
+		}
+		return basicReference;
+	}
+
+	/**
+	 * Searches the database for BasicReferences.
+	 * 
+	 * @param dataObjectId identifies the DataObject
+	 * @param params       encapsulates possible parameters
+	 * @return a List of BasicReferences
+	 */
+	public List<BasicReference> getAllBasicReferences(long dataObjectId, QueryParamHelper params) {
+		var references = basicReferenceDAO.findByDataObject(dataObjectId, params);
+		List<BasicReference> basicReferences = references.stream().filter(r -> !r.isDeleted())
+				.collect(Collectors.toList());
+		return basicReferences;
+	}
+
+	/**
+	 * Set the deleted flag for the Reference
+	 * 
+	 * @param basicReferenceId identifies the BasicReference to be deleted
+	 * @param username         identifies the user
+	 * @return a boolean to identify if the BasicReference was successfully removed
+	 */
+	public boolean deleteBasicReference(long basicReferenceId, String username) {
+		var user = userDAO.find(username);
+
+		var basicReference = basicReferenceDAO.find(basicReferenceId);
+		basicReference.setDeleted(true);
+		basicReference.setUpdatedAt(dateHelper.getDate());
+		basicReference.setUpdatedBy(user);
+
+		basicReferenceDAO.createOrUpdate(basicReference);
+		return true;
+	}
+
+}

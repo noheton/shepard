@@ -1,0 +1,35 @@
+package de.dlr.shepard.neo4Core.dao;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import de.dlr.shepard.neo4Core.entities.URIReference;
+
+public class URIReferenceDAO extends GenericDAO<URIReference> {
+
+	/**
+	 * Searches the database for references.
+	 * 
+	 * @param dataObjectId identifies the dataObject
+	 * @return a List of references
+	 */
+	public List<URIReference> findByDataObject(long dataObjectId) {
+		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->(r:URIReference) WHERE ID(d)=%d ",
+				dataObjectId) + getReturnPart("r");
+
+		var queryResult = findByQuery(query);
+
+		List<URIReference> result = StreamSupport.stream(queryResult.spliterator(), false)
+				.filter(r -> r.getDataObject() != null).filter(r -> r.getDataObject().getId().equals(dataObjectId))
+				.collect(Collectors.toList());
+
+		return result;
+	}
+
+	@Override
+	public Class<URIReference> getEntityType() {
+		return URIReference.class;
+	}
+
+}

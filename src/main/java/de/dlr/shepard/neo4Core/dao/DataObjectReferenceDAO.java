@@ -1,0 +1,35 @@
+package de.dlr.shepard.neo4Core.dao;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import de.dlr.shepard.neo4Core.entities.DataObjectReference;
+
+public class DataObjectReferenceDAO extends GenericDAO<DataObjectReference> {
+
+	/**
+	 * Searches the database for references.
+	 * 
+	 * @param dataObjectId identifies the dataObject
+	 * @return a List of references
+	 */
+	public List<DataObjectReference> findByDataObject(long dataObjectId) {
+		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference) WHERE ID(d)=%d "
+				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)", dataObjectId);
+
+		var queryResult = findByQuery(query);
+
+		List<DataObjectReference> result = StreamSupport.stream(queryResult.spliterator(), false)
+				.filter(r -> r.getDataObject() != null).filter(r -> r.getDataObject().getId().equals(dataObjectId))
+				.collect(Collectors.toList());
+
+		return result;
+	}
+
+	@Override
+	public Class<DataObjectReference> getEntityType() {
+		return DataObjectReference.class;
+	}
+
+}

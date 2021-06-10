@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  neo4j:
+    image: neo4j:latest
+    environment:
+      - NEO4J_AUTH=neo4j/shepard
+    ports:
+      - 7474:7474
+      - 7687:7687
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=shepard
+      - MONGO_INITDB_DATABASE=test
+    restart: unless-stopped
+
+  mongoexpress:
+    image: mongo-express:latest
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=mongo
+      - ME_CONFIG_BASICAUTH_PASSWORD=shepard
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=mongo
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=shepard
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+
+  influxdb:
+    image: influxdb:1.8
+    environment:
+      - INFLUXDB_ADMIN_USER=influx
+      - INFLUXDB_ADMIN_PASSWORD=shepard
+    ports:
+      - 8083:8083
+      - 8086:8086
+    restart: unless-stopped
+
+  chronograf:
+    image: chronograf:latest
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=influx
+      - INFLUXDB_PASSWORD=shepard
+    ports:
+      - 8888:8888
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+
+  swagger:
+    image: swaggerapi/swagger-ui:latest
+    ports:
+      - 8082:8080
+    environment:
+      - URL=http://localhost:8080/backend/doc/openapi.json
+    restart: unless-stopped

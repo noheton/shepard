@@ -1,0 +1,94 @@
+package de.dlr.shepard.influxDB;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+public class TimeseriesService {
+
+	private InfluxConnector influxConnector = InfluxConnector.getInstance();
+
+	/**
+	 * Creates timeseries and writes them to influxDB
+	 * 
+	 * @param database The database to be queried
+	 * @param payload  the Timeseries with InfluxPoints to be created
+	 * @return An error if there was a problem, empty string if all went well
+	 */
+	public String createTimeseries(String database, TimeseriesPayload payload) {
+		return influxConnector.saveTimeseries(database, payload);
+	}
+
+	/**
+	 * Queries the database for time series.
+	 * 
+	 * @param startTimeStamp The beginning of the time series
+	 * @param endTimeStamp   The end of the time series
+	 * @param database       The database to be queried
+	 * @param timeseries     The time series whose points are queried
+	 * @return time series with influx points
+	 */
+	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
+			Timeseries timeseries) {
+		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries);
+		return payload;
+	}
+
+	/**
+	 * Queries the database for many time series in parallel. Returns a list of time
+	 * series. If the filter sets are empty, no filtering takes place.
+	 * 
+	 * @param startTimeStamp        The beginning of the time series
+	 * @param endTimeStamp          The end of the time series
+	 * @param database              The database to be queried
+	 * @param timeseriesList        The list of time series whose points are queried
+	 * @param devicesFilterSet      A set of allowed devices or an empty set
+	 * @param locationsFilterSet    A set of allowed locations or an empty set
+	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
+	 * @return a list of time series with influx points
+	 */
+	public List<TimeseriesPayload> getTimeseriesList(long startTimeStamp, long endTimeStamp, String database,
+			List<Timeseries> timeseriesList, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+			Set<String> symbolicNameFilterSet) {
+		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
+		timeseriesList.parallelStream().forEach(timeseries -> {
+			TimeseriesPayload payload = null;
+			if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
+				payload = getTimeseries(startTimeStamp, endTimeStamp, database, timeseries);
+			}
+			if (payload != null) {
+				timeseriesQueue.add(payload);
+			}
+
+		});
+		return Arrays.asList(timeseriesQueue.toArray(new TimeseriesPayload[0]));
+	}
+
+	/**
+	 * Creates a new database called by a random string
+	 * 
+	 * @return String the new database
+	 */
+	public String createDatabase() {
+		String name = UUID.randomUUID().toString();
+		influxConnector.createDatabase(name);
+		return name;
+	}
+
+	private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {
+		boolean isEqual = true;
+		if (!device.isEmpty()) {
+			isEqual &= device.contains(timeseries.getDevice());
+		}
+		if (!location.isEmpty()) {
+			isEqual &= location.contains(timeseries.getLocation());
+		}
+		if (!symName.isEmpty()) {
+			isEqual &= symName.contains(timeseries.getSymbolicName());
+		}
+		return isEqual;
+	}
+
+}
