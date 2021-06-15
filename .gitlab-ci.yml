@@ -2,13 +2,13 @@ image: maven:3-openjdk-11
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode"
-  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   REPO: shepard
   IMAGE: backend
   OPENAPI_VERSION: 5.1.0
 
 cache:
-  key: $CI_COMMIT_REF_SLUG
+  key: ${CI_COMMIT_REF_SLUG}
   paths:
     - .m2/repository/
     - target/
@@ -21,12 +21,8 @@ stages:
   - deploy
 
 .version_number: &version_number
-  - export VERSION_NUMBER=$(git show -s --format=%cd --date=format:'%Y.%m.%d' $CI_COMMIT_SHA)
-  - echo $VERSION_NUMBER
-  - echo $CI_PROJECT_DIR
-  - echo $CI_REGISTRY_IMAGE
-  - echo $CI_REGISTRY_USER
-  - echo $CI_PAGES_DOMAIN
+  - export VERSION_NUMBER=$(git show -s --format=%cd --date=format:'%Y.%m.%d' ${CI_COMMIT_SHA})
+  - echo ${VERSION_NUMBER}
 
 test:
   stage: test
@@ -47,7 +43,7 @@ test:
     - name: influxdb:1.8
       alias: influxdb
   script:
-    - mvn $MAVEN_CLI_OPTS -Drevision=$VERSION_NUMBER-SNAPSHOT verify site -P test
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT verify site -P test
     - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
     - ls -hal target
   artifacts:
@@ -94,7 +90,7 @@ build:
     - *version_number
   script:
     - ls -hal target
-    - mvn $MAVEN_CLI_OPTS -Drevision=$VERSION_NUMBER-SNAPSHOT -DskipTests -DskipITs package -P prod
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipTests -DskipITs package -P prod
   artifacts:
     when: always
     expire_in: 2 days
@@ -113,14 +109,113 @@ upload_docker:
     - name: docker:dind
   before_script:
     - *version_number
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" ${CI_REGISTRY}
     - docker info
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:$VERSION_NUMBER -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:$VERSION_NUMBER
-    - docker push $CI_REGISTRY_IMAGE:latest
+    - docker build -t ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER} -t ${CI_REGISTRY_IMAGE}:latest .
+    - docker push ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER}
+    - docker push ${CI_REGISTRY_IMAGE}:latest
   only:
-    - master
+    refs:
+      - /^.*-release$/
+
+build_pythonclient:
+  stage: build_clients
+  needs:
+    - build
+  dependencies:
+    - build
+  before_script:
+    - *version_number
+    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+  script:
+    - java -jar openapi-generator-cli.jar generate -i target/swagger/swagger.json -g python-legacy -o clients/python -p=packageName=shepard-client,packageVersion=${VERSION_NUMBER}
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/python
+
+upload_pythonclient:
+  stage: upload
+  image: python:slim
+  needs:
+    - build_pythonclient
+  dependencies:
+    - build_pythonclient
+  before_script:
+    - python3 -m pip install wheel setuptools twine
+  script:
+    - cd clients/python
+    - python3 setup.py sdist bdist_wheel
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
+  only:
+    refs:
+      - /^.*-release$/
+
+build_typescriptclient:
+  stage: build_clients
+  needs:
+    - build
+  dependencies:
+    - build
+  before_script:
+    - *version_number
+    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+  script:
+    - java -jar openapi-generator-cli.jar generate -i target/swagger/swagger.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/typescript
+
+upload_typescriptclient:
+  stage: upload
+  image: node:lts-slim
+  needs:
+    - build_typescriptclient
+  dependencies:
+    - build_typescriptclient
+  before_script:
+    - node -v
+    - npm -v
+    - cd clients/typescript
+    - touch .npmrc
+    - echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" >> .npmrc
+    - echo "${CI_API_V4_URL#http*:}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}" >> .npmrc
+  script:
+    - npm publish
+  only:
+    refs:
+      - /^.*-release$/
+
+build_javaclient:
+  stage: build_clients
+  needs:
+    - build
+  dependencies:
+    - build
+  before_script:
+    - *version_number
+    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+  script:
+    - java -jar openapi-generator-cli.jar generate -i target/swagger/swagger.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}-SNAPSHOT
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/java
+
+upload_javaclient:
+  stage: upload
+  needs:
+    - build_javaclient
+  dependencies:
+    - build_javaclient
+  script:
+    - cd clients/java
+    - mvn ${MAVEN_CLI_OPTS} compile package deploy -s ci_settings.xml
+  only:
+    refs:
+      - /^.*-release$/
 
 pages:
   stage: upload
@@ -132,7 +227,7 @@ pages:
     - ls -hal target
     - mkdir public
     - mv target/site/* public/
-    - echo $CI_PAGES_DOMAIN
+    - echo ${CI_PAGES_DOMAIN}
   artifacts:
     expire_in: 2 days
     paths:
