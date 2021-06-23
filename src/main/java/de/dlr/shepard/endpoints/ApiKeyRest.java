@@ -1,7 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import java.util.UUID;
-
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -35,7 +33,8 @@ public interface ApiKeyRest {
 	@Operation(description = "Get api key")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ApiKeyIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getApiKey(@PathParam(Constants.USERNAME) String username, @PathParam(Constants.APIKEY_UID) UUID apiKeyUid);
+	Response getApiKey(@PathParam(Constants.USERNAME) String username,
+			@PathParam(Constants.APIKEY_UID) String apiKeyUid);
 
 	@POST
 	@Tag(name = Constants.APIKEY)
@@ -52,5 +51,5 @@ public interface ApiKeyRest {
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response deleteApiKey(@PathParam(Constants.USERNAME) String username,
-			@PathParam(Constants.APIKEY_UID) UUID apiKeyUid);
+			@PathParam(Constants.APIKEY_UID) String apiKeyUid);
 }

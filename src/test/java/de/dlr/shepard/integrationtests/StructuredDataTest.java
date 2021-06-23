@@ -158,8 +158,8 @@ public class StructuredDataTest extends BaseTestCaseIT {
 		var actual = given().spec(referencesRequestSpec).when()
 				.get(String.format("%s/%d/payload", referencesURL, reference.getId())).then().statusCode(200).extract()
 				.as(StructuredDataPayload[].class);
-		var payloadMap = objectMapper.readValue(actual[0].getJson(), Map.class);
-		var expectedMap = objectMapper.readValue(payload.getJson(), Map.class);
+		var payloadMap = objectMapper.readValue(actual[0].getPayload(), Map.class);
+		var expectedMap = objectMapper.readValue(payload.getPayload(), Map.class);
 
 		assertThat(actual).hasSize(1);
 		assertThat(actual[0].getStructuredData()).isEqualTo(payload.getStructuredData());

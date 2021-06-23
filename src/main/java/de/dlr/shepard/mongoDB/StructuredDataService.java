@@ -32,9 +32,9 @@ public class StructuredDataService {
 		}
 		Document toInsert;
 		try {
-			toInsert = Document.parse(payload.getJson());
+			toInsert = Document.parse(payload.getPayload());
 		} catch (JsonParseException e) {
-			log.error("Could not parse json: {}", payload.getJson());
+			log.error("Could not parse json: {}", payload.getPayload());
 			return null;
 		}
 		try {

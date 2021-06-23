@@ -14,6 +14,6 @@ public class StructuredDataPayload {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private StructuredData structuredData;
 
-	private String json;
+	private String payload;
 
 }

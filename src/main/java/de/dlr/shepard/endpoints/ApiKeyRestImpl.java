@@ -49,11 +49,18 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	}
 
 	@Override
-	public Response getApiKey(String username, UUID apiKeyUid) {
+	public Response getApiKey(String username, String apiKeyUid) {
 		log.info("Received GET request with parameters: userID: {} apiKeyUid: {} from user {}", username, apiKeyUid,
 				securityContext.getUserPrincipal().getName());
 
-		ApiKey apiKey = apiKeyService.getApiKey(apiKeyUid);
+		UUID uid;
+		try {
+			uid = UUID.fromString(apiKeyUid);
+		} catch (IllegalArgumentException e) {
+			log.error("Given api key has no valid format: {}", apiKeyUid);
+			return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+		}
+		ApiKey apiKey = apiKeyService.getApiKey(uid);
 		return Response.ok(new ApiKeyIO(apiKey)).build();
 	}
 
@@ -74,11 +81,18 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	}
 
 	@Override
-	public Response deleteApiKey(String username, UUID apiKeyUid) {
+	public Response deleteApiKey(String username, String apiKeyUid) {
 		log.info("Received DELETE request with parameters: userID: {} apiKeyID: {} from user {}", username, apiKeyUid,
 				securityContext.getUserPrincipal().getName());
 
-		return apiKeyService.deleteApiKey(apiKeyUid) ? Response.status(204).build()
+		UUID uid;
+		try {
+			uid = UUID.fromString(apiKeyUid);
+		} catch (IllegalArgumentException e) {
+			log.error("Given api key has no valid format: {}", apiKeyUid);
+			return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+		}
+		return apiKeyService.deleteApiKey(uid) ? Response.status(204).build()
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 }

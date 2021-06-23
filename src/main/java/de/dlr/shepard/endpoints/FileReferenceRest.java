@@ -1,7 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import java.io.InputStream;
-
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -68,7 +66,7 @@ public interface FileReferenceRest {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Tag(name = Constants.FILE_REFERENCE)
 	@Operation(description = "Get file payload")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = InputStream.class)))
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = "application/octet-stream", schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getFilePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

@@ -300,7 +300,7 @@ public class InfluxConnectorTest extends BaseTestCase {
 		BatchPoints points = BatchPoints.database(database).build();
 		Builder pointBuilder = configurePointBuilder(timeseries);
 		pointBuilder.time(timestamp, TimeUnit.NANOSECONDS).addField(timeseries.getTimeseries().getField(),
-				value.doubleValue());
+				value);
 		points.point(pointBuilder.build());
 
 		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey(""));
