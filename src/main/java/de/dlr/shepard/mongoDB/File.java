@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class File {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
+	
 	private String oid;
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private String filename;

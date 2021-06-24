@@ -1,6 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
@@ -86,7 +87,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getAllFiles(long collectionId, long dataObjectId, long fileId) {
 		log.info("Received GET ALL FILES request with reference Id {} from user {}", fileId,
 				securityContext.getUserPrincipal().getName());
-		ArrayList<File> ret = fileReferenceService.getFiles(fileId);
+		List<File> ret = fileReferenceService.getFiles(fileId);
 		return Response.ok(ret).build();
 	}
 

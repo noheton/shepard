@@ -1,6 +1,5 @@
 package de.dlr.shepard.neo4Core.services;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,7 +14,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class FileReferenceService {
 
 	private FileReferenceDAO fileReferenceDAO = new FileReferenceDAO();
@@ -52,7 +53,17 @@ public class FileReferenceService {
 		toCreate.setDataObject(dataObject);
 		toCreate.setName(fileReference.getName());
 		toCreate.setFilecontainer(container);
-		toCreate.setFileoids(fileReference.getFileoids());
+		
+		// Get filename per file
+		for(var file:fileReference.getFiles()) {
+			var newFile = fileService.getFile(container.getMongoId(), file.getOid());
+			if(newFile != null) {
+				toCreate.addFile(newFile);
+			} else {
+				log.warn("Could not find file with oid: {}", file.getOid());
+			}
+		}
+		
 		return fileReferenceDAO.createOrUpdate(toCreate);
 	}
 
@@ -73,15 +84,9 @@ public class FileReferenceService {
 		return result;
 	}
 
-	public ArrayList<File> getFiles(long fileId) {
+	public List<File> getFiles(long fileId) {
 		FileReference reference = fileReferenceDAO.find(fileId);
-		String containerId = reference.getFilecontainer().getMongoId();
-		List<String> fileOids = reference.getFileoids();
-		var result = new ArrayList<File>(fileOids.size());
-		for (String fileoid : fileOids) {
-			result.add(fileService.getFile(containerId, fileoid));
-		}
-		return result;
+		return reference.getFiles();
 	}
 
 }

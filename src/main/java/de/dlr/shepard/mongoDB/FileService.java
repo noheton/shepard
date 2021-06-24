@@ -33,11 +33,11 @@ public class FileService {
 		}
 		GridFSBucket gridBucket = mongoDBConnector.createBucket();
 		GridFSUploadOptions uploadOptions = new GridFSUploadOptions().chunkSizeBytes(1024 * 1024);
-		String FileMongoId = gridBucket.uploadFromStream(fileName, inputStream, uploadOptions).toString();
-		Document FileDBEntry = new Document("name", fileName).append("container", mongoid).append("FileMongoId",
-				FileMongoId);
-		collection.insertOne(FileDBEntry);
-		String id = FileDBEntry.getObjectId("_id").toHexString();
+		String fileMongoId = gridBucket.uploadFromStream(fileName, inputStream, uploadOptions).toString();
+		Document fileDBEntry = new Document("name", fileName).append("container", mongoid).append("FileMongoId",
+				fileMongoId);
+		collection.insertOne(fileDBEntry);
+		String id = fileDBEntry.getObjectId("_id").toHexString();
 		return new File(id, fileName);
 	}
 
