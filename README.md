@@ -24,9 +24,9 @@ cd deployment
 3. Prepare storage
 
 ```bash
-mkdir /storage
-mkdir -p /storage/grafana
-chown -R 472:472 /storage/grafana/
+mkdir /opt/shepard
+mkdir -p /opt/shepard/grafana
+chown -R 472:472 /opt/shepard/grafana/
 ```
 
 4. Prepare nginx

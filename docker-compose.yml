@@ -17,8 +17,8 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      - /storage/backend/tomcat:/usr/local/tomcat/logs
-      - /storage/backend/config:/root/.shepard
+      - /opt/shepard/backend/tomcat:/usr/local/tomcat/logs
+      - /opt/shepard/backend/config:/root/.shepard
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       com.centurylinklabs.watchtower.depends-on: neo4j,mongodb,influxdb
@@ -71,9 +71,9 @@ services:
       - "127.0.0.1:7474:7474"
       - "7687:7687"
     volumes:
-      - /storage/neo4j/logs:/logs
-      - /storage/neo4j/plugins:/plugins
-      - /storage/neo4j/data:/var/lib/neo4j/data
+      - /opt/shepard/neo4j/logs:/logs
+      - /opt/shepard/neo4j/plugins:/plugins
+      - /opt/shepard/neo4j/data:/var/lib/neo4j/data
     labels:
       com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
@@ -87,8 +87,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PW}
       MONGO_INITDB_DATABASE: database
     volumes:
-      - /storage/mongodb/db:/data/db
-      - /storage/mongodb/configdb:/data/configdb
+      - /opt/shepard/mongodb/db:/data/db
+      - /opt/shepard/mongodb/configdb:/data/configdb
     labels:
       com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
@@ -127,7 +127,7 @@ services:
       INFLUXDB_HTTP_LOG_ENABLED: "false"
       INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2048M
     volumes:
-      - /storage/influxdb:/var/lib/influxdb
+      - /opt/shepard/influxdb:/var/lib/influxdb
     labels:
       com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
@@ -144,7 +144,7 @@ services:
     ports:
       - "127.0.0.1:8888:8888"
     volumes:
-      - /storage/chronograf:/var/lib/chronograf
+      - /opt/shepard/chronograf:/var/lib/chronograf
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       com.centurylinklabs.watchtower.depends-on: influxdb
@@ -161,7 +161,7 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - /storage/grafana:/var/lib/grafana
+      - /opt/shepard/grafana:/var/lib/grafana
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       com.centurylinklabs.watchtower.depends-on: influxdb
