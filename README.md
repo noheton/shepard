@@ -78,7 +78,7 @@ docker-compose build --pull
 docker-compose up -d
 ```
 
-You can find the backend logs in `/opt/shepard/backend/tomcat/idms.log`.
+You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
 
 ## Update
 
