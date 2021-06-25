@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.dlr.shepard</groupId>
 	<artifactId>backend</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>war</packaging>
 	<name>shepard backend</name>
 
@@ -34,7 +34,7 @@
 	</ciManagement>
 
 	<properties>
-		<revision>2.0.0-SNAPSHOT</revision>
+		<revision>1.0.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.19.0</assertj.version>
 		<basetest.version>1.0.0</basetest.version>
