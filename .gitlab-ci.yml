@@ -133,7 +133,7 @@ build_pythonclient:
     - *version_number
     - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
   script:
-    - java -jar openapi-generator-cli.jar generate -i target/swagger/swagger.json -g python-legacy -o clients/python -p=packageName=shepard-client,packageVersion=${VERSION_NUMBER}
+    - java -jar openapi-generator-cli.jar generate -i target/swagger/swagger.json -g python-legacy -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
     expire_in: 2 days
     paths:
