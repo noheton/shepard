@@ -19,9 +19,7 @@ git clone https://gitlab.com/dlr-shepard/deployment.git
 cd deployment
 ```
 
-2. Set up Docker Registry
-   - https://docs.gitlab.com/ee/user/packages/container_registry/index.html#use-images-from-the-container-registry
-3. Prepare storage
+2. Prepare storage
 
 ```bash
 mkdir /opt/shepard
@@ -29,7 +27,7 @@ mkdir -p /opt/shepard/grafana
 chown -R 472:472 /opt/shepard/grafana/
 ```
 
-4. Prepare nginx
+3. Prepare nginx
    - Apply for SSL certificates and store them in the system
    - Create Diffie-Hellman parameters
 
@@ -37,10 +35,11 @@ chown -R 472:472 /opt/shepard/grafana/
 openssl dhparam -out /etc/nginx/dhparam.pem 2048
 ```
 
-5. Set up nginx
+4. Set up nginx
    - Edit and enable the [sample files with self-signed certificates](https://gitlab.com/dlr-shepard/deployment/-/blob/master/etc/nginx/sites-available/) as needed
-   - Edit `index.html` and put this file into the appropriate directory
    - [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/#server=nginx&config=intermediate)
+   - Do not forget to change these files according to your certificates
+   - Edit `index.html` and put this file into the appropriate directory
    - Restart nginx afterwards by typing `systemctl restart nginx.service`
 
 ```bash
@@ -78,6 +77,8 @@ docker-compose pull
 docker-compose build --pull
 docker-compose up -d
 ```
+
+You can find the backend logs in `/opt/shepard/backend/tomcat/idms.log`.
 
 ## Update
 
