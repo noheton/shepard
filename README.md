@@ -74,7 +74,6 @@ You can adjust the maximum amount of used memory in `docker-compose.yml`.
 
 ```bash
 docker-compose pull
-docker-compose build --pull
 docker-compose up -d
 ```
 
