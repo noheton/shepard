@@ -16,6 +16,9 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class FileService {
+
+	private static final int CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MiB
+
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
 	private UUIDHelper uuidHelper = new UUIDHelper();
 
@@ -32,7 +35,7 @@ public class FileService {
 			return null;
 		}
 		GridFSBucket gridBucket = mongoDBConnector.createBucket();
-		GridFSUploadOptions uploadOptions = new GridFSUploadOptions().chunkSizeBytes(1024 * 1024);
+		GridFSUploadOptions uploadOptions = new GridFSUploadOptions().chunkSizeBytes(CHUNK_SIZE_BYTES);
 		String fileMongoId = gridBucket.uploadFromStream(fileName, inputStream, uploadOptions).toString();
 		Document fileDBEntry = new Document("name", fileName).append("container", mongoid).append("FileMongoId",
 				fileMongoId);

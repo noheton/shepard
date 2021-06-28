@@ -1,0 +1,289 @@
+package de.dlr.shepard.neo4Core.services;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.FileService;
+import de.dlr.shepard.mongoDB.NamedInputStream;
+import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
+import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
+import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
+import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.FileContainer;
+import de.dlr.shepard.neo4Core.entities.FileReference;
+import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.io.FileReferenceIO;
+import de.dlr.shepard.util.DateHelper;
+
+public class FileReferenceServiceTest extends BaseTestCase {
+
+	@Mock
+	private FileReferenceDAO dao;
+
+	@Mock
+	private FileService fileService;
+
+	@Mock
+	private DataObjectDAO dataObjectDAO;
+
+	@Mock
+	private FileContainerDAO fileContainerDAO;
+
+	@Mock
+	private UserDAO userDAO;
+
+	@Mock
+	private DateHelper dateHelper;
+
+	@InjectMocks
+	private FileReferenceService service;
+
+	@Test
+	public void getFileReferenceTest_successful() {
+		var ref = new FileReference(1L);
+
+		when(dao.find(1L)).thenReturn(ref);
+
+		var actual = service.getFileReference(1L);
+		assertEquals(ref, actual);
+	}
+
+	@Test
+	public void getFileReferenceTest_notFound() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.getFileReference(1L);
+		assertNull(actual);
+	}
+
+	@Test
+	public void getFileReferenceTest_deleted() {
+		var ref = new FileReference(1L);
+		ref.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(ref);
+
+		var actual = service.getFileReference(1L);
+		assertNull(actual);
+	}
+
+	@Test
+	public void getAllFileReferencesTest() {
+		var dataObject = new DataObject(200L);
+		var ref1 = new FileReference(1L);
+		var ref2 = new FileReference(2L);
+		var ref3 = new FileReference(3L);
+		ref3.setDeleted(true);
+		dataObject.setReferences(List.of(ref1, ref2, ref3));
+
+		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2, ref3));
+		var actual = service.getAllFileReferences(200L);
+
+		assertEquals(List.of(ref1, ref2), actual);
+	}
+
+	@Test
+	public void createFileReferenceTest() throws InvalidBodyException {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new FileContainer(300L);
+		container.setMongoId("mongoId");
+		var date = new Date(30L);
+		var file = new File("oid", null);
+		var fileComplete = new File("oid", "name");
+		var input = new FileReferenceIO() {
+			{
+				setName("MyName");
+				setFiles(List.of(file));
+				setFileContainerId(300L);
+			}
+		};
+		var toCreate = new FileReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setFiles(List.of(fileComplete));
+				setFileContainer(container);
+			}
+		};
+		var created = new FileReference() {
+			{
+				setId(1L);
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setFiles(List.of(fileComplete));
+				setFileContainer(container);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.find(300L)).thenReturn(container);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(fileService.getFile("mongoId", "oid")).thenReturn(fileComplete);
+
+		var actual = service.createFileReference(200L, input, "Bob");
+		assertEquals(created, actual);
+	}
+
+	@Test
+	public void createFileReferenceTest_newFileIsNull() throws InvalidBodyException {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new FileContainer(300L);
+		container.setMongoId("mongoId");
+		var date = new Date(30L);
+		var file = new File("oid", null);
+		var input = new FileReferenceIO() {
+			{
+				setName("MyName");
+				setFiles(List.of(file));
+				setFileContainerId(300L);
+			}
+		};
+		var toCreate = new FileReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setFiles(Collections.emptyList());
+				setFileContainer(container);
+			}
+		};
+		var created = new FileReference() {
+			{
+				setId(1L);
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setFiles(Collections.emptyList());
+				setFileContainer(container);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.find(300L)).thenReturn(container);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(fileService.getFile("mongoId", "oid")).thenReturn(null);
+
+		var actual = service.createFileReference(200L, input, "Bob");
+		assertEquals(created, actual);
+	}
+
+	@Test
+	public void createFileReferenceTest_ContainerIsNull() throws InvalidBodyException {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new FileContainer(300L);
+		container.setDeleted(true);
+		var file = new File("oid", "name");
+		var input = new FileReferenceIO() {
+			{
+				setName("MyName");
+				setFiles(List.of(file));
+				setFileContainerId(300L);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.find(300L)).thenReturn(container);
+
+		assertThrows(InvalidBodyException.class, () -> service.createFileReference(200L, input, "Bob"));
+	}
+
+	@Test
+	public void createFileReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var file = new File("oid", "name");
+		var input = new FileReferenceIO() {
+			{
+				setName("MyName");
+				setFiles(List.of(file));
+				setFileContainerId(300L);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.find(300L)).thenReturn(null);
+
+		assertThrows(InvalidBodyException.class, () -> service.createFileReference(200L, input, "Bob"));
+	}
+
+	@Test
+	public void deleteReferenceTest() {
+		var user = new User("Bob");
+		var date = new Date(30L);
+		var ref = new FileReference(1L);
+		var expected = new FileReference(1L);
+		expected.setDeleted(true);
+		expected.setUpdatedAt(date);
+		expected.setUpdatedBy(user);
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dao.find(1L)).thenReturn(ref);
+		when(dateHelper.getDate()).thenReturn(date);
+		var actual = service.deleteReference(1L, "Bob");
+
+		verify(dao).createOrUpdate(expected);
+		assertTrue(actual);
+	}
+
+	@Test
+	public void getPayloadTest() {
+		var container = new FileContainer() {
+			{
+				setId(20L);
+				setMongoId("mongoId");
+			}
+		};
+		var ref = new FileReference(1L);
+		ref.setFileContainer(container);
+		var result = new NamedInputStream(null, "myInputStream");
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
+		var actual = service.getPayload(1L, "oid");
+
+		assertEquals(result, actual);
+	}
+
+	@Test
+	public void getFilesTest() {
+		var files = List.of(new File("a", "b"), new File("c", "d"));
+		var ref = new FileReference(1L);
+		ref.setFiles(files);
+
+		when(dao.find(1L)).thenReturn(ref);
+		var actual = service.getFiles(1L);
+
+		assertEquals(files, actual);
+	}
+}

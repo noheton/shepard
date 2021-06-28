@@ -299,8 +299,7 @@ public class InfluxConnectorTest extends BaseTestCase {
 		TimeseriesPayload timeseries = configureTimeseries(value);
 		BatchPoints points = BatchPoints.database(database).build();
 		Builder pointBuilder = configurePointBuilder(timeseries);
-		pointBuilder.time(timestamp, TimeUnit.NANOSECONDS).addField(timeseries.getTimeseries().getField(),
-				value);
+		pointBuilder.time(timestamp, TimeUnit.NANOSECONDS).addField(timeseries.getTimeseries().getField(), value);
 		points.point(pointBuilder.build());
 
 		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey(""));

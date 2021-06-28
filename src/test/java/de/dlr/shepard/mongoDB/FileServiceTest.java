@@ -1,26 +1,37 @@
 package de.dlr.shepard.mongoDB;
 
-import static com.mongodb.client.model.Filters.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
+import com.mongodb.client.model.Filters;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.UUIDHelper;
@@ -31,23 +42,30 @@ public class FileServiceTest extends BaseTestCase {
 	private MongoDBConnector mongoDBConnector;
 	@Mock
 	private UUIDHelper uuidhelper;
+	@InjectMocks
+	private FileService fileService;
+
 	@Mock
 	private MongoCollection<Document> collection;
 	@Mock
 	private MongoDatabase database;
 	@Mock
 	private GridFSBucket gridBucket;
-	@InjectMocks
-	private FileService fileService;
+
+	@BeforeEach
+	public void setUpConnector() {
+		when(mongoDBConnector.getDatabase()).thenReturn(database);
+		when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
+	}
 
 	@Test
 	public void createFileContainerTest() {
 		var uuid = UUID.randomUUID();
-		Mockito.when(uuidhelper.getUUID()).thenReturn(uuid);
+		when(uuidhelper.getUUID()).thenReturn(uuid);
 		var result = fileService.createFileContainer();
 		var expectedUUID = "FileContainer" + uuid.toString();
 		assertEquals(expectedUUID, result);
-		Mockito.verify(mongoDBConnector).createCollection(expectedUUID);
+		verify(mongoDBConnector).createCollection(expectedUUID);
 	}
 
 	@Test
@@ -55,70 +73,41 @@ public class FileServiceTest extends BaseTestCase {
 		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
 		String fileoid = "60b73212cfa45d2d5baa795d";
 		String name = "name";
+		Document file = mock(Document.class);
 		@SuppressWarnings("unchecked")
-		MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = Mockito.mock(FindIterable.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = Mockito.mock(FindIterable.class);
-		Document file = Mockito.mock(Document.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
-		Mockito.when(collection.find(eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
-		Mockito.when(collectionReturn.first()).thenReturn(file);
-		Mockito.when(emptyCollectionReturn.first()).thenReturn(null);
-		Mockito.when(file.getString("name")).thenReturn("name");
+		FindIterable<Document> collectionReturn = mock(FindIterable.class);
+
+		when(database.getCollection(containerId)).thenReturn(collection);
+		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
+		when(collectionReturn.first()).thenReturn(file);
+		when(file.getString("name")).thenReturn("name");
+
+		var expected = new File(fileoid, name);
 		var result = fileService.getFile(containerId, fileoid);
-		System.out.println("result: " + result);
-		assertEquals(result.getFilename(), name);
-		assertEquals(result.getOid(), fileoid);
+		assertEquals(expected, result);
 	}
 
 	@Test
 	public void getNonExistingContainerFileTest() {
 		String nonExistingContainerId = "FileContainer123";
 		String fileoid = "60b73212cfa45d2d5baa795d";
-		@SuppressWarnings("unchecked")
-		MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = Mockito.mock(FindIterable.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = Mockito.mock(FindIterable.class);
-		Document file = Mockito.mock(Document.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDatabase.getCollection(nonExistingContainerId)).thenReturn(null);
-		Mockito.when(collection.find(eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
-		Mockito.when(collectionReturn.first()).thenReturn(file);
-		Mockito.when(emptyCollectionReturn.first()).thenReturn(null);
-		Mockito.when(file.getString("name")).thenReturn("name");
+
+		when(database.getCollection(nonExistingContainerId)).thenReturn(null);
 		var result = fileService.getFile(nonExistingContainerId, fileoid);
-		System.out.println("result: " + result);
-		assertEquals(result, null);
+		assertNull(result);
 	}
 
 	@Test
 	public void getNonExistingFileTest() {
 		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
 		String nonExistingFileoid = "60b73212cfa45d2d5baa795b";
-		String name = "name";
 		@SuppressWarnings("unchecked")
-		MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = Mockito.mock(FindIterable.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = Mockito.mock(FindIterable.class);
-		Document file = Mockito.mock(Document.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
-		Mockito.when(collection.find(eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(emptyCollectionReturn);
-		Mockito.when(collectionReturn.first()).thenReturn(file);
-		Mockito.when(emptyCollectionReturn.first()).thenReturn(null);
-		Mockito.when(file.getString("name")).thenReturn("name");
+		FindIterable<Document> collectionReturn = mock(FindIterable.class);
+
+		when(database.getCollection(containerId)).thenReturn(collection);
+		when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
+		when(collectionReturn.first()).thenReturn(null);
 		var result = fileService.getFile(containerId, nonExistingFileoid);
-		System.out.println("result: " + result);
 		assertEquals(result, null);
 	}
 
@@ -127,14 +116,12 @@ public class FileServiceTest extends BaseTestCase {
 		ObjectId oid = new ObjectId();
 		ObjectId moid = new ObjectId();
 		String fileName = "fileName";
-		InputStream inputStream = Mockito.mock(InputStream.class);
+		InputStream inputStream = mock(InputStream.class);
 		String mongoid = "mongoid";
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(database);
-		Mockito.when(database.getCollection(mongoid)).thenReturn(collection);
-		Mockito.when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
-		Mockito.when(gridBucket.uploadFromStream(Mockito.eq(fileName), Mockito.eq(inputStream),
-				Mockito.any(GridFSUploadOptions.class))).thenReturn(oid);
-		Mockito.when(collection.insertOne(Mockito.any())).thenReturn(null);
+
+		when(database.getCollection(mongoid)).thenReturn(collection);
+		when(gridBucket.uploadFromStream(eq(fileName), eq(inputStream), any(GridFSUploadOptions.class)))
+				.thenReturn(oid);
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -142,75 +129,127 @@ public class FileServiceTest extends BaseTestCase {
 				((Document) args[0]).append("_id", moid);
 				return null;
 			}
-		}).when(collection).insertOne(Mockito.any(Document.class));
+		}).when(collection).insertOne(any(Document.class));
+
+		var expected = new File(moid.toHexString(), fileName);
 		var result = fileService.createFile(mongoid, fileName, inputStream);
-		assertEquals(result.getOid(), moid.toHexString());
-		assertEquals(result.getFilename(), fileName);
+		assertEquals(expected, result);
+		verify(collection).insertOne(any(Document.class));
 	}
 
 	@Test
 	public void createNonExistingMonoidFileTest() {
 		String fileName = "fileName";
-		InputStream inputStream = Mockito.mock(InputStream.class);
+		InputStream inputStream = mock(InputStream.class);
 		String nonExistingMongoid = "mongoid";
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(database);
-		Mockito.when(database.getCollection(nonExistingMongoid)).thenReturn(null);
+
+		when(database.getCollection(nonExistingMongoid)).thenReturn(null);
 		var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
-		assertEquals(result, null);
+		assertNull(result);
 	}
 
 	@Test
 	public void deleteExistingFileContainerTest() {
 		String existingMongoOid = "60b73212cfa45d2d5baa795d";
+		ObjectId oid = new ObjectId();
 		@SuppressWarnings("unchecked")
-		MongoCollection<Document> toDelete = Mockito.mock(MongoCollection.class);
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
-		Mockito.when(mongoDatabase.getCollection(existingMongoOid)).thenReturn(toDelete);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = Mockito.mock(FindIterable.class);
-		Mockito.when(toDelete.find()).thenReturn(emptyCollectionReturn);
-		// TODO: Iterator mocken
-		// var result = fileService.deleteFileContainer(existingMongoOid);
+		FindIterable<Document> collectionReturn = mock(FindIterable.class);
+		Document doc = mock(Document.class);
+		mockIterable(collectionReturn, doc);
+
+		when(database.getCollection(existingMongoOid)).thenReturn(collection);
+		when(collection.find()).thenReturn(collectionReturn);
+		when(doc.get("FileMongoId")).thenReturn(oid);
+
+		var result = fileService.deleteFileContainer(existingMongoOid);
+		assertTrue(result);
+		verify(gridBucket).delete(oid);
 	}
 
 	@Test
 	public void deleteNonExistingFileContainerTest() {
 		String nonExistingMongoOid = "60b73212cfa45d2d5baa795d";
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
-		Mockito.when(mongoDatabase.getCollection(nonExistingMongoOid)).thenReturn(null);
+
+		when(database.getCollection(nonExistingMongoOid)).thenReturn(null);
 		var result = fileService.deleteFileContainer(nonExistingMongoOid);
-		assertEquals(result, false);
+		assertFalse(result);
+	}
+
+	@Test
+	public void getPayloadTest() {
+		String containerId = "4";
+		String fileoid = "60b73212cfa45d2d5baa795d";
+		String fileName = "FileName";
+		@SuppressWarnings("unchecked")
+		FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
+		Document doc = mock(Document.class);
+		ObjectId oid = new ObjectId();
+		GridFSDownloadStream stream = mock(GridFSDownloadStream.class);
+
+		when(database.getCollection(containerId)).thenReturn(collection);
+		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
+		when(emptyCollectionReturn.first()).thenReturn(doc);
+		when(doc.getString("FileMongoId")).thenReturn(oid.toString());
+		when(doc.getString("name")).thenReturn(fileName);
+		when(gridBucket.openDownloadStream(oid)).thenReturn(stream);
+
+		var expected = new NamedInputStream(stream, fileName);
+		var result = fileService.getPayload(containerId, fileoid);
+		assertEquals(expected, result);
 	}
 
 	@Test
 	public void getPayloadNonExistingContainerIdTest() {
 		String nonExistingContainerId = "4";
 		String fileoid = "60b73212cfa45d2d5baa795d";
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-		Mockito.when(mongoDatabase.getCollection(nonExistingContainerId)).thenReturn(null);
+
+		when(database.getCollection(nonExistingContainerId)).thenReturn(null);
 		var result = fileService.getPayload(nonExistingContainerId, fileoid);
-		assertEquals(result, null);
+		assertNull(result);
 	}
 
 	@Test
 	public void getPayloadNonExistingFileOidTest() {
-		String nonExistingContainerId = "4";
+		String containerId = "4";
 		String fileoid = "60b73212cfa45d2d5baa795d";
-		MongoDatabase mongoDatabase = Mockito.mock(MongoDatabase.class);
-		Mockito.when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
+
+		when(database.getCollection(containerId)).thenReturn(collection);
 		@SuppressWarnings("unchecked")
-		MongoCollection<Document> toDelete = Mockito.mock(MongoCollection.class);
-		Mockito.when(mongoDatabase.getCollection(nonExistingContainerId)).thenReturn(toDelete);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = Mockito.mock(FindIterable.class);
-		Mockito.when(toDelete.find(eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
-		Mockito.when(emptyCollectionReturn.first()).thenReturn(null);
-		var result = fileService.getPayload(nonExistingContainerId, fileoid);
-		assertEquals(result, null);
+		FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
+		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
+		when(emptyCollectionReturn.first()).thenReturn(null);
+
+		var result = fileService.getPayload(containerId, fileoid);
+		assertNull(result);
+	}
+
+	/**
+	 * From https://www.batey.info/mocking-iterable-objects-generically.html
+	 *
+	 * @param iterable
+	 * @param values
+	 */
+	@SuppressWarnings("unchecked")
+	private static void mockIterable(FindIterable<Document> iterable, Document... values) {
+		MongoCursor<Document> mockIterator = mock(MongoCursor.class);
+		when(iterable.iterator()).thenReturn(mockIterator);
+
+		if (values.length == 0) {
+			when(mockIterator.hasNext()).thenReturn(false);
+			return;
+		} else if (values.length == 1) {
+			when(mockIterator.hasNext()).thenReturn(true, false);
+			when(mockIterator.next()).thenReturn(values[0]);
+		} else {
+			// build boolean array for hasNext()
+			Boolean[] hasNextResponses = new Boolean[values.length];
+			for (int i = 0; i < hasNextResponses.length - 1; i++) {
+				hasNextResponses[i] = true;
+			}
+			hasNextResponses[hasNextResponses.length - 1] = false;
+			when(mockIterator.hasNext()).thenReturn(true, hasNextResponses);
+			Document[] valuesMinusTheFirst = Arrays.copyOfRange(values, 1, values.length);
+			when(mockIterator.next()).thenReturn(values[0], valuesMinusTheFirst);
+		}
 	}
 }

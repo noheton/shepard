@@ -17,12 +17,12 @@ public class FileReferenceIO extends BasicReferenceIO {
 
 	private List<File> files;
 
-	private long filecontainerId;
+	private long fileContainerId;
 
 	public FileReferenceIO(FileReference ref) {
 		super(ref);
 		this.files = ref.getFiles();
-		this.filecontainerId = ref.getFilecontainer() != null ? ref.getFilecontainer().getId() : -1;
+		this.fileContainerId = ref.getFileContainer() != null ? ref.getFileContainer().getId() : -1;
 	}
 
 }

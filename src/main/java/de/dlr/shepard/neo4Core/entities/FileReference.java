@@ -31,7 +31,7 @@ public class FileReference extends BasicReference {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.IS_IN_CONTAINER)
-	private FileContainer filecontainer;
+	private FileContainer fileContainer;
 
 	/**
 	 * For testing purposes only
@@ -84,7 +84,7 @@ public class FileReference extends BasicReference {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + Objects.hash(filesJson);
-		result = prime * result + HasId.hashcodeHelper(filecontainer);
+		result = prime * result + HasId.hashcodeHelper(fileContainer);
 		return result;
 	}
 
@@ -97,7 +97,7 @@ public class FileReference extends BasicReference {
 		if (!(obj instanceof FileReference))
 			return false;
 		FileReference other = (FileReference) obj;
-		return HasId.equalsHelper(filecontainer, other.filecontainer) && Objects.equals(filesJson, other.filesJson);
+		return HasId.equalsHelper(fileContainer, other.fileContainer) && Objects.equals(filesJson, other.filesJson);
 	}
 
 }

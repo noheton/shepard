@@ -38,7 +38,7 @@ public class StructuredDataContainerIOTest extends BaseTestCase {
 		assertEquals(converted.getCreatedBy(), "bob");
 		assertEquals(converted.getId(), 1L);
 		assertEquals(converted.getName(), "name");
-		assertEquals(converted.getMongoid(), "mongoid");
+		assertEquals(converted.getOid(), "mongoid");
 		assertEquals(converted.getUpdatedAt(), update);
 		assertEquals(converted.getUpdatedBy(), "claus");
 	}

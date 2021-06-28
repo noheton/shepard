@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 public class StructuredDataContainerIO extends AbstractContainerIO {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String mongoid;
+	private String oid;
 
 	public StructuredDataContainerIO(StructuredDataContainer container) {
 		super(container);
-		this.mongoid = container.getMongoId();
+		this.oid = container.getMongoId();
 	}
 }

@@ -70,7 +70,7 @@ public class StructuredDataTest extends BaseTestCaseIT {
 		assertThat(actual.getId()).isNotNull();
 		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getCreatedBy()).isEqualTo(username);
-		assertThat(actual.getMongoid()).isNotBlank();
+		assertThat(actual.getOid()).isNotBlank();
 		assertThat(actual.getName()).isEqualTo("StructuredDataContainer");
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();

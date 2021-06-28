@@ -44,7 +44,7 @@ public class FileReferenceService {
 			throws InvalidBodyException {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
-		var container = containerDAO.find(fileReference.getFilecontainerId());
+		var container = containerDAO.find(fileReference.getFileContainerId());
 		if (container == null || container.isDeleted())
 			throw new InvalidBodyException("invalid container");
 		var toCreate = new FileReference();
@@ -52,18 +52,18 @@ public class FileReferenceService {
 		toCreate.setCreatedBy(user);
 		toCreate.setDataObject(dataObject);
 		toCreate.setName(fileReference.getName());
-		toCreate.setFilecontainer(container);
-		
+		toCreate.setFileContainer(container);
+
 		// Get filename per file
-		for(var file:fileReference.getFiles()) {
+		for (var file : fileReference.getFiles()) {
 			var newFile = fileService.getFile(container.getMongoId(), file.getOid());
-			if(newFile != null) {
+			if (newFile != null) {
 				toCreate.addFile(newFile);
 			} else {
 				log.warn("Could not find file with oid: {}", file.getOid());
 			}
 		}
-		
+
 		return fileReferenceDAO.createOrUpdate(toCreate);
 	}
 
@@ -79,7 +79,7 @@ public class FileReferenceService {
 
 	public NamedInputStream getPayload(long fileId, String fileMongoId) {
 		FileReference reference = fileReferenceDAO.find(fileId);
-		String containerId = reference.getFilecontainer().getMongoId();
+		String containerId = reference.getFileContainer().getMongoId();
 		var result = fileService.getPayload(containerId, fileMongoId);
 		return result;
 	}

@@ -76,7 +76,7 @@ public class TimeseriesReference extends BasicReference {
 		timeseriesJson = result;
 	}
 
-	public void addTimeSeries(Timeseries timeseries) {
+	public void addTimeseries(Timeseries timeseries) {
 		var mapper = new ObjectMapper();
 		try {
 			timeseriesJson.add(mapper.writeValueAsString(timeseries));
