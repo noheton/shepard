@@ -28,13 +28,4 @@ public class TimeseriesReferenceTest extends BaseTestCase {
 		assertEquals(List.of(ts), ref.getTimeseries());
 	}
 
-	@Test
-	public void setTimeseriesTest() {
-		var ref = new TimeseriesReference(1L);
-		var ts = new Timeseries("meas", "dev", "loc", "symname", "field");
-		ref.setTimeseries(List.of(ts));
-
-		assertEquals(List.of(ts), ref.getTimeseries());
-	}
-
 }

@@ -28,13 +28,4 @@ public class FileReferenceTest extends BaseTestCase {
 		assertEquals(List.of(file), ref.getFiles());
 	}
 
-	@Test
-	public void setFilesTest() {
-		var ref = new FileReference(1L);
-		var file = new File("oid", "name");
-		ref.setFiles(List.of(file));
-
-		assertEquals(List.of(file), ref.getFiles());
-	}
-
 }

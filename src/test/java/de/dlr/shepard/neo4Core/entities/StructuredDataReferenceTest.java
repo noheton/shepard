@@ -28,13 +28,4 @@ public class StructuredDataReferenceTest extends BaseTestCase {
 		assertEquals(List.of(sd), ref.getStructuredDatas());
 	}
 
-	@Test
-	public void setStructuredDataTest() {
-		var ref = new StructuredDataReference(1L);
-		var sd = new StructuredData("oid");
-		ref.setStructuredDatas(List.of(sd));
-
-		assertEquals(List.of(sd), ref.getStructuredDatas());
-	}
-
 }
