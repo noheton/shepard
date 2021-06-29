@@ -51,7 +51,7 @@
 		<neo4j.version>3.2.24</neo4j.version>
 		<restassured.version>4.4.0</restassured.version>
 		<swagger.version>2.1.9</swagger.version>
-		<tomcat.version>9.0.46</tomcat.version>
+		<tomcat.version>9.0.45</tomcat.version>
 	</properties>
 
 	<profiles>
