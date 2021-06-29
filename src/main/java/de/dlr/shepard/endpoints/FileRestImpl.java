@@ -44,7 +44,7 @@ public class FileRestImpl implements FileRest {
 
 	@Override
 	public Response getFileContainer(long fileContainerId) {
-		log.info("Received GET STRUCTURED DATA CONTAINER request with container Id {} from user {}", fileContainerId,
+		log.info("Received GET FILE CONTAINER request with container Id {} from user {}", fileContainerId,
 				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.getFileContainer(fileContainerId);
 		return Response.ok(new FileContainerIO(result)).build();
@@ -52,7 +52,7 @@ public class FileRestImpl implements FileRest {
 
 	@Override
 	public Response createFileContainer(FileContainerIO fileContainer) {
-		log.info("Received CREATE FILECONTAINER request from user {}", securityContext.getUserPrincipal().getName());
+		log.info("Received CREATE FILE CONTAINER request from user {}", securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.createFileContainer(fileContainer,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileContainerIO(result)).status(HttpStatus.SC_CREATED).build();
@@ -60,7 +60,7 @@ public class FileRestImpl implements FileRest {
 
 	@Override
 	public Response deleteFileContainer(long fileContainerId) {
-		log.info("Received DELETE File CONTAINER request with container Id {} from user {}", fileContainerId,
+		log.info("Received DELETE FILE CONTAINER request with container Id {} from user {}", fileContainerId,
 				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.deleteFileContainer(fileContainerId,
 				securityContext.getUserPrincipal().getName());

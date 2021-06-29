@@ -22,6 +22,8 @@ import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
+import de.dlr.shepard.neo4Core.entities.FileContainer;
+import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.entities.Subscription;
@@ -45,6 +47,10 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	StructuredDataReferenceService structuredDataReferenceService;
 	@Mock
 	StructuredDataContainerService structuredDataContainerService;
+	@Mock
+	FileReferenceService fileReferenceService;
+	@Mock
+	FileContainerService fileContainerService;
 	@Mock
 	URIReferenceService uriReferenceService;
 	@Mock
@@ -88,26 +94,26 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 	@BeforeEach
 	public void setupSegments() {
-		when(collectionsSeg.toString()).thenReturn(Constants.COLLECTIONS);
-		when(dataObjectsSeg.toString()).thenReturn(Constants.DATAOBJECTS);
-		when(basicReferencesSeg.toString()).thenReturn(Constants.BASIC_REFERENCES);
+		when(collectionsSeg.getPath()).thenReturn(Constants.COLLECTIONS);
+		when(dataObjectsSeg.getPath()).thenReturn(Constants.DATAOBJECTS);
+		when(basicReferencesSeg.getPath()).thenReturn(Constants.BASIC_REFERENCES);
 
-		when(usersSeg.toString()).thenReturn(Constants.USERS);
-		when(apiKeysSeg.toString()).thenReturn(Constants.APIKEYS);
-		when(subscriptionsSeg.toString()).thenReturn(Constants.SUBSCRIPTIONS);
+		when(usersSeg.getPath()).thenReturn(Constants.USERS);
+		when(apiKeysSeg.getPath()).thenReturn(Constants.APIKEYS);
+		when(subscriptionsSeg.getPath()).thenReturn(Constants.SUBSCRIPTIONS);
 
-		when(timeseriesSeg.toString()).thenReturn(Constants.TIMESERIES);
-		when(timeseriesReferencesSeg.toString()).thenReturn(Constants.TIMESERIES_REFERENCES);
+		when(timeseriesSeg.getPath()).thenReturn(Constants.TIMESERIES);
+		when(timeseriesReferencesSeg.getPath()).thenReturn(Constants.TIMESERIES_REFERENCES);
 
-		when(filesSeg.toString()).thenReturn(Constants.FILES);
-		when(fileReferencesSeg.toString()).thenReturn(Constants.FILE_REFERENCES);
+		when(filesSeg.getPath()).thenReturn(Constants.FILES);
+		when(fileReferencesSeg.getPath()).thenReturn(Constants.FILE_REFERENCES);
 
-		when(structuredDatasSeg.toString()).thenReturn(Constants.STRUCTUREDDATAS);
-		when(structuredDataReferencesSeg.toString()).thenReturn(Constants.STRUCTUREDDATA_REFERENCES);
+		when(structuredDatasSeg.getPath()).thenReturn(Constants.STRUCTUREDDATAS);
+		when(structuredDataReferencesSeg.getPath()).thenReturn(Constants.STRUCTUREDDATA_REFERENCES);
 
-		when(uriReferencesSeg.toString()).thenReturn(Constants.URI_REFERENCES);
+		when(uriReferencesSeg.getPath()).thenReturn(Constants.URI_REFERENCES);
 
-		when(dataObjectReferencesSeg.toString()).thenReturn(Constants.DATAOBJECT_REFERENCES);
+		when(dataObjectReferencesSeg.getPath()).thenReturn(Constants.DATAOBJECT_REFERENCES);
 
 	}
 
@@ -116,7 +122,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
+		when(collectionIdSeg.getPath()).thenReturn("100");
 		when(collectionService.getCollection(100L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -128,7 +134,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
+		when(collectionIdSeg.getPath()).thenReturn("100");
 
 		Collection collection = new Collection(100L);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
@@ -143,8 +149,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
 		segments.add(dataObjectIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
 
 		Collection collection = new Collection(100L);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
@@ -161,8 +167,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
 		segments.add(dataObjectIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -179,8 +185,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
 		segments.add(dataObjectIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("101");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("101");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(101L);
@@ -199,8 +205,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(usersSeg);
 		segments.add(userIdSeg);
-		when(usersSeg.toString()).thenReturn("users");
-		when(userIdSeg.toString()).thenReturn("bob");
+		when(usersSeg.getPath()).thenReturn("users");
+		when(userIdSeg.getPath()).thenReturn("bob");
 
 		User user = new User("bob");
 		when(userService.getUser("bob")).thenReturn(user);
@@ -212,8 +218,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(usersSeg);
 		segments.add(userIdSeg);
-		when(usersSeg.toString()).thenReturn("users");
-		when(userIdSeg.toString()).thenReturn("bob");
+		when(usersSeg.getPath()).thenReturn("users");
+		when(userIdSeg.getPath()).thenReturn("bob");
 		when(userService.getUser("bob")).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -228,8 +234,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(apiKeysSeg);
 		segments.add(apiKeyIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(apiKeyIdSeg.toString()).thenReturn(uid.toString());
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(apiKeyIdSeg.getPath()).thenReturn(uid.toString());
 
 		User user = new User("bob");
 		ApiKey apiKey = new ApiKey(uid);
@@ -251,8 +257,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(apiKeysSeg);
 		segments.add(apiKeyIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(apiKeyIdSeg.toString()).thenReturn(uid.toString());
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(apiKeyIdSeg.getPath()).thenReturn(uid.toString());
 
 		User user = new User("bob");
 		when(userService.getUser("bob")).thenReturn(user);
@@ -270,8 +276,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(apiKeysSeg);
 		segments.add(apiKeyIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(apiKeyIdSeg.toString()).thenReturn(uid.toString());
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(apiKeyIdSeg.getPath()).thenReturn(uid.toString());
 
 		User user = new User("bob");
 		user.setApiKeys(new ArrayList<ApiKey>());
@@ -295,8 +301,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(subscriptionsSeg);
 		segments.add(subscriptionIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(subscriptionIdSeg.toString()).thenReturn("100");
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(subscriptionIdSeg.getPath()).thenReturn("100");
 
 		User user = new User("bob");
 		Subscription sub = new Subscription(100L);
@@ -316,8 +322,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(subscriptionsSeg);
 		segments.add(subscriptionIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(subscriptionIdSeg.toString()).thenReturn("100");
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(subscriptionIdSeg.getPath()).thenReturn("100");
 
 		User user = new User("bob");
 		when(userService.getUser("bob")).thenReturn(user);
@@ -334,8 +340,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(userIdSeg);
 		segments.add(subscriptionsSeg);
 		segments.add(subscriptionIdSeg);
-		when(userIdSeg.toString()).thenReturn("bob");
-		when(subscriptionIdSeg.toString()).thenReturn("100");
+		when(userIdSeg.getPath()).thenReturn("bob");
+		when(subscriptionIdSeg.getPath()).thenReturn("100");
 
 		User user = new User("bob");
 		Subscription sub = new Subscription(100L);
@@ -356,7 +362,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(timeseriesSeg);
 		segments.add(timeseriesIdSeg);
 
-		when(timeseriesIdSeg.toString()).thenReturn("100");
+		when(timeseriesIdSeg.getPath()).thenReturn("100");
 
 		var container = new TimeseriesContainer(100);
 		when(timeseriesContainerService.getTimeseriesContainer(100)).thenReturn(container);
@@ -370,7 +376,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(timeseriesSeg);
 		segments.add(timeseriesIdSeg);
 
-		when(timeseriesIdSeg.toString()).thenReturn("100");
+		when(timeseriesIdSeg.getPath()).thenReturn("100");
 		when(timeseriesContainerService.getTimeseriesContainer(100)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -386,9 +392,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(timeseriesReferencesSeg);
 		segments.add(timeseriesReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(timeseriesReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -410,9 +416,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(timeseriesReferencesSeg);
 		segments.add(timeseriesReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(timeseriesReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -434,9 +440,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(timeseriesReferencesSeg);
 		segments.add(timeseriesReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(timeseriesReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -458,7 +464,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(structuredDatasSeg);
 		segments.add(structuredDataIdSeg);
 
-		when(structuredDataIdSeg.toString()).thenReturn("100");
+		when(structuredDataIdSeg.getPath()).thenReturn("100");
 
 		var container = new StructuredDataContainer(100);
 		when(structuredDataContainerService.getStructuredDataContainer(100)).thenReturn(container);
@@ -472,7 +478,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(structuredDatasSeg);
 		segments.add(structuredDataIdSeg);
 
-		when(structuredDataIdSeg.toString()).thenReturn("100");
+		when(structuredDataIdSeg.getPath()).thenReturn("100");
 		when(structuredDataContainerService.getStructuredDataContainer(100)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -488,9 +494,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(structuredDataReferencesSeg);
 		segments.add(structuredDataReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(structuredDataReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -512,9 +518,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(structuredDataReferencesSeg);
 		segments.add(structuredDataReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(structuredDataReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -536,9 +542,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(structuredDataReferencesSeg);
 		segments.add(structuredDataReferenceIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(structuredDataReferenceIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -555,6 +561,108 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
+	public void file_exist() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(filesSeg);
+		segments.add(fileIdSeg);
+
+		when(fileIdSeg.getPath()).thenReturn("100");
+
+		var container = new FileContainer(100);
+		when(fileContainerService.getFileContainer(100)).thenReturn(container);
+
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void file_notFound() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(filesSeg);
+		segments.add(fileIdSeg);
+
+		when(fileIdSeg.getPath()).thenReturn("100");
+		when(fileContainerService.getFileContainer(100)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - Container does not exist", e.getMessage());
+	}
+
+	@Test
+	public void fileReference_exists() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(fileReferencesSeg);
+		segments.add(fileReferenceIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(fileReferenceIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		FileReference reference = new FileReference(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(dataObject);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(fileReferenceService.getFileReference(104L)).thenReturn(reference);
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void fileReference_notFound() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(fileReferencesSeg);
+		segments.add(fileReferenceIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(fileReferenceIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		dataObject.setCollection(collection);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(fileReferenceService.getFileReference(104L)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
+	}
+
+	@Test
+	public void fileReference_wrongAssociation() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(fileReferencesSeg);
+		segments.add(fileReferenceIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(fileReferenceIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		DataObject wrong = new DataObject(103L);
+		FileReference reference = new FileReference(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(wrong);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(fileReferenceService.getFileReference(104L)).thenReturn(reference);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
+	}
+
+	@Test
 	public void uriReference_exists() throws InvalidPathException {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
@@ -563,9 +671,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(uriReferencesSeg);
 		segments.add(uriReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(uriReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -587,9 +695,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(uriReferencesSeg);
 		segments.add(uriReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(uriReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -611,9 +719,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(uriReferencesSeg);
 		segments.add(uriReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(uriReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -638,9 +746,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(dataObjectReferencesSeg);
 		segments.add(dataObjectReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(dataObjectReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -662,9 +770,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(dataObjectReferencesSeg);
 		segments.add(dataObjectReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(dataObjectReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -686,9 +794,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(dataObjectReferencesSeg);
 		segments.add(dataObjectReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(dataObjectReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -713,9 +821,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(basicReferencesSeg);
 		segments.add(basicReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(basicReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -737,9 +845,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(basicReferencesSeg);
 		segments.add(basicReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(basicReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -761,9 +869,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(dataObjectIdSeg);
 		segments.add(basicReferencesSeg);
 		segments.add(basicReferencesIdSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(dataObjectIdSeg.toString()).thenReturn("102");
-		when(basicReferencesIdSeg.toString()).thenReturn("104");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
 		DataObject dataObject = new DataObject(102L);
@@ -792,8 +900,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
 		segments.add(slashSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(slashSeg.toString()).thenReturn("/");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(slashSeg.getPath()).thenReturn("/");
 
 		Collection collection = new Collection(100L);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
@@ -808,8 +916,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
 		segments.add(slashSeg);
-		when(collectionIdSeg.toString()).thenReturn("100");
-		when(slashSeg.toString()).thenReturn("");
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(slashSeg.getPath()).thenReturn("");
 
 		Collection collection = new Collection(100L);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
@@ -823,7 +931,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
 		segments.add(dataObjectsSeg);
-		when(collectionIdSeg.toString()).thenReturn("abc");
+		when(collectionIdSeg.getPath()).thenReturn("abc");
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("The given path seems wrong", e.getMessage());

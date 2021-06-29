@@ -30,6 +30,9 @@ public class UrlPathChecker {
 	private StructuredDataReferenceService structuredDataReferenceService = new StructuredDataReferenceService();
 	private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
 
+	private FileReferenceService fileReferenceService = new FileReferenceService();
+	private FileContainerService fileContainerService = new FileContainerService();
+
 	private UserService userService = new UserService();
 	private ApiKeyService apiKeyService = new ApiKeyService();
 	private SubscriptionService subscrptionService = new SubscriptionService();
@@ -38,7 +41,7 @@ public class UrlPathChecker {
 	 * Checks the url for wrong ids. A wrong id could identify a non existing
 	 * entity, a previous deleted one, or a non existing association between two
 	 * entities. Throws an InvalidPathException in case of an error.
-	 * 
+	 *
 	 * @param pathSegments to process
 	 * @throws InvalidPathException in case of an invalid path
 	 */
@@ -92,7 +95,7 @@ public class UrlPathChecker {
 			}
 		}
 
-		if (pathElems.containsKey(Constants.TIMESERIES)) {
+		if (pathElems.containsKey(Constants.TIMESERIES) && pathSegments.get(0).getPath().equals(Constants.TIMESERIES)) {
 			long id = Long.parseLong(pathElems.get(Constants.TIMESERIES));
 			var timeseriesContainer = timeseriesContainerService.getTimeseriesContainer(id);
 			String error = checkContainer(timeseriesContainer);
@@ -110,10 +113,29 @@ public class UrlPathChecker {
 			}
 		}
 
-		if (pathElems.containsKey(Constants.STRUCTUREDDATAS)) {
+		if (pathElems.containsKey(Constants.STRUCTUREDDATAS)
+				&& pathSegments.get(0).getPath().equals(Constants.STRUCTUREDDATAS)) {
 			long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATAS));
 			var structuredDataContainer = structuredDataContainerService.getStructuredDataContainer(id);
 			String error = checkContainer(structuredDataContainer);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
+		if (pathElems.containsKey(Constants.FILE_REFERENCES)) {
+			long id = Long.parseLong(pathElems.get(Constants.FILE_REFERENCES));
+			var fileReference = fileReferenceService.getFileReference(id);
+			String error = checkReference(fileReference, dataObject);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
+		if (pathElems.containsKey(Constants.FILES) && pathSegments.get(0).getPath().equals(Constants.FILES)) {
+			long id = Long.parseLong(pathElems.get(Constants.FILES));
+			var fileContainer = fileContainerService.getFileContainer(id);
+			String error = checkContainer(fileContainer);
 			if (error != null) {
 				return builder.append(error).toString();
 			}
@@ -235,8 +257,8 @@ public class UrlPathChecker {
 	private HashMap<String, String> getPathElements(List<PathSegment> pathSegments) {
 		HashMap<String, String> pathElems = new HashMap<String, String>();
 		for (int i = 0; i + 1 < pathSegments.size(); i = i + 2) {
-			String value = pathSegments.get(i).toString();
-			String id = pathSegments.get(i + 1).toString();
+			String value = pathSegments.get(i).getPath();
+			String id = pathSegments.get(i + 1).getPath();
 			if (id.isBlank() || id.equals("/"))
 				return pathElems;
 			pathElems.put(value, id);
