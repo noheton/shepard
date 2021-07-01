@@ -156,13 +156,13 @@ public class StructuredDataTest extends BaseTestCaseIT {
 	@SuppressWarnings("unchecked")
 	public void getStructuredDataReferencePayload() throws JsonMappingException, JsonProcessingException {
 		var actual = given().spec(referencesRequestSpec).when()
-				.get(String.format("%s/%d/payload", referencesURL, reference.getId())).then().statusCode(200).extract()
-				.as(StructuredDataPayload[].class);
-		var payloadMap = objectMapper.readValue(actual[0].getPayload(), Map.class);
+				.get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(),
+						payload.getStructuredData().getOid()))
+				.then().statusCode(200).extract().as(StructuredDataPayload.class);
+		var payloadMap = objectMapper.readValue(actual.getPayload(), Map.class);
 		var expectedMap = objectMapper.readValue(payload.getPayload(), Map.class);
 
-		assertThat(actual).hasSize(1);
-		assertThat(actual[0].getStructuredData()).isEqualTo(payload.getStructuredData());
+		assertThat(actual.getStructuredData()).isEqualTo(payload.getStructuredData());
 		assertThat(payloadMap).containsAllEntriesOf(expectedMap);
 	}
 

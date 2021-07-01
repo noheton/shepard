@@ -206,7 +206,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() {
+	public void getAllPayloadTest() {
 		var container = new StructuredDataContainer();
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -222,12 +222,12 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
 		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(payloadB);
 
-		var actual = service.getPayload(1L);
+		var actual = service.getAllPayloads(1L);
 		assertEquals(List.of(payloadA, payloadB), actual);
 	}
 
 	@Test
-	public void getPayloadTest_isNull() {
+	public void getAllPayloadTest_isNull() {
 		var container = new StructuredDataContainer();
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -236,7 +236,25 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getPayload(1L);
+		var actual = service.getAllPayloads(1L);
 		assertEquals(List.of(), actual);
+	}
+
+	@Test
+	public void getPayloadTest() {
+		var container = new StructuredDataContainer();
+		container.setMongoId("mongoId");
+		var ref = new StructuredDataReference(1L);
+		ref.setStructuredDataContainer(container);
+		var structuredDataA = new StructuredData("abc");
+		ref.setStructuredDatas(List.of(structuredDataA));
+
+		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
+
+		var actual = service.getPayload(1L, "abc");
+		assertEquals(payloadA, actual);
 	}
 }

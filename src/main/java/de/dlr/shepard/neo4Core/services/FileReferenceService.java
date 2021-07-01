@@ -77,10 +77,10 @@ public class FileReferenceService {
 		return true;
 	}
 
-	public NamedInputStream getPayload(long fileId, String fileMongoId) {
+	public NamedInputStream getPayload(long fileId, String oid) {
 		FileReference reference = fileReferenceDAO.find(fileId);
 		String containerId = reference.getFileContainer().getMongoId();
-		var result = fileService.getPayload(containerId, fileMongoId);
+		var result = fileService.getPayload(containerId, oid);
 		return result;
 	}
 

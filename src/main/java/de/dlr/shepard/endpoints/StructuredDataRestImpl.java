@@ -77,4 +77,20 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
+	@Override
+	public Response getStructuredData(long structuredDataId, String oid) {
+		log.info("Received GET STRUCTURED DATA request with container Id {} and Oid {} from user {}", structuredDataId,
+				oid, securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
+		return result != null ? Response.ok(result).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
+	}
+
+	@Override
+	public Response getAllStructuredDatas(long structuredDataId) {
+		log.info("Received GET ALL STRUCTURED DATAS request with container Id {} from user {}", structuredDataId,
+				securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId).getStructuredDatas();
+		return Response.ok(result).build();
+	}
+
 }

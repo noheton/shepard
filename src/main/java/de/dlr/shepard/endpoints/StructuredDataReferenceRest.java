@@ -69,4 +69,15 @@ public interface StructuredDataReferenceRest {
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId);
 
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}/payload/{" + Constants.OID + "}")
+	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
+	@Operation(description = "Get a specific structured data payload")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataPayload.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getSpecificStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId,
+			@PathParam(Constants.OID) String oid);
+
 }

@@ -21,7 +21,7 @@ public class StructuredDataContainerService {
 
 	/**
 	 * Creates a StructuredDataContainer and stores it in Neo4J
-	 * 
+	 *
 	 * @param structuredDataContainerIO to be stored
 	 * @param username                  of the related user
 	 * @return the created StructuredDataContainer
@@ -40,7 +40,7 @@ public class StructuredDataContainerService {
 
 	/**
 	 * Searches the StructuredDataContainer in Neo4j
-	 * 
+	 *
 	 * @param id identifies the searched StructuredDataContainer
 	 * @return the StructuredDataContainer with matching id or null
 	 */
@@ -54,7 +54,7 @@ public class StructuredDataContainerService {
 
 	/**
 	 * Searches the database for all StructuredDataContainers
-	 * 
+	 *
 	 * @return a list of StructuredDataContainers
 	 */
 	public List<StructuredDataContainer> getAllStructuredDataContainers() {
@@ -70,7 +70,7 @@ public class StructuredDataContainerService {
 
 	/**
 	 * Deletes a StructuredDataContainer in Neo4j
-	 * 
+	 *
 	 * @param structuredDataId identifies the StructuredDataContainer
 	 * @param username         identifies the deleting user
 	 * @return a boolean to determine if StructuredDataContainer was successfully
@@ -90,11 +90,36 @@ public class StructuredDataContainerService {
 		return structuredDataService.deleteStructuredDataContainer(mongoid);
 	}
 
+	/**
+	 * Upload structured data
+	 *
+	 * @param structuredDataContainerID identifies the container
+	 * @param payload                   the payload to upload
+	 * @return StructuredData with the new oid
+	 */
 	public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
 		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
 			return null;
 		var result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
+		structuredDataContainer.addStructuredData(result);
+		structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
+		return result;
+	}
+
+	/**
+	 * Get uploaded structured data
+	 *
+	 * @param structuredDataContainerID identifies the container
+	 * @param oid                       identifies the structured data within the
+	 *                                  container
+	 * @return StructuredDataPayload
+	 */
+	public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
+		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
+		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
+			return null;
+		var result = structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);
 		return result;
 	}
 

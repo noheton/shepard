@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;
+import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
@@ -164,11 +166,16 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var file = new File("oid", "filename");
 
+		var updated = new FileContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.addFile(file);
+
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", "filename", null)).thenReturn(file);
 		var actual = service.createFile(1L, "filename", null);
 
 		assertEquals(file, actual);
+		verify(dao).createOrUpdate(updated);
 	}
 
 	@Test
@@ -188,6 +195,39 @@ public class FileContainerServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(container);
 		var actual = service.createFile(1L, "filename", null);
 
+		assertNull(actual);
+	}
+
+	@Test
+	public void getFileTest() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		var result = new NamedInputStream(null, "name");
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
+
+		var actual = service.getFile(1L, "oid");
+		assertEquals(result, actual);
+	}
+
+	@Test
+	public void getFileTest_containerIsNull() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.getFile(1L, "oid");
+		assertNull(actual);
+	}
+
+	@Test
+	public void getFileTest_containerIsDeleted() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.getFile(1L, "oid");
 		assertNull(actual);
 	}
 }

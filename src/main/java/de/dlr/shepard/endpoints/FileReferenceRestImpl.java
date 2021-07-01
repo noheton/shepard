@@ -76,11 +76,13 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 
 	@Override
 	public Response getFilePayload(long collectionId, long dataObjectId, long fileReferenceId, String oid) {
-		log.info("Received GET FILE PAYLOAD request with reference Id {} from user {}", fileReferenceId,
+		log.info("Received GET FILE PAYLOAD request with reference Id {} and Oid {} from user {}", fileReferenceId, oid,
 				securityContext.getUserPrincipal().getName());
 		var payload = fileReferenceService.getPayload(fileReferenceId, oid);
-		return Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
-				.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build();
+		return payload != null
+				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
+				: Response.status(HttpStatus.SC_NOT_FOUND).build();
 	}
 
 	@Override

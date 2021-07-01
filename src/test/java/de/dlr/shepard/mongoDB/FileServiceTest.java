@@ -138,7 +138,7 @@ public class FileServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createNonExistingMonoidFileTest() {
+	public void createNonExistingMongoidFileTest() {
 		String fileName = "fileName";
 		InputStream inputStream = mock(InputStream.class);
 		String nonExistingMongoid = "mongoid";

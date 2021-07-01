@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -165,12 +166,17 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
 
+		var updated = new StructuredDataContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.addStructuredData(payload.getStructuredData());
+
 		when(dao.find(1L)).thenReturn(container);
 		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(new StructuredData("oid"));
 
 		var actual = service.createStructuredData(1L, payload);
 
 		assertEquals(new StructuredData("oid"), actual);
+		verify(dao).createOrUpdate(updated);
 	}
 
 	@Test
@@ -208,6 +214,39 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createStructuredData(1L, payload);
 
+		assertNull(actual);
+	}
+
+	@Test
+	public void getStructuredDataTest() {
+		var container = new StructuredDataContainer(1L);
+		container.setMongoId("mongoId");
+		var result = new StructuredDataPayload(new StructuredData("oid"), "payload");
+
+		when(dao.find(1L)).thenReturn(container);
+		when(structuredDataService.getPayload("mongoId", "oid")).thenReturn(result);
+
+		var actual = service.getStructuredData(1L, "oid");
+		assertEquals(result, actual);
+	}
+
+	@Test
+	public void getStructuredDataTest_containerIsNull() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.getStructuredData(1L, "oid");
+		assertNull(actual);
+	}
+
+	@Test
+	public void getStructuredDataTest_containerIsDeleted() {
+		var container = new StructuredDataContainer(1L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);
 	}
 }

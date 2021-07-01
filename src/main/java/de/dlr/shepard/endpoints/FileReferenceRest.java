@@ -62,7 +62,7 @@ public interface FileReferenceRest {
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId);
 
 	@GET
-	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/files/{" + Constants.OID + "}/payload")
+	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/payload/{" + Constants.OID + "}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Tag(name = Constants.FILE_REFERENCE)
 	@Operation(description = "Get file payload")
@@ -73,7 +73,7 @@ public interface FileReferenceRest {
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId, @PathParam(Constants.OID) String oid);
 
 	@GET
-	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/files")
+	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/payload")
 	@Tag(name = Constants.FILE_REFERENCE)
 	@Operation(description = "Get associated files")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))

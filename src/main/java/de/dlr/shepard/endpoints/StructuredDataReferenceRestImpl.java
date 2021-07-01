@@ -78,7 +78,16 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId) {
 		log.info("Received GET STRUCTURED DATA PAYLOAD request with reference Id {} from user {}", structuredDataId,
 				securityContext.getUserPrincipal().getName());
-		var payload = structuredDataReferenceService.getPayload(structuredDataId);
+		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId);
+		return Response.ok(payload).build();
+	}
+
+	@Override
+	public Response getSpecificStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId,
+			String oid) {
+		log.info("Received GET SPECIFIC STRUCTURED DATA PAYLOAD request with reference Id {} and Oid {} from user {}",
+				structuredDataId, oid, securityContext.getUserPrincipal().getName());
+		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid);
 		return Response.ok(payload).build();
 	}
 

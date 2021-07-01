@@ -153,7 +153,7 @@ public class FileTest extends BaseTestCaseIT {
 		var oldFile = new java.io.File(getClass().getClassLoader().getResource("test.txt").toURI());
 		var expected = Files.readString(oldFile.toPath());
 		var actual = given().spec(referencesRequestSpec).when()
-				.get(String.format("%s/%d/files/%s/payload", referencesURL, reference.getId(), file.getOid())).then()
+				.get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(), file.getOid())).then()
 				.statusCode(200).extract().asString();
 
 		assertThat(actual).isEqualTo(expected);

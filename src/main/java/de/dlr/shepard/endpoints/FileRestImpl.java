@@ -69,8 +69,28 @@ public class FileRestImpl implements FileRest {
 	}
 
 	@Override
+	public Response getFile(long fileContainerId, String oid) {
+		log.info("Received GET FILE request with container Id {} and Oid {} from user {}", fileContainerId, oid,
+				securityContext.getUserPrincipal().getName());
+		var payload = fileContainerService.getFile(fileContainerId, oid);
+		return payload != null
+				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
+				: Response.status(HttpStatus.SC_NOT_FOUND).build();
+	}
+
+	@Override
+	public Response getAllFiles(long fileContainerId) {
+		log.info("Received GET ALL FILES request with container Id {} from user {}", fileContainerId,
+				securityContext.getUserPrincipal().getName());
+		var payload = fileContainerService.getFileContainer(fileContainerId).getFiles();
+		return Response.ok(payload).build();
+	}
+
+	@Override
 	public Response createFile(long fileContainerId, InputStream inputStream, FormDataContentDisposition fileMetaData) {
-		log.info("Received POST FILE request from user {}", securityContext.getUserPrincipal().getName());
+		log.info("Received POST FILE request with file {} from user {}", fileMetaData,
+				securityContext.getUserPrincipal().getName());
 		String fileName = fileMetaData.getFileName();
 		var result = fileContainerService.createFile(fileContainerId, fileName, inputStream);
 		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()

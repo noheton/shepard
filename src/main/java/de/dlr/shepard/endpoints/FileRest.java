@@ -8,6 +8,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -58,6 +59,24 @@ public interface FileRest {
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId);
+
+	@GET
+	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
+	@Tag(name = Constants.FILE)
+	@Operation(description = "Get files")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId);
+
+	@GET
+	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Tag(name = Constants.FILE)
+	@Operation(description = "Get file")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = "application/octet-stream", schema = @Schema(type = "string", format = "binary")))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
+			@PathParam(Constants.OID) String oid);
 
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)

@@ -36,6 +36,14 @@ public interface StructuredDataRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
 
+	@DELETE
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
+	@Tag(name = Constants.STRUCTUREDDATA)
+	@Operation(description = "Delete structured data container")
+	@ApiResponse(description = "deleted", responseCode = "204")
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response deleteStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+
 	@POST
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Create a new structured data container")
@@ -53,12 +61,21 @@ public interface StructuredDataRest {
 	Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) StructuredDataPayload payload);
 
-	@DELETE
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Tag(name = Constants.STRUCTUREDDATA)
-	@Operation(description = "Delete structured data container")
-	@ApiResponse(description = "deleted", responseCode = "204")
+	@Operation(description = "Get structured data objects")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredData.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+	Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Tag(name = Constants.STRUCTUREDDATA)
+	@Operation(description = "Download structured data")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataPayload.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+			@PathParam(Constants.OID) String oid);
 
 }

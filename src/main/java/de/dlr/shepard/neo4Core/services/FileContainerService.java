@@ -6,6 +6,7 @@ import java.util.List;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;
+import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
@@ -21,7 +22,7 @@ public class FileContainerService {
 
 	/**
 	 * Creates a FileContainer and stores it in Neo4J
-	 * 
+	 *
 	 * @param fileContainerIO to be stored
 	 * @param username        of the related user
 	 * @return the created FileContainer
@@ -38,7 +39,7 @@ public class FileContainerService {
 
 	/**
 	 * Searches the FileContainer in Neo4j
-	 * 
+	 *
 	 * @param id identifies the searched FileContainer
 	 * @return the FileContainer with matching id or null
 	 */
@@ -52,7 +53,7 @@ public class FileContainerService {
 
 	/**
 	 * Searches the database for all FileContainers
-	 * 
+	 *
 	 * @return a list of FileContainers
 	 */
 	public List<FileContainer> getAllFileContainers() {
@@ -68,7 +69,7 @@ public class FileContainerService {
 
 	/**
 	 * Deletes a FileContainer in Neo4j
-	 * 
+	 *
 	 * @param fileContainerId identifies the FileContainer
 	 * @param username        the deleting user
 	 * @return a boolean to determine if FileContainer was successfully deleted
@@ -87,11 +88,36 @@ public class FileContainerService {
 		return fileService.deleteFileContainer(mongoid);
 	}
 
+	/**
+	 * Get file payload
+	 *
+	 * @param fileContainerId The container to get the payload from
+	 * @param oid             The specific file
+	 * @return
+	 */
+	public NamedInputStream getFile(long fileContainerId, String oid) {
+		var container = fileContainerDAO.find(fileContainerId);
+		if (container == null || container.isDeleted())
+			return null;
+		var result = fileService.getPayload(container.getMongoId(), oid);
+		return result;
+	}
+
+	/**
+	 * Create a new file
+	 *
+	 * @param fileId      identifies the file container
+	 * @param fileName    the name of the new file
+	 * @param inputStream the file itself
+	 * @return
+	 */
 	public File createFile(long fileId, String fileName, InputStream inputStream) {
 		var fileContainer = fileContainerDAO.find(fileId);
 		if (fileContainer == null || fileContainer.isDeleted())
 			return null;
 		var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+		fileContainer.addFile(result);
+		fileContainerDAO.createOrUpdate(fileContainer);
 		return result;
 	}
 

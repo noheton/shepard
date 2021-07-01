@@ -258,12 +258,8 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Test
 	public void getPayloadTest() {
-		var container = new FileContainer() {
-			{
-				setId(20L);
-				setMongoId("mongoId");
-			}
-		};
+		var container = new FileContainer(20L);
+		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);
 		ref.setFileContainer(container);
 		var result = new NamedInputStream(null, "myInputStream");
@@ -286,4 +282,5 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 		assertEquals(files, actual);
 	}
+
 }

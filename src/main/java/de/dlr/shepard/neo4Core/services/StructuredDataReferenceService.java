@@ -50,9 +50,9 @@ public class StructuredDataReferenceService {
 
 	/**
 	 * Searches the neo4j database for a StructuredDataReference
-	 * 
+	 *
 	 * @param id identifies the searched StructuredDataReference
-	 * 
+	 *
 	 * @return the StructuredDataReference with the given id or null
 	 */
 	public StructuredDataReference getStructuredDataReference(long id) {
@@ -65,7 +65,7 @@ public class StructuredDataReferenceService {
 
 	/**
 	 * set the deleted flag for the Reference
-	 * 
+	 *
 	 * @param structuredDataReferenceId identifies the StructuredDataReference to be
 	 *                                  deleted
 	 * @param username                  the deleting user
@@ -82,7 +82,7 @@ public class StructuredDataReferenceService {
 		return true;
 	}
 
-	public List<StructuredDataPayload> getPayload(long structuredDataReferenceId) {
+	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId) {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
@@ -90,6 +90,13 @@ public class StructuredDataReferenceService {
 		for (var structuredData : structuredDatas) {
 			result.add(structuredDataService.getPayload(mongoId, structuredData.getOid()));
 		}
+		return result;
+	}
+
+	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid) {
+		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+		String mongoId = reference.getStructuredDataContainer().getMongoId();
+		var result = structuredDataService.getPayload(mongoId, oid);
 		return result;
 	}
 }
