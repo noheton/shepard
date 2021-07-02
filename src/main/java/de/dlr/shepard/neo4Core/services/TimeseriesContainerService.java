@@ -21,7 +21,7 @@ public class TimeseriesContainerService {
 
 	/**
 	 * Creates a TimeseriesContainer and stores it in Neo4J
-	 * 
+	 *
 	 * @param timeseriesContainer to be stored
 	 * @param username            of the related user
 	 * @return the created timeseriesContainer
@@ -40,7 +40,7 @@ public class TimeseriesContainerService {
 
 	/**
 	 * Searches the TimeseriesContainer in Neo4j
-	 * 
+	 *
 	 * @param id identifies the searched TimeseriesContainer
 	 * @return the TimeseriesContainer with matching id or null
 	 */
@@ -54,7 +54,7 @@ public class TimeseriesContainerService {
 
 	/**
 	 * Searches the database for all TimeseriesContainers
-	 * 
+	 *
 	 * @return a list of TimeseriesContainers
 	 */
 	public List<TimeseriesContainer> getAllTimeseriesContainers() {
@@ -65,7 +65,7 @@ public class TimeseriesContainerService {
 
 	/**
 	 * Deletes a TimeseriesContainer in Neo4j
-	 * 
+	 *
 	 * @param timeSeriesId identifies the TimeseriesContainer
 	 * @param username     of the related user
 	 * @return a boolean to determine if TimeseriesContainer was successfully
@@ -82,7 +82,7 @@ public class TimeseriesContainerService {
 		timeseriesContainer.setUpdatedAt(dateHelper.getDate());
 		timeseriesContainer.setUpdatedBy(user);
 		timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-		// TODO: Payloads aus jeweiligen DBs loeschen
+		// TODO: Delete database
 
 		return true;
 	}

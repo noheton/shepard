@@ -22,7 +22,7 @@ public abstract class JsonListConverter<T> implements AttributeConverter<List<T>
 			try {
 				result.add(mapper.writeValueAsString(obj));
 			} catch (JsonProcessingException e) {
-				log.error("Could not convert object", obj);
+				log.error("Could not convert object {}", obj);
 			}
 		}
 		return result;
@@ -35,7 +35,7 @@ public abstract class JsonListConverter<T> implements AttributeConverter<List<T>
 			try {
 				result.add(mapper.readValue(obj, getEntityType()));
 			} catch (JsonProcessingException e) {
-				log.error("Could not convert object", obj);
+				log.error("Could not convert object {}", obj);
 			}
 		}
 		return result;

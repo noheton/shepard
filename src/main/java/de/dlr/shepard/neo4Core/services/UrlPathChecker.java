@@ -16,7 +16,6 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.Constants;
 
-// TODO: FileReference/-Container
 public class UrlPathChecker {
 	private CollectionService collectionService = new CollectionService();
 	private DataObjectService dataObjectService = new DataObjectService();

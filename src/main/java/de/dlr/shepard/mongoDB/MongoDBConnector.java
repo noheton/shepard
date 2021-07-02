@@ -41,7 +41,7 @@ public class MongoDBConnector implements IConnector {
 	/**
 	 * For development reasons, there should always be just one MongoDBConnector
 	 * instance.
-	 * 
+	 *
 	 * @return The one and only MongoDBConnector instance.
 	 */
 	public static MongoDBConnector getInstance() {
@@ -54,7 +54,7 @@ public class MongoDBConnector implements IConnector {
 	/**
 	 * Establishes a connection to the Mongo server by using the URL saved in the
 	 * config.properties file returned by the DatabaseHelper.
-	 * 
+	 *
 	 */
 	@Override
 	public boolean connect() {
@@ -87,12 +87,6 @@ public class MongoDBConnector implements IConnector {
 		if (mongoClient == null)
 			connect();
 		return database;
-	}
-
-	public void setDatabase(MongoDatabase database) {
-		if (mongoClient == null)
-			connect();
-		this.database = database;
 	}
 
 	public void createCollection(String name) {
