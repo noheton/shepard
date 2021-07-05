@@ -14,7 +14,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 
 public class BaseTestCaseIT {
-	protected static String baseURL = "http://127.0.0.1:8080/backend/api";
+	protected static String baseURL = "http://127.0.0.1:8080/shepard/api";
 
 	protected static String jws;
 	protected static String username;

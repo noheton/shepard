@@ -34,6 +34,7 @@
 	</ciManagement>
 
 	<properties>
+		<finalName>shepard</finalName>
 		<revision>1.0.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.20.0</assertj.version>
@@ -80,7 +81,7 @@
 	</profiles>
 
 	<build>
-		<finalName>${project.artifactId}</finalName>
+		<finalName>${finalName}</finalName>
 		<filters>
 			<filter>profiles/${build.profile.id}/config.properties</filter>
 		</filters>
@@ -234,7 +235,7 @@
 				<artifactId>swagger-maven-plugin</artifactId>
 				<version>${swagger.version}</version>
 				<configuration>
-					<configurationFilePath>${project.build.directory}/${project.artifactId}/WEB-INF/classes/openapi.yaml</configurationFilePath>
+					<configurationFilePath>${project.build.directory}/${finalName}/WEB-INF/classes/openapi.yaml</configurationFilePath>
 					<outputFileName>swagger</outputFileName>
 					<outputFormat>JSONANDYAML</outputFormat>
 					<outputPath>${project.build.directory}/swagger</outputPath>

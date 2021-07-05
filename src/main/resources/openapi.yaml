@@ -7,7 +7,7 @@ openAPI:
     version: ${project.version}
     title: ${project.name}
   servers:
-    - url: /backend/api
+    - url: /shepard/api
       description: shepard backend
   components:
     securitySchemes:
