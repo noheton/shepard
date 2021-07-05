@@ -3,8 +3,14 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -31,8 +37,10 @@ public class CollectionRestImpl implements CollectionRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllCollections(String name, Integer page, Integer size) {
+	public Response getAllCollections(@QueryParam(Constants.QP_NAME) String name,
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size) {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 
 		var params = new QueryParamHelper();
@@ -49,8 +57,10 @@ public class CollectionRestImpl implements CollectionRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}")
 	@Override
-	public Response getCollection(long collectionId) {
+	public Response getCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
 		log.info("Received GET request with parameters: collectionID: {} from user {}", collectionId,
 				securityContext.getUserPrincipal().getName());
 
@@ -58,6 +68,7 @@ public class CollectionRestImpl implements CollectionRest {
 		return Response.ok(new CollectionIO(collection)).build();
 	}
 
+	@POST
 	@Override
 	public Response createCollection(CollectionIO collection) {
 		log.info("Received POST request with new entity: name: {} from user {}", collection.getName(),
@@ -69,8 +80,10 @@ public class CollectionRestImpl implements CollectionRest {
 		return Response.ok(new CollectionIO(newCollection)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@PUT
+	@Path("/{" + Constants.COLLECTION_ID + "}")
 	@Override
-	public Response updateCollection(long collectionId, CollectionIO collection) {
+	public Response updateCollection(@PathParam(Constants.COLLECTION_ID) long collectionId, CollectionIO collection) {
 		log.info(
 				"Received PUT request with parameters: collectionID: {} and new entity: collectionName: {} from user {}",
 				collectionId, collection.getName(), securityContext.getUserPrincipal().getName());
@@ -80,8 +93,10 @@ public class CollectionRestImpl implements CollectionRest {
 		return Response.ok(new CollectionIO(updatedCollection)).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.COLLECTION_ID + "}")
 	@Override
-	public Response deleteCollection(long collectionId) {
+	public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
 		log.info("Received DELETE request with parameters: collectionID: {} from user {}", collectionId,
 				securityContext.getUserPrincipal().getName());
 

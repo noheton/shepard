@@ -3,7 +3,11 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -30,6 +34,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
 	public Response getAllTimeseriesContainer() {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
@@ -41,8 +46,10 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
 	@Override
-	public Response getTimeseriesContainer(long timeseriesId) {
+	public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
 		log.info("Received GET request with container Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -51,6 +58,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		return Response.ok(new TimeseriesContainerIO(result)).build();
 	}
 
+	@POST
 	@Override
 	public Response createTimeseriesContainer(TimeseriesContainerIO timeseriesContainer) {
 		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
@@ -61,8 +69,10 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		return Response.ok(new TimeseriesContainerIO(result)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
 	@Override
-	public Response deleteTimeseriesContainer(long timeseriesId) {
+	public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
 		log.info("Received DELETE request with container Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -73,8 +83,11 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
+	@POST
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
 	@Override
-	public Response createTimeseries(long timeseriesId, TimeseriesPayload payload) {
+	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+			TimeseriesPayload payload) {
 		log.info("Received POST TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
 
 		var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);

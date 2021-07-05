@@ -3,7 +3,11 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -31,8 +35,10 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllStructuredDataReferences(long collectionId, long dataObjectId) {
+	public Response getAllStructuredDataReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received POST request with collection {} and dataobject {} from user {}", collectionId, dataObjectId,
 				securityContext.getUserPrincipal().getName());
 		var references = structuredDataReferenceService.getAllStructuredDataReferences(dataObjectId);
@@ -43,17 +49,23 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
 	@Override
-	public Response getStructuredDataReference(long collectionId, long dataObjectId, long referenceId) {
+	public Response getStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long referenceId) {
 		log.info("Received POST request with collection {}, dataobject {} and reference {} from user {}", collectionId,
 				dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 		var ref = structuredDataReferenceService.getStructuredDataReference(referenceId);
 		return Response.ok(new StructuredDataReferenceIO(ref)).build();
 	}
 
+	@POST
 	@Override
-	public Response createStructuredDataReference(long collectionId, long dataObjectId,
-			StructuredDataReferenceIO structuredDataReference) throws InvalidBodyException {
+	public Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference)
+			throws InvalidBodyException {
 		log.info(
 				"Received POST request with collection {}, dataobject {} and new structureddatareference {} from user {}",
 				collectionId, dataObjectId, structuredDataReference.getName(),
@@ -63,8 +75,12 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 		return Response.ok(new StructuredDataReferenceIO(ref)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
 	@Override
-	public Response deleteBasicReference(long collectionId, long dataObjectId, long structuredDataReferenceId) {
+	public Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataReferenceId) {
 		log.info(
 				"Received DELETE request with parameters: collectionID {}, dataObjectID {}, structuredDataReferenceID {} from user {}",
 				collectionId, dataObjectId, structuredDataReferenceId, securityContext.getUserPrincipal().getName());
@@ -74,17 +90,25 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}/payload")
 	@Override
-	public Response getStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId) {
+	public Response getStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId) {
 		log.info("Received GET STRUCTURED DATA PAYLOAD request with reference Id {} from user {}", structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId);
 		return Response.ok(payload).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}/payload/{" + Constants.OID + "}")
 	@Override
-	public Response getSpecificStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId,
-			String oid) {
+	public Response getSpecificStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId,
+			@PathParam(Constants.OID) String oid) {
 		log.info("Received GET SPECIFIC STRUCTURED DATA PAYLOAD request with reference Id {} and Oid {} from user {}",
 				structuredDataId, oid, securityContext.getUserPrincipal().getName());
 		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid);

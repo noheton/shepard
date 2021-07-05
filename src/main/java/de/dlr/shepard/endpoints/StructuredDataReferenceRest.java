@@ -1,10 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -21,63 +16,42 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 public interface StructuredDataReferenceRest {
 
-	@GET
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Get all structureddata references")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredDataReferenceIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllStructuredDataReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId);
+	Response getAllStructuredDataReferences(long collectionId, long dataObjectId);
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Get structureddata reference")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long referenceId);
+	Response getStructuredDataReference(long collectionId, long dataObjectId, long referenceId);
 
-	@POST
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Create a new structureddata reference")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+	Response createStructuredDataReference(long collectionId, long dataObjectId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))) StructuredDataReferenceIO structuredDataReference)
 			throws InvalidBodyException;
 
-	@DELETE
-	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Delete structureddata reference")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataReferenceId);
+	Response deleteBasicReference(long collectionId, long dataObjectId, long structuredDataReferenceId);
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}/payload")
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Get structured data payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredDataPayload.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId);
+	Response getStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId);
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}/payload/{" + Constants.OID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Get a specific structured data payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataPayload.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getSpecificStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId,
-			@PathParam(Constants.OID) String oid);
+	Response getSpecificStructuredDataPayload(long collectionId, long dataObjectId, long structuredDataId, String oid);
 
 }

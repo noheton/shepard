@@ -3,8 +3,12 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -32,8 +36,11 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllReferences(long collectionId, long dataObjectId, String name, Integer page, Integer size) {
+	public Response getAllReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, @QueryParam(Constants.QP_NAME) String name,
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size) {
 		log.info("Received GET ALL request with collection {} and dataobject {} from user {}", collectionId,
 				dataObjectId, securityContext.getUserPrincipal().getName());
 
@@ -51,8 +58,12 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.BASIC_REFERENCE_ID + "}")
 	@Override
-	public Response getBasicReference(long collectionId, long dataObjectId, long referenceId) {
+	public Response getBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.BASIC_REFERENCE_ID) long referenceId) {
 		log.info("Received GET request with collection {}, dataobject {} and reference {} from user {}", collectionId,
 				dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 
@@ -60,8 +71,12 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 		return Response.ok(new BasicReferenceIO(basicReference)).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.BASIC_REFERENCE_ID + "}")
 	@Override
-	public Response deleteBasicReference(long collectionId, long dataObjectId, long basicReferenceId) {
+	public Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
 		log.info("Received DELETE request with collectionID {}, dataObjectID {} and basicReferenceID {} from user {}",
 				collectionId, dataObjectId, basicReferenceId, securityContext.getUserPrincipal().getName());
 

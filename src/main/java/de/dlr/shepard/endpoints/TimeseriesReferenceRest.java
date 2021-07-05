@@ -2,12 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.Set;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -24,55 +18,37 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 public interface TimeseriesReferenceRest {
 
-	@GET
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Get all timeseries references")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesReferenceIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllTimeseriesReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId);
+	Response getAllTimeseriesReferences(long collectionId, long dataObjectId);
 
-	@GET
-	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}")
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Get timeseries reference")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId);
+	Response getTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId);
 
-	@POST
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Create a new timeseries reference")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+	Response createTimeseriesReference(long collectionId, long dataObjectId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))) TimeseriesReferenceIO timeseriesReference)
 			throws InvalidBodyException;
 
-	@DELETE
-	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}")
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Delete timeseries reference")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId);
+	Response deleteTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId);
 
-	@GET
-	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/payload")
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Get timeseries reference payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesPayload.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
-			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
-			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag);
+	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, Set<String> deviceFilterTag,
+			Set<String> locationFilterTag, Set<String> symbolicNameFilterTag);
 
 }

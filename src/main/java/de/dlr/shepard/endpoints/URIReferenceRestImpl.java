@@ -3,7 +3,11 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -31,8 +35,10 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllReferences(long collectionId, long dataObjectId) {
+	public Response getAllReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received GET ALL request with collection {} and dataobject {} from user {}", collectionId,
 				dataObjectId, securityContext.getUserPrincipal().getName());
 
@@ -44,8 +50,12 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.URI_REFERENCE_ID + "}")
 	@Override
-	public Response getUriReference(long collectionId, long dataObjectId, long referenceId) {
+	public Response getUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.URI_REFERENCE_ID) long referenceId) {
 		log.info("Received GET request with collection {}, dataobject {} and reference {} from user {}", collectionId,
 				dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 
@@ -53,8 +63,10 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 		return Response.ok(new URIReferenceIO(reference)).build();
 	}
 
+	@POST
 	@Override
-	public Response createUriReference(long collectionId, long dataObjectId, URIReferenceIO timeseriesReference)
+	public Response createUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, URIReferenceIO timeseriesReference)
 			throws InvalidBodyException {
 		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
 
@@ -64,8 +76,12 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 		return Response.ok(new URIReferenceIO(result)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.URI_REFERENCE_ID + "}")
 	@Override
-	public Response deleteUriReference(long collectionId, long dataObjectId, long referenceId) {
+	public Response deleteUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.URI_REFERENCE_ID) long referenceId) {
 		log.info("Received DELETE request with collectionID {}, dataObjectID {} and basicReferenceID {} from user {}",
 				collectionId, dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 

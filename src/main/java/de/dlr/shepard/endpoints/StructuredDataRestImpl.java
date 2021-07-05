@@ -3,7 +3,11 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -30,23 +34,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Context
 	private SecurityContext securityContext;
 
-	@Override
-	public Response createStructuredDataContainer(StructuredDataContainerIO structuredDataContainerIO) {
-		log.info("Received CREATE STRUCTUREDDATACONTAINER request from user {}",
-				securityContext.getUserPrincipal().getName());
-		var result = structuredDataContainerService.createStructuredDataContainer(structuredDataContainerIO,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(new StructuredDataContainerIO(result)).status(HttpStatus.SC_CREATED).build();
-	}
-
-	@Override
-	public Response createStructuredData(long structuredDataId, StructuredDataPayload payload) {
-		log.info("Received POST STRUCTUREDDATA request from user {}", securityContext.getUserPrincipal().getName());
-		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
-		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
-	}
-
+	@GET
 	@Override
 	public Response getAllStructuredDataContainer() {
 		log.info("Received GET ALL STRUCTURED DATA CONTAINER request from user {}",
@@ -59,16 +47,22 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
 	@Override
-	public Response getStructuredDataContainer(long structuredDataId) {
+	public Response getStructuredDataContainer(
+			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
 		log.info("Received GET STRUCTURED DATA CONTAINER request with container Id {} from user {}", structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId);
 		return Response.ok(new StructuredDataContainerIO(result)).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
 	@Override
-	public Response deleteStructuredDataContainer(long structuredDataId) {
+	public Response deleteStructuredDataContainer(
+			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
 		log.info("Received DELETE STRUCTURED DATA CONTAINER request with container Id {} from user {}",
 				structuredDataId, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.deleteStructuredDataContainer(structuredDataId,
@@ -77,20 +71,46 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
+	@POST
 	@Override
-	public Response getStructuredData(long structuredDataId, String oid) {
-		log.info("Received GET STRUCTURED DATA request with container Id {} and Oid {} from user {}", structuredDataId,
-				oid, securityContext.getUserPrincipal().getName());
-		var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
-		return result != null ? Response.ok(result).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
+	public Response createStructuredDataContainer(StructuredDataContainerIO structuredDataContainerIO) {
+		log.info("Received CREATE STRUCTUREDDATACONTAINER request from user {}",
+				securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.createStructuredDataContainer(structuredDataContainerIO,
+				securityContext.getUserPrincipal().getName());
+		return Response.ok(new StructuredDataContainerIO(result)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@POST
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Override
-	public Response getAllStructuredDatas(long structuredDataId) {
+	public Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+			StructuredDataPayload payload) {
+		log.info("Received POST STRUCTUREDDATA request from user {}", securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
+		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()
+				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
+	@Override
+	public Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
 		log.info("Received GET ALL STRUCTURED DATAS request with container Id {} from user {}", structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId).getStructuredDatas();
 		return Response.ok(result).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Override
+	public Response getStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+			@PathParam(Constants.OID) String oid) {
+		log.info("Received GET STRUCTURED DATA request with container Id {} and Oid {} from user {}", structuredDataId,
+				oid, securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
+		return result != null ? Response.ok(result).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
 	}
 
 }

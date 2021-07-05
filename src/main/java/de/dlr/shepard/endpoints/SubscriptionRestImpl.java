@@ -3,7 +3,11 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -30,8 +34,9 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllSubscriptions(String username) {
+	public Response getAllSubscriptions(@PathParam(Constants.USERNAME) String username) {
 		log.info("GET ALL request with parameters: username: {} from user {}", username,
 				securityContext.getUserPrincipal().getName());
 
@@ -43,8 +48,11 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.SUBSCRIPTION_ID + "}")
 	@Override
-	public Response getSubscription(String username, long subscriptionId) {
+	public Response getSubscription(@PathParam(Constants.USERNAME) String username,
+			@PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId) {
 		log.info("GET request with parameters: username: {}, id: {} from user {}", username, subscriptionId,
 				securityContext.getUserPrincipal().getName());
 
@@ -53,8 +61,9 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 				: Response.status(Status.NOT_FOUND).build();
 	}
 
+	@POST
 	@Override
-	public Response createSubscription(String username, SubscriptionIO subscription) {
+	public Response createSubscription(@PathParam(Constants.USERNAME) String username, SubscriptionIO subscription) {
 		log.info("POST request with parameters: username: {} from user {}", username,
 				securityContext.getUserPrincipal().getName());
 
@@ -63,8 +72,11 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 				: Response.status(Status.BAD_REQUEST).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.SUBSCRIPTION_ID + "}")
 	@Override
-	public Response deleteSubscription(String username, long subscriptionId) {
+	public Response deleteSubscription(@PathParam(Constants.USERNAME) String username,
+			@PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId) {
 		log.info("DELETE request with parameters: username: {}, id: {} from user {}", username, subscriptionId,
 				securityContext.getUserPrincipal().getName());
 

@@ -4,8 +4,13 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -32,8 +37,10 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllTimeseriesReferences(long collectionId, long dataObjectId) {
+	public Response getAllTimeseriesReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 
 		var references = timeseriesReferenceService.getAllTimeseriesReferences(dataObjectId);
@@ -45,8 +52,12 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}")
 	@Override
-	public Response getTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId) {
+	public Response getTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
 		log.info("Received GET request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -55,9 +66,11 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		return Response.ok(new TimeseriesReferenceIO(result)).build();
 	}
 
+	@POST
 	@Override
-	public Response createTimeseriesReference(long collectionId, long dataObjectId,
-			TimeseriesReferenceIO timeseriesReference) throws InvalidBodyException {
+	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference)
+			throws InvalidBodyException {
 		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
 
 		var result = timeseriesReferenceService.createTimeseriesReference(dataObjectId, timeseriesReference,
@@ -66,8 +79,12 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		return Response.ok(new TimeseriesReferenceIO(result)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}")
 	@Override
-	public Response deleteTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId) {
+	public Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
 		log.info("Received DELETE request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -78,9 +95,15 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/payload")
 	@Override
-	public Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId,
-			Set<String> deviceFilterTag, Set<String> locationFilterTag, Set<String> symbolicNameFilterTag) {
+	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
+			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
+			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
+			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 		var payload = timeseriesReferenceService.getPayload(timeseriesId, deviceFilterTag, locationFilterTag,

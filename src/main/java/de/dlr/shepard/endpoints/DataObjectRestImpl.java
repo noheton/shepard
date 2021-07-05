@@ -3,8 +3,14 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -32,8 +38,11 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
-	public Response getAllDataObjects(long collectionId, String name, Integer page, Integer size, Long parentId) {
+	public Response getAllDataObjects(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@QueryParam(Constants.QP_NAME) String name, @QueryParam(Constants.QP_PAGE) Integer page,
+			@QueryParam(Constants.QP_SIZE) Integer size, @QueryParam(Constants.QP_PARENT_ID) Long parentId) {
 		log.info("Received GET ALL request with collection {} from user {}", collectionId,
 				securityContext.getUserPrincipal().getName());
 
@@ -53,8 +62,11 @@ public class DataObjectRestImpl implements DataObjectRest {
 		return Response.ok(result).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.DATAOBJECT_ID + "}")
 	@Override
-	public Response getDataObject(long collectionId, long dataObjectId) {
+	public Response getDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received GET request with collection {} from user {}", collectionId,
 				securityContext.getUserPrincipal().getName());
 
@@ -62,8 +74,10 @@ public class DataObjectRestImpl implements DataObjectRest {
 		return Response.ok(new DataObjectIO(dataObject)).build();
 	}
 
+	@POST
 	@Override
-	public Response createDataObject(long collectionId, DataObjectIO dataObject) throws InvalidBodyException {
+	public Response createDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId, DataObjectIO dataObject)
+			throws InvalidBodyException {
 		log.info("Received POST request with collection {} and new entity: name: {} from user {}", collectionId,
 				dataObject.getName(), securityContext.getUserPrincipal().getName());
 
@@ -72,8 +86,11 @@ public class DataObjectRestImpl implements DataObjectRest {
 		return Response.ok(new DataObjectIO(newDataObject)).status(HttpStatus.SC_CREATED).build();
 	}
 
+	@PUT
+	@Path("/{" + Constants.DATAOBJECT_ID + "}")
 	@Override
-	public Response updateDataObject(long collectionId, long dataObjectId, DataObjectIO dataObject)
+	public Response updateDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectIO dataObject)
 			throws InvalidBodyException {
 		log.info("Received PUT request with collection {} and new entity: name: {} from user {}", collectionId,
 				dataObject.getName(), securityContext.getUserPrincipal().getName());
@@ -86,8 +103,11 @@ public class DataObjectRestImpl implements DataObjectRest {
 		return Response.ok(new DataObjectIO(updatedDataObject)).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.DATAOBJECT_ID + "}")
 	@Override
-	public Response deleteDataObject(long collectionId, long dataObjectId) {
+	public Response deleteDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received DELETE request with parameters: collectionID: {}, dataObjectID: {} from user {}",
 				collectionId, dataObjectId, securityContext.getUserPrincipal().getName());
 

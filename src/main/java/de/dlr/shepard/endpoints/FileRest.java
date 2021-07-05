@@ -2,18 +2,9 @@ package de.dlr.shepard.endpoints;
 
 import java.io.InputStream;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
@@ -29,22 +20,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 public interface FileRest {
 
-	@GET
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get all file containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = FileContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getAllFileContainers();
 
-	@GET
-	@Path("/{" + Constants.FILE_CONTAINER_ID + "}")
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get file container")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = FileContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId);
+	Response getFileContainer(long fileContainerId);
 
-	@POST
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Create a new file container")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = FileContainerIO.class)))
@@ -52,41 +39,30 @@ public interface FileRest {
 	Response createFileContainer(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = FileContainerIO.class))) FileContainerIO fileContainer);
 
-	@DELETE
-	@Path("/{" + Constants.FILE_CONTAINER_ID + "}")
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Delete file container")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId);
+	Response deleteFileContainer(long fileContainerId);
 
-	@GET
-	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get files")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId);
+	Response getAllFiles(long fileContainerId);
 
-	@GET
-	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get file")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = "application/octet-stream", schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-			@PathParam(Constants.OID) String oid);
+	Response getFile(long fileContainerId, String oid);
 
-	@POST
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Upload a new file")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = File.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response createFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-			@Parameter(schema = @Schema(type = "string", format = "binary", description = "File which you want to upload")) @FormDataParam(Constants.FILE) InputStream fileInputStream,
-			@Parameter(hidden = true) @FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData);
+	Response createFile(long fileContainerId,
+			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "File which you want to upload")) InputStream fileInputStream,
+			@Parameter(hidden = true) FormDataContentDisposition fileMetaData);
 
 }

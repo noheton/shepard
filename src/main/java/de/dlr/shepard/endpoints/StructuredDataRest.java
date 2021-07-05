@@ -1,10 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
 import de.dlr.shepard.mongoDB.StructuredData;
@@ -21,30 +16,24 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 public interface StructuredDataRest {
 
-	@GET
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get all structured data containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredDataContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getAllStructuredDataContainer();
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get structured data container")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+	Response getStructuredDataContainer(long structuredDataId);
 
-	@DELETE
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Delete structured data container")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+	Response deleteStructuredDataContainer(long structuredDataId);
 
-	@POST
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Create a new structured data container")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class)))
@@ -52,30 +41,23 @@ public interface StructuredDataRest {
 	Response createStructuredDataContainer(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))) StructuredDataContainerIO structuredDataContainer);
 
-	@POST
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Upload a new structured data object")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredData.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+	Response createStructuredData(long structuredDataId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) StructuredDataPayload payload);
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get structured data objects")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredData.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId);
+	Response getAllStructuredDatas(long structuredDataId);
 
-	@GET
-	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Download structured data")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = StructuredDataPayload.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
-			@PathParam(Constants.OID) String oid);
+	Response getStructuredData(long structuredDataId, String oid);
 
 }

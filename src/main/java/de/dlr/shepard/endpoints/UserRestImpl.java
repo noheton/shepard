@@ -1,7 +1,9 @@
 package de.dlr.shepard.endpoints;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -28,6 +30,7 @@ public class UserRestImpl implements UserRest {
 	@Context
 	private SecurityContext securityContext;
 
+	@GET
 	@Override
 	public Response getCurrentUser() {
 		JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
@@ -38,8 +41,10 @@ public class UserRestImpl implements UserRest {
 
 	}
 
+	@GET
+	@Path("/{" + Constants.USERNAME + "}")
 	@Override
-	public Response getUser(String username) {
+	public Response getUser(@PathParam(Constants.USERNAME) String username) {
 		log.info("Received GET request with parameters: userID: {} from user {}", username,
 				securityContext.getUserPrincipal().getName());
 
