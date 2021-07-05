@@ -4,8 +4,10 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import de.dlr.shepard.neo4Core.entities.AbstractEntity;
+import de.dlr.shepard.neo4Core.entities.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Schema(name = "AbstractEntity")
-public abstract class AbstractEntityIO {
+public abstract class AbstractEntityIO implements HasId {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private Long id;
@@ -47,5 +49,11 @@ public abstract class AbstractEntityIO {
 			result[i] = entities.get(i).getId();
 		}
 		return result;
+	}
+
+	@Override
+	@JsonIgnore
+	public String getUniqueId() {
+		return id.toString();
 	}
 }

@@ -21,8 +21,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.neo4Core.entities.Subscription;
-import de.dlr.shepard.neo4Core.io.AbstractEntityIO;
 import de.dlr.shepard.neo4Core.io.EventIO;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
@@ -40,7 +40,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
 	/**
 	 * Constructor to inject your own executor service
-	 * 
+	 *
 	 * @param executor Your own Executor Service
 	 */
 	public SubscriptionFilter(Executor executor) {
@@ -63,15 +63,15 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 				RequestMethod.valueOf(requestContext.getMethod()));
 
 		Object entity = responseContext.getEntity();
-		if (entity instanceof AbstractEntityIO) {
-			event.setSubscribedObject((AbstractEntityIO) entity);
+		if (entity instanceof HasId) {
+			event.setSubscribedObject((HasId) entity);
 		}
 
 		List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
 		for (Subscription sub : subs) {
 			// TODO: This could develop into a bottleneck
 			Pattern pattern = Pattern.compile(sub.getSubscribedURL());
-			if (pattern.matcher(event.getUrl()).find()) {
+			if (pattern.matcher(event.getUrl()).matches()) {
 				EventIO e = new EventIO(event);
 				e.setSubscription(new SubscriptionIO(sub));
 				log.debug("{} was triggered with {}", sub, e);
@@ -89,7 +89,8 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 			request.addHeader("content-type", "application/json");
 			request.setEntity(body);
 			HttpResponse response = httpclient.execute(request);
-			log.debug("Notification has been send with response code: {}", response.getStatusLine());
+			log.info("Notification has been send to {} with response code: {}", request.getURI(),
+					response.getStatusLine());
 		} catch (UnsupportedEncodingException | JsonProcessingException e) {
 			log.error("{}: Could not parse event to json: {}", e.getMessage(), event);
 		} catch (IOException e) {

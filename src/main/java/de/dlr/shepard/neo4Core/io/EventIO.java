@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.io;
 
+import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.util.RequestMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -16,7 +17,7 @@ public class EventIO {
 
 	private SubscriptionIO subscription;
 
-	private AbstractEntityIO subscribedObject;
+	private HasId subscribedObject;
 
 	private String url;
 
@@ -29,7 +30,7 @@ public class EventIO {
 
 	/**
 	 * Copy constructor
-	 * 
+	 *
 	 * @param event The event to be copied
 	 */
 	public EventIO(EventIO event) {
@@ -41,7 +42,7 @@ public class EventIO {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param url the url that triggered the event
 	 */
 	public EventIO(String url) {
