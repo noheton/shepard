@@ -1,7 +1,5 @@
 package de.dlr.shepard.mongoDB;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import de.dlr.shepard.neo4Core.entities.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
@@ -19,7 +17,6 @@ public class File implements HasId {
 	private String filename;
 
 	@Override
-	@JsonIgnore
 	public String getUniqueId() {
 		return oid;
 	}

@@ -14,6 +14,7 @@ import javax.ws.rs.ext.Provider;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.EventIO;
+import de.dlr.shepard.neo4Core.io.HasIdIO;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.util.RequestMethod;
@@ -64,7 +66,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
 		Object entity = responseContext.getEntity();
 		if (entity instanceof HasId) {
-			event.setSubscribedObject((HasId) entity);
+			event.setSubscribedObject(new HasIdIO((HasId) entity));
 		}
 
 		List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
@@ -85,8 +87,8 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 		HttpPost request = new HttpPost(sub.getCallbackURL());
 
 		try {
-			StringEntity body = new StringEntity(new ObjectMapper().writeValueAsString(event));
-			request.addHeader("content-type", "application/json");
+			var content = new ObjectMapper().writeValueAsString(event);
+			var body = new StringEntity(content, ContentType.APPLICATION_JSON);
 			request.setEntity(body);
 			HttpResponse response = httpclient.execute(request);
 			log.info("Notification has been send to {} with response code: {}", request.getURI(),

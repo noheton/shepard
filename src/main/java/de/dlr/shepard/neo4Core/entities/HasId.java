@@ -2,21 +2,24 @@ package de.dlr.shepard.neo4Core.entities;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @FunctionalInterface
 public interface HasId {
 
 	/**
 	 * Returns a specific unique identifier for this object
-	 * 
+	 *
 	 * @return String of the unique identifier
 	 */
+	@JsonIgnore
 	String getUniqueId();
 
 	/**
 	 * This function compares two lists of objects. These lists are equal if both
 	 * are sorted in the same way and each object is equal when compared by its
 	 * unique ID. Other attributes are ignored.
-	 * 
+	 *
 	 * @param a The first list
 	 * @param b The second list
 	 * @return True of both lists are equal
@@ -39,7 +42,7 @@ public interface HasId {
 	/**
 	 * This function compares two objects. These objects are equal if their unique
 	 * ID is equal. Other attributes are ignored.
-	 * 
+	 *
 	 * @param a The first object
 	 * @param b The second object
 	 * @return True if both objects are equal
@@ -55,7 +58,7 @@ public interface HasId {
 	/**
 	 * This function calculates the hash code of a list of objects. Only the unique
 	 * ID is included in the calculation.
-	 * 
+	 *
 	 * @param a The list of objects
 	 * @return The calculated hash code
 	 */
@@ -73,7 +76,7 @@ public interface HasId {
 	/**
 	 * This function calculates the hash code of a object. Only the unique ID is
 	 * included in the calculation.
-	 * 
+	 *
 	 * @param a The object
 	 * @return The calculated hash code
 	 */

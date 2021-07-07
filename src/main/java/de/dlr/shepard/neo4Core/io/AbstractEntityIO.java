@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import de.dlr.shepard.neo4Core.entities.AbstractEntity;
 import de.dlr.shepard.neo4Core.entities.HasId;
@@ -52,7 +51,6 @@ public abstract class AbstractEntityIO implements HasId {
 	}
 
 	@Override
-	@JsonIgnore
 	public String getUniqueId() {
 		return id.toString();
 	}

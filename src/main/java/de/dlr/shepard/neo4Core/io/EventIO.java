@@ -1,6 +1,5 @@
 package de.dlr.shepard.neo4Core.io;
 
-import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.util.RequestMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -17,7 +16,7 @@ public class EventIO {
 
 	private SubscriptionIO subscription;
 
-	private HasId subscribedObject;
+	private HasIdIO subscribedObject;
 
 	private String url;
 
