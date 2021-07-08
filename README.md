@@ -12,14 +12,14 @@ Information about the deployment can be found [here](https://gitlab.com/dlr-shep
 
 - [Guide: Writing Testable Code](http://misko.hevery.com/attachments/Guide-Writing%20Testable%20Code.pdf)
 - [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest)
-- [Tomcat Documentation](https://tomcat.apache.org/tomcat-9.0-doc/)
+- [Tomcat Documentation](https://tomcat.apache.org/tomcat-9.0-doc/index.html)
 - [Our Developer Documentation](https://dlr-shepard.gitlab.io/backend/)
 
 ### Downloads
 
 - JDK 11: <https://adoptopenjdk.net/?variant=openjdk11&jvmVariant=hotspot>
 - Eclipse IDE for Enterprise Java Developers: <https://www.eclipse.org/downloads/packages/>
-- Tomcat 9: <https://tomcat.apache.org/download-9.cgi>
+- Tomcat 9: <https://tomcat.apache.org/download-90.cgi>
 - Project Lombok: <https://projectlombok.org/download>
 - Postman (optional): <https://www.getpostman.com/downloads/>
 
