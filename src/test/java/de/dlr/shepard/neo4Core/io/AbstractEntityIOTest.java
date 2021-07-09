@@ -8,7 +8,7 @@ import de.dlr.shepard.BaseTestCase;
 
 public class AbstractEntityIOTest extends BaseTestCase {
 
-	private class EntityIO extends AbstractEntityIO {
+	private static class EntityIO extends AbstractEntityIO {
 
 		public EntityIO(long id) {
 			this.setId(id);

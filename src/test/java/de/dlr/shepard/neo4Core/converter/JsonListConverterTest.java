@@ -17,7 +17,7 @@ import de.dlr.shepard.BaseTestCase;
 
 public class JsonListConverterTest extends BaseTestCase {
 
-	private class IntegerConverter extends JsonListConverter<Integer> {
+	private static class IntegerConverter extends JsonListConverter<Integer> {
 
 		@Override
 		Class<Integer> getEntityType() {
