@@ -94,7 +94,7 @@ public class FileContainerService {
 	 *
 	 * @param fileContainerId The container to get the payload from
 	 * @param oid             The specific file
-	 * @return
+	 * @return a NamedInputStream
 	 */
 	public NamedInputStream getFile(long fileContainerId, String oid) {
 		var container = fileContainerDAO.find(fileContainerId);
@@ -110,7 +110,7 @@ public class FileContainerService {
 	 * @param fileId      identifies the file container
 	 * @param fileName    the name of the new file
 	 * @param inputStream the file itself
-	 * @return
+	 * @return The newly created file
 	 */
 	public File createFile(long fileId, String fileName, InputStream inputStream) {
 		var fileContainer = fileContainerDAO.find(fileId);
@@ -127,7 +127,7 @@ public class FileContainerService {
 	 *
 	 * @param fileContainerId The container to get the payload from
 	 * @param oid             The specific file
-	 * @return
+	 * @return Whether the deletion was successful or not
 	 */
 	public boolean deleteFile(long fileContainerId, String oid) {
 		var container = fileContainerDAO.find(fileContainerId);

@@ -37,8 +37,8 @@
 		<finalName>shepard</finalName>
 		<revision>1.0.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<assertj.version>3.20.0</assertj.version>
-		<commons.version>2.9.0</commons.version>
+		<assertj.version>3.20.2</assertj.version>
+		<commons.version>2.10.0</commons.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.21</influxdb.version>
 		<jacoco.version>0.8.7</jacoco.version>
@@ -47,12 +47,12 @@
 		<junit.version>5.7.2</junit.version>
 		<log4j.version>2.14.1</log4j.version>
 		<lombok.version>1.18.20</lombok.version>
-		<mockito.version>3.11.0</mockito.version>
+		<mockito.version>3.11.2</mockito.version>
 		<mongodb.version>4.2.3</mongodb.version>
 		<neo4j.version>3.2.24</neo4j.version>
 		<restassured.version>4.4.0</restassured.version>
-		<swagger.version>2.1.9</swagger.version>
-		<tomcat.version>9.0.48</tomcat.version>
+		<swagger.version>2.1.10</swagger.version>
+		<tomcat.version>9.0.50</tomcat.version>
 	</properties>
 
 	<profiles>
@@ -188,7 +188,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven3-plugin</artifactId>
-				<version>1.9.4</version>
+				<version>1.9.5</version>
 				<configuration>
 					<skip>${skipITs}</skip>
 					<container>
@@ -435,7 +435,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.6.1</version>
+			<version>3.7</version>
 			<scope>test</scope>
 		</dependency>
 

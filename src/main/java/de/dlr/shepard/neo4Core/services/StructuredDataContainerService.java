@@ -130,7 +130,7 @@ public class StructuredDataContainerService {
 	 * @param structuredDataContainerID identifies the container
 	 * @param oid                       identifies the structured data within the
 	 *                                  container
-	 * @return
+	 * @return Whether the deletion was successful or not
 	 */
 	public boolean deleteStructuredData(long structuredDataContainerID, String oid) {
 		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
