@@ -18,40 +18,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
-import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StructuredDataTest extends BaseTestCaseIT {
-	private static CollectionIO collection;
-	private static DataObjectIO dataObject;
-
-	private static String referencesURL;
-	private static RequestSpecification referencesRequestSpec;
 	private static String containerURL;
 	private static RequestSpecification containerRequestSpec;
 
 	private static StructuredDataContainerIO container;
-	private static StructuredDataReferenceIO reference;
 	private static StructuredDataPayload payload;
 
 	private ObjectMapper objectMapper = new ObjectMapper();
 
 	@BeforeAll
 	public static void setUp() {
-		collection = createCollection("StructuredDataReferenceTestCollection");
-		dataObject = createDataObject("StructuredDataReferenceTestDataObject", collection.getId());
-
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/structureddataReferences", baseURL,
-				collection.getId(), dataObject.getId());
-		referencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
-				.addHeader("X-API-KEY", jws).build();
-
 		containerURL = String.format("%s/structureddatas", baseURL);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
@@ -111,72 +94,46 @@ public class StructuredDataTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(5)
-	public void createStructuredDataReference() {
-		var toCreate = new StructuredDataReferenceIO();
-		toCreate.setName("StructuredDataReferenceDummy");
-		toCreate.setStructuredDatas(List.of(payload.getStructuredData()));
-		toCreate.setStructuredDataContainerId(container.getId());
+	public void getStructuredDatas() {
+		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
+				.then().statusCode(200).extract().as(StructuredData[].class);
 
-		var actual = given().spec(referencesRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
-				.as(StructuredDataReferenceIO.class);
-		reference = actual;
-
-		assertThat(actual.getId()).isNotNull();
-		assertThat(actual.getCreatedAt()).isNotNull();
-		assertThat(actual.getCreatedBy()).isEqualTo(username);
-		assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
-		assertThat(actual.getName()).isEqualTo("StructuredDataReferenceDummy");
-		assertThat(actual.getStructuredDataContainerId()).isEqualTo(container.getId());
-		assertThat(actual.getStructuredDatas()).containsExactly(payload.getStructuredData());
-		assertThat(actual.getType()).isEqualTo("StructuredDataReference");
-		assertThat(actual.getUpdatedAt()).isNull();
-		assertThat(actual.getUpdatedBy()).isNull();
+		assertThat(actual).containsExactly(payload.getStructuredData());
 	}
 
 	@Test
 	@Order(6)
-	public void getStructuredDataReferences() {
-		var actual = given().spec(referencesRequestSpec).when().get().then().statusCode(200).extract()
-				.as(StructuredDataReferenceIO[].class);
-
-		assertThat(actual).containsExactly(reference);
-	}
-
-	@Test
-	@Order(7)
-	public void getStructuredDataReference() {
-		var actual = given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then()
-				.statusCode(200).extract().as(StructuredDataReferenceIO.class);
-
-		assertThat(actual).isEqualTo(reference);
-	}
-
-	@Test
-	@Order(8)
 	@SuppressWarnings("unchecked")
-	public void getStructuredDataReferencePayload() throws JsonMappingException, JsonProcessingException {
-		var actual = given().spec(referencesRequestSpec).when()
-				.get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(),
+	public void getStructuredDataPayload() throws JsonMappingException, JsonProcessingException {
+		var actual = given().spec(containerRequestSpec).when()
+				.get(String.format("%s/%d/payload/%s", containerURL, container.getId(),
 						payload.getStructuredData().getOid()))
 				.then().statusCode(200).extract().as(StructuredDataPayload.class);
+
 		var payloadMap = objectMapper.readValue(actual.getPayload(), Map.class);
 		var expectedMap = objectMapper.readValue(payload.getPayload(), Map.class);
 
 		assertThat(actual.getStructuredData()).isEqualTo(payload.getStructuredData());
 		assertThat(payloadMap).containsAllEntriesOf(expectedMap);
+		assertThat(actual.getStructuredData()).isEqualTo(payload.getStructuredData());
 	}
 
 	@Test
-	@Order(9)
-	public void deleteReferences() {
-		given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then()
-				.statusCode(204);
+	@Order(7)
+	public void deleteStructuredData() {
+		given().spec(containerRequestSpec).when().delete(String.format("%s/%d/payload/%s", containerURL,
+				container.getId(), payload.getStructuredData().getOid())).then().statusCode(204);
 
-		given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+		given().spec(containerRequestSpec).when().get(String.format("%s/%d/payload/%s", containerURL, container.getId(),
+				payload.getStructuredData().getOid())).then().statusCode(404);
+
+		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
+				.then().statusCode(200).extract().as(StructuredData[].class);
+		assertThat(actual).isEmpty();
 	}
 
 	@Test
-	@Order(10)
+	@Order(8)
 	public void deleteContainer() {
 		given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 

@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;
@@ -118,6 +119,27 @@ public class FileContainerService {
 		var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
 		fileContainer.addFile(result);
 		fileContainerDAO.createOrUpdate(fileContainer);
+		return result;
+	}
+
+	/**
+	 * Delete one file
+	 *
+	 * @param fileContainerId The container to get the payload from
+	 * @param oid             The specific file
+	 * @return
+	 */
+	public boolean deleteFile(long fileContainerId, String oid) {
+		var container = fileContainerDAO.find(fileContainerId);
+		if (container == null || container.isDeleted())
+			return false;
+		var result = fileService.deleteFile(container.getMongoId(), oid);
+		if (result) {
+			var newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid))
+					.collect(Collectors.toList());
+			container.setFiles(newFiles);
+			fileContainerDAO.createOrUpdate(container);
+		}
 		return result;
 	}
 

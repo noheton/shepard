@@ -86,9 +86,26 @@ public class FileService {
 		}
 		GridFSBucket gridBucket = mongoDBConnector.createBucket();
 		for (Document doc : toDelete.find()) {
-			gridBucket.delete(new ObjectId(doc.get("FileMongoId").toString()));
+			gridBucket.delete(new ObjectId(doc.getString("FileMongoId")));
 		}
 		toDelete.drop();
 		return true;
 	}
+
+	public boolean deleteFile(String mongoId, String oid) {
+		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoId);
+		if (collection == null) {
+			log.error("Could not find container with mongoid: {}", mongoId);
+			return false;
+		}
+		var doc = collection.findOneAndDelete(eq("_id", new ObjectId(oid)));
+		if (doc == null) {
+			log.error("Could not find and delete file with oid: {}", oid);
+			return false;
+		}
+		var gridBucket = mongoDBConnector.createBucket();
+		gridBucket.delete(new ObjectId(doc.getString("FileMongoId")));
+		return true;
+	}
+
 }

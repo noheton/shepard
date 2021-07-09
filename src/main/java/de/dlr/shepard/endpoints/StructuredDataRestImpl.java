@@ -113,4 +113,16 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		return result != null ? Response.ok(result).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Override
+	public Response deleteStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+			@PathParam(Constants.OID) String oid) {
+		log.info("Received DELETE STRUCTURED DATA request with container Id {} and Oid {} from user {}",
+				structuredDataId, oid, securityContext.getUserPrincipal().getName());
+		var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
+		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
+				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+	}
+
 }

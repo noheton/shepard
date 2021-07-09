@@ -60,4 +60,10 @@ public interface StructuredDataRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getStructuredData(long structuredDataId, String oid);
 
+	@Tag(name = Constants.STRUCTUREDDATA)
+	@Operation(description = "Delete structured data")
+	@ApiResponse(description = "ok", responseCode = "204")
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response deleteStructuredData(long structuredDataId, String oid);
+
 }

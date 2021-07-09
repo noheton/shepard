@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -248,5 +249,61 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);
+	}
+
+	@Test
+	public void deleteStructuredDataTest() {
+		var container = new StructuredDataContainer(1L);
+		container.setMongoId("mongoId");
+		container.setStructuredDatas(List.of(new StructuredData("abc"), new StructuredData("123")));
+
+		var updated = new StructuredDataContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.setStructuredDatas(List.of(new StructuredData("123")));
+
+		when(dao.find(1L)).thenReturn(container);
+		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(true);
+
+		var actual = service.deleteStructuredData(1L, "abc");
+		assertTrue(actual);
+		verify(dao).createOrUpdate(updated);
+	}
+
+	@Test
+	public void deleteStructuredDataTest_deletedFalse() {
+		var container = new StructuredDataContainer(1L);
+		container.setMongoId("mongoId");
+		container.setStructuredDatas(List.of(new StructuredData("abc"), new StructuredData("123")));
+
+		var updated = new StructuredDataContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.setStructuredDatas(List.of(new StructuredData("123")));
+
+		when(dao.find(1L)).thenReturn(container);
+		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(false);
+
+		var actual = service.deleteStructuredData(1L, "abc");
+		assertFalse(actual);
+		verify(dao, never()).createOrUpdate(updated);
+	}
+
+	@Test
+	public void deleteStructuredDataTest_containerIsNull() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.deleteStructuredData(1L, "oid");
+		assertFalse(actual);
+	}
+
+	@Test
+	public void deleteStructuredDataTest_containerIsDeleted() {
+		var container = new StructuredDataContainer(1L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.deleteStructuredData(1L, "oid");
+		assertFalse(actual);
 	}
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -229,5 +230,61 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		var actual = service.getFile(1L, "oid");
 		assertNull(actual);
+	}
+
+	@Test
+	public void deleteFileTest() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		container.setFiles(List.of(new File("abc", "def"), new File("123", "456")));
+
+		var updated = new FileContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.setFiles(List.of(new File("123", "456")));
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.deleteFile("mongoId", "abc")).thenReturn(true);
+
+		var actual = service.deleteFile(1L, "abc");
+		assertTrue(actual);
+		verify(dao).createOrUpdate(updated);
+	}
+
+	@Test
+	public void deleteFileTest_deletedFalse() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		container.setFiles(List.of(new File("abc", "def"), new File("123", "456")));
+
+		var updated = new FileContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.setFiles(List.of(new File("123", "456")));
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.deleteFile("mongoId", "abc")).thenReturn(false);
+
+		var actual = service.deleteFile(1L, "abc");
+		assertFalse(actual);
+		verify(dao, never()).createOrUpdate(updated);
+	}
+
+	@Test
+	public void deleteFileTest_containerIsNull() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.deleteFile(1L, "oid");
+		assertFalse(actual);
+	}
+
+	@Test
+	public void deleteFileTest_containerIsDeleted() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.deleteFile(1L, "oid");
+		assertFalse(actual);
 	}
 }

@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
@@ -120,6 +121,28 @@ public class StructuredDataContainerService {
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
 			return null;
 		var result = structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);
+		return result;
+	}
+
+	/**
+	 * Delete one single structured data object
+	 *
+	 * @param structuredDataContainerID identifies the container
+	 * @param oid                       identifies the structured data within the
+	 *                                  container
+	 * @return
+	 */
+	public boolean deleteStructuredData(long structuredDataContainerID, String oid) {
+		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
+		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
+			return false;
+		var result = structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);
+		if (result) {
+			var newStructuredDatas = structuredDataContainer.getStructuredDatas().stream()
+					.filter(f -> !f.getOid().equals(oid)).collect(Collectors.toList());
+			structuredDataContainer.setStructuredDatas(newStructuredDatas);
+			structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
+		}
 		return result;
 	}
 

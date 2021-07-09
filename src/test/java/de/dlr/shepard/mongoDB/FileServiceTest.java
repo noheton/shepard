@@ -159,7 +159,7 @@ public class FileServiceTest extends BaseTestCase {
 
 		when(database.getCollection(existingMongoOid)).thenReturn(collection);
 		when(collection.find()).thenReturn(collectionReturn);
-		when(doc.get("FileMongoId")).thenReturn(oid);
+		when(doc.getString("FileMongoId")).thenReturn(oid.toString());
 
 		var result = fileService.deleteFileContainer(existingMongoOid);
 		assertTrue(result);
@@ -221,6 +221,45 @@ public class FileServiceTest extends BaseTestCase {
 
 		var result = fileService.getPayload(containerId, fileoid);
 		assertNull(result);
+	}
+
+	@Test
+	public void deletePayloadTest() {
+		String fileOid = "60b73212cfa45d2d5baa795a";
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		Document doc = mock(Document.class);
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(collection);
+		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
+		when(doc.getString("FileMongoId")).thenReturn(fileOid);
+
+		var result = fileService.deleteFile(mongoOid, oid.toString());
+		assertTrue(result);
+		verify(gridBucket).delete(new ObjectId(fileOid));
+	}
+
+	@Test
+	public void deletePayloadTest_collectionIsNull() {
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(null);
+
+		var result = fileService.deleteFile(mongoOid, oid.toString());
+		assertFalse(result);
+	}
+
+	@Test
+	public void deletePayloadTest_documentIsNull() {
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(collection);
+		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
+
+		var result = fileService.deleteFile(mongoOid, oid.toString());
+		assertFalse(result);
 	}
 
 	/**

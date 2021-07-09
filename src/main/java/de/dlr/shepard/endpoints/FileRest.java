@@ -58,6 +58,12 @@ public interface FileRest {
 	Response getFile(long fileContainerId, String oid);
 
 	@Tag(name = Constants.FILE)
+	@Operation(description = "Delete file")
+	@ApiResponse(description = "ok", responseCode = "204")
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response deleteFile(long fileContainerId, String oid);
+
+	@Tag(name = Constants.FILE)
 	@Operation(description = "Upload a new file")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = File.class)))
 	@ApiResponse(description = "not found", responseCode = "404")

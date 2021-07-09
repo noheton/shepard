@@ -72,4 +72,18 @@ public class StructuredDataService {
 		return payload;
 	}
 
+	public boolean deletePayload(String mongoid, String oid) {
+		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+		if (collection == null) {
+			log.error("Could not find container with mongoid: {}", mongoid);
+			return false;
+		}
+		var result = collection.deleteOne(eq("_id", new ObjectId(oid)));
+		if (!result.wasAcknowledged()) {
+			log.error("Could not delete document with oid: {}", oid);
+			return false;
+		}
+		return true;
+	}
+
 }

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,8 @@ import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.DeleteResult;
 
 import de.dlr.shepard.BaseTestCase;
 
@@ -165,6 +168,45 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
 		var actual = service.getPayload("collection", oid.toHexString());
 		assertNull(actual);
+	}
+
+	@Test
+	public void deletePayloadTest() {
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		DeleteResult deleteResult = mock(DeleteResult.class);
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(collection);
+		when(collection.deleteOne(Filters.eq("_id", oid))).thenReturn(deleteResult);
+		when(deleteResult.wasAcknowledged()).thenReturn(true);
+
+		var result = service.deletePayload(mongoOid, oid.toString());
+		assertTrue(result);
+	}
+
+	@Test
+	public void deletePayloadTest_collectionIsNull() {
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(null);
+
+		var result = service.deletePayload(mongoOid, oid.toString());
+		assertFalse(result);
+	}
+
+	@Test
+	public void deletePayloadTest_notAcknowledged() {
+		String mongoOid = "60b73212cfa45d2d5baa795b";
+		DeleteResult deleteResult = mock(DeleteResult.class);
+		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+		when(database.getCollection(mongoOid)).thenReturn(collection);
+		when(collection.deleteOne(Filters.eq("_id", oid))).thenReturn(deleteResult);
+		when(deleteResult.wasAcknowledged()).thenReturn(false);
+
+		var result = service.deletePayload(mongoOid, oid.toString());
+		assertFalse(result);
 	}
 
 }

@@ -104,6 +104,18 @@ public class FileRestImpl implements FileRest {
 				: Response.status(HttpStatus.SC_NOT_FOUND).build();
 	}
 
+	@DELETE
+	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Override
+	public Response deleteFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
+			@PathParam(Constants.OID) String oid) {
+		log.info("Received DELETE FILE request with container Id {} and Oid {} from user {}", fileContainerId, oid,
+				securityContext.getUserPrincipal().getName());
+		var result = fileContainerService.deleteFile(fileContainerId, oid);
+		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
+				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+	}
+
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
