@@ -78,7 +78,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@DELETE
 	@Path("/{" + Constants.FILE_REFERENCE_ID + "}")
 	@Override
-	public Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+	public Response deleteFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId) {
 		log.info(

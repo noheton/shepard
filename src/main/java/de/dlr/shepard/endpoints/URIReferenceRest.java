@@ -19,7 +19,7 @@ public interface URIReferenceRest {
 	@Operation(description = "Get all uri references")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = URIReferenceIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllReferences(long collectionId, long dataObjectId);
+	Response getAllUriReferences(long collectionId, long dataObjectId);
 
 	@Tag(name = Constants.URI_REFERENCE)
 	@Operation(description = "Get uri reference")

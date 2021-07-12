@@ -37,7 +37,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 
 	@GET
 	@Override
-	public Response getAllReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
+	public Response getAllUriReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
 		log.info("Received GET ALL request with collection {} and dataobject {} from user {}", collectionId,
 				dataObjectId, securityContext.getUserPrincipal().getName());

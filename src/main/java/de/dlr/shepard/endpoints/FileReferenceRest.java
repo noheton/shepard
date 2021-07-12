@@ -40,7 +40,7 @@ public interface FileReferenceRest {
 	@Operation(description = "Delete file reference")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteBasicReference(long collectionId, long dataObjectId, long fileReferenceId);
+	Response deleteFileReference(long collectionId, long dataObjectId, long fileReferenceId);
 
 	@Tag(name = Constants.FILE_REFERENCE)
 	@Operation(description = "Get file payload")

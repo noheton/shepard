@@ -78,7 +78,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@DELETE
 	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
 	@Override
-	public Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
+	public Response deleteStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataReferenceId) {
 		log.info(

@@ -40,7 +40,7 @@ public interface StructuredDataReferenceRest {
 	@Operation(description = "Delete structureddata reference")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteBasicReference(long collectionId, long dataObjectId, long structuredDataReferenceId);
+	Response deleteStructuredDataReference(long collectionId, long dataObjectId, long structuredDataReferenceId);
 
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Get structured data payload")
