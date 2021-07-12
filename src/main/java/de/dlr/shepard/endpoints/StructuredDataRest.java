@@ -20,7 +20,7 @@ public interface StructuredDataRest {
 	@Operation(description = "Get all structured data containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredDataContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllStructuredDataContainer();
+	Response getAllStructuredDataContainers();
 
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get structured data container")

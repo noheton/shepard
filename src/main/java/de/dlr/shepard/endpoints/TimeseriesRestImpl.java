@@ -36,7 +36,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@GET
 	@Override
-	public Response getAllTimeseriesContainer() {
+	public Response getAllTimeseriesContainers() {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 		var containers = timeseriesContainerService.getAllTimeseriesContainers();
 		var result = new ArrayList<TimeseriesContainerIO>(containers.size());

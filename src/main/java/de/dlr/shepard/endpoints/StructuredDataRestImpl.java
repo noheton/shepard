@@ -36,7 +36,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 
 	@GET
 	@Override
-	public Response getAllStructuredDataContainer() {
+	public Response getAllStructuredDataContainers() {
 		log.info("Received GET ALL STRUCTURED DATA CONTAINER request from user {}",
 				securityContext.getUserPrincipal().getName());
 		var containers = structuredDataContainerService.getAllStructuredDataContainers();

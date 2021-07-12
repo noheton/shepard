@@ -52,6 +52,6 @@ public interface FileReferenceRest {
 	@Operation(description = "Get associated files")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllFiles(long collectionId, long dataObjectId, long fileId);
+	Response getFiles(long collectionId, long dataObjectId, long fileId);
 
 }

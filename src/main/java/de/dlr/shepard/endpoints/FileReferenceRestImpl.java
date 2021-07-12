@@ -109,7 +109,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@GET
 	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/payload")
 	@Override
-	public Response getAllFiles(@PathParam(Constants.COLLECTION_ID) long collectionId,
+	public Response getFiles(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileId) {
 		log.info("Received GET ALL FILES request with reference Id {} from user {}", fileId,

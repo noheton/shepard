@@ -20,7 +20,7 @@ public interface TimeseriesRest {
 	@Operation(description = "Get all timeseries containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllTimeseriesContainer();
+	Response getAllTimeseriesContainers();
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries container")
