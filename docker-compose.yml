@@ -95,6 +95,7 @@ services:
     networks:
       - shepard
       - mongo
+    command: --wiredTigerCacheSizeGB 2.0
 
   mongoexpress:
     image: mongo-express:latest
