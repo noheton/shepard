@@ -10,10 +10,11 @@ Information about the deployment can be found [here](https://gitlab.com/dlr-shep
 
 ### Documentation
 
+- [Our Developer Documentation](https://dlr-shepard.gitlab.io/backend/)
+- [The latest OpenAPI documentation](https://gitlab.com/dlr-shepard/backend/-/jobs/artifacts/master/file/target/swagger/swagger.yaml?job=build)
 - [Guide: Writing Testable Code](http://misko.hevery.com/attachments/Guide-Writing%20Testable%20Code.pdf)
 - [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest)
 - [Tomcat Documentation](https://tomcat.apache.org/tomcat-9.0-doc/index.html)
-- [Our Developer Documentation](https://dlr-shepard.gitlab.io/backend/)
 
 ### Downloads
 
