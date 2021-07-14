@@ -176,6 +176,23 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
+### CollectionReference(BasicReference)
+
+```json
+{
+  "id": 0,
+  "createdAt": "2021-05-21T11:32:00.172Z",
+  "createdBy": "string",
+  "updatedAt": "2021-05-21T11:32:00.172Z",
+  "updatedBy": "string",
+  "name": "string",
+  "collectionId": 0,
+  "type": "DataObjectReference",
+  "referencedDataObjectId": 0,
+  "relationship": "string"
+}
+```
+
 ### DataObjectReference(BasicReference)
 
 ```json
