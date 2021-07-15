@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -30,7 +29,6 @@ public class CollectionIOTest extends BaseTestCase {
 		var user = new User("bob");
 		var update = new Date();
 		var updateUser = new User("claus");
-		var incoming = new DataObjectReference(3L);
 
 		var obj = new Collection(1L);
 		obj.setAttributes(Map.of("a", "b", "c", "1"));
@@ -38,7 +36,6 @@ public class CollectionIOTest extends BaseTestCase {
 		obj.setCreatedBy(user);
 		obj.setDataObjects(List.of(dataObject));
 		obj.setDescription("My Description");
-		obj.setIncoming(List.of(incoming));
 		obj.setName("MyName");
 		obj.setUpdatedAt(update);
 		obj.setUpdatedBy(updateUser);
@@ -50,7 +47,6 @@ public class CollectionIOTest extends BaseTestCase {
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals("[2]", Arrays.toString(converted.getDataObjectIds()));
 		assertEquals(obj.getDescription(), converted.getDescription());
-		assertEquals("[3]", Arrays.toString(converted.getIncomingIds()));
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());

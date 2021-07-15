@@ -126,8 +126,8 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 		var dataObjectReference = new DataObjectReferenceIO() {
 			{
 				setName("DataObjectReference");
-				setReferencedDataObjectId(collection.getId());
-				setRelationship("back_to_collection");
+				setReferencedDataObjectId(dataObject.getId());
+				setRelationship("self_reference");
 			}
 		};
 		var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(dataObjectReferenceUrl)

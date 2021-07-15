@@ -22,7 +22,7 @@ public class CollectionService {
 
 	/**
 	 * Creates a Collection and stores it in Neo4J
-	 * 
+	 *
 	 * @param collection to be stored
 	 * @param username   of the related user
 	 * @return the created collection
@@ -43,7 +43,7 @@ public class CollectionService {
 
 	/**
 	 * Searches the Collection in Neo4j
-	 * 
+	 *
 	 * @param id identifies the searched Collection
 	 * @return the Collection with matching id or null
 	 */
@@ -58,7 +58,7 @@ public class CollectionService {
 
 	/**
 	 * Searches the database for all Collections
-	 * 
+	 *
 	 * @param params encapsulates possible parameters
 	 * @return a list of Collections
 	 */
@@ -73,7 +73,7 @@ public class CollectionService {
 
 	/**
 	 * Updates a Collection with new Attributes.
-	 * 
+	 *
 	 * @param collectionId identifies the Collection
 	 * @param collection   which contains the new Attributes
 	 * @param username     of the related user
@@ -96,7 +96,7 @@ public class CollectionService {
 
 	/**
 	 * Deletes a Collection in Neo4j
-	 * 
+	 *
 	 * @param collectionId identifies the Collection
 	 * @param username     of the related user
 	 * @return a boolean to determine if Collection was successfully deleted
@@ -131,14 +131,11 @@ public class CollectionService {
 
 	/**
 	 * Remove deleted DataObjects from collection
-	 * 
+	 *
 	 * @param collection The collection to remove deleted DataObjects from
 	 */
 	private void cutDeleted(Collection collection) {
 		var dataObjects = collection.getDataObjects().stream().filter(d -> !d.isDeleted()).collect(Collectors.toList());
 		collection.setDataObjects(dataObjects);
-
-		var incoming = collection.getIncoming().stream().filter(i -> !i.isDeleted()).collect(Collectors.toList());
-		collection.setIncoming(incoming);
 	}
 }

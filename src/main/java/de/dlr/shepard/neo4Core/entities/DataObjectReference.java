@@ -20,13 +20,13 @@ public class DataObjectReference extends BasicReference {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.POINTS_TO)
-	private AbstractDataObject referencedDataObject;
+	private DataObject referencedDataObject;
 
 	private String relationship;
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public DataObjectReference(long id) {

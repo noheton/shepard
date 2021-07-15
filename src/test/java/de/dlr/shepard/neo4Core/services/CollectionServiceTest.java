@@ -21,7 +21,6 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
@@ -73,17 +72,12 @@ public class CollectionServiceTest extends BaseTestCase {
 		DataObject doNotDeleted = new DataObject(1L);
 		DataObject doDeleted = new DataObject(2L);
 		doDeleted.setDeleted(true);
-		DataObjectReference refNotDeleted = new DataObjectReference(3L);
-		DataObjectReference refDeleted = new DataObjectReference(4L);
-		refDeleted.setDeleted(true);
 
 		Collection collection = new Collection(5L);
 		collection.setDataObjects(List.of(doDeleted, doNotDeleted));
-		collection.setIncoming(List.of(refDeleted, refNotDeleted));
 
 		Collection collectionCut = new Collection(5L);
 		collectionCut.setDataObjects(List.of(doNotDeleted));
-		collectionCut.setIncoming(List.of(refNotDeleted));
 
 		when(dao.find(5L)).thenReturn(collection);
 		Collection returned = service.getCollection(5L);

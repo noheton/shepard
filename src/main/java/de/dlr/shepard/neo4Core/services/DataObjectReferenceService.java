@@ -4,11 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
-import de.dlr.shepard.neo4Core.entities.AbstractDataObject;
+import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
@@ -16,7 +15,6 @@ import de.dlr.shepard.util.DateHelper;
 public class DataObjectReferenceService {
 	private DataObjectReferenceDAO dataObjectReferenceDAO = new DataObjectReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-	private CollectionDAO collectionDAO = new CollectionDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -39,10 +37,7 @@ public class DataObjectReferenceService {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 
-		var referencedDataObject = dataObjectDAO.find(dataObjectReference.getReferencedDataObjectId());
-		var referencedCollection = collectionDAO.find(dataObjectReference.getReferencedDataObjectId());
-		var referenced = referencedDataObject != null ? referencedDataObject : referencedCollection;
-
+		var referenced = dataObjectDAO.find(dataObjectReference.getReferencedDataObjectId());
 		if (referenced == null || referenced.isDeleted()) {
 			throw new InvalidBodyException(String.format("The referenced dataObject with id %d could not be found.",
 					dataObjectReference.getReferencedDataObjectId()));
@@ -72,7 +67,7 @@ public class DataObjectReferenceService {
 		return true;
 	}
 
-	public AbstractDataObject getPayload(long dataObjectReferenceId) {
+	public DataObject getPayload(long dataObjectReferenceId) {
 		var reference = dataObjectReferenceDAO.find(dataObjectReferenceId);
 		var dataObject = dataObjectDAO.find(reference.getReferencedDataObject().getId());
 		return dataObject;

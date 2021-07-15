@@ -18,7 +18,7 @@ import org.apache.http.HttpStatus;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.neo4Core.io.AbstractDataObjectIO;
+import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.neo4Core.services.DataObjectReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -95,7 +95,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", dataObjectReferenceId,
 				securityContext.getUserPrincipal().getName());
 		var payload = dataObjectReferenceService.getPayload(dataObjectReferenceId);
-		return Response.ok(new AbstractDataObjectIO(payload) {
+		return Response.ok(new DataObjectIO(payload) {
 		}).build();
 	}
 

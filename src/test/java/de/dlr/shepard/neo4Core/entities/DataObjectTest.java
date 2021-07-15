@@ -57,4 +57,13 @@ public class DataObjectTest extends BaseTestCase {
 		assertEquals(dataObject.getReferences(), List.of(ref));
 	}
 
+	@Test
+	public void addIncomingTest() {
+		var incoming = new DataObjectReference(2L);
+		var dataObject = new DataObject(1L);
+
+		dataObject.addIncoming(incoming);
+		assertEquals(List.of(incoming), dataObject.getIncoming());
+	}
+
 }

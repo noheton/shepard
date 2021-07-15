@@ -10,6 +10,7 @@ import de.dlr.shepard.util.Constants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @NodeEntity
 @Getter
@@ -35,9 +36,13 @@ public class DataObject extends AbstractDataObject {
 	@Relationship(type = Constants.HAS_CHILD, direction = Relationship.INCOMING)
 	private DataObject parent;
 
+	@ToString.Exclude
+	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
+	private List<DataObjectReference> incoming = new ArrayList<DataObjectReference>();
+
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public DataObject(long id) {
@@ -60,6 +65,10 @@ public class DataObject extends AbstractDataObject {
 		children.add(child);
 	}
 
+	public void addIncoming(DataObjectReference dataObjectReference) {
+		incoming.add(dataObjectReference);
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -70,6 +79,7 @@ public class DataObject extends AbstractDataObject {
 		result = prime * result + HasId.hashcodeHelper(predecessors);
 		result = prime * result + HasId.hashcodeHelper(children);
 		result = prime * result + HasId.hashcodeHelper(parent);
+		result = prime * result + HasId.hashcodeHelper(incoming);
 		return result;
 	}
 
@@ -85,6 +95,6 @@ public class DataObject extends AbstractDataObject {
 		return HasId.equalsHelper(collection, other.collection) && HasId.equalsHelper(references, other.references)
 				&& HasId.equalsHelper(predecessors, other.predecessors)
 				&& HasId.equalsHelper(successors, other.successors) && HasId.equalsHelper(parent, other.parent)
-				&& HasId.equalsHelper(children, other.children);
+				&& HasId.equalsHelper(children, other.children) && HasId.equalsHelper(incoming, other.incoming);
 	}
 }

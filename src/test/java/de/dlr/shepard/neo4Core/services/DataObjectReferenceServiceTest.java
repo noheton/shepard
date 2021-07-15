@@ -16,11 +16,9 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
-import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.User;
@@ -37,9 +35,6 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private DataObjectDAO dataObjectDAO;
-
-	@Mock
-	private CollectionDAO collectionDAO;
 
 	@Mock
 	private UserDAO userDAO;
@@ -178,53 +173,6 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(100L)).thenReturn(referenced);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObjectReference(200L, input, "Bob"));
-	}
-
-	@Test
-	public void createDataObjectReferenceTest_ReferencedIsCollection() throws InvalidBodyException {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var date = new Date(30L);
-		var referenced = new Collection(100L);
-
-		var input = new DataObjectReferenceIO() {
-			{
-				setName("MyName");
-				setReferencedDataObjectId(100L);
-				setRelationship("MyRelationship");
-			}
-		};
-		var toCreate = new DataObjectReference() {
-			{
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setReferencedDataObject(referenced);
-				setRelationship("MyRelationship");
-			}
-		};
-		var created = new DataObjectReference() {
-			{
-				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setReferencedDataObject(referenced);
-				setRelationship("MyRelationship");
-			}
-		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.find(100L)).thenReturn(null);
-		when(collectionDAO.find(100L)).thenReturn(referenced);
-		when(dao.createOrUpdate(toCreate)).thenReturn(created);
-		when(dateHelper.getDate()).thenReturn(date);
-
-		var actual = service.createDataObjectReference(200L, input, "Bob");
-		assertEquals(created, actual);
 	}
 
 	@Test

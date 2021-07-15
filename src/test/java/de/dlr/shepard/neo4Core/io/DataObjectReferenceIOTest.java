@@ -50,4 +50,20 @@ public class DataObjectReferenceIOTest extends BaseTestCase {
 		assertEquals(obj.getRelationship(), converted.getRelationship());
 	}
 
+	@Test
+	public void testConversion_Deleted() {
+		var dataObject = new DataObject(2L);
+
+		var obj = new DataObjectReference(1L);
+		obj.setDataObject(dataObject);
+		obj.setReferencedDataObject(null);
+		obj.setRelationship("TestRel");
+
+		var converted = new DataObjectReferenceIO(obj);
+		assertEquals(1L, converted.getId());
+		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(-1, converted.getReferencedDataObjectId());
+		assertEquals(obj.getRelationship(), converted.getRelationship());
+	}
+
 }

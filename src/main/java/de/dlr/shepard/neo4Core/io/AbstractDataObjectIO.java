@@ -5,7 +5,6 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.AbstractDataObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -22,15 +21,11 @@ public abstract class AbstractDataObjectIO extends AbstractEntityIO {
 
 	private Map<String, String> attributes = new HashMap<>();
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] incomingIds;
-
 	public AbstractDataObjectIO(AbstractDataObject dataObject) {
 		super(dataObject);
 		this.name = dataObject.getName();
 		this.description = dataObject.getDescription();
 		this.attributes = dataObject.getAttributes();
-		this.incomingIds = extractIds(dataObject.getIncoming());
 	}
 
 }

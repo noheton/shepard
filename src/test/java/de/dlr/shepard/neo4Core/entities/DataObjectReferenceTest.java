@@ -10,14 +10,12 @@ public class DataObjectReferenceTest extends BaseTestCase {
 	@Test
 	public void equalsContract() {
 
-		var a = new AbstractDataObject(1L) {
-		};
-		var b = new AbstractDataObject(2L) {
-		};
+		var a = new DataObject(1L);
+		var b = new DataObject(2L);
 		EqualsVerifier.simple().forClass(DataObjectReference.class)
 				.withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
-				.withPrefabValues(AbstractDataObject.class, a, b).verify();
+				.withPrefabValues(DataObject.class, a, b).verify();
 	}
 
 }

@@ -29,6 +29,9 @@ public class DataObjectIO extends AbstractDataObjectIO {
 
 	private Long parentId;
 
+	@Schema(accessMode = AccessMode.READ_ONLY)
+	private long[] incomingIds;
+
 	public DataObjectIO(DataObject dataObject) {
 		super(dataObject);
 		this.collectionId = dataObject.getCollection().getId();
@@ -37,6 +40,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
 		this.predecessorIds = extractIds(dataObject.getPredecessors());
 		this.childrenIds = extractIds(dataObject.getChildren());
 		this.parentId = dataObject.getParent() != null ? dataObject.getParent().getId() : null;
+		this.incomingIds = extractIds(dataObject.getIncoming());
 	}
 
 }

@@ -3,7 +3,7 @@ package de.dlr.shepard.endpoints;
 import javax.ws.rs.core.Response;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.io.AbstractDataObjectIO;
+import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,7 +44,7 @@ public interface DataObjectReferenceRest {
 
 	@Tag(name = Constants.DATAOBJECT_REFERENCE)
 	@Operation(description = "Get dataObject reference payload")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = AbstractDataObjectIO.class)))
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getDataObjectReferencePayload(long collectionId, long dataObjectId, long dataObjectReferenceId);
 }

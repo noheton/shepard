@@ -47,7 +47,6 @@ public class CollectionTest extends BaseTestCaseIT {
 		assertThat(actual.getDescription()).isEqualTo("My Description");
 		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getCreatedBy()).isEqualTo(username);
-		assertThat(actual.getIncomingIds()).isEmpty();
 		assertThat(actual.getName()).isEqualTo("CollectionDummy");
 		assertThat(actual.getDataObjectIds()).isEmpty();
 		assertThat(actual.getUpdatedAt()).isNull();

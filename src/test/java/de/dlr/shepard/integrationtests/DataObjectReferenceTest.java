@@ -9,19 +9,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import de.dlr.shepard.neo4Core.io.AbstractDataObjectIO;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import lombok.NoArgsConstructor;
-
-@NoArgsConstructor
-class BasicDataObjectIO extends AbstractDataObjectIO {
-
-}
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectReferenceTest extends BaseTestCaseIT {
@@ -113,7 +106,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
 	public void getDataObjectReferencePayloadTest() {
 		var actual = given().spec(requestSpecification).when()
 				.get(String.format("%s/%d/payload", referencesURL, reference.getId())).then().statusCode(200).extract()
-				.as(BasicDataObjectIO.class);
+				.as(DataObjectIO.class);
 
 		assertThat(actual).usingRecursiveComparison().ignoringFields("incomingIds").isEqualTo(referenced);
 		assertThat(actual.getIncomingIds()).containsExactly(reference.getId());
