@@ -85,6 +85,7 @@ public class FileTest extends BaseTestCaseIT {
 		file = actual;
 
 		assertThat(actual.getOid()).isNotBlank();
+		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getFilename()).isEqualTo("test.txt");
 	}
 

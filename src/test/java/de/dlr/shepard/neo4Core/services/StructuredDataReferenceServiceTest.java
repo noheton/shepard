@@ -103,12 +103,13 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new StructuredDataContainer(300L);
+		container.setMongoId("MongoId");
 		var date = new Date(30L);
-		var structuredData = new StructuredData("oid");
+		var structuredData = new StructuredData("oid", new Date(), "name");
 		var input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDatas(List.of(structuredData));
+				setStructuredDatas(List.of(new StructuredData("oid")));
 				setStructuredDataContainerId(300L);
 			}
 		};
@@ -139,6 +140,55 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
+		when(structuredDataService.getPayload("MongoId", "oid"))
+				.thenReturn(new StructuredDataPayload(structuredData, "value"));
+
+		var actual = service.createStructuredDataReference(200L, input, "Bob");
+		assertEquals(created, actual);
+	}
+
+	@Test
+	public void createStructuredDataReferenceTest_notFound() throws InvalidBodyException {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new StructuredDataContainer(300L);
+		container.setMongoId("MongoId");
+		var date = new Date(30L);
+		var input = new StructuredDataReferenceIO() {
+			{
+				setName("MyName");
+				setStructuredDatas(List.of(new StructuredData("oid")));
+				setStructuredDataContainerId(300L);
+			}
+		};
+		var toCreate = new StructuredDataReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setStructuredDatas(Collections.emptyList());
+				setStructuredDataContainer(container);
+			}
+		};
+		var created = new StructuredDataReference() {
+			{
+				setId(1L);
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setStructuredDatas(Collections.emptyList());
+				setStructuredDataContainer(container);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(structuredDataService.getPayload("MongoId", "oid")).thenReturn(null);
 
 		var actual = service.createStructuredDataReference(200L, input, "Bob");
 		assertEquals(created, actual);

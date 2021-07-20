@@ -1,20 +1,42 @@
 package de.dlr.shepard.mongoDB;
 
-import de.dlr.shepard.neo4Core.entities.HasId;
-import lombok.AllArgsConstructor;
+import java.util.Date;
+
+import org.bson.Document;
+
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @NoArgsConstructor
-@AllArgsConstructor
-public class StructuredData implements HasId {
+public class StructuredData extends AbstractMongoObject {
+	private String name;
 
-	private String oid;
-
-	@Override
-	public String getUniqueId() {
-		return oid;
+	public StructuredData(String oid) {
+		super(oid);
 	}
 
+	public StructuredData(String name, Date createdAt) {
+		setCreatedAt(createdAt);
+		this.name = name;
+	}
+
+	public StructuredData(String oid, Date createdAt, String name) {
+		super(oid, createdAt);
+		this.name = name;
+	}
+
+	/**
+	 * Converts a document to StructuredData
+	 *
+	 * @param doc
+	 */
+	public StructuredData(Document doc) {
+		super(doc.getString("oid"), doc.getDate("createdAt"));
+		this.name = doc.getString("name");
+	}
 }

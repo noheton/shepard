@@ -2,7 +2,10 @@ package de.dlr.shepard.neo4Core.converter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.Test;
 
@@ -15,22 +18,53 @@ public class FileConverterTest extends BaseTestCase {
 
 	@Test
 	public void toGraphPropertyTest() {
-		var files = List.of(new File("oid", "name"), new File("oid2", ""), new File(), new File("oid", null));
+		var date = new Date();
+		var file1 = new File("oid", date, "name");
+		var file2 = new File("", date, "");
+		var file3 = new File();
+		var files = List.of(file1, file2, file3);
 		var actual = converter.toGraphProperty(files);
-		var expected = List.of("{\"oid\":\"oid\",\"filename\":\"name\"}", "{\"oid\":\"oid2\",\"filename\":\"\"}",
-				"{\"oid\":null,\"filename\":null}", "{\"oid\":\"oid\",\"filename\":null}");
+		var expected = List.of(makeString(file1), makeString(file2), makeString(file3));
 
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void toEntityAttribute() {
-		var files = List.of("{\"oid\":\"oid\",\"filename\":\"name\"}", "{\"oid\":\"oid2\",\"filename\":\"\"}",
-				"{\"oid\":null,\"filename\":null}", "{\"oid\":\"oid\",\"filename\":null}");
+		var date = new Date();
+		var file1 = new File("oid", date, "name");
+		var file2 = new File("", date, "");
+		var file3 = new File();
+		var files = List.of(makeString(file1), makeString(file2), makeString(file3));
 		var actual = converter.toEntityAttribute(files);
-		var expected = List.of(new File("oid", "name"), new File("oid2", ""), new File(), new File("oid", null));
+		var expected = List.of(file1, file2, file3);
 
 		assertEquals(expected, actual);
 	}
 
+	private String makeString(File file) {
+		SimpleDateFormat sdf;
+		sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS+00:00");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		StringBuilder builder = new StringBuilder();
+		builder.append("{\"oid\":");
+		if (file.getOid() != null)
+			builder.append(String.format("\"%s\"", file.getOid()));
+		else
+			builder.append("null");
+		builder.append(",\"createdAt\":");
+		if (file.getCreatedAt() != null)
+			builder.append(String.format("\"%s\"", sdf.format(file.getCreatedAt())));
+		else
+			builder.append("null");
+		builder.append(",\"filename\":");
+		if (file.getFilename() != null)
+			builder.append(String.format("\"%s\"", file.getFilename()));
+		else
+			builder.append("null");
+		builder.append("}");
+
+		return builder.toString();
+	}
 }

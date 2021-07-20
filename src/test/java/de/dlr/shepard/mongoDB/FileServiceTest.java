@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.UUID;
 
 import org.bson.Document;
@@ -34,12 +35,15 @@ import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Filters;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
 
 public class FileServiceTest extends BaseTestCase {
 
 	@Mock
 	private MongoDBConnector mongoDBConnector;
+	@Mock
+	private DateHelper dateHelper;
 	@Mock
 	private UUIDHelper uuidhelper;
 	@InjectMocks
@@ -73,6 +77,7 @@ public class FileServiceTest extends BaseTestCase {
 		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
 		String fileoid = "60b73212cfa45d2d5baa795d";
 		String name = "name";
+		Date date = new Date();
 		Document file = mock(Document.class);
 		@SuppressWarnings("unchecked")
 		FindIterable<Document> collectionReturn = mock(FindIterable.class);
@@ -81,8 +86,9 @@ public class FileServiceTest extends BaseTestCase {
 		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
 		when(collectionReturn.first()).thenReturn(file);
 		when(file.getString("name")).thenReturn("name");
+		when(file.getDate("createdAt")).thenReturn(date);
 
-		var expected = new File(fileoid, name);
+		var expected = new File(fileoid, date, name);
 		var result = fileService.getFile(containerId, fileoid);
 		assertEquals(expected, result);
 	}
@@ -118,7 +124,9 @@ public class FileServiceTest extends BaseTestCase {
 		String fileName = "fileName";
 		InputStream inputStream = mock(InputStream.class);
 		String mongoid = "mongoid";
+		Date date = new Date();
 
+		when(dateHelper.getDate()).thenReturn(date);
 		when(database.getCollection(mongoid)).thenReturn(collection);
 		when(gridBucket.uploadFromStream(eq(fileName), eq(inputStream), any(GridFSUploadOptions.class)))
 				.thenReturn(oid);
@@ -131,10 +139,12 @@ public class FileServiceTest extends BaseTestCase {
 			}
 		}).when(collection).insertOne(any(Document.class));
 
-		var expected = new File(moid.toHexString(), fileName);
+		var newFile = new Document("_id", moid).append("name", fileName).append("container", mongoid)
+				.append("FileMongoId", oid.toHexString()).append("createdAt", date);
+		var expected = new File(moid.toHexString(), date, fileName);
 		var result = fileService.createFile(mongoid, fileName, inputStream);
 		assertEquals(expected, result);
-		verify(collection).insertOne(any(Document.class));
+		verify(collection).insertOne(newFile);
 	}
 
 	@Test

@@ -13,6 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Date;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,11 +34,15 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.util.DateHelper;
 
 public class StructuredDataServiceTest extends BaseTestCase {
 
 	@Mock
-	FindIterable<Document> result;
+	private DateHelper dateHelper;
+
+	@Mock
+	private FindIterable<Document> result;
 
 	@Mock
 	private MongoCollection<Document> collection;
@@ -68,11 +74,15 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	@Test
 	public void createStructuredDataTest() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
+		Date date = new Date();
 		ObjectId oid = new ObjectId();
+		StructuredData data = new StructuredData("name", date);
+		Document toInsert = Document.parse(payload);
+		toInsert.append("_meta", data);
 
+		when(dateHelper.getDate()).thenReturn(date);
 		when(database.getCollection("collection")).thenReturn(collection);
 		doAnswer(new Answer<Void>() {
-
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				Object[] args = invocation.getArguments();
@@ -80,10 +90,37 @@ public class StructuredDataServiceTest extends BaseTestCase {
 				return null; // void method, so return null
 			}
 
-		}).when(collection).insertOne(Document.parse(payload));
+		}).when(collection).insertOne(toInsert);
+
+		var expectedData = new StructuredData();
+		expectedData.setName("name");
+		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
+		assertEquals(new StructuredData(oid.toHexString(), date, "name"), actual);
+	}
+
+	@Test
+	public void createStructuredDataTest_noStructuredData() {
+		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
+		Date date = new Date();
+		ObjectId oid = new ObjectId();
+		StructuredData data = new StructuredData(null, date);
+		Document toInsert = Document.parse(payload);
+		toInsert.append("_meta", data);
+
+		when(dateHelper.getDate()).thenReturn(date);
+		when(database.getCollection("collection")).thenReturn(collection);
+		doAnswer(new Answer<Void>() {
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				Object[] args = invocation.getArguments();
+				((Document) args[0]).append("_id", oid);
+				return null; // void method, so return null
+			}
+
+		}).when(collection).insertOne(toInsert);
 
 		var actual = service.createStructuredData("collection", new StructuredDataPayload(null, payload));
-		assertEquals(new StructuredData(oid.toHexString()), actual);
+		assertEquals(new StructuredData(oid.toHexString(), date, null), actual);
 	}
 
 	@Test
@@ -91,9 +128,11 @@ public class StructuredDataServiceTest extends BaseTestCase {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
 		when(database.getCollection("collection")).thenReturn(collection);
-		doThrow(new MongoException("message")).when(collection).insertOne(Document.parse(payload));
+		doThrow(new MongoException("message")).when(collection).insertOne(any(Document.class));
 
-		var actual = service.createStructuredData("collection", new StructuredDataPayload(null, payload));
+		var expectedData = new StructuredData();
+		expectedData.setName("name");
+		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
 		assertNull(actual);
 	}
 
@@ -101,7 +140,9 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	public void createStructuredDataTest_collectionIsNull() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
-		var actual = service.createStructuredData("collection", new StructuredDataPayload(null, payload));
+		var expectedData = new StructuredData();
+		expectedData.setName("name");
+		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
 		assertNull(actual);
 		verify(collection, never()).insertOne(any());
 	}
@@ -112,7 +153,9 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
 		when(database.getCollection("collection")).thenReturn(collection);
 
-		var actual = service.createStructuredData("collection", new StructuredDataPayload(null, payload));
+		var expectedData = new StructuredData();
+		expectedData.setName("name");
+		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
 		assertNull(actual);
 		verify(collection, never()).insertOne(any());
 	}
@@ -136,16 +179,38 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
 	@Test
 	public void getPayloadTest() {
+		Date date = new Date();
+		StructuredData data = new StructuredData(null, date, "name");
 		ObjectId oid = new ObjectId();
-		Document doc = new Document("a", "b");
+		Document doc = new Document("_id", oid);
+		doc.append("a", "b");
+		Document sd = new Document();
+		sd.append("name", data.getName());
+		sd.append("createdAt", data.getCreatedAt());
+		doc.append("_meta", sd);
 
 		when(database.getCollection("collection")).thenReturn(collection);
 		when(collection.find(eq("_id", oid))).thenReturn(result);
 		when(result.first()).thenReturn(doc);
 
 		var actual = service.getPayload("collection", oid.toHexString());
+		assertEquals(new StructuredDataPayload(new StructuredData(oid.toHexString(), date, "name"), doc.toJson()),
+				actual);
+	}
 
-		assertEquals(new StructuredDataPayload(new StructuredData(oid.toHexString()), "{\"a\": \"b\"}"), actual);
+	@Test
+	public void getPayloadTest_noMeta() {
+		ObjectId oid = new ObjectId();
+		Document doc = new Document("_id", oid);
+		doc.append("a", "b");
+
+		when(database.getCollection("collection")).thenReturn(collection);
+		when(collection.find(eq("_id", oid))).thenReturn(result);
+		when(result.first()).thenReturn(doc);
+
+		var actual = service.getPayload("collection", oid.toHexString());
+		assertEquals(new StructuredDataPayload(new StructuredData(oid.toHexString(), null, null), doc.toJson()),
+				actual);
 	}
 
 	@Test

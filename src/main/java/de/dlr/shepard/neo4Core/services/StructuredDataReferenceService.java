@@ -15,7 +15,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class StructuredDataReferenceService {
 
 	private StructuredDataReferenceDAO structuredDataReferenceDAO = new StructuredDataReferenceDAO();
@@ -38,7 +40,18 @@ public class StructuredDataReferenceService {
 		toCreate.setDataObject(dataObject);
 		toCreate.setName(structuredDataReference.getName());
 		toCreate.setStructuredDataContainer(container);
-		toCreate.setStructuredDatas(structuredDataReference.getStructuredDatas());
+
+		// Get structured data
+		for (var structuredData : structuredDataReference.getStructuredDatas()) {
+			var structuredDataPayload = structuredDataService.getPayload(container.getMongoId(),
+					structuredData.getOid());
+			if (structuredDataPayload != null) {
+				toCreate.addStructuredData(structuredDataPayload.getStructuredData());
+			} else {
+				log.warn("Could not find structured data with oid: {}", structuredData.getOid());
+			}
+		}
+
 		return structuredDataReferenceDAO.createOrUpdate(toCreate);
 	}
 

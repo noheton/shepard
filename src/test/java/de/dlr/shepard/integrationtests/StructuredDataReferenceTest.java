@@ -60,7 +60,9 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 		toCreate.setName("StructuredDataContainer");
 		container = given().spec(containerRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
 				.as(StructuredDataContainerIO.class);
-		payload = new StructuredDataPayload(null,
+		var structuredData = new StructuredData();
+		structuredData.setName("My Structured Data");
+		payload = new StructuredDataPayload(structuredData,
 				"{\"Hallo\":\"Welt\",\"number\":123,\"list\":[\"a\",\"b\"],\"object\":{\"a\":\"b\"}}");
 		var actual = given().spec(containerRequestSpec).body(payload).when()
 				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()

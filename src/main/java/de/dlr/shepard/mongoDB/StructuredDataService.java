@@ -11,12 +11,17 @@ import org.bson.types.ObjectId;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 
+import de.dlr.shepard.util.DateHelper;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class StructuredDataService {
 
+	private static final String ID_ATTR = "_id";
+	private static final String META_OBJECT = "_meta";
+
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
+	private DateHelper dateHelper = new DateHelper();
 
 	public String createStructuredDataContainer() {
 		String mongoid = "StructuredDataContainer" + UUID.randomUUID().toString();
@@ -37,14 +42,17 @@ public class StructuredDataService {
 			log.error("Could not parse json: {}", payload.getPayload());
 			return null;
 		}
+		var newName = payload.getStructuredData() != null ? payload.getStructuredData().getName() : null;
+		var structuredData = new StructuredData(newName, dateHelper.getDate());
+		toInsert.append(META_OBJECT, structuredData);
 		try {
 			collection.insertOne(toInsert);
 		} catch (MongoException e) {
 			log.error("Could not write to mongodb: {}", e.toString());
 			return null;
 		}
-		ObjectId oid = toInsert.getObjectId("_id");
-		return new StructuredData(oid.toHexString());
+		structuredData.setOid(toInsert.getObjectId(ID_ATTR).toHexString());
+		return structuredData;
 	}
 
 	public boolean deleteStructuredDataContainer(String mongoid) {
@@ -63,12 +71,16 @@ public class StructuredDataService {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return null;
 		}
-		var payloadDocument = collection.find(eq("_id", new ObjectId(oid))).first();
+		var payloadDocument = collection.find(eq(ID_ATTR, new ObjectId(oid))).first();
 		if (payloadDocument == null) {
 			log.error("Could not find document with oid: {}", oid);
 			return null;
 		}
-		StructuredDataPayload payload = new StructuredDataPayload(new StructuredData(oid), payloadDocument.toJson());
+		var structuredDataDocument = payloadDocument.get(META_OBJECT, Document.class);
+		var structuredData = structuredDataDocument != null ? new StructuredData(structuredDataDocument)
+				: new StructuredData();
+		structuredData.setOid(oid);
+		var payload = new StructuredDataPayload(structuredData, payloadDocument.toJson());
 		return payload;
 	}
 
@@ -78,7 +90,7 @@ public class StructuredDataService {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return false;
 		}
-		var result = collection.deleteOne(eq("_id", new ObjectId(oid)));
+		var result = collection.deleteOne(eq(ID_ATTR, new ObjectId(oid)));
 		if (!result.wasAcknowledged()) {
 			log.error("Could not delete document with oid: {}", oid);
 			return false;

@@ -81,14 +81,18 @@ public class StructuredDataTest extends BaseTestCaseIT {
 	@Order(4)
 	public void createStructuredData() throws JsonProcessingException {
 		var payloadMap = Map.of("Hallo", "Welt", "number", 123, "object", Map.of("a", "b"), "list", List.of("a", "b"));
+		var structuredData = new StructuredData();
+		structuredData.setName("My Structured Data");
 
-		payload = new StructuredDataPayload(null, objectMapper.writeValueAsString(payloadMap));
+		payload = new StructuredDataPayload(structuredData, objectMapper.writeValueAsString(payloadMap));
 
 		var actual = given().spec(containerRequestSpec).body(payload).when()
 				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
 				.as(StructuredData.class);
 
 		assertThat(actual.getOid()).isNotBlank();
+		assertThat(actual.getCreatedAt()).isNotNull();
+		assertThat(actual.getName()).isEqualTo("My Structured Data");
 		payload.setStructuredData(actual);
 	}
 
