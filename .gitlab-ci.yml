@@ -6,6 +6,7 @@ variables:
   REPO: shepard
   IMAGE: backend
   OPENAPI_VERSION: 5.1.0
+  CI_APPLICATION_TAG: "latest"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
@@ -16,6 +17,7 @@ cache:
 include:
   - template: Security/License-Scanning.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
 
 stages:
   - test
