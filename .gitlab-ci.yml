@@ -6,7 +6,7 @@ variables:
   REPO: shepard
   IMAGE: backend
   OPENAPI_VERSION: 5.1.0
-  CI_APPLICATION_TAG: "latest"
+  DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
