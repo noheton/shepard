@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
@@ -16,31 +17,36 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 
 	/**
 	 * Searches the database for DataObjects.
-	 * 
+	 *
 	 * @param collectionId identifies the Collection
 	 * @param params       encapsulates possible parameters
 	 * @return a List of DataObjects
 	 */
 	public List<DataObject> findByCollection(long collectionId, QueryParamHelper params) {
 		if (params.hasParentId()) {
-			return findByParentAndName(collectionId, params.getParentId(), params.getPagination(), params.getName());
+			return findByParentAndName(collectionId, params.getParentId(), params.getPagination(), params.getName(),
+					params.getOrderByAttribute(), params.getOrderDesc());
 		} else {
-			return findByName(collectionId, params.getPagination(), params.getName());
+			return findByName(collectionId, params.getPagination(), params.getName(), params.getOrderByAttribute(),
+					params.getOrderDesc());
 		}
 	}
 
 	/**
 	 * Searches the database for DataObjects.
-	 * 
+	 *
 	 * @param collectionId identifies the collection
 	 * @param page         which page should be fetched
 	 * @param name         filter dataObjects by name, this is allowed to be null
 	 * @return a List of DataObjects
 	 */
-	private List<DataObject> findByName(long collectionId, PaginationHelper page, String name) {
+	private List<DataObject> findByName(long collectionId, PaginationHelper page, String name,
+			OrderByAttribute orderByAttribute, Boolean desc) {
 		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d %s %s",
 				getObjectPart("d", "DataObject", name), collectionId, getPaginationPart(page), getReturnPart("d"));
-
+		if (orderByAttribute != null) {
+			query = query + getOrderByPart("d", orderByAttribute, desc);
+		}
 		var result = new ArrayList<DataObject>();
 		for (var obj : findByQuery(query)) {
 			if (matchCollection(obj, collectionId) && matchName(obj, name)) {
@@ -53,14 +59,15 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 
 	/**
 	 * Searches the database for DataObjects.
-	 * 
+	 *
 	 * @param collectionId identifies the collection
 	 * @param parentId     identifies the parent step
 	 * @param page         which page should be fetched
 	 * @param name         filter dataObjects by name, this is allowed to be null
 	 * @return a List of DataObjects
 	 */
-	private List<DataObject> findByParentAndName(long collectionId, long parentId, PaginationHelper page, String name) {
+	private List<DataObject> findByParentAndName(long collectionId, long parentId, PaginationHelper page, String name,
+			OrderByAttribute orderByAttribute, Boolean desc) {
 		String query;
 		if (parentId == -1) {
 			query = String.format(
@@ -74,7 +81,9 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 					getObjectPart("child", "DataObject", name), collectionId, parentId, getPaginationPart(page),
 					getReturnPart("child"));
 		}
-
+		if (orderByAttribute != null) {
+			query = query + getOrderByPart("d", orderByAttribute, desc);
+		}
 		var result = new ArrayList<DataObject>();
 		for (var obj : findByQuery(query)) {
 			if (matchCollection(obj, collectionId) && matchParent(obj, parentId) && matchName(obj, name)) {

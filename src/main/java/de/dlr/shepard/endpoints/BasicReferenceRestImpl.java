@@ -19,6 +19,7 @@ import org.apache.http.HttpStatus;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
+import de.dlr.shepard.neo4Core.orderBy.BasicReferenceAttributes;
 import de.dlr.shepard.neo4Core.services.BasicReferenceService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -40,7 +41,9 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 	@Override
 	public Response getAllReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, @QueryParam(Constants.QP_NAME) String name,
-			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size) {
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicReferenceAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL request with collection {} and dataobject {} from user {}", collectionId,
 				dataObjectId, securityContext.getUserPrincipal().getName());
 
@@ -49,6 +52,8 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 			params = params.withName(name);
 		if (page != null && size != null)
 			params = params.withPageAndSize(page, size);
+		if (orderBy != null)
+			params = params.withOrderByAttribute(orderBy, orderDesc);
 		var references = basicReferenceService.getAllBasicReferences(dataObjectId, params);
 		var result = new ArrayList<BasicReferenceIO>(references.size());
 

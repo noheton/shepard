@@ -22,6 +22,7 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -42,7 +43,9 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Override
 	public Response getAllDataObjects(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@QueryParam(Constants.QP_NAME) String name, @QueryParam(Constants.QP_PAGE) Integer page,
-			@QueryParam(Constants.QP_SIZE) Integer size, @QueryParam(Constants.QP_PARENT_ID) Long parentId) {
+			@QueryParam(Constants.QP_SIZE) Integer size, @QueryParam(Constants.QP_PARENT_ID) Long parentId,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL request with collection {} from user {}", collectionId,
 				securityContext.getUserPrincipal().getName());
 
@@ -53,6 +56,9 @@ public class DataObjectRestImpl implements DataObjectRest {
 			params = params.withPageAndSize(page, size);
 		if (parentId != null)
 			params = params.withParentId(parentId);
+		if (orderBy != null)
+			params = params.withOrderByAttribute(orderBy, orderDesc);
+
 		var dataObjects = dataObjectService.getAllDataObjects(collectionId, params);
 		var result = new ArrayList<DataObjectIO>(dataObjects.size());
 

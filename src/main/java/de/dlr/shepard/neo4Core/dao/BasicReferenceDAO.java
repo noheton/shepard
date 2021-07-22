@@ -15,29 +15,28 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 
 	/**
 	 * Searches the database for references.
-	 * 
+	 *
 	 * @param dataObjectId identifies the dataObject
 	 * @param params       encapsulates possible parameters
 	 * @return a List of references
 	 */
 	public List<BasicReference> findByDataObject(long dataObjectId, QueryParamHelper params) {
 		String query;
-		if (params.hasPagination()) {
+		if (params.hasPagination())
 			query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r %s %s",
 					getObjectPart("r", "BasicReference", params.getName()), dataObjectId,
 					getPaginationPart(params.getPagination()), getReturnPart("r"));
-		} else {
+		else
 			query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r %s",
 					getObjectPart("r", "BasicReference", params.getName()), dataObjectId, getReturnPart("r"));
-		}
-
+		if (params.hasOrderByAttribute())
+			query = query + getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
 		var result = new ArrayList<BasicReference>();
 		for (var ref : findByQuery(query)) {
 			if (matchDataObject(ref, dataObjectId) && matchName(ref, params.getName())) {
 				result.add(ref);
 			}
 		}
-
 		return result;
 	}
 

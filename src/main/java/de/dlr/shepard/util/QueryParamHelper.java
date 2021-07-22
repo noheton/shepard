@@ -1,5 +1,6 @@
 package de.dlr.shepard.util;
 
+import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,8 @@ public class QueryParamHelper {
 	private String name;
 	private PaginationHelper pagination;
 	private Long parentId;
+	private OrderByAttribute orderByAttribute;
+	private Boolean orderDesc;
 
 	public QueryParamHelper withName(String name) {
 		this.name = name;
@@ -40,6 +43,16 @@ public class QueryParamHelper {
 
 	public boolean hasParentId() {
 		return this.parentId != null;
+	}
+
+	public QueryParamHelper withOrderByAttribute(OrderByAttribute orderBy, Boolean orderDesc) {
+		this.orderByAttribute = orderBy;
+		this.orderDesc = orderDesc;
+		return this;
+	}
+
+	public boolean hasOrderByAttribute() {
+		return this.orderByAttribute != null;
 	}
 
 }

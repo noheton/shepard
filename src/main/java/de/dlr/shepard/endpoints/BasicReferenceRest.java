@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import javax.ws.rs.core.Response;
 
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
+import de.dlr.shepard.neo4Core.orderBy.BasicReferenceAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -17,7 +18,8 @@ public interface BasicReferenceRest {
 	@Operation(description = "Get all references")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = BasicReferenceIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllReferences(long collectionId, long dataObjectId, String name, Integer page, Integer size);
+	Response getAllReferences(long collectionId, long dataObjectId, String name, Integer page, Integer size,
+			BasicReferenceAttributes orderAttribute, Boolean orderDesc);
 
 	@Tag(name = Constants.BASIC_REFERENCE)
 	@Operation(description = "Get reference")

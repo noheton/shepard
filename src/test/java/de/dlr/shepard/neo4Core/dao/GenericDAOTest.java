@@ -21,6 +21,8 @@ import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
+import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.util.PaginationHelper;
 import lombok.Data;
 
@@ -140,6 +142,60 @@ public class GenericDAOTest extends BaseTestCase {
 		var pagination = new PaginationHelper(3, 100);
 		var actual = dao.getPaginationPart(pagination);
 		assertEquals("SKIP 300 LIMIT 100", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestDesc() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
+		Boolean orderDesc = true;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY c.createdAt DESC", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestNull() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
+		Boolean orderDesc = null;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY c.createdAt", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestAsc() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
+		Boolean orderDesc = null;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY c.createdAt", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestStringDesc() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
+		Boolean orderDesc = true;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY toLower(c.createdBy) DESC", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestStringNull() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
+		Boolean orderDesc = null;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY toLower(c.createdBy)", actual);
+	}
+
+	@Test
+	public void getOrderByPartTestStringAsc() {
+		String variable = "c";
+		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
+		Boolean orderDesc = null;
+		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
+		assertEquals(" ORDER BY toLower(c.createdBy)", actual);
 	}
 
 }

@@ -7,6 +7,7 @@ import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.session.Session;
 
+import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.PaginationHelper;
 import lombok.extern.log4j.Log4j2;
@@ -23,7 +24,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Find all instances of a certain entity T
-	 * 
+	 *
 	 * @return an Iterable over the found entities
 	 */
 	public Collection<T> findAll() {
@@ -33,7 +34,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Find all instances of a certain entity T
-	 * 
+	 *
 	 * @param page which page should be fetched
 	 * @return an Iterable over the found entities
 	 */
@@ -45,7 +46,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Find the entity with the given id
-	 * 
+	 *
 	 * @param id The given id
 	 * @return The entity with the given id or null
 	 */
@@ -56,7 +57,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Find entities matching the given filter
-	 * 
+	 *
 	 * @param filter The given filter
 	 * @return An iterable with the found entities
 	 */
@@ -67,7 +68,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Delete an entity
-	 * 
+	 *
 	 * @param id The entity to be deleted
 	 * @return Whether the deletion was successful or not
 	 */
@@ -82,7 +83,7 @@ public abstract class GenericDAO<T> {
 
 	/**
 	 * Save an entity and all related entities
-	 * 
+	 *
 	 * @param entity The entity to be saved
 	 * @return the saved entity
 	 */
@@ -94,7 +95,7 @@ public abstract class GenericDAO<T> {
 	/**
 	 * CAUTION: The query runs against the database and is not checked. You can do
 	 * anything you want.
-	 * 
+	 *
 	 * @param query The query
 	 * @return Iterable The result
 	 */
@@ -121,6 +122,23 @@ public abstract class GenericDAO<T> {
 		var result = String.format("MATCH path=(%s)-[*0..1]-() RETURN %s, nodes(path), relationships(path)", entity,
 				entity);
 		return result;
+	}
+
+	protected String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
+		String ret;
+		boolean isString = orderByAttribute.isString();
+		if (!isString)
+			ret = " ORDER BY " + variable + "." + orderByAttribute;
+		else
+			ret = " ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
+		boolean orderdesc;
+		if (orderDesc == null)
+			orderdesc = false;
+		else
+			orderdesc = orderDesc;
+		if (orderdesc)
+			ret = ret + " DESC";
+		return ret;
 	}
 
 	public abstract Class<T> getEntityType();

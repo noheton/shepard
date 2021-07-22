@@ -61,6 +61,8 @@ public class Constants {
 	public static final String QP_PAGE = "page";
 	public static final String QP_SIZE = "size";
 	public static final String QP_PARENT_ID = "parentId";
+	public static final String QP_ORDER_BY_ATTRIBUTE = "orderBy";
+	public static final String QP_ORDER_DESC = "orderDesc";
 
 	// Relationships
 	public static final String HAS_DATAOBJECT = "has_dataobject";

@@ -15,19 +15,22 @@ public class CollectionDAO extends GenericDAO<Collection> {
 
 	/**
 	 * Searches the database for collections.
-	 * 
+	 *
 	 * @param params encapsulates possible parameters
 	 * @return a list of collections
 	 */
+	// TODO: ignore deleted elements
 	public List<Collection> findAllCollections(QueryParamHelper params) {
 		String query;
-		if (params.hasPagination()) {
+
+		if (params.hasPagination())
 			query = String.format("MATCH %s WITH c %s %s", getObjectPart("c", "Collection", params.getName()),
 					getPaginationPart(params.getPagination()), getReturnPart("c"));
-		} else {
+		else
 			query = String.format("MATCH %s WITH c %s", getObjectPart("c", "Collection", params.getName()),
 					getReturnPart("c"));
-		}
+		if (params.hasOrderByAttribute())
+			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 
 		var result = new ArrayList<Collection>();
 		for (var col : findByQuery(query)) {
