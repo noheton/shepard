@@ -36,6 +36,9 @@
 	<properties>
 		<finalName>shepard</finalName>
 		<revision>1.0.0-SNAPSHOT</revision>
+		<skipTests>false</skipTests>
+		<skipITs>${skipTests}</skipITs>
+		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.20.2</assertj.version>
 		<commons.version>2.10.0</commons.version>
@@ -136,6 +139,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.22.2</version>
 				<configuration>
+					<skipTests>${skipUTs}</skipTests>
 					<excludes>
 						<exclude>**/integrationtests/*.java</exclude>
 					</excludes>
@@ -148,7 +152,7 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco.version}</version>
 				<configuration>
-					<skip>${skipTests}</skip>
+					<skip>${skipUTs}</skip>
 					<excludes>
 						<exclude>**/Backend.*</exclude>
 						<exclude>**/Constants.*</exclude>
@@ -176,6 +180,8 @@
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.22.2</version>
 				<configuration>
+					<skipTests>${skipTests}</skipTests>
+					<skipITs>${skipITs}</skipITs>
 					<includes>
 						<include>**/integrationtests/*.java</include>
 					</includes>

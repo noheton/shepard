@@ -42,6 +42,24 @@ test:
   stage: test
   before_script:
     - *version_number
+  script:
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipITs verify -P test
+    - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
+    - ls -hal target
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - target/surefire-reports/*
+      - target/site/jacoco/*
+    reports:
+      junit:
+        - target/surefire-reports/*.xml
+
+integration-test:
+  stage: test
+  before_script:
+    - *version_number
   variables:
     NEO4J_AUTH: neo4j/shepard
     MONGO_INITDB_ROOT_USERNAME: mongo
@@ -57,20 +75,16 @@ test:
     - name: influxdb:1.8
       alias: influxdb
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT verify -P test
-    - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipUTs verify -P test
     - ls -hal target
   artifacts:
     when: always
     expire_in: 2 days
     paths:
       - target/tomcat9x-logs/*
-      - target/surefire-reports/*
       - target/failsafe-reports/*
-      - target/site/jacoco/*
     reports:
       junit:
-        - target/surefire-reports/*.xml
         - target/failsafe-reports/*.xml
 
 site:
@@ -107,12 +121,12 @@ coverage:
 
 build:
   stage: build
-  needs: [test]
+  # we want to start the build as early as possible
+  needs: [format-prettier]
   before_script:
     - *version_number
   script:
-    - ls -hal target
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipTests -DskipITs package -P prod
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipTests package -P prod
   artifacts:
     when: always
     expire_in: 2 days
@@ -123,7 +137,6 @@ build:
 upload_docker:
   image: docker:latest
   stage: upload
-  needs: [build]
   dependencies: [build]
   services:
     - name: docker:dind
@@ -156,7 +169,6 @@ build_pythonclient:
 upload_pythonclient:
   stage: upload
   image: python:slim
-  needs: [build_pythonclient]
   dependencies: [build_pythonclient]
   before_script:
     - python3 -m pip install wheel setuptools twine
@@ -185,7 +197,6 @@ build_typescriptclient:
 upload_typescriptclient:
   stage: upload
   image: node:lts-slim
-  needs: [build_typescriptclient]
   dependencies: [build_typescriptclient]
   before_script:
     - node -v
@@ -218,7 +229,6 @@ build_javaclient:
 
 upload_javaclient:
   stage: upload
-  needs: [build_javaclient]
   dependencies: [build_javaclient]
   script:
     - cd clients/java
@@ -229,7 +239,6 @@ upload_javaclient:
 
 pages:
   stage: upload
-  needs: [site]
   dependencies: [site]
   script:
     - ls -hal target/site
