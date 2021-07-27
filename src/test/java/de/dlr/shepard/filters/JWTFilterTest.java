@@ -145,22 +145,6 @@ public class JWTFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilterWrongAudience() throws InvalidKeySpecException, NoSuchAlgorithmException {
-		Date now = new Date();
-		Date future = DateUtils.addMinutes(now, 5);
-
-		String jws = Jwts.builder().setSubject("Bob").setAudience("wrong").setExpiration(future).setNotBefore(now)
-				.setIssuedAt(new Date()).setId(UUID.randomUUID().toString()).claim("azp", "testcase")
-				.claim("name", "MyName").claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
-				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
-
-		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
-		filter.filter(context);
-		verify(context).abortWith(responseCaptor.capture());
-		assertEquals(401, responseCaptor.getValue().getStatus());
-	}
-
-	@Test
 	public void testFilterMissingSubject() throws InvalidKeySpecException, NoSuchAlgorithmException {
 		Date now = new Date();
 		Date future = DateUtils.addMinutes(now, 5);
@@ -170,20 +154,6 @@ public class JWTFilterTest extends BaseTestCase {
 				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
 				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
 				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
-
-		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
-		filter.filter(context);
-		verify(context).abortWith(responseCaptor.capture());
-		assertEquals(401, responseCaptor.getValue().getStatus());
-	}
-
-	@Test
-	public void testFilterMissingAttributes() throws InvalidKeySpecException, NoSuchAlgorithmException {
-		Date now = new Date();
-		Date future = DateUtils.addMinutes(now, 5);
-
-		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
-				.setIssuedAt(new Date()).setId(UUID.randomUUID().toString()).signWith(privateKey).compact();
 
 		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
 		filter.filter(context);

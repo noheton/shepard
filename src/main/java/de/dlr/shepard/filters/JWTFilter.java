@@ -110,8 +110,7 @@ public class JWTFilter implements ContainerRequestFilter {
 		Jws<Claims> jws;
 
 		try {
-			jws = Jwts.parserBuilder().requireAudience("account").setSigningKey(oidcPublicKey).build()
-					.parseClaimsJws(token);
+			jws = Jwts.parserBuilder().setSigningKey(oidcPublicKey).build().parseClaimsJws(token);
 			log.debug("Valid token: {}", jws.getBody().getId());
 		} catch (JwtException ex) {
 			log.warn("Invalid token: {}", ex.getMessage());
@@ -122,32 +121,21 @@ public class JWTFilter implements ContainerRequestFilter {
 
 	private JWTPrincipal parsePrincipalFromAccessToken(Jws<Claims> jws) {
 		var body = jws.getBody();
-		String keyId;
-		String subject;
-		String audience;
-		String issuedFor;
-		String username;
-		String firstName;
-		String lastName;
-		String eMail;
-		try {
-			keyId = body.getId();
-			audience = body.getAudience();
-			subject = body.getSubject();
-			issuedFor = body.get("azp").toString();
-			firstName = body.get("given_name").toString();
-			lastName = body.get("family_name").toString();
-			eMail = body.get("email").toString();
-		} catch (NullPointerException ex) {
-			log.warn("Token is missing attributes: {}", ex.getMessage());
-			return null;
-		}
+		String keyId = body.getId();
+		String subject = body.getSubject();
+		String audience = body.getAudience();
+		String issuedFor = body.get("azp", String.class);
+		String firstName = body.get("given_name", String.class);
+		String lastName = body.get("family_name", String.class);
+		String eMail = body.get("email", String.class);
+
 		if (subject == null || subject.isEmpty()) {
-			log.warn("Token is missing attributes: subject");
+			log.warn("Token is missing a subject");
 			return null;
 		}
+                // We only want the last part of the subject, since this is usually a human readable username
 		var splitted = subject.split(":");
-		username = splitted[splitted.length - 1];
+		String username = splitted[splitted.length - 1];
 
 		var principal = new JWTPrincipal(audience, issuedFor, username, firstName, lastName, eMail, keyId,
 				new String[0]);
@@ -201,7 +189,7 @@ public class JWTFilter implements ContainerRequestFilter {
 		String subject = body.getSubject();
 		String keyId = body.getId();
 		if (subject == null || subject.isEmpty()) {
-			log.warn("Token is missing attributes: subject");
+			log.warn("Token is missing a subject");
 			return null;
 		}
 
