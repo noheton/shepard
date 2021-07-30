@@ -5,14 +5,15 @@ import org.junit.jupiter.api.Test;
 import de.dlr.shepard.BaseTestCase;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class DataObjectReferenceTest extends BaseTestCase {
+public class CollectionReferenceTest extends BaseTestCase {
 
 	@Test
 	public void equalsContract() {
 
-		EqualsVerifier.simple().forClass(DataObjectReference.class)
+		EqualsVerifier.simple().forClass(CollectionReference.class)
 				.withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
-				.withPrefabValues(User.class, new User("bob"), new User("claus")).verify();
+				.withPrefabValues(User.class, new User("bob"), new User("claus"))
+				.withPrefabValues(Collection.class, new Collection(1L), new Collection(2L)).verify();
 	}
 
 }

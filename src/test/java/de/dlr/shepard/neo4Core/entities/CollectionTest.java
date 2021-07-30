@@ -16,7 +16,7 @@ public class CollectionTest extends BaseTestCase {
 		EqualsVerifier.simple().forClass(Collection.class)
 				.withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
-				.withPrefabValues(DataObjectReference.class, new DataObjectReference(1L), new DataObjectReference(2L))
+				.withPrefabValues(CollectionReference.class, new CollectionReference(1L), new CollectionReference(2L))
 				.verify();
 	}
 

@@ -16,22 +16,27 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.neo4Core.dao.CollectionDAO;
+import de.dlr.shepard.neo4Core.dao.CollectionReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
-import de.dlr.shepard.neo4Core.dao.DataObjectReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.CollectionReference;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
+import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 
-public class DataObjectReferenceServiceTest extends BaseTestCase {
+public class CollectionReferenceServiceTest extends BaseTestCase {
 
 	@Mock
-	private DataObjectReferenceDAO dao;
+	private CollectionReferenceDAO dao;
 
 	@Mock
 	private DataObjectDAO dataObjectDAO;
+
+	@Mock
+	private CollectionDAO collectionDAO;
 
 	@Mock
 	private UserDAO userDAO;
@@ -40,144 +45,144 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	private DateHelper dateHelper;
 
 	@InjectMocks
-	private DataObjectReferenceService service;
+	private CollectionReferenceService service;
 
 	@Test
-	public void getDataObjectReferenceTest_successful() {
-		var ref = new DataObjectReference(1L);
+	public void getCollectionReferenceTest_successful() {
+		var ref = new CollectionReference(1L);
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getCollectionReference(1L);
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getDataObjectReferenceTest_notFound() {
+	public void getCollectionReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getCollectionReference(1L);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getDataObjectReferenceTest_deleted() {
-		var ref = new DataObjectReference(1L);
+	public void getCollectionReferenceTest_deleted() {
+		var ref = new CollectionReference(1L);
 		ref.setDeleted(true);
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getCollectionReference(1L);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getAllDataObjectReferencesTest() {
+	public void getAllCollectionReferencesTest() {
 		var dataObject = new DataObject(200L);
-		var ref1 = new DataObjectReference(1L);
-		var ref2 = new DataObjectReference(2L);
-		var ref3 = new DataObjectReference(3L);
+		var ref1 = new CollectionReference(1L);
+		var ref2 = new CollectionReference(2L);
+		var ref3 = new CollectionReference(3L);
 		ref3.setDeleted(true);
 		dataObject.setReferences(List.of(ref1, ref2, ref3));
 
 		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2, ref3));
-		var actual = service.getAllDataObjectReferences(200L);
+		var actual = service.getAllCollectionReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createDataObjectReferenceTest() throws InvalidBodyException {
+	public void createCollectionReferenceTest() throws InvalidBodyException {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var date = new Date(30L);
-		var referenced = new DataObject(100L);
+		var referenced = new Collection(100L);
 
-		var input = new DataObjectReferenceIO() {
+		var input = new CollectionReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedCollectionId(100L);
 				setRelationship("MyRelationship");
 			}
 		};
-		var toCreate = new DataObjectReference() {
+		var toCreate = new CollectionReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
 				setName("MyName");
-				setReferencedDataObject(referenced);
+				setReferencedCollection(referenced);
 				setRelationship("MyRelationship");
 			}
 		};
-		var created = new DataObjectReference() {
+		var created = new CollectionReference() {
 			{
 				setId(1L);
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
 				setName("MyName");
-				setReferencedDataObject(referenced);
+				setReferencedCollection(referenced);
 				setRelationship("MyRelationship");
 			}
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.find(100L)).thenReturn(referenced);
+		when(collectionDAO.find(100L)).thenReturn(referenced);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 
-		var actual = service.createDataObjectReference(200L, input, "Bob");
+		var actual = service.createCollectionReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsNull() throws InvalidBodyException {
+	public void createCollectionReferenceTest_ReferencedIsNull() throws InvalidBodyException {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
-		var input = new DataObjectReferenceIO() {
+		var input = new CollectionReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedCollectionId(100L);
 				setRelationship("MyRelationship");
 			}
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.find(100L)).thenReturn(null);
+		when(collectionDAO.find(100L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createDataObjectReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createCollectionReference(200L, input, "Bob"));
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsDeleted() throws InvalidBodyException {
+	public void createCollectionReferenceTest_ReferencedIsDeleted() throws InvalidBodyException {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
-		var referenced = new DataObject(100L);
+		var referenced = new Collection(100L);
 		referenced.setDeleted(true);
-		var input = new DataObjectReferenceIO() {
+		var input = new CollectionReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedCollectionId(100L);
 				setRelationship("MyRelationship");
 			}
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.find(100L)).thenReturn(referenced);
+		when(collectionDAO.find(100L)).thenReturn(referenced);
 
-		assertThrows(InvalidBodyException.class, () -> service.createDataObjectReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createCollectionReference(200L, input, "Bob"));
 	}
 
 	@Test
 	public void deleteReferenceTest() {
 		var user = new User("Bob");
 		var date = new Date(30L);
-		var ref = new DataObjectReference(1L);
-		var expected = new DataObjectReference(1L);
+		var ref = new CollectionReference(1L);
+		var expected = new CollectionReference(1L);
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
@@ -185,7 +190,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dao.find(1L)).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteDataObjectReference(1L, "Bob");
+		var actual = service.deleteCollectionReference(1L, "Bob");
 
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
@@ -193,12 +198,12 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
 	@Test
 	public void getPayloadTest() {
-		var referenced = new DataObject(100L);
-		var reference = new DataObjectReference(1L);
-		reference.setReferencedDataObject(referenced);
+		var referenced = new Collection(100L);
+		var reference = new CollectionReference(1L);
+		reference.setReferencedCollection(referenced);
 
 		when(dao.find(1L)).thenReturn(reference);
-		when(dataObjectDAO.find(100L)).thenReturn(referenced);
+		when(collectionDAO.find(100L)).thenReturn(referenced);
 		var actual = service.getPayload(1L);
 
 		assertEquals(referenced, actual);

@@ -52,6 +52,10 @@ public class Constants {
 	public static final String DATAOBJECT_REFERENCES = "dataObjectReferences";
 	public static final String DATAOBJECT_REFERENCE_ID = "dataObjectReferenceId";
 
+	public static final String COLLECTION_REFERENCE = "collectionReference";
+	public static final String COLLECTION_REFERENCES = "collectionReferences";
+	public static final String COLLECTION_REFERENCE_ID = "collectionReferenceId";
+
 	public static final String URI_REFERENCE = "uriReference";
 	public static final String URI_REFERENCES = "uriReferences";
 	public static final String URI_REFERENCE_ID = "uriReferenceId";

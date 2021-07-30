@@ -20,6 +20,7 @@ import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.CollectionReference;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
@@ -54,6 +55,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	@Mock
 	URIReferenceService uriReferenceService;
 	@Mock
+	CollectionReferenceService collectionReferenceService;
+	@Mock
 	DataObjectReferenceService dataObjectReferenceService;
 	@Mock
 	BasicReferenceService basicReferenceService;
@@ -87,6 +90,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	PathSegment uriReferencesSeg, uriReferencesIdSeg;
 
 	@Mock
+	PathSegment collectionReferencesSeg, collectionReferencesIdSeg;
+
+	@Mock
 	PathSegment dataObjectReferencesSeg, dataObjectReferencesIdSeg;
 
 	@InjectMocks
@@ -114,6 +120,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(uriReferencesSeg.getPath()).thenReturn(Constants.URI_REFERENCES);
 
 		when(dataObjectReferencesSeg.getPath()).thenReturn(Constants.DATAOBJECT_REFERENCES);
+
+		when(collectionReferencesSeg.getPath()).thenReturn(Constants.COLLECTION_REFERENCES);
 
 	}
 
@@ -732,6 +740,81 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
 		when(uriReferenceService.getURIReference(104L)).thenReturn(reference);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
+	}
+
+	@Test
+	public void collectionReference_exists() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(collectionReferencesSeg);
+		segments.add(collectionReferencesIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		CollectionReference reference = new CollectionReference(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(dataObject);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(reference);
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void collectionReference_notFound() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(collectionReferencesSeg);
+		segments.add(collectionReferencesIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		dataObject.setCollection(collection);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
+	}
+
+	@Test
+	public void collectionReference_wrongAssociation() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(collectionReferencesSeg);
+		segments.add(collectionReferencesIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		DataObject wrong = new DataObject(103L);
+		CollectionReference reference = new CollectionReference(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(wrong);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());

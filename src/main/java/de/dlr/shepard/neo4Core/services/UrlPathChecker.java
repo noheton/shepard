@@ -20,6 +20,8 @@ public class UrlPathChecker {
 	private CollectionService collectionService = new CollectionService();
 	private DataObjectService dataObjectService = new DataObjectService();
 	private BasicReferenceService basicReferenceService = new BasicReferenceService();
+
+	private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();
 	private DataObjectReferenceService dataObjectReferenceService = new DataObjectReferenceService();
 	private URIReferenceService uriReferenceService = new URIReferenceService();
 
@@ -135,6 +137,15 @@ public class UrlPathChecker {
 			long id = Long.parseLong(pathElems.get(Constants.FILES));
 			var fileContainer = fileContainerService.getFileContainer(id);
 			String error = checkContainer(fileContainer);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
+		if (pathElems.containsKey(Constants.COLLECTION_REFERENCES)) {
+			long id = Long.parseLong(pathElems.get(Constants.COLLECTION_REFERENCES));
+			var collectionReference = collectionReferenceService.getCollectionReference(id);
+			String error = checkReference(collectionReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
 			}

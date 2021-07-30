@@ -16,9 +16,13 @@ public class CollectionIO extends AbstractDataObjectIO {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private long[] dataObjectIds;
 
+	@Schema(accessMode = AccessMode.READ_ONLY)
+	private long[] incomingIds;
+
 	public CollectionIO(Collection collection) {
 		super(collection);
 		this.dataObjectIds = extractIds(collection.getDataObjects());
+		this.incomingIds = extractIds(collection.getIncoming());
 	}
 
 }

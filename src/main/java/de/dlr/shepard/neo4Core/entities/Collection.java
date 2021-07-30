@@ -10,6 +10,7 @@ import de.dlr.shepard.util.Constants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @NodeEntity
 @Getter
@@ -20,9 +21,13 @@ public class Collection extends AbstractDataObject {
 	@Relationship(type = Constants.HAS_DATAOBJECT)
 	private List<DataObject> dataObjects = new ArrayList<DataObject>();
 
+	@ToString.Exclude
+	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
+	private List<CollectionReference> incoming = new ArrayList<CollectionReference>();
+
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public Collection(long id) {
@@ -31,7 +36,7 @@ public class Collection extends AbstractDataObject {
 
 	/**
 	 * Add one related DataObject
-	 * 
+	 *
 	 * @param dataObject the dataObject to add
 	 */
 	public void addDataObject(DataObject dataObject) {
@@ -43,6 +48,7 @@ public class Collection extends AbstractDataObject {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + HasId.hashcodeHelper(dataObjects);
+		result = prime * result + HasId.hashcodeHelper(incoming);
 		return result;
 	}
 
@@ -55,7 +61,7 @@ public class Collection extends AbstractDataObject {
 		if (!(obj instanceof Collection))
 			return false;
 		Collection other = (Collection) obj;
-		return HasId.equalsHelper(dataObjects, other.dataObjects);
+		return HasId.equalsHelper(dataObjects, other.dataObjects) && HasId.equalsHelper(incoming, other.incoming);
 	}
 
 }

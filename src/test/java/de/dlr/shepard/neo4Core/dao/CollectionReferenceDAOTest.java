@@ -1,0 +1,49 @@
+package de.dlr.shepard.neo4Core.dao;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.neo4j.ogm.session.Session;
+
+import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.neo4Core.entities.CollectionReference;
+import de.dlr.shepard.neo4Core.entities.DataObject;
+
+public class CollectionReferenceDAOTest extends BaseTestCase {
+	@Mock
+	private Session session;
+
+	@InjectMocks
+	private CollectionReferenceDAO dao;
+
+	@Test
+	public void getEntityTypeTest() {
+		var type = dao.getEntityType();
+		assertEquals(CollectionReference.class, type);
+	}
+
+	@Test
+	public void findByDataObjectTest() {
+		var obj = new DataObject(1L);
+		var obj2 = new DataObject(100L);
+		var ref = new CollectionReference(2L);
+		var ref2 = new CollectionReference(3L);
+		var ref3 = new CollectionReference(3L);
+		ref.setDataObject(obj);
+		ref2.setDataObject(obj2);
+
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:CollectionReference) WHERE ID(d)=1 "
+				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		when(session.query(CollectionReference.class, query, Collections.emptyMap()))
+				.thenReturn(List.of(ref, ref2, ref3));
+
+		var actual = dao.findByDataObject(1L);
+		assertEquals(List.of(ref), actual);
+	}
+}
