@@ -1,6 +1,5 @@
 package de.dlr.shepard.neo4Core.services;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,6 +11,7 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class StructuredDataContainerService {
 
@@ -58,15 +58,10 @@ public class StructuredDataContainerService {
 	 *
 	 * @return a list of StructuredDataContainers
 	 */
-	public List<StructuredDataContainer> getAllStructuredDataContainers() {
-		var containers = structuredDataContainerDAO.findAll();
-		var result = new ArrayList<StructuredDataContainer>(containers.size());
-		for (StructuredDataContainer structuredDataContainer : containers) {
-			if (!structuredDataContainer.isDeleted()) {
-				result.add(structuredDataContainer);
-			}
-		}
-		return result;
+	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params) {
+		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params).stream()
+				.filter(c -> !c.isDeleted()).collect(Collectors.toList());
+		return containers;
 	}
 
 	/**

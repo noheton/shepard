@@ -78,9 +78,9 @@ public class FileContainerServiceTest extends BaseTestCase {
 		var containerDeleted = new FileContainer(2L);
 		containerDeleted.setDeleted(true);
 
-		when(dao.findAll()).thenReturn(List.of(container, containerDeleted));
+		when(dao.findAllFileContainers(null)).thenReturn(List.of(container, containerDeleted));
 
-		var actual = service.getAllFileContainers();
+		var actual = service.getAllFileContainers(null);
 		assertEquals(List.of(container), actual);
 	}
 

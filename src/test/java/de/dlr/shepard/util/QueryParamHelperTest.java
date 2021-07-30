@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
 
 public class QueryParamHelperTest extends BaseTestCase {
 
@@ -51,6 +52,21 @@ public class QueryParamHelperTest extends BaseTestCase {
 		var params = new QueryParamHelper();
 		assertFalse(params.hasPagination());
 		assertNull(params.getPagination());
+	}
+
+	@Test
+	public void withOrderBy() {
+		var params = new QueryParamHelper().withOrderByAttribute(CollectionAttributes.name, true);
+		assertTrue(params.hasOrderByAttribute());
+		assertEquals(CollectionAttributes.name, params.getOrderByAttribute());
+		assertTrue(params.getOrderDesc());
+	}
+
+	@Test
+	public void withoutOrderBy() {
+		var params = new QueryParamHelper();
+		assertFalse(params.hasOrderByAttribute());
+		assertNull(params.getOrderByAttribute());
 	}
 
 }

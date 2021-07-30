@@ -11,6 +11,7 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class TimeseriesContainerService {
 
@@ -57,10 +58,10 @@ public class TimeseriesContainerService {
 	 *
 	 * @return a list of TimeseriesContainers
 	 */
-	public List<TimeseriesContainer> getAllTimeseriesContainers() {
-		List<TimeseriesContainer> timeseriesContainers = timeseriesContainerDAO.findAll().stream()
-				.filter(c -> !c.isDeleted()).collect(Collectors.toList());
-		return timeseriesContainers;
+	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params) {
+		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params).stream().filter(c -> !c.isDeleted())
+				.collect(Collectors.toList());
+		return containers;
 	}
 
 	/**

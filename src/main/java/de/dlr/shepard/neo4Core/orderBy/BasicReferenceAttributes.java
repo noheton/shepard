@@ -1,25 +1,17 @@
 package de.dlr.shepard.neo4Core.orderBy;
 
+import java.util.List;
+
 public enum BasicReferenceAttributes implements OrderByAttribute {
 	createdAt, createdBy, updatedAt, updatedBy, name, type;
 
-	private boolean isString(BasicReferenceAttributes basicReferenceAttribute) {
-		switch (basicReferenceAttribute) {
-		case createdAt:
-			return false;
-		case updatedAt:
-			return false;
-		case createdBy:
+	private static List<BasicReferenceAttributes> stringList = List.of(BasicReferenceAttributes.createdBy,
+			BasicReferenceAttributes.name, BasicReferenceAttributes.updatedBy, BasicReferenceAttributes.type);
+
+	private boolean isString(BasicReferenceAttributes referenceAttribute) {
+		if (stringList.contains(referenceAttribute))
 			return true;
-		case name:
-			return true;
-		case updatedBy:
-			return true;
-		case type:
-			return true;
-		default:
-			return false;
-		}
+		return false;
 	}
 
 	@Override

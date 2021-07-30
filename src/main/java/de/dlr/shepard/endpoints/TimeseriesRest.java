@@ -5,6 +5,7 @@ import javax.ws.rs.core.Response;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -20,7 +21,8 @@ public interface TimeseriesRest {
 	@Operation(description = "Get all timeseries containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllTimeseriesContainers();
+	Response getAllTimeseriesContainers(String name, Integer page, Integer size, ContainerAttributes orderAttribute,
+			Boolean orderDesc);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries container")

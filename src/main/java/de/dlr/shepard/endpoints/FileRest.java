@@ -8,6 +8,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
+import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +25,8 @@ public interface FileRest {
 	@Operation(description = "Get all file containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = FileContainerIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllFileContainers();
+	Response getAllFileContainers(String name, Integer page, Integer size, ContainerAttributes orderAttribute,
+			Boolean orderDesc);
 
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get file container")

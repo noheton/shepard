@@ -10,6 +10,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -21,8 +22,10 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
+import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.FileContainerService;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.log4j.Log4j2;
 
 @Subscribable
@@ -38,9 +41,20 @@ public class FileRestImpl implements FileRest {
 
 	@GET
 	@Override
-	public Response getAllFileContainers() {
+	public Response getAllFileContainers(@QueryParam(Constants.QP_NAME) String name,
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL FILE CONTAINER request from user {}", securityContext.getUserPrincipal().getName());
-		var containers = fileContainerService.getAllFileContainers();
+
+		var params = new QueryParamHelper();
+		if (name != null)
+			params = params.withName(name);
+		if (page != null && size != null)
+			params = params.withPageAndSize(page, size);
+		if (orderBy != null)
+			params = params.withOrderByAttribute(orderBy, orderDesc);
+		var containers = fileContainerService.getAllFileContainers(params);
 		var result = new ArrayList<FileContainerIO>(containers.size());
 		for (var container : containers) {
 			result.add(new FileContainerIO(container));

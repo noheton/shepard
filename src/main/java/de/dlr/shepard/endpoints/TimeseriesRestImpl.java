@@ -9,6 +9,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -19,8 +20,10 @@ import org.apache.http.HttpStatus;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.TimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.log4j.Log4j2;
 
 @Subscribable
@@ -36,9 +39,20 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@GET
 	@Override
-	public Response getAllTimeseriesContainers() {
+	public Response getAllTimeseriesContainers(@QueryParam(Constants.QP_NAME) String name,
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
-		var containers = timeseriesContainerService.getAllTimeseriesContainers();
+
+		var params = new QueryParamHelper();
+		if (name != null)
+			params = params.withName(name);
+		if (page != null && size != null)
+			params = params.withPageAndSize(page, size);
+		if (orderBy != null)
+			params = params.withOrderByAttribute(orderBy, orderDesc);
+		var containers = timeseriesContainerService.getAllTimeseriesContainers(params);
 		var result = new ArrayList<TimeseriesContainerIO>(containers.size());
 		for (var container : containers) {
 			result.add(new TimeseriesContainerIO(container));

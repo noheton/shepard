@@ -1,23 +1,17 @@
 package de.dlr.shepard.neo4Core.orderBy;
 
+import java.util.List;
+
 public enum CollectionAttributes implements OrderByAttribute {
 	createdAt, createdBy, updatedAt, updatedBy, name;
 
-	public boolean isString(CollectionAttributes collectionAttribute) {
-		switch (collectionAttribute) {
-		case createdAt:
-			return false;
-		case updatedAt:
-			return false;
-		case createdBy:
+	private static List<CollectionAttributes> stringList = List.of(CollectionAttributes.createdBy,
+			CollectionAttributes.name, CollectionAttributes.updatedBy);
+
+	private boolean isString(CollectionAttributes collectionAttribute) {
+		if (stringList.contains(collectionAttribute))
 			return true;
-		case name:
-			return true;
-		case updatedBy:
-			return true;
-		default:
-			return false;
-		}
+		return false;
 	}
 
 	@Override

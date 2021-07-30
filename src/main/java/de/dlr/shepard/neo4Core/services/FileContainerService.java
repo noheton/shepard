@@ -1,7 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,6 +12,7 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class FileContainerService {
 
@@ -57,15 +57,10 @@ public class FileContainerService {
 	 *
 	 * @return a list of FileContainers
 	 */
-	public List<FileContainer> getAllFileContainers() {
-		var containers = fileContainerDAO.findAll();
-		var result = new ArrayList<FileContainer>(containers.size());
-		for (FileContainer fileContainer : containers) {
-			if (!fileContainer.isDeleted()) {
-				result.add(fileContainer);
-			}
-		}
-		return result;
+	public List<FileContainer> getAllFileContainers(QueryParamHelper params) {
+		var containers = fileContainerDAO.findAllFileContainers(params).stream().filter(c -> !c.isDeleted())
+				.collect(Collectors.toList());
+		return containers;
 	}
 
 	/**
