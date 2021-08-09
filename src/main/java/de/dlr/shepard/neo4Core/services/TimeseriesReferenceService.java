@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -25,8 +24,7 @@ public class TimeseriesReferenceService {
 
 	public List<TimeseriesReference> getAllTimeseriesReferences(long dataObjectId) {
 		var references = timeseriesReferenceDAO.findByDataObject(dataObjectId);
-		var result = references.stream().filter(r -> !r.isDeleted()).collect(Collectors.toList());
-		return result;
+		return references;
 	}
 
 	public TimeseriesReference getTimeseriesReference(long timeseriesId) {

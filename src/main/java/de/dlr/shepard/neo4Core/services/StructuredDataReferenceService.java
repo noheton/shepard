@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
@@ -57,8 +56,7 @@ public class StructuredDataReferenceService {
 
 	public List<StructuredDataReference> getAllStructuredDataReferences(long dataObjectId) {
 		var references = structuredDataReferenceDAO.findByDataObject(dataObjectId);
-		var result = references.stream().filter(r -> !r.isDeleted()).collect(Collectors.toList());
-		return result;
+		return references;
 	}
 
 	/**

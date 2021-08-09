@@ -44,8 +44,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setCollection(c2);
 		d1.setChildren(List.of(d3, d4));
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) WHERE ID(c)=2 WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper();
@@ -66,9 +65,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setCollection(c2);
 		d1.setChildren(List.of(d3, d4));
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) WHERE ID(c)=2 WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper();
@@ -91,9 +88,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setCollection(c2);
 		d1.setChildren(List.of(d3, d4));
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) "
-				+ "WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -114,10 +109,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setCollection(c2);
 		d1.setChildren(List.of(d3, d4));
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) "
-				+ "WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -138,8 +130,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setCollection(c);
 		d3.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) WHERE ID(c)=2 WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -158,9 +149,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setCollection(c);
 		d3.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) WHERE ID(c)=2 WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -181,9 +170,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setCollection(c);
 		d3.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -202,10 +189,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setCollection(c);
 		d3.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -234,9 +218,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d6.setCollection(c);
 		d6.setParent(d3);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject ) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject {deleted: false}) WHERE ID(c)=2 AND ID(parent)=1 WITH child  MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(1L);
@@ -264,10 +246,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d6.setCollection(c);
 		d6.setParent(d3);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject ) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject {deleted: false}) WHERE ID(c)=2 AND ID(parent)=1 WITH child  MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(1L);
@@ -297,9 +276,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d6.setCollection(c);
 		d6.setParent(d3);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(-1L);
@@ -326,10 +303,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d6.setCollection(c);
 		d6.setParent(d3);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject ) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d  "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject {deleted: false}) WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(-1L);
@@ -354,9 +328,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setParent(d1);
 		d4.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : \"Yes\" }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
@@ -379,10 +351,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setParent(d1);
 		d4.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : \"Yes\" }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
@@ -403,9 +372,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setParent(d1);
 		d3.setName("Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject ) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject {deleted: false}) WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
@@ -424,10 +391,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setParent(d1);
 		d3.setName("Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject ) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject {deleted: false}) WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
@@ -453,9 +417,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setParent(d1);
 		d4.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
@@ -479,10 +441,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d4.setParent(d1);
 		d4.setName("No");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 "
-				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->(child:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child SKIP 300 LIMIT 100 MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
@@ -512,9 +471,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d5.setParent(d1);
 		d5.setName("Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
@@ -542,10 +499,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d5.setParent(d1);
 		d5.setName("Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\" }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d SKIP 300 LIMIT 100 "
-				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(d.name) DESC";
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : \"Yes\", deleted: false }) WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject) WITH d SKIP 300 LIMIT 100 MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
 		when(session.query(DataObject.class, query, Collections.emptyMap())).thenReturn(List.of(d1, d3, d4, d5, d6));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");

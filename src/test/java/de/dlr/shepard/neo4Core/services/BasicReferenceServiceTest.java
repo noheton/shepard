@@ -58,7 +58,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 		var ref = new BasicReference(1L);
 		ref.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(ref);
+		when(dao.find(1L)).thenReturn(null);
 
 		var actual = service.getBasicReference(1L);
 		assertNull(actual);
@@ -72,7 +72,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 		ref3.setDeleted(true);
 
 		var params = new QueryParamHelper().withName("test");
-		when(dao.findByDataObject(200L, params)).thenReturn(List.of(ref1, ref2, ref3));
+		when(dao.findByDataObject(200L, params)).thenReturn(List.of(ref1, ref2));
 		var actual = service.getAllBasicReferences(200L, params);
 
 		assertEquals(List.of(ref1, ref2), actual);

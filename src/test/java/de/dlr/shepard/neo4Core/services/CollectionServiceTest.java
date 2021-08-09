@@ -57,7 +57,7 @@ public class CollectionServiceTest extends BaseTestCase {
 	public void getCollectionTest_deleted() {
 		Collection collection = new Collection(1L);
 		collection.setDeleted(true);
-		when(dao.find(1L)).thenReturn(collection);
+		when(dao.find(1L)).thenReturn(null);
 		assertNull(service.getCollection(1L));
 	}
 
@@ -90,7 +90,7 @@ public class CollectionServiceTest extends BaseTestCase {
 		Collection collectionDeleted = new Collection(6L);
 		collectionDeleted.setDeleted(true);
 
-		when(dao.findAllCollections(null)).thenReturn(List.of(collectionDeleted, collectionNotDeleted));
+		when(dao.findAllCollections(null)).thenReturn(List.of(collectionNotDeleted));
 		List<Collection> returned = service.getAllCollections(null);
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}
@@ -102,7 +102,7 @@ public class CollectionServiceTest extends BaseTestCase {
 		collectionDeleted.setDeleted(true);
 
 		var params = new QueryParamHelper().withName("test");
-		when(dao.findAllCollections(params)).thenReturn(List.of(collectionDeleted, collectionNotDeleted));
+		when(dao.findAllCollections(params)).thenReturn(List.of(collectionNotDeleted));
 		List<Collection> returned = service.getAllCollections(params);
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}

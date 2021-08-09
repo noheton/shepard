@@ -1,7 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
@@ -22,8 +21,7 @@ public class CollectionReferenceService {
 
 	public List<CollectionReference> getAllCollectionReferences(long dataObjectId) {
 		var references = collectionReferenceDAO.findByDataObject(dataObjectId);
-		var result = references.stream().filter(r -> !r.isDeleted()).collect(Collectors.toList());
-		return result;
+		return references;
 	}
 
 	public CollectionReference getCollectionReference(long collectionReferenceId) {

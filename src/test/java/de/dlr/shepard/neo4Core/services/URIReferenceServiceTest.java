@@ -75,11 +75,9 @@ public class URIReferenceServiceTest extends BaseTestCase {
 		var dataObject = new DataObject(200L);
 		var ref1 = new URIReference(1L);
 		var ref2 = new URIReference(2L);
-		var ref3 = new URIReference(3L);
-		ref3.setDeleted(true);
-		dataObject.setReferences(List.of(ref1, ref2, ref3));
+		dataObject.setReferences(List.of(ref1, ref2));
 
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2, ref3));
+		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
 		var actual = service.getAllURIReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);

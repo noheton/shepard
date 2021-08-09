@@ -23,7 +23,7 @@ public class DataObjectService {
 
 	/**
 	 * Creates a DataObject and stores it in Neo4J
-	 * 
+	 *
 	 * @param collectionId identifies the Collection
 	 * @param dataObject   to be stored
 	 * @param username     of the related user
@@ -54,7 +54,7 @@ public class DataObjectService {
 
 	/**
 	 * Searches the neo4j database for a dataObject
-	 * 
+	 *
 	 * @param id identifies the searched dataObject
 	 * @return the DataObject with the given id or null
 	 */
@@ -69,7 +69,7 @@ public class DataObjectService {
 
 	/**
 	 * Searches the database for DataObjects.
-	 * 
+	 *
 	 * @param collectionId identifies the collection
 	 * @param params       encapsulates possible parameters
 	 * @return a List of DataObjects
@@ -77,8 +77,7 @@ public class DataObjectService {
 	public List<DataObject> getAllDataObjects(long collectionId, QueryParamHelper params) {
 		var unfiltered = dataObjectDAO.findByCollection(collectionId, params);
 
-		var dataObjects = unfiltered.stream().filter(d -> !d.isDeleted()).peek(this::cutDeleted)
-				.collect(Collectors.toList());
+		var dataObjects = unfiltered.stream().peek(this::cutDeleted).collect(Collectors.toList());
 
 		return dataObjects;
 	}
@@ -86,7 +85,7 @@ public class DataObjectService {
 	/**
 	 * Updates a DataObject with new attributes. Hereby only not null attributes
 	 * will replace the old attributes.
-	 * 
+	 *
 	 * @param dataObjectId Identifies the dataObject
 	 * @param dataObject   DataObject entity for updating.
 	 * @param username     of the related user
@@ -116,7 +115,7 @@ public class DataObjectService {
 
 	/**
 	 * set the deleted flag for the DataObject
-	 * 
+	 *
 	 * @param dataObjectId identifies the DataObject to be deleted
 	 * @param username     of the related user
 	 * @return a boolean to identify if the DataObject was successfully removed

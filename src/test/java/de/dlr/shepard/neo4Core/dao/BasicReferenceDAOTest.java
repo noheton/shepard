@@ -43,8 +43,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference ) WHERE ID(d)=1 WITH r "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper();
@@ -68,8 +67,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref5.setDataObject(obj);
 		ref5.setName("No");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\" }) WHERE ID(d)=1 WITH r "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -94,9 +92,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref5.setDataObject(obj);
 		ref5.setName("No");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\" }) WHERE ID(d)=1 WITH r "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(r.name) DESC";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
 		when(session.query(BasicReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -120,8 +116,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference ) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -142,9 +137,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference ) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(r.name) DESC";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
 		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -170,9 +163,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref5.setDataObject(obj);
 		ref5.setName("No");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\" }) "
-				+ "WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -197,10 +188,7 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref5.setDataObject(obj);
 		ref5.setName("No");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\" }) "
-				+ "WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(r.name) DESC";
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
 		when(session.query(BasicReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref3, ref4, ref5));
 

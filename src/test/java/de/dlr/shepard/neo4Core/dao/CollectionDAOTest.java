@@ -35,8 +35,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col1 = new Collection(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:Collection ) "
-				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+		var query = "MATCH (c:Collection {deleted: false}) WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -50,9 +49,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col1 = new Collection(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:Collection ) "
-				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
+		var query = "MATCH (c:Collection {deleted: false}) WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -70,8 +67,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col2 = new Collection(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:Collection { name : \"Yes\" }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+		var query = "MATCH (c:Collection { name : \"Yes\", deleted: false }) WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -87,9 +83,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col2 = new Collection(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:Collection { name : \"Yes\" }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
+		var query = "MATCH (c:Collection { name : \"Yes\", deleted: false }) WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -105,8 +99,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col1 = new Collection(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:Collection ) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+		var query = "MATCH (c:Collection {deleted: false}) WITH c SKIP 300 LIMIT 100 MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -120,9 +113,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col1 = new Collection(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:Collection ) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
+		var query = "MATCH (c:Collection {deleted: false}) WITH c SKIP 300 LIMIT 100 MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -140,8 +131,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col2 = new Collection(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:Collection { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+		var query = "MATCH (c:Collection { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -157,9 +147,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var col2 = new Collection(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:Collection { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
+		var query = "MATCH (c:Collection { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
 		when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");

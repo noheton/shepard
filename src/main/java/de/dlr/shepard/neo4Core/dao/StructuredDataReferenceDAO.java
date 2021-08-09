@@ -10,14 +10,13 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 
 	/**
 	 * Searches the database for references.
-	 * 
+	 *
 	 * @param dataObjectId identifies the dataObject
 	 * @return a List of references
 	 */
 	public List<StructuredDataReference> findByDataObject(long dataObjectId) {
-		String query = String.format(
-				"MATCH (d:DataObject)-[hr:has_reference]->(r:StructuredDataReference) WHERE ID(d)=%d ", dataObjectId)
-				+ getReturnPart("r");
+		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
+				getObjectPart("r", "StructuredDataReference", null), dataObjectId) + getReturnPart("r");
 
 		var queryResult = findByQuery(query);
 

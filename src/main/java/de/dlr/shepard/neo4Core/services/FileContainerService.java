@@ -58,8 +58,7 @@ public class FileContainerService {
 	 * @return a list of FileContainers
 	 */
 	public List<FileContainer> getAllFileContainers(QueryParamHelper params) {
-		var containers = fileContainerDAO.findAllFileContainers(params).stream().filter(c -> !c.isDeleted())
-				.collect(Collectors.toList());
+		var containers = fileContainerDAO.findAllFileContainers(params);
 		return containers;
 	}
 

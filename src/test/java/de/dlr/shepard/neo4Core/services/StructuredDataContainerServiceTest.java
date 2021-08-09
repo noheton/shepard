@@ -74,14 +74,13 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getAllStructuredDataContainerTest_successful() {
-		var container = new StructuredDataContainer(1L);
-		var containerDeleted = new StructuredDataContainer(2L);
-		containerDeleted.setDeleted(true);
+		var container1 = new StructuredDataContainer(1L);
+		var container2 = new StructuredDataContainer(2L);
 
-		when(dao.findAllStructuredDataContainers(null)).thenReturn(List.of(container, containerDeleted));
+		when(dao.findAllStructuredDataContainers(null)).thenReturn(List.of(container1, container2));
 
 		var actual = service.getAllStructuredDataContainers(null);
-		assertEquals(List.of(container), actual);
+		assertEquals(List.of(container1, container2), actual);
 	}
 
 	@Test

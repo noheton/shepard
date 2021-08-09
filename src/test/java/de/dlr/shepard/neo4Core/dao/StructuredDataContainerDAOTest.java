@@ -35,7 +35,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:StructuredDataContainer ) "
+		var query = "MATCH (c:StructuredDataContainer {deleted: false}) "
 				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
@@ -50,7 +50,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:StructuredDataContainer ) "
+		var query = "MATCH (c:StructuredDataContainer {deleted: false}) "
 				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
@@ -70,7 +70,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\" }) WITH c "
+		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(col1, col2));
@@ -88,7 +88,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\" }) WITH c "
+		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
@@ -107,7 +107,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:StructuredDataContainer ) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
@@ -122,7 +122,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:StructuredDataContainer ) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
@@ -142,7 +142,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(col1, col2));
@@ -160,7 +160,7 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))

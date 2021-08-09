@@ -59,8 +59,7 @@ public class StructuredDataContainerService {
 	 * @return a list of StructuredDataContainers
 	 */
 	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params) {
-		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params).stream()
-				.filter(c -> !c.isDeleted()).collect(Collectors.toList());
+		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params);
 		return containers;
 	}
 

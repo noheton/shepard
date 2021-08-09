@@ -106,7 +106,7 @@ public abstract class GenericDAO<T> {
 	}
 
 	protected String getObjectPart(String variable, String type, String name) {
-		var namePart = name != null ? String.format("{ name : \"%s\" }", name) : "";
+		var namePart = name != null ? String.format("{ name : \"%s\", deleted: false }", name) : "{deleted: false}";
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}

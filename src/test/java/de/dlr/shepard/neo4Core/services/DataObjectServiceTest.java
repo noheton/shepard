@@ -131,11 +131,9 @@ public class DataObjectServiceTest extends BaseTestCase {
 	@Test
 	public void getDataObjectsTest() {
 		DataObject dataObjectNotDeleted = new DataObject(5L);
-		DataObject dataObjectDeleted = new DataObject(6L);
-		dataObjectDeleted.setDeleted(true);
 
 		var params = new QueryParamHelper().withName("Name");
-		when(dao.findByCollection(1L, params)).thenReturn(List.of(dataObjectNotDeleted, dataObjectDeleted));
+		when(dao.findByCollection(1L, params)).thenReturn(List.of(dataObjectNotDeleted));
 		List<DataObject> returned = service.getAllDataObjects(1L, params);
 		assertEquals(List.of(dataObjectNotDeleted), returned);
 	}

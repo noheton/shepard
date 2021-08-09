@@ -88,11 +88,9 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var dataObject = new DataObject(200L);
 		var ref1 = new FileReference(1L);
 		var ref2 = new FileReference(2L);
-		var ref3 = new FileReference(3L);
-		ref3.setDeleted(true);
-		dataObject.setReferences(List.of(ref1, ref2, ref3));
+		dataObject.setReferences(List.of(ref1, ref2));
 
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2, ref3));
+		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
 		var actual = service.getAllFileReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);

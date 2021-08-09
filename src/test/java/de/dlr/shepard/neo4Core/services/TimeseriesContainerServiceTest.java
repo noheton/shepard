@@ -73,14 +73,13 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getAllTimeseriesContainerTest_successful() {
-		var container = new TimeseriesContainer(1L);
-		var containerDeleted = new TimeseriesContainer(2L);
-		containerDeleted.setDeleted(true);
+		var container1 = new TimeseriesContainer(1L);
+		var container2 = new TimeseriesContainer(2L);
 
-		when(dao.findAllTimeseriesContainers(null)).thenReturn(List.of(container, containerDeleted));
+		when(dao.findAllTimeseriesContainers(null)).thenReturn(List.of(container1, container2));
 
 		var actual = service.getAllTimeseriesContainers(null);
-		assertEquals(List.of(container), actual);
+		assertEquals(List.of(container1, container2), actual);
 	}
 
 	@Test

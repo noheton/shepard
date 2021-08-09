@@ -65,8 +65,7 @@ public class CollectionService {
 	public List<Collection> getAllCollections(QueryParamHelper params) {
 		var queryResult = collectionDAO.findAllCollections(params);
 
-		var collections = queryResult.stream().filter(c -> !c.isDeleted()).peek(this::cutDeleted)
-				.collect(Collectors.toList());
+		var collections = queryResult.stream().peek(this::cutDeleted).collect(Collectors.toList());
 
 		return collections;
 	}

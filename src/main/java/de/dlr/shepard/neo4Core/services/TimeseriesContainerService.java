@@ -1,7 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -59,8 +58,7 @@ public class TimeseriesContainerService {
 	 * @return a list of TimeseriesContainers
 	 */
 	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params) {
-		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params).stream().filter(c -> !c.isDeleted())
-				.collect(Collectors.toList());
+		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params);
 		return containers;
 	}
 

@@ -1,7 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -17,9 +16,9 @@ public class BasicReferenceService {
 
 	/**
 	 * Searches the neo4j database for a BasicReference
-	 * 
+	 *
 	 * @param id identifies the searched BasicReference
-	 * 
+	 *
 	 * @return the BasicReference with the given id or null
 	 */
 	public BasicReference getBasicReference(long id) {
@@ -32,21 +31,19 @@ public class BasicReferenceService {
 
 	/**
 	 * Searches the database for BasicReferences.
-	 * 
+	 *
 	 * @param dataObjectId identifies the DataObject
 	 * @param params       encapsulates possible parameters
 	 * @return a List of BasicReferences
 	 */
 	public List<BasicReference> getAllBasicReferences(long dataObjectId, QueryParamHelper params) {
 		var references = basicReferenceDAO.findByDataObject(dataObjectId, params);
-		List<BasicReference> basicReferences = references.stream().filter(r -> !r.isDeleted())
-				.collect(Collectors.toList());
-		return basicReferences;
+		return references;
 	}
 
 	/**
 	 * Set the deleted flag for the Reference
-	 * 
+	 *
 	 * @param basicReferenceId identifies the BasicReference to be deleted
 	 * @param username         identifies the user
 	 * @return a boolean to identify if the BasicReference was successfully removed

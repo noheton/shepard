@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -38,12 +39,13 @@ public class DataObjectReferenceDAOTest extends BaseTestCase {
 		ref.setDataObject(obj);
 		ref2.setDataObject(obj2);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference) WHERE ID(d)=1 "
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference {deleted: false}) WHERE ID(d)=1 "
 				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
 		when(session.query(DataObjectReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref2, ref3));
 
 		var actual = dao.findByDataObject(1L);
+		verify(session).query(DataObjectReference.class, query, Collections.emptyMap());
 		assertEquals(List.of(ref), actual);
 	}
 }

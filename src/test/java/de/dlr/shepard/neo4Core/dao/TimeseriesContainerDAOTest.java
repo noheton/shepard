@@ -35,7 +35,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col1 = new TimeseriesContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:TimeseriesContainer ) "
+		var query = "MATCH (c:TimeseriesContainer {deleted: false}) "
 				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
@@ -50,7 +50,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col1 = new TimeseriesContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:TimeseriesContainer ) "
+		var query = "MATCH (c:TimeseriesContainer {deleted: false}) "
 				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
@@ -70,7 +70,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col2 = new TimeseriesContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\" }) WITH c "
+		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\", deleted: false }) WITH c "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
@@ -87,7 +87,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col2 = new TimeseriesContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\" }) WITH c "
+		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\", deleted: false }) WITH c "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
@@ -105,7 +105,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col1 = new TimeseriesContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:TimeseriesContainer ) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:TimeseriesContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
 
@@ -120,7 +120,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col1 = new TimeseriesContainer(1L);
 		col1.setName("Yes");
 
-		var query = "MATCH (c:TimeseriesContainer ) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:TimeseriesContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
@@ -140,7 +140,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col2 = new TimeseriesContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
 
@@ -157,7 +157,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var col2 = new TimeseriesContainer(2L);
 		col2.setName("No");
 
-		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\" }) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:TimeseriesContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
 				+ " ORDER BY toLower(c.name) DESC";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1, col2));
