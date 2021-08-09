@@ -5,6 +5,19 @@
 - [Docker](https://docs.docker.com/engine/) and [Docker Compose](https://docs.docker.com/compose/) are installed.
 - A reverse proxy (e.g. [nginx](https://www.nginx.com/)) is installed.
 - You have SSL certificates and DNS entries (both with and without wildcard respectively) for your host.
+- There is an OpenID Connect identity provider. [Keycloak](https://www.keycloak.org/) is recommended, but not necessary.
+
+## System requirements
+
+Depending on how you want to use shepard, the system requirements can vary greatly.
+While most services are relatively lightweight, the databases and shepard backend can be quite demanding.
+As a starting point, 8 GB per service may be sufficient.
+Additionally, most services benefit greatly from many CPU cores.
+The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
+
+- [neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
+- [InfluxDB system requirements](https://docs.influxdata.com/influxdb/v1.8/guides/hardware_sizing/#influxdb-oss-guidelines)
+- [MongoDB system requirements](https://www.mongodb.com/blog/post/performance-best-practices-hardware-and-os-configuration)
 
 ## Installation
 
@@ -57,14 +70,18 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 ```
 
 6. Check configuration in `docker-compose.yml` and especially check available memory
-7. Set passwords and configuration in `.env` file
+7. Copy the `env.example` file to `.env` and set passwords and configuration in this file
    - All variables must be set!
    - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`)
    - The database passwords can be changed arbitrarily at the beginning
    - `OIDC_PUBLIC` is the public key of the keycloak
    - `OIDC_AUTHORITY` is the URL of the keycloak realm (e.g. `https://keycloak.example.com/auth/realms/master/`)
-   - `CLIENT_ID` is the client ID of the Vue frontend
+   - `CLIENT_ID` is the client ID of the frontend
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
+
+```bash
+cp env.example .env
+```
 
 ## Start
 
