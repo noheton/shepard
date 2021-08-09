@@ -72,7 +72,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		if (parentId == -1) {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
-							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject) WITH d %s %s",
+							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d %s %s",
 					getObjectPart("d", "DataObject", name), collectionId, getPaginationPart(page), getReturnPart("d"));
 		} else {
 			query = String.format(
@@ -101,11 +101,13 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	}
 
 	private boolean matchParent(DataObject obj, long parentId) {
-		if (obj.getParent() != null && obj.getParent().getId().equals(parentId))
-			return true;
-		else if (obj.getParent() == null && parentId == -1)
-			return true;
-		return false;
+		if (parentId == -1) {
+			// return true if parent is null or parent is deleted
+			return obj.getParent() == null || (obj.getParent() != null && obj.getParent().isDeleted());
+		} else {
+			// return true if parent is not deleted and parent id equals parentId
+			return obj.getParent() != null && !obj.getParent().isDeleted() && obj.getParent().getId().equals(parentId);
+		}
 	}
 
 	private boolean matchCollection(DataObject obj, long collectionId) {
