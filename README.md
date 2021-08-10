@@ -1,4 +1,4 @@
-# GitLab Releases
+# Shepard Releases
 
 This project can be used to create automatic releases with release notes.
 
