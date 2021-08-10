@@ -9,6 +9,7 @@ from gitlab.v4.objects.projects import Project
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
 TEMPLATE_FILE = "release_notes.md"
+TOKEN_FILE = "token.txt"
 
 PROJECTS = {"backend": 27250272, "frontend": 27250279}
 
@@ -67,7 +68,7 @@ def get_release_tag() -> str:
 
 if __name__ == "__main__":
     token = ""
-    with open("token.txt", "r") as f:
+    with open(TOKEN_FILE, "r") as f:
         token = f.read()
     instance = Gitlab("https://gitlab.com", token)
 
