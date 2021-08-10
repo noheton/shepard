@@ -1,4 +1,4 @@
-# Shepard Releases
+# shepard releases
 
 This project can be used to create automatic releases with release notes.
 
