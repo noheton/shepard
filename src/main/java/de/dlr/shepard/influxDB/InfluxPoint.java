@@ -17,8 +17,9 @@ import lombok.NoArgsConstructor;
 public class InfluxPoint {
 
 	@JsonProperty("timestamp")
+	@Schema(description = "Time in nanoseconds since epoch")
 	private long timeInNanoseconds;
 
-	@Schema(anyOf = { String.class, Number.class, Boolean.class })
+	@Schema(anyOf = { String.class, Number.class, Boolean.class }, description = "A string, a number or a boolean")
 	private Object value;
 }

@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.bson.Document;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @NoArgsConstructor
 public class StructuredData extends AbstractMongoObject {
+
+	@Schema(nullable = true)
 	private String name;
 
 	public StructuredData(String oid) {

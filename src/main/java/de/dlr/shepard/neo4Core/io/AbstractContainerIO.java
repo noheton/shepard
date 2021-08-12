@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "AbstractContainer")
 public abstract class AbstractContainerIO extends AbstractEntityIO {
 
+	@Schema(nullable = true)
 	private String name;
 
 	public AbstractContainerIO(AbstractContainer container) {

@@ -23,7 +23,7 @@ public abstract class AbstractMongoObject implements HasId {
 	private String oid;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	@Schema(accessMode = AccessMode.READ_ONLY)
+	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
 	private Date createdAt;
 
 	/**

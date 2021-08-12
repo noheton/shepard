@@ -19,12 +19,16 @@ public class SubscriptionIO {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private Long id;
 
+	@Schema(nullable = true)
 	private String name;
 
+	@Schema(nullable = true)
 	private String callbackURL;
 
+	@Schema(nullable = true)
 	private String subscribedURL;
 
+	@Schema(nullable = true)
 	private RequestMethod requestMethod;
 
 	@Schema(accessMode = AccessMode.READ_ONLY)

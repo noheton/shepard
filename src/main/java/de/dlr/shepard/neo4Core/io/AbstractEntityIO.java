@@ -28,10 +28,10 @@ public abstract class AbstractEntityIO implements HasId {
 	private String createdBy;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	@Schema(accessMode = AccessMode.READ_ONLY)
+	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
 	private Date updatedAt;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
+	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
 	private String updatedBy;
 
 	public AbstractEntityIO(AbstractEntity entity) {

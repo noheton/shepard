@@ -15,8 +15,10 @@ import lombok.NoArgsConstructor;
 @Schema(name = "AbstractDataObject")
 public abstract class AbstractDataObjectIO extends AbstractEntityIO {
 
+	@Schema(nullable = true)
 	private String name;
 
+	@Schema(nullable = true)
 	private String description;
 
 	private Map<String, String> attributes = new HashMap<>();

@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "BasicReference")
 public class BasicReferenceIO extends AbstractEntityIO {
 
+	@Schema(nullable = true)
 	private String name;
 
 	@Schema(accessMode = AccessMode.READ_ONLY)

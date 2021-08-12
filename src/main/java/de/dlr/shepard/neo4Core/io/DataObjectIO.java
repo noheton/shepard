@@ -27,6 +27,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private long[] childrenIds;
 
+	@Schema(nullable = true)
 	private Long parentId;
 
 	@Schema(accessMode = AccessMode.READ_ONLY)

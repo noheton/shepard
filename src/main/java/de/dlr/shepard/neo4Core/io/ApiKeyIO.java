@@ -19,6 +19,7 @@ public class ApiKeyIO {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private UUID uid;
 
+	@Schema(nullable = true)
 	private String name;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING)

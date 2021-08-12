@@ -14,6 +14,7 @@ public class CollectionReferenceIO extends BasicReferenceIO {
 
 	private long referencedCollectionId;
 
+	@Schema(nullable = true)
 	private String relationship;
 
 	public CollectionReferenceIO(CollectionReference ref) {

@@ -14,6 +14,7 @@ public class DataObjectReferenceIO extends BasicReferenceIO {
 
 	private long referencedDataObjectId;
 
+	@Schema(nullable = true)
 	private String relationship;
 
 	public DataObjectReferenceIO(DataObjectReference ref) {

@@ -16,6 +16,7 @@ public class EventIO {
 
 	private SubscriptionIO subscription;
 
+	@Schema(nullable = true)
 	private HasIdIO subscribedObject;
 
 	private String url;
