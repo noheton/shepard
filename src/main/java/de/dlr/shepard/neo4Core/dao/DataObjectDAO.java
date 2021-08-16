@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
@@ -42,13 +44,20 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	 */
 	private List<DataObject> findByName(long collectionId, PaginationHelper page, String name,
 			OrderByAttribute orderByAttribute, Boolean desc) {
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", name);
+		if (page != null) {
+			paramsMap.put("offset", page.getOffset());
+			paramsMap.put("size", page.getSize());
+		}
 		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d %s %s",
-				getObjectPart("d", "DataObject", name), collectionId, getPaginationPart(page), getReturnPart("d"));
+				getParameterizedObjectPart("d", "DataObject", name != null), collectionId,
+				getParameterizedPaginationPart(page != null), getReturnPart("d"));
 		if (orderByAttribute != null) {
 			query = query + getOrderByPart("d", orderByAttribute, desc);
 		}
 		var result = new ArrayList<DataObject>();
-		for (var obj : findByQuery(query)) {
+		for (var obj : findByQuery(query, paramsMap)) {
 			if (matchCollection(obj, collectionId) && matchName(obj, name)) {
 				result.add(obj);
 			}
@@ -69,23 +78,30 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	private List<DataObject> findByParentAndName(long collectionId, long parentId, PaginationHelper page, String name,
 			OrderByAttribute orderByAttribute, Boolean desc) {
 		String query;
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", name);
+		if (page != null) {
+			paramsMap.put("offset", page.getOffset());
+			paramsMap.put("size", page.getSize());
+		}
 		if (parentId == -1) {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
 							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d %s %s",
-					getObjectPart("d", "DataObject", name), collectionId, getPaginationPart(page), getReturnPart("d"));
+					getParameterizedObjectPart("d", "DataObject", name != null), collectionId,
+					getParameterizedPaginationPart(page != null), getReturnPart("d"));
 		} else {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->%s "
 							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH child %s %s",
-					getObjectPart("child", "DataObject", name), collectionId, parentId, getPaginationPart(page),
-					getReturnPart("child"));
+					getParameterizedObjectPart("child", "DataObject", name != null), collectionId, parentId,
+					getParameterizedPaginationPart(page != null), getReturnPart("child"));
 		}
 		if (orderByAttribute != null) {
 			query = query + getOrderByPart("d", orderByAttribute, desc);
 		}
 		var result = new ArrayList<DataObject>();
-		for (var obj : findByQuery(query)) {
+		for (var obj : findByQuery(query, paramsMap)) {
 			if (matchCollection(obj, collectionId) && matchParent(obj, parentId) && matchName(obj, name)) {
 				result.add(obj);
 			}

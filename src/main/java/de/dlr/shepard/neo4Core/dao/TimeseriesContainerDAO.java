@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -10,18 +12,21 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 
 	public List<TimeseriesContainer> findAllTimeseriesContainers(QueryParamHelper params) {
 		String query;
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
+		}
 
-		if (params.hasPagination())
-			query = String.format("MATCH %s WITH c %s %s", getObjectPart("c", "TimeseriesContainer", params.getName()),
-					getPaginationPart(params.getPagination()), getReturnPart("c"));
-		else
-			query = String.format("MATCH %s WITH c %s", getObjectPart("c", "TimeseriesContainer", params.getName()),
-					getReturnPart("c"));
+		query = String.format("MATCH %s WITH c %s %s",
+				getParameterizedObjectPart("c", "TimeseriesContainer", params.hasName()),
+				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("c"));
 		if (params.hasOrderByAttribute())
 			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 
 		var result = new ArrayList<TimeseriesContainer>();
-		for (var container : findByQuery(query)) {
+		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {
 				result.add(container);
 			}

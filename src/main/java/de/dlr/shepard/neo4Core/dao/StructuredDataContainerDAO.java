@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -10,19 +12,20 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 
 	public List<StructuredDataContainer> findAllStructuredDataContainers(QueryParamHelper params) {
 		String query;
-
-		if (params.hasPagination())
-			query = String.format("MATCH %s WITH c %s %s",
-					getObjectPart("c", "StructuredDataContainer", params.getName()),
-					getPaginationPart(params.getPagination()), getReturnPart("c"));
-		else
-			query = String.format("MATCH %s WITH c %s", getObjectPart("c", "StructuredDataContainer", params.getName()),
-					getReturnPart("c"));
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
+		}
+		query = String.format("MATCH %s WITH c %s %s",
+				getParameterizedObjectPart("c", "StructuredDataContainer", params.hasName()),
+				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("c"));
 		if (params.hasOrderByAttribute())
 			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 
 		var result = new ArrayList<StructuredDataContainer>();
-		for (var container : findByQuery(query)) {
+		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {
 				result.add(container);
 			}

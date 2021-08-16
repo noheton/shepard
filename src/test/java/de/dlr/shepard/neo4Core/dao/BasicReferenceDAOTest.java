@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -42,13 +43,16 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref.setName("Yes");
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
-		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r  MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper();
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -66,14 +70,16 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setName("Yes");
 		ref5.setDataObject(obj);
 		ref5.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
-		when(session.query(BasicReference.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(ref, ref3, ref4, ref5));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r  MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withName("Yes");
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -91,16 +97,19 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setName("Yes");
 		ref5.setDataObject(obj);
 		ref5.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
-		when(session.query(BasicReference.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(ref, ref3, ref4, ref5));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r  MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) "
+				+ "ORDER BY toLower(r.name) DESC";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withName("Yes");
 		var basicReferenceAttribute = BasicReferenceAttributes.name;
 		params = params.withOrderByAttribute(basicReferenceAttribute, true);
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -115,13 +124,19 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref.setName("Yes");
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
-		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "RETURN r, nodes(path), relationships(path)";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -136,15 +151,21 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref.setName("Yes");
 		ref4.setDataObject(obj2);
 		ref4.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference {deleted: false}) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
-		when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref3, ref4));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var basicReferenceAttribute = BasicReferenceAttributes.name;
 		params = params.withOrderByAttribute(basicReferenceAttribute, true);
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -162,14 +183,19 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setName("Yes");
 		ref5.setDataObject(obj);
 		ref5.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
-		when(session.query(BasicReference.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(ref, ref3, ref4, ref5));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "RETURN r, nodes(path), relationships(path)";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 
@@ -187,16 +213,21 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		ref4.setName("Yes");
 		ref5.setDataObject(obj);
 		ref5.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : \"Yes\", deleted: false }) WHERE ID(d)=1 WITH r SKIP 300 LIMIT 100 MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
-		when(session.query(BasicReference.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(ref, ref3, ref4, ref5));
+		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "RETURN r, nodes(path), relationships(path) ORDER BY toLower(r.name) DESC";
+		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var basicReferenceAttribute = BasicReferenceAttributes.name;
 		params = params.withOrderByAttribute(basicReferenceAttribute, true);
 		var actual = dao.findByDataObject(1L, params);
-		verify(session).query(BasicReference.class, query, Collections.emptyMap());
+		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
 	}
 }

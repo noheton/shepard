@@ -7,8 +7,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -125,9 +125,10 @@ public class GenericDAOTest extends BaseTestCase {
 	public void findByQueryTest() {
 		var a = new TestObject(1);
 		var query = "MATCH (n {a: 1}) RETURN n";
+		Map<String, Object> params = Map.of("a", "b", "c", "d");
 
-		when(session.query(TestObject.class, query, Collections.emptyMap())).thenReturn(List.of(a));
-		var actual = dao.findByQuery(query);
+		when(session.query(TestObject.class, query, params)).thenReturn(List.of(a));
+		var actual = dao.findByQuery(query, params);
 		assertEquals(List.of(a), actual);
 	}
 
@@ -135,13 +136,6 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getReturnPartTest() {
 		var actual = dao.getReturnPart("entity");
 		assertEquals("MATCH path=(entity)-[*0..1]-() RETURN entity, nodes(path), relationships(path)", actual);
-	}
-
-	@Test
-	public void getPaginationPartTest() {
-		var pagination = new PaginationHelper(3, 100);
-		var actual = dao.getPaginationPart(pagination);
-		assertEquals("SKIP 300 LIMIT 100", actual);
 	}
 
 	@Test
@@ -196,6 +190,34 @@ public class GenericDAOTest extends BaseTestCase {
 		Boolean orderDesc = null;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
 		assertEquals(" ORDER BY toLower(c.createdBy)", actual);
+	}
+
+	@Test
+	public void getParameterizedObjectPartTest_WithName() {
+		String variable = "c";
+		String type = "Collection";
+		var actual = dao.getParameterizedObjectPart(variable, type, true);
+		assertEquals("(c:Collection { name : $name, deleted: false })", actual);
+	}
+
+	@Test
+	public void getParameterizedObjectPartTest_WithoutName() {
+		String variable = "c";
+		String type = "Collection";
+		var actual = dao.getParameterizedObjectPart(variable, type, false);
+		assertEquals("(c:Collection { deleted: false })", actual);
+	}
+
+	@Test
+	public void getParameterizedPaginationPartTest_WithPagination() {
+		var actual = dao.getParameterizedPaginationPart(true);
+		assertEquals("SKIP $offset LIMIT $size", actual);
+	}
+
+	@Test
+	public void getParameterizedPaginationPartTest_WithoutPagination() {
+		var actual = dao.getParameterizedPaginationPart(false);
+		assertEquals("", actual);
 	}
 
 }

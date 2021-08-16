@@ -60,7 +60,6 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 			@PathParam(Constants.APIKEY_UID) String apiKeyUid) {
 		log.info("Received GET request with parameters: userID: {} apiKeyUid: {} from user {}", username, apiKeyUid,
 				securityContext.getUserPrincipal().getName());
-
 		UUID uid;
 		try {
 			uid = UUID.fromString(apiKeyUid);

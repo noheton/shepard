@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -34,14 +35,15 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 	public void findAll_WithoutName() {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer {deleted: false}) "
-				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
+		var query = "MATCH (c:StructuredDataContainer { deleted: false }) WITH c  MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -49,17 +51,18 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 	public void findAll_WithoutNameOrderByNameDesc() {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer {deleted: false}) "
-				+ "WITH c MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
+		var query = "MATCH (c:StructuredDataContainer { deleted: false }) WITH c  MATCH path=(c)-[*0..1]-() "
+				+ "RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -69,15 +72,16 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		col1.setName("Yes");
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(col1, col2));
+		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) WITH c  MATCH path=(c)-[*0..1]-() "
+				+ "RETURN c, nodes(path), relationships(path)";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -87,18 +91,18 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		col1.setName("Yes");
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(col1, col2));
+		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) WITH c  MATCH path=(c)-[*0..1]-() "
+				+ "RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -106,14 +110,18 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 	public void findAll_WithPage() {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer { deleted: false }) WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -121,17 +129,20 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 	public void findAll_WithPageOrderByNameDesc() {
 		var col1 = new StructuredDataContainer(1L);
 		col1.setName("Yes");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer {deleted: false}) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(List.of(col1));
+		var query = "MATCH (c:StructuredDataContainer { deleted: false }) WITH c SKIP $offset LIMIT $size "
+				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -141,15 +152,18 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		col1.setName("Yes");
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
+		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(col1, col2));
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 
@@ -159,18 +173,20 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		col1.setName("Yes");
 		var col2 = new StructuredDataContainer(2L);
 		col2.setName("No");
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 300);
+		paramsMap.put("size", 100);
+		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : \"Yes\", deleted: false }) WITH c SKIP 300 LIMIT 100 "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)"
-				+ " ORDER BY toLower(c.name) DESC";
-		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
-				.thenReturn(List.of(col1, col2));
+		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
+				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path) ORDER BY toLower(c.name) DESC";
+		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
 		var actual = dao.findAllStructuredDataContainers(params);
-		verify(session).query(StructuredDataContainer.class, query, Collections.emptyMap());
+		verify(session).query(StructuredDataContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
 }

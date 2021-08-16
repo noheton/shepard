@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -19,21 +21,21 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	 * @param params encapsulates possible parameters
 	 * @return a list of collections
 	 */
-	// TODO: ignore deleted elements
+
 	public List<Collection> findAllCollections(QueryParamHelper params) {
 		String query;
-
-		if (params.hasPagination())
-			query = String.format("MATCH %s WITH c %s %s", getObjectPart("c", "Collection", params.getName()),
-					getPaginationPart(params.getPagination()), getReturnPart("c"));
-		else
-			query = String.format("MATCH %s WITH c %s", getObjectPart("c", "Collection", params.getName()),
-					getReturnPart("c"));
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
+		}
+		query = String.format("MATCH %s WITH c %s %s", getParameterizedObjectPart("c", "Collection", params.hasName()),
+				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("c"));
 		if (params.hasOrderByAttribute())
 			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
-
 		var result = new ArrayList<Collection>();
-		for (var col : findByQuery(query)) {
+		for (var col : findByQuery(query, paramsMap)) {
 			if (matchName(col, params.getName())) {
 				result.add(col);
 			}

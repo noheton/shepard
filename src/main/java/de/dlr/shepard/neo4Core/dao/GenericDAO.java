@@ -1,7 +1,7 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Map;
 
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
@@ -99,23 +99,41 @@ public abstract class GenericDAO<T> {
 	 * @param query The query
 	 * @return Iterable The result
 	 */
-	protected Iterable<T> findByQuery(String query) {
+	protected Iterable<T> findByQuery(String query, Map<String, Object> paramsMap) {
 		log.debug("Run query: {}", query);
-		Iterable<T> iter = session.query(getEntityType(), query, Collections.emptyMap());
+		String params = "";
+		for (String key : paramsMap.keySet()) {
+			params = params + "(" + key + ", " + paramsMap.get(key) + ")\n";
+		}
+		log.debug("queryParams: {}", params);
+		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
 		return iter;
 	}
 
-	protected String getObjectPart(String variable, String type, String name) {
-		var namePart = name != null ? String.format("{ name : \"%s\", deleted: false }", name) : "{deleted: false}";
+	protected String getParameterizedObjectPart(String variable, String type, boolean hasName) {
+		if (hasName)
+			return getObjectPartWithName(variable, type);
+		else
+			return getObjectPartWithoutName(variable, type);
+	}
+
+	private String getObjectPartWithName(String variable, String type) {
+		var namePart = String.format("{ name : $name, deleted: false }");
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}
 
-	protected String getPaginationPart(PaginationHelper page) {
-		if (page == null)
-			return "";
-		var result = String.format("SKIP %d LIMIT %d", page.getOffset(), page.getSize());
+	private String getObjectPartWithoutName(String variable, String type) {
+		var namePart = String.format("{ deleted: false }");
+		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
+	}
+
+	protected String getParameterizedPaginationPart(boolean hasPagination) {
+		if (hasPagination)
+			return "SKIP $offset LIMIT $size";
+		else
+			return "";
 	}
 
 	protected String getReturnPart(String entity) {
