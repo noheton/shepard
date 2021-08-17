@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		obj.setDataObject(dataObject);
 		obj.setStructuredDataContainer(container);
 		obj.setStructuredDatas(List.of(structuredData));
+		String[] oids = obj.getStructuredDatas().stream().map(sd -> sd.getOid()).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -51,7 +54,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		assertEquals("claus", converted.getUpdatedBy());
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(3L, converted.getStructuredDataContainerId());
-		assertEquals(obj.getStructuredDatas(), converted.getStructuredDatas());
+		assertTrue(Arrays.equals(oids, converted.getStructuredDataOids()));
 	}
 
 	@Test
@@ -67,6 +70,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		obj.setName("MyName");
 		obj.setDataObject(dataObject);
 		obj.setStructuredDatas(List.of(structuredData));
+		String[] oids = obj.getStructuredDatas().stream().map(sd -> sd.getOid()).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -75,7 +79,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(-1, converted.getStructuredDataContainerId());
-		assertEquals(obj.getStructuredDatas(), converted.getStructuredDatas());
+		assertTrue(Arrays.equals(oids, converted.getStructuredDataOids()));
 	}
 
 }

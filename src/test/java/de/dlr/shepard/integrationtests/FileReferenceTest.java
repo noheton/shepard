@@ -7,7 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -70,7 +69,7 @@ public class FileReferenceTest extends BaseTestCaseIT {
 	public void createFileReference() {
 		var toCreate = new FileReferenceIO();
 		toCreate.setName("FileReferenceDummy");
-		toCreate.setFiles(List.of(file));
+		toCreate.setFileOids(new String[] { file.getOid() });
 		toCreate.setFileContainerId(container.getId());
 
 		var actual = given().spec(referencesRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
@@ -83,7 +82,7 @@ public class FileReferenceTest extends BaseTestCaseIT {
 		assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
 		assertThat(actual.getName()).isEqualTo("FileReferenceDummy");
 		assertThat(actual.getFileContainerId()).isEqualTo(container.getId());
-		assertThat(actual.getFiles()).containsExactly(file);
+		assertThat(actual.getFileOids()).containsExactly(file.getOid());
 		assertThat(actual.getType()).isEqualTo("FileReference");
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();

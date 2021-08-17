@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setDataObject(dataObject);
 		obj.setFileContainer(container);
 		obj.setFiles(List.of(file));
+		String[] oids = obj.getFiles().stream().map(f -> f.getOid()).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -51,7 +54,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		assertEquals("claus", converted.getUpdatedBy());
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(3L, converted.getFileContainerId());
-		assertEquals(obj.getFiles(), converted.getFiles());
+		assertTrue(Arrays.equals(oids, converted.getFileOids()));
 	}
 
 	@Test
@@ -67,6 +70,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setName("MyName");
 		obj.setDataObject(dataObject);
 		obj.setFiles(List.of(file));
+		String[] oids = obj.getFiles().stream().map(f -> f.getOid()).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -75,7 +79,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(-1, converted.getFileContainerId());
-		assertEquals(obj.getFiles(), converted.getFiles());
+		assertTrue(Arrays.equals(oids, converted.getFileOids()));
 	}
 
 }

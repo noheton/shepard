@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Date;
 import java.util.List;
 
+import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
@@ -54,7 +55,7 @@ public class TimeseriesReferenceIOTest extends BaseTestCase {
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(obj.getEnd(), converted.getEnd());
 		assertEquals(obj.getStart(), converted.getStart());
-		assertEquals(obj.getTimeseries(), converted.getTimeseries());
+		assertEquals(obj.getTimeseries(), Arrays.asList(converted.getTimeseries()));
 		assertEquals(3L, converted.getTimeseriesContainerId());
 	}
 
@@ -82,7 +83,7 @@ public class TimeseriesReferenceIOTest extends BaseTestCase {
 		assertEquals(2L, converted.getDataObjectId());
 		assertEquals(obj.getEnd(), converted.getEnd());
 		assertEquals(obj.getStart(), converted.getStart());
-		assertEquals(obj.getTimeseries(), converted.getTimeseries());
+		assertEquals(obj.getTimeseries(), Arrays.asList(converted.getTimeseries()));
 		assertEquals(-1, converted.getTimeseriesContainerId());
 	}
 

@@ -53,12 +53,12 @@ public class FileReferenceService {
 		toCreate.setFileContainer(container);
 
 		// Get filename per file
-		for (var file : fileReference.getFiles()) {
-			var newFile = fileService.getFile(container.getMongoId(), file.getOid());
+		for (var file : fileReference.getFileOids()) {
+			var newFile = fileService.getFile(container.getMongoId(), file);
 			if (newFile != null) {
 				toCreate.addFile(newFile);
 			} else {
-				log.warn("Could not find file with oid: {}", file.getOid());
+				log.warn("Could not find file with oid: {}", file);
 			}
 		}
 

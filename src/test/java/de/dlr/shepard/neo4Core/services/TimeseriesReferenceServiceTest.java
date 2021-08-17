@@ -108,7 +108,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
 				setTimeseriesContainerId(300L);
 			}
 		};
@@ -159,7 +159,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
 				setTimeseriesContainerId(300L);
 			}
 		};
@@ -180,7 +180,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
 				setTimeseriesContainerId(300L);
 			}
 		};

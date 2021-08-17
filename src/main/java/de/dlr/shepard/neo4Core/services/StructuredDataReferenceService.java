@@ -41,13 +41,12 @@ public class StructuredDataReferenceService {
 		toCreate.setStructuredDataContainer(container);
 
 		// Get structured data
-		for (var structuredData : structuredDataReference.getStructuredDatas()) {
-			var structuredDataPayload = structuredDataService.getPayload(container.getMongoId(),
-					structuredData.getOid());
+		for (var structuredData : structuredDataReference.getStructuredDataOids()) {
+			var structuredDataPayload = structuredDataService.getPayload(container.getMongoId(), structuredData);
 			if (structuredDataPayload != null) {
 				toCreate.addStructuredData(structuredDataPayload.getStructuredData());
 			} else {
-				log.warn("Could not find structured data with oid: {}", structuredData.getOid());
+				log.warn("Could not find structured data with oid: {}", structuredData);
 			}
 		}
 

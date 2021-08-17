@@ -84,7 +84,7 @@ public class TimeseriesReferenceTest extends BaseTestCaseIT {
 		toCreate.setName("TimeseriesReferenceDummy");
 		toCreate.setStart(nanos - 1000000000L);
 		toCreate.setEnd(nanos + 1000000000L * numPoints);
-		toCreate.setTimeseries(List.of(payload.getTimeseries()));
+		toCreate.setTimeseries(new Timeseries[] { payload.getTimeseries() });
 		toCreate.setTimeseriesContainerId(container.getId());
 
 		var actual = given().spec(referencesRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
@@ -98,7 +98,7 @@ public class TimeseriesReferenceTest extends BaseTestCaseIT {
 		assertThat(actual.getStart()).isEqualTo(nanos - 1000000000L);
 		assertThat(actual.getEnd()).isEqualTo(nanos + 1000000000L * numPoints);
 		assertThat(actual.getName()).isEqualTo("TimeseriesReferenceDummy");
-		assertThat(actual.getTimeseries()).isEqualTo(List.of(payload.getTimeseries()));
+		assertThat(actual.getTimeseries()).isEqualTo(new Timeseries[] { payload.getTimeseries() });
 		assertThat(actual.getType()).isEqualTo("TimeseriesReference");
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();

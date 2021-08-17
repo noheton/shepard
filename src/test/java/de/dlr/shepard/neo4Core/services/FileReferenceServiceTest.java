@@ -103,12 +103,11 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var container = new FileContainer(300L);
 		container.setMongoId("mongoId");
 		var date = new Date(30L);
-		var file = new File("oid", null);
 		var fileComplete = new File("oid", "name");
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
-				setFiles(List.of(file));
+				setFileOids(new String[] { "oid" });
 				setFileContainerId(300L);
 			}
 		};
@@ -152,11 +151,10 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var container = new FileContainer(300L);
 		container.setMongoId("mongoId");
 		var date = new Date(30L);
-		var file = new File("oid", null);
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
-				setFiles(List.of(file));
+				setFileOids(new String[] { "oid" });
 				setFileContainerId(300L);
 			}
 		};
@@ -199,11 +197,10 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var dataObject = new DataObject(200L);
 		var container = new FileContainer(300L);
 		container.setDeleted(true);
-		var file = new File("oid", "name");
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
-				setFiles(List.of(file));
+				setFileOids(new String[] { "oid" });
 				setFileContainerId(300L);
 			}
 		};
@@ -219,11 +216,10 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	public void createFileReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
-		var file = new File("oid", "name");
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
-				setFiles(List.of(file));
+				setFileOids(new String[] { "oid" });
 				setFileContainerId(300L);
 			}
 		};

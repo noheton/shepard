@@ -3,7 +3,6 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -75,7 +74,7 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 	public void createStructuredDataReference() {
 		var toCreate = new StructuredDataReferenceIO();
 		toCreate.setName("StructuredDataReferenceDummy");
-		toCreate.setStructuredDatas(List.of(payload.getStructuredData()));
+		toCreate.setStructuredDataOids(new String[] { payload.getStructuredData().getOid() });
 		toCreate.setStructuredDataContainerId(container.getId());
 
 		var actual = given().spec(referencesRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
@@ -88,7 +87,7 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 		assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
 		assertThat(actual.getName()).isEqualTo("StructuredDataReferenceDummy");
 		assertThat(actual.getStructuredDataContainerId()).isEqualTo(container.getId());
-		assertThat(actual.getStructuredDatas()).containsExactly(payload.getStructuredData());
+		assertThat(actual.getStructuredDataOids()).containsExactly(payload.getStructuredData().getOid());
 		assertThat(actual.getType()).isEqualTo("StructuredDataReference");
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();

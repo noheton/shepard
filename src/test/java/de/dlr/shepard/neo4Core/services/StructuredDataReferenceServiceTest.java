@@ -107,7 +107,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDatas(List.of(new StructuredData("oid")));
+				setStructuredDataOids(new String[] { "oid" });
 				setStructuredDataContainerId(300L);
 			}
 		};
@@ -155,7 +155,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDatas(List.of(new StructuredData("oid")));
+				setStructuredDataOids(new String[] { "oid" });
 				setStructuredDataContainerId(300L);
 			}
 		};
@@ -198,11 +198,10 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var dataObject = new DataObject(200L);
 		var container = new StructuredDataContainer(300L);
 		container.setDeleted(true);
-		var structuredData = new StructuredData("oid");
 		var input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDatas(List.of(structuredData));
+				setStructuredDataOids(new String[] { "oid" });
 				setStructuredDataContainerId(300L);
 			}
 		};
@@ -218,11 +217,10 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	public void createStructuredDataReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
-		var structuredData = new StructuredData("oid");
 		var input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDatas(List.of(structuredData));
+				setStructuredDataOids(new String[] { "oid" });
 				setStructuredDataContainerId(300L);
 			}
 		};

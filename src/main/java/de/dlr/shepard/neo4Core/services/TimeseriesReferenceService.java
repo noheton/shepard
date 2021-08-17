@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -53,7 +54,7 @@ public class TimeseriesReferenceService {
 		toCreate.setName(timeseriesReference.getName());
 		toCreate.setStart(timeseriesReference.getStart());
 		toCreate.setEnd(timeseriesReference.getEnd());
-		toCreate.setTimeseries(timeseriesReference.getTimeseries());
+		toCreate.setTimeseries(Arrays.asList(timeseriesReference.getTimeseries()));
 		toCreate.setTimeseriesContainer(container);
 
 		var created = timeseriesReferenceDAO.createOrUpdate(toCreate);
