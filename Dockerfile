@@ -1,4 +1,4 @@
-FROM tomcat:9.0.50-jdk11-openjdk-slim
+FROM tomcat:9.0.52-jdk11-openjdk-slim
 
 COPY server.xml /usr/local/tomcat/conf/
 COPY target/shepard.war /usr/local/tomcat/webapps/shepard.war

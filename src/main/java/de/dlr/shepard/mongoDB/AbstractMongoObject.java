@@ -29,7 +29,7 @@ public abstract class AbstractMongoObject implements HasId {
 	/**
 	 * Constructor
 	 *
-	 * @param oid
+	 * @param oid Object Identifier
 	 */
 	public AbstractMongoObject(String oid) {
 		this.oid = oid;

@@ -41,21 +41,20 @@
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.20.2</assertj.version>
-		<commons.version>2.10.0</commons.version>
+		<commons.version>2.11.0</commons.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.21</influxdb.version>
-		<jacoco.version>0.8.7</jacoco.version>
 		<jersey.version>2.34</jersey.version>
 		<jjwt.version>0.11.2</jjwt.version>
 		<junit.version>5.7.2</junit.version>
 		<log4j.version>2.14.1</log4j.version>
 		<lombok.version>1.18.20</lombok.version>
 		<mockito.version>3.11.2</mockito.version>
-		<mongodb.version>4.2.3</mongodb.version>
-		<neo4j.version>3.2.24</neo4j.version>
+		<mongodb.version>4.3.1</mongodb.version>
+		<neo4j.version>3.2.25</neo4j.version>
 		<restassured.version>4.4.0</restassured.version>
 		<swagger.version>2.1.10</swagger.version>
-		<tomcat.version>9.0.50</tomcat.version>
+		<tomcat.version>9.0.52</tomcat.version>
 	</properties>
 
 	<profiles>
@@ -150,7 +149,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>${jacoco.version}</version>
+				<version>0.8.7</version>
 				<configuration>
 					<skip>${skipUTs}</skip>
 					<excludes>
@@ -262,12 +261,8 @@
 					</execution>
 				</executions>
 			</plugin>
-		</plugins>
-	</build>
 
-	<!-- ####### Reports ####### -->
-	<reporting>
-		<plugins>
+			<!-- ####### Reports ####### -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
@@ -282,6 +277,39 @@
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>versions-maven-plugin</artifactId>
 				<version>2.8.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<version>3.0.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>3.14.0</version>
+			</plugin>
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.2.3</version>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!-- ####### Reports ####### -->
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
 				<configuration>
 					<rulesUri>file://${session.executionRootDirectory}/version-rules.xml</rulesUri>
 				</configuration>
@@ -298,24 +326,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>3.0.0</version>
 				<configuration>
 					<linkJavadoc>true</linkJavadoc>
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.2.0</version>
-				<configuration>
-					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-					<doclint>all,-missing</doclint>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>${jacoco.version}</version>
 				<reportSets>
 					<reportSet>
 						<reports>
@@ -328,12 +345,10 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.14.0</version>
 			</plugin>
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.2.3</version>
 				<configuration>
 					<onlyAnalyze>de.dlr.shepard.*</onlyAnalyze>
 					<effort>Max</effort>
@@ -448,7 +463,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.7</version>
+			<version>3.7.1</version>
 			<scope>test</scope>
 		</dependency>
 

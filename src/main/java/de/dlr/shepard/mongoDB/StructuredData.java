@@ -36,7 +36,7 @@ public class StructuredData extends AbstractMongoObject {
 	/**
 	 * Converts a document to StructuredData
 	 *
-	 * @param doc
+	 * @param doc Document
 	 */
 	public StructuredData(Document doc) {
 		super(doc.getString("oid"), doc.getDate("createdAt"));
