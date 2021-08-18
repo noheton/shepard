@@ -248,9 +248,9 @@
 				<version>${swagger.version}</version>
 				<configuration>
 					<configurationFilePath>${project.build.directory}/${finalName}/WEB-INF/classes/openapi.yaml</configurationFilePath>
-					<outputFileName>swagger</outputFileName>
+					<outputFileName>openapi</outputFileName>
 					<outputFormat>JSONANDYAML</outputFormat>
-					<outputPath>${project.build.directory}/swagger</outputPath>
+					<outputPath>${project.build.directory}/openapi</outputPath>
 				</configuration>
 				<executions>
 					<execution>
