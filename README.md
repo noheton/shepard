@@ -18,30 +18,38 @@ Information about the deployment can be found [here](https://gitlab.com/dlr-shep
 
 ### Downloads
 
-- JDK 11: <https://adoptopenjdk.net/?variant=openjdk11&jvmVariant=hotspot>
-- Eclipse IDE for Enterprise Java Developers: <https://www.eclipse.org/downloads/packages/>
-- Tomcat 9: <https://tomcat.apache.org/download-90.cgi>
+- OpenJDK 11 (LTS): <https://adoptopenjdk.net/?variant=openjdk11&jvmVariant=hotspot>
+- Eclipse IDE for Enterprise Java and Web Developers: <https://www.eclipse.org/downloads/packages/>
+- Apache Tomcat 9: <https://tomcat.apache.org/download-90.cgi>
 - Project Lombok: <https://projectlombok.org/download>
 - Postman (optional): <https://www.getpostman.com/downloads/>
 
 ### Installation
 
-1. install JDK
-2. unpack Eclipse
-3. unpack Tomcat
+1. install OpenJDK 11 (LTS)
+2. install Eclipse IDE for Enterprise Java and Web Developers
+3. unpack Apache Tomcat 9
 4. install Project Lombok (run JAR file and follow the installer)
 5. clone Git repository
 6. import project into Eclipse (File -> Open Projects from File System...)
 7. link Tomcat with Eclipse (create a new server in tab `Servers` and select Tomcat)
-8. if needed, modify the file `src/main/resources/db.properties` and configure databases
-9. start the project: right click on the project -> Run on Server
 
-### Local databases (optional)
+### Local databases
 
 1. install Docker and Docker Compose
 2. change to the root directory
-3. run `docker-compose up`.
+3. run `docker-compose up`
 4. local instances of the databases will be launched without persistent storage
+
+### First run
+
+> If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
+
+1. start the project: right click on the project -> Run on Server
+2. run the integration tests: right click on `src/test/java/en/dlr/shepard/integrationtests` -> Run as JUnit Test
+3. go to <http://localhost:7474/> and log in to your local neo4j database
+4. obtain your api key with the following query: `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
+5. switch to the table view and copy the attribute `jws`, this is your api key
 
 ### Code Review Checklist
 
