@@ -2,6 +2,8 @@ package de.dlr.shepard.neo4Core.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	SubscriptionService subscriptionService;
 
 	@Mock
-	PathSegment slashSeg;
+	PathSegment slashSeg, dummySeg, dummyIdSeg;
 
 	@Mock
 	PathSegment collectionsSeg, collectionIdSeg, dataObjectsSeg, dataObjectIdSeg, basicReferencesSeg,
@@ -100,6 +102,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 	@BeforeEach
 	public void setupSegments() {
+		when(dummySeg.getPath()).thenReturn("dummy");
+		when(dummyIdSeg.getPath()).thenReturn("123");
+
 		when(collectionsSeg.getPath()).thenReturn(Constants.COLLECTIONS);
 		when(dataObjectsSeg.getPath()).thenReturn(Constants.DATAOBJECTS);
 		when(basicReferencesSeg.getPath()).thenReturn(Constants.BASIC_REFERENCES);
@@ -122,7 +127,6 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectReferencesSeg.getPath()).thenReturn(Constants.DATAOBJECT_REFERENCES);
 
 		when(collectionReferencesSeg.getPath()).thenReturn(Constants.COLLECTION_REFERENCES);
-
 	}
 
 	@Test
@@ -392,6 +396,21 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
+	public void timeseries_wrongUrl() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+
+		segments.add(dummySeg);
+		segments.add(dummyIdSeg);
+		segments.add(timeseriesSeg);
+		segments.add(timeseriesIdSeg);
+
+		when(timeseriesIdSeg.getPath()).thenReturn("200");
+
+		urlPathChecker.checkPathSegments(segments);
+		verify(timeseriesContainerService, never()).getTimeseriesContainer(200);
+	}
+
+	@Test
 	public void timeseriesReference_exists() throws InvalidPathException {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
@@ -494,6 +513,21 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
+	public void structuredData_wrongUrl() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+
+		segments.add(dummySeg);
+		segments.add(dummyIdSeg);
+		segments.add(structuredDatasSeg);
+		segments.add(structuredDataIdSeg);
+
+		when(structuredDataIdSeg.getPath()).thenReturn("200");
+
+		urlPathChecker.checkPathSegments(segments);
+		verify(structuredDataContainerService, never()).getStructuredDataContainer(200);
+	}
+
+	@Test
 	public void structuredDataReference_exists() throws InvalidPathException {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
@@ -593,6 +627,21 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
+	}
+
+	@Test
+	public void file_wrongUrl() throws InvalidPathException {
+		List<PathSegment> segments = new ArrayList<>();
+
+		segments.add(dummySeg);
+		segments.add(dummyIdSeg);
+		segments.add(filesSeg);
+		segments.add(fileIdSeg);
+
+		when(fileIdSeg.getPath()).thenReturn("200");
+
+		urlPathChecker.checkPathSegments(segments);
+		verify(fileContainerService, never()).getFileContainer(200);
 	}
 
 	@Test

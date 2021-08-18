@@ -65,7 +65,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		var ref = new DataObjectReference(1L);
 		ref.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.find(1L)).thenReturn(ref);
 
 		var actual = service.getDataObjectReference(1L);
 		assertNull(actual);

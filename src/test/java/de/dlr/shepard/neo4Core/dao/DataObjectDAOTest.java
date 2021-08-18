@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,574 +36,599 @@ public class DataObjectDAOTest extends BaseTestCase {
 
 	@Test
 	public void findAllTest() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d4.setCollection(c2);
-		d1.setChildren(List.of(d3, d4));
+		d1.setCollection(c1);
+		d3.setCollection(c2);
+		d1.setChildren(List.of(d2, d3));
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+				+ "WHERE ID(c)=100 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper();
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findAllTestOrderByNameDesc() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d4.setCollection(c2);
-		d1.setChildren(List.of(d3, d4));
+		d1.setCollection(c1);
+		d3.setCollection(c2);
+		d1.setChildren(List.of(d2, d3));
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+				+ "WHERE ID(c)=100 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper();
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByPageTest() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d4.setCollection(c2);
-		d1.setChildren(List.of(d3, d4));
+		d1.setCollection(c1);
+		d3.setCollection(c2);
+		d1.setChildren(List.of(d2, d3));
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByPageTestOrderByNameDesc() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d4.setCollection(c2);
-		d1.setChildren(List.of(d3, d4));
+		d1.setCollection(c1);
+		d3.setCollection(c2);
+		d1.setChildren(List.of(d2, d3));
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
+				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
 				+ "RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByNameTest() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
+		d2.setCollection(c1);
+		d2.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+				+ "WHERE ID(c)=100 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withName("Yes");
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByNameTestOrderByNameDesc() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
+		d2.setCollection(c1);
+		d2.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) "
+				+ "WHERE ID(c)=100 WITH d  MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) "
 				+ "ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withName("Yes");
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByNameAndPageTest() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
+		d2.setCollection(c1);
+		d2.setName("No");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
+				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
 				+ "RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByNameAndPageTestOrderByNameDesc() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
+		d2.setCollection(c1);
+		d2.setName("No");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
+				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() "
 				+ "RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByParentTest() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d3.setCollection(c2);
 		d3.setParent(d1);
-		d4.setCollection(c2);
 		d4.setParent(d1);
-		d5.setParent(d1);
-		d6.setCollection(c);
-		d6.setParent(d3);
+		d5.setCollection(c1);
+		d5.setParent(d2);
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
+				+ "(child:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 WITH child  "
 				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
+	}
+
+	@Test
+	public void findByParentDeletedTest() {
+		var c1 = new Collection(100L);
+		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
+		d1.setDeleted(true);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", null);
+
+		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
+				+ "(child:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 WITH child  "
+				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
+
+		var params = new QueryParamHelper().withParentId(1L);
+		var actual = dao.findByCollection(100L, params);
+		verify(session).query(DataObject.class, query, paramsMap);
+		verify(session).query(DataObject.class, query, paramsMap);
+		assertEquals(Collections.EMPTY_LIST, actual);
 	}
 
 	@Test
 	public void findByParentTestOrderByNameDesc() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d3.setCollection(c2);
 		d3.setParent(d1);
-		d4.setCollection(c2);
 		d4.setParent(d1);
-		d5.setParent(d1);
-		d6.setCollection(c);
-		d6.setParent(d3);
+		d5.setCollection(c1);
+		d5.setParent(d2);
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
+				+ "(child:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 WITH child  "
 				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L);
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findWithoutParentTest() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setDeleted(true);
+		d3.setCollection(c2);
 		d3.setParent(d1);
-		d4.setCollection(c2);
 		d4.setParent(d1);
-		d5.setParent(d1);
-		d6.setCollection(c);
-		d6.setParent(d3);
+		d5.setCollection(c1);
+		d5.setParent(d2);
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d  "
+				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d  "
 				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d1), actual);
+		assertEquals(List.of(d1, d5), actual);
 	}
 
 	@Test
 	public void findWithoutParentTestOrderByNameDesc() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d3.setCollection(c2);
 		d3.setParent(d1);
-		d4.setCollection(c2);
 		d4.setParent(d1);
-		d5.setParent(d1);
-		d6.setCollection(c);
-		d6.setParent(d3);
+		d5.setCollection(c1);
+		d5.setParent(d2);
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d  "
+				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d  "
 				+ "MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L);
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findByParentAndNameTest() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
+		d3.setCollection(c1);
 		d3.setParent(d1);
-		d3.setName("Yes");
-		d4.setCollection(c);
-		d4.setParent(d1);
-		d4.setName("No");
+		d3.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
+				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 WITH child  "
 				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findByParentAndNameTestOrderByNameDesc() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
-		var d4 = new DataObject(4L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
+		d3.setCollection(c1);
 		d3.setParent(d1);
-		d3.setName("Yes");
-		d4.setCollection(c);
-		d4.setParent(d1);
-		d4.setName("No");
+		d3.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 WITH child  "
+				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 WITH child  "
 				+ "MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findByParentAndPageTest() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
-		d3.setCollection(c);
-		d3.setParent(d1);
-		d3.setName("Yes");
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 "
+				+ "(child:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
 				+ "WITH child SKIP $offset LIMIT $size MATCH path=(child)-[*0..1]-() RETURN child, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findByParentAndPageTestOrderByNameDesc() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
-		var d3 = new DataObject(3L);
-		d1.setCollection(c);
-		d3.setCollection(c);
-		d3.setParent(d1);
-		d3.setName("Yes");
+		var d2 = new DataObject(2L);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 "
+				+ "(child:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
 				+ "WITH child SKIP $offset LIMIT $size MATCH path=(child)-[*0..1]-() "
 				+ "RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findByParentAndPageAndNameTest() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
-		var d5 = new DataObject(5L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
+		d3.setCollection(c1);
 		d3.setParent(d1);
-		d3.setName("Yes");
-		d4.setCollection(c);
-		d4.setParent(d1);
-		d4.setName("No");
+		d3.setName("No");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 "
+				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
 				+ "WITH child SKIP $offset LIMIT $size MATCH path=(child)-[*0..1]-() "
 				+ "RETURN child, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findByParentAndPageAndNameTestOrderByNameDesc() {
-		var c = new Collection(2L);
+		var c1 = new Collection(100L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
-		var d5 = new DataObject(5L);
-		d1.setCollection(c);
-		d3.setCollection(c);
+		d1.setCollection(c1);
+		d2.setCollection(c1);
+		d2.setParent(d1);
+		d2.setName("Yes");
+		d3.setCollection(c1);
 		d3.setParent(d1);
-		d3.setName("Yes");
-		d4.setCollection(c);
-		d4.setParent(d1);
-		d4.setName("No");
+		d3.setName("No");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
-				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=2 AND ID(parent)=1 "
+				+ "(child:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
 				+ "WITH child SKIP $offset LIMIT $size MATCH path=(child)-[*0..1]-() "
 				+ "RETURN child, nodes(path), relationships(path) ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
-		assertEquals(List.of(d3), actual);
+		assertEquals(List.of(d2), actual);
 	}
 
 	@Test
 	public void findWithoutParentByPageAndNameTest() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
-		d4.setCollection(c2);
+		d2.setCollection(c1);
+		d2.setName("No");
+		d3.setCollection(c2);
+		d3.setName("Yes");
+		d4.setCollection(c1);
+		d4.setParent(d1);
 		d4.setName("Yes");
-		d5.setCollection(c);
-		d5.setParent(d1);
-		d5.setName("Yes");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
+				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
 				+ "WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path)";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}
 
 	@Test
 	public void findWithoutParentByPageAndNameTestOrderByNameDesc() {
-		var c = new Collection(2L);
-		var c2 = new Collection(100L);
+		var c1 = new Collection(100L);
+		var c2 = new Collection(200L);
 		var d1 = new DataObject(1L);
+		var d2 = new DataObject(2L);
 		var d3 = new DataObject(3L);
 		var d4 = new DataObject(4L);
 		var d5 = new DataObject(5L);
-		var d6 = new DataObject(6L);
-		d1.setCollection(c);
+		d1.setCollection(c1);
 		d1.setName("Yes");
-		d3.setCollection(c);
-		d3.setName("No");
-		d4.setCollection(c2);
+		d2.setCollection(c1);
+		d2.setName("No");
+		d3.setCollection(c2);
+		d3.setName("Yes");
+		d4.setCollection(c1);
+		d4.setParent(d1);
 		d4.setName("Yes");
-		d5.setCollection(c);
-		d5.setParent(d1);
-		d5.setName("Yes");
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=2 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
+				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
 				+ "WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-() RETURN d, nodes(path), relationships(path) "
 				+ "ORDER BY toLower(d.name) DESC";
-		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d3, d4, d5, d6));
+		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
 		var dataObjectAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(dataObjectAttribute, true);
-		var actual = dao.findByCollection(2L, params);
+		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
 	}

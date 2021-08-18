@@ -119,7 +119,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	private boolean matchParent(DataObject obj, long parentId) {
 		if (parentId == -1) {
 			// return true if parent is null or parent is deleted
-			return obj.getParent() == null || (obj.getParent() != null && obj.getParent().isDeleted());
+			return obj.getParent() == null || obj.getParent().isDeleted();
 		} else {
 			// return true if parent is not deleted and parent id equals parentId
 			return obj.getParent() != null && !obj.getParent().isDeleted() && obj.getParent().getId().equals(parentId);

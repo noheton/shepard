@@ -57,7 +57,7 @@ public class CollectionServiceTest extends BaseTestCase {
 	public void getCollectionTest_deleted() {
 		Collection collection = new Collection(1L);
 		collection.setDeleted(true);
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.find(1L)).thenReturn(collection);
 		assertNull(service.getCollection(1L));
 	}
 

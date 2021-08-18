@@ -162,6 +162,24 @@ public class JWTFilterTest extends BaseTestCase {
 	}
 
 	@Test
+	public void testFilterEmptySubject() throws InvalidKeySpecException, NoSuchAlgorithmException {
+		Date now = new Date();
+		Date future = DateUtils.addMinutes(now, 5);
+		UUID keyId = UUID.randomUUID();
+
+		String jws = Jwts.builder().setAudience("account").setExpiration(future).setNotBefore(now)
+				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
+				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
+				.claim("family_name", "MyLastName").claim("email", "MyEMail").claim("sub", "").signWith(privateKey)
+				.compact();
+
+		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+		filter.filter(context);
+		verify(context).abortWith(responseCaptor.capture());
+		assertEquals(401, responseCaptor.getValue().getStatus());
+	}
+
+	@Test
 	public void testFilterSucessful() throws InvalidKeySpecException, NoSuchAlgorithmException {
 		Date now = new Date();
 		Date future = DateUtils.addMinutes(now, 5);
@@ -220,6 +238,29 @@ public class JWTFilterTest extends BaseTestCase {
 
 		String jws = Jwts.builder().setNotBefore(now).setIssuedAt(new Date()).setId(uid.toString()).signWith(privateKey)
 				.compact();
+
+		User user = new User("MyUserName");
+
+		ApiKey apiKey = new ApiKey(uid);
+		apiKey.setName("MyApiKey");
+		apiKey.setJws(jws);
+		apiKey.setBelongsTo(user);
+
+		when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+		when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+
+		filter.filter(context);
+		verify(context).abortWith(responseCaptor.capture());
+		assertEquals(401, responseCaptor.getValue().getStatus());
+	}
+
+	@Test
+	public void testFilterEmptySubjectApiKey() throws InvalidKeySpecException, NoSuchAlgorithmException {
+		Date now = new Date();
+		UUID uid = UUID.randomUUID();
+
+		String jws = Jwts.builder().setNotBefore(now).setIssuedAt(new Date()).setId(uid.toString()).claim("sub", "")
+				.signWith(privateKey).compact();
 
 		User user = new User("MyUserName");
 

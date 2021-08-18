@@ -58,7 +58,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 		var ref = new BasicReference(1L);
 		ref.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.find(1L)).thenReturn(ref);
 
 		var actual = service.getBasicReference(1L);
 		assertNull(actual);
