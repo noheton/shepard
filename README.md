@@ -9,10 +9,10 @@
 
 ## System requirements
 
-Depending on how you want to use shepard, the system requirements can vary greatly.
-While most services are relatively lightweight, the databases and shepard backend can be quite demanding.
-As a starting point, 8 GB per service may be sufficient.
-Additionally, most services benefit greatly from many CPU cores.
+Depending on how you plan to use shepard, the system requirements can vary greatly.
+While most services are relatively lightweight, the databases and Shepard backend can be quite demanding.
+As a starting point, 8 GB of memory per service may be sufficient.
+Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads.
 The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
 
 - [neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
@@ -80,6 +80,7 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
 
 ```bash
+# copy configuration file
 cp env.example .env
 ```
 
