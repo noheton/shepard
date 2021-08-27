@@ -57,7 +57,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long referenceId) {
-		log.info("Received POST request with collection {}, dataobject {} and reference {} from user {}", collectionId,
+		log.info("Received GET request with collection {}, dataobject {} and reference {} from user {}", collectionId,
 				dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 		var ref = fileReferenceService.getFileReference(referenceId);
 		return Response.ok(new FileReferenceIO(ref)).build();

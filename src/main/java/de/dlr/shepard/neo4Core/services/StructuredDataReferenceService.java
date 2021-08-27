@@ -98,7 +98,11 @@ public class StructuredDataReferenceService {
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
 		for (var structuredData : structuredDatas) {
-			result.add(structuredDataService.getPayload(mongoId, structuredData.getOid()));
+			var payload = structuredDataService.getPayload(mongoId, structuredData.getOid());
+			if (payload != null)
+				result.add(payload);
+			else
+				result.add(new StructuredDataPayload(structuredData, null));
 		}
 		return result;
 	}

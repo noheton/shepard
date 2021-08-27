@@ -273,6 +273,26 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getAllPayloadTest_unknownOid() {
+		var container = new StructuredDataContainer();
+		container.setMongoId("mongoId");
+		var ref = new StructuredDataReference(1L);
+		ref.setStructuredDataContainer(container);
+		var structuredDataA = new StructuredData("abc");
+		var structuredDataB = new StructuredData("def");
+		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
+
+		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
+		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(null);
+
+		var actual = service.getAllPayloads(1L);
+		assertEquals(List.of(payloadA, new StructuredDataPayload(structuredDataB, null)), actual);
+	}
+
+	@Test
 	public void getAllPayloadTest_isNull() {
 		var container = new StructuredDataContainer();
 		container.setMongoId("mongoId");

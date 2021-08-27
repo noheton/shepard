@@ -39,8 +39,8 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Override
 	public Response getAllStructuredDataReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		log.info("Received POST request with collection {} and dataobject {} from user {}", collectionId, dataObjectId,
-				securityContext.getUserPrincipal().getName());
+		log.info("Received GET ALL request with collection {} and dataobject {} from user {}", collectionId,
+				dataObjectId, securityContext.getUserPrincipal().getName());
 		var references = structuredDataReferenceService.getAllStructuredDataReferences(dataObjectId);
 		var result = new ArrayList<StructuredDataReferenceIO>(references.size());
 		for (var ref : references) {
@@ -55,7 +55,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long referenceId) {
-		log.info("Received POST request with collection {}, dataobject {} and reference {} from user {}", collectionId,
+		log.info("Received GET request with collection {}, dataobject {} and reference {} from user {}", collectionId,
 				dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 		var ref = structuredDataReferenceService.getStructuredDataReference(referenceId);
 		return Response.ok(new StructuredDataReferenceIO(ref)).build();
@@ -112,7 +112,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 		log.info("Received GET SPECIFIC STRUCTURED DATA PAYLOAD request with reference Id {} and Oid {} from user {}",
 				structuredDataId, oid, securityContext.getUserPrincipal().getName());
 		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid);
-		return Response.ok(payload).build();
+		return payload != null ? Response.ok(payload).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
 	}
 
 }
