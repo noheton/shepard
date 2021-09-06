@@ -129,11 +129,8 @@ public abstract class GenericDAO<T> {
 		return result;
 	}
 
-	protected String getParameterizedPaginationPart(boolean hasPagination) {
-		if (hasPagination)
-			return "SKIP $offset LIMIT $size";
-		else
-			return "";
+	protected String getParameterizedPaginationPart() {
+		return "SKIP $offset LIMIT $size";
 	}
 
 	protected String getReturnPart(String entity) {
@@ -146,15 +143,10 @@ public abstract class GenericDAO<T> {
 		String ret;
 		boolean isString = orderByAttribute.isString();
 		if (!isString)
-			ret = " ORDER BY " + variable + "." + orderByAttribute;
+			ret = "ORDER BY " + variable + "." + orderByAttribute;
 		else
-			ret = " ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
-		boolean orderdesc;
-		if (orderDesc == null)
-			orderdesc = false;
-		else
-			orderdesc = orderDesc;
-		if (orderdesc)
+			ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
+		if (orderDesc != null && orderDesc == true)
 			ret = ret + " DESC";
 		return ret;
 	}

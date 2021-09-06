@@ -18,12 +18,14 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WITH c %s %s",
-				getParameterizedObjectPart("c", "FileContainer", params.hasName()),
-				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("c"));
-		if (params.hasOrderByAttribute())
-			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
-
+		query = String.format("MATCH %s WITH c", getParameterizedObjectPart("c", "FileContainer", params.hasName()));
+		if (params.hasOrderByAttribute()) {
+			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			query += " " + getParameterizedPaginationPart();
+		}
+		query += " " + getReturnPart("c");
 		var result = new ArrayList<FileContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

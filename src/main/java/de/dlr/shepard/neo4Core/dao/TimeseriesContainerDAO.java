@@ -19,12 +19,15 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 
-		query = String.format("MATCH %s WITH c %s %s",
-				getParameterizedObjectPart("c", "TimeseriesContainer", params.hasName()),
-				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("c"));
-		if (params.hasOrderByAttribute())
-			query = query + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
-
+		query = String.format("MATCH %s WITH c",
+				getParameterizedObjectPart("c", "TimeseriesContainer", params.hasName()));
+		if (params.hasOrderByAttribute()) {
+			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			query += " " + getParameterizedPaginationPart();
+		}
+		query += " " + getReturnPart("c");
 		var result = new ArrayList<TimeseriesContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

@@ -30,11 +30,15 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r %s %s",
-				getParameterizedObjectPart("r", "BasicReference", params.hasName()), dataObjectId,
-				getParameterizedPaginationPart(params.hasPagination()), getReturnPart("r"));
-		if (params.hasOrderByAttribute())
-			query = query + getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
+		query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r",
+				getParameterizedObjectPart("r", "BasicReference", params.hasName()), dataObjectId);
+		if (params.hasOrderByAttribute()) {
+			query += " " + getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			query += " " + getParameterizedPaginationPart();
+		}
+		query += " " + getReturnPart("r");
 		var result = new ArrayList<BasicReference>();
 		for (var ref : findByQuery(query, paramsMap)) {
 			if (matchDataObject(ref, dataObjectId) && matchName(ref, params.getName())) {

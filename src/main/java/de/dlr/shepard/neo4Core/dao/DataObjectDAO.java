@@ -50,12 +50,15 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			paramsMap.put("offset", page.getOffset());
 			paramsMap.put("size", page.getSize());
 		}
-		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d %s %s",
-				getParameterizedObjectPart("d", "DataObject", name != null), collectionId,
-				getParameterizedPaginationPart(page != null), getReturnPart("d"));
+		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d",
+				getParameterizedObjectPart("d", "DataObject", name != null), collectionId);
 		if (orderByAttribute != null) {
-			query = query + getOrderByPart("d", orderByAttribute, desc);
+			query += " " + getOrderByPart("d", orderByAttribute, desc);
 		}
+		if (page != null) {
+			query += " " + getParameterizedPaginationPart();
+		}
+		query += " " + getReturnPart("d");
 		var result = new ArrayList<DataObject>();
 		for (var obj : findByQuery(query, paramsMap)) {
 			if (matchCollection(obj, collectionId) && matchName(obj, name)) {
@@ -87,19 +90,21 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		if (parentId == -1) {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
-							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d %s %s",
-					getParameterizedObjectPart("d", "DataObject", name != null), collectionId,
-					getParameterizedPaginationPart(page != null), getReturnPart("d"));
+							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d",
+					getParameterizedObjectPart("d", "DataObject", name != null), collectionId);
 		} else {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->%s "
-							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH d %s %s",
-					getParameterizedObjectPart("d", "DataObject", name != null), collectionId, parentId,
-					getParameterizedPaginationPart(page != null), getReturnPart("d"));
+							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH d",
+					getParameterizedObjectPart("d", "DataObject", name != null), collectionId, parentId);
 		}
 		if (orderByAttribute != null) {
-			query = query + getOrderByPart("d", orderByAttribute, desc);
+			query += " " + getOrderByPart("d", orderByAttribute, desc);
 		}
+		if (page != null) {
+			query += " " + getParameterizedPaginationPart();
+		}
+		query += " " + getReturnPart("d");
 		var result = new ArrayList<DataObject>();
 		for (var obj : findByQuery(query, paramsMap)) {
 			if (matchCollection(obj, collectionId) && matchParent(obj, parentId) && matchName(obj, name)) {

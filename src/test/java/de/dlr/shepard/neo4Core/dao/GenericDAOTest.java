@@ -144,7 +144,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
 		Boolean orderDesc = true;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY c.createdAt DESC", actual);
+		assertEquals("ORDER BY c.createdAt DESC", actual);
 	}
 
 	@Test
@@ -153,7 +153,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
 		Boolean orderDesc = null;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY c.createdAt", actual);
+		assertEquals("ORDER BY c.createdAt", actual);
 	}
 
 	@Test
@@ -162,7 +162,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
 		Boolean orderDesc = null;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY c.createdAt", actual);
+		assertEquals("ORDER BY c.createdAt", actual);
 	}
 
 	@Test
@@ -171,7 +171,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
 		Boolean orderDesc = true;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY toLower(c.createdBy) DESC", actual);
+		assertEquals("ORDER BY toLower(c.createdBy) DESC", actual);
 	}
 
 	@Test
@@ -180,7 +180,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
 		Boolean orderDesc = null;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY toLower(c.createdBy)", actual);
+		assertEquals("ORDER BY toLower(c.createdBy)", actual);
 	}
 
 	@Test
@@ -189,7 +189,7 @@ public class GenericDAOTest extends BaseTestCase {
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdBy;
 		Boolean orderDesc = null;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals(" ORDER BY toLower(c.createdBy)", actual);
+		assertEquals("ORDER BY toLower(c.createdBy)", actual);
 	}
 
 	@Test
@@ -210,14 +210,8 @@ public class GenericDAOTest extends BaseTestCase {
 
 	@Test
 	public void getParameterizedPaginationPartTest_WithPagination() {
-		var actual = dao.getParameterizedPaginationPart(true);
+		var actual = dao.getParameterizedPaginationPart();
 		assertEquals("SKIP $offset LIMIT $size", actual);
-	}
-
-	@Test
-	public void getParameterizedPaginationPartTest_WithoutPagination() {
-		var actual = dao.getParameterizedPaginationPart(false);
-		assertEquals("", actual);
 	}
 
 }
