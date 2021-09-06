@@ -93,9 +93,9 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		} else {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->%s "
-							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH child %s %s",
-					getParameterizedObjectPart("child", "DataObject", name != null), collectionId, parentId,
-					getParameterizedPaginationPart(page != null), getReturnPart("child"));
+							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH d %s %s",
+					getParameterizedObjectPart("d", "DataObject", name != null), collectionId, parentId,
+					getParameterizedPaginationPart(page != null), getReturnPart("d"));
 		}
 		if (orderByAttribute != null) {
 			query = query + getOrderByPart("d", orderByAttribute, desc);
