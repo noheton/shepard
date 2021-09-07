@@ -285,7 +285,6 @@ public class FileServiceTest extends BaseTestCase {
 
 		if (values.length == 0) {
 			when(mockIterator.hasNext()).thenReturn(false);
-			return;
 		} else if (values.length == 1) {
 			when(mockIterator.hasNext()).thenReturn(true, false);
 			when(mockIterator.next()).thenReturn(values[0]);

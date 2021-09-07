@@ -103,7 +103,7 @@ public abstract class GenericDAO<T> {
 		log.debug("Run query: {}", query);
 		String params = "";
 		for (String key : paramsMap.keySet()) {
-			params = params + "(" + key + ", " + paramsMap.get(key) + ")\n";
+			params += "(" + key + ", " + paramsMap.get(key) + ")\n";
 		}
 		log.debug("queryParams: {}", params);
 		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);

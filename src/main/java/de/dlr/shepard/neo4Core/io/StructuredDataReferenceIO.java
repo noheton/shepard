@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.io;
 
+import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -18,7 +19,7 @@ public class StructuredDataReferenceIO extends BasicReferenceIO {
 
 	public StructuredDataReferenceIO(StructuredDataReference ref) {
 		super(ref);
-		this.structuredDataOids = ref.getStructuredDatas().stream().map(sd -> sd.getOid()).toArray(String[]::new);
+		this.structuredDataOids = ref.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
 		this.structuredDataContainerId = ref.getStructuredDataContainer() != null
 				? ref.getStructuredDataContainer().getId()
 				: -1;

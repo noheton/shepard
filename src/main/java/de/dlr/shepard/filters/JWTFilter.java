@@ -133,7 +133,9 @@ public class JWTFilter implements ContainerRequestFilter {
 			log.warn("Token is missing a subject");
 			return null;
 		}
-                // We only want the last part of the subject, since this is usually a human readable username
+
+		// We only want the last part of the subject, since this is usually a human
+		// readable user name
 		var splitted = subject.split(":");
 		String username = splitted[splitted.length - 1];
 

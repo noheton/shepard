@@ -43,7 +43,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setDataObject(dataObject);
 		obj.setFileContainer(container);
 		obj.setFiles(List.of(file));
-		String[] oids = obj.getFiles().stream().map(f -> f.getOid()).toArray(String[]::new);
+		String[] oids = obj.getFiles().stream().map(File::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -70,7 +70,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setName("MyName");
 		obj.setDataObject(dataObject);
 		obj.setFiles(List.of(file));
-		String[] oids = obj.getFiles().stream().map(f -> f.getOid()).toArray(String[]::new);
+		String[] oids = obj.getFiles().stream().map(File::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());

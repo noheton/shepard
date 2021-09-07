@@ -43,7 +43,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		obj.setDataObject(dataObject);
 		obj.setStructuredDataContainer(container);
 		obj.setStructuredDatas(List.of(structuredData));
-		String[] oids = obj.getStructuredDatas().stream().map(sd -> sd.getOid()).toArray(String[]::new);
+		String[] oids = obj.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -70,7 +70,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		obj.setName("MyName");
 		obj.setDataObject(dataObject);
 		obj.setStructuredDatas(List.of(structuredData));
-		String[] oids = obj.getStructuredDatas().stream().map(sd -> sd.getOid()).toArray(String[]::new);
+		String[] oids = obj.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
