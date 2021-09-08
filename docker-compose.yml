@@ -155,23 +155,6 @@ services:
     networks:
       - influxdata
 
-  grafana:
-    image: grafana/grafana:latest
-    environment:
-      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource,ryantxu-ajax-panel,mtanda-histogram-panel,natel-plotly-panel,corpglory-progresslist-panel,simpod-json-datasource
-    ports:
-      - "127.0.0.1:3000:3000"
-    volumes:
-      - /opt/shepard/grafana:/var/lib/grafana
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.depends-on: influxdb
-    restart: unless-stopped
-    depends_on:
-      - influxdb
-    networks:
-      - influxdata
-
   # Optional: Use watchtower to automatically update containers
   watchtower:
     image: containrrr/watchtower:latest

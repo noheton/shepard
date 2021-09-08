@@ -32,15 +32,7 @@ git clone https://gitlab.com/dlr-shepard/deployment.git
 cd deployment
 ```
 
-2. Prepare storage
-
-```bash
-mkdir /opt/shepard
-mkdir -p /opt/shepard/grafana
-chown -R 472:472 /opt/shepard/grafana/
-```
-
-3. Prepare nginx
+2. Prepare nginx
    - Apply for SSL certificates and store them in the system
    - Create Diffie-Hellman parameters
 
@@ -48,7 +40,7 @@ chown -R 472:472 /opt/shepard/grafana/
 openssl dhparam -out /etc/nginx/dhparam.pem 2048
 ```
 
-4. Set up nginx
+3. Set up nginx
    - Edit and enable the [sample files with self-signed certificates](https://gitlab.com/dlr-shepard/deployment/-/blob/master/etc/nginx/sites-available/) as needed
    - [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/#server=nginx&config=intermediate)
    - Do not forget to change these files according to your certificates
@@ -69,8 +61,8 @@ sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" /var/www/shepard/index.htm
 ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 ```
 
-6. Check configuration in `docker-compose.yml` and especially check available memory
-7. Copy the `env.example` file to `.env` and set passwords and configuration in this file
+4. Check configuration in `docker-compose.yml` and especially check available memory
+5. Copy the `env.example` file to `.env` and set passwords and configuration in this file
    - All variables must be set!
    - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`)
    - The database passwords can be changed arbitrarily at the beginning
