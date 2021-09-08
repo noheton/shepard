@@ -44,13 +44,13 @@
 		<commons.version>2.11.0</commons.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.21</influxdb.version>
-		<jersey.version>2.34</jersey.version>
+		<jersey.version>2.35</jersey.version>
 		<jjwt.version>0.11.2</jjwt.version>
 		<junit.version>5.7.2</junit.version>
 		<log4j.version>2.14.1</log4j.version>
 		<lombok.version>1.18.20</lombok.version>
-		<mockito.version>3.11.2</mockito.version>
-		<mongodb.version>4.3.1</mongodb.version>
+		<mockito.version>3.12.4</mockito.version>
+		<mongodb.version>4.3.2</mongodb.version>
 		<neo4j.version>3.2.25</neo4j.version>
 		<restassured.version>4.4.0</restassured.version>
 		<swagger.version>2.1.10</swagger.version>
@@ -266,7 +266,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>3.1.2</version>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -281,7 +281,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.1.1</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -291,7 +291,7 @@
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.2.3</version>
+				<version>4.3.0</version>
 			</plugin>
 		</plugins>
 	</build>

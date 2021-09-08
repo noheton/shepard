@@ -160,7 +160,7 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getOrderByPartTestAsc() {
 		String variable = "c";
 		OrderByAttribute orderByAttribute = CollectionAttributes.createdAt;
-		Boolean orderDesc = null;
+		Boolean orderDesc = false;
 		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
 		assertEquals("ORDER BY c.createdAt", actual);
 	}
