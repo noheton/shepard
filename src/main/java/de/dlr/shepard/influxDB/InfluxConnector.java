@@ -49,7 +49,7 @@ public class InfluxConnector implements IConnector {
 	/**
 	 * For development reasons, there should always be just one InfluxConnector
 	 * instance.
-	 * 
+	 *
 	 * @return The one and only InfluxConnector instance.
 	 */
 	public static InfluxConnector getInstance() {
@@ -63,7 +63,7 @@ public class InfluxConnector implements IConnector {
 	 * Establishes a connection to the Influx server by using the URL saved in the
 	 * config.properties file returned by the DatabaseHelper. In addition the
 	 * logging is being configured.
-	 * 
+	 *
 	 */
 	@Override
 	public boolean connect() {
@@ -88,7 +88,7 @@ public class InfluxConnector implements IConnector {
 
 	/**
 	 * Tests whether a connection exists.
-	 * 
+	 *
 	 * @return True if connection exists, otherwise false.
 	 */
 	public boolean testConnection() {
@@ -101,7 +101,7 @@ public class InfluxConnector implements IConnector {
 
 	/**
 	 * Creates a new database.
-	 * 
+	 *
 	 * @param databaseName Name of the new database to be created.
 	 */
 	public void createDatabase(String databaseName) {
@@ -111,7 +111,7 @@ public class InfluxConnector implements IConnector {
 
 	/**
 	 * Deletes a database.
-	 * 
+	 *
 	 * @param databaseName Name of the database to be deleted.
 	 */
 	public void deleteDatabase(String databaseName) {
@@ -122,12 +122,12 @@ public class InfluxConnector implements IConnector {
 	 * Writes all InfluxPoint objects, saved in the TimeseriesWithInfluxpoints
 	 * object, into the influx database. Therefore the method uses the name of the
 	 * database, the name of the measurement, the location, the device, the symbolic
-	 * name and the name of the field provided by the given
-	 * TimeseriesWithInfluxPoints object. The actual write operation is done by
-	 * using the unix timestamp in nanoseconds and the value of every InfluxPoint
-	 * object in the TimeseriesWithInfluxPoint object. All these variables have to
-	 * be defined in the given Timeseries object for a successful write operation.
-	 * 
+	 * name and the name of the field provided by the given TimeseriesPayload
+	 * object. The actual write operation is done by using the unix timestamp in
+	 * nanoseconds and the value of every InfluxPoint object in the
+	 * TimeseriesWithInfluxPoint object. All these variables have to be defined in
+	 * the given Timeseries object for a successful write operation.
+	 *
 	 * @param database The database to store the payload in
 	 * @param payload  Combines the required attributes in a structured way.
 	 * @return An error if there was a problem, empty string if all went well
@@ -177,7 +177,7 @@ public class InfluxConnector implements IConnector {
 	 * the given conditions consigned to the method. The returned InfluxPoint
 	 * objects are in the given measurement of the specific database between the
 	 * start and the end timestamp.
-	 * 
+	 *
 	 * @param startTimeStamp Start timestamp from which influx values should be
 	 *                       returned.
 	 * @param endTimeStamp   End timestamp to which influx values should be
@@ -225,7 +225,7 @@ public class InfluxConnector implements IConnector {
 	 * results as well as the series-lists are not empty. If this returns true it is
 	 * safe to run
 	 * {@code queryResult.getResults().get(0).getSeries().get(0).getValues()}
-	 * 
+	 *
 	 * @param queryResult The QueryResult to be checked.
 	 * @return False if QueryResult has errors or results or series are empty, true
 	 *         otherwise.
@@ -257,7 +257,7 @@ public class InfluxConnector implements IConnector {
 
 	/**
 	 * Checks whether a database exists or not
-	 * 
+	 *
 	 * @param database name of database
 	 * @return boolean
 	 */
@@ -281,10 +281,10 @@ public class InfluxConnector implements IConnector {
 	/**
 	 * Returns the expected data type of a field or an empty string according to
 	 * https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_reference/#data-types
-	 * 
-	 * @param database
-	 * @param measurement
-	 * @param field
+	 *
+	 * @param database    The database
+	 * @param measurement The measurement
+	 * @param field       The field which data type is to be determined
 	 * @return expected datatype or empty string
 	 */
 	private String getExpectedDatatype(String database, String measurement, String field) {

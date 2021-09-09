@@ -55,6 +55,7 @@ public class FileContainerService {
 	/**
 	 * Searches the database for all FileContainers
 	 *
+	 * @param params QueryParamsHelper
 	 * @return a list of FileContainers
 	 */
 	public List<FileContainer> getAllFileContainers(QueryParamHelper params) {

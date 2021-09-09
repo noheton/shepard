@@ -56,6 +56,7 @@ public class StructuredDataContainerService {
 	/**
 	 * Searches the database for all StructuredDataContainers
 	 *
+	 * @param params QueryParamsHelper
 	 * @return a list of StructuredDataContainers
 	 */
 	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params) {

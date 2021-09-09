@@ -55,6 +55,7 @@ public class TimeseriesContainerService {
 	/**
 	 * Searches the database for all TimeseriesContainers
 	 *
+	 * @param params QueryParamsHelper
 	 * @return a list of TimeseriesContainers
 	 */
 	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params) {

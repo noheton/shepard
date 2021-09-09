@@ -96,7 +96,8 @@ public abstract class GenericDAO<T> {
 	 * CAUTION: The query runs against the database and is not checked. You can do
 	 * anything you want.
 	 *
-	 * @param query The query
+	 * @param query     The query
+	 * @param paramsMap Map of parameters
 	 * @return Iterable The result
 	 */
 	protected Iterable<T> findByQuery(String query, Map<String, Object> paramsMap) {

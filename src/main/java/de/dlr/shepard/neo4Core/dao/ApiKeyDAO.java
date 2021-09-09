@@ -8,7 +8,7 @@ public class ApiKeyDAO extends GenericDAO<ApiKey> {
 
 	/**
 	 * Find an apiKey by uid
-	 * 
+	 *
 	 * @param id Identifies the apiKey
 	 * @return the found apiKey
 	 */
@@ -19,7 +19,7 @@ public class ApiKeyDAO extends GenericDAO<ApiKey> {
 
 	/**
 	 * Find an apiKey by uid
-	 * 
+	 *
 	 * @param id Identifies the apiKey
 	 * @return true if deletion was successful
 	 */
