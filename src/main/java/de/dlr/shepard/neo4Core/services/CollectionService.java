@@ -3,9 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
-import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
@@ -15,8 +13,6 @@ import de.dlr.shepard.util.QueryParamHelper;
 public class CollectionService {
 
 	private CollectionDAO collectionDAO = new CollectionDAO();
-	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-	private BasicReferenceDAO referenceDAO = new BasicReferenceDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -104,28 +100,8 @@ public class CollectionService {
 		var date = dateHelper.getDate();
 		var user = userDAO.find(username);
 
-		// TODO: Improve this later
-		var collection = collectionDAO.find(collectionId);
-		for (var dataObjectLazy : collection.getDataObjects()) {
-			var dataObject = dataObjectDAO.find(dataObjectLazy.getId());
-			for (var referenceLazy : dataObject.getReferences()) {
-				var reference = referenceDAO.find(referenceLazy.getId());
-				reference.setUpdatedAt(date);
-				reference.setUpdatedBy(user);
-				reference.setDeleted(true);
-				referenceDAO.createOrUpdate(reference);
-			}
-			dataObject.setUpdatedAt(date);
-			dataObject.setUpdatedBy(user);
-			dataObject.setDeleted(true);
-			dataObjectDAO.createOrUpdate(dataObject);
-		}
-		collection.setUpdatedBy(user);
-		collection.setUpdatedAt(date);
-		collection.setDeleted(true);
-		collectionDAO.createOrUpdate(collection);
-
-		return true;
+		var result = collectionDAO.deleteCollection(collectionId, user, date);
+		return result;
 	}
 
 	/**

@@ -1,11 +1,14 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionDAO extends GenericDAO<Collection> {
@@ -45,6 +48,28 @@ public class CollectionDAO extends GenericDAO<Collection> {
 			}
 		}
 
+		return result;
+	}
+
+	/**
+	 * Delete collection and all related dataObjects and references
+	 *
+	 * @param id        identifies the collection
+	 * @param updatedBy current date
+	 * @param updatedAt current user
+	 * @return whether the deletion was successful or not
+	 */
+	public boolean deleteCollection(long id, User updatedBy, Date updatedAt) {
+		var collection = find(id);
+		collection.setUpdatedBy(updatedBy);
+		collection.setUpdatedAt(updatedAt);
+		collection.setDeleted(true);
+		createOrUpdate(collection);
+		String query = String
+				.format("MATCH (c:Collection) WHERE ID(c) = %d OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) "
+						+ "OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
+						+ "FOREACH (n in [c,d,r] | SET n.deleted = true)", id);
+		var result = runQuery(query, Collections.emptyMap());
 		return result;
 	}
 

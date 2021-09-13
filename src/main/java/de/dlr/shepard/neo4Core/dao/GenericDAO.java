@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
@@ -109,6 +110,12 @@ public abstract class GenericDAO<T> {
 		log.debug("queryParams: {}", params);
 		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
 		return iter;
+	}
+
+	protected boolean runQuery(String query, Map<String, Object> paramsMap) {
+		log.debug("Run query: {}", query);
+		Result result = session.query(query, paramsMap);
+		return result.queryStatistics().containsUpdates();
 	}
 
 	protected String getParameterizedObjectPart(String variable, String type, boolean hasName) {

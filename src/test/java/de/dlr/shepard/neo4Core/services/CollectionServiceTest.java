@@ -2,7 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -18,7 +18,6 @@ import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
-import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
@@ -199,36 +198,14 @@ public class CollectionServiceTest extends BaseTestCase {
 		var user = new User("bob");
 		var date = new Date(23);
 
-		var reference = new BasicReference(3L);
-		var dataObject = new DataObject(2L);
-		dataObject.setReferences(List.of(reference));
 		var collection = new Collection(1L);
-		collection.setDataObjects(List.of(dataObject));
-
-		var referenceDeleted = new BasicReference(3L);
-		referenceDeleted.setUpdatedAt(date);
-		referenceDeleted.setUpdatedBy(user);
-		referenceDeleted.setDeleted(true);
-		var dataObjectDeleted = new DataObject(2L);
-		dataObjectDeleted.setReferences(List.of(referenceDeleted));
-		dataObjectDeleted.setUpdatedAt(date);
-		dataObjectDeleted.setUpdatedBy(user);
-		dataObjectDeleted.setDeleted(true);
-		var collectionDeleted = new Collection(1L);
-		collectionDeleted.setDataObjects(List.of(dataObjectDeleted));
-		collectionDeleted.setUpdatedAt(date);
-		collectionDeleted.setUpdatedBy(user);
-		collectionDeleted.setDeleted(true);
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(dao.find(1L)).thenReturn(collection);
-		when(dataObjectDAO.find(2L)).thenReturn(dataObject);
-		when(referenceDAO.find(3L)).thenReturn(reference);
+		when(dao.deleteCollection(1L, user, date)).thenReturn(true);
 
-		service.deleteCollection(1L, "bob");
-		verify(referenceDAO).createOrUpdate(referenceDeleted);
-		verify(dataObjectDAO).createOrUpdate(dataObjectDeleted);
-		verify(dao).createOrUpdate(collectionDeleted);
+		var result = service.deleteCollection(1L, "bob");
+		assertTrue(result);
 	}
 }

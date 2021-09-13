@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
+import org.neo4j.ogm.model.QueryStatistics;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
@@ -130,6 +133,21 @@ public class GenericDAOTest extends BaseTestCase {
 		when(session.query(TestObject.class, query, params)).thenReturn(List.of(a));
 		var actual = dao.findByQuery(query, params);
 		assertEquals(List.of(a), actual);
+	}
+
+	@Test
+	public void runQueryTest() {
+		var query = "MATCH (n {a: 1}) RETURN n";
+		Map<String, Object> params = Map.of("a", "b", "c", "d");
+		Result result = mock(Result.class);
+		QueryStatistics stat = mock(QueryStatistics.class);
+
+		when(session.query(query, params)).thenReturn(result);
+		when(result.queryStatistics()).thenReturn(stat);
+		when(stat.containsUpdates()).thenReturn(true);
+
+		var actual = dao.runQuery(query, params);
+		assertTrue(actual);
 	}
 
 	@Test

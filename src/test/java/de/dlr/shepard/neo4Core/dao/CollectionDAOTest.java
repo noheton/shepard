@@ -1,9 +1,14 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +20,7 @@ import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
 import de.dlr.shepard.util.QueryParamHelper;
 
@@ -193,6 +199,31 @@ public class CollectionDAOTest extends BaseTestCase {
 		var actual = dao.findAllCollections(params);
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
+	}
+
+	@Test
+	public void deleteCollectionsTest() {
+		CollectionDAO spy = spy(CollectionDAO.class);
+
+		var collection = new Collection(1L);
+		var user = new User("bob");
+		var date = new Date();
+
+		var updated = new Collection(1L);
+		updated.setUpdatedBy(user);
+		updated.setUpdatedAt(date);
+		updated.setDeleted(true);
+
+		doReturn(collection).when(spy).find(1L);
+		doReturn(updated).when(spy).createOrUpdate(updated);
+		doReturn(true).when(spy)
+				.runQuery("MATCH (c:Collection) WHERE ID(c) = 1 OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) "
+						+ "OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
+						+ "FOREACH (n in [c,d,r] | SET n.deleted = true)", Collections.emptyMap());
+
+		var result = spy.deleteCollection(1L, user, date);
+		verify(spy).createOrUpdate(updated);
+		assertTrue(result);
 	}
 
 }

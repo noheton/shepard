@@ -1,11 +1,14 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -32,6 +35,27 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			return findByName(collectionId, params.getPagination(), params.getName(), params.getOrderByAttribute(),
 					params.getOrderDesc());
 		}
+	}
+
+	/**
+	 * Delete dataObject and all related references
+	 *
+	 * @param id        identifies the dataObject
+	 * @param updatedBy current date
+	 * @param updatedAt current user
+	 * @return whether the deletion was successful or not
+	 */
+	public boolean deleteDataObject(long id, User updatedBy, Date updatedAt) {
+		var dataObject = find(id);
+		dataObject.setUpdatedBy(updatedBy);
+		dataObject.setUpdatedAt(updatedAt);
+		dataObject.setDeleted(true);
+		createOrUpdate(dataObject);
+		String query = String
+				.format("MATCH (d:DataObject) WHERE ID(d) = %d OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
+						+ "FOREACH (n in [d,r] | SET n.deleted = true)", id);
+		var result = runQuery(query, Collections.emptyMap());
+		return result;
 	}
 
 	/**

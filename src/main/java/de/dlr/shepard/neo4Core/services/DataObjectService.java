@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -17,7 +16,6 @@ import de.dlr.shepard.util.QueryParamHelper;
 public class DataObjectService {
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private CollectionDAO collectionDAO = new CollectionDAO();
-	private BasicReferenceDAO referenceDAO = new BasicReferenceDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -124,20 +122,8 @@ public class DataObjectService {
 		var date = dateHelper.getDate();
 		var user = userDAO.find(username);
 
-		var dataObject = dataObjectDAO.find(dataObjectId);
-		for (var referenceLazy : dataObject.getReferences()) {
-			var reference = referenceDAO.find(referenceLazy.getId());
-			reference.setUpdatedAt(date);
-			reference.setUpdatedBy(user);
-			reference.setDeleted(true);
-			referenceDAO.createOrUpdate(reference);
-		}
-		dataObject.setUpdatedAt(date);
-		dataObject.setUpdatedBy(user);
-		dataObject.setDeleted(true);
-		dataObjectDAO.createOrUpdate(dataObject);
-
-		return true;
+		var result = dataObjectDAO.deleteDataObject(dataObjectId, user, date);
+		return result;
 	}
 
 	private void cutDeleted(DataObject dataObject) {

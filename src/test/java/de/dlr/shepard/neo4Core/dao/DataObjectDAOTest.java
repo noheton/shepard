@@ -1,10 +1,14 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +21,7 @@ import org.neo4j.ogm.session.Session;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.QueryParamHelper;
 
@@ -640,6 +645,31 @@ public class DataObjectDAOTest extends BaseTestCase {
 		var actual = dao.findByCollection(100L, params);
 		verify(session).query(DataObject.class, query, paramsMap);
 		assertEquals(List.of(d1), actual);
+	}
+
+	@Test
+	public void deleteDataObjectTest() {
+		DataObjectDAO spy = spy(DataObjectDAO.class);
+
+		var dataObject = new DataObject(1L);
+		var user = new User("bob");
+		var date = new Date();
+
+		var updated = new DataObject(1L);
+		updated.setUpdatedBy(user);
+		updated.setUpdatedAt(date);
+		updated.setDeleted(true);
+
+		doReturn(dataObject).when(spy).find(1L);
+		doReturn(updated).when(spy).createOrUpdate(updated);
+		doReturn(true).when(spy).runQuery(
+				"MATCH (d:DataObject) WHERE ID(d) = 1 OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
+						+ "FOREACH (n in [d,r] | SET n.deleted = true)",
+				Collections.emptyMap());
+
+		var result = spy.deleteDataObject(1L, user, date);
+		verify(spy).createOrUpdate(updated);
+		assertTrue(result);
 	}
 
 }

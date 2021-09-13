@@ -3,7 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -392,27 +392,14 @@ public class DataObjectServiceTest extends BaseTestCase {
 		var user = new User("bob");
 		var date = new Date(23);
 
-		var reference = new BasicReference(2L);
 		var dataObject = new DataObject(1L);
-		dataObject.setReferences(List.of(reference));
-
-		var referenceDeleted = new BasicReference(2L);
-		referenceDeleted.setUpdatedAt(date);
-		referenceDeleted.setUpdatedBy(user);
-		referenceDeleted.setDeleted(true);
-		var dataObjectDeleted = new DataObject(1L);
-		dataObjectDeleted.setReferences(List.of(referenceDeleted));
-		dataObjectDeleted.setUpdatedAt(date);
-		dataObjectDeleted.setUpdatedBy(user);
-		dataObjectDeleted.setDeleted(true);
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(dao.find(1L)).thenReturn(dataObject);
-		when(referenceDAO.find(2L)).thenReturn(reference);
+		when(dao.deleteDataObject(1L, user, date)).thenReturn(true);
 
-		service.deleteDataObject(1L, "bob");
-		verify(referenceDAO).createOrUpdate(referenceDeleted);
-		verify(dao).createOrUpdate(dataObjectDeleted);
+		var result = service.deleteDataObject(1L, "bob");
+		assertTrue(result);
 	}
 }
