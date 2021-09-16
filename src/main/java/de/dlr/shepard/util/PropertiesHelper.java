@@ -14,6 +14,7 @@ public class PropertiesHelper {
 	private Map<String, String> environment = System.getenv();
 
 	private void init() {
+		log.info("Reading properties file at {}", PROPERTIES);
 		try (var resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTIES);) {
 			propertiesFile.load(resourceAsStream);
 		} catch (IOException e) {

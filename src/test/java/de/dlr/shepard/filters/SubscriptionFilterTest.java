@@ -11,10 +11,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.core.UriInfo;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -24,6 +20,9 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.AbstractEntityIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.util.RequestMethod;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.core.UriInfo;
 
 public class SubscriptionFilterTest extends BaseTestCase {
 

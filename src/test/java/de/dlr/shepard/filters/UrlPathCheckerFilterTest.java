@@ -10,11 +10,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.List;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +20,10 @@ import org.mockito.Spy;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.services.UrlPathChecker;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.PathSegment;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
 public class UrlPathCheckerFilterTest extends BaseTestCase {
 

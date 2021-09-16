@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import javax.ws.rs.core.PathSegment;
-
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.entities.AbstractContainer;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
@@ -15,6 +13,7 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.Constants;
+import jakarta.ws.rs.core.PathSegment;
 
 public class UrlPathChecker {
 	private CollectionService collectionService = new CollectionService();

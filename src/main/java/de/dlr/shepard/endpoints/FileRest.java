@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.io.InputStream;
 
-import javax.ws.rs.core.Response;
-
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import de.dlr.shepard.mongoDB.File;
@@ -18,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.core.Response;
 
 public interface FileRest {
 

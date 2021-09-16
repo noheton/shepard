@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.Set;
 
-import javax.ws.rs.core.Response;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
@@ -15,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.core.Response;
 
 public interface TimeseriesReferenceRest {
 

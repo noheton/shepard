@@ -41,20 +41,23 @@
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.20.2</assertj.version>
+		<bind-api.version>3.0.1</bind-api.version>
 		<commons.version>2.11.0</commons.version>
+		<equalsverifier.version>3.7.1</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.21</influxdb.version>
-		<jersey.version>2.35</jersey.version>
+		<jaxb-impl.version>3.0.2</jaxb-impl.version>
+		<jersey.version>3.0.2</jersey.version>
 		<jjwt.version>0.11.2</jjwt.version>
-		<junit.version>5.7.2</junit.version>
+		<junit.version>5.8.0</junit.version>
 		<log4j.version>2.14.1</log4j.version>
 		<lombok.version>1.18.20</lombok.version>
 		<mockito.version>3.12.4</mockito.version>
 		<mongodb.version>4.3.2</mongodb.version>
-		<neo4j.version>3.2.25</neo4j.version>
+		<neo4j.version>3.2.26</neo4j.version>
 		<restassured.version>4.4.0</restassured.version>
 		<swagger.version>2.1.10</swagger.version>
-		<tomcat.version>9.0.52</tomcat.version>
+		<tomcat.version>10.0.11</tomcat.version>
 	</properties>
 
 	<profiles>
@@ -204,15 +207,15 @@
 				<configuration>
 					<skip>${skipITs}</skip>
 					<container>
-						<containerId>tomcat9x</containerId>
+						<containerId>tomcat10x</containerId>
 						<artifactInstaller>
 							<groupId>org.apache.tomcat</groupId>
 							<artifactId>tomcat</artifactId>
 							<version>${tomcat.version}</version>
 						</artifactInstaller>
-						<output>${project.build.directory}/tomcat9x-logs/container.log</output>
+						<output>${project.build.directory}/tomcat10x-logs/container.log</output>
 						<append>false</append>
-						<log>${project.build.directory}/tomcat9x-logs/cargo.log</log>
+						<log>${project.build.directory}/tomcat10x-logs/cargo.log</log>
 					</container>
 					<deployables>
 						<deployable>
@@ -244,7 +247,7 @@
 			<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-maven-plugin -->
 			<plugin>
 				<groupId>io.swagger.core.v3</groupId>
-				<artifactId>swagger-maven-plugin</artifactId>
+				<artifactId>swagger-maven-plugin-jakarta</artifactId>
 				<version>${swagger.version}</version>
 				<configuration>
 					<configurationFilePath>${project.build.directory}/${finalName}/WEB-INF/classes/openapi.yaml</configurationFilePath>
@@ -376,7 +379,7 @@
 		</dependency>
 
 		<!-- ####### JERSEY ####### -->
-		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet-core -->
+		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet -->
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
 			<artifactId>jersey-container-servlet</artifactId>
@@ -402,6 +405,22 @@
 			<groupId>org.glassfish.jersey.media</groupId>
 			<artifactId>jersey-media-json-jackson</artifactId>
 			<version>${jersey.version}</version>
+		</dependency>
+
+		<!-- ####### XML Binding ####### -->
+		<!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<version>${bind-api.version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>${jaxb-impl.version}</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<!-- ####### LOGGING ####### -->
@@ -463,7 +482,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.7.1</version>
+			<version>${equalsverifier.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -527,14 +546,14 @@
 		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
-			<artifactId>swagger-jaxrs2</artifactId>
+			<artifactId>swagger-jaxrs2-jakarta</artifactId>
 			<version>${swagger.version}</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer-v2 -->
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
-			<artifactId>swagger-jaxrs2-servlet-initializer-v2</artifactId>
+			<artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
 			<version>${swagger.version}</version>
 		</dependency>
 

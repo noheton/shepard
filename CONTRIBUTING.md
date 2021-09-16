@@ -37,8 +37,8 @@ If your feature request involves major conceptual changes, please submit an issu
 ## Documentation
 
 - [Guide: Writing Testable Code](http://misko.hevery.com/attachments/Guide-Writing%20Testable%20Code.pdf)
-- [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest)
-- [Tomcat Documentation](https://tomcat.apache.org/tomcat-9.0-doc/index.html)
+- [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/user-guide.html)
+- [Tomcat Documentation](https://tomcat.apache.org/tomcat-10.0-doc/index.html)
 
 ## Setting up a develping environment
 
@@ -46,7 +46,7 @@ If your feature request involves major conceptual changes, please submit an issu
 
 - OpenJDK 11 (LTS): <https://adoptopenjdk.net/?variant=openjdk11&jvmVariant=hotspot>
 - Eclipse IDE for Enterprise Java and Web Developers: <https://www.eclipse.org/downloads/packages/>
-- Apache Tomcat 9: <https://tomcat.apache.org/download-90.cgi>
+- Apache Tomcat 10: <https://tomcat.apache.org/download-10.cgi>
 - Project Lombok: <https://projectlombok.org/download>
 - Postman (optional): <https://www.getpostman.com/downloads/>
 
@@ -54,7 +54,7 @@ If your feature request involves major conceptual changes, please submit an issu
 
 1. install OpenJDK 11 (LTS)
 2. install Eclipse IDE for Enterprise Java and Web Developers
-3. unpack Apache Tomcat 9
+3. unpack Apache Tomcat
 4. install Project Lombok (run JAR file and follow the installer)
 5. clone Git repository
 6. import project into Eclipse (File -> Open Projects from File System...)

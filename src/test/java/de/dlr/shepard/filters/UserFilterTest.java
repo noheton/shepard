@@ -8,8 +8,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.security.Principal;
 
-import javax.ws.rs.container.ContainerRequestContext;
-
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +20,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
+import jakarta.ws.rs.container.ContainerRequestContext;
 
 public class UserFilterTest extends BaseTestCase {
 

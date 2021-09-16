@@ -3,7 +3,7 @@ package de.dlr.shepard.security;
 import java.security.Principal;
 import java.util.Arrays;
 
-import javax.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.SecurityContext;
 
 public class JWTSecurityContext implements SecurityContext {
 
