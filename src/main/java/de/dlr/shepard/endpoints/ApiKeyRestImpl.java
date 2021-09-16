@@ -3,8 +3,6 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
@@ -20,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import lombok.extern.log4j.Log4j2;
@@ -64,7 +63,7 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 			uid = UUID.fromString(apiKeyUid);
 		} catch (IllegalArgumentException e) {
 			log.error("Given api key has no valid format: {}", apiKeyUid);
-			return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+			return Response.status(Status.BAD_REQUEST).build();
 		}
 		ApiKey apiKey = apiKeyService.getApiKey(uid);
 		return Response.ok(new ApiKeyIO(apiKey)).build();
@@ -78,13 +77,12 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 				principal.getName(), username, apiKey.getName(), securityContext.getUserPrincipal().getName());
 
 		if (!principal.getName().equals(username)) {
-			return Response
-					.status(HttpStatus.SC_FORBIDDEN, "You are not allowed to create API Keys for user " + username)
-					.build();
+			return Response.status(Status.FORBIDDEN.getStatusCode(),
+					"You are not allowed to create API Keys for user " + username).build();
 		}
 
 		ApiKey created = apiKeyService.createApiKey(apiKey, principal.getName(), uriInfo.getBaseUri().toString());
-		return Response.ok(new ApiKeyWithJWTIO(created)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new ApiKeyWithJWTIO(created)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -100,9 +98,9 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 			uid = UUID.fromString(apiKeyUid);
 		} catch (IllegalArgumentException e) {
 			log.error("Given api key has no valid format: {}", apiKeyUid);
-			return Response.status(HttpStatus.SC_BAD_REQUEST).build();
+			return Response.status(Status.BAD_REQUEST).build();
 		}
 		return apiKeyService.deleteApiKey(uid) ? Response.status(204).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 }

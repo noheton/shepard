@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
@@ -80,7 +78,7 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 				securityContext.getUserPrincipal().getName());
 
 		return service.deleteSubscription(subscriptionId) ? Response.status(204).build()
-				: Response.status(HttpStatus.SC_NOT_FOUND).build();
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

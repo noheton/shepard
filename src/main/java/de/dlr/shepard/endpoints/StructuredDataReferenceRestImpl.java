@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
@@ -19,6 +17,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -71,7 +70,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 				securityContext.getUserPrincipal().getName());
 		var ref = structuredDataReferenceService.createStructuredDataReference(dataObjectId, structuredDataReference,
 				securityContext.getUserPrincipal().getName());
-		return Response.ok(new StructuredDataReferenceIO(ref)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new StructuredDataReferenceIO(ref)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -85,8 +84,8 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 				collectionId, dataObjectId, structuredDataReferenceId, securityContext.getUserPrincipal().getName());
 		var result = structuredDataReferenceService.deleteReference(structuredDataReferenceId,
 				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@GET
@@ -111,7 +110,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 		log.info("Received GET SPECIFIC STRUCTURED DATA PAYLOAD request with reference Id {} and Oid {} from user {}",
 				structuredDataId, oid, securityContext.getUserPrincipal().getName());
 		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid);
-		return payload != null ? Response.ok(payload).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
+		return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 }

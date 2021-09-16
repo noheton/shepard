@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -24,6 +22,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -88,7 +87,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 
 		DataObject newDataObject = dataObjectService.createDataObject(collectionId, dataObject,
 				securityContext.getUserPrincipal().getName());
-		return Response.ok(new DataObjectIO(newDataObject)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new DataObjectIO(newDataObject)).status(Status.CREATED).build();
 	}
 
 	@PUT
@@ -103,7 +102,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 		DataObject updatedDataObject = dataObjectService.updateDataObject(dataObjectId, dataObject,
 				securityContext.getUserPrincipal().getName());
 		if (updatedDataObject == null) {
-			return Response.status(HttpStatus.SC_NOT_FOUND).build();
+			return Response.status(Status.NOT_FOUND).build();
 		}
 		return Response.ok(new DataObjectIO(updatedDataObject)).build();
 	}
@@ -117,8 +116,8 @@ public class DataObjectRestImpl implements DataObjectRest {
 				collectionId, dataObjectId, securityContext.getUserPrincipal().getName());
 
 		return dataObjectService.deleteDataObject(dataObjectId, securityContext.getUserPrincipal().getName())
-				? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+				? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 }

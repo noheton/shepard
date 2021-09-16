@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
@@ -19,6 +17,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -72,7 +71,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 		var result = uriReferenceService.createURIReference(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 
-		return Response.ok(new URIReferenceIO(result)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new URIReferenceIO(result)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -85,8 +84,8 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 				collectionId, dataObjectId, referenceId, securityContext.getUserPrincipal().getName());
 
 		return uriReferenceService.deleteURIReference(referenceId, securityContext.getUserPrincipal().getName())
-				? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+				? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 }

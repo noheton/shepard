@@ -8,8 +8,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.UUID;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.ApiError;
 import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.security.GracePeriodUtil;
@@ -29,6 +27,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.log4j.Log4j2;
 
@@ -77,15 +76,15 @@ public class JWTFilter implements ContainerRequestFilter {
 			log.warn("Invalid/missing authorization header (Authorization: {}, X-API-KEY: {}) on endpoint {}",
 					authorizationHeader, apiKeyHeader, requestContext.getUriInfo().getAbsolutePath());
 			requestContext.abortWith(
-					Response.status(HttpStatus.SC_UNAUTHORIZED).entity(new ApiError(HttpStatus.SC_UNAUTHORIZED,
+					Response.status(Status.UNAUTHORIZED).entity(new ApiError(Status.UNAUTHORIZED.getStatusCode(),
 							"AuthenticationException", "Invalid/missing authorization header")).build());
 			return;
 		}
 
 		if (principal == null) {
-			requestContext.abortWith(Response.status(HttpStatus.SC_UNAUTHORIZED).entity(
-					new ApiError(HttpStatus.SC_UNAUTHORIZED, "AuthenticationException", "Invalid Authentication"))
-					.build());
+			requestContext.abortWith(
+					Response.status(Status.UNAUTHORIZED).entity(new ApiError(Status.UNAUTHORIZED.getStatusCode(),
+							"AuthenticationException", "Invalid Authentication")).build());
 			return;
 		}
 

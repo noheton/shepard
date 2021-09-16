@@ -3,8 +3,6 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.File;
@@ -21,6 +19,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -71,7 +70,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 				collectionId, dataObjectId, fileReference.getName(), securityContext.getUserPrincipal().getName());
 		var ref = fileReferenceService.createFileReference(dataObjectId, fileReference,
 				securityContext.getUserPrincipal().getName());
-		return Response.ok(new FileReferenceIO(ref)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -85,8 +84,8 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 				collectionId, dataObjectId, fileReferenceId, securityContext.getUserPrincipal().getName());
 		var result = fileReferenceService.deleteReference(fileReferenceId,
 				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@GET
@@ -102,7 +101,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 		return payload != null
 				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
 						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
-				: Response.status(HttpStatus.SC_NOT_FOUND).build();
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 	@GET

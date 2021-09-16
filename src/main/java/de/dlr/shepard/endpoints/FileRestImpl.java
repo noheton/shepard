@@ -3,7 +3,6 @@ package de.dlr.shepard.endpoints;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -24,6 +23,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -77,7 +77,7 @@ public class FileRestImpl implements FileRest {
 		log.info("Received CREATE FILE CONTAINER request from user {}", securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.createFileContainer(fileContainer,
 				securityContext.getUserPrincipal().getName());
-		return Response.ok(new FileContainerIO(result)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new FileContainerIO(result)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -88,8 +88,8 @@ public class FileRestImpl implements FileRest {
 				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.deleteFileContainer(fileContainerId,
 				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@GET
@@ -114,7 +114,7 @@ public class FileRestImpl implements FileRest {
 		return payload != null
 				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
 						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
-				: Response.status(HttpStatus.SC_NOT_FOUND).build();
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 	@DELETE
@@ -125,8 +125,8 @@ public class FileRestImpl implements FileRest {
 		log.info("Received DELETE FILE request with container Id {} and Oid {} from user {}", fileContainerId, oid,
 				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.deleteFile(fileContainerId, oid);
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@POST
@@ -140,7 +140,7 @@ public class FileRestImpl implements FileRest {
 				securityContext.getUserPrincipal().getName());
 		String fileName = fileMetaData.getFileName();
 		var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
-		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result != null ? Response.status(Status.CREATED).entity(result).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 }

@@ -1,21 +1,9 @@
 package de.dlr.shepard.filters;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.neo4Core.entities.Subscription;
@@ -24,9 +12,13 @@ import de.dlr.shepard.neo4Core.io.HasIdIO;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.util.RequestMethod;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -82,27 +74,18 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 	}
 
 	private void sendCallback(Subscription sub, EventIO event) {
-		CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-		HttpPost request = new HttpPost(sub.getCallbackURL());
+		var client = ClientBuilder.newClient();
+		var webTarget = client.target(sub.getCallbackURL());
 
 		try {
-			var content = new ObjectMapper().writeValueAsString(event);
-			var body = new StringEntity(content, ContentType.APPLICATION_JSON);
-			request.setEntity(body);
-			HttpResponse response = httpclient.execute(request);
-			log.info("Notification has been send to {} with response code: {}", request.getURI(),
-					response.getStatusLine());
-		} catch (UnsupportedEncodingException | JsonProcessingException e) {
-			log.error("{}: Could not parse event to json: {}", e.getMessage(), event);
-		} catch (IOException e) {
+			var entity = Entity.entity(event, MediaType.APPLICATION_JSON);
+			var response = webTarget.request().buildPost(entity).invoke();
+			log.info("Notification has been send to {} with response code: {}", sub.getCallbackURL(),
+					response.getStatus());
+		} catch (ProcessingException e) {
 			log.error("{}: Could not execute notification request", e.getMessage());
 		} finally {
-			// eww :/
-			try {
-				httpclient.close();
-			} catch (IOException e) {
-				log.error("IOException while closing HTTPClient");
-			}
+			client.close();
 		}
 	}
 

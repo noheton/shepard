@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
@@ -22,6 +20,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -79,7 +78,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		var result = timeseriesContainerService.createTimeseriesContainer(timeseriesContainer,
 				securityContext.getUserPrincipal().getName());
 
-		return Response.ok(new TimeseriesContainerIO(result)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new TimeseriesContainerIO(result)).status(Status.CREATED).build();
 	}
 
 	@DELETE
@@ -92,8 +91,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		var result = timeseriesContainerService.deleteTimeseriesContainer(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@POST
@@ -105,8 +104,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 		var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);
 
-		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result != null ? Response.status(Status.CREATED).entity(result).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 }

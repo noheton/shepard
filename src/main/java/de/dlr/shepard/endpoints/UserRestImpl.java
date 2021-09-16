@@ -1,7 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.neo4Core.services.UserService;
@@ -15,6 +13,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -35,7 +34,7 @@ public class UserRestImpl implements UserRest {
 		JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
 		log.info("Received GET CURRENT USER request with parameters: username: {}", principal.getUsername());
 		User currentUser = userService.getUser(principal.getUsername());
-		return currentUser == null ? Response.status(HttpStatus.SC_NOT_FOUND).build()
+		return currentUser == null ? Response.status(Status.NOT_FOUND).build()
 				: Response.ok(new UserIO(currentUser)).build();
 
 	}
@@ -48,6 +47,6 @@ public class UserRestImpl implements UserRest {
 				securityContext.getUserPrincipal().getName());
 
 		User user = userService.getUser(username);
-		return user == null ? Response.status(HttpStatus.SC_NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
+		return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
 	}
 }

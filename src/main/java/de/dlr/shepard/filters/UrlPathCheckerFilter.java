@@ -2,14 +2,13 @@ package de.dlr.shepard.filters;
 
 import java.io.IOException;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.exceptions.ApiError;
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.services.UrlPathChecker;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.log4j.Log4j2;
 
@@ -25,7 +24,7 @@ public class UrlPathCheckerFilter implements ContainerRequestFilter {
 			urlPathChecker.checkPathSegments(requestContext.getUriInfo().getPathSegments());
 		} catch (InvalidPathException e) {
 			log.warn("Cought invalid path exception: {}", e.getMessage());
-			var status = HttpStatus.SC_NOT_FOUND;
+			var status = Status.NOT_FOUND.getStatusCode();
 			requestContext.abortWith(Response.status(status)
 					.entity(new ApiError(status, e.getClass().toString(), e.getMessage())).build());
 		}

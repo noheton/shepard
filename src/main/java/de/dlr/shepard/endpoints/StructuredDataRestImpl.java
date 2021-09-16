@@ -2,8 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import org.apache.http.HttpStatus;
-
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
@@ -22,6 +20,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.log4j.Log4j2;
 
@@ -80,8 +79,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 				structuredDataId, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.deleteStructuredDataContainer(structuredDataId,
 				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@POST
@@ -91,7 +90,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.createStructuredDataContainer(structuredDataContainerIO,
 				securityContext.getUserPrincipal().getName());
-		return Response.ok(new StructuredDataContainerIO(result)).status(HttpStatus.SC_CREATED).build();
+		return Response.ok(new StructuredDataContainerIO(result)).status(Status.CREATED).build();
 	}
 
 	@POST
@@ -101,8 +100,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 			StructuredDataPayload payload) {
 		log.info("Received POST STRUCTUREDDATA request from user {}", securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
-		return result != null ? Response.status(HttpStatus.SC_CREATED).entity(result).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result != null ? Response.status(Status.CREATED).entity(result).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@GET
@@ -123,7 +122,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		log.info("Received GET STRUCTURED DATA request with container Id {} and Oid {} from user {}", structuredDataId,
 				oid, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
-		return result != null ? Response.ok(result).build() : Response.status(HttpStatus.SC_NOT_FOUND).build();
+		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 	@DELETE
@@ -134,8 +133,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		log.info("Received DELETE STRUCTURED DATA request with container Id {} and Oid {} from user {}",
 				structuredDataId, oid, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
-		return result ? Response.status(HttpStatus.SC_NO_CONTENT).build()
-				: Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return result ? Response.status(Status.NO_CONTENT).build()
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 }
