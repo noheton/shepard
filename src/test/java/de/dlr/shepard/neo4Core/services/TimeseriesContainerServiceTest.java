@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -126,9 +127,11 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var user = new User("bob");
 		var date = new Date(23);
 		var old = new TimeseriesContainer(1L);
+		old.setDatabase("database");
 
 		var expected = new TimeseriesContainer(1L) {
 			{
+				setDatabase("database");
 				setUpdatedAt(date);
 				setUpdatedBy(user);
 				setDeleted(true);
@@ -142,6 +145,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		var actual = service.deleteTimeseriesContainer(1L, "bob");
 		assertTrue(actual);
+		verify(timeseriesService).deleteDatabase("database");
 	}
 
 	@Test

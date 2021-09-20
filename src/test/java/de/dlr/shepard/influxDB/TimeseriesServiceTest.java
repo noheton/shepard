@@ -108,4 +108,10 @@ public class TimeseriesServiceTest extends BaseTestCase {
 		assertEquals(List.of(), actual);
 	}
 
+	@Test
+	public void deleteDatabaseTest() {
+		service.deleteDatabase("database");
+		verify(connector).deleteDatabase("database");
+	}
+
 }

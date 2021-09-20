@@ -103,7 +103,7 @@ public class InfluxConnectorTest extends BaseTestCase {
 	@Test
 	public void testDeleteDatabase() {
 		connector.deleteDatabase(database);
-		verify(influxDB).query(new Query("DROP DATABASE " + database));
+		verify(influxDB).query(new Query(String.format("DROP DATABASE \"%s\"", database)));
 	}
 
 	@Test

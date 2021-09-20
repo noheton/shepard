@@ -18,7 +18,7 @@ public class PKIHelperTest extends BaseTestCase {
 
 	@Test
 	public void testInit() {
-		// TODO
+		// TODO: How to test filesystem interactions?
 	}
 
 }

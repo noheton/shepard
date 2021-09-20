@@ -12,7 +12,7 @@ public class TimeseriesService {
 
 	/**
 	 * Creates timeseries and writes them to influxDB
-	 * 
+	 *
 	 * @param database The database to be queried
 	 * @param payload  the Timeseries with InfluxPoints to be created
 	 * @return An error if there was a problem, empty string if all went well
@@ -23,7 +23,7 @@ public class TimeseriesService {
 
 	/**
 	 * Queries the database for time series.
-	 * 
+	 *
 	 * @param startTimeStamp The beginning of the time series
 	 * @param endTimeStamp   The end of the time series
 	 * @param database       The database to be queried
@@ -39,7 +39,7 @@ public class TimeseriesService {
 	/**
 	 * Queries the database for many time series in parallel. Returns a list of time
 	 * series. If the filter sets are empty, no filtering takes place.
-	 * 
+	 *
 	 * @param startTimeStamp        The beginning of the time series
 	 * @param endTimeStamp          The end of the time series
 	 * @param database              The database to be queried
@@ -68,13 +68,17 @@ public class TimeseriesService {
 
 	/**
 	 * Creates a new database called by a random string
-	 * 
+	 *
 	 * @return String the new database
 	 */
 	public String createDatabase() {
 		String name = UUID.randomUUID().toString();
 		influxConnector.createDatabase(name);
 		return name;
+	}
+
+	public void deleteDatabase(String database) {
+		influxConnector.deleteDatabase(database);
 	}
 
 	private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {

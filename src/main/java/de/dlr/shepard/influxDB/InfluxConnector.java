@@ -115,7 +115,8 @@ public class InfluxConnector implements IConnector {
 	 * @param databaseName Name of the database to be deleted.
 	 */
 	public void deleteDatabase(String databaseName) {
-		influxDB.query(new Query("DROP DATABASE " + databaseName));
+		String query = String.format("DROP DATABASE \"%s\"", databaseName);
+		influxDB.query(new Query(query));
 	}
 
 	/**

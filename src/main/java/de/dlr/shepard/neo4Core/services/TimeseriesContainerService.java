@@ -82,8 +82,7 @@ public class TimeseriesContainerService {
 		timeseriesContainer.setUpdatedAt(dateHelper.getDate());
 		timeseriesContainer.setUpdatedBy(user);
 		timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-		// TODO: Delete database
-
+		timeseriesService.deleteDatabase(timeseriesContainer.getDatabase());
 		return true;
 	}
 
