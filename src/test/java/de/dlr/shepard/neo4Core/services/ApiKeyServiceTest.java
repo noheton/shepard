@@ -10,6 +10,7 @@ import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -84,7 +85,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
 		when(userDAO.find("bob")).thenReturn(null);
 
 		var actual = service.getAllApiKeys("bob");
-		assertEquals(List.of(), actual);
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test

@@ -17,6 +17,7 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -229,10 +230,10 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(50L, 7)));
 
 		when(dao.find(1L)).thenReturn(ref);
-		when(timeseriesService.getTimeseriesList(123, 321, "Database", List.of(ts), Set.of("dev"), Set.of("loc"),
-				Set.of("name"))).thenReturn(List.of(payload));
+		when(timeseriesService.getTimeseriesList(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
+				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(List.of(payload));
 
-		var actual = service.getPayload(1L, Set.of("dev"), Set.of("loc"), Set.of("name"));
+		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"));
 		assertEquals(List.of(payload), actual);
 	}
 }

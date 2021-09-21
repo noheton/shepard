@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
 
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
@@ -96,6 +97,17 @@ public class TimeseriesContainerService {
 			return null;
 		}
 		return payload.getTimeseries();
+	}
+
+	public TimeseriesPayload getTimeseries(long timeseriesId, Timeseries timeseries, long start, long end,
+			AggregateFunction function, Long groupBySec) {
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
+		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			return null;
+		}
+		var result = timeseriesService.getTimeseries(start, end, timeseriesContainer.getDatabase(), timeseries,
+				function, groupBySec);
+		return result;
 	}
 
 }

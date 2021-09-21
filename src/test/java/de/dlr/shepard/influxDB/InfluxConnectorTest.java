@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.eq;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.gte;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.lte;
-import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.select;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.ti;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,6 +29,7 @@ import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.influxdb.dto.QueryResult.Result;
 import org.influxdb.dto.QueryResult.Series;
+import org.influxdb.querybuilder.BuiltQuery.QueryBuilder;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -54,10 +54,12 @@ public class InfluxConnectorTest extends BaseTestCase {
 	private final long timestamp = System.currentTimeMillis() * 1000000;
 	private final long start = 12345L;
 	private final long end = 67890L;
+	private final long groupBy = 10L;
+	private final AggregateFunction function = AggregateFunction.MEAN;
 
-	private final Query query = select(field).from(database, measurement).where(gte("time", ti(start, "ns")))
-			.and(lte("time", ti(end, "ns"))).and(eq(Constants.DEVICE, device)).and(eq(Constants.LOCATION, location))
-			.and(eq(Constants.SYMBOLICNAME, sym_name));
+	private final Query query = QueryBuilder.select().mean(field).from(database, measurement)
+			.where(gte("time", ti(start, "ns"))).and(lte("time", ti(end, "ns"))).and(eq(Constants.DEVICE, device))
+			.and(eq(Constants.LOCATION, location)).and(eq(Constants.SYMBOLICNAME, sym_name)).groupBy(groupBy);
 
 	private final Timeseries expectedTimeseries = new Timeseries(measurement, location, device, sym_name, field);
 	private final TimeseriesPayload expectedTimeseriesPayload = new TimeseriesPayload(expectedTimeseries,
@@ -622,7 +624,40 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		List<InfluxPoint> exp1 = connector.getTimeseries(start, end, database, expectedTimeseries).getPoints();
+		List<InfluxPoint> exp1 = connector.getTimeseries(start, end, database, expectedTimeseries, function, groupBy)
+				.getPoints();
+		assertEquals((int) exp1.get(0).getValue(), 5);
+	}
+
+	@Test
+	public void testGetTimeseriesWithoutAggregateFunction() {
+		List<List<Object>> values = new ArrayList<List<Object>>();
+		List<Object> value = new ArrayList<Object>();
+		value.add(Instant.ofEpochMilli(System.currentTimeMillis()).toString());
+		value.add(5);
+		values.add(value);
+
+		Series series = new Series();
+		series.setValues(values);
+
+		Result result = new Result();
+		List<Series> seriesList = new ArrayList<Series>();
+		seriesList.add(series);
+		result.setSeries(seriesList);
+
+		List<Result> resultList = new ArrayList<Result>();
+		resultList.add(result);
+
+		QueryResult queryResult = new QueryResult();
+		queryResult.setResults(resultList);
+
+		var query = QueryBuilder.select(field).from(database, measurement).where(gte("time", ti(start, "ns")))
+				.and(lte("time", ti(end, "ns"))).and(eq(Constants.DEVICE, device)).and(eq(Constants.LOCATION, location))
+				.and(eq(Constants.SYMBOLICNAME, sym_name));
+		when(influxDB.query(query)).thenReturn(queryResult);
+
+		List<InfluxPoint> exp1 = connector.getTimeseries(start, end, database, expectedTimeseries, null, null)
+				.getPoints();
 		assertEquals((int) exp1.get(0).getValue(), 5);
 	}
 
@@ -633,7 +668,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -659,7 +695,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -672,7 +709,22 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
+		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
+				.isEqualTo(expectedTimeseriesPayload);
+		assertTrue(actualTimeseries.getPoints().isEmpty());
+	}
+
+	@Test
+	public void testGetTimeseriesWithQueryResultsListIsNull() {
+		QueryResult queryResult = new QueryResult();
+		queryResult.setResults(null);
+
+		when(influxDB.query(query)).thenReturn(queryResult);
+
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -689,7 +741,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -706,7 +759,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -723,7 +777,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(query)).thenReturn(queryResult);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -733,7 +788,8 @@ public class InfluxConnectorTest extends BaseTestCase {
 	public void testGetTimeseriesWithInfluxDBException() {
 		doThrow(InfluxDBException.class).when(influxDB).query(query);
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
+				groupBy);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());

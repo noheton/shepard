@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -72,7 +73,7 @@ public class SubscriptionServiceTest extends BaseTestCase {
 		when(userDAO.find("bob")).thenReturn(null);
 		var actual = service.getAllSubscriptions("bob");
 
-		assertEquals(List.of(), actual);
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test

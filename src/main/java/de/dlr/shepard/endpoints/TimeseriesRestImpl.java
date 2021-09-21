@@ -3,12 +3,15 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.TimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -106,6 +109,32 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
+	@Override
+	public Response getTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
+			@QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
+			@QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
+			@QueryParam(Constants.SYMBOLICNAME) @Parameter(required = true) String symbolicName,
+			@QueryParam(Constants.FIELD) @Parameter(required = true) String field,
+			@QueryParam(Constants.START) @Parameter(required = true) long start,
+			@QueryParam(Constants.END) @Parameter(required = true) long end,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.GROUP_BY_SEC) Long groupBySec) {
+		log.info("Received GET TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
+
+		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
+
+		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+		var result = timeseriesContainerService.getTimeseries(timeseriesId, timeseries, start, end, function,
+				groupBySec);
+
+		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 }

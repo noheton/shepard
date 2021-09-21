@@ -22,17 +22,20 @@ public class TimeseriesService {
 	}
 
 	/**
-	 * Queries the database for time series.
+	 * Queries the database for time series including aggregate functions.
 	 *
-	 * @param startTimeStamp The beginning of the time series
-	 * @param endTimeStamp   The end of the time series
-	 * @param database       The database to be queried
-	 * @param timeseries     The time series whose points are queried
+	 * @param startTimeStamp  The beginning of the time series
+	 * @param endTimeStamp    The end of the time series
+	 * @param database        The database to be queried
+	 * @param timeseries      The time series whose points are queried
+	 * @param function        The aggregate function
+	 * @param groupByInterval The time interval measurements get grouped by
 	 * @return time series with influx points
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries) {
-		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries);
+			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries,
+				function, groupByInterval);
 		return payload;
 	}
 
@@ -44,19 +47,21 @@ public class TimeseriesService {
 	 * @param endTimeStamp          The end of the time series
 	 * @param database              The database to be queried
 	 * @param timeseriesList        The list of time series whose points are queried
+	 * @param function              The aggregate function
+	 * @param groupByInterval       The time interval measurements get grouped by
 	 * @param devicesFilterSet      A set of allowed devices or an empty set
 	 * @param locationsFilterSet    A set of allowed locations or an empty set
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
 	 * @return a list of time series with influx points
 	 */
 	public List<TimeseriesPayload> getTimeseriesList(long startTimeStamp, long endTimeStamp, String database,
-			List<Timeseries> timeseriesList, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
-			Set<String> symbolicNameFilterSet) {
+			List<Timeseries> timeseriesList, AggregateFunction function, Long groupByInterval,
+			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
 		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
 		timeseriesList.parallelStream().forEach(timeseries -> {
 			TimeseriesPayload payload = null;
 			if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
-				payload = getTimeseries(startTimeStamp, endTimeStamp, database, timeseries);
+				payload = getTimeseries(startTimeStamp, endTimeStamp, database, timeseries, function, groupByInterval);
 			}
 			if (payload != null) {
 				timeseriesQueue.add(payload);
@@ -82,17 +87,19 @@ public class TimeseriesService {
 	}
 
 	private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {
-		boolean isEqual = true;
+		var deviceMatches = true;
+		var locatioMatches = true;
+		var symbolicNameMatches = true;
 		if (!device.isEmpty()) {
-			isEqual &= device.contains(timeseries.getDevice());
+			deviceMatches = device.contains(timeseries.getDevice());
 		}
 		if (!location.isEmpty()) {
-			isEqual &= location.contains(timeseries.getLocation());
+			locatioMatches = location.contains(timeseries.getLocation());
 		}
 		if (!symName.isEmpty()) {
-			isEqual &= symName.contains(timeseries.getSymbolicName());
+			symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
 		}
-		return isEqual;
+		return deviceMatches && locatioMatches && symbolicNameMatches;
 	}
 
 }

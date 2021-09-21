@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
@@ -47,7 +48,8 @@ public interface TimeseriesReferenceRest {
 	@Operation(description = "Get timeseries reference payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesPayload.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, Set<String> deviceFilterTag,
-			Set<String> locationFilterTag, Set<String> symbolicNameFilterTag);
+	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, AggregateFunction function,
+			Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
+			Set<String> symbolicNameFilterTag);
 
 }

@@ -4,10 +4,13 @@ import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.eq;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.gte;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.lte;
 import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.ti;
+import static org.influxdb.querybuilder.FunctionFactory.time;
+import static org.influxdb.querybuilder.time.DurationLiteral.SECOND;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.BatchOptions;
@@ -21,6 +24,8 @@ import org.influxdb.dto.Pong;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.influxdb.querybuilder.BuiltQuery.QueryBuilder;
+import org.influxdb.querybuilder.SelectionQueryImpl;
+import org.influxdb.querybuilder.WhereQueryImpl;
 
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
@@ -120,14 +125,14 @@ public class InfluxConnector implements IConnector {
 	}
 
 	/**
-	 * Writes all InfluxPoint objects, saved in the TimeseriesWithInfluxpoints
-	 * object, into the influx database. Therefore the method uses the name of the
-	 * database, the name of the measurement, the location, the device, the symbolic
-	 * name and the name of the field provided by the given TimeseriesPayload
-	 * object. The actual write operation is done by using the unix timestamp in
-	 * nanoseconds and the value of every InfluxPoint object in the
-	 * TimeseriesWithInfluxPoint object. All these variables have to be defined in
-	 * the given Timeseries object for a successful write operation.
+	 * Writes all InfluxPoint objects, saved in the TimeseriesPayload object, into
+	 * the influx database. Therefore the method uses the name of the database, the
+	 * name of the measurement, the location, the device, the symbolic name and the
+	 * name of the field provided by the given TimeseriesPayload object. The actual
+	 * write operation is done by using the unix timestamp in nanoseconds and the
+	 * value of every InfluxPoint object in the TimeseriesPayload object. All these
+	 * variables have to be defined in the given Timeseries object for a successful
+	 * write operation.
 	 *
 	 * @param database The database to store the payload in
 	 * @param payload  Combines the required attributes in a structured way.
@@ -140,9 +145,90 @@ public class InfluxConnector implements IConnector {
 		if (!databaseExist(database)) {
 			return String.format("The database %s does not exist", database);
 		}
+
+		var batchPoints = createBatch(database, influxPoints, timeseries);
+
+		try {
+			influxDB.write(batchPoints);
+		} catch (InfluxDBException e) {
+			log.error("InfluxdbException while writing points: {}", e.getMessage());
+			return e.getMessage();
+		}
+		return "";
+
+	}
+
+	/**
+	 * Returns a Timeseries object containing all the influx data points which match
+	 * the given conditions consigned to the method. The returned InfluxPoint
+	 * objects are in the given measurement of the specific database between the
+	 * start and the end timestamp.
+	 *
+	 * @param startTimeStamp  Start timestamp from which influx values should be
+	 *                        returned.
+	 * @param endTimeStamp    End timestamp to which influx values should be
+	 *                        returned.
+	 * @param database        Name of the database.
+	 * @param timeseries      Specifies the data to load from database
+	 * @param function        The aggregate function
+	 * @param groupByInterval The time interval measurements get grouped by
+	 * @return A Timeseries object containing a list of all InfluxPoints in the
+	 *         given measurement of the specific database between the two given
+	 *         timestamps matching the "device"-tag, the "location"-tag and the
+	 *         "symbolic_name"-tag.
+	 */
+
+	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
+			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+		Query query = buildQuery(startTimeStamp, endTimeStamp, database, timeseries, function, groupByInterval);
+		log.debug("Influx Query: {}", query.getCommand());
+		QueryResult queryResult;
+		try {
+			queryResult = influxDB.query(query);
+		} catch (InfluxDBException e) {
+			queryResult = null;
+			log.error("Could not parse query: {}", query.getCommand());
+		}
+		if (isQueryResultValid(queryResult)) {
+			return extractPayload(queryResult, timeseries);
+		}
+		return new TimeseriesPayload(timeseries, Collections.emptyList());
+	}
+
+	private Query buildQuery(long startTimeStamp, long endTimeStamp, String database, Timeseries timeseries,
+			AggregateFunction function, Long groupByInterval) {
+		String field = "\"" + timeseries.getField() + "\"";
+		SelectionQueryImpl selectionQuery;
+		if (function == null) {
+			selectionQuery = QueryBuilder.select(field);
+		} else {
+			selectionQuery = QueryBuilder.select().raw(String.format("%s(%s)", function.toString(), field));
+		}
+		WhereQueryImpl<?> query = selectionQuery.from(database, "\"" + timeseries.getMeasurement() + "\"")
+				.where(gte("time", ti(startTimeStamp, "ns"))).and(lte("time", ti(endTimeStamp, "ns")))
+				.and(eq(Constants.DEVICE, timeseries.getDevice())).and(eq(Constants.LOCATION, timeseries.getLocation()))
+				.and(eq(Constants.SYMBOLICNAME, timeseries.getSymbolicName()));
+		if (groupByInterval == null)
+			return query;
+		return query.groupBy(time(groupByInterval, SECOND));
+
+	}
+
+	private TimeseriesPayload extractPayload(QueryResult queryResult, Timeseries timeseries) {
+		var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
+		var influxPoints = new ArrayList<InfluxPoint>(values.size());
+		for (var value : values) {
+			var time = Instant.parse((String) value.get(0));
+			var nanoseconds = time.getEpochSecond() * MULTIPLIER_NANO + time.getNano();
+			influxPoints.add(new InfluxPoint(nanoseconds, value.get(1)));
+		}
+		return new TimeseriesPayload(timeseries, influxPoints);
+	}
+
+	private BatchPoints createBatch(String database, List<InfluxPoint> influxPoints, Timeseries timeseries) {
+		BatchPoints batchPoints = BatchPoints.database(database).build();
 		String expectedType = getExpectedDatatype(database, timeseries.getMeasurement(), timeseries.getField());
 
-		BatchPoints batchPoints = BatchPoints.database(database).build();
 		for (var influxPoint : influxPoints) {
 			Builder pointBuilder = Point.measurement(timeseries.getMeasurement())
 					.tag(Constants.LOCATION, timeseries.getLocation()).tag(Constants.DEVICE, timeseries.getDevice())
@@ -163,62 +249,7 @@ public class InfluxConnector implements IConnector {
 			batchPoints.point(pointBuilder.build());
 		}
 
-		try {
-			influxDB.write(batchPoints);
-		} catch (InfluxDBException e) {
-			log.error("InfluxdbException while writing points: {}", e.getMessage());
-			return e.getMessage();
-		}
-		return "";
-
-	}
-
-	/**
-	 * Returns a Timeseries object containing all the influx data points which match
-	 * the given conditions consigned to the method. The returned InfluxPoint
-	 * objects are in the given measurement of the specific database between the
-	 * start and the end timestamp.
-	 *
-	 * @param startTimeStamp Start timestamp from which influx values should be
-	 *                       returned.
-	 * @param endTimeStamp   End timestamp to which influx values should be
-	 *                       returned.
-	 * @param database       Name of the database.
-	 * @param timeseries     Specifies the data to load from database
-	 * @return A Timeseries object containing a list of all InfluxPoints in the
-	 *         given measurement of the specific database between the two given
-	 *         timestamps matching the "device"-tag, the "location"-tag and the
-	 *         "symbolic_name"-tag.
-	 */
-
-	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries) {
-		TimeseriesPayload payload = null;
-		Query query = QueryBuilder.select("\"" + timeseries.getField() + "\"")
-				.from(database, "\"" + timeseries.getMeasurement() + "\"").where(gte("time", ti(startTimeStamp, "ns")))
-				.and(lte("time", ti(endTimeStamp, "ns"))).and(eq(Constants.DEVICE, timeseries.getDevice()))
-				.and(eq(Constants.LOCATION, timeseries.getLocation()))
-				.and(eq(Constants.SYMBOLICNAME, timeseries.getSymbolicName()));
-		QueryResult queryResult;
-		try {
-			queryResult = influxDB.query(query);
-		} catch (InfluxDBException e) {
-			queryResult = null;
-			log.error("Could not parse query: {}", query.getCommand());
-		}
-		if (isQueryResultValid(queryResult)) {
-			var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
-			var influxPoints = new ArrayList<InfluxPoint>(values.size());
-			for (var value : values) {
-				var time = Instant.parse((String) value.get(0));
-				var nanoseconds = time.getEpochSecond() * MULTIPLIER_NANO + time.getNano();
-				influxPoints.add(new InfluxPoint(nanoseconds, value.get(1)));
-			}
-			payload = new TimeseriesPayload(timeseries, influxPoints);
-		} else {
-			payload = new TimeseriesPayload(timeseries, Collections.emptyList());
-		}
-		return payload;
+		return batchPoints;
 	}
 
 	/**
@@ -242,10 +273,16 @@ public class InfluxConnector implements IConnector {
 		}
 
 		var resultList = queryResult.getResults();
-		if (resultList == null || resultList.isEmpty() || resultList.get(0).hasError())
+		if (resultList == null || resultList.isEmpty())
 			return false;
 
-		var seriesList = resultList.get(0).getSeries();
+		var result = resultList.get(0);
+		if (result.hasError()) {
+			log.warn("There was an error while querying the Influxdb: {}", result.getError());
+			return false;
+		}
+
+		var seriesList = result.getSeries();
 		if (seriesList == null || seriesList.isEmpty())
 			return false;
 
@@ -292,7 +329,7 @@ public class InfluxConnector implements IConnector {
 		String queryString = String.format("SHOW FIELD KEYS ON \"%s\" FROM %s", database, measurement);
 		QueryResult result = influxDB.query(new Query(queryString));
 		if (!isQueryResultValid(result)) {
-			log.warn("There was an error while querying the Influxdb with query string \"{}\"", queryString);
+			log.info("Could not get expected datatype query string \"{}\"", queryString);
 			return "";
 		}
 

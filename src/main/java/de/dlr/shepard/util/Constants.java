@@ -81,8 +81,14 @@ public class Constants {
 	public static final String IS_IN_CONTAINER = "is_in_container";
 
 	// Influx
-	public static final String MEASUREMENT_NAME = "measurementName";
+	public static final String MEASUREMENT = "measurement";
 	public static final String LOCATION = "location";
 	public static final String DEVICE = "device";
 	public static final String SYMBOLICNAME = "symbolic_name";
+	public static final String FIELD = "field";
+	public static final String START = "start";
+	public static final String END = "end";
+	public static final String FUNCTION = "function";
+	public static final String GROUP_BY_SEC = "group_by";
+
 }

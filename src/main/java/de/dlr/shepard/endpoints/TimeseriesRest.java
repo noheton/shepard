@@ -1,5 +1,6 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
@@ -48,5 +49,11 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createTimeseries(long timeseriesId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) TimeseriesPayload payload);
+
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Get timeseries payload")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
+	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
+			String field, long start, long end, AggregateFunction function, Long groupBySec);
 
 }

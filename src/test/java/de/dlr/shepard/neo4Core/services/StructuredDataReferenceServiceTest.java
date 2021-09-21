@@ -303,7 +303,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 
 		var actual = service.getAllPayloads(1L);
-		assertEquals(List.of(), actual);
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test

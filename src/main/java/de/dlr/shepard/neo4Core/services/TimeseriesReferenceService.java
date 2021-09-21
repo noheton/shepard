@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
@@ -73,13 +74,13 @@ public class TimeseriesReferenceService {
 		return true;
 	}
 
-	public List<TimeseriesPayload> getPayload(long timeseriesId, Set<String> devicesFilterSet,
-			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
+	public List<TimeseriesPayload> getPayload(long timeseriesId, AggregateFunction function, Long groupBy,
+			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 
 		var payload = timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(),
-				ref.getTimeseriesContainer().getDatabase(), ref.getTimeseries(), devicesFilterSet, locationsFilterSet,
-				symbolicNameFilterSet);
+				ref.getTimeseriesContainer().getDatabase(), ref.getTimeseries(), function, groupBy, devicesFilterSet,
+				locationsFilterSet, symbolicNameFilterSet);
 
 		return payload;
 	}

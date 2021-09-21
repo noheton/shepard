@@ -5,6 +5,7 @@ import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -99,13 +100,14 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.GROUP_BY_SEC) Long groupBy, @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
-		var payload = timeseriesReferenceService.getPayload(timeseriesId, deviceFilterTag, locationFilterTag,
-				symbolicNameFilterTag);
+		var payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
+				locationFilterTag, symbolicNameFilterTag);
 		return Response.ok(payload).build();
 	}
 

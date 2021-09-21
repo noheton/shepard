@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -28,6 +29,8 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	private Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 	private TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+	private AggregateFunction function = AggregateFunction.MEAN;
+	private Long groupBy = 10L;
 
 	@Test
 	public void createTimeseriesTest() {
@@ -46,66 +49,73 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	@Test
 	public void getTimeseriesTest() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseries(1, 2, "db", ts);
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseries(1, 2, "db", ts, function, groupBy);
 		assertEquals(payload, actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_noFilter() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of(), Set.of(), Set.of());
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Collections.emptySet(), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_allFilters() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of("dev"), Set.of("loc"),
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("dev"), Set.of("loc"),
 				Set.of("symName"));
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterLoc() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of(), Set.of("loc"), Set.of());
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Set.of("loc"), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterDev() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of("dev"), Set.of(), Set.of());
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("dev"),
+				Collections.emptySet(), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterName() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of(), Set.of(), Set.of("symName"));
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Collections.emptySet(), Set.of("symName"));
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingLoc() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of(), Set.of("wrong"), Set.of());
-		assertEquals(List.of(), actual);
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Set.of("wrong"), Collections.emptySet());
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingDev() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of("wrong"), Set.of(), Set.of());
-		assertEquals(List.of(), actual);
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("wrong"),
+				Collections.emptySet(), Collections.emptySet());
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingName() {
-		when(connector.getTimeseries(1, 2, "db", ts)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), Set.of(), Set.of(), Set.of("wrong"));
-		assertEquals(List.of(), actual);
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Collections.emptySet(), Set.of("wrong"));
+		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test

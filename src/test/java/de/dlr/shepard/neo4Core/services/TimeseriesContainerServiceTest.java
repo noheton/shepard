@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -211,6 +212,50 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		when(timeseriesService.createTimeseries("database", payload)).thenReturn("error");
 
 		var actual = service.createTimeseries(1L, payload);
+		assertNull(actual);
+	}
+
+	@Test
+	public void getTimeseriesTest() {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+		var start = 123L;
+		var end = 456L;
+
+		when(dao.find(1L)).thenReturn(container);
+		when(timeseriesService.getTimeseries(start, end, "database", ts, AggregateFunction.MEAN, 10L))
+				.thenReturn(payload);
+
+		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		assertEquals(payload, actual);
+	}
+
+	@Test
+	public void getTimeseriesTest_containerNull() {
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var start = 123L;
+		var end = 456L;
+
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		assertNull(actual);
+	}
+
+	@Test
+	public void getTimeseriesTest_containerDeleted() {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		container.setDeleted(true);
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var start = 123L;
+		var end = 456L;
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
 		assertNull(actual);
 	}
 
