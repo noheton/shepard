@@ -26,7 +26,7 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 		if (params.hasPagination()) {
 			query += " " + getParameterizedPaginationPart();
 		}
-		query += " " + getReturnPart("c");
+		query += " " + getReturnPart("c", true);
 		var result = new ArrayList<StructuredDataContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

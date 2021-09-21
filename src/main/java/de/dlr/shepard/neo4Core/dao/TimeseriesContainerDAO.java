@@ -27,7 +27,7 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 		if (params.hasPagination()) {
 			query += " " + getParameterizedPaginationPart();
 		}
-		query += " " + getReturnPart("c");
+		query += " " + getReturnPart("c", true);
 		var result = new ArrayList<TimeseriesContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

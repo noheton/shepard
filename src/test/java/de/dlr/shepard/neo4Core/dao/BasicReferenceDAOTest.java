@@ -47,7 +47,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+				+ "WHERE ID(d)=1 WITH r MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
+				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper();
@@ -74,7 +75,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+				+ "WHERE ID(d)=1 WITH r MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
+				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -101,7 +103,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC MATCH path=(r)-[*0..1]-() "
+				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC "
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
 				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -130,7 +133,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size "
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
 				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
@@ -157,7 +161,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size "
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
 				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
@@ -189,7 +194,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-() "
+				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size "
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
 				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -220,7 +226,8 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
 				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
+				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");

@@ -38,7 +38,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c MATCH path=(c)-[*0..1]-() "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c "
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -55,8 +56,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) "
-				+ "WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-() "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -77,7 +78,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c MATCH path=(c)-[*0..1]-() "
+		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c "
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -96,8 +98,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
-				+ "WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-() "
+		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -119,7 +121,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
+				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -138,7 +141,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
+				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -161,7 +165,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
+				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -183,7 +188,8 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 
 		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]-() RETURN c, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(c)-[*0..1]->({deleted: False}) "
+				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");

@@ -142,8 +142,14 @@ public abstract class GenericDAO<T> {
 	}
 
 	protected String getReturnPart(String entity) {
-		var result = String.format("MATCH path=(%s)-[*0..1]-() RETURN %s, nodes(path), relationships(path)", entity,
-				entity);
+		return getReturnPart(entity, false);
+	}
+
+	protected String getReturnPart(String entity, boolean omitIncoming) {
+		var baseString = omitIncoming
+				? "MATCH path=(User)<-[]-(%s)-[*0..1]->({deleted: False}) RETURN %s, nodes(path), relationships(path)"
+				: "MATCH path=(User)<-[]-(%s)-[*0..1]-({deleted: False}) RETURN %s, nodes(path), relationships(path)";
+		var result = String.format(baseString, entity, entity);
 		return result;
 	}
 

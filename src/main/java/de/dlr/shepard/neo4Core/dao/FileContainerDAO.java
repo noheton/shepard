@@ -25,7 +25,7 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 		if (params.hasPagination()) {
 			query += " " + getParameterizedPaginationPart();
 		}
-		query += " " + getReturnPart("c");
+		query += " " + getReturnPart("c", true);
 		var result = new ArrayList<FileContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

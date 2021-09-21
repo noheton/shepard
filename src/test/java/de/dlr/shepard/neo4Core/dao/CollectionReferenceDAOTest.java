@@ -40,7 +40,8 @@ public class CollectionReferenceDAOTest extends BaseTestCase {
 		ref2.setDataObject(obj2);
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:CollectionReference { deleted: false }) WHERE ID(d)=1 "
-				+ "MATCH path=(r)-[*0..1]-() RETURN r, nodes(path), relationships(path)";
+				+ "MATCH path=(User)<-[]-(r)-[*0..1]-({deleted: False}) "
+				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(CollectionReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref2, ref3));
 
