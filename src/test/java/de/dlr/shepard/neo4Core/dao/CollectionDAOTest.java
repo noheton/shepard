@@ -21,7 +21,7 @@ import org.neo4j.ogm.session.Session;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionDAOTest extends BaseTestCase {
@@ -68,7 +68,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
-		var collectionAttribute = CollectionAttributes.name;
+		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
 		var actual = dao.findAllCollections(params);
 		verify(session).query(Collection.class, query, paramsMap);
@@ -110,7 +110,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
-		var collectionAttribute = CollectionAttributes.name;
+		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
 		var actual = dao.findAllCollections(params);
 		verify(session).query(Collection.class, query, paramsMap);
@@ -153,7 +153,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
-		var collectionAttribute = CollectionAttributes.name;
+		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
 		var actual = dao.findAllCollections(params);
 		verify(session).query(Collection.class, query, paramsMap);
@@ -200,7 +200,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
-		var collectionAttribute = CollectionAttributes.name;
+		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
 		var actual = dao.findAllCollections(params);
 		verify(session).query(Collection.class, query, paramsMap);

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.CollectionService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -40,7 +40,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Override
 	public Response getAllCollections(@QueryParam(Constants.QP_NAME) String name,
 			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
-			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) CollectionAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 

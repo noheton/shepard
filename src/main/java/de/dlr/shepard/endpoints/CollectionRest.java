@@ -1,7 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.orderBy.CollectionAttributes;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -18,7 +18,7 @@ public interface CollectionRest {
 	@Operation(description = "Get all collections")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CollectionIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllCollections(String name, Integer page, Integer size, CollectionAttributes orderAttribute,
+	Response getAllCollections(String name, Integer page, Integer size, DataObjectAttributes orderAttribute,
 			Boolean orderDesc);
 
 	@Tag(name = Constants.COLLECTION)

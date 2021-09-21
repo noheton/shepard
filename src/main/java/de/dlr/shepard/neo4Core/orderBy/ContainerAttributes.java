@@ -3,10 +3,9 @@ package de.dlr.shepard.neo4Core.orderBy;
 import java.util.List;
 
 public enum ContainerAttributes implements OrderByAttribute {
-	createdAt, createdBy, updatedAt, updatedBy, name;
+	createdAt, updatedAt, name;
 
-	private static List<ContainerAttributes> stringList = List.of(ContainerAttributes.createdBy,
-			ContainerAttributes.name, ContainerAttributes.updatedBy);
+	private static List<ContainerAttributes> stringList = List.of(ContainerAttributes.name);
 
 	private boolean isString(ContainerAttributes containerAttribute) {
 		if (stringList.contains(containerAttribute))
