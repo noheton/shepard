@@ -33,8 +33,8 @@ public class DataObjectService {
 		var collection = collectionDAO.find(collectionId);
 		var user = userDAO.find(username);
 
-		var parent = getDataObject(dataObject.getParentId());
-		var predecessors = getDataObjects(dataObject.getPredecessorIds());
+		var parent = findRelatedDataObject(collection.getId(), dataObject.getParentId());
+		var predecessors = findRelatedDataObjects(collection.getId(), dataObject.getPredecessorIds());
 
 		var toCreate = new DataObject();
 		toCreate.setAttributes(dataObject.getAttributes());
@@ -95,8 +95,8 @@ public class DataObjectService {
 		var old = dataObjectDAO.find(dataObjectId);
 		var user = userDAO.find(username);
 
-		var parent = getDataObject(dataObject.getParentId());
-		var predecessors = getDataObjects(dataObject.getPredecessorIds());
+		var parent = findRelatedDataObject(old.getCollection().getId(), dataObject.getParentId());
+		var predecessors = findRelatedDataObjects(old.getCollection().getId(), dataObject.getPredecessorIds());
 
 		old.setAttributes(dataObject.getAttributes());
 		old.setDescription(dataObject.getDescription());
@@ -144,31 +144,30 @@ public class DataObjectService {
 		dataObject.setReferences(references);
 	}
 
-	private List<DataObject> getDataObjects(long[] ids) throws InvalidBodyException {
-		var result = new ArrayList<DataObject>();
-		if (ids == null) {
-			return result;
-		}
+	private List<DataObject> findRelatedDataObjects(long collectionId, long[] ids) throws InvalidBodyException {
+		if (ids == null)
+			return new ArrayList<DataObject>();
 
-		result.ensureCapacity(ids.length);
+		var result = new ArrayList<DataObject>(ids.length);
 		for (var id : ids) {
-			var dataObject = dataObjectDAO.find(id);
-			if (dataObject == null || dataObject.isDeleted()) {
-				throw new InvalidBodyException(String.format("The DataObject with id %d could not be found.", id));
-			}
-			result.add(dataObject);
+			result.add(findRelatedDataObject(collectionId, id));
 		}
 		return result;
 	}
 
-	private DataObject getDataObject(Long id) throws InvalidBodyException {
-		DataObject dataObject = null;
-		if (id != null) {
-			dataObject = dataObjectDAO.find(id);
-			if (dataObject == null || dataObject.isDeleted()) {
-				throw new InvalidBodyException(String.format("The DataObject with id %d could not be found.", id));
-			}
-		}
+	private DataObject findRelatedDataObject(long collectionId, Long id) throws InvalidBodyException {
+		if (id == null)
+			return null;
+
+		DataObject dataObject = dataObjectDAO.find(id);
+		if (dataObject == null || dataObject.isDeleted())
+			throw new InvalidBodyException(String.format("The DataObject with id %d could not be found.", id));
+
+		// Prevent cross collection references
+		if (!dataObject.getCollection().getId().equals(collectionId))
+			throw new InvalidBodyException(
+					"Related data objects must belong to the same collection as the new data object");
+
 		return dataObject;
 	}
 }

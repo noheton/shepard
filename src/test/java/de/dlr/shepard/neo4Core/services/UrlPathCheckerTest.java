@@ -208,7 +208,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectService.getDataObject(101L)).thenReturn(dataObject);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
-		assertEquals("ID ERROR - There is no association between experiment and dataObject", e.getMessage());
+		assertEquals("ID ERROR - There is no association between collection and dataObject", e.getMessage());
 	}
 
 	@Test

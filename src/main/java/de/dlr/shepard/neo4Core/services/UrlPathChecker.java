@@ -217,7 +217,7 @@ public class UrlPathChecker {
 		if (dataObject == null) {
 			return "DataObject does not exist";
 		} else if (!dataObject.getCollection().getId().equals(collection.getId())) {
-			return "There is no association between experiment and dataObject";
+			return "There is no association between collection and dataObject";
 		}
 		return null;
 	}

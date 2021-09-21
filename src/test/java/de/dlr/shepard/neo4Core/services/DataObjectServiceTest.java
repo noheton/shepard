@@ -144,7 +144,9 @@ public class DataObjectServiceTest extends BaseTestCase {
 		var date = new Date(23);
 		var collection = new Collection(2L);
 		var parent = new DataObject(3L);
+		parent.setCollection(collection);
 		var predecessor = new DataObject(4L);
+		predecessor.setCollection(collection);
 
 		var input = new DataObjectIO() {
 			{
@@ -333,13 +335,68 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void createDataObjectTest_ParentWrongCollection() throws InvalidBodyException {
+		var user = new User("bob");
+		var date = new Date(23);
+		var collection = new Collection(2L);
+		var wrong = new Collection(200L);
+		var parent = new DataObject(3L);
+		parent.setCollection(wrong);
+
+		var input = new DataObjectIO() {
+			{
+				setAttributes(Map.of("a", "b", "c", "d"));
+				setDescription("Desc");
+				setName("Name");
+				setParentId(3L);
+			}
+		};
+
+		when(dao.find(3L)).thenReturn(parent);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(userDAO.find("bob")).thenReturn(user);
+		when(collectionDAO.find(2L)).thenReturn(collection);
+
+		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
+	}
+
+	@Test
+	public void createDataObjectTest_PredecessorWrongCollection() throws InvalidBodyException {
+		var user = new User("bob");
+		var date = new Date(23);
+		var collection = new Collection(2L);
+		var wrong = new Collection(200L);
+		var predecessor = new DataObject(4L);
+		predecessor.setCollection(wrong);
+
+		var input = new DataObjectIO() {
+			{
+				setAttributes(Map.of("a", "b", "c", "d"));
+				setDescription("Desc");
+				setName("Name");
+				setPredecessorIds(new long[] { 4L });
+			}
+		};
+
+		when(dao.find(4L)).thenReturn(predecessor);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(userDAO.find("bob")).thenReturn(user);
+		when(collectionDAO.find(2L)).thenReturn(collection);
+
+		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
+	}
+
+	@Test
 	public void updateDataObjectTest() throws InvalidBodyException {
+		var collection = new Collection(100L);
 		var user = new User("bob");
 		var date = new Date(23);
 		var updateUser = new User("claus");
 		var updateDate = new Date(43);
 		var parent = new DataObject(3L);
+		parent.setCollection(collection);
 		var predecessor = new DataObject(4L);
+		predecessor.setCollection(collection);
 
 		var input = new DataObjectIO() {
 			{
@@ -359,6 +416,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setId(1L);
+				setCollection(collection);
 			}
 		};
 		var updated = new DataObject() {
@@ -373,6 +431,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 				setParent(parent);
 				setPredecessors(List.of(predecessor));
 				setId(1L);
+				setCollection(collection);
 			}
 		};
 
