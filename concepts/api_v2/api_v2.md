@@ -108,7 +108,7 @@ In this example, only `ParameterX` should be modified, all other fields, relatio
 This is an internal class diagram.
 Some attributes are hidden or changed for the user.
 
-![class_diagram.png](images/class_diagram.png "Class Diagram")
+![class_diagram.png](class_diagram.png "Class Diagram")
 
 ## Example Structures
 
