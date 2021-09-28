@@ -333,7 +333,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
 				+ "(d:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
-				+ "WITH d ORDER BY toLower(d.name) DESC " + "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
+				+ "WITH d ORDER BY toLower(d.name) DESC MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
@@ -368,7 +368,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d "
+				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d "
 				+ "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
@@ -400,8 +400,8 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
-				+ "WITH d ORDER BY toLower(d.name) DESC " + "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
+				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
+				+ "WITH d ORDER BY toLower(d.name) DESC MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
@@ -486,7 +486,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
 				+ "(d:DataObject { deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
-				+ "WITH d SKIP $offset LIMIT $size " + "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
+				+ "WITH d SKIP $offset LIMIT $size MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
@@ -546,7 +546,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->"
 				+ "(d:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 AND ID(parent)=1 "
-				+ "WITH d SKIP $offset LIMIT $size " + "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
+				+ "WITH d SKIP $offset LIMIT $size MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
@@ -614,8 +614,8 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
-				+ "WITH d SKIP $offset LIMIT $size " + "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
+				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
+				+ "WITH d SKIP $offset LIMIT $size MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
@@ -649,7 +649,7 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) "
+				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
 				+ "WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
 				+ "MATCH path=(:User)<-[]-(d)-[*0..1]-({deleted: False}) "
 				+ "RETURN d, nodes(path), relationships(path)";

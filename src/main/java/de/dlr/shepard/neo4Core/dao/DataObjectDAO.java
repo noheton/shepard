@@ -114,7 +114,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		if (parentId == -1) {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
-							+ "WHERE ID(c)=%d AND NOT (d)<-[:has_child]-(:DataObject {deleted: false}) WITH d",
+							+ "WHERE ID(c)=%d AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d",
 					getParameterizedObjectPart("d", "DataObject", name != null), collectionId);
 		} else {
 			query = String.format(

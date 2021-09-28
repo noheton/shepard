@@ -28,7 +28,7 @@ public class NeoConnector implements IConnector {
 
 	/**
 	 * Returns the one and only instance of a NeoConnector
-	 * 
+	 *
 	 * @return NeoConnector
 	 */
 	public static NeoConnector getInstance() {
@@ -78,7 +78,7 @@ public class NeoConnector implements IConnector {
 
 	/**
 	 * Returns the internal neo4j session
-	 * 
+	 *
 	 * @return the internal neo4j session
 	 */
 	public Session getNeo4jSession() {
