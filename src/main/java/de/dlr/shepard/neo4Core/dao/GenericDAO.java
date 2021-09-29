@@ -105,7 +105,7 @@ public abstract class GenericDAO<T> {
 		log.debug("Run query: {}", query);
 		String params = "";
 		for (String key : paramsMap.keySet()) {
-			params += "(" + key + ", " + paramsMap.get(key) + ")\n";
+			params += "(" + key + ", " + paramsMap.get(key) + "), ";
 		}
 		log.debug("queryParams: {}", params);
 		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
@@ -147,8 +147,8 @@ public abstract class GenericDAO<T> {
 
 	protected String getReturnPart(String entity, boolean omitIncoming) {
 		var baseString = omitIncoming
-				? "MATCH path=(User)<-[]-(%s)-[*0..1]->({deleted: False}) RETURN %s, nodes(path), relationships(path)"
-				: "MATCH path=(User)<-[]-(%s)-[*0..1]-({deleted: False}) RETURN %s, nodes(path), relationships(path)";
+				? "MATCH path=(:User)<-[]-(%s)-[*0..1]->({deleted: False}) RETURN %s, nodes(path), relationships(path)"
+				: "MATCH path=(:User)<-[]-(%s)-[*0..1]-({deleted: False}) RETURN %s, nodes(path), relationships(path)";
 		var result = String.format(baseString, entity, entity);
 		return result;
 	}

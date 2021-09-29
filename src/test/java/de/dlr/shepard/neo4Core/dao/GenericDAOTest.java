@@ -154,7 +154,7 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getReturnPartTest() {
 		var actual = dao.getReturnPart("entity");
 		assertEquals(
-				"MATCH path=(User)<-[]-(entity)-[*0..1]-({deleted: False}) RETURN entity, nodes(path), relationships(path)",
+				"MATCH path=(:User)<-[]-(entity)-[*0..1]-({deleted: False}) RETURN entity, nodes(path), relationships(path)",
 				actual);
 	}
 
@@ -162,7 +162,7 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getReturnPartTest_omitIncoming() {
 		var actual = dao.getReturnPart("entity", true);
 		assertEquals(
-				"MATCH path=(User)<-[]-(entity)-[*0..1]->({deleted: False}) RETURN entity, nodes(path), relationships(path)",
+				"MATCH path=(:User)<-[]-(entity)-[*0..1]->({deleted: False}) RETURN entity, nodes(path), relationships(path)",
 				actual);
 	}
 
