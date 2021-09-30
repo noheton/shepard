@@ -11,7 +11,7 @@ public class FileReferenceDAO extends GenericDAO<FileReference> {
 
 	public List<FileReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getParameterizedObjectPart("r", "FileReference", false), dataObjectId) + getReturnPart("r");
+				getObjectPart("r", "FileReference", false), dataObjectId) + getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

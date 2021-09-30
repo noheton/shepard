@@ -75,12 +75,12 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			paramsMap.put("size", page.getSize());
 		}
 		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d",
-				getParameterizedObjectPart("d", "DataObject", name != null), collectionId);
+				getObjectPart("d", "DataObject", name != null), collectionId);
 		if (orderByAttribute != null) {
 			query += " " + getOrderByPart("d", orderByAttribute, desc);
 		}
 		if (page != null) {
-			query += " " + getParameterizedPaginationPart();
+			query += " " + getPaginationPart();
 		}
 		query += " " + getReturnPart("d");
 		var result = new ArrayList<DataObject>();
@@ -115,18 +115,18 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
 							+ "WHERE ID(c)=%d AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d",
-					getParameterizedObjectPart("d", "DataObject", name != null), collectionId);
+					getObjectPart("d", "DataObject", name != null), collectionId);
 		} else {
 			query = String.format(
 					"MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->%s "
 							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH d",
-					getParameterizedObjectPart("d", "DataObject", name != null), collectionId, parentId);
+					getObjectPart("d", "DataObject", name != null), collectionId, parentId);
 		}
 		if (orderByAttribute != null) {
 			query += " " + getOrderByPart("d", orderByAttribute, desc);
 		}
 		if (page != null) {
-			query += " " + getParameterizedPaginationPart();
+			query += " " + getPaginationPart();
 		}
 		query += " " + getReturnPart("d");
 		var result = new ArrayList<DataObject>();

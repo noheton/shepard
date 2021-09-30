@@ -33,12 +33,12 @@ public class CollectionDAO extends GenericDAO<Collection> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WITH c", getParameterizedObjectPart("c", "Collection", params.hasName()));
+		query = String.format("MATCH %s WITH c", getObjectPart("c", "Collection", params.hasName()));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getParameterizedPaginationPart();
+			query += " " + getPaginationPart();
 		}
 		query += " " + getReturnPart("c");
 		var result = new ArrayList<Collection>();

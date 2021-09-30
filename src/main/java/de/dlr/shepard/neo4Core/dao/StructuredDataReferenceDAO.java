@@ -17,7 +17,7 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 	 */
 	public List<StructuredDataReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getParameterizedObjectPart("r", "StructuredDataReference", false), dataObjectId) + getReturnPart("r");
+				getObjectPart("r", "StructuredDataReference", false), dataObjectId) + getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

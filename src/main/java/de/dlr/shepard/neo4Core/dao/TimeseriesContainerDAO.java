@@ -20,12 +20,12 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 		}
 
 		query = String.format("MATCH %s WITH c",
-				getParameterizedObjectPart("c", "TimeseriesContainer", params.hasName()));
+				getObjectPart("c", "TimeseriesContainer", params.hasName()));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getParameterizedPaginationPart();
+			query += " " + getPaginationPart();
 		}
 		query += " " + getReturnPart("c", true);
 		var result = new ArrayList<TimeseriesContainer>();

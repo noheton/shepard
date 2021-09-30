@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
+import org.neo4j.ogm.annotation.Index;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
@@ -24,6 +25,7 @@ public abstract class AbstractEntity implements HasId {
 	@GeneratedValue
 	private Long id;
 
+	@Index
 	private boolean deleted = false;
 
 	@DateLong
@@ -42,7 +44,7 @@ public abstract class AbstractEntity implements HasId {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public AbstractEntity(long id) {

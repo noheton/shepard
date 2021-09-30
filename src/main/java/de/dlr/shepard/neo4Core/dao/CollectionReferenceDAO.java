@@ -17,7 +17,7 @@ public class CollectionReferenceDAO extends GenericDAO<CollectionReference> {
 	 */
 	public List<CollectionReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getParameterizedObjectPart("r", "CollectionReference", false), dataObjectId) + getReturnPart("r");
+				getObjectPart("r", "CollectionReference", false), dataObjectId) + getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

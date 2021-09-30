@@ -154,7 +154,7 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getReturnPartTest() {
 		var actual = dao.getReturnPart("entity");
 		assertEquals(
-				"MATCH path=(:User)<-[]-(entity)-[*0..1]-({deleted: False}) RETURN entity, nodes(path), relationships(path)",
+				"MATCH path=(entity)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN entity, nodes(path), relationships(path)",
 				actual);
 	}
 
@@ -162,7 +162,7 @@ public class GenericDAOTest extends BaseTestCase {
 	public void getReturnPartTest_omitIncoming() {
 		var actual = dao.getReturnPart("entity", true);
 		assertEquals(
-				"MATCH path=(:User)<-[]-(entity)-[*0..1]->({deleted: False}) RETURN entity, nodes(path), relationships(path)",
+				"MATCH path=(entity)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL RETURN entity, nodes(path), relationships(path)",
 				actual);
 	}
 
@@ -221,24 +221,24 @@ public class GenericDAOTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getParameterizedObjectPartTest_WithName() {
+	public void getObjectPartTest_WithName() {
 		String variable = "c";
 		String type = "Collection";
-		var actual = dao.getParameterizedObjectPart(variable, type, true);
+		var actual = dao.getObjectPart(variable, type, true);
 		assertEquals("(c:Collection { name : $name, deleted: false })", actual);
 	}
 
 	@Test
-	public void getParameterizedObjectPartTest_WithoutName() {
+	public void getObjectPartTest_WithoutName() {
 		String variable = "c";
 		String type = "Collection";
-		var actual = dao.getParameterizedObjectPart(variable, type, false);
+		var actual = dao.getObjectPart(variable, type, false);
 		assertEquals("(c:Collection { deleted: false })", actual);
 	}
 
 	@Test
-	public void getParameterizedPaginationPartTest_WithPagination() {
-		var actual = dao.getParameterizedPaginationPart();
+	public void getPaginationPartTest_WithPagination() {
+		var actual = dao.getPaginationPart();
 		assertEquals("SKIP $offset LIMIT $size", actual);
 	}
 

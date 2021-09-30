@@ -31,12 +31,12 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 		query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r",
-				getParameterizedObjectPart("r", "BasicReference", params.hasName()), dataObjectId);
+				getObjectPart("r", "BasicReference", params.hasName()), dataObjectId);
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getParameterizedPaginationPart();
+			query += " " + getPaginationPart();
 		}
 		query += " " + getReturnPart("r");
 		var result = new ArrayList<BasicReference>();

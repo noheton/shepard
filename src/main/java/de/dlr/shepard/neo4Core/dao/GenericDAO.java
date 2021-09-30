@@ -118,7 +118,7 @@ public abstract class GenericDAO<T> {
 		return result.queryStatistics().containsUpdates();
 	}
 
-	protected String getParameterizedObjectPart(String variable, String type, boolean hasName) {
+	protected String getObjectPart(String variable, String type, boolean hasName) {
 		if (hasName)
 			return getObjectPartWithName(variable, type);
 		else
@@ -137,7 +137,7 @@ public abstract class GenericDAO<T> {
 		return result;
 	}
 
-	protected String getParameterizedPaginationPart() {
+	protected String getPaginationPart() {
 		return "SKIP $offset LIMIT $size";
 	}
 
@@ -147,8 +147,8 @@ public abstract class GenericDAO<T> {
 
 	protected String getReturnPart(String entity, boolean omitIncoming) {
 		var baseString = omitIncoming
-				? "MATCH path=(:User)<-[]-(%s)-[*0..1]->({deleted: False}) RETURN %s, nodes(path), relationships(path)"
-				: "MATCH path=(:User)<-[]-(%s)-[*0..1]-({deleted: False}) RETURN %s, nodes(path), relationships(path)";
+				? "MATCH path=(%s)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL RETURN %s, nodes(path), relationships(path)"
+				: "MATCH path=(%s)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN %s, nodes(path), relationships(path)";
 		var result = String.format(baseString, entity, entity);
 		return result;
 	}

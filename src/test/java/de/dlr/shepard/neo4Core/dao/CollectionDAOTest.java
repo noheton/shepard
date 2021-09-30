@@ -45,7 +45,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = "MATCH (c:Collection { deleted: false }) WITH c "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -63,7 +63,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = "MATCH (c:Collection { deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -85,7 +85,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -105,7 +105,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -127,7 +127,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:Collection { deleted: false }) WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -148,7 +148,7 @@ public class CollectionDAOTest extends BaseTestCase {
 
 		var query = "MATCH (c:Collection { deleted: false }) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -172,7 +172,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -195,7 +195,7 @@ public class CollectionDAOTest extends BaseTestCase {
 
 		var query = "MATCH (c:Collection { name : $name, deleted: false }) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(:User)<-[]-(c)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 

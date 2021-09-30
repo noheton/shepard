@@ -50,8 +50,8 @@ public class NeoConnector implements IConnector {
 		String password = helper.getProperty("neo4j.password");
 		String host = helper.getProperty("neo4j.host");
 		String connectionString = String.format("bolt://%s:%s@%s", username, password, host);
-		// TODO: How to autoIndex?
-		String autoIndexMode = AutoIndexMode.NONE.getName();
+		// TODO: How to autoIndex without deprecation warnings?
+		String autoIndexMode = AutoIndexMode.ASSERT.getName();
 		Configuration configuration = new Configuration.Builder().uri(connectionString).autoIndex(autoIndexMode)
 				.verifyConnection(true).useNativeTypes().build();
 		while (true) {

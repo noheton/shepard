@@ -40,7 +40,7 @@ public class URIReferenceDAOTest extends BaseTestCase {
 		ref2.setDataObject(obj2);
 
 		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:URIReference { deleted: false }) WHERE ID(d)=1 "
-				+ "MATCH path=(:User)<-[]-(r)-[*0..1]-({deleted: False}) "
+				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN r, nodes(path), relationships(path)";
 		when(session.query(URIReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref2, ref3));
 

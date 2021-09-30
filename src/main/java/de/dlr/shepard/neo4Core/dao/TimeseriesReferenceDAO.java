@@ -17,7 +17,7 @@ public class TimeseriesReferenceDAO extends GenericDAO<TimeseriesReference> {
 	 */
 	public List<TimeseriesReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getParameterizedObjectPart("r", "TimeseriesReference", false), dataObjectId) + getReturnPart("r");
+				getObjectPart("r", "TimeseriesReference", false), dataObjectId) + getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 
