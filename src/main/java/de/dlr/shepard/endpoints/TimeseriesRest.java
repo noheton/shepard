@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface TimeseriesRest {
@@ -35,7 +36,7 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createTimeseriesContainer(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))) TimeseriesContainerIO timeseriesContainer);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))) @Valid TimeseriesContainerIO timeseriesContainer);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Delete timeseries container")
@@ -48,7 +49,7 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = Timeseries.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createTimeseries(long timeseriesId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) TimeseriesPayload payload);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) @Valid TimeseriesPayload payload);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries payload")

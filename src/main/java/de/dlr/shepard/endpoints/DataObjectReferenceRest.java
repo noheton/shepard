@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface DataObjectReferenceRest {
@@ -32,7 +33,7 @@ public interface DataObjectReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createDataObjectReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))) DataObjectReferenceIO dataObjectReference)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))) @Valid DataObjectReferenceIO dataObjectReference)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.DATAOBJECT_REFERENCE)

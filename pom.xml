@@ -414,6 +414,13 @@
 			<version>${jersey.version}</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.ext/jersey-bean-validation -->
+		<dependency>
+			<groupId>org.glassfish.jersey.ext</groupId>
+			<artifactId>jersey-bean-validation</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+
 		<!-- ####### XML Binding ####### -->
 		<!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
 		<dependency>

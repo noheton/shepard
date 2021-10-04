@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface DataObjectRest {
@@ -33,7 +34,7 @@ public interface DataObjectRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createDataObject(long collectionId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) DataObjectIO dataObject)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.DATAOBJECT)
@@ -41,7 +42,7 @@ public interface DataObjectRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response updateDataObject(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) DataObjectIO dataObject)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.DATAOBJECT)

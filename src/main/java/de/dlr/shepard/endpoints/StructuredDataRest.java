@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface StructuredDataRest {
@@ -40,14 +41,14 @@ public interface StructuredDataRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createStructuredDataContainer(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))) StructuredDataContainerIO structuredDataContainer);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))) @Valid StructuredDataContainerIO structuredDataContainer);
 
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Upload a new structured data object")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredData.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createStructuredData(long structuredDataId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) StructuredDataPayload payload);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) @Valid StructuredDataPayload payload);
 
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get structured data objects")

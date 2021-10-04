@@ -5,6 +5,7 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.AbstractDataObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "AbstractDataObject")
 public abstract class AbstractDataObjectIO extends AbstractEntityIO {
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String name;
 

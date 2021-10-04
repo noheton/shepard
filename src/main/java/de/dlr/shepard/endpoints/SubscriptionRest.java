@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface SubscriptionRest {
@@ -32,7 +33,7 @@ public interface SubscriptionRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = SubscriptionIO.class)), links = @Link(name = "unsubscribe", operationId = "deleteSubscription", parameters = @LinkParameter(name = Constants.SUBSCRIPTION_ID, expression = "$response.body#/id")))
 	@Callback(name = "SubscriptionIO", operation = @Operation(operationId = "notifyClient", summary = "Notify the client about an event", method = "post", responses = @ApiResponse(responseCode = "200", description = "Notification received"), requestBody = @RequestBody(description = "Notification about an event", content = @Content(schema = @Schema(implementation = EventIO.class)), required = true)), callbackUrlExpression = "{$request.body#/callbackUrl}")
 	Response createSubscription(String username,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SubscriptionIO.class))) SubscriptionIO subscription);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SubscriptionIO.class))) @Valid SubscriptionIO subscription);
 
 	@Tag(name = Constants.SUBSCRIPTION)
 	@Operation(description = "Delete subscription")

@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -33,7 +34,7 @@ public interface FileReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = FileReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createFileReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = FileReferenceIO.class))) FileReferenceIO fileReference)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = FileReferenceIO.class))) @Valid FileReferenceIO fileReference)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.FILE_REFERENCE)

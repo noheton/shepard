@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface StructuredDataReferenceRest {
@@ -32,7 +33,7 @@ public interface StructuredDataReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createStructuredDataReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))) StructuredDataReferenceIO structuredDataReference)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))) @Valid StructuredDataReferenceIO structuredDataReference)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)

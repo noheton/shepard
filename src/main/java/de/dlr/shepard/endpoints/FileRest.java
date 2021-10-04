@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -39,7 +40,7 @@ public interface FileRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = FileContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createFileContainer(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = FileContainerIO.class))) FileContainerIO fileContainer);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = FileContainerIO.class))) @Valid FileContainerIO fileContainer);
 
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Delete file container")

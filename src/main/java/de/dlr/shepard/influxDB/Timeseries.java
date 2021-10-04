@@ -2,6 +2,7 @@ package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.neo4Core.entities.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,17 +12,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Timeseries implements HasId {
 
+	@NotBlank
 	private String measurement;
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String device;
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String location;
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String symbolicName;
 
+	@NotBlank
 	private String field;
 
 	@Override

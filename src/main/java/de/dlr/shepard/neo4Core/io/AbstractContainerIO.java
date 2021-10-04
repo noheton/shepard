@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.AbstractContainer;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "AbstractContainer")
 public abstract class AbstractContainerIO extends AbstractEntityIO {
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String name;
 

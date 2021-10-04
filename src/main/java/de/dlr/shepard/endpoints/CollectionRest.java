@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface CollectionRest {
@@ -31,14 +32,14 @@ public interface CollectionRest {
 	@Operation(description = "Create a new collection")
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = CollectionIO.class)))
 	Response createCollection(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionIO.class))) CollectionIO collection);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionIO.class))) @Valid CollectionIO collection);
 
 	@Tag(name = Constants.COLLECTION)
 	@Operation(description = "Update collection")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = CollectionIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response updateCollection(long collectionId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionIO.class))) CollectionIO collection);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionIO.class))) @Valid CollectionIO collection);
 
 	@Tag(name = Constants.COLLECTION)
 	@Operation(description = "Delete collection")

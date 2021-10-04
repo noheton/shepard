@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +20,7 @@ public class ApiKeyIO {
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private UUID uid;
 
+	@NotBlank
 	@Schema(nullable = true)
 	private String name;
 

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface URIReferenceRest {
@@ -31,7 +32,7 @@ public interface URIReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = URIReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createUriReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = URIReferenceIO.class))) URIReferenceIO timeseriesReference)
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = URIReferenceIO.class))) @Valid URIReferenceIO timeseriesReference)
 			throws InvalidBodyException;
 
 	@Tag(name = Constants.URI_REFERENCE)

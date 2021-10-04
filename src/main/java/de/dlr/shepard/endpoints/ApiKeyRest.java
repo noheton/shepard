@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface ApiKeyRest {
@@ -31,7 +32,7 @@ public interface ApiKeyRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = ApiKeyWithJWTIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createApiKey(String username,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = ApiKeyIO.class))) ApiKeyIO apiKey);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = ApiKeyIO.class))) @Valid ApiKeyIO apiKey);
 
 	@Tag(name = Constants.APIKEY)
 	@Operation(description = "Delete api key")
