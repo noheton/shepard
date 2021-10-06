@@ -1,5 +1,6 @@
 package de.dlr.shepard.endpoints;
 
+import java.io.IOException;
 import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public interface TimeseriesReferenceRest {
@@ -52,5 +54,13 @@ public interface TimeseriesReferenceRest {
 	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, AggregateFunction function,
 			Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
 			Set<String> symbolicNameFilterTag);
+
+	@Tag(name = Constants.TIMESERIES_REFERENCE)
+	@Operation(description = "Export timeseries reference payload")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response exportTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId,
+			AggregateFunction function, Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
+			Set<String> symbolicNameFilterTag) throws IOException;
 
 }

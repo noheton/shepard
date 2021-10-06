@@ -1,6 +1,8 @@
 package de.dlr.shepard.influxDB;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -9,6 +11,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class TimeseriesService {
 
 	private InfluxConnector influxConnector = InfluxConnector.getInstance();
+	private CsvConverter csvConverter = new CsvConverter();
 
 	/**
 	 * Creates timeseries and writes them to influxDB
@@ -68,7 +71,7 @@ public class TimeseriesService {
 			}
 
 		});
-		return Arrays.asList(timeseriesQueue.toArray(new TimeseriesPayload[0]));
+		return new ArrayList<TimeseriesPayload>(timeseriesQueue);
 	}
 
 	/**
@@ -100,6 +103,15 @@ public class TimeseriesService {
 			symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
 		}
 		return deviceMatches && locatioMatches && symbolicNameMatches;
+	}
+
+	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseries,
+			AggregateFunction function, Long groupBy, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+			Set<String> symbolicNameFilterSet) throws IOException {
+		var payload = getTimeseriesList(start, end, database, timeseries, function, groupBy, devicesFilterSet,
+				locationsFilterSet, symbolicNameFilterSet);
+		var stream = csvConverter.convertToCsv(payload);
+		return stream;
 	}
 
 }

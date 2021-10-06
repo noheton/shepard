@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -236,4 +238,30 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"));
 		assertEquals(List.of(payload), actual);
 	}
+
+	@Test
+	public void exportTest() throws IOException {
+		var is = new ByteArrayInputStream("Hello World".getBytes());
+		var container = new TimeseriesContainer(2L);
+		container.setDatabase("Database");
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var ref = new TimeseriesReference() {
+			{
+				setId(1L);
+				setEnd(321);
+				setStart(123);
+				setTimeseries(List.of(ts));
+				setTimeseriesContainer(container);
+
+			}
+		};
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(timeseriesService.exportTimeseries(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
+				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(is);
+
+		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"));
+		assertEquals(is, actual);
+	}
+
 }

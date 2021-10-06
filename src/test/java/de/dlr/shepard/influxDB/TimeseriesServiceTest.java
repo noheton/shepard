@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +22,9 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	@Mock
 	private InfluxConnector connector;
+
+	@Mock
+	private CsvConverter converter;
 
 	@InjectMocks
 	private TimeseriesService service;
@@ -122,6 +127,16 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	public void deleteDatabaseTest() {
 		service.deleteDatabase("database");
 		verify(connector).deleteDatabase("database");
+	}
+
+	@Test
+	public void exportTimeseriesTest() throws IOException {
+		var is = new ByteArrayInputStream("Hello World".getBytes());
+		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		when(converter.convertToCsv(List.of(payload))).thenReturn(is);
+		var actual = service.exportTimeseries(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
+				Collections.emptySet(), Collections.emptySet());
+		assertEquals(is, actual);
 	}
 
 }

@@ -1,5 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -83,6 +85,17 @@ public class TimeseriesReferenceService {
 				locationsFilterSet, symbolicNameFilterSet);
 
 		return payload;
+	}
+
+	public InputStream export(long timeseriesId, AggregateFunction function, Long groupBy, Set<String> devicesFilterSet,
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
+		var ref = timeseriesReferenceDAO.find(timeseriesId);
+
+		var stream = timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(),
+				ref.getTimeseriesContainer().getDatabase(), ref.getTimeseries(), function, groupBy, devicesFilterSet,
+				locationsFilterSet, symbolicNameFilterSet);
+
+		return stream;
 	}
 
 }

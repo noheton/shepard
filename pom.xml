@@ -55,6 +55,7 @@
 		<mockito.version>3.12.4</mockito.version>
 		<mongodb.version>4.3.2</mongodb.version>
 		<neo4j.version>3.2.26</neo4j.version>
+		<opencsv.version>5.5.2</opencsv.version>
 		<restassured.version>4.4.0</restassured.version>
 		<swagger.version>2.1.10</swagger.version>
 		<tomcat.version>10.0.11</tomcat.version>
@@ -435,6 +436,14 @@
 			<artifactId>jaxb-impl</artifactId>
 			<version>${jaxb-impl.version}</version>
 			<scope>runtime</scope>
+		</dependency>
+
+		<!-- ####### CSV ####### -->
+		<!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>${opencsv.version}</version>
 		</dependency>
 
 		<!-- ####### LOGGING ####### -->
