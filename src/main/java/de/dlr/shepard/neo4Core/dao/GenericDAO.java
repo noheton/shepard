@@ -11,6 +11,7 @@ import org.neo4j.ogm.session.Session;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.PaginationHelper;
+import de.dlr.shepard.util.TraversalRules;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -162,6 +163,45 @@ public abstract class GenericDAO<T> {
 			ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
 		if (orderDesc != null && orderDesc == true)
 			ret = ret + " DESC";
+		return ret;
+	}
+
+	public String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long startId) {
+		String ret = "";
+		switch (traversalRule) {
+		case children:
+			ret = "MATCH path = (d:DataObject)-[hc:has_child*0..]->(e:DataObject)-[hr:has_reference]->";
+			break;
+		case parents:
+			ret = "MATCH path = (d:DataObject)<-[hc:has_child*0..]-(e:DataObject)-[hr:has_reference]->";
+			break;
+		case successors:
+			ret = "MATCH path = (d:DataObject)-[hc:has_successor*0..]->(e:DataObject)-[hr:has_reference]->";
+			break;
+		case predecessors:
+			ret = "MATCH path = (d:DataObject)<-[hc:has_successor*0..]-(e:DataObject)-[hr:has_reference]->";
+			break;
+		}
+		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
+		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
+		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
+		String returnPart = getReturnPart("ret", false);
+		ret = ret + returnPart;
+		System.out.println("ret: ");
+		System.out.println(ret);
+		return ret;
+	}
+
+	public String getSearchForReachableReferencesQuery(long startId) {
+		String ret = "";
+		ret = "MATCH path = (d:DataObject)-[hr:has_reference]->";
+		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
+		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
+		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
+		String returnPart = getReturnPart("ret", false);
+		ret = ret + returnPart;
+		System.out.println("ret: ");
+		System.out.println(ret);
 		return ret;
 	}
 

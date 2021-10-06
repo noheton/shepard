@@ -42,6 +42,8 @@ public class Constants {
 
 	public static final String OID = "oid";
 
+	public static final String SEARCH = "search";
+
 	public static final String TIMESERIES = "timeseries";
 	public static final String TIMESERIES_CONTAINER_ID = "timeseriesContainerId";
 	public static final String TIMESERIES_REFERENCE = "timeseriesReference";
