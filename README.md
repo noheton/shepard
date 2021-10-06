@@ -43,7 +43,7 @@ openssl dhparam -out /etc/nginx/dhparam.pem 2048
 3. Set up nginx
    - Edit and enable the [sample files with self-signed certificates](https://gitlab.com/dlr-shepard/deployment/-/blob/master/etc/nginx/sites-available/) as needed
    - [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/#server=nginx&config=intermediate)
-   - Do not forget to change these files according to your certificates
+   - **Do not forget to change these files according to your certificates**
    - Edit `index.html` and put this file into the appropriate directory
    - Restart nginx afterwards by typing `systemctl restart nginx.service`
 
