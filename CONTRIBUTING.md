@@ -33,6 +33,7 @@ If your feature request involves major conceptual changes, please submit an issu
 - If you need any of the features of objects, use them otherwise use primitives.
 - Try to offload as much work as possible to the databases.
 - Parallelize things only when needed (e.g. if more than 1000 objects will occur in a stream).
+- Use Jakarta Bean Validation to validate user input.
 
 ## Documentation
 
@@ -62,10 +63,11 @@ If your feature request involves major conceptual changes, please submit an issu
 
 ### Local databases
 
-1. install Docker and Docker Compose
-2. change to the root directory
-3. run `docker-compose up`
+1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
+2. change to the project root directory
+3. run `docker-compose up` (or `podman-compose up`)
 4. local instances of the databases will be launched without persistent storage
+5. quick tip: run the integration tests to fill your database with some content
 
 ### First run
 
