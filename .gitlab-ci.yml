@@ -32,7 +32,7 @@ stages:
 
 format-prettier:
   stage: test
-  image: node:lts-alpine
+  image: node:14-slim
   before_script:
     - npm install -g prettier
   script:
@@ -138,6 +138,7 @@ build:
 upload_docker:
   image: docker:latest
   stage: upload
+  needs: [build]
   dependencies: [build]
   services:
     - name: docker:dind
@@ -169,7 +170,8 @@ build_pythonclient:
 
 upload_pythonclient:
   stage: upload
-  image: python:slim
+  image: python:3.9-slim
+  needs: [build_pythonclient]
   dependencies: [build_pythonclient]
   before_script:
     - python3 -m pip install wheel setuptools twine
@@ -177,9 +179,9 @@ upload_pythonclient:
     - cd clients/python
     - python3 setup.py sdist bdist_wheel
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
-  only:
-    refs:
-      - /^.*-release$/
+  #only:
+  #  refs:
+  #    - /^.*-release$/
 
 build_typescriptclient:
   stage: build_clients
@@ -197,7 +199,8 @@ build_typescriptclient:
 
 upload_typescriptclient:
   stage: upload
-  image: node:lts-slim
+  image: node:14-slim
+  needs: [build_typescriptclient]
   dependencies: [build_typescriptclient]
   before_script:
     - node -v
@@ -230,6 +233,7 @@ build_javaclient:
 
 upload_javaclient:
   stage: upload
+  needs: [build_javaclient]
   dependencies: [build_javaclient]
   script:
     - cd clients/java
@@ -240,6 +244,7 @@ upload_javaclient:
 
 pages:
   stage: upload
+  needs: [site]
   dependencies: [site]
   script:
     - ls -hal target/site
