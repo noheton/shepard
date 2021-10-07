@@ -122,8 +122,6 @@ coverage:
 
 build:
   stage: build
-  # we want to start the build as early as possible
-  needs: [format-prettier]
   before_script:
     - *version_number
   script:
