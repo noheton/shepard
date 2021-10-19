@@ -45,7 +45,7 @@ If your feature request involves major conceptual changes, please submit an issu
 
 ### Downloads
 
-- OpenJDK 11 (LTS): <https://adoptopenjdk.net/?variant=openjdk11&jvmVariant=hotspot>
+- OpenJDK 11 (LTS): <https://adoptium.net/?variant=openjdk11&jvmVariant=hotspot>
 - Eclipse IDE for Enterprise Java and Web Developers: <https://www.eclipse.org/downloads/packages/>
 - Apache Tomcat 10: <https://tomcat.apache.org/download-10.cgi>
 - Project Lombok: <https://projectlombok.org/download>
