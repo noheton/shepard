@@ -25,15 +25,15 @@ public class TimeseriesService {
 	}
 
 	/**
-	 * Queries the database for time series including aggregate functions.
+	 * Queries the database for timeseries including aggregate functions.
 	 *
-	 * @param startTimeStamp  The beginning of the time series
-	 * @param endTimeStamp    The end of the time series
+	 * @param startTimeStamp  The beginning of the timeseries
+	 * @param endTimeStamp    The end of the timeseries
 	 * @param database        The database to be queried
-	 * @param timeseries      The time series whose points are queried
+	 * @param timeseries      The timeseries whose points are queried
 	 * @param function        The aggregate function
 	 * @param groupByInterval The time interval measurements get grouped by
-	 * @return time series with influx points
+	 * @return timeseries with influx points
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
 			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
@@ -43,19 +43,19 @@ public class TimeseriesService {
 	}
 
 	/**
-	 * Queries the database for many time series in parallel. Returns a list of time
-	 * series. If the filter sets are empty, no filtering takes place.
+	 * Queries the database for many timeseries in parallel. Returns a list of
+	 * timeseries. If the filter sets are empty, no filtering takes place.
 	 *
-	 * @param startTimeStamp        The beginning of the time series
-	 * @param endTimeStamp          The end of the time series
+	 * @param startTimeStamp        The beginning of the timeseries
+	 * @param endTimeStamp          The end of the timeseries
 	 * @param database              The database to be queried
-	 * @param timeseriesList        The list of time series whose points are queried
+	 * @param timeseriesList        The list of timeseries whose points are queried
 	 * @param function              The aggregate function
 	 * @param groupByInterval       The time interval measurements get grouped by
 	 * @param devicesFilterSet      A set of allowed devices or an empty set
 	 * @param locationsFilterSet    A set of allowed locations or an empty set
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
-	 * @return a list of time series with influx points
+	 * @return a list of timeseries with influx points
 	 */
 	public List<TimeseriesPayload> getTimeseriesList(long startTimeStamp, long endTimeStamp, String database,
 			List<Timeseries> timeseriesList, AggregateFunction function, Long groupByInterval,

@@ -87,6 +87,13 @@ public class TimeseriesContainerService {
 		return true;
 	}
 
+	/**
+	 * Saves timeseries payload in a timeseries container.
+	 *
+	 * @param timeseriesId identifies the TimeseriesContainer
+	 * @param payload      TimeseriesPayload to be created
+	 * @return created timeseries
+	 */
 	public Timeseries createTimeseries(long timeseriesId, TimeseriesPayload payload) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
@@ -99,6 +106,17 @@ public class TimeseriesContainerService {
 		return payload.getTimeseries();
 	}
 
+	/**
+	 * Loads timeseries payload from a timeseries container.
+	 *
+	 * @param timeseriesId identifies the TimeseriesContainer
+	 * @param timeseries   The timeseries to load
+	 * @param start        The beginning of the timeseries
+	 * @param end          The end of the timeseries
+	 * @param function     The aggregate function
+	 * @param groupBySec   The time interval measurements get grouped by
+	 * @return TimeseriesPayload
+	 */
 	public TimeseriesPayload getTimeseries(long timeseriesId, Timeseries timeseries, long start, long end,
 			AggregateFunction function, Long groupBySec) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
