@@ -109,22 +109,22 @@ public class TimeseriesContainerService {
 	/**
 	 * Loads timeseries payload from a timeseries container.
 	 *
-	 * @param timeseriesId identifies the TimeseriesContainer
-	 * @param timeseries   The timeseries to load
-	 * @param start        The beginning of the timeseries
-	 * @param end          The end of the timeseries
-	 * @param function     The aggregate function
-	 * @param groupBySec   The time interval measurements get grouped by
+	 * @param timeseriesId    identifies the TimeseriesContainer
+	 * @param timeseries      The timeseries to load
+	 * @param start           The beginning of the timeseries
+	 * @param end             The end of the timeseries
+	 * @param function        The aggregate function
+	 * @param groupByInterval The time interval measurements get grouped by
 	 * @return TimeseriesPayload
 	 */
 	public TimeseriesPayload getTimeseries(long timeseriesId, Timeseries timeseries, long start, long end,
-			AggregateFunction function, Long groupBySec) {
+			AggregateFunction function, Long groupByInterval) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			return null;
 		}
 		var result = timeseriesService.getTimeseries(start, end, timeseriesContainer.getDatabase(), timeseries,
-				function, groupBySec);
+				function, groupByInterval);
 		return result;
 	}
 

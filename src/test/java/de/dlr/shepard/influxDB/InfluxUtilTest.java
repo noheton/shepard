@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,31 +19,45 @@ import de.dlr.shepard.BaseTestCase;
 
 public class InfluxUtilTest extends BaseTestCase {
 
+	private static String baseQuery = "SELECT %s FROM %s WHERE time >= %dns AND time <= %dns "
+			+ "AND \"device\" = $device AND \"location\" = $location AND \"symbolic_name\" = $symbolic_name";
+
 	@Test
 	public void buildQueryTest() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
 		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, AggregateFunction.MEAN, 123L);
-		var expected = "SELECT MEAN(\"field\") FROM \"meas\" WHERE time >= 1ns AND time <= 2ns "
-				+ "AND device = 'dev' AND location = 'loc' AND symbolic_name = 'name' GROUP BY time(123s);";
+		var expected = String.format(baseQuery, "MEAN(\"field\")", "\"meas\"", 1, 2)
+				+ String.format(" GROUP BY time(%dns)", 123);
+		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
+
 		assertEquals(expected, query.getCommand());
+		assertEquals("db", query.getDatabase());
+		assertEquals(params, URLDecoder.decode(query.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8));
 	}
 
 	@Test
 	public void buildQueryTest_noFunction() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
 		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, null, 123L);
-		var expected = "SELECT \"field\" FROM \"meas\" WHERE time >= 1ns AND time <= 2ns "
-				+ "AND device = 'dev' AND location = 'loc' AND symbolic_name = 'name' GROUP BY time(123s);";
+		var expected = String.format(baseQuery, "\"field\"", "\"meas\"", 1, 2)
+				+ String.format(" GROUP BY time(%dns)", 123);
+		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
+
 		assertEquals(expected, query.getCommand());
+		assertEquals("db", query.getDatabase());
+		assertEquals(params, URLDecoder.decode(query.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8));
 	}
 
 	@Test
 	public void buildQueryTest_noGroupBy() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
 		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, AggregateFunction.MEAN, null);
-		var expected = "SELECT MEAN(\"field\") FROM \"meas\" WHERE time >= 1ns AND time <= 2ns "
-				+ "AND device = 'dev' AND location = 'loc' AND symbolic_name = 'name';";
+		var expected = String.format(baseQuery, "MEAN(\"field\")", "\"meas\"", 1, 2);
+		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
+
 		assertEquals(expected, query.getCommand());
+		assertEquals("db", query.getDatabase());
+		assertEquals(params, URLDecoder.decode(query.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8));
 	}
 
 	@Test

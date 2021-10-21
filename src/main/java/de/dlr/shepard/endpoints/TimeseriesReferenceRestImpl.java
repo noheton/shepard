@@ -101,8 +101,8 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function,
-			@QueryParam(Constants.GROUP_BY_SEC) Long groupBy, @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", timeseriesId,
@@ -119,8 +119,8 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response exportTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function,
-			@QueryParam(Constants.GROUP_BY_SEC) Long groupBy, @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {
 		log.info("Received EXPORT PAYLOAD request with reference Id {} from user {}", timeseriesId,

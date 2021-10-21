@@ -106,9 +106,9 @@ public class TimeseriesService {
 	}
 
 	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseries,
-			AggregateFunction function, Long groupBy, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
-			Set<String> symbolicNameFilterSet) throws IOException {
-		var payload = getTimeseriesList(start, end, database, timeseries, function, groupBy, devicesFilterSet,
+			AggregateFunction function, Long groupByInterval, Set<String> devicesFilterSet,
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
+		var payload = getTimeseriesList(start, end, database, timeseries, function, groupByInterval, devicesFilterSet,
 				locationsFilterSet, symbolicNameFilterSet);
 		var stream = csvConverter.convertToCsv(payload);
 		return stream;

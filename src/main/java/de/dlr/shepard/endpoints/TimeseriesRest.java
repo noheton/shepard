@@ -55,6 +55,6 @@ public interface TimeseriesRest {
 	@Operation(description = "Get timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
 	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
-			String field, long start, long end, AggregateFunction function, Long groupBySec);
+			String field, long start, long end, AggregateFunction function, Long groupByInterval);
 
 }

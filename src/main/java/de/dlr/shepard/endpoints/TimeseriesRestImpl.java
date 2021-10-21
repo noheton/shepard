@@ -123,7 +123,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.START) @Parameter(required = true) long start,
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
 			@QueryParam(Constants.FUNCTION) AggregateFunction function,
-			@QueryParam(Constants.GROUP_BY_SEC) Long groupBySec) {
+			@QueryParam(Constants.GROUP_BY) Long groupByInterval) {
 		log.info("Received GET TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
 
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
@@ -132,7 +132,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 		var result = timeseriesContainerService.getTimeseries(timeseriesId, timeseries, start, end, function,
-				groupBySec);
+				groupByInterval);
 
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}

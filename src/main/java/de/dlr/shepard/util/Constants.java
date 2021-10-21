@@ -91,6 +91,6 @@ public class Constants {
 	public static final String START = "start";
 	public static final String END = "end";
 	public static final String FUNCTION = "function";
-	public static final String GROUP_BY_SEC = "group_by";
+	public static final String GROUP_BY = "group_by";
 
 }

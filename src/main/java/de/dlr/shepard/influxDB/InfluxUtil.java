@@ -1,25 +1,17 @@
 package de.dlr.shepard.influxDB;
 
-import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.eq;
-import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.gte;
-import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.lte;
-import static org.influxdb.querybuilder.BuiltQuery.QueryBuilder.ti;
-import static org.influxdb.querybuilder.FunctionFactory.time;
-import static org.influxdb.querybuilder.time.DurationLiteral.SECOND;
-
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.dto.BatchPoints;
+import org.influxdb.dto.BoundParameterQuery;
+import org.influxdb.dto.BoundParameterQuery.QueryBuilder;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Point.Builder;
-import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
-import org.influxdb.querybuilder.BuiltQuery.QueryBuilder;
-import org.influxdb.querybuilder.SelectQueryImpl;
-import org.influxdb.querybuilder.SelectionQueryImpl;
-import org.influxdb.querybuilder.WhereQueryImpl;
 
 import de.dlr.shepard.util.Constants;
 import lombok.extern.log4j.Log4j2;
@@ -44,23 +36,26 @@ public final class InfluxUtil {
 	 * @param groupByInterval The time interval measurements get grouped by
 	 * @return an influx query
 	 */
-	public static Query buildQuery(long startTimeStamp, long endTimeStamp, String database, Timeseries timeseries,
-			AggregateFunction function, Long groupByInterval) {
-		String field = "\"" + timeseries.getField() + "\"";
-		SelectionQueryImpl selectionQuery;
-		if (function == null) {
-			selectionQuery = QueryBuilder.select(field);
-		} else {
-			selectionQuery = QueryBuilder.select().raw(String.format("%s(%s)", function.toString(), field));
+	public static BoundParameterQuery buildQuery(long startTimeStamp, long endTimeStamp, String database,
+			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+		var selectPart = (function != null)
+				? String.format("SELECT %s(\"%s\")", function.toString(), timeseries.getField())
+				: String.format("SELECT \"%s\"", timeseries.getField());
+		var fromPart = String.format("FROM \"%s\"", timeseries.getMeasurement());
+		var wherePart = String.format("WHERE time >= %dns AND time <= %dns "
+				+ "AND \"device\" = $device AND \"location\" = $location AND \"symbolic_name\" = $symbolic_name",
+				startTimeStamp, endTimeStamp);
+		var query = String.join(" ", selectPart, fromPart, wherePart);
+
+		if (groupByInterval != null) {
+			query += String.format(" GROUP BY time(%dns)", groupByInterval);
 		}
-		WhereQueryImpl<?> whereQuery = selectionQuery.from(database, "\"" + timeseries.getMeasurement() + "\"")
-				.where(gte("time", ti(startTimeStamp, "ns"))).and(lte("time", ti(endTimeStamp, "ns")))
-				.and(eq(Constants.DEVICE, timeseries.getDevice())).and(eq(Constants.LOCATION, timeseries.getLocation()))
-				.and(eq(Constants.SYMBOLICNAME, timeseries.getSymbolicName()));
-		if (groupByInterval == null)
-			return whereQuery;
-		SelectQueryImpl selectQuery = whereQuery.groupBy(time(groupByInterval, SECOND));
-		return selectQuery;
+		var parameterizedQuery = QueryBuilder.newQuery(query).forDatabase(database)
+				.bind("device", timeseries.getDevice()).bind("location", timeseries.getLocation())
+				.bind("symbolic_name", timeseries.getSymbolicName()).create();
+		log.debug("Query influxdb {}: {} with params {}", database, parameterizedQuery.getCommand(),
+				URLDecoder.decode(parameterizedQuery.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8));
+		return parameterizedQuery;
 	}
 
 	/**
