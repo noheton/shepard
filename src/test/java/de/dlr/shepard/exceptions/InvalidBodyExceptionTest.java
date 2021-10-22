@@ -19,4 +19,10 @@ public class InvalidBodyExceptionTest extends BaseTestCase {
 		var obj = new InvalidBodyException("Message");
 		assertEquals("Message", obj.getMessage());
 	}
+
+	@Test
+	public void testGetStatusCode() {
+		var obj = new InvalidBodyException("Message");
+		assertEquals(400, obj.getStatusCode());
+	}
 }

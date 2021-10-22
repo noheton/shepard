@@ -1,5 +1,7 @@
 package de.dlr.shepard.exceptions;
 
+import jakarta.ws.rs.core.Response.Status;
+
 /**
  * InvalidBodyException implements an exception. This exception should be thrown
  * if a value in the JSON Request Body doesn't fulfill the necessary constraints
@@ -17,6 +19,11 @@ public class InvalidBodyException extends ShepardException {
 
 	public InvalidBodyException(String message) {
 		super(message);
+	}
+
+	@Override
+	int getStatusCode() {
+		return Status.BAD_REQUEST.getStatusCode();
 	}
 
 }

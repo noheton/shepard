@@ -8,4 +8,6 @@ public abstract class ShepardException extends Exception {
 		super(message);
 	}
 
+	abstract int getStatusCode();
+
 }

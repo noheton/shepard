@@ -13,27 +13,14 @@ public class ShepardExceptionMapperTest extends BaseTestCase {
 	private ShepardExceptionMapper mapper;
 
 	@Test
-	public void toResponseTest_invalidPath() {
-		var response = mapper.toResponse(new InvalidPathException("test"));
-		var error = new ApiError(404, "InvalidPathException", "test");
-
-		assertEquals(404, response.getStatus());
-		assertEquals(error, response.getEntity());
-	}
-
-	@Test
-	public void toResponseTest_invalidBody() {
-		var response = mapper.toResponse(new InvalidBodyException("test"));
-		var error = new ApiError(400, "InvalidBodyException", "test");
-
-		assertEquals(400, response.getStatus());
-		assertEquals(error, response.getEntity());
-	}
-
-	@Test
 	public void toResponseTest_different() {
 		var ex = new ShepardException("test") {
 			private static final long serialVersionUID = 1L;
+
+			@Override
+			int getStatusCode() {
+				return 500;
+			}
 		};
 		var response = mapper.toResponse(ex);
 		var error = new ApiError(500, "", "test");

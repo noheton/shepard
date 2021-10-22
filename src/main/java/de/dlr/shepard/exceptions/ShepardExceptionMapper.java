@@ -1,7 +1,6 @@
 package de.dlr.shepard.exceptions;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
@@ -10,12 +9,7 @@ public class ShepardExceptionMapper implements ExceptionMapper<ShepardException>
 
 	@Override
 	public Response toResponse(ShepardException exception) {
-		int status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
-		if (exception instanceof InvalidBodyException) {
-			status = Status.BAD_REQUEST.getStatusCode();
-		} else if (exception instanceof InvalidPathException) {
-			status = Status.NOT_FOUND.getStatusCode();
-		}
+		var status = exception.getStatusCode();
 
 		return Response.status(status)
 				.entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage())).build();
