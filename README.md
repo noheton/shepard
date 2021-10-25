@@ -5,7 +5,7 @@
 - [Docker](https://docs.docker.com/engine/) and [Docker Compose](https://docs.docker.com/compose/) are installed.
 - A reverse proxy (e.g. [nginx](https://www.nginx.com/)) is installed.
 - You have SSL certificates and DNS entries (both with and without wildcard respectively) for your host.
-- There is an OpenID Connect identity provider. [Keycloak](https://www.keycloak.org/) is recommended, but not necessary.
+- There is an OpenID Connect identity provider that uses [JSON web tokens](https://jwt.io/) as access tokens. [Keycloak](https://www.keycloak.org/) is recommended, but not required.
 
 ## System requirements
 
