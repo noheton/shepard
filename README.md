@@ -67,7 +67,7 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
    - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`, do not append a trailing slash)
    - The database passwords can be changed arbitrarily at the beginning
    - `OIDC_PUBLIC` is the public key of the oidc identity provider (e.g. keycloak)
-   - ``OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`, the trailing slash is important)
+   - `OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`, the trailing slash is important)
    - `CLIENT_ID` is the client ID of the frontend as known to the oidc identity provider.
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
 
