@@ -62,13 +62,13 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 ```
 
 4. Check configuration in `docker-compose.yml` and especially check available memory
-5. Copy the `env.example` file to `.env` and set passwords and configuration in this file
+5. Copy the file `env.example` to `.env` and set passwords and configuration in this file
    - All variables must be set!
-   - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`)
+   - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`, do not append a trailing slash)
    - The database passwords can be changed arbitrarily at the beginning
-   - `OIDC_PUBLIC` is the public key of the keycloak
-   - `OIDC_AUTHORITY` is the URL of the keycloak realm (e.g. `https://keycloak.example.com/auth/realms/master/`)
-   - `CLIENT_ID` is the client ID of the frontend
+   - `OIDC_PUBLIC` is the public key of the oidc identity provider (e.g. keycloak)
+   - ``OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`, the trailing slash is important)
+   - `CLIENT_ID` is the client ID of the frontend as known to the oidc identity provider.
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
 
 ```bash
