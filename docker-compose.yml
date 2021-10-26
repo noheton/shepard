@@ -5,6 +5,7 @@ services:
     environment:
       CATALINA_OPTS: "-Xms2048m -Xmx2048m -XX:MaxPermSize=256m"
       oidc.public: ${OIDC_PUBLIC}
+      oidc.authority: ${OIDC_AUTHORITY}
       influx.host: influxdb:8086
       influx.username: admin
       influx.password: ${INFLUX_PW}
