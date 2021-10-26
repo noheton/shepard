@@ -4,6 +4,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -34,6 +35,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.util.DateHelper;
 
 public class StructuredDataServiceTest extends BaseTestCase {
@@ -72,7 +74,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest() {
+	public void createStructuredDataTest() throws InvalidBodyException {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 		Date date = new Date();
 		ObjectId oid = new ObjectId();
@@ -99,7 +101,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_noStructuredData() {
+	public void createStructuredDataTest_noStructuredData() throws InvalidBodyException {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 		Date date = new Date();
 		ObjectId oid = new ObjectId();
@@ -124,7 +126,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_mongoError() {
+	public void createStructuredDataTest_mongoError() throws InvalidBodyException {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
 		when(database.getCollection("collection")).thenReturn(collection);
@@ -137,7 +139,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_collectionIsNull() {
+	public void createStructuredDataTest_collectionIsNull() throws InvalidBodyException {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
 		var expectedData = new StructuredData();
@@ -155,8 +157,8 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
 		var expectedData = new StructuredData();
 		expectedData.setName("name");
-		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
-		assertNull(actual);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
 		verify(collection, never()).insertOne(any());
 	}
 

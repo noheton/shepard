@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
@@ -161,7 +162,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest() {
+	public void createStructuredDataTest() throws InvalidBodyException {
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
 		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
@@ -180,7 +181,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_containerIsNull() {
+	public void createStructuredDataTest_containerIsNull() throws InvalidBodyException {
 		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
 
 		when(dao.find(1L)).thenReturn(null);
@@ -191,7 +192,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_containerIsDeleted() {
+	public void createStructuredDataTest_containerIsDeleted() throws InvalidBodyException {
 		var container = new StructuredDataContainer(1L);
 		container.setDeleted(true);
 		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
@@ -204,7 +205,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_mongoError() {
+	public void createStructuredDataTest_mongoError() throws InvalidBodyException {
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
 		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");

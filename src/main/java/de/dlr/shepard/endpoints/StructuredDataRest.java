@@ -1,5 +1,6 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
@@ -48,7 +49,8 @@ public interface StructuredDataRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredData.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createStructuredData(long structuredDataId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) @Valid StructuredDataPayload payload);
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))) @Valid StructuredDataPayload payload)
+			throws InvalidBodyException;
 
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Get structured data objects")

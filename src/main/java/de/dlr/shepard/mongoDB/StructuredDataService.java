@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.log4j.Log4j2;
 
@@ -29,7 +30,8 @@ public class StructuredDataService {
 		return mongoid;
 	}
 
-	public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload) {
+	public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload)
+			throws InvalidBodyException {
 		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
 		if (collection == null) {
 			log.error("Could not find container with mongoid: {}", mongoid);
@@ -40,7 +42,7 @@ public class StructuredDataService {
 			toInsert = Document.parse(payload.getPayload());
 		} catch (JsonParseException e) {
 			log.error("Could not parse json: {}", payload.getPayload());
-			return null;
+			throw new InvalidBodyException("The specified payload is not json parsable");
 		}
 		var newName = payload.getStructuredData() != null ? payload.getStructuredData().getName() : null;
 		var structuredData = new StructuredData(newName, dateHelper.getDate());

@@ -2,6 +2,7 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
@@ -97,7 +98,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Override
 	public Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
-			StructuredDataPayload payload) {
+			StructuredDataPayload payload) throws InvalidBodyException {
 		log.info("Received POST STRUCTUREDDATA request from user {}", securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
