@@ -97,7 +97,23 @@ First idea for a possible query in unified form:
 Open issues:
 * maybe also a list of "querys" to allow more complex querys?
 * also how to allow more "complex" queryies like "400 > value AND value < 500"?
-
+* maybe represent the query object in polish notation: (probably easy to parse), maybe support "or" as well?
+```json
+{
+  "and": [
+      { 
+      "symbolic_name": "TemperaturPly",
+      "operator" : ">", 
+      "value": 400  
+      },
+      {
+      "symbolic_name": "TemperaturPly",
+      "operator" : "<", 
+      "value": 500  
+      }
+    ]
+}
+```
 
 ## MetaData
 
