@@ -14,8 +14,7 @@ import jakarta.ws.rs.core.SecurityContext;
 public class JWTSecurityContextTest extends BaseTestCase {
 
 	private String[] roles = { "role1", "role2" };
-	private JWTPrincipal principal = new JWTPrincipal("MyAudience", "MyIssuedFor", "MyUsername", "MyFirstName",
-			"MyLastName", "MyEMail", "MyKeyId", roles);
+	private JWTPrincipal principal = new JWTPrincipal("MyAudience", "MyIssuedFor", "MyUsername", "MyKeyId", roles);
 
 	private SecurityContext sc = new SecurityContext() {
 

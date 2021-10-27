@@ -40,7 +40,7 @@ public class JWTFilter implements ContainerRequestFilter {
 
 	private final PublicKey oidcPublicKey;
 	private final PublicKey jwtPublicKey;
-	private GracePeriodUtil<?> lastSeen = new GracePeriodUtil<>(FIVE_MINUTES_IN_MILLIS);
+	private GracePeriodUtil lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
 
 	public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException {
 		var pHelper = new PropertiesHelper();
@@ -67,7 +67,7 @@ public class JWTFilter implements ContainerRequestFilter {
 
 		// Get the HTTP Authorization header from the request
 		String authorizationHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-		String apiKeyHeader = requestContext.getHeaderString("X-API-KEY");
+		String apiKeyHeader = requestContext.getHeaderString(Constants.API_KEY_HEADER);
 		if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 			principal = parseAccessToken(authorizationHeader);
 		} else if (apiKeyHeader != null) {
@@ -90,7 +90,6 @@ public class JWTFilter implements ContainerRequestFilter {
 
 		var securityContext = new JWTSecurityContext(requestContext.getSecurityContext(), principal);
 		requestContext.setSecurityContext(securityContext);
-		requestContext.setProperty(Constants.USER, principal);
 	}
 
 	private JWTPrincipal parseAccessToken(String header) {
@@ -123,9 +122,6 @@ public class JWTFilter implements ContainerRequestFilter {
 		String subject = body.getSubject();
 		String audience = body.getAudience();
 		String issuedFor = body.get("azp", String.class);
-		String firstName = body.get("given_name", String.class);
-		String lastName = body.get("family_name", String.class);
-		String eMail = body.get("email", String.class);
 
 		if (subject == null || subject.isEmpty()) {
 			log.warn("Token is missing a subject");
@@ -137,8 +133,8 @@ public class JWTFilter implements ContainerRequestFilter {
 		var splitted = subject.split(":");
 		String username = splitted[splitted.length - 1];
 
-		var principal = new JWTPrincipal(audience, issuedFor, username, firstName, lastName, eMail, keyId,
-				new String[0]);
+		var principal = new JWTPrincipal(audience, issuedFor, username, keyId, new String[0]);
+
 		return principal;
 	}
 
@@ -178,7 +174,7 @@ public class JWTFilter implements ContainerRequestFilter {
 				log.warn("Token from header is not equal to the token from database");
 				return null;
 			}
-			lastSeen.elementSeen(tokenId.toString(), null);
+			lastSeen.elementSeen(tokenId.toString());
 
 		}
 		return principal;

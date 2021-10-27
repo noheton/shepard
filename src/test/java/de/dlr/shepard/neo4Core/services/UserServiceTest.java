@@ -18,7 +18,6 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.security.JWTPrincipal;
 
 public class UserServiceTest extends BaseTestCase {
 
@@ -46,97 +45,92 @@ public class UserServiceTest extends BaseTestCase {
 
 	@Test
 	public void updateUserTest_noUpdate() {
-		var principal = new JWTPrincipal("aud", "iss", "bob", "John", "Doe", "john.doe@example.com", "key",
-				new String[0]);
+		var old = new User("bob", "John", "Doe", "john.doe@example.com");
 		var user = new User("bob", "John", "Doe", "john.doe@example.com");
 
-		when(dao.find("bob")).thenReturn(user);
+		when(dao.find("bob")).thenReturn(old);
 
-		var actual = service.updateUser(principal);
+		var actual = service.updateUser(user);
 		verify(dao, never()).createOrUpdate(any());
-		assertEquals(user, actual);
+		assertEquals(old, actual);
 	}
 
 	@Test
 	public void updateUserTest_noUser() {
-		var principal = new JWTPrincipal("aud", "iss", "bob", "John", "Doe", "john.doe@example.com", "key",
-				new String[0]);
 		var user = new User("bob", "John", "Doe", "john.doe@example.com");
 
 		when(dao.find("bob")).thenReturn(null);
 		when(dao.createOrUpdate(user)).thenReturn(user);
 
-		var actual = service.updateUser(principal);
+		var actual = service.updateUser(user);
 		assertEquals(user, actual);
 	}
 
 	@Test
 	public void updateUserTest_updateFirstName() {
 		var uid = UUID.randomUUID();
-		var principal = new JWTPrincipal("aud", "iss", "bob", "new", "Doe", "john.doe@example.com", "key",
-				new String[0]);
-		var user = new User("bob", "John", "Doe", "john.doe@example.com");
-		user.setApiKeys(List.of(new ApiKey(uid)));
-		user.setSubscriptions(List.of(new Subscription(3L)));
+		var old = new User("bob", "John", "Doe", "john.doe@example.com");
+		old.setApiKeys(List.of(new ApiKey(uid)));
+		old.setSubscriptions(List.of(new Subscription(3L)));
+		var user = new User("bob", "new", "Doe", "john.doe@example.com");
 		var expected = new User("bob", "new", "Doe", "john.doe@example.com");
 		expected.setApiKeys(List.of(new ApiKey(uid)));
 		expected.setSubscriptions(List.of(new Subscription(3L)));
 
-		when(dao.find("bob")).thenReturn(user);
+		when(dao.find("bob")).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-		var actual = service.updateUser(principal);
+		var actual = service.updateUser(user);
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void updateUserTest_updateLastName() {
 		var uid = UUID.randomUUID();
-		var principal = new JWTPrincipal("aud", "iss", "bob", "John", "new", "john.doe@example.com", "key",
-				new String[0]);
-		var user = new User("bob", "John", "Doe", "john.doe@example.com");
-		user.setApiKeys(List.of(new ApiKey(uid)));
-		user.setSubscriptions(List.of(new Subscription(3L)));
+		var old = new User("bob", "John", "Doe", "john.doe@example.com");
+		old.setApiKeys(List.of(new ApiKey(uid)));
+		old.setSubscriptions(List.of(new Subscription(3L)));
+		var user = new User("bob", "John", "new", "john.doe@example.com");
 		var expected = new User("bob", "John", "new", "john.doe@example.com");
 		expected.setApiKeys(List.of(new ApiKey(uid)));
 		expected.setSubscriptions(List.of(new Subscription(3L)));
 
-		when(dao.find("bob")).thenReturn(user);
+		when(dao.find("bob")).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-		var actual = service.updateUser(principal);
+		var actual = service.updateUser(user);
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void updateUserTest_updateEmail() {
 		var uid = UUID.randomUUID();
-		var principal = new JWTPrincipal("aud", "iss", "bob", "John", "Doe", "new@example.com", "key", new String[0]);
-		var user = new User("bob", "John", "Doe", "john.doe@example.com");
-		user.setApiKeys(List.of(new ApiKey(uid)));
-		user.setSubscriptions(List.of(new Subscription(3L)));
+		var old = new User("bob", "John", "Doe", "john.doe@example.com");
+		old.setApiKeys(List.of(new ApiKey(uid)));
+		old.setSubscriptions(List.of(new Subscription(3L)));
+		var user = new User("bob", "John", "Doe", "new@example.com");
 		var expected = new User("bob", "John", "Doe", "new@example.com");
 		expected.setApiKeys(List.of(new ApiKey(uid)));
 		expected.setSubscriptions(List.of(new Subscription(3L)));
 
-		when(dao.find("bob")).thenReturn(user);
+		when(dao.find("bob")).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-		var actual = service.updateUser(principal);
+		var actual = service.updateUser(user);
 		assertEquals(expected, actual);
 	}
 
 	@Test
-	public void updateUserTest_emptyPrincipal() {
+	public void updateUserTest_emptyInput() {
 		var uid = UUID.randomUUID();
-		var principal = new JWTPrincipal("bob", "key");
-		var user = new User("bob", "John", "Doe", "john.doe@example.com");
-		user.setApiKeys(List.of(new ApiKey(uid)));
-		user.setSubscriptions(List.of(new Subscription(3L)));
+		var old = new User("bob", "John", "Doe", "john.doe@example.com");
+		old.setApiKeys(List.of(new ApiKey(uid)));
+		old.setSubscriptions(List.of(new Subscription(3L)));
+		var user = new User("bob");
 
-		when(dao.find("bob")).thenReturn(user);
+		when(dao.find("bob")).thenReturn(old);
 
-		var actual = service.updateUser(principal);
-		assertEquals(user, actual);
+		var actual = service.updateUser(user);
+		assertEquals(old, actual);
 	}
 }

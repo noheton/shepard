@@ -59,7 +59,7 @@ public class JWTFilterTest extends BaseTestCase {
 	private ApiKeyService apiKeyService;
 
 	@Mock
-	private GracePeriodUtil<?> lastSeen;
+	private GracePeriodUtil lastSeen;
 
 	@Spy
 	private JWTFilter filter;
@@ -189,15 +189,13 @@ public class JWTFilterTest extends BaseTestCase {
 				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
 				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
 
-		JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", "MyFirstName", "MyLastName", "MyEMail",
-				keyId.toString(), new String[0]);
+		JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", keyId.toString(), new String[0]);
 		JWTSecurityContext securityContext = new JWTSecurityContext(context.getSecurityContext(), principal);
 
 		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
 		filter.filter(context);
 		verify(context, never()).abortWith(any());
 		verify(context).setSecurityContext(scCaptor.capture());
-		verify(context).setProperty("user", principal);
 		assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
 	}
 
@@ -225,8 +223,7 @@ public class JWTFilterTest extends BaseTestCase {
 		filter.filter(context);
 		verify(context, never()).abortWith(any());
 		verify(context).setSecurityContext(scCaptor.capture());
-		verify(context).setProperty("user", principal);
-		verify(lastSeen).elementSeen(uid.toString(), null);
+		verify(lastSeen).elementSeen(uid.toString());
 		assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
 	}
 
@@ -355,7 +352,6 @@ public class JWTFilterTest extends BaseTestCase {
 		filter.filter(context);
 		verify(context, never()).abortWith(any());
 		verify(context).setSecurityContext(scCaptor.capture());
-		verify(context).setProperty("user", principal);
 		verify(apiKeyService, never()).getApiKey(uid);
 		assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
 	}
