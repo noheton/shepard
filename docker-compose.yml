@@ -82,7 +82,7 @@ services:
       - shepard
 
   mongodb:
-    image: mongo:4.2
+    image: mongo:4.4
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PW}
