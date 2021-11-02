@@ -18,8 +18,7 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WITH c",
-				getObjectPart("c", "StructuredDataContainer", params.hasName()));
+		query = String.format("MATCH %s WITH c", getObjectPart("c", "StructuredDataContainer", params.hasName()));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}

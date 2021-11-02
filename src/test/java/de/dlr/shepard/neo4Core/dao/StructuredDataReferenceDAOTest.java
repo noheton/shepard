@@ -15,6 +15,7 @@ import org.neo4j.ogm.session.Session;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
+import de.dlr.shepard.util.TraversalRules;
 
 public class StructuredDataReferenceDAOTest extends BaseTestCase {
 	@Mock
@@ -48,5 +49,28 @@ public class StructuredDataReferenceDAOTest extends BaseTestCase {
 		var actual = dao.findByDataObject(1L);
 		verify(session).query(StructuredDataReference.class, query, Collections.emptyMap());
 		assertEquals(List.of(ref), actual);
+	}
+
+	@Test
+	public void findReachableReferencesStartIdTest() {
+		long startId = 1L;
+		String query = dao.getSearchForReachableReferencesQuery(startId);
+		StructuredDataReference reference = new StructuredDataReference();
+		reference.setId(3L);
+		when(dao.findByQuery(query, Collections.emptyMap())).thenReturn(List.of(reference));
+		var actual = dao.findReachableReferences(startId);
+		assertEquals(List.of(reference), actual);
+	}
+
+	@Test
+	public void findReachableReferencesStartIdTraversalRuleTest() {
+		long startId = 1L;
+		TraversalRules children = TraversalRules.children;
+		String query = dao.getSearchForReachableReferencesQuery(children, startId);
+		StructuredDataReference reference = new StructuredDataReference();
+		reference.setId(3L);
+		when(dao.findByQuery(query, Collections.emptyMap())).thenReturn(List.of(reference));
+		var actual = dao.findReachableReferences(children, startId);
+		assertEquals(List.of(reference), actual);
 	}
 }

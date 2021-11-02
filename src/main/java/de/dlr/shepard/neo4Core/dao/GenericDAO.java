@@ -187,21 +187,17 @@ public abstract class GenericDAO<T> {
 		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		String returnPart = getReturnPart("ret", false);
 		ret = ret + returnPart;
-		System.out.println("ret: ");
-		System.out.println(ret);
 		return ret;
 	}
 
 	public String getSearchForReachableReferencesQuery(long startId) {
-		String ret = "";
+		String ret;
 		ret = "MATCH path = (d:DataObject)-[hr:has_reference]->";
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
 		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		String returnPart = getReturnPart("ret", false);
 		ret = ret + returnPart;
-		System.out.println("ret: ");
-		System.out.println(ret);
 		return ret;
 	}
 
