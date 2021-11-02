@@ -84,10 +84,11 @@ public class DataObjectTest extends BaseTestCaseIT {
 		assertThat(actual.getParentId()).isEqualTo(dataObject.getId());
 		assertThat(actual.getCollectionId()).isEqualTo(collection.getId());
 
-		dataObject.setChildrenIds(new long[] { child.getId() });
 		DataObjectIO parent = given().spec(requestSpecification).when().get(dataObjectsURL + "/" + dataObject.getId())
 				.then().statusCode(200).extract().as(DataObjectIO.class);
-		assertThat(parent).isEqualTo(dataObject);
+		assertThat(parent).usingRecursiveComparison().ignoringFields("childrenIds").isEqualTo(dataObject);
+		assertThat(parent.getChildrenIds()).containsExactlyInAnyOrder(child.getId());
+		dataObject = parent;
 	}
 
 	@Test
@@ -108,10 +109,11 @@ public class DataObjectTest extends BaseTestCaseIT {
 		assertThat(actual.getParentId()).isNull();
 		assertThat(actual.getCollectionId()).isEqualTo(collection.getId());
 
-		dataObject.setSuccessorIds(new long[] { actual.getId() });
 		DataObjectIO predecessor = given().spec(requestSpecification).when()
 				.get(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(200).extract().as(DataObjectIO.class);
-		assertThat(predecessor).isEqualTo(dataObject);
+		assertThat(predecessor).usingRecursiveComparison().ignoringFields("successorIds").isEqualTo(dataObject);
+		assertThat(predecessor.getSuccessorIds()).containsExactlyInAnyOrder(successor.getId());
+		dataObject = predecessor;
 	}
 
 	@Test
@@ -136,13 +138,14 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO parent = given().spec(requestSpecification).when().get(dataObjectsURL + "/" + dataObject.getId())
 				.then().statusCode(200).extract().as(DataObjectIO.class);
 		assertThat(parent).usingRecursiveComparison().ignoringFields("childrenIds").isEqualTo(dataObject);
-		assertThat(parent.getChildrenIds()).containsExactlyInAnyOrder(child.getId(), actual.getId());
+		assertThat(parent.getChildrenIds()).containsExactlyInAnyOrder(child.getId(), successorAndChild.getId());
 		dataObject = parent;
 
-		child.setSuccessorIds(new long[] { actual.getId() });
 		DataObjectIO predecessor = given().spec(requestSpecification).when().get(dataObjectsURL + "/" + child.getId())
 				.then().statusCode(200).extract().as(DataObjectIO.class);
-		assertThat(predecessor).isEqualTo(child);
+		assertThat(predecessor).usingRecursiveComparison().ignoringFields("successorIds").isEqualTo(child);
+		assertThat(predecessor.getSuccessorIds()).containsExactlyInAnyOrder(successorAndChild.getId());
+		child = predecessor;
 	}
 
 	@Test
@@ -160,7 +163,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(requestSpecification).queryParam("name", dataObject.getName()).when()
 				.get().then().statusCode(200).extract().as(DataObjectIO[].class);
 
-		assertThat(response).containsExactly(dataObject);
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(dataObject);
 	}
 
 	@Test
@@ -169,7 +173,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(requestSpecification).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
 
-		assertThat(response).containsExactlyInAnyOrder(dataObject, child, successor, successorAndChild);
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(dataObject, child, successor, successorAndChild);
 	}
 
 	@Test
@@ -178,7 +183,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(requestSpecification).queryParam("parentId", dataObject.getId()).when()
 				.get().then().statusCode(200).extract().as(DataObjectIO[].class);
 
-		assertThat(response).containsExactlyInAnyOrder(child, successorAndChild);
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(child, successorAndChild);
 	}
 
 	@Test
@@ -187,11 +193,52 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(requestSpecification).queryParam("parentId", -1).when().get().then()
 				.statusCode(200).extract().as(DataObjectIO[].class);
 
-		assertThat(response).containsExactlyInAnyOrder(dataObject, successor);
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(dataObject, successor);
 	}
 
 	@Test
 	@Order(10)
+	public void getDataObjectsTest_ByPredecessor() {
+		DataObjectIO[] response = given().spec(requestSpecification).queryParam("predecessorId", dataObject.getId())
+				.when().get().then().statusCode(200).extract().as(DataObjectIO[].class);
+
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(successor);
+	}
+
+	@Test
+	@Order(11)
+	public void getDataObjectsTest_WithoutPredecessor() {
+		DataObjectIO[] response = given().spec(requestSpecification).queryParam("predecessorId", -1).when().get().then()
+				.statusCode(200).extract().as(DataObjectIO[].class);
+
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(dataObject, child);
+	}
+
+	@Test
+	@Order(12)
+	public void getDataObjectsTest_BySuccessor() {
+		DataObjectIO[] response = given().spec(requestSpecification).queryParam("successorId", successor.getId()).when()
+				.get().then().statusCode(200).extract().as(DataObjectIO[].class);
+
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(dataObject);
+	}
+
+	@Test
+	@Order(13)
+	public void getDataObjectsTest_WithoutSuccessor() {
+		DataObjectIO[] response = given().spec(requestSpecification).queryParam("successorId", -1).when().get().then()
+				.statusCode(200).extract().as(DataObjectIO[].class);
+
+		assertThat(response).usingRecursiveFieldByFieldElementComparatorIgnoringFields("childrenIds", "successorIds",
+				"predecessorIds").containsExactlyInAnyOrder(successor, successorAndChild);
+	}
+
+	@Test
+	@Order(14)
 	public void putDataObjectTest_Successful() {
 		dataObject.setName("DataObjectSuccessorChanged");
 
@@ -205,7 +252,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(11)
+	@Order(15)
 	public void putDataObjectTest_newParent() {
 		successorAndChild.setName("DataObjectChildChanged");
 		successorAndChild.setParentId(successor.getId());
@@ -230,7 +277,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(12)
+	@Order(16)
 	public void putDataObjectTest_newPredecessor() {
 		child.setName("DataObjectSuccessorChanged");
 		child.setPredecessorIds(new long[] { dataObject.getId() });
@@ -249,7 +296,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(13)
+	@Order(17)
 	public void deleteDataObjectTest_Successful() {
 		given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then()
 				.statusCode(204);

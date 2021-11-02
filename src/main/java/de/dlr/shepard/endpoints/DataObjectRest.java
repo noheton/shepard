@@ -21,7 +21,7 @@ public interface DataObjectRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = DataObjectIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getAllDataObjects(long collectionId, String name, Integer page, Integer size, Long parentId,
-			DataObjectAttributes orderAttribute, Boolean orderDesc);
+			Long predecessorId, Long successorId, DataObjectAttributes orderAttribute, Boolean orderDesc);
 
 	@Tag(name = Constants.DATAOBJECT)
 	@Operation(description = "Get dataObject")

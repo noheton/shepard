@@ -15,6 +15,8 @@ public class QueryParamHelper {
 	private String name;
 	private PaginationHelper pagination;
 	private Long parentId;
+	private Long predecessorId;
+	private Long successorId;
 	private OrderByAttribute orderByAttribute;
 	private Boolean orderDesc;
 
@@ -34,6 +36,24 @@ public class QueryParamHelper {
 
 	public boolean hasPagination() {
 		return this.pagination != null;
+	}
+
+	public QueryParamHelper withPredecessorId(long predecessorId) {
+		this.predecessorId = predecessorId;
+		return this;
+	}
+
+	public boolean hasPredecessorId() {
+		return this.predecessorId != null;
+	}
+
+	public QueryParamHelper withSuccessorId(long successorId) {
+		this.successorId = successorId;
+		return this;
+	}
+
+	public boolean hasSuccessorId() {
+		return this.successorId != null;
 	}
 
 	public QueryParamHelper withParentId(long parentId) {

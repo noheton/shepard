@@ -41,6 +41,34 @@ public class QueryParamHelperTest extends BaseTestCase {
 	}
 
 	@Test
+	public void withPredecessorId() {
+		var params = new QueryParamHelper().withPredecessorId(123L);
+		assertTrue(params.hasPredecessorId());
+		assertEquals(123L, params.getPredecessorId());
+	}
+
+	@Test
+	public void withoutPredecessorId() {
+		var params = new QueryParamHelper();
+		assertFalse(params.hasPredecessorId());
+		assertNull(params.getPredecessorId());
+	}
+
+	@Test
+	public void withSuccessorId() {
+		var params = new QueryParamHelper().withSuccessorId(123L);
+		assertTrue(params.hasSuccessorId());
+		assertEquals(123L, params.getSuccessorId());
+	}
+
+	@Test
+	public void withoutSuccessorId() {
+		var params = new QueryParamHelper();
+		assertFalse(params.hasSuccessorId());
+		assertNull(params.getSuccessorId());
+	}
+
+	@Test
 	public void withPagination() {
 		var params = new QueryParamHelper().withPageAndSize(1, 2);
 		assertTrue(params.hasPagination());

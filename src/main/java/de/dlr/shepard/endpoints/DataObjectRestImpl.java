@@ -42,6 +42,8 @@ public class DataObjectRestImpl implements DataObjectRest {
 	public Response getAllDataObjects(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@QueryParam(Constants.QP_NAME) String name, @QueryParam(Constants.QP_PAGE) Integer page,
 			@QueryParam(Constants.QP_SIZE) Integer size, @QueryParam(Constants.QP_PARENT_ID) Long parentId,
+			@QueryParam(Constants.QP_PREDECESSOR_ID) Long predecessorId,
+			@QueryParam(Constants.QP_SUCCESSOR_ID) Long successorId,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		log.info("Received GET ALL request with collection {} from user {}", collectionId,
@@ -54,6 +56,10 @@ public class DataObjectRestImpl implements DataObjectRest {
 			params = params.withPageAndSize(page, size);
 		if (parentId != null)
 			params = params.withParentId(parentId);
+		if (predecessorId != null)
+			params = params.withPredecessorId(predecessorId);
+		if (successorId != null)
+			params = params.withSuccessorId(successorId);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
 

@@ -9,8 +9,6 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
-import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class DataObjectDAO extends GenericDAO<DataObject> {
@@ -28,13 +26,65 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	 * @return a List of DataObjects
 	 */
 	public List<DataObject> findByCollection(long collectionId, QueryParamHelper params) {
-		if (params.hasParentId()) {
-			return findByParentAndName(collectionId, params.getParentId(), params.getPagination(), params.getName(),
-					params.getOrderByAttribute(), params.getOrderDesc());
-		} else {
-			return findByName(collectionId, params.getPagination(), params.getName(), params.getOrderByAttribute(),
-					params.getOrderDesc());
+
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
 		}
+		String match = "MATCH (c:Collection)-[hdo:has_dataobject]->"
+				+ getObjectPart("d", "DataObject", params.hasName());
+		String where = " WHERE ID(c)=" + collectionId;
+
+		if (params.hasParentId()) {
+			if (params.getParentId() == -1) {
+				where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false}))";
+			} else {
+				match += "<-[:has_child]-(parent:DataObject {deleted: false})";
+				where += " AND ID(parent)=" + params.getParentId();
+			}
+		}
+
+		if (params.hasPredecessorId()) {
+			if (params.getPredecessorId() == -1) {
+				where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: false}))";
+			} else {
+				match += "<-[:has_successor]-(predecessor:DataObject {deleted: false})";
+				where += " AND ID(predecessor)=" + params.getPredecessorId();
+			}
+		}
+		if (params.hasSuccessorId()) {
+			if (params.getSuccessorId() == -1) {
+				where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: false}))";
+			} else {
+				match += "-[:has_successor]->(successor:DataObject {deleted: false})";
+				where += " AND ID(successor)=" + params.getSuccessorId();
+			}
+		}
+
+		String query = match + where + " WITH d";
+		if (params.hasOrderByAttribute()) {
+			query += " " + getOrderByPart("d", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			query += " " + getPaginationPart();
+		}
+		query += " " + getReturnPart("d");
+		var result = new ArrayList<DataObject>();
+		for (var obj :
+
+		findByQuery(query, paramsMap)) {
+			List<DataObject> parentList = obj.getParent() != null ? List.of(obj.getParent()) : Collections.emptyList();
+			if (matchCollection(obj, collectionId) && matchName(obj, params.getName())
+					&& matchRelated(parentList, params.getParentId())
+					&& matchRelated(obj.getSuccessors(), params.getSuccessorId())
+					&& matchRelated(obj.getPredecessors(), params.getPredecessorId())) {
+				result.add(obj);
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -58,100 +108,21 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		return result;
 	}
 
-	/**
-	 * Searches the database for DataObjects.
-	 *
-	 * @param collectionId identifies the collection
-	 * @param page         which page should be fetched
-	 * @param name         filter dataObjects by name, this is allowed to be null
-	 * @return a List of DataObjects
-	 */
-	private List<DataObject> findByName(long collectionId, PaginationHelper page, String name,
-			OrderByAttribute orderByAttribute, Boolean desc) {
-		Map<String, Object> paramsMap = new HashMap<>();
-		paramsMap.put("name", name);
-		if (page != null) {
-			paramsMap.put("offset", page.getOffset());
-			paramsMap.put("size", page.getSize());
-		}
-		String query = String.format("MATCH (c:Collection)-[hdo:has_dataobject]->%s WHERE ID(c)=%d WITH d",
-				getObjectPart("d", "DataObject", name != null), collectionId);
-		if (orderByAttribute != null) {
-			query += " " + getOrderByPart("d", orderByAttribute, desc);
-		}
-		if (page != null) {
-			query += " " + getPaginationPart();
-		}
-		query += " " + getReturnPart("d");
-		var result = new ArrayList<DataObject>();
-		for (var obj : findByQuery(query, paramsMap)) {
-			if (matchCollection(obj, collectionId) && matchName(obj, name)) {
-				result.add(obj);
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Searches the database for DataObjects.
-	 *
-	 * @param collectionId identifies the collection
-	 * @param parentId     identifies the parent step
-	 * @param page         which page should be fetched
-	 * @param name         filter dataObjects by name, this is allowed to be null
-	 * @return a List of DataObjects
-	 */
-	private List<DataObject> findByParentAndName(long collectionId, long parentId, PaginationHelper page, String name,
-			OrderByAttribute orderByAttribute, Boolean desc) {
-		String query;
-		Map<String, Object> paramsMap = new HashMap<>();
-		paramsMap.put("name", name);
-		if (page != null) {
-			paramsMap.put("offset", page.getOffset());
-			paramsMap.put("size", page.getSize());
-		}
-		if (parentId == -1) {
-			query = String.format(
-					"MATCH (c:Collection)-[hdo:has_dataobject]->%s "
-							+ "WHERE ID(c)=%d AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d",
-					getObjectPart("d", "DataObject", name != null), collectionId);
-		} else {
-			query = String.format(
-					"MATCH (c:Collection)-[hdo:has_dataobject]->(parent:DataObject)-[hc:has_child]->%s "
-							+ "WHERE ID(c)=%d AND ID(parent)=%d WITH d",
-					getObjectPart("d", "DataObject", name != null), collectionId, parentId);
-		}
-		if (orderByAttribute != null) {
-			query += " " + getOrderByPart("d", orderByAttribute, desc);
-		}
-		if (page != null) {
-			query += " " + getPaginationPart();
-		}
-		query += " " + getReturnPart("d");
-		var result = new ArrayList<DataObject>();
-		for (var obj : findByQuery(query, paramsMap)) {
-			if (matchCollection(obj, collectionId) && matchParent(obj, parentId) && matchName(obj, name)) {
-				result.add(obj);
-			}
-		}
-
-		return result;
-	}
-
 	private boolean matchName(DataObject obj, String name) {
-		if (name == null || obj.getName().equalsIgnoreCase(name))
+		if (name == null || name.equalsIgnoreCase(obj.getName()))
 			return true;
 		return false;
 	}
 
-	private boolean matchParent(DataObject obj, long parentId) {
-		if (parentId == -1) {
-			// return true if parent is null or parent is deleted
-			return obj.getParent() == null || obj.getParent().isDeleted();
+	private boolean matchRelated(List<DataObject> related, Long id) {
+		if (id == null) {
+			return true;
+		} else if (id == -1) {
+			// return true if there is no related object or all objects are deleted
+			return related.stream().allMatch(d -> d.isDeleted());
 		} else {
-			// return true if parent is not deleted and parent id equals parentId
-			return obj.getParent() != null && !obj.getParent().isDeleted() && obj.getParent().getId().equals(parentId);
+			// return true if at least one related object that is not deleted matches the ID
+			return related.stream().anyMatch(d -> (!d.isDeleted() && d.getId().equals(id)));
 		}
 	}
 
