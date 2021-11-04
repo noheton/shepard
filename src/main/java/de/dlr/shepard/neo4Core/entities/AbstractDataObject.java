@@ -5,13 +5,11 @@ import java.util.Objects;
 
 import org.neo4j.ogm.annotation.Properties;
 
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@Setter
+@Data
 @ToString(callSuper = true)
 @NoArgsConstructor
 public abstract class AbstractDataObject extends AbstractEntity {

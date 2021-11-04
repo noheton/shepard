@@ -9,15 +9,12 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 public class User implements HasId {
 
@@ -40,7 +37,7 @@ public class User implements HasId {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param username identifies the user
 	 */
 	public User(String username) {
@@ -49,7 +46,7 @@ public class User implements HasId {
 
 	/**
 	 * Simple constructor
-	 * 
+	 *
 	 * @param username  Username
 	 * @param firstName First name
 	 * @param lastName  Last name

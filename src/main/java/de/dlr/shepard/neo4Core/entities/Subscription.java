@@ -12,15 +12,12 @@ import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.RequestMethod;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 public class Subscription implements HasId {
 
@@ -46,7 +43,7 @@ public class Subscription implements HasId {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public Subscription(long id) {

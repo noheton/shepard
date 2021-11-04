@@ -12,15 +12,12 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.neo4Core.converter.TimeseriesConverter;
 import de.dlr.shepard.util.Constants;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 public class TimeseriesReference extends BasicReference {
 

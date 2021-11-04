@@ -2,16 +2,12 @@ package de.dlr.shepard.neo4Core.entities;
 
 import org.neo4j.ogm.annotation.NodeEntity;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class URIReference extends BasicReference {
@@ -20,7 +16,7 @@ public class URIReference extends BasicReference {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public URIReference(long id) {

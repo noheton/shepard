@@ -2,15 +2,9 @@ package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.util.RequestMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
+@Data
 @Schema(name = "Event")
 public class EventIO {
 

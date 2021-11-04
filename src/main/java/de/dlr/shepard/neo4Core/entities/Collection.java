@@ -7,14 +7,13 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
+@Data
+@ToString(callSuper = true)
 @NoArgsConstructor
 public class Collection extends AbstractDataObject {
 

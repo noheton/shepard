@@ -6,14 +6,12 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
+@Data
 @ToString(callSuper = true)
 @NoArgsConstructor
 public class BasicReference extends AbstractEntity {
@@ -26,7 +24,7 @@ public class BasicReference extends AbstractEntity {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param id identifies the entity
 	 */
 	public BasicReference(long id) {
@@ -35,7 +33,7 @@ public class BasicReference extends AbstractEntity {
 
 	/**
 	 * Returns the name of the implemented class
-	 * 
+	 *
 	 * @return the simple class name
 	 */
 	public String getType() {

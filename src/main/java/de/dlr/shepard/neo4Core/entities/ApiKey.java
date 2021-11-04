@@ -14,15 +14,12 @@ import org.neo4j.ogm.id.UuidStrategy;
 import org.neo4j.ogm.typeconversion.UuidStringConverter;
 
 import de.dlr.shepard.util.Constants;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 public class ApiKey implements HasId {
 
@@ -50,7 +47,7 @@ public class ApiKey implements HasId {
 
 	/**
 	 * For testing purposes only
-	 * 
+	 *
 	 * @param uid identifies the entity
 	 */
 	public ApiKey(UUID uid) {

@@ -9,16 +9,12 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.neo4Core.converter.FileConverter;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 @NodeEntity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class FileContainer extends AbstractContainer {
