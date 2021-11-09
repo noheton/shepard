@@ -1,6 +1,6 @@
 package de.dlr.shepard.influxDB;
 
-import de.dlr.shepard.neo4Core.entities.HasId;
+import de.dlr.shepard.util.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

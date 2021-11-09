@@ -10,6 +10,7 @@ import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HasId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;

@@ -7,6 +7,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HasId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;

@@ -1,4 +1,4 @@
-package de.dlr.shepard.neo4Core.entities;
+package de.dlr.shepard.util;
 
 import java.util.List;
 

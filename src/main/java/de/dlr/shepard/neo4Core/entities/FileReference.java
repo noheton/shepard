@@ -12,6 +12,7 @@ import org.neo4j.ogm.annotation.typeconversion.Convert;
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.neo4Core.converter.FileConverter;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HasId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;

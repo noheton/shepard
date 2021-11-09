@@ -14,6 +14,7 @@ import org.neo4j.ogm.id.UuidStrategy;
 import org.neo4j.ogm.typeconversion.UuidStringConverter;
 
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HasId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.neo4Core.entities.HasId;
+import de.dlr.shepard.util.HasId;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class HasIdIOTest extends BaseTestCase {

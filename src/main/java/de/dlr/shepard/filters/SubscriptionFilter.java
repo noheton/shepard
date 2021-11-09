@@ -5,12 +5,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import de.dlr.shepard.neo4Core.entities.HasId;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.EventIO;
 import de.dlr.shepard.neo4Core.io.HasIdIO;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
+import de.dlr.shepard.util.HasId;
 import de.dlr.shepard.util.RequestMethod;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
