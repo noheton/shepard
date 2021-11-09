@@ -170,16 +170,16 @@ public abstract class GenericDAO<T> {
 		String ret = "";
 		switch (traversalRule) {
 		case children:
-			ret = "MATCH path = (d:DataObject)-[hc:has_child*0..]->(e:DataObject)-[hr:has_reference]->";
+			ret = "MATCH path = (d:DataObject)-[:has_child*0..]->(e:DataObject)-[hr:has_reference]->";
 			break;
 		case parents:
-			ret = "MATCH path = (d:DataObject)<-[hc:has_child*0..]-(e:DataObject)-[hr:has_reference]->";
+			ret = "MATCH path = (d:DataObject)<-[:has_child*0..]-(e:DataObject)-[hr:has_reference]->";
 			break;
 		case successors:
-			ret = "MATCH path = (d:DataObject)-[hc:has_successor*0..]->(e:DataObject)-[hr:has_reference]->";
+			ret = "MATCH path = (d:DataObject)-[:has_successor*0..]->(e:DataObject)-[hr:has_reference]->";
 			break;
 		case predecessors:
-			ret = "MATCH path = (d:DataObject)<-[hc:has_successor*0..]-(e:DataObject)-[hr:has_reference]->";
+			ret = "MATCH path = (d:DataObject)<-[:has_successor*0..]-(e:DataObject)-[hr:has_reference]->";
 			break;
 		}
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
