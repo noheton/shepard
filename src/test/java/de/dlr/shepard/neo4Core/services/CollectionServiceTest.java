@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -17,9 +18,11 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
@@ -38,6 +41,9 @@ public class CollectionServiceTest extends BaseTestCase {
 
 	@Mock
 	private UserDAO userDAO;
+
+	@Mock
+	private PermissionsDAO permissionsDAO;
 
 	@Mock
 	private DateHelper dateHelper;
@@ -89,8 +95,8 @@ public class CollectionServiceTest extends BaseTestCase {
 		Collection collectionDeleted = new Collection(6L);
 		collectionDeleted.setDeleted(true);
 
-		when(dao.findAllCollections(null)).thenReturn(List.of(collectionNotDeleted));
-		List<Collection> returned = service.getAllCollections(null);
+		when(dao.findAllCollections(null, "bob")).thenReturn(List.of(collectionNotDeleted));
+		List<Collection> returned = service.getAllCollections(null, "bob");
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}
 
@@ -101,8 +107,8 @@ public class CollectionServiceTest extends BaseTestCase {
 		collectionDeleted.setDeleted(true);
 
 		var params = new QueryParamHelper().withName("test");
-		when(dao.findAllCollections(params)).thenReturn(List.of(collectionNotDeleted));
-		List<Collection> returned = service.getAllCollections(params);
+		when(dao.findAllCollections(params, "bob")).thenReturn(List.of(collectionNotDeleted));
+		List<Collection> returned = service.getAllCollections(params, "bob");
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}
 
@@ -144,6 +150,7 @@ public class CollectionServiceTest extends BaseTestCase {
 
 		var actual = service.createCollection(input, "bob");
 		assertEquals(created, actual);
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
 	}
 
 	@Test

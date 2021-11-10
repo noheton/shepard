@@ -125,7 +125,7 @@ public class CollectionTest extends BaseTestCaseIT {
 	@Test
 	@Order(9)
 	public void getCollectionTest_WrongId() {
-		given().spec(requestSpecification).when().get("now_the_request_should_result_in_404").then().statusCode(404);
+		given().spec(requestSpecification).when().get("9999").then().statusCode(404);
 	}
 
 	@Test

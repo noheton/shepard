@@ -8,8 +8,10 @@ import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -17,6 +19,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 public class FileContainerService {
 
 	private FileContainerDAO fileContainerDAO = new FileContainerDAO();
+	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private FileService fileService = new FileService();
@@ -35,7 +38,10 @@ public class FileContainerService {
 		toCreate.setCreatedBy(user);
 		toCreate.setMongoId(fileService.createFileContainer());
 		toCreate.setName(fileContainerIO.getName());
-		return fileContainerDAO.createOrUpdate(toCreate);
+
+		var created = fileContainerDAO.createOrUpdate(toCreate);
+		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		return created;
 	}
 
 	/**
@@ -55,11 +61,12 @@ public class FileContainerService {
 	/**
 	 * Searches the database for all FileContainers
 	 *
-	 * @param params QueryParamsHelper
+	 * @param params   QueryParamsHelper
+	 * @param username the name of the user
 	 * @return a list of FileContainers
 	 */
-	public List<FileContainer> getAllFileContainers(QueryParamHelper params) {
-		var containers = fileContainerDAO.findAllFileContainers(params);
+	public List<FileContainer> getAllFileContainers(QueryParamHelper params, String username) {
+		var containers = fileContainerDAO.findAllFileContainers(params, username);
 		return containers;
 	}
 

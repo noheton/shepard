@@ -20,8 +20,10 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
@@ -31,6 +33,9 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Mock
 	private StructuredDataContainerDAO dao;
+
+	@Mock
+	private PermissionsDAO permissionsDAO;
 
 	@Mock
 	private StructuredDataService structuredDataService;
@@ -78,9 +83,9 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		var container1 = new StructuredDataContainer(1L);
 		var container2 = new StructuredDataContainer(2L);
 
-		when(dao.findAllStructuredDataContainers(null)).thenReturn(List.of(container1, container2));
+		when(dao.findAllStructuredDataContainers(null, "bob")).thenReturn(List.of(container1, container2));
 
-		var actual = service.getAllStructuredDataContainers(null);
+		var actual = service.getAllStructuredDataContainers(null, "bob");
 		assertEquals(List.of(container1, container2), actual);
 	}
 
@@ -121,6 +126,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createStructuredDataContainer(input, "bob");
 		assertEquals(created, actual);
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
 	}
 
 	@Test

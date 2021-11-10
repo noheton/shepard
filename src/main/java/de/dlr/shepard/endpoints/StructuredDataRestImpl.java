@@ -5,15 +5,19 @@ import java.util.ArrayList;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
+import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.StructuredDataContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -32,6 +36,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class StructuredDataRestImpl implements StructuredDataRest {
 	private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
+	private PermissionsService permissionsService = new PermissionsService();
 
 	@Context
 	private SecurityContext securityContext;
@@ -52,7 +57,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = structuredDataContainerService.getAllStructuredDataContainers(params);
+		var containers = structuredDataContainerService.getAllStructuredDataContainers(params,
+				securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<StructuredDataContainerIO>(containers.size());
 		for (var container : containers) {
 			result.add(new StructuredDataContainerIO(container));
@@ -136,6 +142,27 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response getPermissions(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.getPermissionsByEntity(structuredDataId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@PUT
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response editPermissions(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+			@Valid PermissionsIO permissions) {
+		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.updatePermissions(permissions, structuredDataId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

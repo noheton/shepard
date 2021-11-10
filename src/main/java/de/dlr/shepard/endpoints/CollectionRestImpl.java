@@ -5,10 +5,13 @@ import java.util.ArrayList;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.CollectionService;
+import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -32,6 +35,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class CollectionRestImpl implements CollectionRest {
 	private CollectionService collectionService = new CollectionService();
+	private PermissionsService permissionsService = new PermissionsService();
 
 	@Context
 	private SecurityContext securityContext;
@@ -51,7 +55,7 @@ public class CollectionRestImpl implements CollectionRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var collections = collectionService.getAllCollections(params);
+		var collections = collectionService.getAllCollections(params, securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<CollectionIO>(collections.size());
 
 		for (var collection : collections) {
@@ -106,6 +110,27 @@ public class CollectionRestImpl implements CollectionRest {
 		return collectionService.deleteCollection(collectionId, securityContext.getUserPrincipal().getName())
 				? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response getPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.getPermissionsByEntity(collectionId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@PUT
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response editPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@Valid PermissionsIO permissions) {
+		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.updatePermissions(permissions, collectionId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

@@ -64,6 +64,15 @@ public class Constants {
 	public static final String URI_REFERENCES = "uriReferences";
 	public static final String URI_REFERENCE_ID = "uriReferenceId";
 
+	public static final String PERMISSIONS = "permissions";
+	public static final String PERMISSION_ID = "permissionId";
+
+	public static final String OWNED_BY = "owned_by";
+	public static final String READABLE_BY = "readable_by";
+	public static final String WRITEABLE_BY = "writeable_by";
+	public static final String MANAGEABLE_BY = "manageable_by";
+	public static final String HAS_PERMISSIONS = "has_permissions";
+
 	// Query Params
 	public static final String QP_NAME = "name";
 	public static final String QP_PAGE = "page";

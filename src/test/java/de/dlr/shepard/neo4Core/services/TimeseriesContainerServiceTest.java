@@ -20,8 +20,10 @@ import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
@@ -31,6 +33,9 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 	@Mock
 	private TimeseriesContainerDAO dao;
+
+	@Mock
+	private PermissionsDAO permissionsDAO;
 
 	@Mock
 	private TimeseriesService timeseriesService;
@@ -78,9 +83,9 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var container1 = new TimeseriesContainer(1L);
 		var container2 = new TimeseriesContainer(2L);
 
-		when(dao.findAllTimeseriesContainers(null)).thenReturn(List.of(container1, container2));
+		when(dao.findAllTimeseriesContainers(null, "bob")).thenReturn(List.of(container1, container2));
 
-		var actual = service.getAllTimeseriesContainers(null);
+		var actual = service.getAllTimeseriesContainers(null, "bob");
 		assertEquals(List.of(container1, container2), actual);
 	}
 
@@ -121,6 +126,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createTimeseriesContainer(input, "bob");
 		assertEquals(created, actual);
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
 	}
 
 	@Test

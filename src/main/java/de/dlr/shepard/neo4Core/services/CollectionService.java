@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -14,6 +16,7 @@ public class CollectionService {
 
 	private CollectionDAO collectionDAO = new CollectionDAO();
 	private UserDAO userDAO = new UserDAO();
+	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private DateHelper dateHelper = new DateHelper();
 
 	/**
@@ -34,6 +37,7 @@ public class CollectionService {
 		toCreate.setName(collection.getName());
 
 		var created = collectionDAO.createOrUpdate(toCreate);
+		permissionsDAO.createOrUpdate(new Permissions(created, user));
 		return created;
 	}
 
@@ -55,11 +59,12 @@ public class CollectionService {
 	/**
 	 * Searches the database for all Collections
 	 *
-	 * @param params encapsulates possible parameters
+	 * @param params   encapsulates possible parameters
+	 * @param username the name of the user
 	 * @return a list of Collections
 	 */
-	public List<Collection> getAllCollections(QueryParamHelper params) {
-		var queryResult = collectionDAO.findAllCollections(params);
+	public List<Collection> getAllCollections(QueryParamHelper params, String username) {
+		var queryResult = collectionDAO.findAllCollections(params, username);
 
 		var collections = queryResult.stream().peek(this::cutDeleted).collect(Collectors.toList());
 

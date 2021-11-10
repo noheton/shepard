@@ -166,7 +166,14 @@ public abstract class GenericDAO<T> {
 		return ret;
 	}
 
-	public String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long startId) {
+	protected String getReadableByPart(String variable, String username) {
+		String ret = String.format(
+				"WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" }))",
+				variable, variable, username);
+		return ret;
+	}
+
+	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long startId) {
 		String ret = "";
 		switch (traversalRule) {
 		case children:
@@ -190,7 +197,7 @@ public abstract class GenericDAO<T> {
 		return ret;
 	}
 
-	public String getSearchForReachableReferencesQuery(long startId) {
+	protected String getSearchForReachableReferencesQuery(long startId) {
 		String ret;
 		ret = "MATCH path = (d:DataObject)-[hr:has_reference]->";
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";

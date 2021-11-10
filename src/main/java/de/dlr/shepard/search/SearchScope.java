@@ -1,20 +1,16 @@
 package de.dlr.shepard.search;
 
 import de.dlr.shepard.util.TraversalRules;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class SearchScope {
 
-	@Valid
 	@NotNull
-	private Integer collectionId;
-	@Valid
+	private Long collectionId;
 	@NotNull
-	private Integer dataObjectId;
-	@Valid
+	private Long dataObjectId;
 	@NotNull
 	private TraversalRules[] traversalRules;
 

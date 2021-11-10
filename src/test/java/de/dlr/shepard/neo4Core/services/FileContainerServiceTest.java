@@ -20,8 +20,10 @@ import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
@@ -30,6 +32,9 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Mock
 	private FileContainerDAO dao;
+
+	@Mock
+	private PermissionsDAO permissionsDAO;
 
 	@Mock
 	private FileService fileService;
@@ -77,9 +82,9 @@ public class FileContainerServiceTest extends BaseTestCase {
 		var container1 = new FileContainer(1L);
 		var container2 = new FileContainer(2L);
 
-		when(dao.findAllFileContainers(null)).thenReturn(List.of(container1, container2));
+		when(dao.findAllFileContainers(null, "bob")).thenReturn(List.of(container1, container2));
 
-		var actual = service.getAllFileContainers(null);
+		var actual = service.getAllFileContainers(null, "bob");
 		assertEquals(List.of(container1, container2), actual);
 	}
 
@@ -120,6 +125,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createFileContainer(input, "bob");
 		assertEquals(created, actual);
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
 	}
 
 	@Test

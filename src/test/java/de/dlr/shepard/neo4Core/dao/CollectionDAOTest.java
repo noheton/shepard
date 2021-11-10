@@ -44,13 +44,14 @@ public class CollectionDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:Collection { deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
+		var query = "MATCH (c:Collection { deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -62,7 +63,9 @@ public class CollectionDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:Collection { deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+		var query = "MATCH (c:Collection { deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c ORDER BY toLower(c.name) DESC "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -70,7 +73,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper();
 		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -84,13 +87,14 @@ public class CollectionDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
+		var query = "MATCH (c:Collection { name : $name, deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -104,7 +108,9 @@ public class CollectionDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+		var query = "MATCH (c:Collection { name : $name, deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c ORDER BY toLower(c.name) DESC "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
@@ -112,7 +118,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withName("Yes");
 		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -126,13 +132,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:Collection { deleted: false }) WITH c SKIP $offset LIMIT $size "
+		var query = "MATCH (c:Collection { deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -146,7 +154,8 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:Collection { deleted: false }) "
+		var query = "MATCH (c:Collection { deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
@@ -155,7 +164,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -171,13 +180,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:Collection { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
+		var query = "MATCH (c:Collection { name : $name, deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -193,7 +204,8 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:Collection { name : $name, deleted: false }) "
+		var query = "MATCH (c:Collection { name : $name, deleted: false }) WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
@@ -202,7 +214,7 @@ public class CollectionDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var collectionAttribute = DataObjectAttributes.name;
 		params = params.withOrderByAttribute(collectionAttribute, true);
-		var actual = dao.findAllCollections(params);
+		var actual = dao.findAllCollections(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -223,7 +235,8 @@ public class CollectionDAOTest extends BaseTestCase {
 		doReturn(collection).when(spy).find(1L);
 		doReturn(updated).when(spy).createOrUpdate(updated);
 		doReturn(true).when(spy)
-				.runQuery("MATCH (c:Collection) WHERE ID(c) = 1 OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) "
+				.runQuery("MATCH (c:Collection) WHERE ID(c) = 1 "
+						+ "OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) "
 						+ "OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
 						+ "FOREACH (n in [c,d,r] | SET n.deleted = true)", Collections.emptyMap());
 

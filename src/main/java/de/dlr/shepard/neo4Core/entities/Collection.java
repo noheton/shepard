@@ -25,6 +25,10 @@ public class Collection extends AbstractDataObject {
 	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
 	private List<CollectionReference> incoming = new ArrayList<CollectionReference>();
 
+	@ToString.Exclude
+	@Relationship(type = Constants.HAS_PERMISSIONS)
+	private Permissions permissions;
+
 	/**
 	 * For testing purposes only
 	 *
@@ -49,6 +53,7 @@ public class Collection extends AbstractDataObject {
 		int result = super.hashCode();
 		result = prime * result + HasId.hashcodeHelper(dataObjects);
 		result = prime * result + HasId.hashcodeHelper(incoming);
+		result = prime * result + HasId.hashcodeHelper(permissions);
 		return result;
 	}
 
@@ -61,7 +66,8 @@ public class Collection extends AbstractDataObject {
 		if (!(obj instanceof Collection))
 			return false;
 		Collection other = (Collection) obj;
-		return HasId.equalsHelper(dataObjects, other.dataObjects) && HasId.equalsHelper(incoming, other.incoming);
+		return HasId.equalsHelper(dataObjects, other.dataObjects) && HasId.equalsHelper(incoming, other.incoming)
+				&& HasId.equalsHelper(permissions, other.permissions);
 	}
 
 }

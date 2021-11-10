@@ -68,9 +68,8 @@ public class UserFilter implements ContainerRequestFilter {
 	}
 
 	private void abort(ContainerRequestContext requestContext, String reason) {
-		requestContext
-				.abortWith(Response.status(Status.UNAUTHORIZED).entity(new ApiError(Status.UNAUTHORIZED.getStatusCode(),
-						"AuthenticationException", "Could not fetch userinfo")).build());
+		requestContext.abortWith(Response.status(Status.UNAUTHORIZED)
+				.entity(new ApiError(Status.UNAUTHORIZED.getStatusCode(), "AuthenticationException", reason)).build());
 	}
 
 	protected UserService getUserService() {

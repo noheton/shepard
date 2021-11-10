@@ -76,12 +76,7 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 		log.info("Received POST request from {} with parameters: username: {} and new entity: name: {} from user {}",
 				principal.getName(), username, apiKey.getName(), securityContext.getUserPrincipal().getName());
 
-		if (!principal.getName().equals(username)) {
-			return Response.status(Status.FORBIDDEN.getStatusCode(),
-					"You are not allowed to create API Keys for user " + username).build();
-		}
-
-		ApiKey created = apiKeyService.createApiKey(apiKey, principal.getName(), uriInfo.getBaseUri().toString());
+		ApiKey created = apiKeyService.createApiKey(apiKey, username, uriInfo.getBaseUri().toString());
 		return Response.ok(new ApiKeyWithJWTIO(created)).status(Status.CREATED).build();
 	}
 

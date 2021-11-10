@@ -24,8 +24,8 @@ public class SearcherTest extends BaseTestCase {
 
 	@Test
 	public void searchTest() {
-		Integer collectionId = 1;
-		Integer dataObjectId = 2;
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
 		TraversalRules[] traversalRules = { TraversalRules.children, TraversalRules.parents };
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(collectionId);

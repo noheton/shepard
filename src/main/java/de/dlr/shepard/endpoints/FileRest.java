@@ -6,6 +6,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,5 +74,18 @@ public interface FileRest {
 	Response createFile(long fileContainerId,
 			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "File which you want to upload")) InputStream fileInputStream,
 			@Parameter(hidden = true) FormDataContentDisposition fileMetaData);
+
+	@Tag(name = Constants.FILE)
+	@Operation(description = "Get permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getPermissions(long fileContainerId);
+
+	@Tag(name = Constants.FILE)
+	@Operation(description = "Edit permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response editPermissions(long fileContainerId,
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }

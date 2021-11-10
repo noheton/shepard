@@ -6,8 +6,10 @@ import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
@@ -17,6 +19,7 @@ public class TimeseriesContainerService {
 
 	private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
 	private TimeseriesService timeseriesService = new TimeseriesService();
+	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -36,7 +39,9 @@ public class TimeseriesContainerService {
 		toCreate.setDatabase(timeseriesService.createDatabase());
 		toCreate.setName(timeseriesContainer.getName());
 
-		return timeseriesContainerDAO.createOrUpdate(toCreate);
+		var created = timeseriesContainerDAO.createOrUpdate(toCreate);
+		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		return created;
 	}
 
 	/**
@@ -56,11 +61,12 @@ public class TimeseriesContainerService {
 	/**
 	 * Searches the database for all TimeseriesContainers
 	 *
-	 * @param params QueryParamsHelper
+	 * @param params   QueryParamsHelper
+	 * @param username the name of the user
 	 * @return a list of TimeseriesContainers
 	 */
-	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params) {
-		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params);
+	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params, String username) {
+		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, username);
 		return containers;
 	}
 

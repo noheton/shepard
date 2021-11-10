@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
@@ -69,5 +70,18 @@ public interface StructuredDataRest {
 	@ApiResponse(description = "ok", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response deleteStructuredData(long structuredDataId, String oid);
+
+	@Tag(name = Constants.STRUCTUREDDATA)
+	@Operation(description = "Get permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getPermissions(long structuredDataId);
+
+	@Tag(name = Constants.STRUCTUREDDATA)
+	@Operation(description = "Edit permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response editPermissions(long structuredDataId,
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }

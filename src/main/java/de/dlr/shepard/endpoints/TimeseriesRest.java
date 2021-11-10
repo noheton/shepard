@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
@@ -56,5 +57,18 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
 	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
 			String field, long start, long end, AggregateFunction function, Long groupByInterval);
+
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Get permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getPermissions(long timeseriesId);
+
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Edit permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response editPermissions(long timeseriesId,
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }

@@ -10,7 +10,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 
 public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContainer> {
 
-	public List<StructuredDataContainer> findAllStructuredDataContainers(QueryParamHelper params) {
+	public List<StructuredDataContainer> findAllStructuredDataContainers(QueryParamHelper params, String username) {
 		String query;
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());
@@ -18,7 +18,8 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WITH c", getObjectPart("c", "StructuredDataContainer", params.hasName()));
+		query = String.format("MATCH %s %s WITH c", getObjectPart("c", "StructuredDataContainer", params.hasName()),
+				getReadableByPart("c", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}

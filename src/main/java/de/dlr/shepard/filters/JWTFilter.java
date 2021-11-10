@@ -16,12 +16,12 @@ import de.dlr.shepard.security.JWTSecurityContext;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PKIHelper;
 import de.dlr.shepard.util.PropertiesHelper;
-import de.dlr.shepard.util.RequestMethod;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.annotation.Priority;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -58,7 +58,7 @@ public class JWTFilter implements ContainerRequestFilter {
 	public void filter(ContainerRequestContext requestContext) {
 
 		// Allow CORS preflight requests
-		if (RequestMethod.OPTIONS.name().equals(requestContext.getRequest().getMethod())) {
+		if (HttpMethod.OPTIONS.equals(requestContext.getMethod())) {
 			// Allow all requests with request method OPTIONS
 			return;
 		}

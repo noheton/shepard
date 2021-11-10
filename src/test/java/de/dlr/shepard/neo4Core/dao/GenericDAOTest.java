@@ -244,6 +244,13 @@ public class GenericDAOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getReadableByPartTest() {
+		var actual = dao.getReadableByPart("n", "bob");
+		var query = "WHERE NOT exists((n)-[:has_permissions]->(:Permissions)) OR exists((n)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" }))";
+		assertEquals(query, actual);
+	}
+
+	@Test
 	public void getSearchForReachableReferencesQueryChildrenTest() {
 		TraversalRules children = TraversalRules.children;
 		long StartId = 1L;

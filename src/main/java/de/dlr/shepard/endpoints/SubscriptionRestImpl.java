@@ -37,7 +37,7 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 		log.info("GET ALL request with parameters: username: {} from user {}", username,
 				securityContext.getUserPrincipal().getName());
 
-		var subscriptions = service.getAllSubscriptions(securityContext.getUserPrincipal().getName());
+		var subscriptions = service.getAllSubscriptions(username);
 		var result = new ArrayList<SubscriptionIO>(subscriptions.size());
 		for (var sub : subscriptions) {
 			result.add(new SubscriptionIO(sub));
@@ -64,7 +64,7 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 		log.info("POST request with parameters: username: {} from user {}", username,
 				securityContext.getUserPrincipal().getName());
 
-		Subscription created = service.createSubscription(subscription, securityContext.getUserPrincipal().getName());
+		Subscription created = service.createSubscription(subscription, username);
 		return created != null ? Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build()
 				: Response.status(Status.BAD_REQUEST).build();
 	}

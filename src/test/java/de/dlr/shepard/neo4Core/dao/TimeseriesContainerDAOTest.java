@@ -38,13 +38,14 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -56,7 +57,9 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c ORDER BY toLower(c.name) DESC "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -64,7 +67,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper();
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -78,13 +81,14 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
+		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -98,7 +102,9 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c ORDER BY toLower(c.name) DESC "
+		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c ORDER BY toLower(c.name) DESC "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
@@ -106,7 +112,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withName("Yes");
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -120,13 +126,15 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c SKIP $offset LIMIT $size "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -140,7 +148,9 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:TimeseriesContainer { deleted: false }) WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
+		var query = "MATCH (c:TimeseriesContainer { deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -148,7 +158,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -164,13 +174,15 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) WITH c SKIP $offset LIMIT $size "
+		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
+				+ "WITH c SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}
@@ -187,6 +199,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = "MATCH (c:TimeseriesContainer { name : $name, deleted: false }) "
+				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
 				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
 				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
 				+ "RETURN c, nodes(path), relationships(path)";
@@ -195,7 +208,7 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
 		var attr = ContainerAttributes.name;
 		params = params.withOrderByAttribute(attr, true);
-		var actual = dao.findAllTimeseriesContainers(params);
+		var actual = dao.findAllTimeseriesContainers(params, "bob");
 		verify(session).query(TimeseriesContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
 	}

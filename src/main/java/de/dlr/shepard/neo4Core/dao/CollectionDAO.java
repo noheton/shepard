@@ -21,19 +21,20 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	/**
 	 * Searches the database for collections.
 	 *
-	 * @param params encapsulates possible parameters
+	 * @param params   encapsulates possible parameters
+	 * @param username the name of the user
 	 * @return a list of collections
 	 */
 
-	public List<Collection> findAllCollections(QueryParamHelper params) {
-		String query;
+	public List<Collection> findAllCollections(QueryParamHelper params, String username) {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());
 		if (params.hasPagination()) {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WITH c", getObjectPart("c", "Collection", params.hasName()));
+		var query = String.format("MATCH %s %s WITH c", getObjectPart("c", "Collection", params.hasName()),
+				getReadableByPart("c", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}

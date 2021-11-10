@@ -6,16 +6,20 @@ import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
+import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.TimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -34,6 +38,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class TimeseriesRestImpl implements TimeseriesRest {
 	private TimeseriesContainerService timeseriesContainerService = new TimeseriesContainerService();
+	private PermissionsService permissionsService = new PermissionsService();
 
 	@Context
 	private SecurityContext securityContext;
@@ -53,7 +58,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = timeseriesContainerService.getAllTimeseriesContainers(params);
+		var containers = timeseriesContainerService.getAllTimeseriesContainers(params,
+				securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<TimeseriesContainerIO>(containers.size());
 		for (var container : containers) {
 			result.add(new TimeseriesContainerIO(container));
@@ -137,4 +143,24 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
+	@GET
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response getPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
+		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.getPermissionsByEntity(timeseriesId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@PUT
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response editPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+			@Valid PermissionsIO permissions) {
+		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.updatePermissions(permissions, timeseriesId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
 }

@@ -10,7 +10,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 
 public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 
-	public List<TimeseriesContainer> findAllTimeseriesContainers(QueryParamHelper params) {
+	public List<TimeseriesContainer> findAllTimeseriesContainers(QueryParamHelper params, String username) {
 		String query;
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());
@@ -19,7 +19,8 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 
-		query = String.format("MATCH %s WITH c", getObjectPart("c", "TimeseriesContainer", params.hasName()));
+		query = String.format("MATCH %s %s WITH c", getObjectPart("c", "TimeseriesContainer", params.hasName()),
+				getReadableByPart("c", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}

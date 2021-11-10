@@ -37,7 +37,6 @@ import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.JWTSecurityContext;
 import io.jsonwebtoken.Jwts;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
@@ -48,9 +47,6 @@ public class JWTFilterTest extends BaseTestCase {
 
 	@Mock
 	private ContainerRequestContext context;
-
-	@Mock
-	private Request request;
 
 	@Mock
 	private UriInfo uriInfo;
@@ -77,8 +73,7 @@ public class JWTFilterTest extends BaseTestCase {
 		when(uriInfo.getAbsolutePath()).thenReturn(uri);
 		when(uriInfo.getBaseUri()).thenReturn(baseUri);
 		when(context.getUriInfo()).thenReturn(uriInfo);
-		when(request.getMethod()).thenReturn("GET");
-		when(context.getRequest()).thenReturn(request);
+		when(context.getMethod()).thenReturn("GET");
 	}
 
 	@BeforeEach
@@ -106,9 +101,9 @@ public class JWTFilterTest extends BaseTestCase {
 
 	@Test
 	public void testFilterCORS() throws URISyntaxException {
-		when(request.getMethod()).thenReturn("OPTIONS");
+		when(context.getMethod()).thenReturn("OPTIONS");
 		filter.filter(context);
-		verify(context, never()).getHeaderString(any());
+		verify(context, never()).abortWith(any());
 	}
 
 	@Test

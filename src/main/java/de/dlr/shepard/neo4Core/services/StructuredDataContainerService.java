@@ -7,8 +7,10 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
@@ -18,6 +20,7 @@ public class StructuredDataContainerService {
 
 	private StructuredDataContainerDAO structuredDataContainerDAO = new StructuredDataContainerDAO();
 	private StructuredDataService structuredDataService = new StructuredDataService();
+	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -37,7 +40,10 @@ public class StructuredDataContainerService {
 		toCreate.setCreatedBy(user);
 		toCreate.setMongoId(mongoid);
 		toCreate.setName(structuredDataContainerIO.getName());
-		return structuredDataContainerDAO.createOrUpdate(toCreate);
+
+		var created = structuredDataContainerDAO.createOrUpdate(toCreate);
+		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		return created;
 	}
 
 	/**
@@ -57,11 +63,12 @@ public class StructuredDataContainerService {
 	/**
 	 * Searches the database for all StructuredDataContainers
 	 *
-	 * @param params QueryParamsHelper
+	 * @param params   QueryParamsHelper
+	 * @param username the name of the user
 	 * @return a list of StructuredDataContainers
 	 */
-	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params) {
-		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params);
+	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params, String username) {
+		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params, username);
 		return containers;
 	}
 

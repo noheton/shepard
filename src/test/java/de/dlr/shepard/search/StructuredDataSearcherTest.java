@@ -80,8 +80,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
-		Integer collectionId = 1;
-		Integer dataObjectId = 2;
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
 		TraversalRules[] traversalRules = {};
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(collectionId);
@@ -143,8 +143,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
-		Integer collectionId = 1;
-		Integer dataObjectId = 2;
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
 		TraversalRules[] traversalRules = { TraversalRules.children };
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(collectionId);
