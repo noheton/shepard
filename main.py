@@ -79,16 +79,22 @@ if __name__ == "__main__":
         print(f"Project {ex} could not be found")
         sys.exit(1)
 
-    title = input("Release title: ")
     latest_release = project.releases.list()[0]
     breaking, others = get_changes(project, latest_release.released_at)
     release_notes = get_release_notes(breaking, others)
     release_tag = get_release_tag()
 
-    print(f"Project: {project.name_with_namespace}")
+    print({project.name_with_namespace})
+    print("Merge Requests:")
+    print(release_notes)
+    print()
+    title = input("Release title:")
+    description = input("Description:")
+
     print(f"Title: {title}")
     print(f"Tag: {release_tag}")
     print("Release notes:")
+    print(description)
     print(release_notes)
     print()
 
