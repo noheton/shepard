@@ -48,6 +48,7 @@ def get_mr_list(mrs: List[MergeRequest]) -> str:
 
 
 def get_release_notes(
+    description: str,
     breaking_changes: List[MergeRequest],
     other_changes: List[MergeRequest],
 ) -> str:
@@ -55,6 +56,7 @@ def get_release_notes(
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template(TEMPLATE_FILE)
     result = template.render(
+        description=description,
         breaking_changes=get_mr_list(breaking_changes),
         other_changes=get_mr_list(other_changes),
     )
@@ -81,20 +83,19 @@ if __name__ == "__main__":
 
     latest_release = project.releases.list()[0]
     breaking, others = get_changes(project, latest_release.released_at)
-    release_notes = get_release_notes(breaking, others)
     release_tag = get_release_tag()
 
     print({project.name_with_namespace})
     print("Merge Requests:")
-    print(release_notes)
+    print(*[mr.title for mr in breaking + others], sep="\n")
     print()
-    title = input("Release title:")
-    description = input("Description:")
+    title = input("Release title: ")
+    description = input("Description: ")
+    release_notes = get_release_notes(description, breaking, others)
 
     print(f"Title: {title}")
     print(f"Tag: {release_tag}")
     print("Release notes:")
-    print(description)
     print(release_notes)
     print()
 
