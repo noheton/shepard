@@ -146,7 +146,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response getPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
+	public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
 		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(timeseriesId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
@@ -156,7 +156,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@PUT
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response editPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+	public Response editTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			@Valid PermissionsIO permissions) {
 		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, timeseriesId);

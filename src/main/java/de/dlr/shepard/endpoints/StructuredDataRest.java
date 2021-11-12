@@ -75,13 +75,13 @@ public interface StructuredDataRest {
 	@Operation(description = "Get permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getPermissions(long structuredDataId);
+	Response getStructuredDataPermissions(long structuredDataId);
 
 	@Tag(name = Constants.STRUCTUREDDATA)
 	@Operation(description = "Edit permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response editPermissions(long structuredDataId,
+	Response editStructuredDataPermissions(long structuredDataId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }

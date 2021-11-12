@@ -153,7 +153,7 @@ public class FileRestImpl implements FileRest {
 	@GET
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response getPermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+	public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
 		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(fileContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
@@ -163,7 +163,7 @@ public class FileRestImpl implements FileRest {
 	@PUT
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response editPermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
+	public Response editFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@Valid PermissionsIO permissions) {
 		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, fileContainerId);

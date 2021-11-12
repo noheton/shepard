@@ -147,7 +147,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@GET
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response getPermissions(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+	public Response getStructuredDataPermissions(
+			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
 		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
@@ -157,8 +158,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@PUT
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response editPermissions(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
-			@Valid PermissionsIO permissions) {
+	public Response editStructuredDataPermissions(
+			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId, @Valid PermissionsIO permissions) {
 		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()

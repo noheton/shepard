@@ -52,13 +52,13 @@ public interface CollectionRest {
 	@Operation(description = "Get permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getPermissions(long collectionId);
+	Response getCollectionPermissions(long collectionId);
 
 	@Tag(name = Constants.COLLECTION)
 	@Operation(description = "Edit permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response editPermissions(long collectionId,
+	Response editCollectionPermissions(long collectionId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }

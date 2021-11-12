@@ -115,7 +115,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@GET
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response getPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+	public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
 		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
@@ -125,7 +125,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@PUT
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response editPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId,
+	public Response editCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@Valid PermissionsIO permissions) {
 		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, collectionId);
