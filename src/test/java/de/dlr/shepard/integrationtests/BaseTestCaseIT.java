@@ -43,9 +43,11 @@ public class BaseTestCaseIT {
 		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, collectionId);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
-		var dataObject = given().spec(dataObjectSpecification).body(Map.of("name", name)).when().post().then()
+		DataObjectIO dataObjectIO = new DataObjectIO();
+		dataObjectIO.setName(name);
+		var dataObjectIOToReturn = given().spec(dataObjectSpecification).body(dataObjectIO).when().post().then()
 				.statusCode(201).extract().as(DataObjectIO.class);
-		return dataObject;
+		return dataObjectIOToReturn;
 	}
 
 }
