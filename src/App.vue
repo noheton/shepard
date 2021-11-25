@@ -45,4 +45,10 @@ h4 {
   margin-top: 30px;
   margin-bottom: 10px;
 }
+
+.small-button {
+  width: 40px;
+  height: 40px;
+  padding: 0px;
+}
 </style>

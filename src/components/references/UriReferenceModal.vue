@@ -86,11 +86,3 @@ export default Vue.extend({
   },
 });
 </script>
-
-<style scoped>
-.fixed-width {
-  width: 40px;
-  height: 40px;
-  padding: 0px;
-}
-</style>

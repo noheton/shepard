@@ -5,8 +5,8 @@
     size="lg"
     :title="modalName"
     lazy
-    @show="prepareEdit()"
-    @ok="handleEdit()"
+    @show="prepare()"
+    @ok="handleOk()"
   >
     <b-form-group>
       <b-container>
@@ -60,7 +60,7 @@
               <b-col cols="1">
                 <b-button
                   v-show="i == possibleAttributes.length - 1"
-                  class="fixed-width"
+                  class="small-button"
                   variant="success"
                   @click="
                     possibleAttributes.push({
@@ -75,7 +75,7 @@
               <b-col cols="1">
                 <b-button
                   v-show="i || (!i && possibleAttributes.length > 1)"
-                  class="fixed-width"
+                  class="small-button"
                   variant="danger"
                   @click="possibleAttributes.splice(i, 1)"
                 >
@@ -135,7 +135,7 @@ export default (
   },
 
   methods: {
-    prepareEdit() {
+    prepare() {
       this.newCollection = this.currentCollection
         ? { ...this.currentCollection }
         : { name: "" };
@@ -156,7 +156,7 @@ export default (
         });
       }
     },
-    handleEdit() {
+    handleOk() {
       if (!this.currentCollection?.id) return;
       let attributes: { [key: string]: string } = {};
       this.possibleAttributes.forEach(attr => {
@@ -182,11 +182,3 @@ export default (
   },
 });
 </script>
-
-<style scoped>
-.fixed-width {
-  width: 40px;
-  height: 40px;
-  padding: 0px;
-}
-</style>

@@ -5,7 +5,7 @@
     size="lg"
     :title="modalName"
     lazy
-    @show="reset()"
+    @show="prepare()"
     @ok="handleOk()"
   >
     <b-form-group>
@@ -84,7 +84,7 @@
             <b-col cols="1">
               <b-button
                 v-show="i == possiblePredecessors.length - 1"
-                class="fixed-width"
+                class="small-button"
                 variant="success"
                 @click="
                   possiblePredecessors.push({
@@ -99,7 +99,7 @@
             <b-col cols="1">
               <b-button
                 v-show="i || (!i && possiblePredecessors.length > 1)"
-                class="fixed-width"
+                class="small-button"
                 variant="danger"
                 @click="possiblePredecessors.splice(i, 1)"
               >
@@ -135,7 +135,7 @@
               <b-col cols="1">
                 <b-button
                   v-show="i == possibleAttributes.length - 1"
-                  class="fixed-width"
+                  class="small-button"
                   variant="success"
                   @click="
                     possibleAttributes.push({
@@ -150,7 +150,7 @@
               <b-col cols="1">
                 <b-button
                   v-show="i || (!i && possibleAttributes.length > 1)"
-                  class="fixed-width"
+                  class="small-button"
                   variant="danger"
                   @click="possibleAttributes.splice(i, 1)"
                 >
@@ -170,7 +170,7 @@ import { DataObjectVue } from "@/utils/api-mixin";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
-interface DataObjectModelData {
+interface DataObjectModalData {
   newDataObject: DataObject;
   possibleParent: {
     id?: number;
@@ -223,7 +223,7 @@ export default (
         value: string;
       }[],
       validationError: false,
-    } as DataObjectModelData;
+    } as DataObjectModalData;
   },
 
   methods: {
@@ -366,11 +366,3 @@ export default (
   },
 });
 </script>
-
-<style scoped>
-.fixed-width {
-  width: 40px;
-  height: 40px;
-  padding: 0px;
-}
-</style>

@@ -38,10 +38,6 @@
   background-color: #fff;
 }
 
-a {
-  color: #343a40;
-}
-
 hr {
   margin-top: 4px;
   border-top: 1px solid #343a40;
