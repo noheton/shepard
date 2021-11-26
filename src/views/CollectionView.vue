@@ -169,8 +169,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching collection: " + e.statusText);
-        })
-        .finally();
+        });
     },
     handleDelete() {
       this.collectionApi
@@ -180,8 +179,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting collection: " + e.statusText);
-        })
-        .finally();
+        });
     },
     retrievePermissions() {
       this.collectionApi
@@ -191,8 +189,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
     updatePermissions(perms: Permissions) {
       this.collectionApi
@@ -205,8 +202,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while edit permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

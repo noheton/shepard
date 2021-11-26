@@ -98,8 +98,7 @@ export default (
           console.log(
             "Error while fetching timeseries containers: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     createContainer(newName: string) {
       this.timeseriesApi
@@ -113,8 +112,7 @@ export default (
           console.log(
             "Error while creating timeseries container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     deleteContainer(id: number) {
       this.timeseriesApi
@@ -128,8 +126,7 @@ export default (
           console.log(
             "Error while deleting timeseries container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
   },
 });

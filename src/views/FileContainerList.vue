@@ -96,8 +96,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching file containers: " + e.statusText);
-        })
-        .finally();
+        });
     },
     createContainer(newName: string) {
       this.fileApi
@@ -109,8 +108,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating file container: " + e.statusText);
-        })
-        .finally();
+        });
     },
     deleteContainer(id: number) {
       this.fileApi
@@ -122,8 +120,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting file container: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

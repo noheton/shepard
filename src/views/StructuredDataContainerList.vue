@@ -98,8 +98,7 @@ export default (
           console.log(
             "Error while fetching structured data containers: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     createContainer(newName: string) {
       this.structuredDataApi
@@ -113,8 +112,7 @@ export default (
           console.log(
             "Error while creating structured data container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     deleteContainer(id: number) {
       this.structuredDataApi
@@ -128,8 +126,7 @@ export default (
           console.log(
             "Error while deleting structured data container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
   },
 });

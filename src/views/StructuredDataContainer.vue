@@ -34,7 +34,8 @@
           v-for="(structuredData, index) in structuredDataList"
           :key="index"
         >
-          {{ structuredData.oid }} | {{ structuredData.name }}
+          {{ structuredData.oid }}
+          <span v-if="structuredData.name"> | {{ structuredData.name }} </span>
         </b-list-group-item>
       </b-list-group>
     </div>
@@ -111,8 +112,7 @@ export default (
           console.log(
             "Error while fetching structuredData container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     retrieveStructuredDataList() {
       this.structuredDataApi
@@ -126,8 +126,7 @@ export default (
           console.log(
             "Error while fetching structuredData payload: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     handleDelete() {
       this.structuredDataApi
@@ -141,8 +140,7 @@ export default (
           console.log(
             "Error while deleting structured data container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     retrievePermissions() {
       this.structuredDataApi
@@ -154,8 +152,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
     updatePermissions(perms: Permissions) {
       this.structuredDataApi
@@ -168,8 +165,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while edit permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

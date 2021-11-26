@@ -58,8 +58,7 @@ export default (
           })
           .catch(e => {
             console.log("Error while fetching dataObject: " + e.statusText);
-          })
-          .finally();
+          });
       });
     },
   },

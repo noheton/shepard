@@ -98,8 +98,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching collections: " + e.statusText);
-        })
-        .finally();
+        });
     },
     createCollection(newName: string) {
       this.collectionApi
@@ -111,8 +110,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating collection: " + e.statusText);
-        })
-        .finally();
+        });
     },
     deleteCollection(id: number) {
       this.collectionApi
@@ -124,8 +122,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting collection: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

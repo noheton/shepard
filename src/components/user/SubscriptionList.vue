@@ -127,8 +127,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching subscriptions: " + e.statusText);
-        })
-        .finally();
+        });
     },
     handleCreate() {
       if (!this.subscriptionToCreate) {
@@ -145,8 +144,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating subscription: " + e.statusText);
-        })
-        .finally();
+        });
     },
     handleDelete(id: number) {
       this.subscriptionApi

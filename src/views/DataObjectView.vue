@@ -181,8 +181,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching dataObject: " + e.statusText);
-        })
-        .finally();
+        });
     },
     handleDelete() {
       this.dataObjectApi
@@ -200,8 +199,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting dataObject: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

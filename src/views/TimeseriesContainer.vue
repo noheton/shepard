@@ -96,8 +96,7 @@ export default (
           console.log(
             "Error while fetching timeseries container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     handleDelete() {
       this.timeseriesApi
@@ -111,8 +110,7 @@ export default (
           console.log(
             "Error while deleting timeseries container: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     retrievePermissions() {
       this.timeseriesApi
@@ -124,8 +122,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
     updatePermissions(perms: Permissions) {
       this.timeseriesApi
@@ -138,8 +135,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while edit permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

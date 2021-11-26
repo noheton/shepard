@@ -111,8 +111,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching apiKeys: " + e.statusText);
-        })
-        .finally();
+        });
     },
     copyApiKey() {
       if (!this.createdApiKey || !this.createdApiKey.jwt) return;

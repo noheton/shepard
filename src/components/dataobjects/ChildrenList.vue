@@ -114,8 +114,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching dataObjects: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

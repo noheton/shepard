@@ -102,8 +102,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching file container: " + e.statusText);
-        })
-        .finally();
+        });
     },
     retrieveFileList() {
       this.fileApi
@@ -115,8 +114,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching file payload: " + e.statusText);
-        })
-        .finally();
+        });
     },
     handleDelete() {
       this.fileApi
@@ -126,8 +124,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting file container: " + e.statusText);
-        })
-        .finally();
+        });
     },
     retrievePermissions() {
       this.fileApi
@@ -137,8 +134,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
     updatePermissions(perms: Permissions) {
       this.fileApi
@@ -151,8 +147,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while edit permissons: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

@@ -36,8 +36,8 @@
     </div>
     <div class="icon">
       <ParentIcon title="Parents" />
-      <a v-if="dataObject.parentId"> 1 </a>
-      <a v-else> 0 </a>
+      <span v-if="dataObject.parentId"> 1 </span>
+      <span v-else> 0 </span>
     </div>
   </b-list-group-item>
 </template>
