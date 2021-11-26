@@ -26,8 +26,6 @@
     </b-button>
 
     <CollectionReferenceModal
-      :current-collection-id="currentCollectionId"
-      :current-data-object-id="currentDataObjectId"
       modal-id="create-collection-ref-modal"
       modal-name="Create Collection Reference"
       @create="create($event)"
@@ -151,8 +149,7 @@ export default (
           console.log(
             "Error while fetching Collection References: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     retrieveCollection(referenceId: number) {
       this.collectionReferenceApi
@@ -171,8 +168,7 @@ export default (
             "Error while fetching Collection Reference Payload: " +
               e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     create(newReference: CollectionReference) {
@@ -191,8 +187,7 @@ export default (
           console.log(
             "Error while creating CollectionReference: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     handleDelete(collectionReferenceId: number) {
@@ -208,8 +203,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting URI Reference: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

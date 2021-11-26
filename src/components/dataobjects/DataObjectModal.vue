@@ -27,7 +27,7 @@
           <b-col cols="8">
             <b-form-textarea
               v-model="newDataObject.description"
-              placeholder="please insert description"
+              placeholder="Description"
               rows="3"
               max-rows="6"
             >
@@ -319,8 +319,7 @@ export default (
           obj.name = "";
           console.log("Error while validating dataObject: " + e.statusText);
           this.validationError = true;
-        })
-        .finally();
+        });
     },
 
     create() {
@@ -340,8 +339,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating dataObject: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     update() {
@@ -360,8 +358,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while updating dataObject: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

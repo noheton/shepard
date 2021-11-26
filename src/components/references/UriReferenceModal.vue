@@ -11,26 +11,25 @@
     <b-form-group>
       <b-container>
         <b-row class="mb-3">
-          <b-col cols="2"> Name </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Name </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newURIReference.name"
-              required
               placeholder="Name"
-            >
-            </b-form-input>
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="2"> URI </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> URI </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newURIReference.uri"
+              placeholder="URI"
+              type="url"
               required
-              placeholder="please insert URI"
-            >
-            </b-form-input>
+            ></b-form-input>
           </b-col>
         </b-row>
       </b-container>
@@ -64,14 +63,6 @@ export default Vue.extend({
     modalName: {
       type: String,
       default: "URIReferenceModal",
-    },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
     },
   },
 

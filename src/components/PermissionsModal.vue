@@ -150,6 +150,7 @@ export default (
   methods: {
     reset() {
       Object.assign(this.$data, initialState());
+      this.parseOldPermissions();
     },
     handleOk() {
       const perms: Permissions = {

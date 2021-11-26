@@ -12,39 +12,42 @@
       <b-container>
         <b-row class="mb-3">
           <b-col cols="3"> Name </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-input
               v-model="newStructuredDataReference.name"
-              required
               placeholder="Name"
-            >
-            </b-form-input>
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
           <b-col cols="3"> Container ID </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-input
-              v-model="newStructuredDataReference.structuredDataContainerId"
+              v-model="currentContainerId"
+              placeholder="Structured data container id"
+              type="number"
               required
-              placeholder="please insert structured data container id"
-              @blur="prepareOids()"
-            >
-            </b-form-input>
+              :state="validContainer"
+              @blur="fetchContainer()"
+            ></b-form-input>
+            <small v-if="currentContainer">
+              <em> {{ currentContainer.name }} </em>
+            </small>
+            <small v-else>Please enter a valid container id</small>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
           <b-col cols="3"> Oids </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-select
               v-model="selected"
               :options="possibleOids"
               multiple
               required
-            >
-            </b-form-select>
+            ></b-form-select>
           </b-col>
         </b-row>
       </b-container>
@@ -54,7 +57,10 @@
 
 <script lang="ts">
 import { StructuredDataVue } from "@/utils/api-mixin";
-import { StructuredDataReference } from "@dlr-shepard/shepard-client";
+import {
+  StructuredDataContainer,
+  StructuredDataReference,
+} from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface Option {
@@ -66,6 +72,9 @@ interface StructuredDataReferenceModelData {
   newStructuredDataReference: StructuredDataReference;
   possibleOids: Array<Option>;
   selected: Array<string>;
+  currentContainerId: string;
+  currentContainer?: StructuredDataContainer;
+  validContainer?: boolean;
 }
 
 function initialState(): StructuredDataReferenceModelData {
@@ -77,6 +86,9 @@ function initialState(): StructuredDataReferenceModelData {
     },
     possibleOids: [],
     selected: [],
+    currentContainerId: "",
+    currentContainer: undefined,
+    validContainer: undefined,
   };
 }
 
@@ -92,14 +104,6 @@ export default (
     modalName: {
       type: String,
       default: "StructuredDataReferenceModal",
-    },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
     },
   },
 
@@ -117,11 +121,32 @@ export default (
       this.$emit("create", this.newStructuredDataReference);
     },
 
-    prepareOids() {
+    fetchContainer() {
+      this.structuredDataApi
+        ?.getStructuredDataContainer({
+          structureddataContainerId: +this.currentContainerId,
+        })
+        .then(container => {
+          this.currentContainer = container;
+          this.validContainer = true;
+          this.fetchStructuredData();
+          if (container.id)
+            this.newStructuredDataReference.structuredDataContainerId =
+              container.id;
+        })
+        .catch(e => {
+          console.log(
+            "Error while getting structured data container: " + e.statusText,
+          );
+          this.currentContainer = undefined;
+          this.validContainer = false;
+        });
+    },
+
+    fetchStructuredData() {
       this.structuredDataApi
         ?.getAllStructuredDatas({
-          structureddataContainerId:
-            this.newStructuredDataReference.structuredDataContainerId,
+          structureddataContainerId: +this.currentContainerId,
         })
         .then(response => {
           response.forEach(strdata => {
@@ -139,8 +164,7 @@ export default (
           console.log(
             "Error while getting all structured datas: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
   },
 });

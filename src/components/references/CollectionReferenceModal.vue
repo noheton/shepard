@@ -11,38 +11,41 @@
     <b-form-group>
       <b-container>
         <b-row class="mb-3">
-          <b-col cols="2"> Name </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Name </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newCollectionReference.name"
-              required
               placeholder="Name"
-            >
-            </b-form-input>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-3">
-          <b-col cols="2"> Referenced Collection ID </b-col>
-          <b-col cols="8">
-            <b-form-input
-              v-model="newCollectionReference.referencedCollectionId"
               required
-              placeholder="please insert referenced collection id"
-            >
-            </b-form-input>
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="2"> Relationship </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Referenced Collection </b-col>
+          <b-col cols="9">
+            <b-form-input
+              v-model="currentCollectionId"
+              :state="validCollection"
+              placeholder="Referenced collection id"
+              type="number"
+              required
+              @blur="fetchCollection()"
+            ></b-form-input>
+            <small v-if="currentCollection">
+              <em> {{ currentCollection.name }} </em>
+            </small>
+            <small v-else>Please enter a valid collection id</small>
+          </b-col>
+        </b-row>
+
+        <b-row class="mb-3">
+          <b-col cols="3"> Relationship </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newCollectionReference.relationship"
-              required
-              placeholder="please insert relationship"
-            >
-            </b-form-input>
+              placeholder="Relationship"
+            ></b-form-input>
           </b-col>
         </b-row>
       </b-container>
@@ -51,11 +54,15 @@
 </template>
 
 <script lang="ts">
-import { CollectionReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { CollectionVue } from "@/utils/api-mixin";
+import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
+import Vue, { VueConstructor } from "vue";
 
 interface CollectionReferenceModelData {
   newCollectionReference: CollectionReference;
+  validCollection?: boolean;
+  currentCollectionId: string;
+  currentCollection?: Collection;
 }
 
 function initialState(): CollectionReferenceModelData {
@@ -65,10 +72,16 @@ function initialState(): CollectionReferenceModelData {
       referencedCollectionId: 0,
       relationship: "",
     },
+    validCollection: undefined,
+    currentCollectionId: "",
+    currentCollection: undefined,
   };
 }
 
-export default Vue.extend({
+export default (
+  Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
+).extend({
+  mixins: [CollectionVue],
   props: {
     modalId: {
       type: String,
@@ -78,22 +91,30 @@ export default Vue.extend({
       type: String,
       default: "CollectionReferenceModal",
     },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
-    },
   },
-
   data() {
     return initialState();
   },
   methods: {
     reset() {
       Object.assign(this.$data, initialState());
+    },
+    fetchCollection() {
+      this.collectionApi
+        ?.getCollection({
+          collectionId: +this.currentCollectionId,
+        })
+        .then(collection => {
+          this.currentCollection = collection;
+          this.validCollection = true;
+          if (collection.id)
+            this.newCollectionReference.referencedCollectionId = collection.id;
+        })
+        .catch(e => {
+          console.log("Error while getting collection: " + e.statusText);
+          this.currentCollection = undefined;
+          this.validCollection = false;
+        });
     },
   },
 });

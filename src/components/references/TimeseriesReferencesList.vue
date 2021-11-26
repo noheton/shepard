@@ -58,13 +58,6 @@
             Container: {{ timeseriesItem.timeseriesContainerId }}
           </b-link>
         </div>
-        <b-link
-          class="float-right"
-          :disabled="downloadActive"
-          @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
-        >
-          <DownloadIcon />
-        </b-link>
         <CreatedByLine
           :created-by="timeseriesItem.createdBy"
           :created-at="timeseriesItem.createdAt"
@@ -75,6 +68,13 @@
           <b>end:</b>
           {{ new Date(timeseriesItem.end / 1e6).toLocaleString() }}
         </small>
+        <b-link
+          class="float-right"
+          :disabled="downloadActive"
+          @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
+        >
+          <DownloadIcon />
+        </b-link>
         <b-table striped hover small :items="timeseriesItem.timeseries">
         </b-table>
       </b-list-group-item>
@@ -162,8 +162,7 @@ export default (
           console.log(
             "Error while fetching Timeseries References: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     downloadCsv(referenceId: number, referenceName: string) {
       this.downloadStarted = true;

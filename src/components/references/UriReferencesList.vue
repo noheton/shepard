@@ -22,8 +22,6 @@
     </b-button>
 
     <UriReferenceModal
-      :current-collection-id="currentCollectionId"
-      :current-data-object-id="currentDataObjectId"
       modal-id="create-uri-ref-modal"
       modal-name="Create URI Reference"
       @create="create($event)"
@@ -119,8 +117,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching URI References: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     create(newReference: URIReference) {
@@ -136,8 +133,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating URIReference: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     handleDelete(uriReferenceId: number) {
@@ -153,8 +149,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting URI Reference: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

@@ -27,7 +27,7 @@
           <b-col cols="8">
             <b-form-textarea
               v-model="newCollection.description"
-              placeholder="please insert description"
+              placeholder="Description"
               rows="3"
               max-rows="6"
             >
@@ -176,8 +176,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while updating collection: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

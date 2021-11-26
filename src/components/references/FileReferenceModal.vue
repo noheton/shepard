@@ -12,39 +12,42 @@
       <b-container>
         <b-row class="mb-3">
           <b-col cols="3"> Name </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-input
               v-model="newFileReference.name"
-              required
               placeholder="Name"
-            >
-            </b-form-input>
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
           <b-col cols="3"> Container ID </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-input
-              v-model="newFileReference.fileContainerId"
+              v-model="currentContainerId"
+              placeholder="File container id"
+              type="number"
               required
-              placeholder="please insert file container id"
-              @blur="prepareOids()"
-            >
-            </b-form-input>
+              :state="validContainer"
+              @blur="fetchContainer()"
+            ></b-form-input>
+            <small v-if="currentContainer">
+              <em> {{ currentContainer.name }} </em>
+            </small>
+            <small v-else>Please enter a valid container id</small>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
           <b-col cols="3"> Oids </b-col>
-          <b-col cols="8">
+          <b-col cols="9">
             <b-form-select
               v-model="selected"
               :options="possibleOids"
               multiple
               required
-            >
-            </b-form-select>
+            ></b-form-select>
           </b-col>
         </b-row>
       </b-container>
@@ -54,7 +57,7 @@
 
 <script lang="ts">
 import { FileVue } from "@/utils/api-mixin";
-import { FileReference } from "@dlr-shepard/shepard-client";
+import { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface Option {
@@ -66,6 +69,9 @@ interface FileReferenceModelData {
   newFileReference: FileReference;
   possibleOids: Array<Option>;
   selected: Array<string>;
+  currentContainerId: string;
+  currentContainer?: FileContainer;
+  validContainer?: boolean;
 }
 
 function initialState(): FileReferenceModelData {
@@ -77,6 +83,9 @@ function initialState(): FileReferenceModelData {
     },
     possibleOids: [],
     selected: [],
+    currentContainerId: "",
+    currentContainer: undefined,
+    validContainer: undefined,
   };
 }
 
@@ -92,14 +101,6 @@ export default (
     modalName: {
       type: String,
       default: "FileReferenceModal",
-    },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
     },
   },
 
@@ -117,10 +118,29 @@ export default (
       this.$emit("create", this.newFileReference);
     },
 
-    prepareOids() {
+    fetchContainer() {
+      this.fileApi
+        ?.getFileContainer({
+          fileContainerId: +this.currentContainerId,
+        })
+        .then(container => {
+          this.currentContainer = container;
+          this.validContainer = true;
+          this.fetchFiles();
+          if (container.id)
+            this.newFileReference.fileContainerId = container.id;
+        })
+        .catch(e => {
+          console.log("Error while getting file container: " + e.statusText);
+          this.currentContainer = undefined;
+          this.validContainer = false;
+        });
+    },
+
+    fetchFiles() {
       this.fileApi
         ?.getAllFiles({
-          fileContainerId: this.newFileReference.fileContainerId,
+          fileContainerId: +this.currentContainerId,
         })
         .then(response => {
           response.forEach(file => {
@@ -136,8 +156,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while getting all files: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });

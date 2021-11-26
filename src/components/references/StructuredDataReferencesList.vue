@@ -26,8 +26,6 @@
     </b-button>
 
     <StructuredDataReferenceModal
-      :current-collection-id="currentCollectionId"
-      :current-data-object-id="currentDataObjectId"
       modal-id="create-structured-data-ref-modal"
       modal-name="Create StructuredData Reference"
       @create="create($event)"
@@ -174,8 +172,7 @@ export default (
           console.log(
             "Error while fetching StructuredData References: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     retrieveStructuredDatas(id: number) {
@@ -198,8 +195,7 @@ export default (
           console.log(
             "Error while fetching StructuredDataPayload: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     create(newReference: StructuredDataReference) {
@@ -218,8 +214,7 @@ export default (
           console.log(
             "Error while creating StructuredDataReference: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     handleDelete(structureddataReferenceId: number) {
@@ -237,8 +232,7 @@ export default (
           console.log(
             "Error while deleting Structured Data Reference: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
   },
 });

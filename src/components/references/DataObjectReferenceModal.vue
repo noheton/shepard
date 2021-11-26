@@ -11,38 +11,37 @@
     <b-form-group>
       <b-container>
         <b-row class="mb-3">
-          <b-col cols="2"> Name </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Name </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newDataObjectReference.name"
-              required
               placeholder="Name"
-            >
-            </b-form-input>
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="2"> Referenced Data Object ID </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Referenced Data Object </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newDataObjectReference.referencedDataObjectId"
+              placeholder="Referenced data object id"
+              type="number"
               required
-              placeholder="please insert referenced data object id"
-            >
-            </b-form-input>
+              @blur="fetchDataObject()"
+            ></b-form-input>
           </b-col>
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="2"> Relationship </b-col>
-          <b-col cols="8">
+          <b-col cols="3"> Relationship </b-col>
+          <b-col cols="9">
             <b-form-input
               v-model="newDataObjectReference.relationship"
+              placeholder="Relationship"
               required
-              placeholder="please insert relationship"
-            >
-            </b-form-input>
+            ></b-form-input>
           </b-col>
         </b-row>
       </b-container>
@@ -51,6 +50,7 @@
 </template>
 
 <script lang="ts">
+import { DataObjectVue } from "@/utils/api-mixin";
 import { DataObjectReference } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
 
@@ -69,6 +69,7 @@ function initialState(): DataObjectReferenceModelData {
 }
 
 export default Vue.extend({
+  mixins: [DataObjectVue],
   props: {
     modalId: {
       type: String,
@@ -77,14 +78,6 @@ export default Vue.extend({
     modalName: {
       type: String,
       default: "DataObjectReferenceModal",
-    },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
     },
   },
   data() {

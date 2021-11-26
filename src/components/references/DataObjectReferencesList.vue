@@ -26,8 +26,6 @@
     </b-button>
 
     <DataObjectReferenceModal
-      :current-collection-id="currentCollectionId"
-      :current-data-object-id="currentDataObjectId"
       modal-id="create-data-object-ref-modal"
       modal-name="Create DataObject Reference"
       @create="create($event)"
@@ -152,8 +150,7 @@ export default (
           console.log(
             "Error while fetching DataObject References: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
     retrieveDataObject(referenceId: number) {
       this.dataObjectReferenceApi
@@ -172,8 +169,7 @@ export default (
             "Error while fetching DataObject Reference Payload: " +
               e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     create(newReference: DataObjectReference) {
@@ -192,8 +188,7 @@ export default (
           console.log(
             "Error while creating DataObjectReference: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
 
     handleDelete(dataObjectReferenceId: number) {
@@ -211,8 +206,7 @@ export default (
           console.log(
             "Error while deleting Data Object Reference: " + e.statusText,
           );
-        })
-        .finally();
+        });
     },
   },
 });

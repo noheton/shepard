@@ -22,7 +22,7 @@
         />
       </b-tab>
 
-      <b-tab title="URI" :disabled="!hasURIReference">
+      <b-tab title="URI">
         <UriReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
@@ -54,22 +54,10 @@ import StructuredDataReferencesList from "@/components/references/StructuredData
 import TimeseriesReferencesList from "@/components/references/TimeseriesReferencesList.vue";
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
 import { ReferenceVue } from "@/utils/api-mixin";
-import { BasicReference, DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import { DataObject } from "@dlr-shepard/shepard-client";
+import Vue from "vue";
 
-interface DataObjectData {
-  currentReferences: BasicReference[];
-  hasTimeReference: boolean;
-  hasStructuredDataReference: boolean;
-  hasFileReference: boolean;
-  hasURIReference: boolean;
-  hasCollectionReference: boolean;
-  hasDataObjectReference: boolean;
-}
-
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof ReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     TimeseriesReferencesList,
     StructuredDataReferencesList,
@@ -83,60 +71,6 @@ export default (
     currentDataObject: {
       type: Object as () => DataObject,
       required: true,
-    },
-  },
-  data() {
-    return {
-      currentReferences: [],
-      hasTimeReference: false,
-      hasStructuredDataReference: false,
-      hasFileReference: false,
-      hasURIReference: false,
-      hasCollectionReference: false,
-      hasDataObjectReference: false,
-    } as DataObjectData;
-  },
-  mounted() {
-    this.retrieveReferences();
-  },
-  methods: {
-    retrieveReferences() {
-      if (!this.currentDataObject.id || !this.currentDataObject.collectionId)
-        return;
-      this.referenceApi
-        ?.getAllReferences({
-          collectionId: this.currentDataObject.collectionId,
-          dataObjectId: this.currentDataObject.id,
-        })
-        .then(response => {
-          this.currentReferences = response;
-          this.currentReferences.forEach(item => {
-            switch (item.type) {
-              case "TimeseriesReference":
-                this.hasTimeReference = true;
-                break;
-              case "StructuredDataReference":
-                this.hasStructuredDataReference = true;
-                break;
-              case "FileReference":
-                this.hasFileReference = true;
-                break;
-              case "URIReference":
-                this.hasURIReference = true;
-                break;
-              case "CollectionReference":
-                this.hasCollectionReference = true;
-                break;
-              case "DataObjectReference":
-                this.hasDataObjectReference = true;
-                break;
-            }
-          });
-        })
-        .catch(e => {
-          console.log("Error while fetching references: " + e.statusText);
-        })
-        .finally();
     },
   },
 });

@@ -22,8 +22,6 @@
     </b-button>
 
     <FileReferenceModal
-      :current-collection-id="currentCollectionId"
-      :current-data-object-id="currentDataObjectId"
       modal-id="create-file-ref-modal"
       modal-name="Create File Reference"
       @create="create($event)"
@@ -67,10 +65,10 @@
         <div v-for="(oid, i) in fileReference.fileOids" :key="i">
           <small v-if="files[oid]">
             <b>Oid:</b> {{ oid }} | <b>Filename:</b> {{ files[oid].filename }}
-            <a v-if="files[oid].createdAt">
+            <span v-if="files[oid].createdAt">
               | <b>Created at:</b>
               {{ new Date(files[oid].createdAt).toLocaleString() }}
-            </a>
+            </span>
             <b-link
               class="float-right"
               :disabled="downloadActive"
@@ -170,8 +168,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching File References: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     getFiles(id: number) {
@@ -192,8 +189,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while fetching Files: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     getFilePayload(fileReferenceId: number, oid: string, filename: string) {
@@ -231,8 +227,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while creating FileReference: " + e.statusText);
-        })
-        .finally();
+        });
     },
 
     handleDelete(fileReferenceId: number) {
@@ -248,8 +243,7 @@ export default (
         })
         .catch(e => {
           console.log("Error while deleting File Reference: " + e.statusText);
-        })
-        .finally();
+        });
     },
   },
 });
