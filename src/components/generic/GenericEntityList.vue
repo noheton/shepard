@@ -1,22 +1,5 @@
 <template>
   <div class="component">
-    <b-alert
-      :show="showCreate"
-      dismissible
-      variant="dark"
-      @dismissed="showCreate = false"
-    >
-      Successfully created
-    </b-alert>
-    <b-alert
-      :show="showDelete"
-      dismissible
-      variant="dark"
-      @dismissed="showDelete = false"
-    >
-      Successfully deleted
-    </b-alert>
-
     <b-input-group class="component">
       <!-- Dirty fix: https://stackoverflow.com/a/57044265 -->
       <b-form-input
@@ -55,23 +38,24 @@
             v-b-tooltip.hover
             title="Delete"
             variant="dark"
-            @click="currentEntity = entity"
+            @click="currentEntityId = entity.id"
           >
             <DeleteIcon />
           </b-button>
         </b-button-group>
       </b-list-group-item>
     </b-list-group>
+
     <DeleteConfirmationModal
-      v-if="currentEntity"
+      v-if="currentEntityId"
       modal-id="delete-confirmation-modal"
       modal-name="Confirm to delete"
       :modal-text="
-        'Do you really want do delete the entity with name ' +
-        currentEntity.name +
+        'Do you really want do delete the entity with id ' +
+        currentEntityId +
         '?'
       "
-      @confirmation="deleteEntity(currentEntity.id)"
+      @confirmation="deleteEntity(currentEntityId)"
     />
   </div>
 </template>
@@ -81,17 +65,8 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import Vue from "vue";
 
-interface Entity {
-  name: string;
-  id: number;
-  createdAt: Date;
-  createdBy: string;
-}
-
 interface GenericEntityListData {
-  currentEntity?: Entity;
-  showCreate: boolean;
-  showDelete: boolean;
+  currentEntityId?: number;
   newName: string;
 }
 
@@ -110,9 +85,7 @@ export default Vue.extend({
   },
   data() {
     return {
-      currentEntity: undefined,
-      showCreate: false,
-      showDelete: false,
+      currentEntityId: undefined,
       newName: "",
     } as GenericEntityListData;
   },
@@ -120,11 +93,10 @@ export default Vue.extend({
     createEntity() {
       this.$emit("createEntity", this.newName);
       this.newName = "";
-      this.showCreate = true;
     },
     deleteEntity(id: number) {
       this.$emit("deleteEntity", id);
-      this.showDelete = true;
+      this.currentEntityId = undefined;
     },
   },
 });

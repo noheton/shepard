@@ -1,18 +1,18 @@
 <template>
   <div class="list">
     <b-alert
-      :show="showCreate"
+      :show="createdAlert"
       dismissible
       variant="success"
-      @dismissed="showCreate = false"
+      @dismissed="createdAlert = false"
     >
       Successfully created
     </b-alert>
     <b-alert
-      :show="showDelete"
+      :show="deletedAlert"
       dismissible
       variant="danger"
-      @dismissed="showDelete = false"
+      @dismissed="deletedAlert = false"
     >
       Successfully deleted
     </b-alert>
@@ -98,8 +98,8 @@ interface DataObjectListData {
   dataObjectList: DataObjectReference[];
   referencedList: { [key: number]: DataObject };
   currentDataObjectReference?: DataObjectReference;
-  showCreate: boolean;
-  showDelete: boolean;
+  createdAlert: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -126,8 +126,8 @@ export default (
       dataObjectList: new Array<DataObjectReference>(),
       referencedList: {},
       currentDataObjectReference: undefined,
-      showCreate: false,
-      showDelete: false,
+      createdAlert: false,
+      deletedAlert: false,
     } as DataObjectListData;
   },
   mounted() {
@@ -180,9 +180,9 @@ export default (
           dataObjectReference: newReference,
         })
         .then(response => {
+          this.createdAlert = true;
           this.dataObjectList = [response].concat(this.dataObjectList);
           if (response.id) this.retrieveDataObject(response.id);
-          this.showCreate = true;
         })
         .catch(e => {
           console.log(
@@ -199,8 +199,8 @@ export default (
           dataObjectReferenceId: dataObjectReferenceId,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveReferences();
-          this.showDelete = true;
         })
         .catch(e => {
           console.log(

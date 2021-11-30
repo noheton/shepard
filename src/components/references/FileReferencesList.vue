@@ -1,18 +1,18 @@
 <template>
   <div class="list">
     <b-alert
-      :show="showCreate"
+      :show="createdAlert"
       dismissible
       variant="success"
-      @dismissed="showCreate = false"
+      @dismissed="createdAlert = false"
     >
       Successfully created
     </b-alert>
     <b-alert
-      :show="showDelete"
+      :show="deletedAlert"
       dismissible
       variant="danger"
-      @dismissed="showDelete = false"
+      @dismissed="deletedAlert = false"
     >
       Successfully deleted
     </b-alert>
@@ -114,8 +114,8 @@ interface FileListData {
   downloadActive: boolean;
   downloadError: boolean;
   currentFileReference?: FileReference;
-  showCreate: boolean;
-  showDelete: boolean;
+  createdAlert: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -146,8 +146,8 @@ export default (
       downloadActive: false,
       downloadError: false,
       currentFileReference: undefined,
-      showCreate: false,
-      showDelete: false,
+      createdAlert: false,
+      deletedAlert: false,
     } as FileListData;
   },
   mounted() {
@@ -221,9 +221,9 @@ export default (
           fileReference: newReference,
         })
         .then(response => {
+          this.createdAlert = true;
           this.fileReferenceList = [response].concat(this.fileReferenceList);
           if (response.id) this.retrieveReferences();
-          this.showCreate = true;
         })
         .catch(e => {
           console.log("Error while creating FileReference: " + e.statusText);
@@ -238,8 +238,8 @@ export default (
           fileReferenceId: fileReferenceId,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveReferences();
-          this.showDelete = true;
         })
         .catch(e => {
           console.log("Error while deleting File Reference: " + e.statusText);

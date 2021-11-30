@@ -1,18 +1,18 @@
 <template>
   <div class="list">
     <b-alert
-      :show="showCreate"
+      :show="createdAlert"
       dismissible
       variant="success"
-      @dismissed="showCreate = false"
+      @dismissed="createdAlert = false"
     >
       Successfully created
     </b-alert>
     <b-alert
-      :show="showDelete"
+      :show="deletedAlert"
       dismissible
       variant="danger"
-      @dismissed="showDelete = false"
+      @dismissed="deletedAlert = false"
     >
       Successfully deleted
     </b-alert>
@@ -97,8 +97,8 @@ interface CollectionListData {
   collectionList: CollectionReference[];
   referencedList: { [key: number]: Collection };
   currentCollectionReference?: CollectionReference;
-  showCreate: boolean;
-  showDelete: boolean;
+  createdAlert: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -125,8 +125,8 @@ export default (
       collectionList: new Array<CollectionReference>(),
       referencedList: {},
       currentCollectionReference: undefined,
-      showCreate: false,
-      showDelete: false,
+      createdAlert: false,
+      deletedAlert: false,
     } as CollectionListData;
   },
   mounted() {
@@ -179,9 +179,9 @@ export default (
           collectionReference: newReference,
         })
         .then(response => {
+          this.createdAlert = true;
           this.collectionList = [response].concat(this.collectionList);
           if (response.id) this.retrieveCollection(response.id);
-          this.showCreate = true;
         })
         .catch(e => {
           console.log(
@@ -198,8 +198,8 @@ export default (
           collectionReferenceId: collectionReferenceId,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveReferences();
-          this.showDelete = true;
         })
         .catch(e => {
           console.log("Error while deleting URI Reference: " + e.statusText);

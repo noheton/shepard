@@ -2,6 +2,16 @@
   <div class="structured-data-container-list">
     <div class="component">
       <h4>Structured Data Containers</h4>
+
+      <b-alert
+        :show="deletedAlert"
+        dismissible
+        variant="dark"
+        @dismissed="deletedAlert = false"
+      >
+        Successfully deleted
+      </b-alert>
+
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -45,6 +55,7 @@ interface StructuredDatasListData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -59,6 +70,7 @@ export default (
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
+      deletedAlert: false,
     } as StructuredDatasListData;
   },
   computed: {
@@ -105,8 +117,13 @@ export default (
         ?.createStructuredDataContainer({
           structuredDataContainer: { name: newName } as StructuredDataContainer,
         })
-        .then(() => {
-          this.retrieveContainers();
+        .then(response => {
+          this.$router.push({
+            name: "StructuredData",
+            params: {
+              structuredDataId: String(response.id),
+            },
+          });
         })
         .catch(e => {
           console.log(
@@ -120,6 +137,7 @@ export default (
           structureddataContainerId: id,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveContainers();
         })
         .catch(e => {

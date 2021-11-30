@@ -1,18 +1,18 @@
 <template>
   <div>
     <b-alert
-      :show="showCreate"
+      :show="createdAlert"
       dismissible
       variant="success"
-      @dismissed="showCreate = false"
+      @dismissed="createdAlert = false"
     >
       Successfully created
     </b-alert>
     <b-alert
-      :show="showDelete"
+      :show="deletedAlert"
       dismissible
       variant="danger"
-      @dismissed="showDelete = false"
+      @dismissed="deletedAlert = false"
     >
       Successfully deleted
     </b-alert>
@@ -75,8 +75,8 @@ import Vue, { VueConstructor } from "vue";
 interface URIListData {
   uriList: URIReference[];
   currentUriReference?: URIReference;
-  showCreate: boolean;
-  showDelete: boolean;
+  createdAlert: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -98,8 +98,8 @@ export default (
     return {
       uriList: new Array<URIReference>(),
       currentUriReference: undefined,
-      showCreate: false,
-      showDelete: false,
+      createdAlert: false,
+      deletedAlert: false,
     } as URIListData;
   },
   mounted() {
@@ -128,8 +128,8 @@ export default (
           uRIReference: newReference,
         })
         .then(response => {
+          this.createdAlert = true;
           this.uriList = [response].concat(this.uriList);
-          this.showCreate = true;
         })
         .catch(e => {
           console.log("Error while creating URIReference: " + e.statusText);
@@ -144,8 +144,8 @@ export default (
           uriReferenceId: uriReferenceId,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveReferences();
-          this.showDelete = true;
         })
         .catch(e => {
           console.log("Error while deleting URI Reference: " + e.statusText);

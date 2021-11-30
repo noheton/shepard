@@ -2,6 +2,16 @@
   <div class="explore">
     <div class="component">
       <h4>Explore Collections</h4>
+
+      <b-alert
+        :show="deletedAlert"
+        dismissible
+        variant="dark"
+        @dismissed="deletedAlert = false"
+      >
+        Successfully deleted
+      </b-alert>
+
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -47,6 +57,7 @@ interface ExploreData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -61,6 +72,7 @@ export default (
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
+      deletedAlert: false,
     } as ExploreData;
   },
   computed: {
@@ -105,8 +117,13 @@ export default (
         ?.createCollection({
           collection: { name: newName } as Collection,
         })
-        .then(() => {
-          this.retrieveCollections();
+        .then(response => {
+          this.$router.push({
+            name: "Collection",
+            params: {
+              collectionId: String(response.id),
+            },
+          });
         })
         .catch(e => {
           console.log("Error while creating collection: " + e.statusText);
@@ -118,6 +135,7 @@ export default (
           collectionId: id,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveCollections();
         })
         .catch(e => {

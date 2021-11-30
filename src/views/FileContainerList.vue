@@ -2,6 +2,16 @@
   <div class="file-container-list">
     <div class="component">
       <h4>File Containers</h4>
+
+      <b-alert
+        :show="deletedAlert"
+        dismissible
+        variant="dark"
+        @dismissed="deletedAlert = false"
+      >
+        Successfully deleted
+      </b-alert>
+
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -45,6 +55,7 @@ interface FilesListData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -59,6 +70,7 @@ export default (
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
+      deletedAlert: false,
     } as FilesListData;
   },
   computed: {
@@ -103,8 +115,13 @@ export default (
         ?.createFileContainer({
           fileContainer: { name: newName } as FileContainer,
         })
-        .then(() => {
-          this.retrieveContainers();
+        .then(response => {
+          this.$router.push({
+            name: "Files",
+            params: {
+              fileId: String(response.id),
+            },
+          });
         })
         .catch(e => {
           console.log("Error while creating file container: " + e.statusText);
@@ -116,6 +133,7 @@ export default (
           fileContainerId: id,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveContainers();
         })
         .catch(e => {

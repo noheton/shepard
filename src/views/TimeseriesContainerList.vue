@@ -2,6 +2,16 @@
   <div class="timeseries-container-list">
     <div class="component">
       <h4>Timeseries Containers</h4>
+
+      <b-alert
+        :show="deletedAlert"
+        dismissible
+        variant="dark"
+        @dismissed="deletedAlert = false"
+      >
+        Successfully deleted
+      </b-alert>
+
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -45,6 +55,7 @@ interface TimeseriesListData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
+  deletedAlert: boolean;
 }
 
 export default (
@@ -59,6 +70,7 @@ export default (
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
+      deletedAlert: false,
     } as TimeseriesListData;
   },
   computed: {
@@ -105,8 +117,13 @@ export default (
         ?.createTimeseriesContainer({
           timeseriesContainer: { name: newName } as TimeseriesContainer,
         })
-        .then(() => {
-          this.retrieveContainers();
+        .then(response => {
+          this.$router.push({
+            name: "Timeseries",
+            params: {
+              timeseriesId: String(response.id),
+            },
+          });
         })
         .catch(e => {
           console.log(
@@ -120,6 +137,7 @@ export default (
           timeseriesContainerId: id,
         })
         .then(() => {
+          this.deletedAlert = true;
           this.retrieveContainers();
         })
         .catch(e => {
