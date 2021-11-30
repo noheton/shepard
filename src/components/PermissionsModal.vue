@@ -96,7 +96,7 @@
 <script lang="ts">
 import { UserVue } from "@/utils/api-mixin";
 import { Permissions, User } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue, { PropType, VueConstructor } from "vue";
 
 interface PermissionsModalData {
   username: string;
@@ -138,7 +138,7 @@ export default (
       required: true,
     },
     oldPermissions: {
-      type: Object,
+      type: Object as PropType<Permissions>,
       default: () => {
         return { owner: undefined, reader: [], writer: [], manager: [] };
       },

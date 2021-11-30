@@ -168,7 +168,7 @@
 <script lang="ts">
 import { DataObjectVue } from "@/utils/api-mixin";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue, { PropType, VueConstructor } from "vue";
 
 interface DataObjectModalData {
   newDataObject: DataObject;
@@ -205,7 +205,7 @@ export default (
       required: true,
     },
     currentDataObject: {
-      type: Object as () => DataObject,
+      type: Object as PropType<DataObject>,
       default: undefined,
     },
   },

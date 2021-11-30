@@ -55,7 +55,7 @@ import TimeseriesReferencesList from "@/components/references/TimeseriesReferenc
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
 import { ReferenceVue } from "@/utils/api-mixin";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import Vue, { PropType } from "vue";
 
 export default Vue.extend({
   components: {
@@ -69,7 +69,7 @@ export default Vue.extend({
   mixins: [ReferenceVue],
   props: {
     currentDataObject: {
-      type: Object as () => DataObject,
+      type: Object as PropType<DataObject>,
       required: true,
     },
   },

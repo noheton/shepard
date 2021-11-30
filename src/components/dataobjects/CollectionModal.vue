@@ -93,7 +93,7 @@
 <script lang="ts">
 import { CollectionVue } from "@/utils/api-mixin";
 import { Collection } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue, { PropType, VueConstructor } from "vue";
 
 interface CollectionModalData {
   newCollection: Collection;
@@ -118,7 +118,7 @@ export default (
       default: "collectionModal",
     },
     currentCollection: {
-      type: Object as () => Collection,
+      type: Object as PropType<Collection>,
       default: undefined,
     },
   },

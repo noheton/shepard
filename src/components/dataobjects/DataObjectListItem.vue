@@ -44,13 +44,14 @@
 
 <script lang="ts">
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import Vue from "vue";
+import { DataObject } from "@dlr-shepard/shepard-client";
+import Vue, { PropType } from "vue";
 
 export default Vue.extend({
   components: { CreatedByLine },
   props: {
     dataObject: {
-      type: Object,
+      type: Object as PropType<DataObject>,
       required: true,
     },
   },
