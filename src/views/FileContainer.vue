@@ -60,6 +60,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { FileVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { FileContainer, Permissions } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -101,7 +102,9 @@ export default (
           this.currentFile = response;
         })
         .catch(e => {
-          console.log("Error while fetching file container: " + e.statusText);
+          const error = "Error while fetching file container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrieveFileList() {
@@ -113,7 +116,8 @@ export default (
           this.fileList = response;
         })
         .catch(e => {
-          console.log("Error while fetching file payload: " + e.statusText);
+          const error = "Error while fetching file payload: " + e.statusText;
+          console.log(error);
         });
     },
     handleDelete() {
@@ -123,7 +127,9 @@ export default (
           this.$router.push({ name: "FilesList" });
         })
         .catch(e => {
-          console.log("Error while deleting file container: " + e.statusText);
+          const error = "Error while deleting file container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrievePermissions() {
@@ -133,7 +139,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while fetching permissons: " + e.statusText);
+          const error = "Error while fetching permissons: " + e.statusText;
+          console.log(error);
         });
     },
     updatePermissions(perms: Permissions) {
@@ -146,7 +153,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while edit permissons: " + e.statusText);
+          const error = "Error while editing permissons: " + e.statusText;
+          console.log(error);
         });
     },
   },

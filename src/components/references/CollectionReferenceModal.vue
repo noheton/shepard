@@ -111,7 +111,8 @@ export default (
             this.newCollectionReference.referencedCollectionId = collection.id;
         })
         .catch(e => {
-          console.log("Error while getting collection: " + e.statusText);
+          const error = "Error while getting collection: " + e.statusText;
+          console.log(error);
           this.currentCollection = undefined;
           this.validCollection = false;
         });

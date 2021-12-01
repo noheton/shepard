@@ -104,6 +104,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import { FileReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
+import EventBus from "@/utils/event-bus";
 import { FileReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -167,7 +168,8 @@ export default (
           });
         })
         .catch(e => {
-          console.log("Error while fetching File References: " + e.statusText);
+          const error = "Error while fetching file references: " + e.statusText;
+          console.log(error);
         });
     },
 
@@ -188,7 +190,8 @@ export default (
           this.files = { ...this.files, ...temp };
         })
         .catch(e => {
-          console.log("Error while fetching Files: " + e.statusText);
+          const error = "Error while fetching files: " + e.statusText;
+          console.log(error);
         });
     },
 
@@ -206,7 +209,8 @@ export default (
           downloadFile(response, filename);
         })
         .catch(e => {
-          console.log("Error while fetching File Payload: " + e.statusText);
+          const error = "Error while fetching file payload: " + e.statusText;
+          console.log(error);
           this.downloadStarted = false;
           this.downloadError = true;
         })
@@ -226,7 +230,9 @@ export default (
           if (response.id) this.retrieveReferences();
         })
         .catch(e => {
-          console.log("Error while creating FileReference: " + e.statusText);
+          const error = "Error while creating file reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -242,7 +248,9 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log("Error while deleting File Reference: " + e.statusText);
+          const error = "Error while deleting file reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

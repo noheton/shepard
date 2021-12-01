@@ -110,6 +110,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import { StructuredDataReferenceVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import {
   StructuredDataPayload,
   StructuredDataReference,
@@ -169,9 +170,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log(
-            "Error while fetching StructuredData References: " + e.statusText,
-          );
+          const error =
+            "Error while fetching structured data references: " + e.statusText;
+          console.log(error);
         });
     },
 
@@ -192,9 +193,9 @@ export default (
           this.structuredDatas = { ...this.structuredDatas, ...temp };
         })
         .catch(e => {
-          console.log(
-            "Error while fetching StructuredDataPayload: " + e.statusText,
-          );
+          const error =
+            "Error while fetching structured data payload: " + e.statusText;
+          console.log(error);
         });
     },
 
@@ -211,9 +212,10 @@ export default (
           if (response.id) this.retrieveStructuredDatas(response.id);
         })
         .catch(e => {
-          console.log(
-            "Error while creating StructuredDataReference: " + e.statusText,
-          );
+          const error =
+            "Error while creating structured data reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -229,9 +231,10 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log(
-            "Error while deleting Structured Data Reference: " + e.statusText,
-          );
+          const error =
+            "Error while deleting structured data reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

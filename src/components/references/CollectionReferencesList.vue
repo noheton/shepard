@@ -90,6 +90,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import { CollectionReferenceVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -146,9 +147,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log(
-            "Error while fetching Collection References: " + e.statusText,
-          );
+          const error =
+            "Error while fetching collection references: " + e.statusText;
+          console.log(error);
         });
     },
     retrieveCollection(referenceId: number) {
@@ -164,10 +165,10 @@ export default (
           this.referencedList = { ...this.referencedList, ...temp };
         })
         .catch(e => {
-          console.log(
-            "Error while fetching Collection Reference Payload: " +
-              e.statusText,
-          );
+          const error =
+            "Error while fetching collection reference payload: " +
+            e.statusText;
+          console.log(error);
         });
     },
 
@@ -184,9 +185,10 @@ export default (
           if (response.id) this.retrieveCollection(response.id);
         })
         .catch(e => {
-          console.log(
-            "Error while creating CollectionReference: " + e.statusText,
-          );
+          const error =
+            "Error while creating collection reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -202,7 +204,10 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log("Error while deleting URI Reference: " + e.statusText);
+          const error =
+            "Error while deleting collection reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

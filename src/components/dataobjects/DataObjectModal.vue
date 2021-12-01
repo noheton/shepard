@@ -167,6 +167,7 @@
 
 <script lang="ts">
 import { DataObjectVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
@@ -317,7 +318,8 @@ export default (
         })
         .catch(e => {
           obj.name = "";
-          console.log("Error while validating dataObject: " + e.statusText);
+          const error = "Error while validating data object: " + e.statusText;
+          console.log(error);
           this.validationError = true;
         });
     },
@@ -338,7 +340,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log("Error while creating dataObject: " + e.statusText);
+          const error = "Error while creating data object: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -357,7 +361,9 @@ export default (
           this.$emit("dataObjectChanged");
         })
         .catch(e => {
-          console.log("Error while updating dataObject: " + e.statusText);
+          const error = "Error while updating data object: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

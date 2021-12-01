@@ -131,7 +131,8 @@ export default (
             this.newFileReference.fileContainerId = container.id;
         })
         .catch(e => {
-          console.log("Error while getting file container: " + e.statusText);
+          const error = "Error while getting file container: " + e.statusText;
+          console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
         });
@@ -155,7 +156,8 @@ export default (
           });
         })
         .catch(e => {
-          console.log("Error while getting all files: " + e.statusText);
+          const error = "Error while getting all files: " + e.statusText;
+          console.log(error);
         });
     },
   },

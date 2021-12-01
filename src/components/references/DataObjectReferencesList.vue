@@ -91,6 +91,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import { DataObjectReferenceVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -147,9 +148,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log(
-            "Error while fetching DataObject References: " + e.statusText,
-          );
+          const error =
+            "Error while fetching data object references: " + e.statusText;
+          console.log(error);
         });
     },
     retrieveDataObject(referenceId: number) {
@@ -165,10 +166,10 @@ export default (
           this.referencedList = { ...this.referencedList, ...temp };
         })
         .catch(e => {
-          console.log(
-            "Error while fetching DataObject Reference Payload: " +
-              e.statusText,
-          );
+          const error =
+            "Error while fetching data object reference payload: " +
+            e.statusText;
+          console.log(error);
         });
     },
 
@@ -185,9 +186,10 @@ export default (
           if (response.id) this.retrieveDataObject(response.id);
         })
         .catch(e => {
-          console.log(
-            "Error while creating DataObjectReference: " + e.statusText,
-          );
+          const error =
+            "Error while creating data object reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -203,9 +205,10 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log(
-            "Error while deleting Data Object Reference: " + e.statusText,
-          );
+          const error =
+            "Error while deleting data object reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

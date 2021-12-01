@@ -57,7 +57,8 @@ export default (
             this.dataObjects.push(response);
           })
           .catch(e => {
-            console.log("Error while fetching dataObject: " + e.statusText);
+            const error = "Error while fetching data object: " + e.statusText;
+            console.log(error);
           });
       });
     },

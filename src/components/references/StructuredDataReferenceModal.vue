@@ -135,9 +135,9 @@ export default (
               container.id;
         })
         .catch(e => {
-          console.log(
-            "Error while getting structured data container: " + e.statusText,
-          );
+          const error =
+            "Error while getting structured data container: " + e.statusText;
+          console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
         });
@@ -161,9 +161,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log(
-            "Error while getting all structured datas: " + e.statusText,
-          );
+          const error =
+            "Error while getting all structured datas: " + e.statusText;
+          console.log(error);
         });
     },
   },

@@ -101,6 +101,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import { TimeseriesReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
+import EventBus from "@/utils/event-bus";
 import { TimeseriesReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -159,9 +160,9 @@ export default (
           this.timeseriesList = response;
         })
         .catch(e => {
-          console.log(
-            "Error while fetching Timeseries References: " + e.statusText,
-          );
+          const error =
+            "Error while fetching timeseries references: " + e.statusText;
+          console.log(error);
         });
     },
     downloadCsv(referenceId: number, referenceName: string) {
@@ -177,7 +178,9 @@ export default (
           downloadFile(response, referenceName + ".csv");
         })
         .catch(e => {
-          console.log("Error while fetching Timeseries CSV: " + e.statusText);
+          const error =
+            "Error while fetching timeseries payload: " + e.statusText;
+          console.log(error);
           this.downloadStarted = false;
           this.downloadError = true;
         })
@@ -196,9 +199,10 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log(
-            "Error while deleting Timeseries Reference: " + e.statusText,
-          );
+          const error =
+            "Error while deleting timeseries reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -214,9 +218,10 @@ export default (
           this.timeseriesList = [response].concat(this.timeseriesList);
         })
         .catch(e => {
-          console.log(
-            "Error while creating Timeseries Reference: " + e.statusText,
-          );
+          const error =
+            "Error while creating timeseries reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

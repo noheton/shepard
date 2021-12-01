@@ -114,6 +114,7 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { CollectionVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { Collection, Permissions } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -168,7 +169,9 @@ export default (
           }
         })
         .catch(e => {
-          console.log("Error while fetching collection: " + e.statusText);
+          const error = "Error while fetching collection: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     handleDelete() {
@@ -178,7 +181,9 @@ export default (
           this.$router.push({ name: "Explore" });
         })
         .catch(e => {
-          console.log("Error while deleting collection: " + e.statusText);
+          const error = "Error while deleting collection: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrievePermissions() {
@@ -188,7 +193,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while fetching permissons: " + e.statusText);
+          const error = "Error while fetching permissons: " + e.statusText;
+          console.log(error);
         });
     },
     updatePermissions(perms: Permissions) {
@@ -201,7 +207,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while edit permissons: " + e.statusText);
+          const error = "Error while editing permissons: " + e.statusText;
+          console.log(error);
         });
     },
   },

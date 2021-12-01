@@ -312,9 +312,9 @@ export default (
             this.newTimeseriesReference.timeseriesContainerId = container.id;
         })
         .catch(e => {
-          console.log(
-            "Error while getting timeseries container: " + e.statusText,
-          );
+          const error =
+            "Error while getting timeseries container: " + e.statusText;
+          console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
         });

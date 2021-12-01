@@ -69,6 +69,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import { UriReferenceVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { URIReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -116,7 +117,8 @@ export default (
           this.uriList = response;
         })
         .catch(e => {
-          console.log("Error while fetching URI References: " + e.statusText);
+          const error = "Error while fetching URI references: " + e.statusText;
+          console.log(error);
         });
     },
 
@@ -132,7 +134,9 @@ export default (
           this.uriList = [response].concat(this.uriList);
         })
         .catch(e => {
-          console.log("Error while creating URIReference: " + e.statusText);
+          const error = "Error while creating URI reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
 
@@ -148,7 +152,9 @@ export default (
           this.retrieveReferences();
         })
         .catch(e => {
-          console.log("Error while deleting URI Reference: " + e.statusText);
+          const error = "Error while deleting URI reference: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

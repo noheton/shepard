@@ -77,7 +77,8 @@ export default (
           this.user = response;
         })
         .catch(e => {
-          console.log("Error while fetching user: " + e.statusText);
+          const error = "Error while fetching user: " + e.statusText;
+          console.log(error);
         });
     },
     userTableItems() {

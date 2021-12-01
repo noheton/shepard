@@ -55,6 +55,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { TimeseriesVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import { Permissions, TimeseriesContainer } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -93,9 +94,10 @@ export default (
           this.currentTimeseries = response;
         })
         .catch(e => {
-          console.log(
-            "Error while fetching timeseries container: " + e.statusText,
-          );
+          const error =
+            "Error while fetching timeseries container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     handleDelete() {
@@ -107,9 +109,10 @@ export default (
           this.$router.push({ name: "TimeseriesList" });
         })
         .catch(e => {
-          console.log(
-            "Error while deleting timeseries container: " + e.statusText,
-          );
+          const error =
+            "Error while deleting timeseries container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrievePermissions() {
@@ -121,7 +124,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while fetching permissons: " + e.statusText);
+          const error = "Error while fetching permissons: " + e.statusText;
+          console.log(error);
         });
     },
     updatePermissions(perms: Permissions) {
@@ -134,7 +138,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while edit permissons: " + e.statusText);
+          const error = "Error while edit permissons: " + e.statusText;
+          console.log(error);
         });
     },
   },

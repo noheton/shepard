@@ -43,6 +43,7 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { CollectionVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import {
   Collection,
   CollectionApi,
@@ -109,7 +110,9 @@ export default (
           this.collections = response;
         })
         .catch(e => {
-          console.log("Error while fetching collections: " + e.statusText);
+          const error = "Error while fetching collections: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     createCollection(newName: string) {
@@ -126,7 +129,9 @@ export default (
           });
         })
         .catch(e => {
-          console.log("Error while creating collection: " + e.statusText);
+          const error = "Error while creating collection: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     deleteCollection(id: number) {
@@ -139,7 +144,9 @@ export default (
           this.retrieveCollections();
         })
         .catch(e => {
-          console.log("Error while deleting collection: " + e.statusText);
+          const error = "Error while deleting collection: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
   },

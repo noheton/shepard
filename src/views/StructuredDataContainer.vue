@@ -64,6 +64,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { StructuredDataVue } from "@/utils/api-mixin";
+import EventBus from "@/utils/event-bus";
 import {
   Permissions,
   StructuredData,
@@ -109,9 +110,10 @@ export default (
           this.currentStructuredData = response;
         })
         .catch(e => {
-          console.log(
-            "Error while fetching structuredData container: " + e.statusText,
-          );
+          const error =
+            "Error while fetching structured data container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrieveStructuredDataList() {
@@ -123,9 +125,9 @@ export default (
           this.structuredDataList = response;
         })
         .catch(e => {
-          console.log(
-            "Error while fetching structuredData payload: " + e.statusText,
-          );
+          const error =
+            "Error while fetching structured data payload: " + e.statusText;
+          console.log(error);
         });
     },
     handleDelete() {
@@ -137,9 +139,10 @@ export default (
           this.$router.push({ name: "StructuredDatasList" });
         })
         .catch(e => {
-          console.log(
-            "Error while deleting structured data container: " + e.statusText,
-          );
+          const error =
+            "Error while deleting structured data container: " + e.statusText;
+          console.log(error);
+          EventBus.$emit("error", error);
         });
     },
     retrievePermissions() {
@@ -151,7 +154,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while fetching permissons: " + e.statusText);
+          const error = "Error while fetching permissons: " + e.statusText;
+          console.log(error);
         });
     },
     updatePermissions(perms: Permissions) {
@@ -164,7 +168,8 @@ export default (
           this.permissions = response;
         })
         .catch(e => {
-          console.log("Error while edit permissons: " + e.statusText);
+          const error = "Error while editing permissons: " + e.statusText;
+          console.log(error);
         });
     },
   },
