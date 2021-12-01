@@ -3,6 +3,7 @@
     <div class="component">
       <b-button-group class="float-right">
         <b-button
+          v-if="managerAccess"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -76,6 +77,7 @@ interface StructuredDataData {
   currentStructuredData?: StructuredDataContainer;
   permissions?: Permissions;
   structuredDataList: StructuredData[];
+  managerAccess: boolean;
 }
 
 export default (
@@ -88,6 +90,7 @@ export default (
       currentStructuredData: undefined,
       permissions: undefined,
       structuredDataList: [],
+      managerAccess: false,
     } as StructuredDataData;
   },
   computed: {
@@ -152,10 +155,12 @@ export default (
         })
         .then(response => {
           this.permissions = response;
+          this.managerAccess = true;
         })
         .catch(e => {
           const error = "Error while fetching permissons: " + e.statusText;
           console.log(error);
+          this.managerAccess = false;
         });
     },
     updatePermissions(perms: Permissions) {

@@ -3,6 +3,7 @@
     <div class="component">
       <b-button-group class="float-right">
         <b-button
+          v-if="managerAccess"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -62,6 +63,7 @@ import Vue, { VueConstructor } from "vue";
 interface TimeseriesData {
   currentTimeseries?: TimeseriesContainer;
   permissions?: Permissions;
+  managerAccess: boolean;
 }
 
 export default (
@@ -73,6 +75,7 @@ export default (
     return {
       currentTimeseries: undefined,
       permissions: undefined,
+      managerAccess: false,
     } as TimeseriesData;
   },
   computed: {
@@ -122,10 +125,12 @@ export default (
         })
         .then(response => {
           this.permissions = response;
+          this.managerAccess = true;
         })
         .catch(e => {
           const error = "Error while fetching permissons: " + e.statusText;
           console.log(error);
+          this.managerAccess = false;
         });
     },
     updatePermissions(perms: Permissions) {

@@ -19,6 +19,7 @@
           <EditIcon />
         </b-button>
         <b-button
+          v-if="managerAccess"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -122,6 +123,7 @@ interface CollectionData {
   currentCollection?: Collection;
   permissions?: Permissions;
   attributeItems: Array<{ key: string; value: string }>;
+  managerAccess: boolean;
 }
 
 export default (
@@ -143,6 +145,7 @@ export default (
       currentCollection: undefined,
       permissions: undefined,
       attributeItems: [],
+      managerAccess: false,
     } as CollectionData;
   },
   computed: {
@@ -191,10 +194,12 @@ export default (
         ?.getCollectionPermissions({ collectionId: this.currentCollectionId })
         .then(response => {
           this.permissions = response;
+          this.managerAccess = true;
         })
         .catch(e => {
           const error = "Error while fetching permissons: " + e.statusText;
           console.log(error);
+          this.managerAccess = false;
         });
     },
     updatePermissions(perms: Permissions) {

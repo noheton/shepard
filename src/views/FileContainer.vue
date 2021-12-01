@@ -3,6 +3,7 @@
     <div class="component">
       <b-button-group class="float-right">
         <b-button
+          v-if="managerAccess"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -68,6 +69,7 @@ interface FileData {
   currentFile?: FileContainer;
   permissions?: Permissions;
   fileList: unknown[];
+  managerAccess: boolean;
 }
 
 export default (
@@ -80,6 +82,7 @@ export default (
       currentFile: undefined,
       permissions: undefined,
       fileList: [],
+      managerAccess: false,
     } as FileData;
   },
   computed: {
@@ -137,10 +140,12 @@ export default (
         ?.getFilePermissions({ fileContainerId: this.currentFileId })
         .then(response => {
           this.permissions = response;
+          this.managerAccess = true;
         })
         .catch(e => {
           const error = "Error while fetching permissons: " + e.statusText;
           console.log(error);
+          this.managerAccess = false;
         });
     },
     updatePermissions(perms: Permissions) {
