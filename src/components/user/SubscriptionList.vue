@@ -77,7 +77,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import { SubscriptionVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import {
   Subscription,
   SubscriptionRequestMethodEnum,
@@ -147,7 +147,7 @@ export default (
         .catch(e => {
           const error = "Error while creating subscription: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     handleDelete(id: number) {
@@ -159,7 +159,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting subscription: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         })
         .finally(() => {
           this.retrieveSubscriptions();

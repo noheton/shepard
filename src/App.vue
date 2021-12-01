@@ -17,7 +17,7 @@
 <script lang="ts">
 import Breadcrumb from "@/components/Breadcrumb.vue";
 import Navbar from "@/components/Navbar.vue";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import Vue from "vue";
 
 export default Vue.extend({
@@ -29,15 +29,10 @@ export default Vue.extend({
     };
   },
   created() {
-    EventBus.$on("error", (e: string) => {
-      this.onError(e);
-    });
-  },
-  methods: {
-    onError(error: string) {
-      this.errorString = error;
+    emitter.on("error", e => {
+      this.errorString = e;
       this.errorAlert = true;
-    },
+    });
   },
 });
 </script>

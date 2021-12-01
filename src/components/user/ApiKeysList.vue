@@ -62,7 +62,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import { ApiKeyVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -132,7 +132,7 @@ export default (
         .catch(e => {
           const error = "Error while creating api key: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         })
         .finally(() => {
           this.retrieveApiKeys();
@@ -145,7 +145,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting api key: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         })
         .finally(() => {
           this.retrieveApiKeys();

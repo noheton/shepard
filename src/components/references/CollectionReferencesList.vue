@@ -90,7 +90,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import { CollectionReferenceVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -188,7 +188,7 @@ export default (
           const error =
             "Error while creating collection reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -207,7 +207,7 @@ export default (
           const error =
             "Error while deleting collection reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

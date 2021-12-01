@@ -110,7 +110,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import { StructuredDataReferenceVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import {
   StructuredDataPayload,
   StructuredDataReference,
@@ -215,7 +215,7 @@ export default (
           const error =
             "Error while creating structured data reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -234,7 +234,7 @@ export default (
           const error =
             "Error while deleting structured data reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

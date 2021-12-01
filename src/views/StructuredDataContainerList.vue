@@ -43,7 +43,7 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { StructuredDataVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import {
   GetAllStructuredDataContainersOrderByEnum,
   StructuredDataContainer,
@@ -111,7 +111,7 @@ export default (
           const error =
             "Error while fetching structured data containers: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     createContainer(newName: string) {
@@ -131,7 +131,7 @@ export default (
           const error =
             "Error while creating structured data container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     deleteContainer(id: number) {
@@ -147,7 +147,7 @@ export default (
           const error =
             "Error while deleting structured data container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

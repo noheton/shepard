@@ -101,7 +101,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import { TimeseriesReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { TimeseriesReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -202,7 +202,7 @@ export default (
           const error =
             "Error while deleting timeseries reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -221,7 +221,7 @@ export default (
           const error =
             "Error while creating timeseries reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

@@ -104,7 +104,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import { FileReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { FileReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -232,7 +232,7 @@ export default (
         .catch(e => {
           const error = "Error while creating file reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -250,7 +250,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting file reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

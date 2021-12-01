@@ -43,7 +43,7 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { FileVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import {
   FileContainer,
   GetAllFileContainersOrderByEnum,
@@ -110,7 +110,7 @@ export default (
         .catch(e => {
           const error = "Error while fetching file containers: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     createContainer(newName: string) {
@@ -129,7 +129,7 @@ export default (
         .catch(e => {
           const error = "Error while creating file container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     deleteContainer(id: number) {
@@ -144,7 +144,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting file container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

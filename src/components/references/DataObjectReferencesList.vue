@@ -91,7 +91,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import { DataObjectReferenceVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -189,7 +189,7 @@ export default (
           const error =
             "Error while creating data object reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -208,7 +208,7 @@ export default (
           const error =
             "Error while deleting data object reference: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

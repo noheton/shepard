@@ -92,7 +92,7 @@
 
 <script lang="ts">
 import { CollectionVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { Collection } from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
@@ -178,7 +178,7 @@ export default (
         .catch(e => {
           const error = "Error while updating collection: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

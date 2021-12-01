@@ -60,7 +60,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { FileVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { FileContainer, Permissions } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -104,7 +104,7 @@ export default (
         .catch(e => {
           const error = "Error while fetching file container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     retrieveFileList() {
@@ -129,7 +129,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting file container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     retrievePermissions() {

@@ -167,7 +167,7 @@
 
 <script lang="ts">
 import { DataObjectVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
@@ -342,7 +342,7 @@ export default (
         .catch(e => {
           const error = "Error while creating data object: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
 
@@ -363,7 +363,7 @@ export default (
         .catch(e => {
           const error = "Error while updating data object: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

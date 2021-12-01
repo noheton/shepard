@@ -1,3 +1,7 @@
-import Vue from "vue";
-const EventBus = new Vue();
-export default EventBus;
+import mitt from "mitt";
+
+type Events = {
+  error: string;
+};
+
+export const emitter = mitt<Events>();

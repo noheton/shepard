@@ -121,7 +121,7 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
 import { DataObjectVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -183,7 +183,7 @@ export default (
         .catch(e => {
           const error = "Error while fetching data object: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     handleDelete() {
@@ -203,7 +203,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting data object: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
   },

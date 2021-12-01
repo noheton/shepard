@@ -64,7 +64,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { StructuredDataVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import {
   Permissions,
   StructuredData,
@@ -113,7 +113,7 @@ export default (
           const error =
             "Error while fetching structured data container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     retrieveStructuredDataList() {
@@ -142,7 +142,7 @@ export default (
           const error =
             "Error while deleting structured data container: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     retrievePermissions() {

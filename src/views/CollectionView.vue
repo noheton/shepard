@@ -114,7 +114,7 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { CollectionVue } from "@/utils/api-mixin";
-import EventBus from "@/utils/event-bus";
+import { emitter } from "@/utils/event-bus";
 import { Collection, Permissions } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -171,7 +171,7 @@ export default (
         .catch(e => {
           const error = "Error while fetching collection: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     handleDelete() {
@@ -183,7 +183,7 @@ export default (
         .catch(e => {
           const error = "Error while deleting collection: " + e.statusText;
           console.log(error);
-          EventBus.$emit("error", error);
+          emitter.emit("error", error);
         });
     },
     retrievePermissions() {
