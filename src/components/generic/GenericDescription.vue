@@ -6,12 +6,12 @@
         {{ text }}
       </div>
       <div v-else>
-        <a v-if="readMore">
+        <span v-if="readMore">
           {{ text }}
-        </a>
-        <a v-else>
+        </span>
+        <span v-else>
           {{ text.substring(0, wordCount) + "..." }}
-        </a>
+        </span>
         <a @click="readMore = !readMore">
           <span v-if="readMore" class="moreorless">Read Less</span>
           <span v-else class="moreorless">Read More</span>
