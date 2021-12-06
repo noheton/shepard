@@ -160,7 +160,7 @@ export default (
         .catch(e => {
           const error = "Error while fetching permissons: " + e.statusText;
           console.log(error);
-          this.managerAccess = false;
+          this.managerAccess = e.status != 403;
         });
     },
     updatePermissions(perms: Permissions) {
