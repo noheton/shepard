@@ -22,7 +22,7 @@
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="3"> Referenced Collection </b-col>
+          <b-col cols="3"> Collection </b-col>
           <b-col cols="9">
             <b-form-input
               v-model="currentCollectionId"

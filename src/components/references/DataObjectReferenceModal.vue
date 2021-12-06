@@ -22,15 +22,38 @@
         </b-row>
 
         <b-row class="mb-3">
-          <b-col cols="3"> Referenced Data Object </b-col>
+          <b-col cols="3"> Collection </b-col>
           <b-col cols="9">
             <b-form-input
-              v-model="newDataObjectReference.referencedDataObjectId"
-              placeholder="Referenced data object id"
+              v-model="currentCollectionId"
+              placeholder="Referenced collection id"
               type="number"
               required
-              @blur="fetchDataObject()"
+              :state="validCollection"
+              @blur="fetchCollection()"
             ></b-form-input>
+            <small v-if="currentCollection">
+              <em> {{ currentCollection.name }} </em>
+            </small>
+            <small v-else>Please enter a valid collection id</small>
+          </b-col>
+        </b-row>
+
+        <b-row class="mb-3">
+          <b-col cols="3"> Data Object </b-col>
+          <b-col cols="9">
+            <b-form-select
+              v-model="currentDataObjectId"
+              required
+              :disabled="!currentCollection"
+              :options="options"
+              @change="fetchDataObject()"
+            >
+            </b-form-select>
+            <small v-if="currentDataObject">
+              <em> {{ currentDataObject.name }} </em>
+            </small>
+            <small v-else>Please select a data object</small>
           </b-col>
         </b-row>
 
@@ -50,12 +73,29 @@
 </template>
 
 <script lang="ts">
-import { DataObjectVue } from "@/utils/api-mixin";
-import { DataObjectReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { CollectionVue, DataObjectVue } from "@/utils/api-mixin";
+import {
+  Collection,
+  CollectionApi,
+  DataObject,
+  DataObjectApi,
+  DataObjectReference,
+} from "@dlr-shepard/shepard-client";
+import Vue, { VueConstructor } from "vue";
+
+interface Option {
+  text: string;
+  value: number;
+}
 
 interface DataObjectReferenceModelData {
   newDataObjectReference: DataObjectReference;
+  validCollection?: boolean;
+  currentCollectionId: string;
+  currentCollection?: Collection;
+  currentDataObjectId: string;
+  currentDataObject?: DataObject;
+  options: Array<Option>;
 }
 
 function initialState(): DataObjectReferenceModelData {
@@ -65,11 +105,23 @@ function initialState(): DataObjectReferenceModelData {
       referencedDataObjectId: 0,
       relationship: "",
     },
+    validCollection: undefined,
+    currentCollectionId: "",
+    currentCollection: undefined,
+    currentDataObjectId: "",
+    currentDataObject: undefined,
+    options: [],
   };
 }
 
-export default Vue.extend({
-  mixins: [DataObjectVue],
+export default (
+  Vue as VueConstructor<
+    Vue &
+      InstanceType<typeof CollectionVue> &
+      InstanceType<typeof DataObjectVue>
+  >
+).extend({
+  mixins: [CollectionVue, DataObjectVue],
   props: {
     modalId: {
       type: String,
@@ -86,6 +138,50 @@ export default Vue.extend({
   methods: {
     reset() {
       Object.assign(this.$data, initialState());
+    },
+    fetchCollection() {
+      this.collectionApi
+        ?.getCollection({
+          collectionId: +this.currentCollectionId,
+        })
+        .then(collection => {
+          this.currentCollection = collection;
+          this.validCollection = true;
+          this.options = [];
+          collection.dataObjectIds?.forEach(id => {
+            this.options.push({ text: String(id), value: id });
+          });
+          this.options.sort((a, b) => {
+            return a.value - b.value;
+          });
+        })
+        .catch(e => {
+          const error = "Error while getting collection: " + e.statusText;
+          console.log(error);
+          this.currentCollection = undefined;
+          this.validCollection = false;
+        });
+    },
+    fetchDataObject() {
+      this.dataObjectApi
+        ?.getDataObject({
+          collectionId: +this.currentCollectionId,
+          dataObjectId: +this.currentDataObjectId,
+        })
+        .then(dataObject => {
+          this.currentDataObject = dataObject;
+          if (dataObject.id)
+            this.newDataObjectReference.referencedDataObjectId = dataObject.id;
+        })
+        .catch(e => {
+          const error = "Error while getting data object: " + e.statusText;
+          console.log(error);
+          this.currentDataObject = undefined;
+        });
+    },
+    createApi() {
+      this.collectionApi = new CollectionApi(this.config);
+      this.dataObjectApi = new DataObjectApi(this.config);
     },
   },
 });
