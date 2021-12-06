@@ -8,14 +8,17 @@
           <code> {{ appVersion }} </code>
         </b-list-group-item>
         <b-list-group-item>
+          <strong>Client Version:</strong>
+          <code> {{ clientVersion }} </code>
+        </b-list-group-item>
+        <b-list-group-item>
           <strong>Backend Version:</strong>
           <code v-if="backend"> {{ backend.info.version }} </code>
           <code v-else> unknown </code>
         </b-list-group-item>
         <b-list-group-item>
-          <strong>OpenAPI Version:</strong>
-          <code v-if="backend"> {{ backend.openapi }} </code>
-          <code v-else> unknown </code>
+          <strong>Backend URL:</strong>
+          <code> {{ backendUrl }} </code>
         </b-list-group-item>
       </b-list-group>
     </div>
@@ -24,12 +27,15 @@
 
 <script lang="ts">
 import getEnv from "@/utils/env";
+import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import Vue from "vue";
 import { version } from "../../package.json";
 
 interface AboutData {
   backend?: unknown;
   appVersion: string;
+  clientVersion: string;
+  backendUrl: string;
 }
 
 export default Vue.extend({
@@ -37,6 +43,8 @@ export default Vue.extend({
     return {
       backend: undefined,
       appVersion: version,
+      clientVersion: clientVersion,
+      backendUrl: getEnv("VUE_APP_BACKEND"),
     } as AboutData;
   },
   mounted() {
@@ -44,10 +52,10 @@ export default Vue.extend({
   },
   methods: {
     fetchBackend() {
-      const backendUrl: string[] = getEnv("VUE_APP_BACKEND").split("/");
-      backendUrl.pop();
-      backendUrl.push("doc/openapi.json");
-      fetch(backendUrl.join("/"))
+      const openapiURL = this.backendUrl.split("/");
+      openapiURL.pop();
+      openapiURL.push("doc/openapi.json");
+      fetch(openapiURL.join("/"))
         .then(response => response.json())
         .then(data => (this.backend = data));
     },
