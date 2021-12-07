@@ -78,6 +78,13 @@
       <b-table striped small :items="attributeItems"> </b-table>
     </GenericCollapse>
 
+    <GenericCollapse v-if="currentDataObject.parentId" title="Parent" visible>
+      <DataObjectElement
+        :collection-id="currentCollectionId"
+        :data-object-id="currentDataObject.parentId"
+      />
+    </GenericCollapse>
+
     <GenericCollapse title="Related Objects" visible>
       <RelatedObjectsTable :current-data-object="currentDataObject" />
     </GenericCollapse>
@@ -113,6 +120,7 @@
 </template>
 
 <script lang="ts">
+import DataObjectElement from "@/components/dataobjects/DataObjectElement.vue";
 import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
 import RelatedObjectsTable from "@/components/dataobjects/RelatedObjectsTable.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
@@ -141,6 +149,7 @@ export default (
     DataObjectModal,
     ReferencesTable,
     RelatedObjectsTable,
+    DataObjectElement,
     DeleteConfirmationModal,
   },
   mixins: [DataObjectVue],

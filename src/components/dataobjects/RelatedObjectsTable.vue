@@ -1,28 +1,22 @@
 <template>
   <b-card no-body>
     <b-tabs card>
-      <b-tab title="Parent" :disabled="!parentIds.length">
-        <DataObjectList
-          :current-collection-id="currentDataObject.collectionId"
-          :data-object-ids="parentIds"
-        />
-      </b-tab>
       <b-tab title="Children" :disabled="!childrenIds.length">
-        <ChildrenList
+        <DataObjectList
           :current-collection-id="currentDataObject.collectionId"
           :parent-id="currentDataObject.id"
           :max-objects="childrenIds.length"
         />
       </b-tab>
       <b-tab title="Predecessors" :disabled="!predecessorIds.length">
-        <ChildrenList
+        <DataObjectList
           :current-collection-id="currentDataObject.collectionId"
           :successor-id="currentDataObject.id"
           :max-objects="predecessorIds.length"
         />
       </b-tab>
       <b-tab title="Successors" :disabled="!successorIds.length">
-        <ChildrenList
+        <DataObjectList
           :current-collection-id="currentDataObject.collectionId"
           :predecessor-id="currentDataObject.id"
           :max-objects="successorIds.length"
@@ -33,20 +27,18 @@
 </template>
 
 <script lang="ts">
-import ChildrenList from "@/components/dataobjects/ChildrenList.vue";
 import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType } from "vue";
 
 interface RelatedObjectsTableData {
-  parentIds: number[];
   childrenIds: number[];
   predecessorIds: number[];
   successorIds: number[];
 }
 
 export default Vue.extend({
-  components: { DataObjectList, ChildrenList },
+  components: { DataObjectList },
   props: {
     currentDataObject: {
       type: Object as PropType<DataObject>,
@@ -55,9 +47,6 @@ export default Vue.extend({
   },
   data() {
     return {
-      parentIds: this.currentDataObject.parentId
-        ? [this.currentDataObject.parentId]
-        : [],
       childrenIds: this.currentDataObject.childrenIds || [],
       predecessorIds: this.currentDataObject.predecessorIds || [],
       successorIds: this.currentDataObject.successorIds || [],

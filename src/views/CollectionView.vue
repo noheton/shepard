@@ -68,7 +68,7 @@
       title="Data Objects"
       visible
     >
-      <ChildrenList
+      <DataObjectList
         :current-collection-id="currentCollection.id"
         :parent-id="-1"
       />
@@ -106,8 +106,8 @@
 </template>
 
 <script lang="ts">
-import ChildrenList from "@/components/dataobjects/ChildrenList.vue";
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
+import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
 import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
@@ -133,7 +133,7 @@ export default (
     GenericCollapse,
     GenericDescription,
     CreatedByLine,
-    ChildrenList,
+    DataObjectList,
     DataObjectModal,
     CollectionModal,
     DeleteConfirmationModal,

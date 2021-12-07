@@ -95,7 +95,7 @@ import { emitter } from "@/utils/event-bus";
 import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
-interface DataObjectListData {
+interface DataObjectReferenceListData {
   dataObjectList: DataObjectReference[];
   referencedList: { [key: number]: DataObject };
   currentDataObjectReference?: DataObjectReference;
@@ -129,7 +129,7 @@ export default (
       currentDataObjectReference: undefined,
       createdAlert: false,
       deletedAlert: false,
-    } as DataObjectListData;
+    } as DataObjectReferenceListData;
   },
   mounted() {
     this.retrieveReferences();
