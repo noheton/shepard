@@ -45,25 +45,25 @@
     </div>
 
     <b-row class="section">
-      <b-col>
+      <b-col @click="scrollTo('#parentCollapse')">
         <ParentIcon title="Parents" />
         <span v-if="currentDataObject.parentId"> 1 </span>
         <span v-else> 0 </span>
         Parents
       </b-col>
-      <b-col v-if="currentDataObject.childrenIds">
+      <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <ChildIcon title="Children" />
         {{ currentDataObject.childrenIds.length }} Children
       </b-col>
-      <b-col v-if="currentDataObject.predecessorIds">
+      <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <PredecessorIcon title="Predecessors" />
         {{ currentDataObject.predecessorIds.length }} Predecessors
       </b-col>
-      <b-col v-if="currentDataObject.successorIds">
+      <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <SuccessorIcon title="Successors" />
         {{ currentDataObject.successorIds.length }} Successors
       </b-col>
-      <b-col v-if="currentDataObject.referenceIds">
+      <b-col @click="scrollTo('#referencesCollapse')">
         <ReferencesIcon title="References" />
         {{ currentDataObject.referenceIds.length }} References
       </b-col>
@@ -78,18 +78,27 @@
       <b-table striped small :items="attributeItems"> </b-table>
     </GenericCollapse>
 
-    <GenericCollapse v-if="currentDataObject.parentId" title="Parent" visible>
+    <GenericCollapse
+      v-if="currentDataObject.parentId"
+      id="parentCollapse"
+      title="Parent"
+      visible
+    >
       <DataObjectElement
         :collection-id="currentCollectionId"
         :data-object-id="currentDataObject.parentId"
       />
     </GenericCollapse>
 
-    <GenericCollapse title="Related Objects" visible>
+    <GenericCollapse
+      id="relatedObjectsCollapse"
+      title="Related Objects"
+      visible
+    >
       <RelatedObjectsTable :current-data-object="currentDataObject" />
     </GenericCollapse>
 
-    <GenericCollapse title="References" visible>
+    <GenericCollapse id="referencesCollapse" title="References" visible>
       <ReferencesTable :current-data-object="currentDataObject" />
     </GenericCollapse>
 
@@ -173,6 +182,12 @@ export default (
     this.screenWidth = window.innerWidth;
   },
   methods: {
+    scrollTo(element: string) {
+      var el = this.$el.querySelector(element);
+      if (el) {
+        el.scrollIntoView();
+      }
+    },
     retrieveDataObject() {
       this.dataObjectApi
         ?.getDataObject({
