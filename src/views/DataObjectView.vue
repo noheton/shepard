@@ -51,19 +51,19 @@
         <span v-else> 0 </span>
         Parents
       </b-col>
-      <b-col>
+      <b-col v-if="currentDataObject.childrenIds">
         <ChildIcon title="Children" />
         {{ currentDataObject.childrenIds.length }} Children
       </b-col>
-      <b-col>
+      <b-col v-if="currentDataObject.predecessorIds">
         <PredecessorIcon title="Predecessors" />
         {{ currentDataObject.predecessorIds.length }} Predecessors
       </b-col>
-      <b-col>
+      <b-col v-if="currentDataObject.successorIds">
         <SuccessorIcon title="Successors" />
         {{ currentDataObject.successorIds.length }} Successors
       </b-col>
-      <b-col>
+      <b-col v-if="currentDataObject.referenceIds">
         <ReferencesIcon title="References" />
         {{ currentDataObject.referenceIds.length }} References
       </b-col>

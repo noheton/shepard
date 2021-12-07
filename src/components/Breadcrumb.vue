@@ -1,33 +1,93 @@
 <template>
-  <div>
-    <b-breadcrumb v-if="$route.params.collectionId" class="breadcrumb">
-      <b-breadcrumb-item to="/explore"> Explore </b-breadcrumb-item>
+  <div v-if="collectionId">
+    <b-breadcrumb class="breadcrumb">
+      <b-breadcrumb-item to="/explore"> Collections </b-breadcrumb-item>
+
       <b-breadcrumb-item
+        v-if="dataObjectId"
         :to="{
           name: 'Collection',
           params: {
-            Collection: $route.params.collectionId,
+            collectionId: collectionId,
           },
         }"
       >
         Collection
       </b-breadcrumb-item>
+      <b-breadcrumb-item v-else active> Collection </b-breadcrumb-item>
+
       <b-breadcrumb-item
-        v-if="$route.params.dataObjectId"
+        v-if="parentId"
         :to="{
           name: 'DataObject',
           params: {
-            Collection: $route.params.collectionId,
-            DataObject: $route.params.dataObjectId,
+            collectionId: collectionId,
+            dataObjectId: parentId,
           },
         }"
       >
-        DataObject
+        Parent
+      </b-breadcrumb-item>
+
+      <b-breadcrumb-item v-if="dataObjectId" active>
+        Data Object
       </b-breadcrumb-item>
     </b-breadcrumb>
-    <hr v-if="$route.params.collectionId" />
+    <hr />
   </div>
 </template>
+
+<script lang="ts">
+import { DataObjectVue } from "@/utils/api-mixin";
+import Vue, { VueConstructor } from "vue";
+
+interface BreadcrumbData {
+  parentId?: number;
+}
+
+export default (
+  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
+).extend({
+  mixins: [DataObjectVue],
+  data() {
+    return {
+      parentId: undefined,
+    } as BreadcrumbData;
+  },
+  computed: {
+    collectionId(): string {
+      return this.$route.params.collectionId;
+    },
+    dataObjectId(): string {
+      return this.$route.params.dataObjectId;
+    },
+  },
+  watch: {
+    dataObjectId() {
+      if (this.dataObjectId) this.retrieveDataObject();
+      else this.parentId = undefined;
+    },
+  },
+  methods: {
+    retrieveDataObject() {
+      this.dataObjectApi
+        ?.getDataObject({
+          collectionId: +this.collectionId,
+          dataObjectId: +this.dataObjectId,
+        })
+        .then(response => {
+          if (response.parentId) this.parentId = response.parentId;
+          else this.parentId = undefined;
+        })
+        .catch(e => {
+          this.parentId = undefined;
+          const error = "Error while fetching data objects: " + e.statusText;
+          console.log(error);
+        });
+    },
+  },
+});
+</script>
 
 <style scoped>
 .breadcrumb {

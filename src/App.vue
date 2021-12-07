@@ -9,8 +9,8 @@
     >
       {{ errorString }}
     </b-alert>
-    <Breadcrumb id="view" />
-    <router-view id="view" :key="$route.fullPath" />
+    <Breadcrumb class="view" />
+    <router-view :key="$route.fullPath" class="view" />
   </div>
 </template>
 
@@ -42,7 +42,7 @@ export default Vue.extend({
   margin-bottom: 20%;
 }
 
-#view {
+.view {
   margin: auto;
   max-width: 850px;
 }
