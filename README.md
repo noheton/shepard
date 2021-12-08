@@ -1,6 +1,7 @@
 # shepard backend
 
-> This project is currently under heavy development. Use at your own risk.
+This is the source code repository for the shepard backend written in Java.
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Important links
 
