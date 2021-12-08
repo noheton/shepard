@@ -1,5 +1,8 @@
 # shepard deployment
 
+This repository contains everything you need to set up a shepard instance with Docker and Docker Compose.
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
+
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/engine/) and [Docker Compose](https://docs.docker.com/compose/) are installed.
