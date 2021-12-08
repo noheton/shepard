@@ -1,6 +1,7 @@
 # shepard releases
 
 This project can be used to create automatic releases with release notes.
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Preparation (only required once)
 
