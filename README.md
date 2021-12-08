@@ -1,6 +1,7 @@
 # shepard frontend
 
 The shepard frontend is based on [Vue.js](https://vuejs.org/) and [OpenAPI Generator](https://openapi-generator.tech/).
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Documentation
 
