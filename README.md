@@ -1,6 +1,7 @@
 # Architecture
 
 General architecture documents and discussions are managed in this repository.
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 Major conceptual changes should be discussed here before they are implemented.
 Feature requests can be submitted via an issue.
