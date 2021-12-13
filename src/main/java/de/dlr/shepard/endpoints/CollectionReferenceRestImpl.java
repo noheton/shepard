@@ -93,8 +93,8 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", collectionReferenceId,
 				securityContext.getUserPrincipal().getName());
 		var payload = collectionReferenceService.getPayload(collectionReferenceId);
-		return Response.ok(new CollectionIO(payload) {
-		}).build();
+		return payload != null ? Response.ok(new CollectionIO(payload)).build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

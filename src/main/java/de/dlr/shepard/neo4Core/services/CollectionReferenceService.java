@@ -70,6 +70,8 @@ public class CollectionReferenceService {
 	public Collection getPayload(long dataObjectReferenceId) {
 		var reference = collectionReferenceDAO.find(dataObjectReferenceId);
 		var collection = collectionDAO.find(reference.getReferencedCollection().getId());
+		if (collection.isDeleted())
+			return null;
 		return collection;
 	}
 

@@ -93,8 +93,8 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", dataObjectReferenceId,
 				securityContext.getUserPrincipal().getName());
 		var payload = dataObjectReferenceService.getPayload(dataObjectReferenceId);
-		return Response.ok(new DataObjectIO(payload) {
-		}).build();
+		return payload != null ? Response.ok(new DataObjectIO(payload)).build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

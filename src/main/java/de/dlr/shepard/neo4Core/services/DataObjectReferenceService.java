@@ -68,6 +68,8 @@ public class DataObjectReferenceService {
 	public DataObject getPayload(long dataObjectReferenceId) {
 		var reference = dataObjectReferenceDAO.find(dataObjectReferenceId);
 		var dataObject = dataObjectDAO.find(reference.getReferencedDataObject().getId());
+		if (dataObject.isDeleted())
+			return null;
 		return dataObject;
 	}
 
