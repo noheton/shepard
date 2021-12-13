@@ -67,7 +67,7 @@ h4 {
   margin-bottom: 10px;
 }
 
-.small-button {
+.small-button b-button {
   width: 40px;
   height: 40px;
   padding: 0px;
