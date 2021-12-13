@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import de.dlr.shepard.mongoDB.File;
 import de.dlr.shepard.mongoDB.FileService;

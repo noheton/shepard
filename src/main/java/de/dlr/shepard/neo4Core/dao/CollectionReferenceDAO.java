@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.dao;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.CollectionReference;
