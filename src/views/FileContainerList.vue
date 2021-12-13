@@ -1,7 +1,18 @@
 <template>
   <div class="file-container-list">
     <div class="component">
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.create-file-container-modal
+          v-b-tooltip.hover
+          title="Create File Container"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+      </b-button-group>
       <h4>File Containers</h4>
+      <br />
 
       <b-alert
         :show="deletedAlert"
@@ -25,6 +36,11 @@
         @createEntity="createContainer($event)"
         @deleteEntity="deleteContainer($event)"
       />
+      <GenericCreateModal
+        modal-id="create-file-container-modal"
+        modal-name="Create File Container"
+        @create="createContainer($event)"
+      />
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
@@ -41,6 +57,7 @@
 import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { FileVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -62,7 +79,7 @@ interface FilesListData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
 ).extend({
-  components: { GenericEntityList, FilterListLine },
+  components: { GenericEntityList, FilterListLine, GenericCreateModal },
   mixins: [FileVue],
   data() {
     return {
@@ -128,21 +145,6 @@ export default (
         })
         .catch(e => {
           const error = "Error while creating file container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    deleteContainer(id: number) {
-      this.fileApi
-        ?.deleteFileContainer({
-          fileContainerId: id,
-        })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveContainers();
-        })
-        .catch(e => {
-          const error = "Error while deleting file container: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         });

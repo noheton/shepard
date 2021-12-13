@@ -1,7 +1,18 @@
 <template>
   <div class="explore">
     <div class="component">
-      <h4>Explore Collections</h4>
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.create-collection-modal
+          v-b-tooltip.hover
+          title="Create Collection"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+      </b-button-group>
+
+      <h4 class="mb-4">Explore Collections</h4>
 
       <b-alert
         :show="deletedAlert"
@@ -20,11 +31,8 @@
         :default-order-by="orderBy"
         @filterChanged="filterChanged($event)"
       />
-      <GenericEntityList
-        :entities="collections"
-        @createEntity="createCollection($event)"
-        @deleteEntity="deleteCollection($event)"
-      />
+      <GenericEntityList :entities="collections" />
+
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
@@ -33,11 +41,17 @@
         size="sm"
         @change="retrieveCollections($event)"
       ></b-pagination>
+
+      <CollectionModal
+        modal-id="create-collection-modal"
+        modal-name="Create Collection"
+      />
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
@@ -64,7 +78,7 @@ interface ExploreData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
 ).extend({
-  components: { GenericEntityList, FilterListLine },
+  components: { GenericEntityList, FilterListLine, CollectionModal },
   mixins: [CollectionVue],
   data() {
     return {
@@ -111,40 +125,6 @@ export default (
         })
         .catch(e => {
           const error = "Error while fetching collections: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    createCollection(newName: string) {
-      this.collectionApi
-        ?.createCollection({
-          collection: { name: newName } as Collection,
-        })
-        .then(response => {
-          this.$router.push({
-            name: "Collection",
-            params: {
-              collectionId: String(response.id),
-            },
-          });
-        })
-        .catch(e => {
-          const error = "Error while creating collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    deleteCollection(id: number) {
-      this.collectionApi
-        ?.deleteCollection({
-          collectionId: id,
-        })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveCollections();
-        })
-        .catch(e => {
-          const error = "Error while deleting collection: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         });

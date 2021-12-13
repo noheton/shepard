@@ -1,7 +1,19 @@
 <template>
   <div class="structured-data-container-list">
     <div class="component">
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.create-structured-data-container-modal
+          v-b-tooltip.hover
+          title="Create Structured Data Container"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+      </b-button-group>
+
       <h4>Structured Data Containers</h4>
+      <br />
 
       <b-alert
         :show="deletedAlert"
@@ -25,6 +37,11 @@
         @createEntity="createContainer($event)"
         @deleteEntity="deleteContainer($event)"
       />
+      <GenericCreateModal
+        modal-id="create-structured-data-container-modal"
+        modal-name="Create Structured Data Container"
+        @create="createContainer($event)"
+      />
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
@@ -41,6 +58,7 @@
 import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { StructuredDataVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -62,7 +80,7 @@ interface StructuredDatasListData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
 ).extend({
-  components: { GenericEntityList, FilterListLine },
+  components: { GenericEntityList, FilterListLine, GenericCreateModal },
   mixins: [StructuredDataVue],
   data() {
     return {
@@ -130,22 +148,6 @@ export default (
         .catch(e => {
           const error =
             "Error while creating structured data container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    deleteContainer(id: number) {
-      this.structuredDataApi
-        ?.deleteStructuredDataContainer({
-          structureddataContainerId: id,
-        })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveContainers();
-        })
-        .catch(e => {
-          const error =
-            "Error while deleting structured data container: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         });

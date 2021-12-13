@@ -1,7 +1,18 @@
 <template>
   <div class="timeseries-container-list">
     <div class="component">
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.create-timeseries-container-modal
+          v-b-tooltip.hover
+          title="Create Timeseries Container"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+      </b-button-group>
       <h4>Timeseries Containers</h4>
+      <br />
 
       <b-alert
         :show="deletedAlert"
@@ -25,6 +36,11 @@
         @createEntity="createContainer($event)"
         @deleteEntity="deleteContainer($event)"
       />
+      <GenericCreateModal
+        modal-id="create-timeseries-container-modal"
+        modal-name="Create Timeseries Container"
+        @create="createContainer($event)"
+      />
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
@@ -41,6 +57,7 @@
 import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { TimeseriesVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -62,7 +79,7 @@ interface TimeseriesListData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof TimeseriesVue>>
 ).extend({
-  components: { GenericEntityList, FilterListLine },
+  components: { GenericEntityList, FilterListLine, GenericCreateModal },
   mixins: [TimeseriesVue],
   data() {
     return {
@@ -130,22 +147,6 @@ export default (
         .catch(e => {
           const error =
             "Error while creating timeseries container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    deleteContainer(id: number) {
-      this.timeseriesApi
-        ?.deleteTimeseriesContainer({
-          timeseriesContainerId: id,
-        })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveContainers();
-        })
-        .catch(e => {
-          const error =
-            "Error while deleting timeseries container: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         });

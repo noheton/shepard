@@ -158,7 +158,6 @@ export default (
       }
     },
     handleOk() {
-      if (!this.currentCollection?.id) return;
       let attributes: { [key: string]: string } = {};
       this.possibleAttributes.forEach(attr => {
         if (attr.key != "") {
@@ -167,10 +166,37 @@ export default (
       });
       this.newCollection.attributes = attributes;
 
+      if (this.currentCollection) {
+        this.updateCollection(this.newCollection);
+      } else {
+        this.createCollection(this.newCollection);
+      }
+    },
+    createCollection(collection: Collection) {
+      this.collectionApi
+        ?.createCollection({
+          collection: collection,
+        })
+        .then(response => {
+          this.$router.push({
+            name: "Collection",
+            params: {
+              collectionId: String(response.id),
+            },
+          });
+        })
+        .catch(e => {
+          const error = "Error while creating collection: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        });
+    },
+    updateCollection(collection: Collection) {
+      if (!this.currentCollection.id) return;
       this.collectionApi
         ?.updateCollection({
           collectionId: this.currentCollection.id,
-          collection: this.newCollection,
+          collection: collection,
         })
         .then(() => {
           this.$emit("collectionChanged");
