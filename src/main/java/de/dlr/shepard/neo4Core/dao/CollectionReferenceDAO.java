@@ -23,7 +23,7 @@ public class CollectionReferenceDAO extends GenericDAO<CollectionReference> {
 
 		List<CollectionReference> result = StreamSupport.stream(queryResult.spliterator(), false)
 				.filter(r -> r.getDataObject() != null).filter(r -> r.getDataObject().getId().equals(dataObjectId))
-				.collect(Collectors.toList());
+				.toList();
 
 		return result;
 	}

@@ -137,8 +137,7 @@ public class FileContainerService {
 			return false;
 		var result = fileService.deleteFile(container.getMongoId(), oid);
 		if (result) {
-			var newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid))
-					.collect(Collectors.toList());
+			var newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
 			container.setFiles(newFiles);
 			fileContainerDAO.createOrUpdate(container);
 		}

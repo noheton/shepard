@@ -66,7 +66,7 @@ public class CollectionService {
 	public List<Collection> getAllCollections(QueryParamHelper params, String username) {
 		var queryResult = collectionDAO.findAllCollections(params, username);
 
-		var collections = queryResult.stream().peek(this::cutDeleted).collect(Collectors.toList());
+		var collections = queryResult.stream().peek(this::cutDeleted).toList();
 
 		return collections;
 	}
@@ -115,7 +115,7 @@ public class CollectionService {
 	 * @param collection The collection to remove deleted DataObjects from
 	 */
 	private void cutDeleted(Collection collection) {
-		var dataObjects = collection.getDataObjects().stream().filter(d -> !d.isDeleted()).collect(Collectors.toList());
+		var dataObjects = collection.getDataObjects().stream().filter(d -> !d.isDeleted()).toList();
 		collection.setDataObjects(dataObjects);
 	}
 }

@@ -144,7 +144,7 @@ public class StructuredDataContainerService {
 		var result = structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);
 		if (result) {
 			var newStructuredDatas = structuredDataContainer.getStructuredDatas().stream()
-					.filter(f -> !f.getOid().equals(oid)).collect(Collectors.toList());
+					.filter(f -> !f.getOid().equals(oid)).toList();
 			structuredDataContainer.setStructuredDatas(newStructuredDatas);
 			structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
 		}

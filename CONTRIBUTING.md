@@ -45,15 +45,14 @@ If your feature request involves major conceptual changes, please submit an issu
 
 ### Downloads
 
-- OpenJDK 11 (LTS): <https://adoptium.net/?variant=openjdk11&jvmVariant=hotspot>
+- OpenJDK 17 (LTS): <https://adoptium.net/index.html?variant=openjdk17&jvmVariant=hotspot>
 - Eclipse IDE for Enterprise Java and Web Developers: <https://www.eclipse.org/downloads/packages/>
 - Apache Tomcat 10: <https://tomcat.apache.org/download-10.cgi>
 - Project Lombok: <https://projectlombok.org/download>
-- Postman (optional): <https://www.getpostman.com/downloads/>
 
 ### Installation
 
-1. install OpenJDK 11 (LTS)
+1. install OpenJDK
 2. install Eclipse IDE for Enterprise Java and Web Developers
 3. unpack Apache Tomcat
 4. install Project Lombok (run JAR file and follow the installer)

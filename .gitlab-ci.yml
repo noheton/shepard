@@ -1,4 +1,4 @@
-image: maven:3-openjdk-11
+image: maven:3-eclipse-temurin-17
 
 variables:
   MAVEN_CLI_OPTS: "--batch-mode"
@@ -29,6 +29,10 @@ stages:
 .version_number: &version_number
   - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
   - echo ${VERSION_NUMBER}
+
+.download_openapi_generator: &download_openapi_generator
+  - apt-get update && apt-get install -y wget
+  - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
 
 format-prettier:
   stage: test
@@ -158,7 +162,7 @@ build_pythonclient:
   dependencies: [build]
   before_script:
     - *version_number
-    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+    - *download_openapi_generator
   script:
     - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g python-legacy -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
@@ -187,7 +191,7 @@ build_typescriptclient:
   dependencies: [build]
   before_script:
     - *version_number
-    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+    - *download_openapi_generator
   script:
     - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
   artifacts:
@@ -221,7 +225,7 @@ build_javaclient:
   dependencies: [build]
   before_script:
     - *version_number
-    - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
+    - *download_openapi_generator
   script:
     - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}-SNAPSHOT
   artifacts:

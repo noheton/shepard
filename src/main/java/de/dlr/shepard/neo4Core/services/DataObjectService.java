@@ -75,7 +75,7 @@ public class DataObjectService {
 	public List<DataObject> getAllDataObjects(long collectionId, QueryParamHelper params) {
 		var unfiltered = dataObjectDAO.findByCollection(collectionId, params);
 
-		var dataObjects = unfiltered.stream().peek(this::cutDeleted).collect(Collectors.toList());
+		var dataObjects = unfiltered.stream().peek(this::cutDeleted).toList();
 
 		return dataObjects;
 	}
@@ -127,20 +127,18 @@ public class DataObjectService {
 	}
 
 	private void cutDeleted(DataObject dataObject) {
-		var incoming = dataObject.getIncoming().stream().filter(i -> !i.isDeleted()).collect(Collectors.toList());
+		var incoming = dataObject.getIncoming().stream().filter(i -> !i.isDeleted()).toList();
 		dataObject.setIncoming(incoming);
 		if (dataObject.getParent() != null && dataObject.getParent().isDeleted()) {
 			dataObject.setParent(null);
 		}
-		var children = dataObject.getChildren().stream().filter(s -> !s.isDeleted()).collect(Collectors.toList());
+		var children = dataObject.getChildren().stream().filter(s -> !s.isDeleted()).toList();
 		dataObject.setChildren(children);
-		var predecessors = dataObject.getPredecessors().stream().filter(s -> !s.isDeleted())
-				.collect(Collectors.toList());
+		var predecessors = dataObject.getPredecessors().stream().filter(s -> !s.isDeleted()).toList();
 		dataObject.setPredecessors(predecessors);
-		var sucessors = dataObject.getSuccessors().stream().filter(s -> !s.isDeleted()).collect(Collectors.toList());
+		var sucessors = dataObject.getSuccessors().stream().filter(s -> !s.isDeleted()).toList();
 		dataObject.setSuccessors(sucessors);
-		var references = dataObject.getReferences().stream().filter(ref -> !ref.isDeleted())
-				.collect(Collectors.toList());
+		var references = dataObject.getReferences().stream().filter(ref -> !ref.isDeleted()).toList();
 		dataObject.setReferences(references);
 	}
 
