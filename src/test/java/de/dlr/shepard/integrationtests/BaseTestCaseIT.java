@@ -30,10 +30,24 @@ public class BaseTestCaseIT {
 		userIO = new UserIO(credentials.getUser());
 	}
 
+	protected static UserWithApiKey getNewUserWithApiKey(String username) {
+		PrepareDatabase prepareDatabase = new PrepareDatabase(username);
+		return prepareDatabase.getUserWithApiKey();
+	}
+
 	protected static CollectionIO createCollection(String name) {
 		var collectionsURL = String.format("%s/collections/", baseURL);
 		var collectionSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(collectionsURL).addHeader("X-API-KEY", jws).build();
+		var collection = given().spec(collectionSpecification).body(Map.of("name", name)).when().post().then()
+				.statusCode(201).extract().as(CollectionIO.class);
+		return collection;
+	}
+
+	protected static CollectionIO createCollection(String name, UserWithApiKey userWithApiKey) {
+		var collectionsURL = String.format("%s/collections/", baseURL);
+		var collectionSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(collectionsURL).addHeader("X-API-KEY", userWithApiKey.getApiKey().getJws()).build();
 		var collection = given().spec(collectionSpecification).body(Map.of("name", name)).when().post().then()
 				.statusCode(201).extract().as(CollectionIO.class);
 		return collection;

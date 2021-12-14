@@ -8,6 +8,7 @@ import de.dlr.shepard.exceptions.ApiError;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.PermissionType;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
@@ -94,11 +95,19 @@ public class PermissionsFilter implements ContainerRequestFilter {
 			return false;
 		}
 
-		if (readerMethods.contains(requestContext.getMethod())
-				&& perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername())))
-			// Is reader
+		if ((readerMethods.contains(requestContext.getMethod()) || writerMethods.contains(requestContext.getMethod()))
+				&& PermissionType.Public.equals(perms.getPermissionType()))
 			return true;
-		else if (writerMethods.contains(requestContext.getMethod())
+
+		if (readerMethods.contains(requestContext.getMethod())
+				&& PermissionType.PublicReadable.equals(perms.getPermissionType()))
+			return true;
+
+		if (readerMethods.contains(requestContext.getMethod())) {
+			if (perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername())))
+				// Is reader
+				return true;
+		} else if (writerMethods.contains(requestContext.getMethod())
 				&& perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername())))
 			// Is writer
 			return true;

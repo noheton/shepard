@@ -20,6 +20,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.GracePeriodUtil;
+import de.dlr.shepard.util.PermissionType;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.SecurityContext;
@@ -195,6 +196,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setOwner(new User("different"));
+				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -208,6 +210,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setManager(List.of(new User("principal")));
+				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(pathSeg.getPath()).thenReturn("permissions");
@@ -232,6 +235,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setReader(List.of(new User("principal")));
+				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -244,6 +248,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 	@Test
 	public void filterTest_NoReader() {
 		var perms = new Permissions();
+		perms.setPermissionType(PermissionType.Private);
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
 		when(context.getMethod()).thenReturn("GET");
 
@@ -256,6 +261,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setWriter(List.of(new User("principal")));
+				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -268,6 +274,18 @@ public class PermissionsFilterTest extends BaseTestCase {
 	@Test
 	public void filterTest_NoWriter() {
 		var perms = new Permissions();
+		perms.setPermissionType(PermissionType.Private);
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("POST");
+
+		filter.filter(context);
+		verify(context).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_NullPermission() {
+		var perms = new Permissions();
+		perms.setPermissionType(null);
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
 		when(context.getMethod()).thenReturn("POST");
 

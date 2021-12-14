@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionService {
@@ -36,7 +37,7 @@ public class CollectionService {
 		toCreate.setName(collection.getName());
 
 		var created = collectionDAO.createOrUpdate(toCreate);
-		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
 		return created;
 	}
 

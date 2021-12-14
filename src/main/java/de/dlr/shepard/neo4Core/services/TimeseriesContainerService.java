@@ -13,6 +13,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class TimeseriesContainerService {
@@ -40,7 +41,7 @@ public class TimeseriesContainerService {
 		toCreate.setName(timeseriesContainer.getName());
 
 		var created = timeseriesContainerDAO.createOrUpdate(toCreate);
-		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
 		return created;
 	}
 

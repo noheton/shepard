@@ -28,6 +28,7 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 
 public class TimeseriesContainerServiceTest extends BaseTestCase {
 
@@ -126,7 +127,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createTimeseriesContainer(input, "bob");
 		assertEquals(created, actual);
-		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
 
 	@Test

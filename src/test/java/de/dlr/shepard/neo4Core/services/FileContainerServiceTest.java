@@ -27,6 +27,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 
 public class FileContainerServiceTest extends BaseTestCase {
 
@@ -125,7 +126,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createFileContainer(input, "bob");
 		assertEquals(created, actual);
-		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
 
 	@Test

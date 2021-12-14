@@ -25,7 +25,15 @@ public class PrepareDatabase {
 
 	public PrepareDatabase() {
 		session = openSession();
-		var user = generateUser();
+		var user = generateUser("test_it");
+		var apiKey = generateApiKey(user);
+		sessionFactory.close();
+		this.userWithApiKey = new UserWithApiKey(user, apiKey);
+	}
+
+	public PrepareDatabase(String username) {
+		session = openSession();
+		var user = generateUser(username);
 		var apiKey = generateApiKey(user);
 		sessionFactory.close();
 		this.userWithApiKey = new UserWithApiKey(user, apiKey);
@@ -55,11 +63,11 @@ public class PrepareDatabase {
 		return jws;
 	}
 
-	private User generateUser() {
-		User user = session.load(User.class, "test_it", 2);
+	private User generateUser(String userName) {
+		User user = session.load(User.class, userName, 2);
 
 		if (user == null) {
-			user = new User("test_it");
+			user = new User(userName);
 		}
 		user.setFirstName("Integration");
 		user.setLastName("Test");

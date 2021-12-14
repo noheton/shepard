@@ -45,6 +45,7 @@ public class PermissionsService {
 	 */
 	public Permissions updatePermissions(PermissionsIO permissions, long entityId) {
 		var owner = permissions.getOwner() != null ? userDAO.find(permissions.getOwner()) : null;
+		var permissionType = permissions.getPermissionType();
 		var reader = fetchUsers(permissions.getReader());
 		var writer = fetchUsers(permissions.getWriter());
 		var manager = fetchUsers(permissions.getManager());
@@ -52,13 +53,14 @@ public class PermissionsService {
 		var old = getPermissionsByEntity(entityId);
 		if (old == null) {
 			// There is no old permissions object
-			var toCreate = new Permissions(owner, reader, writer, manager);
+			var toCreate = new Permissions(owner, reader, writer, manager, permissions.getPermissionType());
 			return permissionsDAO.createWithEntity(toCreate, entityId);
 		}
 		old.setOwner(owner);
 		old.setReader(reader);
 		old.setWriter(writer);
 		old.setManager(manager);
+		old.setPermissionType(permissionType);
 		return permissionsDAO.createOrUpdate(old);
 
 	}

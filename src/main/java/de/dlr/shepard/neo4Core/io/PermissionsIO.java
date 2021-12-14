@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.util.PermissionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +19,8 @@ public class PermissionsIO {
 
 	private String owner;
 
+	private PermissionType permissionType;
+
 	@NotNull
 	private String[] reader;
 
@@ -29,6 +32,7 @@ public class PermissionsIO {
 
 	public PermissionsIO(Permissions permissions) {
 		this.entityId = permissions.getEntity().getId();
+		this.permissionType = permissions.getPermissionType();
 		this.owner = permissions.getOwner() != null ? permissions.getOwner().getUsername() : null;
 		this.reader = permissions.getReader().stream().map(User::getUsername).toArray(String[]::new);
 		this.writer = permissions.getWriter().stream().map(User::getUsername).toArray(String[]::new);

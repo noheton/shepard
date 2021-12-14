@@ -28,6 +28,7 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 
 public class StructuredDataContainerServiceTest extends BaseTestCase {
 
@@ -126,7 +127,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		var actual = service.createStructuredDataContainer(input, "bob");
 		assertEquals(created, actual);
-		verify(permissionsDAO).createOrUpdate(new Permissions(created, user));
+		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
 
 	@Test

@@ -13,6 +13,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class StructuredDataContainerService {
@@ -41,7 +42,7 @@ public class StructuredDataContainerService {
 		toCreate.setName(structuredDataContainerIO.getName());
 
 		var created = structuredDataContainerDAO.createOrUpdate(toCreate);
-		permissionsDAO.createOrUpdate(new Permissions(created, user));
+		permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
 		return created;
 	}
 
