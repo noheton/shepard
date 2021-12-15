@@ -27,13 +27,13 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 @Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.STRUCTUREDDATAS)
-@Log4j2
+@Slf4j
 public class StructuredDataRestImpl implements StructuredDataRest {
 	private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
 	private PermissionsService permissionsService = new PermissionsService();

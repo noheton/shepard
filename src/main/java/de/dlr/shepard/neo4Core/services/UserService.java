@@ -2,9 +2,9 @@ package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.User;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public class UserService {
 	private UserDAO userDAO = new UserDAO();
 

@@ -21,11 +21,11 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 import lombok.NoArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 @Subscribable
 @Provider
-@Log4j2
+@Slf4j
 @NoArgsConstructor
 public class SubscriptionFilter implements ContainerResponseFilter {
 

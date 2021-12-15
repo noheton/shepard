@@ -1,6 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.dlr.shepard</groupId>
 	<artifactId>backend</artifactId>
@@ -43,14 +41,15 @@
 		<assertj.version>3.21.0</assertj.version>
 		<bind-api.version>3.0.1</bind-api.version>
 		<commons.version>2.11.0</commons.version>
-		<equalsverifier.version>3.8</equalsverifier.version>
+		<equalsverifier.version>3.8.1</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.22</influxdb.version>
+		<janino.version>3.1.6</janino.version>
 		<jaxb-impl.version>3.0.2</jaxb-impl.version>
 		<jersey.version>3.0.3</jersey.version>
 		<jjwt.version>0.11.2</jjwt.version>
 		<junit.version>5.8.2</junit.version>
-		<log4j.version>2.16.0</log4j.version>
+		<logback.version>1.2.8</logback.version>
 		<lombok.version>1.18.22</lombok.version>
 		<mockito.version>4.1.0</mockito.version>
 		<mongodb.version>4.4.0</mongodb.version>
@@ -70,18 +69,21 @@
 			</activation>
 			<properties>
 				<build.profile.id>dev</build.profile.id>
+				<logging.appender>STDOUT</logging.appender>
 			</properties>
 		</profile>
 		<profile>
 			<id>test</id>
 			<properties>
 				<build.profile.id>test</build.profile.id>
+				<logging.appender>STDOUT</logging.appender>
 			</properties>
 		</profile>
 		<profile>
 			<id>prod</id>
 			<properties>
 				<build.profile.id>prod</build.profile.id>
+				<logging.appender>FILE</logging.appender>
 			</properties>
 		</profile>
 	</profiles>
@@ -447,25 +449,18 @@
 		</dependency>
 
 		<!-- ####### LOGGING ####### -->
+		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.codehaus.janino/janino -->
 		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-web</artifactId>
-			<version>${log4j.version}</version>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
+			<version>${janino.version}</version>
 		</dependency>
 
 		<!-- ####### TESTS ####### -->

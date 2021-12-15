@@ -8,14 +8,14 @@ import org.neo4j.ogm.session.SessionFactory;
 
 import de.dlr.shepard.util.IConnector;
 import de.dlr.shepard.util.PropertiesHelper;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Connector for read and write access to the Neo4J database. The class
  * represents the lowest level of data access to the Neo4J database.
  *
  */
-@Log4j2
+@Slf4j
 public class NeoConnector implements IConnector {
 	private static SessionFactory sessionFactory = null;
 	private static NeoConnector instance = null;

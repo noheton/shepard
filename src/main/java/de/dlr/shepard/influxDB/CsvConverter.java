@@ -14,9 +14,9 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvFieldAssignmentException;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public class CsvConverter {
 
 	public InputStream convertToCsv(List<TimeseriesPayload> payloads) throws IOException {

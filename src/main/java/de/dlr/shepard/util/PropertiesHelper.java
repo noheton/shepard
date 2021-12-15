@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public class PropertiesHelper {
 	private final String PROPERTIES = "db.properties";
 
@@ -18,7 +18,7 @@ public class PropertiesHelper {
 		try (var resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(PROPERTIES);) {
 			propertiesFile.load(resourceAsStream);
 		} catch (IOException e) {
-			log.fatal("IOException while reading properties file");
+			log.error("IOException while reading properties file");
 		}
 	}
 

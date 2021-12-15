@@ -12,9 +12,9 @@ import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public abstract class GenericDAO<T> {
 	protected static final int DEPTH_ENTITY = 1;
 

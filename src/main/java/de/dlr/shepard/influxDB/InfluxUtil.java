@@ -14,9 +14,9 @@ import org.influxdb.dto.Point.Builder;
 import org.influxdb.dto.QueryResult;
 
 import de.dlr.shepard.util.Constants;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public final class InfluxUtil {
 
 	private InfluxUtil() {

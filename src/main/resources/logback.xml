@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<configuration>
+
+	<if condition='"${logging.appender}".equals("STDOUT")'>
+		<then>
+			<appender name="appender"
+				class="ch.qos.logback.core.ConsoleAppender">
+				<encoder>
+					<pattern>%d{HH:mm:ss.SSS} %-5level %logger{15} - %msg%n</pattern>
+				</encoder>
+			</appender>
+		</then>
+		<else>
+			<appender name="appender"
+				class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<file>logs/shepard.log</file>
+				<rollingPolicy
+					class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<fileNamePattern>
+						logs/shepard.%d{yyyy-MM-dd}.log
+					</fileNamePattern>
+					<maxHistory>60</maxHistory>
+				</rollingPolicy>
+
+				<encoder>
+					<pattern>%d{HH:mm:ss.SSS} %-5level %logger{15} - %msg%n</pattern>
+				</encoder>
+			</appender>
+		</else>
+	</if>
+
+	<root level="info">
+		<appender-ref ref="appender" />
+	</root>
+</configuration>

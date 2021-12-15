@@ -10,10 +10,10 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 @Provider
-@Log4j2
+@Slf4j
 public class UrlPathCheckerFilter implements ContainerRequestFilter {
 
 	@Override

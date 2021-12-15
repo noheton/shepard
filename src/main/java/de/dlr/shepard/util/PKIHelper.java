@@ -14,9 +14,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public class PKIHelper {
 
 	public static final String PUBLIC = "public.key";
@@ -38,19 +38,19 @@ public class PKIHelper {
 		try {
 			publicKey = importPublicKey();
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-			log.fatal("Exception while reading public key specification: {}", e);
+			log.error("Exception while reading public key specification: {}", e);
 		}
 
 		try {
 			privateKey = importPrivateKey();
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-			log.fatal("Exception while reading private key specification: {}", e.toString());
+			log.error("Exception while reading private key specification: {}", e.toString());
 		}
 	}
 
 	private void generateKeyPairIfNecessary() {
 		if (keysDir.exists() && keysDir.isFile()) {
-			log.fatal("keys directory is a file, cannot create keys");
+			log.error("keys directory is a file, cannot create keys");
 			return;
 		} else if (!keysDir.exists()) {
 			log.info("keys directory does not exist, creating...");
@@ -67,7 +67,7 @@ public class PKIHelper {
 		try {
 			generateKeyPair();
 		} catch (NoSuchAlgorithmException | IOException e) {
-			log.fatal("Error while generating keys: {}", e.toString());
+			log.error("Error while generating keys: {}", e.toString());
 		}
 	}
 

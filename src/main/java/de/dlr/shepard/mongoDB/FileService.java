@@ -13,9 +13,9 @@ import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 public class FileService {
 
 	private static final int CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MiB
