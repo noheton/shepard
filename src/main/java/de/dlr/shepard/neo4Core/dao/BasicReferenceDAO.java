@@ -63,7 +63,7 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 		return false;
 	}
 
-	public long getPredecessorDataObjectId(long referenceId) {
+	public long getDataObjectId(long referenceId) {
 		String query = "MATCH (d:DataObject)-[has_reference]->(r) WHERE id(r) = " + referenceId + " RETURN id(d)";
 		Result idResult = session.query(query, Collections.emptyMap());
 		Map<String, Object> map = idResult.iterator().next();

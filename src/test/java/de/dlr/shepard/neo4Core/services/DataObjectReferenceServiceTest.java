@@ -203,4 +203,18 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
 		assertEquals(referenced, actual);
 	}
+
+	@Test
+	public void getPayloadTest_Deleted() {
+		var referenced = new DataObject(100L);
+		referenced.setDeleted(true);
+		var reference = new DataObjectReference(1L);
+		reference.setReferencedDataObject(referenced);
+
+		when(dao.find(1L)).thenReturn(reference);
+		when(dataObjectDAO.find(100L)).thenReturn(referenced);
+		var actual = service.getPayload(1L);
+
+		assertNull(actual);
+	}
 }

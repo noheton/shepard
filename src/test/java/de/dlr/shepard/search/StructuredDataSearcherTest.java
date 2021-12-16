@@ -112,7 +112,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(firstDocument);
-		when(basicReferenceDAO.getPredecessorDataObjectId(1L)).thenReturn(3L);
+		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
 		// define expected values
 		HashSet<StructuredDataReference> expectedRet = new HashSet<StructuredDataReference>();
 		expectedRet.add(structuredDataReference1);
@@ -175,7 +175,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(firstDocument);
-		when(basicReferenceDAO.getPredecessorDataObjectId(1L)).thenReturn(3L);
+		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
 		// define expected values
 		HashSet<StructuredDataReference> expectedRet = new HashSet<StructuredDataReference>();
 		expectedRet.add(structuredDataReference1);

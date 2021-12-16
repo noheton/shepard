@@ -1,16 +1,20 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
@@ -46,9 +50,10 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) \
+				WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper();
@@ -74,9 +79,10 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) \
+				WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -102,10 +108,11 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC "
-				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) \
+				WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -132,10 +139,11 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size "
-				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) \
+				WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -160,10 +168,11 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", null);
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: false }) \
+				WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -193,10 +202,11 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size "
-				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) \
+				WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -224,10 +234,11 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) "
-				+ "WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN r, nodes(path), relationships(path)";
+		var query = """
+				MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: false }) \
+				WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -236,5 +247,20 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		var actual = dao.findByDataObject(1L, params);
 		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void getDataObjectIdTest() {
+		var query = "MATCH (d:DataObject)-[has_reference]->(r) WHERE id(r) = 5 RETURN id(d)";
+
+		var iterator = mock(Iterator.class);
+		when(iterator.next()).thenReturn(Map.of("id(d)", 123L));
+		var result = mock(Result.class);
+		when(result.iterator()).thenReturn(iterator);
+		when(session.query(query, Collections.emptyMap())).thenReturn(result);
+
+		var actual = dao.getDataObjectId(5L);
+		assertEquals(123L, actual);
 	}
 }

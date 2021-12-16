@@ -41,9 +41,10 @@ public class PermissionsDAOTest extends BaseTestCase {
 	@Test
 	public void findByEntityTest() {
 		var perm = new Permissions(1L);
-		String query = "MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 "
-				+ "MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN p, nodes(path), relationships(path)";
+		String query = """
+				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
 		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(List.of(perm));
 		var actual = dao.findByEntity(1L);
 		verify(session).query(Permissions.class, query, Collections.emptyMap());
@@ -52,9 +53,10 @@ public class PermissionsDAOTest extends BaseTestCase {
 
 	@Test
 	public void findByEntityTest_notFound() {
-		String query = "MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 "
-				+ "MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN p, nodes(path), relationships(path)";
+		String query = """
+				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
 		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(Collections.emptyList());
 		var actual = dao.findByEntity(1L);
 		verify(session).query(Permissions.class, query, Collections.emptyMap());

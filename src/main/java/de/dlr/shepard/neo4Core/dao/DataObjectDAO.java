@@ -119,10 +119,10 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			return true;
 		} else if (id == -1) {
 			// return true if there is no related object or all objects are deleted
-			return related.stream().allMatch(d -> d.isDeleted());
+			return related.stream().allMatch(DataObject::isDeleted);
 		} else {
 			// return true if at least one related object that is not deleted matches the ID
-			return related.stream().anyMatch(d -> (!d.isDeleted() && d.getId().equals(id)));
+			return related.stream().anyMatch(d -> !d.isDeleted() && d.getId().equals(id));
 		}
 	}
 

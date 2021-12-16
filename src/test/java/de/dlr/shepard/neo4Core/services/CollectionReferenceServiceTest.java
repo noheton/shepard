@@ -206,4 +206,18 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 
 		assertEquals(referenced, actual);
 	}
+
+	@Test
+	public void getPayloadTest_Deleted() {
+		var referenced = new Collection(100L);
+		referenced.setDeleted(true);
+		var reference = new CollectionReference(1L);
+		reference.setReferencedCollection(referenced);
+
+		when(dao.find(1L)).thenReturn(reference);
+		when(collectionDAO.find(100L)).thenReturn(referenced);
+		var actual = service.getPayload(1L);
+
+		assertNull(actual);
+	}
 }

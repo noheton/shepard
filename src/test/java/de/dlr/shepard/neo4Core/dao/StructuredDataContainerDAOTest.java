@@ -38,10 +38,11 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer { deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -57,11 +58,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer { deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c ORDER BY toLower(c.name) DESC "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c ORDER BY toLower(c.name) DESC \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -81,10 +83,11 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { name : $name, deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -102,11 +105,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c ORDER BY toLower(c.name) DESC "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { name : $name, deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c ORDER BY toLower(c.name) DESC \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -126,11 +130,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer { deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c SKIP $offset LIMIT $size \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -148,11 +153,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", null);
 
-		var query = "MATCH (c:StructuredDataContainer { deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -174,11 +180,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { name : $name, deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c SKIP $offset LIMIT $size \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -198,11 +205,12 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 		paramsMap.put("name", "Yes");
 
-		var query = "MATCH (c:StructuredDataContainer { name : $name, deleted: false }) "
-				+ "WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) "
-				+ "WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN c, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:StructuredDataContainer { name : $name, deleted: false }) \
+				WHERE NOT exists((c)-[:has_permissions]->(:Permissions)) OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
+				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");

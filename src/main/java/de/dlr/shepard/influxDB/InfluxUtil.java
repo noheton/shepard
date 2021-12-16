@@ -97,12 +97,12 @@ public final class InfluxUtil {
 			Object value = influxPoint.getValue();
 			if ("string".equalsIgnoreCase(expectedType)) {
 				pointBuilder.addField(timeseries.getField(), value.toString());
-			} else if (value instanceof String) {
-				pointBuilder.addField(timeseries.getField(), (String) value);
-			} else if (value instanceof Number) {
-				pointBuilder.addField(timeseries.getField(), ((Number) value).doubleValue());
-			} else if (value instanceof Boolean) {
-				pointBuilder.addField(timeseries.getField(), (Boolean) value);
+			} else if (value instanceof String stringValue) {
+				pointBuilder.addField(timeseries.getField(), stringValue);
+			} else if (value instanceof Number numberValue) {
+				pointBuilder.addField(timeseries.getField(), numberValue.doubleValue());
+			} else if (value instanceof Boolean booleanValue) {
+				pointBuilder.addField(timeseries.getField(), booleanValue);
 			} else {
 				pointBuilder.addField(timeseries.getField(), value.toString());
 			}

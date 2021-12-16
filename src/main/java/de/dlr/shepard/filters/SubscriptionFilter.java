@@ -56,8 +56,8 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 				RequestMethod.valueOf(requestContext.getMethod()));
 
 		Object entity = responseContext.getEntity();
-		if (entity instanceof HasId) {
-			event.setSubscribedObject(new HasIdIO((HasId) entity));
+		if (entity instanceof HasId hasId) {
+			event.setSubscribedObject(new HasIdIO(hasId));
 		}
 
 		List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());

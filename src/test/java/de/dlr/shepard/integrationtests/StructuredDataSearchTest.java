@@ -37,7 +37,6 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 	private static DataObjectIO rootObject;
 	private static DataObjectIO firstChild;
 	private static DataObjectIO secondChild;
-	private static DataObjectIO firstChildFirstGrandchild;
 	private static DataObjectIO secondChildFirstGrandchild;
 	private static DataObjectIO cyclicSuccessor;
 	private static DataObjectIO firstSuccessor;
@@ -64,8 +63,6 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		rootObject = createDataObject("RootDataObject", collection.getId());
 		firstChild = createDataObjectWithParent("firstChild", collection.getId(), rootObject.getId());
 		secondChild = createDataObjectWithParent("secondChild", collection.getId(), rootObject.getId());
-		firstChildFirstGrandchild = createDataObjectWithParent("firstChildFirstGrandchild", collection.getId(),
-				firstChild.getId());
 		secondChildFirstGrandchild = createDataObjectWithParent("secondChildFirstGrandchild", collection.getId(),
 				secondChild.getId());
 		long[] firstPredecessorIDs = { firstChild.getId(), secondChild.getId() };
@@ -366,15 +363,6 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 				.as(StructuredDataContainerIO.class);
 	}
 
-	private static StructuredData createStructuredData(String name, long containerID, StructuredDataPayload payload) {
-		containerURL = String.format("%s/structureddatas", baseURL);
-		StructuredData structuredDataToCreate = new StructuredData();
-		structuredDataToCreate.setName(name);
-		return given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, containerID)).then().statusCode(201).extract()
-				.as(StructuredData.class);
-	}
-
 	private static StructuredData createStructuredData(StructuredData structuredDataToCreate, long containerID,
 			StructuredDataPayload payload) {
 		containerURL = String.format("%s/structureddatas", baseURL);
@@ -410,8 +398,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		putURL = putURL + "/" + dataObjectToChangeID;
 		RequestSpecification putSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(putURL).addHeader("X-API-KEY", jws).build();
-		DataObjectIO changeResult = given().spec(putSpecification).body(changedDataObject).when().put(putURL).then()
-				.statusCode(200).extract().as(DataObjectIO.class);
+		given().spec(putSpecification).body(changedDataObject).when().put(putURL).then().statusCode(200);
 	}
 
 }

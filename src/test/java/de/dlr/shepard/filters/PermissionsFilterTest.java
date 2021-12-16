@@ -196,7 +196,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setOwner(new User("different"));
-				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -210,7 +209,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setManager(List.of(new User("principal")));
-				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(pathSeg.getPath()).thenReturn("permissions");
@@ -235,7 +233,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setReader(List.of(new User("principal")));
-				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -248,7 +245,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 	@Test
 	public void filterTest_NoReader() {
 		var perms = new Permissions();
-		perms.setPermissionType(PermissionType.Private);
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
 		when(context.getMethod()).thenReturn("GET");
 
@@ -261,7 +257,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 		var perms = new Permissions() {
 			{
 				setWriter(List.of(new User("principal")));
-				setPermissionType(PermissionType.Private);
 			}
 		};
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
@@ -274,7 +269,6 @@ public class PermissionsFilterTest extends BaseTestCase {
 	@Test
 	public void filterTest_NoWriter() {
 		var perms = new Permissions();
-		perms.setPermissionType(PermissionType.Private);
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
 		when(context.getMethod()).thenReturn("POST");
 
@@ -285,12 +279,81 @@ public class PermissionsFilterTest extends BaseTestCase {
 	@Test
 	public void filterTest_NullPermission() {
 		var perms = new Permissions();
-		perms.setPermissionType(null);
 		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
 		when(context.getMethod()).thenReturn("POST");
 
 		filter.filter(context);
 		verify(context).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_TypePrivate() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.Private);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("GET");
+
+		filter.filter(context);
+		verify(context).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_TypeReadable() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.PublicReadable);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("GET");
+
+		filter.filter(context);
+		verify(context, never()).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_TypeReadableWrite() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.PublicReadable);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("POST");
+
+		filter.filter(context);
+		verify(context).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_TypePublic() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.Public);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("GET");
+
+		filter.filter(context);
+		verify(context, never()).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_TypePublicWrite() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.Public);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(context.getMethod()).thenReturn("POST");
+
+		filter.filter(context);
+		verify(context, never()).abortWith(any());
 	}
 
 }

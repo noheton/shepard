@@ -174,26 +174,17 @@ public abstract class GenericDAO<T> {
 	}
 
 	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long startId) {
-		String ret = "";
-		switch (traversalRule) {
-		case children:
-			ret = "MATCH path = (d:DataObject)-[:has_child*0..]->(e:DataObject)-[hr:has_reference]->";
-			break;
-		case parents:
-			ret = "MATCH path = (d:DataObject)<-[:has_child*0..]-(e:DataObject)-[hr:has_reference]->";
-			break;
-		case successors:
-			ret = "MATCH path = (d:DataObject)-[:has_successor*0..]->(e:DataObject)-[hr:has_reference]->";
-			break;
-		case predecessors:
-			ret = "MATCH path = (d:DataObject)<-[:has_successor*0..]-(e:DataObject)-[hr:has_reference]->";
-			break;
-		}
-		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
+		String ret = "MATCH path = ";
+		ret = ret + switch (traversalRule) {
+		case children -> "(d:DataObject)-[:has_child*0..]->(e:DataObject)";
+		case parents -> "(d:DataObject)<-[:has_child*0..]-(e:DataObject)";
+		case successors -> "(d:DataObject)-[:has_successor*0..]->(e:DataObject)";
+		case predecessors -> "(d:DataObject)<-[:has_successor*0..]-(e:DataObject)";
+		};
+		ret = ret + "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
 		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
-		String returnPart = getReturnPart("ret", false);
-		ret = ret + returnPart;
+		ret = ret + getReturnPart("ret", false);
 		return ret;
 	}
 

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
+import de.dlr.shepard.search.SearchScope;
 import de.dlr.shepard.search.Searcher;
 import de.dlr.shepard.util.Constants;
 import jakarta.ws.rs.Consumes;
@@ -37,7 +38,7 @@ public class SearchRestImpl implements SearchRest {
 		var principal = securityContext.getUserPrincipal();
 		log.info("Received SEARCH REQUEST from user {}", principal.getName());
 
-		Set<Long> collectionIds = Arrays.stream(body.getScopes()).map(s -> s.getCollectionId())
+		Set<Long> collectionIds = Arrays.stream(body.getScopes()).map(SearchScope::getCollectionId)
 				.collect(Collectors.toSet());
 		boolean allowed = collectionIds.stream().allMatch(id -> allowedToRead(id, principal.getName()));
 		if (!allowed)

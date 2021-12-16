@@ -21,22 +21,24 @@ public class CsvConverterTest extends BaseTestCase {
 	private Timeseries ts2 = new Timeseries("meas2", "dev2", "loc2", "sym2", "field2");
 	private Timeseries ts3 = new Timeseries("meas2", "dev2", "loc2", "sym2", "field3");
 
-	private String csv = "\"DEVICE\",\"FIELD\",\"LOCATION\",\"MEASUREMENT\",\"SYMBOLICNAME\",\"TIMESTAMP\",\"VALUE\"\n"
-			+ "\"dev\",\"field\",\"loc\",\"meas\",\"sym\",\"123\",\"string\"\n"
-			+ "\"dev\",\"field\",\"loc\",\"meas\",\"sym\",\"234\",\"123\"\n"
-			+ "\"dev\",\"field\",\"loc\",\"meas\",\"sym\",\"345\",\"true\"\n"
-			+ "\"dev\",\"field\",\"loc\",\"meas\",\"sym\",\"465\",\"another string\"\n"
-			+ "\"dev\",\"field\",\"loc\",\"meas\",\"sym\",\"567\",\"\"\n"
-			+ "\"dev2\",\"field2\",\"loc2\",\"meas2\",\"sym2\",\"123\",\"string\"\n"
-			+ "\"dev2\",\"field2\",\"loc2\",\"meas2\",\"sym2\",\"234\",\"123\"\n"
-			+ "\"dev2\",\"field2\",\"loc2\",\"meas2\",\"sym2\",\"345\",\"true\"\n"
-			+ "\"dev2\",\"field2\",\"loc2\",\"meas2\",\"sym2\",\"465\",\"another string\"\n"
-			+ "\"dev2\",\"field2\",\"loc2\",\"meas2\",\"sym2\",\"567\",\"\"\n"
-			+ "\"dev2\",\"field3\",\"loc2\",\"meas2\",\"sym2\",\"123\",\"string\"\n"
-			+ "\"dev2\",\"field3\",\"loc2\",\"meas2\",\"sym2\",\"234\",\"123\"\n"
-			+ "\"dev2\",\"field3\",\"loc2\",\"meas2\",\"sym2\",\"345\",\"true\"\n"
-			+ "\"dev2\",\"field3\",\"loc2\",\"meas2\",\"sym2\",\"465\",\"another string\"\n"
-			+ "\"dev2\",\"field3\",\"loc2\",\"meas2\",\"sym2\",\"567\",\"\"\n";
+	private String csv = """
+			"DEVICE","FIELD","LOCATION","MEASUREMENT","SYMBOLICNAME","TIMESTAMP","VALUE"
+			"dev","field","loc","meas","sym","123","string"
+			"dev","field","loc","meas","sym","234","123"
+			"dev","field","loc","meas","sym","345","true"
+			"dev","field","loc","meas","sym","465","another string"
+			"dev","field","loc","meas","sym","567",""
+			"dev2","field2","loc2","meas2","sym2","123","string"
+			"dev2","field2","loc2","meas2","sym2","234","123"
+			"dev2","field2","loc2","meas2","sym2","345","true"
+			"dev2","field2","loc2","meas2","sym2","465","another string"
+			"dev2","field2","loc2","meas2","sym2","567",""
+			"dev2","field3","loc2","meas2","sym2","123","string"
+			"dev2","field3","loc2","meas2","sym2","234","123"
+			"dev2","field3","loc2","meas2","sym2","345","true"
+			"dev2","field3","loc2","meas2","sym2","465","another string"
+			"dev2","field3","loc2","meas2","sym2","567",""
+			""";
 
 	@Test
 	public void toCsvTest() throws IOException {

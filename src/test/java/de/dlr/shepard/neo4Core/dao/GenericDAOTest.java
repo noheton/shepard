@@ -245,8 +245,8 @@ public class GenericDAOTest extends BaseTestCase {
 
 	@Test
 	public void getReadableByPartTest() {
-		var actual = dao.getReadableByPart("n", "bob");
 		var query = "WHERE NOT exists((n)-[:has_permissions]->(:Permissions)) OR exists((n)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" }))";
+		var actual = dao.getReadableByPart("n", "bob");
 		assertEquals(query, actual);
 	}
 
@@ -255,7 +255,8 @@ public class GenericDAOTest extends BaseTestCase {
 		TraversalRules children = TraversalRules.children;
 		long StartId = 1L;
 		String childrenQuery = "MATCH path = (d:DataObject)-[:has_child*0..]->(e:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 and NONE(node IN ns WHERE (node.deleted = TRUE)) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-		assertEquals(dao.getSearchForReachableReferencesQuery(children, StartId), childrenQuery);
+		var actual = dao.getSearchForReachableReferencesQuery(children, StartId);
+		assertEquals(childrenQuery, actual);
 	}
 
 	@Test
@@ -263,7 +264,8 @@ public class GenericDAOTest extends BaseTestCase {
 		TraversalRules parents = TraversalRules.parents;
 		long StartId = 1L;
 		String parentsQuery = "MATCH path = (d:DataObject)<-[:has_child*0..]-(e:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 and NONE(node IN ns WHERE (node.deleted = TRUE)) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-		assertEquals(dao.getSearchForReachableReferencesQuery(parents, StartId), parentsQuery);
+		var actual = dao.getSearchForReachableReferencesQuery(parents, StartId);
+		assertEquals(parentsQuery, actual);
 	}
 
 	@Test
@@ -271,7 +273,8 @@ public class GenericDAOTest extends BaseTestCase {
 		TraversalRules predecessors = TraversalRules.predecessors;
 		long StartId = 1L;
 		String predecessorsQuery = "MATCH path = (d:DataObject)<-[:has_successor*0..]-(e:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 and NONE(node IN ns WHERE (node.deleted = TRUE)) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-		assertEquals(dao.getSearchForReachableReferencesQuery(predecessors, StartId), predecessorsQuery);
+		var actual = dao.getSearchForReachableReferencesQuery(predecessors, StartId);
+		assertEquals(predecessorsQuery, actual);
 	}
 
 	@Test
@@ -279,14 +282,16 @@ public class GenericDAOTest extends BaseTestCase {
 		TraversalRules successors = TraversalRules.successors;
 		long StartId = 1L;
 		String successorsQuery = "MATCH path = (d:DataObject)-[:has_successor*0..]->(e:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 and NONE(node IN ns WHERE (node.deleted = TRUE)) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-		assertEquals(dao.getSearchForReachableReferencesQuery(successors, StartId), successorsQuery);
+		var actual = dao.getSearchForReachableReferencesQuery(successors, StartId);
+		assertEquals(successorsQuery, actual);
 	}
 
 	@Test
 	public void getSearchForReachableReferencesQueryStartIdTest() {
 		long StartId = 1L;
 		String startIdQuery = "MATCH path = (d:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 and NONE(node IN ns WHERE (node.deleted = TRUE)) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-		assertEquals(dao.getSearchForReachableReferencesQuery(StartId), startIdQuery);
+		var actual = dao.getSearchForReachableReferencesQuery(StartId);
+		assertEquals(startIdQuery, actual);
 	}
 
 }

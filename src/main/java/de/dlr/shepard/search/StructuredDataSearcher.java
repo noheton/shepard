@@ -61,7 +61,7 @@ public class StructuredDataSearcher implements ISearcher {
 			ResultTriple resultTriple = new ResultTriple();
 			resultTriple.setCollectionId(searchBody.getScopes()[0].getCollectionId());
 			resultTriple.setReferenceId(matchingReferenceId);
-			resultTriple.setDataObjectId(basicReferenceDAO.getPredecessorDataObjectId(matchingReferenceId));
+			resultTriple.setDataObjectId(basicReferenceDAO.getDataObjectId(matchingReferenceId));
 			resultTriples[i] = resultTriple;
 			i++;
 		}

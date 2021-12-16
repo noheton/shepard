@@ -53,10 +53,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->"
-				+ "(d:DataObject { deleted: false }) WHERE ID(c)=100 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->\
+				(d:DataObject { deleted: false }) WHERE ID(c)=100 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper();
@@ -79,10 +80,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper();
@@ -109,10 +111,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -137,10 +140,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -162,10 +166,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d2.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->"
-				+ "(d:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->\
+				(d:DataObject { name : $name, deleted: false }) WHERE ID(c)=100 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -185,10 +190,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d2.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) \
+				WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -213,10 +219,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) \
+				WHERE ID(c)=100 WITH d SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -239,10 +246,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) \
+				WHERE ID(c)=100 WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -273,10 +281,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L);
@@ -298,10 +307,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withParentId(1L);
@@ -331,11 +341,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(parent)=1 WITH d ORDER BY toLower(d.name) DESC "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(parent)=1 WITH d ORDER BY toLower(d.name) DESC \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(1L);
@@ -368,10 +379,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L);
@@ -400,10 +412,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
-				+ "WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) \
+				WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L);
@@ -429,10 +442,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
@@ -456,11 +470,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d3.setName("No");
 		Map<String, Object> paramsMap = Map.of("name", "Yes");
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(parent)=1 WITH d ORDER BY toLower(d.name) DESC "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(parent)=1 WITH d ORDER BY toLower(d.name) DESC \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
 		var params = new QueryParamHelper().withParentId(1L).withName("Yes");
@@ -485,11 +500,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(parent)=1 WITH d SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(parent)=1 WITH d SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
@@ -512,11 +528,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 "
-				+ "WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 \
+				WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100);
@@ -546,11 +563,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(parent)=1 WITH d SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(parent)=1 WITH d SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
@@ -578,11 +596,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })"
-				+ "<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 "
-				+ "WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false })\
+				<-[:has_child]-(parent:DataObject {deleted: false}) WHERE ID(c)=100 AND ID(parent)=1 \
+				WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
 		var params = new QueryParamHelper().withParentId(1L).withPageAndSize(3, 100).withName("Yes");
@@ -616,11 +635,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
-				+ "WITH d SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) \
+				WITH d SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
@@ -652,11 +672,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		paramsMap.put("offset", 300);
 		paramsMap.put("size", 100);
 
-		String query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) "
-				+ "WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		String query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false})) \
+				WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
 		var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
@@ -677,11 +698,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d.addPredecessor(pre);
 		d.setCollection(c);
 
-		var query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "<-[:has_successor]-(predecessor:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(predecessor)=201 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				<-[:has_successor]-(predecessor:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(predecessor)=201 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
@@ -703,10 +725,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d2.addPredecessor(d2);
 		d2.setCollection(c);
 
-		var query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: false})) WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: false})) WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
@@ -728,11 +751,12 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d.addSuccessor(suc);
 		d.setCollection(c);
 
-		var query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })"
-				+ "-[:has_successor]->(successor:DataObject {deleted: false}) "
-				+ "WHERE ID(c)=100 AND ID(successor)=201 WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false })\
+				-[:has_successor]->(successor:DataObject {deleted: false}) \
+				WHERE ID(c)=100 AND ID(successor)=201 WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 
@@ -754,10 +778,11 @@ public class DataObjectDAOTest extends BaseTestCase {
 		d.addPredecessor(d2);
 		d.setCollection(c);
 
-		var query = "MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) "
-				+ "WHERE ID(c)=100 AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: false})) WITH d "
-				+ "MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL "
-				+ "RETURN d, nodes(path), relationships(path)";
+		var query = """
+				MATCH (c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: false }) \
+				WHERE ID(c)=100 AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: false})) WITH d \
+				MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				RETURN d, nodes(path), relationships(path)""";
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", null);
 

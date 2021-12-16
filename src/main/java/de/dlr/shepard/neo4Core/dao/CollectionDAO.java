@@ -66,10 +66,10 @@ public class CollectionDAO extends GenericDAO<Collection> {
 		collection.setUpdatedAt(updatedAt);
 		collection.setDeleted(true);
 		createOrUpdate(collection);
-		String query = String
-				.format("MATCH (c:Collection) WHERE ID(c) = %d OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) "
-						+ "OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) "
-						+ "FOREACH (n in [c,d,r] | SET n.deleted = true)", id);
+		String query = String.format("""
+				MATCH (c:Collection) WHERE ID(c) = %d OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
+				OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
+				FOREACH (n in [c,d,r] | SET n.deleted = true)""", id);
 		var result = runQuery(query, Collections.emptyMap());
 		return result;
 	}
