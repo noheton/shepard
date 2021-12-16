@@ -13,7 +13,7 @@ For more information about shepard, its usage and infrastructure, check out [the
 ## System requirements
 
 Depending on how you plan to use shepard, the system requirements can vary greatly.
-While most services are relatively lightweight, the databases and Shepard backend can be quite demanding.
+While most services are relatively lightweight, the databases and shepard backend can be quite demanding.
 As a starting point, 8 GB of memory per service may be sufficient.
 Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads.
 The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
@@ -94,12 +94,15 @@ You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
 
 ## Update
 
-Database upgrades may require manual intervention.
+Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/deployment/-/merge_requests?scope=all&state=merged&label_name[]=Breaking%20Change) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
+
+Database upgrades may also require manual intervention.
 What exactly needs to be adjusted can be found in the respective changelogs.
 The shepard backend can handle a relatively wide range of database versions.
 Therefore, it is possible to sit out database upgrades for some time and still update shepard.
-This repository will always use the latest versions of the databases in use which have been successfully tested to work with shepard.
-Be careful when you notice that versions of databases have changed and check the respective changelogs whether manual intervention is required or not.
+This repository will always use a recent version of the respective databases that have been successfully tested to work with shepard.
+
+The upgrade process consists of shutting down the docker containers, updating the git repository, and restarting the docker containers again.
 
 ```bash
 docker-compose down
@@ -108,3 +111,25 @@ git pull
 docker-compose pull
 docker-compose up -d
 ```
+
+## Troubleshooting
+
+### Check for Breaking Changes
+
+Sometimes the installation does not work as expected or the system does not boot after an update.
+In these cases, you should check for `Breaking Changes` again, as you might have missed an important change.
+
+### Review your configuration
+
+Verify that the configuration meets the given requirements.
+The file must have the name `.env` and all variables from `env.example` must be set.
+Also look at the provided URLs and the trailing slashes, as there are some specific requirements.
+
+### Read the logs
+
+Most containers log to STDOUT.
+Therefore, you can observe the logs via `docker-compose logs <containername>`.
+The shepard backend also uses this method, but additionally writes to log files.
+These log files contain detailed log messages from the system and may contain important information about an issue.
+You can find the log files at `/opt/shepard/backend/tomcat/` unless you have changed the default location.
+The file `shepard.log` contains all logs since the last startup or rollover.
