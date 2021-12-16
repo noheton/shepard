@@ -67,10 +67,11 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 4. Check configuration in `docker-compose.yml` and especially check available memory
 5. Copy the file `env.example` to `.env` and set passwords and configuration in this file
    - All variables must be set!
-   - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com`, do not append a trailing slash)
+   - URLs have to end with a trailing slash
+   - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com/`)
    - The database passwords can be changed arbitrarily at the beginning
    - `OIDC_PUBLIC` is the public key of the oidc identity provider (e.g. keycloak)
-   - `OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`, the trailing slash is important)
+   - `OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`)
    - `CLIENT_ID` is the client ID of the frontend as known to the oidc identity provider.
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
 
@@ -123,7 +124,7 @@ In these cases, you should check for `Breaking Changes` again, as you might have
 
 Verify that the configuration meets the given requirements.
 The file must have the name `.env` and all variables from `env.example` must be set.
-Also look at the provided URLs and the trailing slashes, as there are some specific requirements.
+Also look at the provided URLs, as most URLs must end with a trailing slash.
 
 ### Read the logs
 
