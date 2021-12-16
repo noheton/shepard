@@ -9,7 +9,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class URIReferenceService {
 
 	private URIReferenceDAO dao = new URIReferenceDAO();
@@ -25,6 +27,7 @@ public class URIReferenceService {
 	public URIReference getURIReference(long uriReferenceId) {
 		var reference = dao.find(uriReferenceId);
 		if (reference == null || reference.isDeleted()) {
+			log.error("URI Reference with id {} is null or deleted", uriReferenceId);
 			return null;
 		}
 		return reference;

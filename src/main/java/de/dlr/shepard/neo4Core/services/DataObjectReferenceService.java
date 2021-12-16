@@ -10,7 +10,9 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DataObjectReferenceService {
 	private DataObjectReferenceDAO dataObjectReferenceDAO = new DataObjectReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
@@ -25,6 +27,7 @@ public class DataObjectReferenceService {
 	public DataObjectReference getDataObjectReference(long dataObjectReferenceId) {
 		var reference = dataObjectReferenceDAO.find(dataObjectReferenceId);
 		if (reference == null || reference.isDeleted()) {
+			log.error("Data Object Reference with id {} is null or deleted", dataObjectReferenceId);
 			return null;
 		}
 		return reference;
@@ -68,8 +71,10 @@ public class DataObjectReferenceService {
 	public DataObject getPayload(long dataObjectReferenceId) {
 		var reference = dataObjectReferenceDAO.find(dataObjectReferenceId);
 		var dataObject = dataObjectDAO.find(reference.getReferencedDataObject().getId());
-		if (dataObject.isDeleted())
+		if (dataObject.isDeleted()) {
+			log.error("Data Object with id {} is deleted", reference.getReferencedDataObject().getId());
 			return null;
+		}
 		return dataObject;
 	}
 

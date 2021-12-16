@@ -11,7 +11,9 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DataObjectService {
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private CollectionDAO collectionDAO = new CollectionDAO();
@@ -58,6 +60,7 @@ public class DataObjectService {
 	public DataObject getDataObject(long id) {
 		var dataObject = dataObjectDAO.find(id);
 		if (dataObject == null || dataObject.isDeleted()) {
+			log.error("Data Object with id {} is null or deleted", id);
 			return null;
 		}
 		cutDeleted(dataObject);

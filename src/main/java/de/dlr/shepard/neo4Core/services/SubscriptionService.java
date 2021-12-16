@@ -13,9 +13,9 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.RequestMethod;
-import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-@NoArgsConstructor
+@Slf4j
 public class SubscriptionService {
 	private SubscriptionDAO subscriptionDAO = new SubscriptionDAO();
 	private UserDAO userDAO = new UserDAO();
@@ -23,7 +23,7 @@ public class SubscriptionService {
 
 	/**
 	 * Creates an Subscription and stores it in Neo4J
-	 * 
+	 *
 	 * @param subscription to be stored
 	 * @param username     of the related user
 	 * @return the stored Subscription with the auto generated id
@@ -43,18 +43,22 @@ public class SubscriptionService {
 
 	/**
 	 * Searches the neo4j database for an Subscription
-	 * 
+	 *
 	 * @param id identifies the searched Subscription
 	 * @return the Subscription with the given id
 	 */
 	public Subscription getSubscription(long id) {
 		Subscription subscription = subscriptionDAO.find(id);
+		if (subscription == null) {
+			log.error("Subscription with id {} is null", id);
+			return null;
+		}
 		return subscription;
 	}
 
 	/**
 	 * Updates an Subscription with new attributes
-	 * 
+	 *
 	 * @param id           identifies the subscription
 	 * @param subscription contains the new attributes.
 	 * @return the old Subscription with updated attributes.
@@ -71,7 +75,7 @@ public class SubscriptionService {
 
 	/**
 	 * Delete the given subscription
-	 * 
+	 *
 	 * @param subscriptionId identifies the Subscription to be deleted
 	 * @return a boolean to identify if the Subscription was successfully removed
 	 */
@@ -81,7 +85,7 @@ public class SubscriptionService {
 
 	/**
 	 * Searches the database for subscriptions.
-	 * 
+	 *
 	 * @param username The name of the user
 	 * @return a List of Subscriptions
 	 */
@@ -95,7 +99,7 @@ public class SubscriptionService {
 
 	/**
 	 * Return all subscriptions matching a given request.
-	 * 
+	 *
 	 * @param method The request method to match against
 	 * @return A list of matching subscriptions
 	 */

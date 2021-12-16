@@ -11,7 +11,9 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.CollectionReference;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CollectionReferenceService {
 	private CollectionReferenceDAO collectionReferenceDAO = new CollectionReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
@@ -27,6 +29,7 @@ public class CollectionReferenceService {
 	public CollectionReference getCollectionReference(long collectionReferenceId) {
 		var reference = collectionReferenceDAO.find(collectionReferenceId);
 		if (reference == null || reference.isDeleted()) {
+			log.error("Collection Reference with id {} is null or deleted", collectionReferenceId);
 			return null;
 		}
 		return reference;
@@ -70,8 +73,10 @@ public class CollectionReferenceService {
 	public Collection getPayload(long dataObjectReferenceId) {
 		var reference = collectionReferenceDAO.find(dataObjectReferenceId);
 		var collection = collectionDAO.find(reference.getReferencedCollection().getId());
-		if (collection.isDeleted())
+		if (collection.isDeleted()) {
+			log.error("Collection with id {} is deleted", reference.getReferencedCollection().getId());
 			return null;
+		}
 		return collection;
 	}
 

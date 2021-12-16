@@ -11,7 +11,9 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CollectionService {
 
 	private CollectionDAO collectionDAO = new CollectionDAO();
@@ -50,6 +52,7 @@ public class CollectionService {
 	public Collection getCollection(long id) {
 		var collection = collectionDAO.find(id);
 		if (collection == null || collection.isDeleted()) {
+			log.error("Collection with id {} is null or deleted", id);
 			return null;
 		}
 		cutDeleted(collection);

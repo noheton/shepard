@@ -22,7 +22,7 @@ public class ApiKeyService {
 
 	/**
 	 * Searches the neo4j database for all ApiKeys associated with a given user.
-	 * 
+	 *
 	 * @param username Identifies the associated user
 	 * @return The list of ApiKeys associated with the given user
 	 */
@@ -36,7 +36,7 @@ public class ApiKeyService {
 
 	/**
 	 * Searches the neo4j database for an ApiKey
-	 * 
+	 *
 	 * @param apiKeyUid Identifies the ApiKey to be searched
 	 * @return The ApiKey with the given uid or null
 	 */
@@ -46,7 +46,7 @@ public class ApiKeyService {
 
 	/**
 	 * Creates an ApiKey and stores it in neo4j
-	 * 
+	 *
 	 * @param apiKey   The ApiKey to be stored
 	 * @param username The user who wants to create an apiKey
 	 * @param baseUri  The current Uri
@@ -67,7 +67,7 @@ public class ApiKeyService {
 
 	/**
 	 * Deletes an ApiKey from neo4j
-	 * 
+	 *
 	 * @param apiKeyUid Identifies the ApiKey to be deleted
 	 * @return A boolean to identify whether the ApiKey was successfully removed
 	 */
@@ -81,7 +81,7 @@ public class ApiKeyService {
 	 * "subject", the URL of this backend software as the JWT claim "issuer", the id
 	 * of the apiKey as the JWT claim "id" and the current date for the JWT claims
 	 * "not before" and "issued at".
-	 * 
+	 *
 	 * @param apiKey  The apiKey for which the JSON Web Token should be generated.
 	 * @param baseUri Contains the context of the request in order to set JWT claim
 	 *                "issuer"

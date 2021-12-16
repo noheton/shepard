@@ -17,7 +17,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TimeseriesReferenceService {
 	private TimeseriesReferenceDAO timeseriesReferenceDAO = new TimeseriesReferenceDAO();
 	private TimeseriesService timeseriesService = new TimeseriesService();
@@ -31,9 +33,10 @@ public class TimeseriesReferenceService {
 		return references;
 	}
 
-	public TimeseriesReference getTimeseriesReference(long timeseriesId) {
-		var reference = timeseriesReferenceDAO.find(timeseriesId);
+	public TimeseriesReference getTimeseriesReference(long id) {
+		var reference = timeseriesReferenceDAO.find(id);
 		if (reference == null || reference.isDeleted()) {
+			log.error("Timeseries Reference with id {} is null or deleted", id);
 			return null;
 		}
 		return reference;

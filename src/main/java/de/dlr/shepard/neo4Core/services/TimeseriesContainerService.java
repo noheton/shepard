@@ -15,7 +15,9 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TimeseriesContainerService {
 
 	private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
@@ -54,6 +56,7 @@ public class TimeseriesContainerService {
 	public TimeseriesContainer getTimeseriesContainer(long id) {
 		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(id);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", id);
 			return null;
 		}
 		return timeseriesContainer;
@@ -97,17 +100,19 @@ public class TimeseriesContainerService {
 	/**
 	 * Saves timeseries payload in a timeseries container.
 	 *
-	 * @param timeseriesId identifies the TimeseriesContainer
-	 * @param payload      TimeseriesPayload to be created
+	 * @param timeseriesContainerId identifies the TimeseriesContainer
+	 * @param payload               TimeseriesPayload to be created
 	 * @return created timeseries
 	 */
-	public Timeseries createTimeseries(long timeseriesId, TimeseriesPayload payload) {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
+	public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload) {
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
 		var result = timeseriesService.createTimeseries(timeseriesContainer.getDatabase(), payload);
 		if (result != "") {
+			log.error("Failed to create timeseries with error: {}", result);
 			return null;
 		}
 		return payload.getTimeseries();
@@ -116,18 +121,19 @@ public class TimeseriesContainerService {
 	/**
 	 * Loads timeseries payload from a timeseries container.
 	 *
-	 * @param timeseriesId    identifies the TimeseriesContainer
-	 * @param timeseries      The timeseries to load
-	 * @param start           The beginning of the timeseries
-	 * @param end             The end of the timeseries
-	 * @param function        The aggregate function
-	 * @param groupByInterval The time interval measurements get grouped by
+	 * @param timeseriesContainerId identifies the TimeseriesContainer
+	 * @param timeseries            The timeseries to load
+	 * @param start                 The beginning of the timeseries
+	 * @param end                   The end of the timeseries
+	 * @param function              The aggregate function
+	 * @param groupByInterval       The time interval measurements get grouped by
 	 * @return TimeseriesPayload
 	 */
-	public TimeseriesPayload getTimeseries(long timeseriesId, Timeseries timeseries, long start, long end,
+	public TimeseriesPayload getTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
 			AggregateFunction function, Long groupByInterval) {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesId);
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
 		var result = timeseriesService.getTimeseries(start, end, timeseriesContainer.getDatabase(), timeseries,

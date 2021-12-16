@@ -68,6 +68,7 @@ public class StructuredDataReferenceService {
 	public StructuredDataReference getStructuredDataReference(long id) {
 		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.find(id);
 		if (structuredDataReference == null || structuredDataReference.isDeleted()) {
+			log.error("Structured Data Reference with id {} is null or deleted", id);
 			return null;
 		}
 		return structuredDataReference;

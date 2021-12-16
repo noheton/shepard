@@ -15,7 +15,9 @@ import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StructuredDataContainerService {
 
 	private StructuredDataContainerDAO structuredDataContainerDAO = new StructuredDataContainerDAO();
@@ -55,6 +57,7 @@ public class StructuredDataContainerService {
 	public StructuredDataContainer getStructuredDataContainer(long id) {
 		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.find(id);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
+			log.error("Structured Data Container with id {} is null or deleted", id);
 			return null;
 		}
 		return structuredDataContainer;
@@ -105,8 +108,10 @@ public class StructuredDataContainerService {
 	public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload)
 			throws InvalidBodyException {
 		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
-		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
+		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
+			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
 			return null;
+		}
 		var result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
 		structuredDataContainer.addStructuredData(result);
 		structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
@@ -123,8 +128,10 @@ public class StructuredDataContainerService {
 	 */
 	public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
 		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
-		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
+		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
+			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
 			return null;
+		}
 		var result = structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);
 		return result;
 	}

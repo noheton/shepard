@@ -15,7 +15,9 @@ import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class FileContainerService {
 
 	private FileContainerDAO fileContainerDAO = new FileContainerDAO();
@@ -53,6 +55,7 @@ public class FileContainerService {
 	public FileContainer getFileContainer(long id) {
 		FileContainer fileContainer = fileContainerDAO.find(id);
 		if (fileContainer == null || fileContainer.isDeleted()) {
+			log.error("File Container with id {} is null or deleted", id);
 			return null;
 		}
 		return fileContainer;
@@ -100,8 +103,10 @@ public class FileContainerService {
 	 */
 	public NamedInputStream getFile(long fileContainerId, String oid) {
 		var container = fileContainerDAO.find(fileContainerId);
-		if (container == null || container.isDeleted())
+		if (container == null || container.isDeleted()) {
+			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;
+		}
 		var result = fileService.getPayload(container.getMongoId(), oid);
 		return result;
 	}
@@ -109,15 +114,17 @@ public class FileContainerService {
 	/**
 	 * Create a new file
 	 *
-	 * @param fileId      identifies the file container
-	 * @param fileName    the name of the new file
-	 * @param inputStream the file itself
+	 * @param fileContainerId identifies the file container
+	 * @param fileName        the name of the new file
+	 * @param inputStream     the file itself
 	 * @return The newly created file
 	 */
-	public File createFile(long fileId, String fileName, InputStream inputStream) {
-		var fileContainer = fileContainerDAO.find(fileId);
-		if (fileContainer == null || fileContainer.isDeleted())
+	public File createFile(long fileContainerId, String fileName, InputStream inputStream) {
+		var fileContainer = fileContainerDAO.find(fileContainerId);
+		if (fileContainer == null || fileContainer.isDeleted()) {
+			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;
+		}
 		var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
 		fileContainer.addFile(result);
 		fileContainerDAO.createOrUpdate(fileContainer);

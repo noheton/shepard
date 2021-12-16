@@ -33,6 +33,7 @@ public class FileReferenceService {
 	public FileReference getFileReference(long id) {
 		FileReference fileReference = fileReferenceDAO.find(id);
 		if (fileReference == null || fileReference.isDeleted()) {
+			log.error("File Reference with id {} is null or deleted", id);
 			return null;
 		}
 		return fileReference;

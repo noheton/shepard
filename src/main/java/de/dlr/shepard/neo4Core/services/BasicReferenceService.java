@@ -7,7 +7,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class BasicReferenceService {
 
 	private BasicReferenceDAO basicReferenceDAO = new BasicReferenceDAO();
@@ -24,6 +26,7 @@ public class BasicReferenceService {
 	public BasicReference getBasicReference(long id) {
 		BasicReference basicReference = basicReferenceDAO.find(id);
 		if (basicReference == null || basicReference.isDeleted()) {
+			log.error("Basic Reference with id {} is null or deleted", id);
 			return null;
 		}
 		return basicReference;

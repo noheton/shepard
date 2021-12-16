@@ -8,7 +8,9 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PermissionsService {
 
 	private PermissionsDAO permissionsDAO = new PermissionsDAO();
@@ -22,6 +24,10 @@ public class PermissionsService {
 	 */
 	public Permissions getPermissionsByEntity(long entityId) {
 		var permissions = permissionsDAO.findByEntity(entityId);
+		if (permissions == null) {
+			log.error("Permissions with entity id {} is null", entityId);
+			return null;
+		}
 		return permissions;
 	}
 
