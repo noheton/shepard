@@ -245,7 +245,7 @@ public class GenericDAOTest extends BaseTestCase {
 
 	@Test
 	public void getReadableByPartTest() {
-		var query = "WHERE NOT exists((n)-[:has_permissions]->(:Permissions)) OR exists((n)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" }))";
+		var query = "WHERE NOT exists((n)-[:has_permissions]->(:Permissions)) OR exists((n)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) OR exists((n)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((n)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"}))";
 		var actual = dao.getReadableByPart("n", "bob");
 		assertEquals(query, actual);
 	}

@@ -167,9 +167,11 @@ public abstract class GenericDAO<T> {
 	}
 
 	protected String getReadableByPart(String variable, String username) {
-		String ret = String.format(
-				"WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" }))",
-				variable, variable, username);
+		String ret = String.format("WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) "
+				+ "OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) "
+				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) "
+				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"}))", variable,
+				variable, username, variable, variable);
 		return ret;
 	}
 
