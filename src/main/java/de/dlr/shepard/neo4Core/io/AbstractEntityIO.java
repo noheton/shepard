@@ -34,7 +34,7 @@ public abstract class AbstractEntityIO implements HasId {
 	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
 	private String updatedBy;
 
-	public AbstractEntityIO(AbstractEntity entity) {
+	protected AbstractEntityIO(AbstractEntity entity) {
 		this.id = entity.getId();
 		this.createdAt = entity.getCreatedAt();
 		this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;

@@ -26,7 +26,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
 
 	private static final int FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
 
-	private static GracePeriodUtil lastSeen;
+	private final GracePeriodUtil lastSeen;
 
 	public PermissionsFilter() {
 		lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);

@@ -34,13 +34,13 @@ public class FileContainerIOTest extends BaseTestCase {
 		obj.setUpdatedBy(updateUser);
 
 		var converted = new FileContainerIO(obj);
-		assertEquals(converted.getCreatedAt(), date);
-		assertEquals(converted.getCreatedBy(), "bob");
-		assertEquals(converted.getId(), 1L);
-		assertEquals(converted.getName(), "name");
-		assertEquals(converted.getOid(), "oid");
-		assertEquals(converted.getUpdatedAt(), update);
-		assertEquals(converted.getUpdatedBy(), "claus");
+		assertEquals(date, converted.getCreatedAt());
+		assertEquals("bob", converted.getCreatedBy());
+		assertEquals(1L, converted.getId());
+		assertEquals("name", converted.getName());
+		assertEquals("oid", converted.getOid());
+		assertEquals(update, converted.getUpdatedAt());
+		assertEquals("claus", converted.getUpdatedBy());
 	}
 
 }

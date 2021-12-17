@@ -111,7 +111,7 @@ public class TimeseriesContainerService {
 			return null;
 		}
 		var result = timeseriesService.createTimeseries(timeseriesContainer.getDatabase(), payload);
-		if (result != "") {
+		if (!result.isBlank()) {
 			log.error("Failed to create timeseries with error: {}", result);
 			return null;
 		}

@@ -35,12 +35,12 @@ public class StructuredDataContainerIOTest extends BaseTestCase {
 
 		var converted = new StructuredDataContainerIO(obj);
 		assertEquals(converted.getCreatedAt(), date);
-		assertEquals(converted.getCreatedBy(), "bob");
-		assertEquals(converted.getId(), 1L);
-		assertEquals(converted.getName(), "name");
-		assertEquals(converted.getOid(), "mongoid");
-		assertEquals(converted.getUpdatedAt(), update);
-		assertEquals(converted.getUpdatedBy(), "claus");
+		assertEquals("bob", converted.getCreatedBy());
+		assertEquals(1L, converted.getId());
+		assertEquals("name", converted.getName());
+		assertEquals("mongoid", converted.getOid());
+		assertEquals(update, converted.getUpdatedAt());
+		assertEquals("claus", converted.getUpdatedBy());
 	}
 
 }

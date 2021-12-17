@@ -31,7 +31,7 @@ public abstract class AbstractMongoObject implements HasId {
 	 *
 	 * @param oid Object Identifier
 	 */
-	public AbstractMongoObject(String oid) {
+	protected AbstractMongoObject(String oid) {
 		this.oid = oid;
 	}
 

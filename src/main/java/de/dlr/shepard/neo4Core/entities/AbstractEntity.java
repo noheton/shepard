@@ -45,7 +45,7 @@ public abstract class AbstractEntity implements HasId {
 	 *
 	 * @param id identifies the entity
 	 */
-	public AbstractEntity(long id) {
+	protected AbstractEntity(long id) {
 		this.id = id;
 	}
 

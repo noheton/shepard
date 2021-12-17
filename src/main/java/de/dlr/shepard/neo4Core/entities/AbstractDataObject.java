@@ -27,7 +27,7 @@ public abstract class AbstractDataObject extends AbstractEntity {
 	 *
 	 * @param id identifies the entity
 	 */
-	public AbstractDataObject(long id) {
+	protected AbstractDataObject(long id) {
 		super(id);
 	}
 

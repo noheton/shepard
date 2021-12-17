@@ -77,7 +77,7 @@ public class DataObjectService {
 	public List<DataObject> getAllDataObjects(long collectionId, QueryParamHelper params) {
 		var unfiltered = dataObjectDAO.findByCollection(collectionId, params);
 
-		var dataObjects = unfiltered.stream().peek(this::cutDeleted).toList();
+		var dataObjects = unfiltered.stream().map(this::cutDeleted).toList();
 
 		return dataObjects;
 	}
@@ -128,7 +128,7 @@ public class DataObjectService {
 		return result;
 	}
 
-	private void cutDeleted(DataObject dataObject) {
+	private DataObject cutDeleted(DataObject dataObject) {
 		var incoming = dataObject.getIncoming().stream().filter(i -> !i.isDeleted()).toList();
 		dataObject.setIncoming(incoming);
 		if (dataObject.getParent() != null && dataObject.getParent().isDeleted()) {
@@ -142,6 +142,7 @@ public class DataObjectService {
 		dataObject.setSuccessors(sucessors);
 		var references = dataObject.getReferences().stream().filter(ref -> !ref.isDeleted()).toList();
 		dataObject.setReferences(references);
+		return dataObject;
 	}
 
 	private List<DataObject> findRelatedDataObjects(long collectionId, long[] ids) throws InvalidBodyException {

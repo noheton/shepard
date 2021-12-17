@@ -25,7 +25,7 @@ public abstract class AbstractDataObjectIO extends AbstractEntityIO {
 
 	private Map<String, String> attributes = new HashMap<>();
 
-	public AbstractDataObjectIO(AbstractDataObject dataObject) {
+	protected AbstractDataObjectIO(AbstractDataObject dataObject) {
 		super(dataObject);
 		this.name = dataObject.getName();
 		this.description = dataObject.getDescription();

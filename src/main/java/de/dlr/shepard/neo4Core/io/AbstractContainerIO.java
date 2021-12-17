@@ -17,7 +17,7 @@ public abstract class AbstractContainerIO extends AbstractEntityIO {
 	@Schema(nullable = true)
 	private String name;
 
-	public AbstractContainerIO(AbstractContainer container) {
+	protected AbstractContainerIO(AbstractContainer container) {
 		super(container);
 		this.name = container.getName();
 	}

@@ -98,7 +98,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 		requestSpecification1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws1).build();
 		var answer = given().spec(requestSpecification1).when().get(collectionsURL + "/" + collection1.getId());
-		assertEquals(answer.statusCode(), 200);
+		assertEquals(200, answer.statusCode());
 	}
 
 	@Test
@@ -107,7 +107,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws2).build();
 		var answer = given().spec(requestSpecification2).when().get(collectionsURL + "/" + collection1.getId());
-		assertEquals(answer.statusCode(), 403);
+		assertEquals(403, answer.statusCode());
 	}
 
 	@Test
@@ -128,7 +128,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws2).build();
 		var answer = given().spec(requestSpecification2).when().get(collectionsURL + "/" + collection1.getId());
-		assertEquals(answer.statusCode(), 200);
+		assertEquals(200, answer.statusCode());
 	}
 
 	@Test
@@ -138,7 +138,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws2).build();
 		var answer = given().spec(requestSpecification2).body(collection1).when()
 				.put(collectionsURL + "/" + collection1.getId());
-		assertEquals(answer.statusCode(), 403);
+		assertEquals(403, answer.statusCode());
 	}
 
 	@Test
@@ -160,7 +160,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws2).build();
 		var answer = given().spec(requestSpecification2).body(collection1).when()
 				.put(collectionsURL + "/" + collection1.getId());
-		assertEquals(answer.statusCode(), 200);
+		assertEquals(200, answer.statusCode());
 	}
 
 	@Test
@@ -181,7 +181,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 		requestSpecification1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws1).build();
 		var answer = given().spec(requestSpecification1).when().get(collectionsURL + "/" + collection2.getId());
-		assertEquals(answer.statusCode(), 200);
+		assertEquals(200, answer.statusCode());
 	}
 
 	@Test
@@ -203,7 +203,7 @@ public class PermissionsTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws1).build();
 		var answer = given().spec(requestSpecification1).body(collection2).when()
 				.put(collectionsURL + "/" + collection2.getId());
-		assertEquals(answer.statusCode(), 200);
+		assertEquals(200, answer.statusCode());
 	}
 
 }

@@ -26,7 +26,7 @@ public class UserFilter implements ContainerRequestFilter {
 
 	private static final int THIRTY_MINUTES_IN_MILLIS = 30 * 60 * 1000;
 
-	private static GracePeriodUtil lastSeen;
+	private final GracePeriodUtil lastSeen;
 
 	public UserFilter() {
 		lastSeen = new GracePeriodUtil(THIRTY_MINUTES_IN_MILLIS);

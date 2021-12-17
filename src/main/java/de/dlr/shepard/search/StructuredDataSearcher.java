@@ -77,7 +77,6 @@ public class StructuredDataSearcher implements ISearcher {
 		SearchScope[] searchScopes = searchBody.getScopes();
 		for (SearchScope searchScope : searchScopes)
 			ret.addAll(getAllStructuredaDataReferencesFromScope(searchScope));
-		System.out.println("ret.size: " + ret.size());
 		return ret;
 	}
 

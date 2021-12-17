@@ -131,11 +131,11 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 1);
-		assertEquals(result.getResultSet()[0].getCollectionId(), collection.getId());
-		assertEquals(result.getResultSet()[0].getDataObjectId(), secondChild.getId());
-		assertEquals(result.getResultSet()[0].getReferenceId(), reference.getId());
-		assertEquals(result.getSearchParams().getQuery(), query);
+		assertEquals(1, result.getResultSet().length);
+		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
+		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
+		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
+		assertEquals(query, result.getSearchParams().getQuery());
 	}
 
 	@Test
@@ -156,7 +156,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 0);
+		assertEquals(0, result.getResultSet().length);
 	}
 
 	@Test
@@ -177,10 +177,10 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 1);
-		assertEquals(result.getResultSet()[0].getCollectionId(), collection.getId());
-		assertEquals(result.getResultSet()[0].getDataObjectId(), secondChild.getId());
-		assertEquals(result.getResultSet()[0].getReferenceId(), reference.getId());
+		assertEquals(1, result.getResultSet().length);
+		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
+		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
+		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
 	}
 
 	@Test
@@ -201,7 +201,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 0);
+		assertEquals(0, result.getResultSet().length);
 	}
 
 	@Test
@@ -222,10 +222,10 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 1);
-		assertEquals(result.getResultSet()[0].getCollectionId(), collection.getId());
-		assertEquals(result.getResultSet()[0].getDataObjectId(), secondChild.getId());
-		assertEquals(result.getResultSet()[0].getReferenceId(), reference.getId());
+		assertEquals(1, result.getResultSet().length);
+		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
+		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
+		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
 	}
 
 	@Test
@@ -246,10 +246,10 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 1);
-		assertEquals(result.getResultSet()[0].getCollectionId(), collection.getId());
-		assertEquals(result.getResultSet()[0].getDataObjectId(), firstSuccessor.getId());
-		assertEquals(result.getResultSet()[0].getReferenceId(), referenceSuccessor.getId());
+		assertEquals(1, result.getResultSet().length);
+		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
+		assertEquals(firstSuccessor.getId(), result.getResultSet()[0].getDataObjectId());
+		assertEquals(referenceSuccessor.getId(), result.getResultSet()[0].getReferenceId());
 	}
 
 	@Test
@@ -270,7 +270,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 2);
+		assertEquals(2, result.getResultSet().length);
 		HashSet<ResultTriple> resultTriples = new HashSet<ResultTriple>();
 		resultTriples.add(result.getResultSet()[0]);
 		resultTriples.add(result.getResultSet()[1]);
@@ -303,7 +303,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 1);
+		assertEquals(1, result.getResultSet().length);
 	}
 
 	@Test
@@ -325,7 +325,7 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(result.getResultSet().length, 0);
+		assertEquals(0, result.getResultSet().length);
 	}
 
 	private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {

@@ -34,13 +34,13 @@ public class TimeseriesContainerIOTest extends BaseTestCase {
 		obj.setUpdatedBy(updateUser);
 
 		var converted = new TimeseriesContainerIO(obj);
-		assertEquals(converted.getCreatedAt(), date);
-		assertEquals(converted.getCreatedBy(), "bob");
-		assertEquals(converted.getDatabase(), "Database");
-		assertEquals(converted.getId(), 1L);
-		assertEquals(converted.getName(), "name");
-		assertEquals(converted.getUpdatedAt(), update);
-		assertEquals(converted.getUpdatedBy(), "claus");
+		assertEquals(date, converted.getCreatedAt());
+		assertEquals("bob", converted.getCreatedBy());
+		assertEquals("Database", converted.getDatabase());
+		assertEquals(1L, converted.getId());
+		assertEquals("name", converted.getName());
+		assertEquals(update, converted.getUpdatedAt());
+		assertEquals("claus", converted.getUpdatedBy());
 	}
 
 }

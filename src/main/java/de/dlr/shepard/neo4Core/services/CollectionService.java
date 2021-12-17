@@ -69,7 +69,7 @@ public class CollectionService {
 	public List<Collection> getAllCollections(QueryParamHelper params, String username) {
 		var queryResult = collectionDAO.findAllCollections(params, username);
 
-		var collections = queryResult.stream().peek(this::cutDeleted).toList();
+		var collections = queryResult.stream().map(this::cutDeleted).toList();
 
 		return collections;
 	}
@@ -112,13 +112,9 @@ public class CollectionService {
 		return result;
 	}
 
-	/**
-	 * Remove deleted DataObjects from collection
-	 *
-	 * @param collection The collection to remove deleted DataObjects from
-	 */
-	private void cutDeleted(Collection collection) {
+	private Collection cutDeleted(Collection collection) {
 		var dataObjects = collection.getDataObjects().stream().filter(d -> !d.isDeleted()).toList();
 		collection.setDataObjects(dataObjects);
+		return collection;
 	}
 }

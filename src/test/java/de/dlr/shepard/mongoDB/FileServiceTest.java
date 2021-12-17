@@ -114,7 +114,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
 		when(collectionReturn.first()).thenReturn(null);
 		var result = fileService.getFile(containerId, nonExistingFileoid);
-		assertEquals(result, null);
+		assertNull(result);
 	}
 
 	@Test

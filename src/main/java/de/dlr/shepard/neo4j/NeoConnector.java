@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class NeoConnector implements IConnector {
-	private static SessionFactory sessionFactory = null;
+	private SessionFactory sessionFactory = null;
 	private static NeoConnector instance = null;
 
 	/**

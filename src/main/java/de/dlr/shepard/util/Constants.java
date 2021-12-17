@@ -2,6 +2,10 @@ package de.dlr.shepard.util;
 
 public class Constants {
 
+	private Constants() {
+		// hide public constructor
+	}
+
 	public static final String API_KEY_HEADER = "X-API-KEY";
 
 	public static final String USER = "user";

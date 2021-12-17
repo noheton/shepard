@@ -25,7 +25,7 @@ public abstract class AbstractContainer extends AbstractEntity {
 	 *
 	 * @param id identifies the entity
 	 */
-	public AbstractContainer(long id) {
+	protected AbstractContainer(long id) {
 		super(id);
 	}
 

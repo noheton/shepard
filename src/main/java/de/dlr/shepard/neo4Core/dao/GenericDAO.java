@@ -20,7 +20,7 @@ public abstract class GenericDAO<T> {
 
 	protected Session session = null;
 
-	public GenericDAO() {
+	protected GenericDAO() {
 		session = NeoConnector.getInstance().getNeo4jSession();
 	}
 
@@ -105,8 +105,8 @@ public abstract class GenericDAO<T> {
 	protected Iterable<T> findByQuery(String query, Map<String, Object> paramsMap) {
 		log.debug("Run query: {}", query);
 		String params = "";
-		for (String key : paramsMap.keySet()) {
-			params += "(" + key + ", " + paramsMap.get(key) + "), ";
+		for (var entry : paramsMap.entrySet()) {
+			params += "(" + entry.getKey() + ", " + entry.getValue() + "), ";
 		}
 		log.debug("queryParams: {}", params);
 		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
@@ -127,13 +127,13 @@ public abstract class GenericDAO<T> {
 	}
 
 	private String getObjectPartWithName(String variable, String type) {
-		var namePart = String.format("{ name : $name, deleted: false }");
+		var namePart = "{ name : $name, deleted: false }";
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}
 
 	private String getObjectPartWithoutName(String variable, String type) {
-		var namePart = String.format("{ deleted: false }");
+		var namePart = "{ deleted: false }";
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}
