@@ -3,7 +3,7 @@ services:
   backend:
     image: registry.gitlab.com/dlr-shepard/backend:latest
     environment:
-      CATALINA_OPTS: "-Xms2048m -Xmx2048m -XX:MaxPermSize=256m"
+      CATALINA_OPTS: "-Xms2048m -Xmx2048m"
       oidc.public: ${OIDC_PUBLIC}
       oidc.authority: ${OIDC_AUTHORITY}
       influx.host: influxdb:8086
