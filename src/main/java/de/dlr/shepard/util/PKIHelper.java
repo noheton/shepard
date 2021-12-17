@@ -1,9 +1,9 @@
 package de.dlr.shepard.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -19,12 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PKIHelper {
 
-	public static final String PUBLIC = "public.key";
-	public static final String PRIVATE = "private.key";
-
 	private final String RSA = "RSA";
 
-	private File keysDir = new File(System.getProperty("user.home"), ".shepard/keys");
+	private Path keysDir = Paths.get(System.getProperty("user.home"), ".shepard/keys");
+	private Path pubKey = Paths.get(keysDir.toString(), "public.key");
+	private Path privKey = Paths.get(keysDir.toString(), "private.key");
 
 	@Getter
 	private PublicKey publicKey;
@@ -44,22 +43,31 @@ public class PKIHelper {
 		try {
 			privateKey = importPrivateKey();
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-			log.error("Exception while reading private key specification: {}", e.toString());
+			log.error("Exception while reading private key specification: {}", e);
 		}
 	}
 
 	private void generateKeyPairIfNecessary() {
-		if (keysDir.exists() && keysDir.isFile()) {
+		if (Files.isRegularFile(keysDir)) {
 			log.error("keys directory is a file, cannot create keys");
 			return;
-		} else if (!keysDir.exists()) {
+		}
+		if (Files.notExists(keysDir)) {
 			log.info("keys directory does not exist, creating...");
-			keysDir.mkdirs();
+			try {
+				Files.createDirectories(keysDir);
+			} catch (IOException e) {
+				log.error("Error while generating keys directory: {}", e.toString());
+				return;
+			}
+		}
+		if (!Files.isReadable(keysDir) || !Files.isWritable(keysDir)) {
+			log.error("insufficient permissions for the keys directory");
+			return;
 		}
 
-		var pubKey = new File(keysDir, "public.key");
-		var privKey = new File(keysDir, "public.key");
-		if (pubKey.exists() && !pubKey.isDirectory() && privKey.exists() && !privKey.isDirectory()) {
+		if (Files.exists(pubKey) && Files.isRegularFile(pubKey) && Files.exists(privKey)
+				&& Files.isRegularFile(privKey)) {
 			log.info("keys found, importing...");
 			return;
 		}
@@ -73,7 +81,7 @@ public class PKIHelper {
 
 	private PublicKey importPublicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 		byte[] key;
-		try (var fis = new FileInputStream(new File(keysDir, PUBLIC));) {
+		try (var fis = Files.newInputStream(pubKey)) {
 			key = fis.readAllBytes();
 		}
 
@@ -84,7 +92,7 @@ public class PKIHelper {
 
 	private PrivateKey importPrivateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 		byte[] key;
-		try (var fis = new FileInputStream(new File(keysDir, PRIVATE));) {
+		try (var fis = Files.newInputStream(privKey)) {
 			key = fis.readAllBytes();
 		}
 
@@ -98,8 +106,7 @@ public class PKIHelper {
 		kpg.initialize(2048);
 		var kp = kpg.generateKeyPair();
 
-		try (var pubFos = new FileOutputStream(new File(keysDir, PUBLIC));
-				var privFos = new FileOutputStream(new File(keysDir, PRIVATE));) {
+		try (var pubFos = Files.newOutputStream(pubKey); var privFos = Files.newOutputStream(privKey);) {
 			pubFos.write(kp.getPublic().getEncoded());
 			privFos.write(kp.getPrivate().getEncoded());
 		}

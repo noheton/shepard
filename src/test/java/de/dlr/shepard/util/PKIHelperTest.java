@@ -1,6 +1,6 @@
 package de.dlr.shepard.util;
 
-import java.io.File;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -11,7 +11,7 @@ import de.dlr.shepard.BaseTestCase;
 public class PKIHelperTest extends BaseTestCase {
 
 	@Mock
-	private File keysDir;
+	private Path keysDir;
 
 	@InjectMocks
 	private PKIHelper pkiHelper;
