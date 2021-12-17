@@ -20,9 +20,6 @@ services:
     volumes:
       - /opt/shepard/backend/tomcat:/usr/local/tomcat/logs
       - /opt/shepard/backend/config:/root/.shepard
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.depends-on: neo4j,mongodb,influxdb
     restart: unless-stopped
     depends_on:
       - neo4j
@@ -39,8 +36,6 @@ services:
       VUE_APP_CLIENT_ID: ${CLIENT_ID}
     ports:
       - "127.0.0.1:8081:80"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     depends_on:
       - backend
@@ -53,8 +48,6 @@ services:
       - URL=${BACKEND_URL}shepard/doc/openapi.json
     ports:
       - "127.0.0.1:8082:8080"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     depends_on:
       - backend
@@ -75,8 +68,6 @@ services:
       - /opt/shepard/neo4j/logs:/logs
       - /opt/shepard/neo4j/plugins:/plugins
       - /opt/shepard/neo4j/data:/var/lib/neo4j/data
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     networks:
       - shepard
@@ -90,8 +81,6 @@ services:
     volumes:
       - /opt/shepard/mongodb/db:/data/db
       - /opt/shepard/mongodb/configdb:/data/configdb
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     networks:
       - shepard
@@ -109,9 +98,6 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PW}
     ports:
       - "127.0.0.1:8084:8081"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.depends-on: mongodb
     restart: unless-stopped
     depends_on:
       - mongodb
@@ -130,8 +116,6 @@ services:
       INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2048M
     volumes:
       - /opt/shepard/influxdb:/var/lib/influxdb
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
     restart: unless-stopped
     networks:
       - shepard
@@ -147,26 +131,11 @@ services:
       - "127.0.0.1:8888:8888"
     volumes:
       - /opt/shepard/chronograf:/var/lib/chronograf
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.depends-on: influxdb
     restart: unless-stopped
     depends_on:
       - influxdb
     networks:
       - influxdata
-
-  # Optional: Use watchtower to automatically update containers
-  watchtower:
-    image: containrrr/watchtower:latest
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_LABEL_ENABLE: "true"
-      WATCHTOWER_POLL_INTERVAL: 1800
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
 
 networks:
   shepard:
