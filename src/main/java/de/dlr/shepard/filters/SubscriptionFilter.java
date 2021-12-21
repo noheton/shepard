@@ -10,6 +10,8 @@ import de.dlr.shepard.neo4Core.io.EventIO;
 import de.dlr.shepard.neo4Core.io.HasIdIO;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.HasId;
 import de.dlr.shepard.util.RequestMethod;
 import jakarta.ws.rs.ProcessingException;
@@ -20,16 +22,21 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Subscribable
 @Provider
 @Slf4j
-@NoArgsConstructor
 public class SubscriptionFilter implements ContainerResponseFilter {
 
-	private Executor executor = Executors.newCachedThreadPool();
+	private Executor executor;
+
+	/**
+	 * Default constructor
+	 */
+	public SubscriptionFilter() {
+		this.executor = Executors.newCachedThreadPool();
+	}
 
 	/**
 	 * Constructor to inject your own executor service
@@ -60,11 +67,13 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 			event.setSubscribedObject(new HasIdIO(hasId));
 		}
 
+		var permissionsUtil = getPermissionsUtil();
 		List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
 		for (Subscription sub : subs) {
 			// TODO: This could develop into a bottleneck
 			Pattern pattern = Pattern.compile(sub.getSubscribedURL());
-			if (pattern.matcher(event.getUrl()).matches()) {
+			if (pattern.matcher(event.getUrl()).matches() && permissionsUtil.isAllowed(
+					requestContext.getUriInfo().getPathSegments(), AccessType.Read, sub.getCreatedBy().getUsername())) {
 				EventIO e = new EventIO(event);
 				e.setSubscription(new SubscriptionIO(sub));
 				log.debug("{} was triggered with {}", sub, e);
@@ -83,7 +92,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 			log.info("Notification has been send to {} with response code: {}", sub.getCallbackURL(),
 					response.getStatus());
 		} catch (ProcessingException e) {
-			log.error("{}: Could not execute notification request", e.getMessage());
+			log.error("Could not execute notification request");
 		} finally {
 			client.close();
 		}
@@ -91,6 +100,10 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
 	protected SubscriptionService getService() {
 		return new SubscriptionService();
+	}
+
+	protected PermissionsUtil getPermissionsUtil() {
+		return new PermissionsUtil();
 	}
 
 }

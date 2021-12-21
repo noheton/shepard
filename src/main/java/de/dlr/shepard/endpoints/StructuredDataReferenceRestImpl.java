@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
@@ -60,6 +59,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference)
@@ -75,6 +75,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 
 	@DELETE
 	@Path("/{" + Constants.STRUCTUREDDATA_REFERENCE_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

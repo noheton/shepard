@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.STRUCTUREDDATAS)
@@ -79,6 +78,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 
 	@DELETE
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteStructuredDataContainer(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
@@ -102,6 +102,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 
 	@POST
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
+	@Subscribable
 	@Override
 	public Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			StructuredDataPayload payload) throws InvalidBodyException {
@@ -134,6 +135,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 
 	@DELETE
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Subscribable
 	@Override
 	public Response deleteStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			@PathParam(Constants.OID) String oid) {

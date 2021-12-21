@@ -21,7 +21,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
@@ -62,6 +61,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, URIReferenceIO timeseriesReference)
@@ -76,6 +76,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 
 	@DELETE
 	@Path("/{" + Constants.URI_REFERENCE_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

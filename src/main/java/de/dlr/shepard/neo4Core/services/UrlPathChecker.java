@@ -248,7 +248,7 @@ public class UrlPathChecker {
 	private String checkApiKey(ApiKey apiKey, User user) {
 		if (apiKey == null) {
 			return "ApiKey does not exist";
-		} else if (!user.getApiKeys().stream().anyMatch(aKey -> aKey.getUid().equals(apiKey.getUid()))) {
+		} else if (user.getApiKeys().stream().noneMatch(aKey -> aKey.getUid().equals(apiKey.getUid()))) {
 			return "There is no association between apiKey and user";
 		}
 		return null;
@@ -257,7 +257,7 @@ public class UrlPathChecker {
 	private String checkSubscription(Subscription subscription, User user) {
 		if (subscription == null) {
 			return "Subscription does not exist";
-		} else if (!user.getSubscriptions().stream().anyMatch(s -> s.getId().equals(subscription.getId()))) {
+		} else if (user.getSubscriptions().stream().noneMatch(s -> s.getId().equals(subscription.getId()))) {
 			return "There is no association between subscription and user";
 		}
 		return null;

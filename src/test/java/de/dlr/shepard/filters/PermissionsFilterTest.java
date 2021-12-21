@@ -16,11 +16,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.neo4Core.entities.Permissions;
-import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.GracePeriodUtil;
-import de.dlr.shepard.util.PermissionType;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.SecurityContext;
@@ -38,10 +36,10 @@ public class PermissionsFilterTest extends BaseTestCase {
 	private PathSegment pathSeg;
 
 	@Mock
-	private UserPrincipal userPrincipal;
+	private UriInfo uriInfo;
 
 	@Mock
-	private UriInfo uriInfo;
+	private UserPrincipal userPrincipal;
 
 	@Mock
 	private SecurityContext securityContext;
@@ -50,7 +48,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 	private ContainerRequestContext context;
 
 	@Mock
-	private PermissionsService permissionsService;
+	private PermissionsUtil permissionsUtil;
 
 	@Mock
 	private GracePeriodUtil lastSeen;
@@ -77,68 +75,48 @@ public class PermissionsFilterTest extends BaseTestCase {
 
 	@BeforeEach
 	public void prepareSpy() throws IllegalAccessException {
-		when(filter.getPermissionsService()).thenReturn(permissionsService);
+		when(filter.getPermissionsUtil()).thenReturn(permissionsUtil);
 		FieldUtils.writeField(filter, "lastSeen", lastSeen, true);
 	}
 
 	@Test
-	public void filterTest_NoId() {
-		when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg));
+	public void filterTest_Read() {
+		when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "principal")).thenReturn(true);
 
 		filter.filter(context);
 		verify(context, never()).abortWith(any());
 	}
 
 	@Test
-	public void filterTest_EmptyId() {
-		when(idSeg.getPath()).thenReturn("");
+	public void filterTest_Write() {
+		when(context.getMethod()).thenReturn("PUT");
+		when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Write, "principal")).thenReturn(true);
 
 		filter.filter(context);
 		verify(context, never()).abortWith(any());
 	}
 
 	@Test
-	public void filterTest_NonNumericId() {
-		when(idSeg.getPath()).thenReturn("abc");
+	public void filterTest_Manage() {
+		when(pathSeg.getPath()).thenReturn("permissions");
+		when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Manage, "principal")).thenReturn(true);
+
+		filter.filter(context);
+		verify(context, never()).abortWith(any());
+	}
+
+	@Test
+	public void filterTest_Invalid() {
+		when(context.getMethod()).thenReturn("OPTIONS");
+		when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.None, "principal")).thenReturn(false);
 
 		filter.filter(context);
 		verify(context).abortWith(any());
 	}
 
 	@Test
-	public void filterTest_GetUsers() {
-		when(rootSeg.getPath()).thenReturn("users");
-		when(idSeg.getPath()).thenReturn("abc");
-		when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg, idSeg));
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_EditUsers() {
-		when(rootSeg.getPath()).thenReturn("users");
-		when(idSeg.getPath()).thenReturn("abc");
-		when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg, idSeg));
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_ManageYourself() {
-		when(rootSeg.getPath()).thenReturn("users");
-		when(idSeg.getPath()).thenReturn("principal");
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_ManageOther() {
-		when(rootSeg.getPath()).thenReturn("users");
-		when(idSeg.getPath()).thenReturn("different");
+	public void filterTest_NotAllowed() {
+		when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "principal")).thenReturn(false);
 
 		filter.filter(context);
 		verify(context).abortWith(any());
@@ -165,194 +143,7 @@ public class PermissionsFilterTest extends BaseTestCase {
 		when(lastSeen.elementIsKnown("principalGET/shepard/api/projects")).thenReturn(true);
 
 		filter.filter(context);
-		verify(permissionsService, never()).getPermissionsByEntity(123L);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_NoPermissions() {
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(null);
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_IsOwner() {
-		var perms = new Permissions() {
-			{
-				setOwner(new User("principal"));
-			}
-		};
-		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_DifferentOwner() {
-		var perms = new Permissions() {
-			{
-				setOwner(new User("different"));
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_Manager() {
-		var perms = new Permissions() {
-			{
-				setManager(List.of(new User("principal")));
-			}
-		};
-		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_NoManager() {
-		var perms = new Permissions();
-		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_Reader() {
-		var perms = new Permissions() {
-			{
-				setReader(List.of(new User("principal")));
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("GET");
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_NoReader() {
-		var perms = new Permissions();
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("GET");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_Writer() {
-		var perms = new Permissions() {
-			{
-				setWriter(List.of(new User("principal")));
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_NoWriter() {
-		var perms = new Permissions();
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_NullPermission() {
-		var perms = new Permissions();
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_TypePrivate() {
-		var perms = new Permissions() {
-			{
-				setPermissionType(PermissionType.Private);
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("GET");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_TypeReadable() {
-		var perms = new Permissions() {
-			{
-				setPermissionType(PermissionType.PublicReadable);
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("GET");
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_TypeReadableWrite() {
-		var perms = new Permissions() {
-			{
-				setPermissionType(PermissionType.PublicReadable);
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
-		verify(context).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_TypePublic() {
-		var perms = new Permissions() {
-			{
-				setPermissionType(PermissionType.Public);
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("GET");
-
-		filter.filter(context);
-		verify(context, never()).abortWith(any());
-	}
-
-	@Test
-	public void filterTest_TypePublicWrite() {
-		var perms = new Permissions() {
-			{
-				setPermissionType(PermissionType.Public);
-			}
-		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
-		when(context.getMethod()).thenReturn("POST");
-
-		filter.filter(context);
+		verify(permissionsUtil, never()).isAllowed(any(), any(), any());
 		verify(context, never()).abortWith(any());
 	}
 

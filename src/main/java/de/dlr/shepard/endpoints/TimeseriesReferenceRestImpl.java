@@ -25,7 +25,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
@@ -67,6 +66,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference)
@@ -81,6 +81,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 
 	@DELETE
 	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

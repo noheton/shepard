@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.FILES)
@@ -88,6 +87,7 @@ public class FileRestImpl implements FileRest {
 
 	@DELETE
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
 		log.info("Received DELETE FILE CONTAINER request with container Id {} from user {}", fileContainerId,
@@ -125,6 +125,7 @@ public class FileRestImpl implements FileRest {
 
 	@DELETE
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+	@Subscribable
 	@Override
 	public Response deleteFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@PathParam(Constants.OID) String oid) {
@@ -138,6 +139,7 @@ public class FileRestImpl implements FileRest {
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
+	@Subscribable
 	@Override
 	public Response createFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@FormDataParam(Constants.FILE) InputStream fileInputStream,

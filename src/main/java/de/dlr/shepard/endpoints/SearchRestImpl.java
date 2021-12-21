@@ -4,11 +4,12 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchScope;
 import de.dlr.shepard.search.Searcher;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -30,7 +31,7 @@ public class SearchRestImpl implements SearchRest {
 	@Context
 	private SecurityContext securityContext;
 	private Searcher searcher = new Searcher();
-	private PermissionsService permissionsService = new PermissionsService();
+	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	@POST
 	@Override
@@ -40,21 +41,13 @@ public class SearchRestImpl implements SearchRest {
 
 		Set<Long> collectionIds = Arrays.stream(body.getScopes()).map(SearchScope::getCollectionId)
 				.collect(Collectors.toSet());
-		boolean allowed = collectionIds.stream().allMatch(id -> allowedToRead(id, principal.getName()));
-		if (!allowed)
-			return Response.status(Status.FORBIDDEN).build();
+		if (collectionIds.stream()
+				.allMatch(id -> permissionsUtil.isAllowed(id, AccessType.Read, principal.getName()))) {
+			ResponseBody ret = searcher.search(body);
+			return Response.ok(ret).build();
+		}
+		return Response.status(Status.FORBIDDEN).build();
 
-		ResponseBody ret = searcher.search(body);
-		return Response.ok(ret).build();
-	}
-
-	private boolean allowedToRead(Long entityId, String username) {
-		var perms = permissionsService.getPermissionsByEntity(entityId);
-		if (perms == null)
-			return true;
-		if (perms.getOwner() != null && username.equals(perms.getOwner().getUsername()))
-			return true;
-		return perms.getReader().stream().anyMatch(u -> u.getUsername().equals(username));
 	}
 
 }

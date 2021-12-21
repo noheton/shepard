@@ -22,7 +22,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
@@ -60,6 +59,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference)
@@ -72,6 +72,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 
 	@DELETE
 	@Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

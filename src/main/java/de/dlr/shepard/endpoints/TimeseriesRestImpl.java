@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.TIMESERIES)
@@ -92,6 +91,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@DELETE
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
 		log.info("Received DELETE request with container Id {} from user {}", timeseriesId,
@@ -106,6 +106,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@POST
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
+	@Subscribable
 	@Override
 	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			TimeseriesPayload payload) {

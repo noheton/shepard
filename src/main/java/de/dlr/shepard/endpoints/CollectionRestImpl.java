@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Path(Constants.COLLECTIONS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -89,6 +88,7 @@ public class CollectionRestImpl implements CollectionRest {
 
 	@PUT
 	@Path("/{" + Constants.COLLECTION_ID + "}")
+	@Subscribable
 	@Override
 	public Response updateCollection(@PathParam(Constants.COLLECTION_ID) long collectionId, CollectionIO collection) {
 		log.info(
@@ -102,6 +102,7 @@ public class CollectionRestImpl implements CollectionRest {
 
 	@DELETE
 	@Path("/{" + Constants.COLLECTION_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
 		log.info("Received DELETE request with parameters: collectionID: {} from user {}", collectionId,

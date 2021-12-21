@@ -26,7 +26,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS)
@@ -85,6 +84,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId, DataObjectIO dataObject)
 			throws InvalidBodyException {
@@ -98,6 +98,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 
 	@PUT
 	@Path("/{" + Constants.DATAOBJECT_ID + "}")
+	@Subscribable
 	@Override
 	public Response updateDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectIO dataObject)
@@ -115,6 +116,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 
 	@DELETE
 	@Path("/{" + Constants.DATAOBJECT_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {

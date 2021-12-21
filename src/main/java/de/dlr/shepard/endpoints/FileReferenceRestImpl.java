@@ -23,7 +23,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
-@Subscribable
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
@@ -62,6 +61,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	}
 
 	@POST
+	@Subscribable
 	@Override
 	public Response createFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, FileReferenceIO fileReference)
@@ -75,6 +75,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 
 	@DELETE
 	@Path("/{" + Constants.FILE_REFERENCE_ID + "}")
+	@Subscribable
 	@Override
 	public Response deleteFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
