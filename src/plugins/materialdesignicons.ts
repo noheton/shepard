@@ -8,6 +8,7 @@ import ClipboardArrowLeftOutline from "vue-material-design-icons/ClipboardArrowL
 import ClipboardArrowRightOutline from "vue-material-design-icons/ClipboardArrowRightOutline.vue";
 import ClipboardArrowUpOutline from "vue-material-design-icons/ClipboardArrowUpOutline.vue";
 import ClipboardOutline from "vue-material-design-icons/ClipboardOutline.vue";
+import ContentCopy from "vue-material-design-icons/ContentCopy.vue";
 import DatabaseImportOutline from "vue-material-design-icons/DatabaseImportOutline.vue";
 import Delete from "vue-material-design-icons/Delete.vue";
 import FileDocumentOutline from "vue-material-design-icons/FileDocumentOutline.vue";
@@ -41,3 +42,4 @@ Vue.component("RemoveIcon", Minus);
 Vue.component("OpenIcon", FolderOpen);
 Vue.component("PermissionsIcon", AccountLock);
 Vue.component("DownloadIcon", FileDownloadOutline);
+Vue.component("CopyIcon", ContentCopy);

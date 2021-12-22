@@ -81,11 +81,24 @@
               }}
             </div>
             <div v-else><b>Oid:</b> {{ oid }}</div>
-            <b>Payload: </b>
-            <code v-if="structuredDatas[oid].payload">
-              {{ structuredDatas[oid].payload }}
-            </code>
-            <code v-else>Payload is missing</code>
+
+            <b-link @click="toggleReadMore(oid)">
+              <span v-if="readMore[oid]"><CollapsIcon /></span>
+              <span v-else><ExtendIcon /></span>
+            </b-link>
+            <b>Payload:</b>
+            <b-link title="Copy" class="ml-1" @click="copyPayload(oid)">
+              <CopyIcon :size="15" />
+            </b-link>
+
+            <span v-if="structuredDatas[oid].payload">
+              <span v-if="readMore[oid]">
+                <pre class="payload">{{
+                  structuredDatas[oid].payload | pretty
+                }}</pre>
+              </span>
+            </span>
+            <span v-else>Payload is missing</span>
           </small>
         </div>
       </b-list-group-item>
@@ -123,6 +136,7 @@ interface StructuredDataListData {
   currentStructuredDataReference?: StructuredDataReference;
   createdAlert: boolean;
   deletedAlert: boolean;
+  readMore: { [key: string]: boolean };
 }
 
 export default (
@@ -133,6 +147,12 @@ export default (
     StructuredDataReferenceModal,
     DeleteConfirmationModal,
   },
+  filters: {
+    pretty: function (value: string) {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    },
+  },
+
   mixins: [StructuredDataReferenceVue],
   props: {
     currentCollectionId: {
@@ -151,6 +171,7 @@ export default (
       currentStructuredDataReference: undefined,
       createdAlert: false,
       deletedAlert: false,
+      readMore: {},
     } as StructuredDataListData;
   },
   mounted() {
@@ -237,6 +258,20 @@ export default (
           emitter.emit("error", error);
         });
     },
+    copyPayload(oid: string) {
+      const payload = this.structuredDatas[oid].payload;
+      if (payload) navigator.clipboard.writeText(payload);
+    },
+    toggleReadMore(oid: string) {
+      this.readMore[oid] = !this.readMore[oid];
+      this.readMore = { ...this.readMore };
+    },
   },
 });
 </script>
+
+<style scoped>
+.payload {
+  color: #e83e8c;
+}
+</style>

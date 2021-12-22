@@ -12,10 +12,10 @@
         <span v-else>
           {{ text.substring(0, wordCount) + "..." }}
         </span>
-        <a @click="readMore = !readMore">
-          <span v-if="readMore" class="moreorless">Read Less</span>
-          <span v-else class="moreorless">Read More</span>
-        </a>
+        <b-link @click="readMore = !readMore">
+          <span v-if="readMore">Read Less</span>
+          <span v-else>Read More</span>
+        </b-link>
       </div>
     </div>
   </div>
@@ -51,9 +51,5 @@ export default Vue.extend({
 .description {
   font-style: italic;
   text-align: justify;
-}
-.moreorless {
-  font-style: italic;
-  color: blue;
 }
 </style>
