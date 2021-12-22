@@ -40,6 +40,14 @@
         <div>
           <b><GenericName :name="timeseriesItem.name" /></b> | ID:
           {{ timeseriesItem.id }} |
+          <b-link
+            :to="{
+              name: 'Timeseries',
+              params: { timeseriesId: timeseriesItem.timeseriesContainerId },
+            }"
+          >
+            Container: {{ timeseriesItem.timeseriesContainerId }}
+          </b-link>
           <b-button
             v-b-modal.timeseries-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -50,14 +58,6 @@
           >
             <DeleteIcon />
           </b-button>
-          <b-link
-            :to="{
-              name: 'Timeseries',
-              params: { timeseriesId: timeseriesItem.timeseriesContainerId },
-            }"
-          >
-            Container: {{ timeseriesItem.timeseriesContainerId }}
-          </b-link>
         </div>
         <CreatedByLine
           :created-by="timeseriesItem.createdBy"

@@ -6,8 +6,8 @@
       :to="String(entity.id)"
       append
     >
-      <b><GenericName :name="entity.name" :word-count="40" /></b> ID:
-      {{ entity.id }}
+      <b><GenericName :name="entity.name" :word-count="60" /></b>
+      ID: {{ entity.id }}
       <CreatedByLine
         :created-by="entity.createdBy"
         :created-at="entity.createdAt"

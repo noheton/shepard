@@ -39,16 +39,6 @@
         <div>
           <b><GenericName :name="structuredDataReference.name" /></b>
           | ID: {{ structuredDataReference.id }} |
-          <b-button
-            v-b-modal.structured-data-reference-delete-confirmation-modal
-            v-b-tooltip.hover
-            class="float-right"
-            title="Delete"
-            variant="dark"
-            @click="currentStructuredDataReference = structuredDataReference"
-          >
-            <DeleteIcon />
-          </b-button>
           <b-link
             :to="{
               name: 'StructuredData',
@@ -60,6 +50,16 @@
           >
             Container: {{ structuredDataReference.structuredDataContainerId }}
           </b-link>
+          <b-button
+            v-b-modal.structured-data-reference-delete-confirmation-modal
+            v-b-tooltip.hover
+            class="float-right"
+            title="Delete"
+            variant="dark"
+            @click="currentStructuredDataReference = structuredDataReference"
+          >
+            <DeleteIcon />
+          </b-button>
         </div>
         <CreatedByLine
           :created-by="structuredDataReference.createdBy"

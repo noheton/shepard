@@ -40,6 +40,14 @@
         <div>
           <b><GenericName :name="fileReference.name" /></b> | ID:
           {{ fileReference.id }} |
+          <b-link
+            :to="{
+              name: 'Files',
+              params: { fileId: fileReference.fileContainerId },
+            }"
+          >
+            Container: {{ fileReference.fileContainerId }}
+          </b-link>
           <b-button
             v-b-modal.file-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -50,14 +58,6 @@
           >
             <DeleteIcon />
           </b-button>
-          <b-link
-            :to="{
-              name: 'Files',
-              params: { fileId: fileReference.fileContainerId },
-            }"
-          >
-            Container: {{ fileReference.fileContainerId }}
-          </b-link>
         </div>
         <CreatedByLine
           :created-by="fileReference.createdBy"
