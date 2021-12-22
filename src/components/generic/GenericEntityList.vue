@@ -6,7 +6,8 @@
       :to="String(entity.id)"
       append
     >
-      <b>{{ entity.name }}</b> ID: {{ entity.id }}
+      <b><GenericName :name="entity.name" :word-count="40" /></b> ID:
+      {{ entity.id }}
       <CreatedByLine
         :created-by="entity.createdBy"
         :created-at="entity.createdAt"
@@ -17,11 +18,13 @@
 
 <script lang="ts">
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import Vue from "vue";
 
 export default Vue.extend({
   components: {
     CreatedByLine,
+    GenericName,
   },
   props: {
     entities: {

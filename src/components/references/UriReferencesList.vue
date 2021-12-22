@@ -30,7 +30,8 @@
     <b-list-group>
       <b-list-group-item v-for="(uriItem, index) in uriList" :key="index">
         <div>
-          <b>{{ uriItem.name }}</b> | ID: {{ uriItem.id }}
+          <b><GenericName :name="uriItem.name" /></b> | ID:
+          {{ uriItem.id }}
           <b-button
             v-b-modal.uri-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -67,6 +68,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import { UriReferenceVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -83,7 +85,12 @@ interface URIListData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof UriReferenceVue>>
 ).extend({
-  components: { CreatedByLine, UriReferenceModal, DeleteConfirmationModal },
+  components: {
+    CreatedByLine,
+    UriReferenceModal,
+    DeleteConfirmationModal,
+    GenericName,
+  },
   mixins: [UriReferenceVue],
   props: {
     currentCollectionId: {

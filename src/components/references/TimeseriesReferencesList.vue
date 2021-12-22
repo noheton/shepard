@@ -38,7 +38,8 @@
         :key="index"
       >
         <div>
-          <b>{{ timeseriesItem.name }}</b> | ID: {{ timeseriesItem.id }} |
+          <b><GenericName :name="timeseriesItem.name" /></b> | ID:
+          {{ timeseriesItem.id }} |
           <b-button
             v-b-modal.timeseries-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -98,6 +99,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import { TimeseriesReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
@@ -123,6 +125,7 @@ export default (
     DownloadAlert,
     TimeseriesReferenceModal,
     DeleteConfirmationModal,
+    GenericName,
   },
   mixins: [TimeseriesReferenceVue],
   props: {

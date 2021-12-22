@@ -38,7 +38,8 @@
         :key="index"
       >
         <div>
-          <b>{{ fileReference.name }}</b> | ID: {{ fileReference.id }} |
+          <b><GenericName :name="fileReference.name" /></b> | ID:
+          {{ fileReference.id }} |
           <b-button
             v-b-modal.file-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -101,6 +102,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import { FileReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
@@ -127,6 +129,7 @@ export default (
     DownloadAlert,
     FileReferenceModal,
     DeleteConfirmationModal,
+    GenericName,
   },
   mixins: [FileReferenceVue],
   props: {

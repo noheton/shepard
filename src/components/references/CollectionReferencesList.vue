@@ -37,7 +37,8 @@
         :key="index"
       >
         <div>
-          <b>{{ collectionItem.name }}</b> | ID: {{ collectionItem.id }}
+          <b><GenericName :name="collectionItem.name" /></b> | ID:
+          {{ collectionItem.id }}
           <b-button
             v-b-modal.collection-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -88,6 +89,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import { CollectionReferenceVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -109,6 +111,7 @@ export default (
     CreatedByLine,
     CollectionReferenceModal,
     DeleteConfirmationModal,
+    GenericName,
   },
   mixins: [CollectionReferenceVue],
   props: {

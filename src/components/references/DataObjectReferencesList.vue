@@ -37,7 +37,8 @@
         :key="index"
       >
         <div>
-          <b>{{ dataObjectItem.name }}</b> | ID: {{ dataObjectItem.id }}
+          <b><GenericName :name="dataObjectItem.name" /></b> | ID:
+          {{ dataObjectItem.id }}
           <b-button
             v-b-modal.data-object-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -89,6 +90,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import { DataObjectReferenceVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -110,6 +112,7 @@ export default (
     CreatedByLine,
     DataObjectReferenceModal,
     DeleteConfirmationModal,
+    GenericName,
   },
   mixins: [DataObjectReferenceVue],
   props: {

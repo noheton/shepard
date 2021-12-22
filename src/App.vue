@@ -45,6 +45,8 @@ export default Vue.extend({
 .view {
   margin: auto;
   max-width: 850px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .component {

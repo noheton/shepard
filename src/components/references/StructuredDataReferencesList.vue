@@ -37,8 +37,8 @@
         :key="index"
       >
         <div>
-          <b>{{ structuredDataReference.name }}</b> | ID:
-          {{ structuredDataReference.id }} |
+          <b><GenericName :name="structuredDataReference.name" /></b>
+          | ID: {{ structuredDataReference.id }} |
           <b-button
             v-b-modal.structured-data-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -121,6 +121,7 @@
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import { StructuredDataReferenceVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -146,6 +147,7 @@ export default (
     CreatedByLine,
     StructuredDataReferenceModal,
     DeleteConfirmationModal,
+    GenericName,
   },
   filters: {
     pretty: function (value: string) {

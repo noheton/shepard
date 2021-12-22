@@ -11,7 +11,8 @@
   >
     <div class="float-left">
       <div>
-        <b>{{ dataObject.name }}</b> ID: {{ dataObject.id }}
+        <b><GenericName :name="dataObject.name" :word-count="40" /></b> ID:
+        {{ dataObject.id }}
       </div>
       <CreatedByLine
         :created-by="dataObject.createdBy"
@@ -44,11 +45,12 @@
 
 <script lang="ts">
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType } from "vue";
 
 export default Vue.extend({
-  components: { CreatedByLine },
+  components: { CreatedByLine, GenericName },
   props: {
     dataObject: {
       type: Object as PropType<DataObject>,
