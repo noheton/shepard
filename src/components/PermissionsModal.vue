@@ -8,6 +8,14 @@
     @show="reset()"
     @ok="handleOk()"
   >
+    <h5>Permission Type</h5>
+    <b-form-select
+      v-model="permissionType"
+      class="mb-3"
+      :options="permissionOptions"
+    ></b-form-select>
+
+    <h5>Individual Permissions</h5>
     <b-input-group prepend="Username">
       <b-form-input
         v-model="username"
@@ -36,7 +44,7 @@
     </small>
     <small v-else>Please enter a valid username</small>
 
-    <h5>Owner</h5>
+    <div>Owner</div>
     <b-list-group>
       <b-list-group-item
         v-if="owner"
@@ -49,7 +57,7 @@
       </b-list-group-item>
     </b-list-group>
 
-    <h5>Reader</h5>
+    <div>Reader</div>
     <b-list-group>
       <b-list-group-item
         v-for="(user, index) in reader"
@@ -63,7 +71,7 @@
       </b-list-group-item>
     </b-list-group>
 
-    <h5>Writer</h5>
+    <div>Writer</div>
     <b-list-group>
       <b-list-group-item
         v-for="(user, index) in writer"
@@ -77,7 +85,7 @@
       </b-list-group-item>
     </b-list-group>
 
-    <h5>Manager</h5>
+    <div>Manager</div>
     <b-list-group>
       <b-list-group-item
         v-for="(user, index) in manager"
@@ -95,7 +103,11 @@
 
 <script lang="ts">
 import { UserVue } from "@/utils/api-mixin";
-import { Permissions, User } from "@dlr-shepard/shepard-client";
+import {
+  Permissions,
+  PermissionsPermissionTypeEnum,
+  User,
+} from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
 interface PermissionsModalData {
@@ -106,6 +118,8 @@ interface PermissionsModalData {
   reader: User[];
   writer: User[];
   manager: User[];
+  permissionOptions: { value: PermissionsPermissionTypeEnum; text: string }[];
+  permissionType?: PermissionsPermissionTypeEnum;
 }
 
 function initialState(): PermissionsModalData {
@@ -117,6 +131,21 @@ function initialState(): PermissionsModalData {
     reader: [],
     writer: [],
     manager: [],
+    permissionOptions: [
+      {
+        value: PermissionsPermissionTypeEnum.Private,
+        text: "Private",
+      },
+      {
+        value: PermissionsPermissionTypeEnum.PublicReadable,
+        text: "Public Readable",
+      },
+      {
+        value: PermissionsPermissionTypeEnum.Public,
+        text: "Public",
+      },
+    ],
+    permissionType: undefined,
   };
 }
 
@@ -154,6 +183,7 @@ export default (
     },
     handleOk() {
       const perms: Permissions = {
+        permissionType: this.permissionType,
         owner: this.owner?.username,
         reader: [],
         manager: [],
@@ -226,6 +256,9 @@ export default (
     parseOldPermissions() {
       const perms: Permissions = this.oldPermissions;
       if (!perms) return;
+      if (perms.permissionType) {
+        this.permissionType = perms.permissionType;
+      }
       if (perms.owner) {
         this.userApi
           ?.getUser({ username: perms.owner })

@@ -91,16 +91,9 @@ export default (
       ];
     },
     copyBearerToken() {
-      if (this.config.accessToken)
-        navigator.clipboard.writeText(this.config.accessToken(""));
+      if (this.oidcAccessToken)
+        navigator.clipboard.writeText(this.oidcAccessToken);
     },
   },
 });
 </script>
-
-<style scoped>
-.list {
-  max-width: 1280px;
-  margin: auto;
-}
-</style>
