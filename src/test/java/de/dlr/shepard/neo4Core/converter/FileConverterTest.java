@@ -10,7 +10,7 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 
 public class FileConverterTest extends BaseTestCase {
 
@@ -19,9 +19,9 @@ public class FileConverterTest extends BaseTestCase {
 	@Test
 	public void toGraphPropertyTest() {
 		var date = new Date();
-		var file1 = new File("oid", date, "name");
-		var file2 = new File("", date, "");
-		var file3 = new File();
+		var file1 = new ShepardFile("oid", date, "name");
+		var file2 = new ShepardFile("", date, "");
+		var file3 = new ShepardFile();
 		var files = List.of(file1, file2, file3);
 		var actual = converter.toGraphProperty(files);
 		var expected = List.of(makeString(file1), makeString(file2), makeString(file3));
@@ -32,9 +32,9 @@ public class FileConverterTest extends BaseTestCase {
 	@Test
 	public void toEntityAttribute() {
 		var date = new Date();
-		var file1 = new File("oid", date, "name");
-		var file2 = new File("", date, "");
-		var file3 = new File();
+		var file1 = new ShepardFile("oid", date, "name");
+		var file2 = new ShepardFile("", date, "");
+		var file3 = new ShepardFile();
 		var files = List.of(makeString(file1), makeString(file2), makeString(file3));
 		var actual = converter.toEntityAttribute(files);
 		var expected = List.of(file1, file2, file3);
@@ -42,7 +42,7 @@ public class FileConverterTest extends BaseTestCase {
 		assertEquals(expected, actual);
 	}
 
-	private String makeString(File file) {
+	private String makeString(ShepardFile file) {
 		SimpleDateFormat sdf;
 		sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS+00:00");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));

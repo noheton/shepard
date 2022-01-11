@@ -9,7 +9,7 @@ import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.converter.FileConverter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
@@ -24,7 +24,7 @@ public class FileReference extends BasicReference {
 
 	@Property("filesJson")
 	@Convert(FileConverter.class)
-	private List<File> files = new ArrayList<>();
+	private List<ShepardFile> files = new ArrayList<>();
 
 	@ToString.Exclude
 	@Relationship(type = Constants.IS_IN_CONTAINER)
@@ -39,7 +39,7 @@ public class FileReference extends BasicReference {
 		super(id);
 	}
 
-	public void addFile(File file) {
+	public void addFile(ShepardFile file) {
 		files.add(file);
 	}
 

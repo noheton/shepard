@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
@@ -27,7 +27,7 @@ import io.restassured.specification.RequestSpecification;
 public class FileReferenceTest extends BaseTestCaseIT {
 	private static CollectionIO collection;
 	private static DataObjectIO dataObject;
-	private static File file;
+	private static ShepardFile file;
 
 	private static String referencesURL;
 	private static RequestSpecification referencesRequestSpec;
@@ -61,7 +61,7 @@ public class FileReferenceTest extends BaseTestCaseIT {
 				.as(FileContainerIO.class);
 		file = given().spec(fileRequestSpec).multiPart("file", "test.txt", targetStream).when()
 				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(File.class);
+				.as(ShepardFile.class);
 	}
 
 	@Test

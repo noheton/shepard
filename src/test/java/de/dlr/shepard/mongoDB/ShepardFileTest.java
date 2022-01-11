@@ -9,26 +9,26 @@ import org.junit.jupiter.api.Test;
 import de.dlr.shepard.BaseTestCase;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class FileTest extends BaseTestCase {
+public class ShepardFileTest extends BaseTestCase {
 
 	@Test
 	public void equalsContract() {
-		EqualsVerifier.simple().forClass(File.class).verify();
+		EqualsVerifier.simple().forClass(ShepardFile.class).verify();
 	}
 
 	@Test
 	public void constructorTest() {
 		var date = new Date();
-		var expected = new File();
+		var expected = new ShepardFile();
 		expected.setCreatedAt(date);
 		expected.setFilename("name");
-		var actual = new File(date, "name");
+		var actual = new ShepardFile(date, "name");
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void getUniqueIdTest() {
-		var file = new File("oid", "name");
+		var file = new ShepardFile("oid", "name");
 		var actual = file.getUniqueId();
 
 		assertEquals("oid", actual);

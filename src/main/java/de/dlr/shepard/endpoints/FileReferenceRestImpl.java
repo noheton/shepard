@@ -5,7 +5,7 @@ import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -113,7 +113,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileId) {
 		log.info("Received GET ALL FILES request with reference Id {} from user {}", fileId,
 				securityContext.getUserPrincipal().getName());
-		List<File> ret = fileReferenceService.getFiles(fileId);
+		List<ShepardFile> ret = fileReferenceService.getFiles(fileId);
 		return Response.ok(ret).build();
 	}
 

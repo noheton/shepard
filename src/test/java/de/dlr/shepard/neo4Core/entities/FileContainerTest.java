@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class FileContainerTest extends BaseTestCase {
@@ -20,7 +20,7 @@ public class FileContainerTest extends BaseTestCase {
 
 	@Test
 	public void addFileTest() {
-		var toAdd = new File("newOid", "filename");
+		var toAdd = new ShepardFile("newOid", "filename");
 		var container = new FileContainer(1L);
 		container.addFile(toAdd);
 		assertEquals(List.of(toAdd), container.getFiles());

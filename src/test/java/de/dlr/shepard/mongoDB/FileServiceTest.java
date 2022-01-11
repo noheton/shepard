@@ -88,7 +88,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(file.getString("name")).thenReturn("name");
 		when(file.getDate("createdAt")).thenReturn(date);
 
-		var expected = new File(fileoid, date, name);
+		var expected = new ShepardFile(fileoid, date, name);
 		var result = fileService.getFile(containerId, fileoid);
 		assertEquals(expected, result);
 	}
@@ -141,7 +141,7 @@ public class FileServiceTest extends BaseTestCase {
 
 		var newFile = new Document("_id", moid).append("name", fileName).append("container", mongoid)
 				.append("FileMongoId", oid.toHexString()).append("createdAt", date);
-		var expected = new File(moid.toHexString(), date, fileName);
+		var expected = new ShepardFile(moid.toHexString(), date, fileName);
 		var result = fileService.createFile(mongoid, fileName, inputStream);
 		assertEquals(expected, result);
 		verify(collection).insertOne(newFile);

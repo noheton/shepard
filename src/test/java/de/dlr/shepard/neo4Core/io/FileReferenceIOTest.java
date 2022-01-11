@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.FileReference;
@@ -32,7 +32,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
 		var container = new FileContainer(3L);
-		var file = new File("oid", "name");
+		var file = new ShepardFile("oid", "name");
 
 		var obj = new FileReference(1L);
 		obj.setCreatedAt(date);
@@ -43,7 +43,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setDataObject(dataObject);
 		obj.setFileContainer(container);
 		obj.setFiles(List.of(file));
-		String[] oids = obj.getFiles().stream().map(File::getOid).toArray(String[]::new);
+		String[] oids = obj.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -62,7 +62,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var date = new Date();
 		var user = new User("bob");
 		var dataObject = new DataObject(2L);
-		var file = new File("oid", "name");
+		var file = new ShepardFile("oid", "name");
 
 		var obj = new FileReference(1L);
 		obj.setCreatedAt(date);
@@ -70,7 +70,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		obj.setName("MyName");
 		obj.setDataObject(dataObject);
 		obj.setFiles(List.of(file));
-		String[] oids = obj.getFiles().stream().map(File::getOid).toArray(String[]::new);
+		String[] oids = obj.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
 		assertEquals(obj.getId(), converted.getId());

@@ -17,7 +17,7 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
@@ -103,7 +103,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var container = new FileContainer(300L);
 		container.setMongoId("mongoId");
 		var date = new Date(30L);
-		var fileComplete = new File("oid", "name");
+		var fileComplete = new ShepardFile("oid", "name");
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
@@ -267,7 +267,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Test
 	public void getFilesTest() {
-		var files = List.of(new File("a", "b"), new File("c", "d"));
+		var files = List.of(new ShepardFile("a", "b"), new ShepardFile("c", "d"));
 		var ref = new FileReference(1L);
 		ref.setFiles(files);
 

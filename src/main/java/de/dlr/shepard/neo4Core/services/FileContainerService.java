@@ -3,7 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.io.InputStream;
 import java.util.List;
 
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
@@ -119,7 +119,7 @@ public class FileContainerService {
 	 * @param inputStream     the file itself
 	 * @return The newly created file
 	 */
-	public File createFile(long fileContainerId, String fileName, InputStream inputStream) {
+	public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
 		var fileContainer = fileContainerDAO.find(fileContainerId);
 		if (fileContainer == null || fileContainer.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", fileContainerId);

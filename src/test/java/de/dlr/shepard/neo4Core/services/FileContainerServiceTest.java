@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
@@ -171,7 +171,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void createFileTest() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		var file = new File("oid", "filename");
+		var file = new ShepardFile("oid", "filename");
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
@@ -242,11 +242,11 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void deleteFileTest() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		container.setFiles(List.of(new File("abc", "def"), new File("123", "456")));
+		container.setFiles(List.of(new ShepardFile("abc", "def"), new ShepardFile("123", "456")));
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setFiles(List.of(new File("123", "456")));
+		updated.setFiles(List.of(new ShepardFile("123", "456")));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(true);
@@ -260,11 +260,11 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void deleteFileTest_deletedFalse() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		container.setFiles(List.of(new File("abc", "def"), new File("123", "456")));
+		container.setFiles(List.of(new ShepardFile("abc", "def"), new ShepardFile("123", "456")));
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setFiles(List.of(new File("123", "456")));
+		updated.setFiles(List.of(new ShepardFile("123", "456")));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(false);

@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -21,7 +22,7 @@ import io.restassured.specification.RequestSpecification;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class FileTest extends BaseTestCaseIT {
-	private static File file;
+	private static ShepardFile file;
 
 	private static String containerURL;
 	private static RequestSpecification containerRequestSpec;
@@ -78,10 +79,10 @@ public class FileTest extends BaseTestCaseIT {
 	@Test
 	@Order(4)
 	public void uploadFile() throws URISyntaxException {
-		var newFile = new java.io.File(getClass().getClassLoader().getResource("test.txt").toURI());
+		var newFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());
 		var actual = given().spec(fileRequestSpec).multiPart(newFile).when()
 				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(File.class);
+				.as(ShepardFile.class);
 		file = actual;
 
 		assertThat(actual.getOid()).isNotBlank();
@@ -93,7 +94,7 @@ public class FileTest extends BaseTestCaseIT {
 	@Order(5)
 	public void getFiles() {
 		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(File[].class);
+				.then().statusCode(200).extract().as(ShepardFile[].class);
 
 		assertThat(actual).containsExactly(file);
 	}
@@ -101,7 +102,7 @@ public class FileTest extends BaseTestCaseIT {
 	@Test
 	@Order(6)
 	public void getFilePayload() throws URISyntaxException, IOException {
-		var oldFile = new java.io.File(getClass().getClassLoader().getResource("test.txt").toURI());
+		var oldFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());
 		var expected = Files.readString(oldFile.toPath());
 		var actual = given().spec(containerRequestSpec).when()
 				.get(String.format("%s/%d/payload/%s", containerURL, container.getId(), file.getOid())).then()
@@ -122,7 +123,7 @@ public class FileTest extends BaseTestCaseIT {
 				.statusCode(404);
 
 		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(File[].class);
+				.then().statusCode(200).extract().as(ShepardFile[].class);
 		assertThat(actual).isEmpty();
 	}
 

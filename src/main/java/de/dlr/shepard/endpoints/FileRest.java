@@ -4,7 +4,7 @@ import java.io.InputStream;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
@@ -51,7 +51,7 @@ public interface FileRest {
 
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Get files")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ShepardFile.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getAllFiles(long fileContainerId);
 
@@ -69,7 +69,7 @@ public interface FileRest {
 
 	@Tag(name = Constants.FILE)
 	@Operation(description = "Upload a new file")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = File.class)))
+	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = ShepardFile.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createFile(long fileContainerId,
 			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "File which you want to upload")) InputStream fileInputStream,

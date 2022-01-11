@@ -1,7 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,7 +51,7 @@ public interface FileReferenceRest {
 
 	@Tag(name = Constants.FILE_REFERENCE)
 	@Operation(description = "Get associated files")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = File.class))))
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ShepardFile.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getFiles(long collectionId, long dataObjectId, long fileId);
 

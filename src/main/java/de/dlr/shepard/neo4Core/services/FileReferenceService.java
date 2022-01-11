@@ -3,7 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.File;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
@@ -83,7 +83,7 @@ public class FileReferenceService {
 		return result;
 	}
 
-	public List<File> getFiles(long fileId) {
+	public List<ShepardFile> getFiles(long fileId) {
 		FileReference reference = fileReferenceDAO.find(fileId);
 		return reference.getFiles();
 	}

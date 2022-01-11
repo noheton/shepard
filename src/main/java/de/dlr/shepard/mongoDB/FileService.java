@@ -35,7 +35,7 @@ public class FileService {
 		return oid;
 	}
 
-	public File createFile(String mongoid, String fileName, InputStream inputStream) {
+	public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
 		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
 		if (collection == null) {
 			log.error("Could not find container with mongoid: {}", mongoid);
@@ -49,7 +49,7 @@ public class FileService {
 				.append(CREATEDAT_ATTR, createdAt);
 		collection.insertOne(doc);
 		var oid = doc.getObjectId(ID_ATTR).toHexString();
-		var file = new File(oid, createdAt, fileName);
+		var file = new ShepardFile(oid, createdAt, fileName);
 		return file;
 	}
 
@@ -72,7 +72,7 @@ public class FileService {
 		return new NamedInputStream(inputStream, filename);
 	}
 
-	public File getFile(String containerId, String fileoid) {
+	public ShepardFile getFile(String containerId, String fileoid) {
 		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(containerId);
 		if (collection == null) {
 			log.error("Could not find container with mongoid: {}", containerId);
@@ -83,7 +83,7 @@ public class FileService {
 			log.error("Could not find file with oid: {}", fileoid);
 			return null;
 		}
-		var file = new File(fileoid, doc.getDate(CREATEDAT_ATTR), doc.getString(FILENAME_ATTR));
+		var file = new ShepardFile(fileoid, doc.getDate(CREATEDAT_ATTR), doc.getString(FILENAME_ATTR));
 		return file;
 	}
 
