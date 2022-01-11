@@ -5,7 +5,7 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   REPO: shepard
   IMAGE: backend
-  OPENAPI_VERSION: 5.3.0
+  OPENAPI_VERSION: 5.3.1
   DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
 
 cache:
@@ -240,6 +240,34 @@ upload_javaclient:
   script:
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} compile package deploy -s ci_settings.xml
+  only:
+    refs:
+      - /^.*-release$/
+
+build_cppclient:
+  stage: build_clients
+  needs: [build]
+  dependencies: [build]
+  before_script:
+    - *version_number
+    - *download_openapi_generator
+  script:
+    - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g cpp-restsdk -o clients/cpp/client -p apiPackage=de.dlr.shepard.client.cpp.api -p modelPackage=de.dlr.shepard.client.cpp.model -p packageName=ShepardClient --type-mappings set=std::vector
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/cpp
+
+upload_cppclient:
+  stage: upload
+  needs: [build_cppclient]
+  dependencies: [build_cppclient]
+  before_script:
+    - *version_number
+  script:
+    - cd clients/cpp
+    - tar cvfz cpp-client.tgz client/
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file cpp-client.tgz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/cpp-client/1.0.0.${VERSION_NUMBER}/cpp-client.tgz"'
   only:
     refs:
       - /^.*-release$/
