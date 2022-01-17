@@ -1,7 +1,15 @@
 <template>
-  <div v-if="currentFile" class="file-container">
+  <div v-if="currentFileContainer" class="file-container">
     <div class="component">
       <b-button-group class="float-right">
+        <b-button
+          v-b-modal.upload-file-to-container-modal
+          v-b-tooltip.hover
+          title="Upload File"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
         <b-button
           v-if="managerAccess"
           v-b-modal.permissions-modal
@@ -12,7 +20,7 @@
           <PermissionsIcon />
         </b-button>
         <b-button
-          v-b-modal.delete-confirmation-modal
+          v-b-modal.delete-container-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
           variant="dark"
@@ -20,32 +28,76 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentFile.name }}</h3>
+      <h3>{{ currentFileContainer.name }}</h3>
       <p>
-        <b>ID:</b> {{ currentFile.id }}<br />
-        <b>Oid:</b> {{ currentFile.oid }}<br />
+        <b>ID:</b> {{ currentFileContainer.id }}<br />
+        <b>Oid:</b> {{ currentFileContainer.oid }}<br />
         <CreatedByLine
-          :created-at="currentFile.createdAt"
-          :created-by="currentFile.createdBy"
+          :created-at="currentFileContainer.createdAt"
+          :created-by="currentFileContainer.createdBy"
           tooltip
         />
       </p>
+      <DownloadAlert
+        :download-active="downloadActive"
+        :download-started="downloadStarted"
+        :download-error="downloadError"
+      />
+
       <b-list-group>
         <b-list-group-item v-for="(file, index) in fileList" :key="index">
-          {{ file.oid }} | {{ file.filename }}
+          <div class="float-left">
+            <b><GenericName :name="file.filename" :word-count="40" /></b> |
+            {{ file.oid }} | {{ new Date(file.createdAt).toLocaleString() }}
+          </div>
+          <b-button-group class="float-right">
+            <b-button
+              v-b-modal.file-download-confirmation-modal
+              v-b-tooltip.hover
+              title="Download"
+              variant="success"
+              @click="downloadFile(file.oid, file.filename)"
+            >
+              <DownloadIcon />
+            </b-button>
+            <b-button
+              v-b-modal.delete-file-confirmation-modal
+              v-b-tooltip.hover
+              title="Delete"
+              variant="dark"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-button-group>
+          <DeleteConfirmationModal
+            modal-id="delete-file-confirmation-modal"
+            modal-name="Confirm to delete file"
+            :modal-text="
+              'Do you really want do delete the file with name ' +
+              file.filename +
+              '?'
+            "
+            @confirmation="handleDeleteFile(file.oid)"
+          />
         </b-list-group-item>
       </b-list-group>
     </div>
+    <FileContainerModal
+      modal-id="upload-file-to-container-modal"
+      modal-name="Upload File To Container"
+      @created="uploadFile($event)"
+    />
     <DeleteConfirmationModal
-      modal-id="delete-confirmation-modal"
+      modal-id="delete-container-confirmation-modal"
       modal-name="Confirm to delete file container"
       :modal-text="
         'Do you really want do delete the file container with name ' +
-        currentFile.name +
+        currentFileContainer.name +
         '?'
       "
-      @confirmation="handleDelete()"
+      @confirmation="handleDeleteContainer()"
     />
+
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
@@ -57,17 +109,24 @@
 </template>
 
 <script lang="ts">
+import FileContainerModal from "@/components/containers/UploadFileModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { FileVue } from "@/utils/api-mixin";
+import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { FileContainer, Permissions } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface FileData {
-  currentFile?: FileContainer;
+  currentFileContainer?: FileContainer;
   permissions?: Permissions;
+  downloadStarted: boolean;
+  downloadActive: boolean;
+  downloadError: boolean;
   fileList: unknown[];
   managerAccess: boolean;
 }
@@ -75,12 +134,22 @@ interface FileData {
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
 ).extend({
-  components: { CreatedByLine, DeleteConfirmationModal, PermissionsModal },
+  components: {
+    CreatedByLine,
+    DeleteConfirmationModal,
+    PermissionsModal,
+    FileContainerModal,
+    DownloadAlert,
+    GenericName,
+  },
   mixins: [FileVue],
   data() {
     return {
-      currentFile: undefined,
+      currentFileContainer: undefined,
       permissions: undefined,
+      downloadStarted: false,
+      downloadActive: false,
+      downloadError: false,
       fileList: [],
       managerAccess: false,
     } as FileData;
@@ -91,18 +160,18 @@ export default (
     },
   },
   mounted() {
-    this.retrieveFile();
+    this.retrieveFileContainer();
     this.retrieveFileList();
     this.retrievePermissions();
   },
   methods: {
-    retrieveFile() {
+    retrieveFileContainer() {
       this.fileApi
         ?.getFileContainer({
           fileContainerId: this.currentFileId,
         })
         .then(response => {
-          this.currentFile = response;
+          this.currentFileContainer = response;
         })
         .catch(e => {
           const error = "Error while fetching file container: " + e.statusText;
@@ -123,7 +192,7 @@ export default (
           console.log(error);
         });
     },
-    handleDelete() {
+    handleDeleteContainer() {
       this.fileApi
         ?.deleteFileContainer({ fileContainerId: this.currentFileId })
         .then(() => {
@@ -134,6 +203,61 @@ export default (
           console.log(error);
           emitter.emit("error", error);
         });
+    },
+    uploadFile(newFile: Blob) {
+      if (this.currentFileContainer?.id)
+        this.fileApi
+          ?.createFile({
+            fileContainerId: this.currentFileContainer?.id,
+            file: newFile,
+          })
+          .then(() => {
+            this.retrieveFileList();
+          })
+          .catch(e => {
+            const error = "Error while uploading File: " + e.statusText;
+            console.log(error);
+            emitter.emit("error", error);
+          })
+          .finally();
+    },
+    downloadFile(oid: string, filename: string) {
+      this.downloadStarted = true;
+      this.downloadActive = true;
+      if (this.currentFileContainer?.id)
+        this.fileApi
+          ?.getFile({
+            fileContainerId: this.currentFileContainer?.id,
+            oid: oid,
+          })
+          .then(response => {
+            downloadFile(response, filename);
+          })
+          .catch(e => {
+            const error = "Error while fetching file: " + e.statusText;
+            console.log(error);
+            emitter.emit("error", error);
+            this.downloadStarted = false;
+            this.downloadError = true;
+          })
+          .finally(() => (this.downloadActive = false));
+    },
+
+    handleDeleteFile(oid: string) {
+      if (this.currentFileContainer?.id)
+        this.fileApi
+          ?.deleteFile({
+            fileContainerId: this.currentFileContainer?.id,
+            oid: oid,
+          })
+          .catch(e => {
+            const error = "Error while deleting file: " + e.statusText;
+            console.log(error);
+            emitter.emit("error", error);
+          })
+          .finally(() => {
+            this.retrieveFileList();
+          });
     },
     retrievePermissions() {
       this.fileApi
