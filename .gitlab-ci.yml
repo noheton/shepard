@@ -5,7 +5,7 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   REPO: shepard
   IMAGE: backend
-  OPENAPI_VERSION: 5.3.1
+  OPENAPI_VERSION: v5.3.1
   DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
 
 cache:
@@ -29,10 +29,6 @@ stages:
 .version_number: &version_number
   - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
   - echo ${VERSION_NUMBER}
-
-.download_openapi_generator: &download_openapi_generator
-  - apt-get update && apt-get install -y wget
-  - wget -nv https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/${OPENAPI_VERSION}/openapi-generator-cli-${OPENAPI_VERSION}.jar -O openapi-generator-cli.jar
 
 format-prettier:
   stage: test
@@ -158,13 +154,15 @@ upload_docker:
 
 build_pythonclient:
   stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
   needs: [build]
   dependencies: [build]
   before_script:
     - *version_number
-    - *download_openapi_generator
   script:
-    - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g python-legacy -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g python-legacy -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
     expire_in: 2 days
     paths:
@@ -187,13 +185,15 @@ upload_pythonclient:
 
 build_typescriptclient:
   stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
   needs: [build]
   dependencies: [build]
   before_script:
     - *version_number
-    - *download_openapi_generator
   script:
-    - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
   artifacts:
     expire_in: 2 days
     paths:
@@ -221,13 +221,15 @@ upload_typescriptclient:
 
 build_javaclient:
   stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
   needs: [build]
   dependencies: [build]
   before_script:
     - *version_number
-    - *download_openapi_generator
   script:
-    - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}-SNAPSHOT
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}-SNAPSHOT
   artifacts:
     expire_in: 2 days
     paths:
@@ -246,13 +248,15 @@ upload_javaclient:
 
 build_cppclient:
   stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
   needs: [build]
   dependencies: [build]
   before_script:
     - *version_number
-    - *download_openapi_generator
   script:
-    - java -jar openapi-generator-cli.jar generate -i target/openapi/openapi.json -g cpp-restsdk -o clients/cpp/client -p apiPackage=de.dlr.shepard.client.cpp.api -p modelPackage=de.dlr.shepard.client.cpp.model -p packageName=ShepardClient --type-mappings set=std::vector
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g cpp-restsdk -o clients/cpp/client -p apiPackage=de.dlr.shepard.client.cpp.api -p modelPackage=de.dlr.shepard.client.cpp.model -p packageName=ShepardClient --type-mappings set=std::vector
   artifacts:
     expire_in: 2 days
     paths:
