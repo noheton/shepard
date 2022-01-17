@@ -133,6 +133,22 @@ build:
       - target/shepard.war
       - target/openapi/*
 
+openapi-diff:
+  stage: build_clients
+  image:
+    name: openapitools/openapi-diff:latest
+    entrypoint: [""]
+  needs: [build]
+  dependencies: [build]
+  script:
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/backend/-/jobs/artifacts/master/raw/target/openapi/openapi.yaml?job=build target/openapi/openapi.yaml --fail-on-changed --markdown target/openapi/diff.md
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - target/openapi/*
+  allow_failure: true
+
 upload_docker:
   image: docker:latest
   stage: upload
