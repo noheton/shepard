@@ -1,0 +1,53 @@
+.build_typescript: &build_typescript
+  stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
+  needs: [build]
+  dependencies: [build]
+  script:
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/typescript
+
+.upload_typescript: &upload_typescript
+  stage: upload
+  image: node:14-slim
+  before_script:
+    - cd clients/typescript
+    - touch .npmrc
+    - echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" >> .npmrc
+    - echo "${CI_API_V4_URL#http*:}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}" >> .npmrc
+  script:
+    - npm install
+    - npm run build
+    - npm publish
+
+build_typescriptclient_dev:
+  <<: *build_typescript
+  extends: .only_branches
+  before_script:
+    - !reference [.version_number, script]
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev
+    - echo ${VERSION_NUMBER}
+
+upload_typescriptclient_dev:
+  <<: *upload_typescript
+  extends: .only_master
+  needs: [build_typescriptclient_dev]
+  dependencies: [build_typescriptclient_dev]
+
+build_typescriptclient:
+  <<: *build_typescript
+  extends: .only_releases
+  before_script:
+    - !reference [.version_number, script]
+    - echo ${VERSION_NUMBER}
+
+upload_typescriptclient:
+  <<: *upload_typescript
+  extends: .only_releases
+  needs: [build_typescriptclient]
+  dependencies: [build_typescriptclient]

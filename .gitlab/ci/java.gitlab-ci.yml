@@ -1,0 +1,46 @@
+.build_java: &build_java
+  stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:v5.3.0
+    entrypoint: [""]
+  needs: [build]
+  dependencies: [build]
+  script:
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/java
+
+.upload_java: &upload_java
+  stage: upload
+  script:
+    - cd clients/java
+    - mvn ${MAVEN_CLI_OPTS} compile package deploy -s ci_settings.xml
+
+build_javaclient_dev:
+  <<: *build_java
+  extends: .only_branches
+  before_script:
+    - !reference [.version_number, script]
+    - export VERSION_NUMBER=${VERSION_NUMBER}-SNAPSHOT
+    - echo ${VERSION_NUMBER}
+
+upload_javaclient_dev:
+  <<: *upload_java
+  extends: .only_master
+  needs: [build_javaclient_dev]
+  dependencies: [build_javaclient_dev]
+
+build_javaclient:
+  <<: *build_java
+  extends: .only_releases
+  before_script:
+    - !reference [.version_number, script]
+    - echo ${VERSION_NUMBER}
+
+upload_javaclient:
+  <<: *upload_java
+  extends: .only_releases
+  needs: [build_javaclient]
+  dependencies: [build_javaclient]

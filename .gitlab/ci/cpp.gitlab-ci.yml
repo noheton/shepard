@@ -1,0 +1,37 @@
+.upload_cpp: &upload_cpp
+  stage: upload
+  needs: [build_cppclient]
+  dependencies: [build_cppclient]
+  script:
+    - cd clients/cpp
+    - tar cvfz cpp-client.tgz client/
+    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file cpp-client.tgz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/cpp-client/${VERSION_NUMBER}/cpp-client.tgz"'
+
+build_cppclient:
+  stage: build_clients
+  image:
+    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    entrypoint: [""]
+  needs: [build]
+  dependencies: [build]
+  script:
+    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g cpp-restsdk -o clients/cpp/client -p apiPackage=de.dlr.shepard.client.cpp.api -p modelPackage=de.dlr.shepard.client.cpp.model -p packageName=ShepardClient --type-mappings set=std::vector
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - clients/cpp
+
+upload_cppclient_dev:
+  <<: *upload_cpp
+  extends: .only_master
+  before_script:
+    - !reference [.version_number, script]
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev
+    - echo ${VERSION_NUMBER}
+
+upload_cppclient:
+  <<: *upload_cpp
+  extends: .only_releases
+  before_script:
+    - !reference [.version_number, script]
+    - echo ${VERSION_NUMBER}
