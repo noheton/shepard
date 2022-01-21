@@ -23,7 +23,7 @@
   script:
     - npm install
     - npm run build
-    - npm publish
+    - npm publish --tag ${NPM_TAG}
 
 build_typescriptclient_dev:
   <<: *build_typescript
@@ -38,6 +38,8 @@ upload_typescriptclient_dev:
   extends: .only_master
   needs: [build_typescriptclient_dev]
   dependencies: [build_typescriptclient_dev]
+  variables:
+    NPM_TAG: dev
 
 build_typescriptclient:
   <<: *build_typescript
@@ -51,3 +53,5 @@ upload_typescriptclient:
   extends: .only_releases
   needs: [build_typescriptclient]
   dependencies: [build_typescriptclient]
+  variables:
+    NPM_TAG: latest
