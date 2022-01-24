@@ -159,7 +159,7 @@ openapi-diff:
   needs: [build]
   dependencies: [build]
   script:
-    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/backend/-/jobs/artifacts/master/raw/target/openapi/openapi.yaml?job=build target/openapi/openapi.yaml --fail-on-changed --markdown target/openapi/diff.md
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/backend/-/jobs/artifacts/master/raw/target/openapi/openapi.yaml?job=build target/openapi/openapi.yaml --fail-on-changed --text target/openapi/diff.txt --markdown target/openapi/diff.md
   artifacts:
     when: always
     expire_in: 2 days

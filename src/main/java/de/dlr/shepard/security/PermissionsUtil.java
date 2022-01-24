@@ -1,10 +1,14 @@
 package de.dlr.shepard.security;
 
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PermissionType;
@@ -13,6 +17,7 @@ import jakarta.ws.rs.core.PathSegment;
 public class PermissionsUtil {
 
 	private PermissionsService permissionsService = new PermissionsService();
+	private UserGroupService userGroupService = new UserGroupService();
 
 	/**
 	 * Check whether a request is allowed or not
@@ -67,12 +72,25 @@ public class PermissionsUtil {
 		} else if (AccessType.Read.equals(accessType)) {
 			return PermissionType.Public.equals(perms.getPermissionType())
 					|| PermissionType.PublicReadable.equals(perms.getPermissionType())
-					|| perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()));
+					|| perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()))
+					|| fetchUserNames(perms.getReaderGroups()).contains(username);
 		} else if (AccessType.Write.equals(accessType)) {
 			return PermissionType.Public.equals(perms.getPermissionType())
-					|| perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()));
+					|| perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()))
+					|| fetchUserNames(perms.getWriterGroups()).contains(username);
 		}
 
 		return false;
+	}
+
+	private HashSet<String> fetchUserNames(List<UserGroup> UserGroups) {
+		HashSet<String> ret = new HashSet<String>();
+		for (UserGroup userGroup : UserGroups) {
+			UserGroup fullUserGroup = userGroupService.getUserGroup(userGroup.getId());
+			for (User user : fullUserGroup.getUsers()) {
+				ret.add(user.getUsername());
+			}
+		}
+		return ret;
 	}
 }

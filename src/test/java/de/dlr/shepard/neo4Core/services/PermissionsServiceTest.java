@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -14,15 +16,20 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.UserGroupDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 
 public class PermissionsServiceTest extends BaseTestCase {
 
 	@Mock
 	private UserDAO userDAO;
+
+	@Mock
+	private UserGroupDAO userGroupDAO;
 
 	@Mock
 	private PermissionsDAO dao;
@@ -70,6 +77,20 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var reader = new User("reader");
 		var writer = new User("writer");
 		var manager = new User("manager");
+		var groupwriter = new User("groupwriter");
+		UserGroup writerGroup = new UserGroup();
+		ArrayList<User> writerGroupList = new ArrayList<User>();
+		writerGroupList.add(groupwriter);
+		writerGroup.setName("writerGroup");
+		writerGroup.setId(12L);
+		writerGroup.setUsers(writerGroupList);
+		List<UserGroup> writerGroupsList = new ArrayList<UserGroup>();
+		writerGroupsList.add(writerGroup);
+
+		UserGroup readerGroup = new UserGroup();
+		readerGroup.setId(null);
+		ArrayList<UserGroup> readerGroupsList = new ArrayList<UserGroup>();
+		readerGroupsList.add(readerGroup);
 
 		var col = new Collection(2L);
 		var existing = new Permissions(1L);
@@ -80,6 +101,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setOwner("owner");
 				setReader(new String[] { "reader" });
 				setWriter(new String[] { "writer" });
+				setWriterGroupIds(new long[] { 12L });
 				setManager(new String[] { "manager" });
 			}
 		};
@@ -91,6 +113,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
+				setWriterGroups(writerGroupsList);
 				setManager(List.of(manager));
 			}
 		};
@@ -99,9 +122,9 @@ public class PermissionsServiceTest extends BaseTestCase {
 		when(userDAO.find("reader")).thenReturn(reader);
 		when(userDAO.find("writer")).thenReturn(writer);
 		when(userDAO.find("manager")).thenReturn(manager);
+		when(userGroupDAO.find(12L)).thenReturn(writerGroup);
 		when(dao.findByEntity(2L)).thenReturn(existing);
 		when(dao.createOrUpdate(updated)).thenReturn(updated);
-
 		var actual = service.updatePermissions(perms, 2L);
 		assertEquals(updated, actual);
 	}
@@ -119,6 +142,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setOwner("owner");
 				setReader(new String[] { "reader" });
 				setWriter(new String[] { "writer" });
+				setReaderGroupIds(new long[] {});
 				setManager(new String[] { "manager" });
 			}
 		};
@@ -128,6 +152,8 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
+				setReaderGroups(Collections.emptyList());
+				setWriterGroups(Collections.emptyList());
 				setManager(List.of(manager));
 			}
 		};
@@ -139,6 +165,8 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
+				setReaderGroups(Collections.emptyList());
+				setWriterGroups(Collections.emptyList());
 				setManager(List.of(manager));
 			}
 		};
@@ -168,6 +196,8 @@ public class PermissionsServiceTest extends BaseTestCase {
 			{
 				setReader(new String[] { "reader", "not_existing" });
 				setWriter(new String[] { "writer", null });
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[0]);
 			}
 		};
@@ -178,6 +208,8 @@ public class PermissionsServiceTest extends BaseTestCase {
 				setEntity(col);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
+				setReaderGroups(Collections.emptyList());
+				setWriterGroups(Collections.emptyList());
 			}
 		};
 

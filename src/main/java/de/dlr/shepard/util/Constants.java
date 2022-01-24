@@ -11,6 +11,8 @@ public class Constants {
 	public static final String USER = "user";
 	public static final String USERS = "users";
 	public static final String USERNAME = "username";
+	public static final String USERGROUP = "usergroup";
+	public static final String USERGROUPID = "usergroupId";
 
 	public static final String APIKEY = "apikey";
 	public static final String APIKEYS = "apikeys";
@@ -76,6 +78,8 @@ public class Constants {
 	public static final String WRITEABLE_BY = "writeable_by";
 	public static final String MANAGEABLE_BY = "manageable_by";
 	public static final String HAS_PERMISSIONS = "has_permissions";
+	public static final String READABLE_BY_GROUP = "readable_by_group";
+	public static final String WRITEABLE_BY_GROUP = "writeable_by_group";
 
 	// Query Params
 	public static final String QP_NAME = "name";
@@ -98,6 +102,7 @@ public class Constants {
 	public static final String SUBSCRIBED_BY = "subscribed_by";
 	public static final String POINTS_TO = "points_to";
 	public static final String IS_IN_CONTAINER = "is_in_container";
+	public static final String IS_IN_GROUP = "is_in_group";
 
 	// Influx
 	public static final String MEASUREMENT = "measurement";

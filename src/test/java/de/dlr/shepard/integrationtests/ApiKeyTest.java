@@ -78,7 +78,6 @@ public class ApiKeyTest extends BaseTestCaseIT {
 	@Order(4)
 	public void deleteApiKeyTest() {
 		given().spec(requestSpecification).when().delete(apikeysURL + "/" + apikey.getUid()).then().statusCode(204);
-
 		given().spec(requestSpecification).when().get(apikeysURL + "/" + apikey.getUid()).then().statusCode(404);
 	}
 

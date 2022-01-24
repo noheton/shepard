@@ -37,7 +37,6 @@ public class CollectionTest extends BaseTestCaseIT {
 		payload.setName("CollectionDummy");
 		payload.setDescription("My Description");
 		payload.setAttributes(Map.of("a", "1", "b", "2"));
-
 		CollectionIO actual = given().spec(requestSpecification).body(payload).when().post().then().statusCode(201)
 				.extract().as(CollectionIO.class);
 		collection = actual;
@@ -147,7 +146,6 @@ public class CollectionTest extends BaseTestCaseIT {
 	public void deleteCollectionTest_Successful() {
 		given().spec(requestSpecification).when().delete(collectionsURL + "/" + collection.getId()).then()
 				.statusCode(204);
-
 		given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
 	}
 }

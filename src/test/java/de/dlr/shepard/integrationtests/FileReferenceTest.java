@@ -93,7 +93,6 @@ public class FileReferenceTest extends BaseTestCaseIT {
 	public void getFileReferences() {
 		var actual = given().spec(referencesRequestSpec).when().get().then().statusCode(200).extract()
 				.as(FileReferenceIO[].class);
-
 		assertThat(actual).containsExactly(reference);
 	}
 

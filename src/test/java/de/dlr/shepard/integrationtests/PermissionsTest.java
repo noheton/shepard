@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.PermissionType;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -26,13 +27,19 @@ public class PermissionsTest extends BaseTestCaseIT {
 	private static String collectionsURL;
 
 	private static String permissionsURL;
+	private static String userGroupURL;
 	private static RequestSpecification requestSpecification;
 	private static RequestSpecification requestSpecification1;
 	private static RequestSpecification requestSpecification2;
+	private static RequestSpecification requestSpecification3;
+	private static RequestSpecification userGroupSpecification;
 	private static UserWithApiKey user1;
 	private static UserWithApiKey user2;
+	private static UserWithApiKey user3;
+	private static UserWithApiKey user4;
 	private static String jws1;
 	private static String jws2;
+	private static String jws3;
 
 	@BeforeAll
 	public static void setUp() {
@@ -43,14 +50,20 @@ public class PermissionsTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws).build();
 		user1 = getNewUserWithApiKey("user1");
 		user2 = getNewUserWithApiKey("user2");
+		user3 = getNewUserWithApiKey("user3");
+		user4 = getNewUserWithApiKey("user4");
 		jws1 = user1.getApiKey().getJws();
 		jws2 = user2.getApiKey().getJws();
+		jws3 = user3.getApiKey().getJws();
 		requestSpecification1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
 				.addHeader("X-API-KEY", jws1).build();
 		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
 				.addHeader("X-API-KEY", jws2).build();
+		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
+				.addHeader("X-API-KEY", jws3).build();
 		collection1 = createCollection("PermissionsTestCollection1", user1);
 		collection2 = createCollection("PermissionsTestCollection2", user2);
+		userGroupURL = String.format("%s/usergroup", baseURL);
 	}
 
 	@Test
@@ -85,6 +98,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 				setOwner(null);
 				setReader(new String[] { username });
 				setWriter(new String[] { username });
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[] { username });
 			}
 		};
@@ -117,6 +132,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 			{
 				setReader(new String[] {});
 				setWriter(new String[] {});
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[] {});
 				setPermissionType(PermissionType.PublicReadable);
 			}
@@ -148,6 +165,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 			{
 				setReader(new String[] {});
 				setWriter(new String[] {});
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[] {});
 				setPermissionType(PermissionType.Public);
 			}
@@ -170,6 +189,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 			{
 				setReader(new String[] { "user1" });
 				setWriter(new String[] {});
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[] {});
 				setPermissionType(PermissionType.Private);
 			}
@@ -191,6 +212,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 			{
 				setReader(new String[] {});
 				setWriter(new String[] { "user1" });
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(new long[] {});
 				setManager(new String[] {});
 				setPermissionType(PermissionType.Private);
 			}
@@ -202,6 +225,136 @@ public class PermissionsTest extends BaseTestCaseIT {
 		requestSpecification1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws1).build();
 		var answer = given().spec(requestSpecification1).body(collection2).when()
+				.put(collectionsURL + "/" + collection2.getId());
+		assertEquals(200, answer.statusCode());
+	}
+
+	@Test
+	@Order(10)
+	public void notPermittedGetViaReadersGroup() {
+		UserGroupIO readersGroup = new UserGroupIO();
+		readersGroup.setName("readersGroup");
+		readersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
+		userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(userGroupURL)
+				.addHeader("X-API-KEY", jws2).build();
+		readersGroup = given().spec(userGroupSpecification).body(readersGroup).when().post(userGroupURL).then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+		long[] readerGroupIds = { readersGroup.getId() };
+		var permissions = new PermissionsIO() {
+			{
+				setReader(new String[] {});
+				setWriter(new String[] {});
+				setReaderGroupIds(readerGroupIds);
+				setWriterGroupIds(new long[] {});
+				setManager(new String[] {});
+				setPermissionType(PermissionType.Private);
+			}
+		};
+		permissionsURL = String.format("%s/collections/%d/permissions", baseURL, collection2.getId());
+		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
+				.addHeader("X-API-KEY", jws2).build();
+		given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
+
+		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
+				.addHeader("X-API-KEY", jws3).build();
+		var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
+		assertEquals(403, answer.statusCode());
+	}
+
+	@Test
+	@Order(11)
+	public void permittedGetViaReadersGroup() {
+		UserGroupIO readersGroup = new UserGroupIO();
+		readersGroup.setName("readersGroup1");
+		readersGroup.setUsernames(new String[] { "user3" });
+		userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(userGroupURL)
+				.addHeader("X-API-KEY", jws2).build();
+		readersGroup = given().spec(userGroupSpecification).body(readersGroup).when().post(userGroupURL).then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+		long[] readerGroupIds = { readersGroup.getId() };
+		var permissions = new PermissionsIO() {
+			{
+				setReader(new String[] {});
+				setWriter(new String[] {});
+				setReaderGroupIds(readerGroupIds);
+				setWriterGroupIds(new long[] {});
+				setManager(new String[] {});
+				setPermissionType(PermissionType.Private);
+			}
+		};
+		permissionsURL = String.format("%s/collections/%d/permissions", baseURL, collection2.getId());
+		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
+				.addHeader("X-API-KEY", jws2).build();
+		given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
+
+		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
+				.addHeader("X-API-KEY", jws3).build();
+		var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
+		assertEquals(200, answer.statusCode());
+	}
+
+	@Test
+	@Order(12)
+	public void notPermittedPutViaWritersGroup() {
+		UserGroupIO writersGroup = new UserGroupIO();
+		writersGroup.setName("writersGroup");
+		writersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
+		userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(userGroupURL)
+				.addHeader("X-API-KEY", jws2).build();
+		writersGroup = given().spec(userGroupSpecification).body(writersGroup).when().post(userGroupURL).then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+		long[] writersGroupIds = { writersGroup.getId() };
+		var permissions = new PermissionsIO() {
+			{
+				setReader(new String[] {});
+				setWriter(new String[] {});
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(writersGroupIds);
+				setManager(new String[] {});
+				setPermissionType(PermissionType.Private);
+			}
+		};
+		permissionsURL = String.format("%s/collections/%d/permissions", baseURL, collection2.getId());
+		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
+				.addHeader("X-API-KEY", jws2).build();
+		given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
+
+		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
+				.addHeader("X-API-KEY", jws3).build();
+		var answer = given().spec(requestSpecification3).body(collection2).when()
+				.put(collectionsURL + "/" + collection2.getId());
+		assertEquals(403, answer.statusCode());
+	}
+
+	@Test
+	@Order(13)
+	public void permittedPutViaWritersGroup() {
+		UserGroupIO writersGroup = new UserGroupIO();
+		writersGroup.setName("writersGroup1");
+		writersGroup.setUsernames(new String[] { "user3" });
+		userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(userGroupURL)
+				.addHeader("X-API-KEY", jws2).build();
+		writersGroup = given().spec(userGroupSpecification).body(writersGroup).when().post(userGroupURL).then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+		long[] writersGroupIds = { writersGroup.getId() };
+		var permissions = new PermissionsIO() {
+			{
+				setReader(new String[] {});
+				setWriter(new String[] {});
+				setReaderGroupIds(new long[] {});
+				setWriterGroupIds(writersGroupIds);
+				setManager(new String[] {});
+				setPermissionType(PermissionType.Private);
+			}
+		};
+		permissionsURL = String.format("%s/collections/%d/permissions", baseURL, collection2.getId());
+		requestSpecification2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
+				.addHeader("X-API-KEY", jws2).build();
+		given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
+
+		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
+				.addHeader("X-API-KEY", jws3).build();
+		var answer = given().spec(requestSpecification3).body(collection2).when()
 				.put(collectionsURL + "/" + collection2.getId());
 		assertEquals(200, answer.statusCode());
 	}

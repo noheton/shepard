@@ -5,8 +5,10 @@ import java.util.List;
 
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.UserGroupDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,6 +17,7 @@ public class PermissionsService {
 
 	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private UserDAO userDAO = new UserDAO();
+	private UserGroupDAO userGroupDAO = new UserGroupDAO();
 
 	/**
 	 * Searches for permissions in Neo4j.
@@ -54,17 +57,21 @@ public class PermissionsService {
 		var permissionType = permissions.getPermissionType();
 		var reader = fetchUsers(permissions.getReader());
 		var writer = fetchUsers(permissions.getWriter());
+		var readerGroups = fetchUserGroups(permissions.getReaderGroupIds());
+		var writerGroups = fetchUserGroups(permissions.getWriterGroupIds());
 		var manager = fetchUsers(permissions.getManager());
-
 		var old = getPermissionsByEntity(entityId);
 		if (old == null) {
 			// There is no old permissions object
-			var toCreate = new Permissions(owner, reader, writer, manager, permissions.getPermissionType());
+			var toCreate = new Permissions(owner, reader, writer, readerGroups, writerGroups, manager,
+					permissions.getPermissionType());
 			return permissionsDAO.createWithEntity(toCreate, entityId);
 		}
 		old.setOwner(owner);
 		old.setReader(reader);
 		old.setWriter(writer);
+		old.setReaderGroups(readerGroups);
+		old.setWriterGroups(writerGroups);
 		old.setManager(manager);
 		old.setPermissionType(permissionType);
 		return permissionsDAO.createOrUpdate(old);
@@ -81,6 +88,17 @@ public class PermissionsService {
 			var user = userDAO.find(username);
 			if (user != null) {
 				result.add(user);
+			}
+		}
+		return result;
+	}
+
+	private List<UserGroup> fetchUserGroups(long[] userGroupIds) {
+		var result = new ArrayList<UserGroup>(userGroupIds.length);
+		for (var userGroupId : userGroupIds) {
+			var userGroup = userGroupDAO.find(userGroupId);
+			if (userGroup != null) {
+				result.add(userGroup);
 			}
 		}
 		return result;

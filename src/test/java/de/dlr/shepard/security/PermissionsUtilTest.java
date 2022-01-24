@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,9 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.PermissionType;
 import jakarta.ws.rs.core.PathSegment;
@@ -34,6 +37,9 @@ public class PermissionsUtilTest extends BaseTestCase {
 
 	@Mock
 	private PermissionsService permissionsService;
+
+	@Mock
+	private UserGroupService userGroupService;
 
 	@InjectMocks
 	private PermissionsUtil util;
@@ -209,6 +215,86 @@ public class PermissionsUtilTest extends BaseTestCase {
 
 		var actual = util.isAllowed(pathSegments, AccessType.Write, "principal");
 		assertTrue(actual);
+	}
+
+	@Test
+	public void isAllowedTest_WriterGroup() {
+		UserGroup writerGroup = new UserGroup();
+		writerGroup.setId(35L);
+		User writer = new User("principal");
+		ArrayList<User> users = new ArrayList<User>();
+		users.add(writer);
+		writerGroup.setUsers(users);
+		ArrayList<UserGroup> writerGroups = new ArrayList<UserGroup>();
+		writerGroups.add(writerGroup);
+		var perms = new Permissions() {
+			{
+				setWriterGroups(writerGroups);
+			}
+		};
+		when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		assertTrue(util.isAllowed(123, AccessType.Write, "principal"));
+	}
+
+	@Test
+	public void isNotAllowedTest_WriterGroup() {
+		UserGroup writerGroup = new UserGroup();
+		writerGroup.setId(35L);
+		User writer = new User("principal");
+		ArrayList<User> users = new ArrayList<User>();
+		users.add(writer);
+		writerGroup.setUsers(users);
+		ArrayList<UserGroup> writerGroups = new ArrayList<UserGroup>();
+		writerGroups.add(writerGroup);
+		var perms = new Permissions() {
+			{
+				setWriterGroups(writerGroups);
+			}
+		};
+		when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		assertFalse(util.isAllowed(123, AccessType.Write, "Heinz"));
+	}
+
+	@Test
+	public void isAllowedTest_ReaderGroup() {
+		UserGroup readerGroup = new UserGroup();
+		readerGroup.setId(35L);
+		User reader = new User("principal");
+		ArrayList<User> users = new ArrayList<User>();
+		users.add(reader);
+		readerGroup.setUsers(users);
+		ArrayList<UserGroup> readerGroups = new ArrayList<UserGroup>();
+		readerGroups.add(readerGroup);
+		var perms = new Permissions() {
+			{
+				setReaderGroups(readerGroups);
+			}
+		};
+		when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		assertTrue(util.isAllowed(123, AccessType.Read, "principal"));
+	}
+
+	@Test
+	public void isNotAllowedTest_ReaderGroup() {
+		UserGroup readerGroup = new UserGroup();
+		readerGroup.setId(35L);
+		User reader = new User("principal");
+		ArrayList<User> users = new ArrayList<User>();
+		users.add(reader);
+		readerGroup.setUsers(users);
+		ArrayList<UserGroup> readerGroups = new ArrayList<UserGroup>();
+		readerGroups.add(readerGroup);
+		var perms = new Permissions() {
+			{
+				setReaderGroups(readerGroups);
+			}
+		};
+		when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		assertFalse(util.isAllowed(123, AccessType.Read, "AKP"));
 	}
 
 	@Test
