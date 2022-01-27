@@ -82,7 +82,7 @@
         </b-list-group-item>
       </b-list-group>
     </div>
-    <FileContainerModal
+    <UploadFileModal
       modal-id="upload-file-to-container-modal"
       modal-name="Upload File To Container"
       @created="uploadFile($event)"
@@ -109,7 +109,7 @@
 </template>
 
 <script lang="ts">
-import FileContainerModal from "@/components/containers/UploadFileModal.vue";
+import UploadFileModal from "@/components/containers/UploadFileModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
@@ -138,7 +138,7 @@ export default (
     CreatedByLine,
     DeleteConfirmationModal,
     PermissionsModal,
-    FileContainerModal,
+    UploadFileModal,
     DownloadAlert,
     GenericName,
   },
