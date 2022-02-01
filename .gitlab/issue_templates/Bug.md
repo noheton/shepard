@@ -1,4 +1,4 @@
-# Reporting a bug
+# Bug Report
 
 <!--
 Thanks for contributing to our project!

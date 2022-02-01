@@ -1,4 +1,4 @@
-# Requesting a new feature
+# Feature Request
 
 <!--
 Thanks for contributing to our project!
