@@ -3,31 +3,20 @@
 The shepard frontend is based on [Vue.js](https://vuejs.org/) and [OpenAPI Generator](https://openapi-generator.tech/).
 For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
-## Documentation
+## Getting started as an administrator
 
-- [Vue.js](https://vuejs.org/v2/guide/)
-- [Typescript](https://www.typescriptlang.org/docs/)
-- [BootstrapVue](https://bootstrap-vue.org/)
-- [Material Design Icons](https://materialdesignicons.com/)
+Information about the deployment can be found [here](https://gitlab.com/dlr-shepard/deployment).
 
-## Downloads
+## Getting started as a contributor
 
-- NodeJS and npm: <https://nodejs.org/en/download/>
-- Visual Studio Code: <https://code.visualstudio.com/>
-- Vue tooling for VS Code: <https://vuejs.github.io/vetur/>
-- Vue Devtools for Firefox: <https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/>
-- Vue Devtools for Chrome: <https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd>
+Shepard is open for contributions.
+Information on how to contribute can be found [here](CONTRIBUTING.md).
 
-## Installation
-
-1. Update environment variables in `.env.development`
-2. Install packages via `npm install`
-3. Run development server via `npm run serve`
-
-## Commands
+## Useful Commands
 
 - Install node modules: `npm install`
 - Update packages: `npm update`
+- Find outdated packages: `npm outdated`
 - Compile for development: `npm run serve`
 - Run linter: `npm run lint`
 - Fix linting issues: `npm run fix`
