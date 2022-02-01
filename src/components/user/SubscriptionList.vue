@@ -1,16 +1,24 @@
 <template>
   <div>
-    <h4>Subscriptions List</h4>
-    <b-button v-b-modal.create-subscription-modal variant="primary">
-      Create
-    </b-button>
+    <b-container>
+      <b-row class="mb-2">
+        <b-button
+          v-b-modal.create-subscription-modal
+          class="ml-auto"
+          variant="primary"
+        >
+          Create
+        </b-button>
+      </b-row>
+    </b-container>
     <div>
       <b-list-group>
         <b-list-group-item
           v-for="(subscription, index) in subscriptions"
           :key="index"
         >
-          {{ subscription.name }} | {{ subscription.callbackURL }} |
+          <b><GenericName :name="subscription.name" :word-count="60" /></b> ID:
+          {{ subscription.id }} | {{ subscription.callbackURL }} |
           {{ subscription.subscribedURL }} | {{ subscription.requestMethod }}
           <b-button
             v-b-modal.delete-confirmation-modal
@@ -26,40 +34,7 @@
         </b-list-group-item>
       </b-list-group>
     </div>
-    <b-modal
-      id="create-subscription-modal"
-      ref="modal"
-      title="Create Subscription"
-      @show="subscriptionToCreate = { requestMethod: 'GET' }"
-      @ok="handleCreate()"
-    >
-      <div v-if="subscriptionToCreate">
-        <b-form-group label="Name">
-          <b-form-input
-            v-model="subscriptionToCreate.name"
-            placeholder="My Subscription"
-          ></b-form-input>
-        </b-form-group>
-        <b-form-group label="Callback URL">
-          <b-form-input
-            v-model="subscriptionToCreate.callbackURL"
-            placeholder="http://my-server.example.com/callback-url"
-          ></b-form-input>
-        </b-form-group>
-        <b-form-group label="Subscribed URL">
-          <b-form-input
-            v-model="subscriptionToCreate.subscribedURL"
-            placeholder=".*/collections/123"
-          ></b-form-input>
-        </b-form-group>
-        <b-form-group label="Request Method">
-          <b-form-select
-            v-model="subscriptionToCreate.requestMethod"
-            :options="requestMethods"
-          ></b-form-select>
-        </b-form-group>
-      </div>
-    </b-modal>
+    <SubscriptionModal @create="handleCreate($event)" />
     <DeleteConfirmationModal
       v-if="currentSubscription"
       modal-id="delete-confirmation-modal"
@@ -76,6 +51,8 @@
 
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
 import { SubscriptionVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
 import {
@@ -87,14 +64,13 @@ import Vue, { VueConstructor } from "vue";
 interface SubscriptionListData {
   subscriptions: Subscription[];
   currentSubscription?: Subscription;
-  subscriptionToCreate?: Subscription;
   requestMethods: string[];
 }
 
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof SubscriptionVue>>
 ).extend({
-  components: { DeleteConfirmationModal },
+  components: { DeleteConfirmationModal, SubscriptionModal, GenericName },
   mixins: [SubscriptionVue],
   props: {
     currentUsername: {
@@ -106,14 +82,8 @@ export default (
     return {
       subscriptions: new Array<Subscription>(),
       currentSubscription: undefined,
-      subscriptionToCreate: undefined,
       requestMethods: Object.values(SubscriptionRequestMethodEnum),
     } as SubscriptionListData;
-  },
-  watch: {
-    currentUsername() {
-      this.retrieveSubscriptions();
-    },
   },
   mounted() {
     this.retrieveSubscriptions();
@@ -131,18 +101,14 @@ export default (
           console.log(error);
         });
     },
-    handleCreate() {
-      if (!this.subscriptionToCreate) {
-        return;
-      }
+    handleCreate(subscription: Subscription) {
       this.subscriptionApi
         ?.createSubscription({
           username: this.currentUsername,
-          subscription: this.subscriptionToCreate,
+          subscription: subscription,
         })
         .then(response => {
           this.subscriptions.push(response);
-          this.subscriptionToCreate = undefined;
         })
         .catch(e => {
           const error = "Error while creating subscription: " + e.statusText;
@@ -162,6 +128,7 @@ export default (
           emitter.emit("error", error);
         })
         .finally(() => {
+          this.currentSubscription = undefined;
           this.retrieveSubscriptions();
         });
     },

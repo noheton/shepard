@@ -6,6 +6,19 @@
         <b-list-group-item v-for="c in claims" :key="c.key">
           <strong>{{ c.key }}:</strong> {{ c.value }}
         </b-list-group-item>
+        <b-list-group-item>
+          <strong>Bearer Token: </strong>
+          <code>
+            {{ oidcAccessToken.substring(0, 50) + "... " }}
+          </code>
+          <b-link
+            title="Copy Bearer Token"
+            class="float-right"
+            @click="copyBearerToken()"
+          >
+            <CopyIcon :size="15" />
+          </b-link>
+        </b-list-group-item>
       </b-list-group>
     </div>
     <b-button variant="danger" @click="signOutOidc()"> Sign out </b-button>
@@ -35,6 +48,10 @@ export default Vue.extend({
   },
   methods: {
     ...mapActions("oidcStore", ["signOutOidc"]),
+    copyBearerToken() {
+      if (this.oidcAccessToken)
+        navigator.clipboard.writeText(this.oidcAccessToken);
+    },
   },
 });
 </script>

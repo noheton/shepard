@@ -20,27 +20,20 @@
             <th scope="row">E-Mail</th>
             <td>{{ user.email }}</td>
           </tr>
-          <tr>
-            <th scope="row">Bearer Token</th>
-            <td>
-              <b-button size="sm" variant="primary" @click="copyBearerToken()">
-                Copy Token
-              </b-button>
-            </td>
-          </tr>
         </tbody>
       </table>
     </div>
-    <div v-if="user" class="component">
+    <GenericCollapse v-if="user" title="Api Keys">
       <ApiKeyList :current-username="user.username" />
-    </div>
-    <div v-if="user" class="component">
+    </GenericCollapse>
+    <GenericCollapse v-if="user" title="Subscriptions">
       <SubscriptionList :current-username="user.username" />
-    </div>
+    </GenericCollapse>
   </div>
 </template>
 
 <script lang="ts">
+import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
 import { UserVue } from "@/utils/api-mixin";
@@ -58,6 +51,7 @@ export default (
   components: {
     ApiKeyList,
     SubscriptionList,
+    GenericCollapse,
   },
   mixins: [UserVue],
   data() {
@@ -89,10 +83,6 @@ export default (
         { "First Name": this.user.firstName },
         { "Last Name": this.user.lastName },
       ];
-    },
-    copyBearerToken() {
-      if (this.oidcAccessToken)
-        navigator.clipboard.writeText(this.oidcAccessToken);
     },
   },
 });

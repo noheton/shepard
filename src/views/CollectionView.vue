@@ -59,14 +59,13 @@
       :text="currentCollection.description"
     />
 
-    <GenericCollapse v-if="attributeItems.length" title="Attributes" visible>
+    <GenericCollapse v-if="attributeItems.length" title="Attributes">
       <b-table striped small :items="attributeItems"> </b-table>
     </GenericCollapse>
 
     <GenericCollapse
       v-if="currentCollection.dataObjectIds.length"
       title="Data Objects"
-      visible
     >
       <DataObjectList
         :current-collection-id="currentCollection.id"

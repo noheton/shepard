@@ -1,15 +1,15 @@
 <template>
   <div class="component">
     <h4 @click="toggleVisible()">
-      <span v-if="collapsed">
-        <CollapsIcon />
+      <span v-if="collapsedState">
+        <ExtendIcon />
       </span>
       <span v-else>
-        <ExtendIcon />
+        <CollapsIcon />
       </span>
       {{ title }}
     </h4>
-    <b-collapse id="collapse" :visible="collapsed">
+    <b-collapse id="collapse" :visible="!collapsedState">
       <slot></slot>
     </b-collapse>
   </div>
@@ -23,17 +23,17 @@ export default Vue.extend({
       type: String,
       required: true,
     },
-    visible: {
+    collapsed: {
       type: Boolean,
       default: false,
     },
   },
   data() {
-    return { collapsed: this.visible };
+    return { collapsedState: this.collapsed };
   },
   methods: {
     toggleVisible() {
-      this.collapsed = !this.collapsed;
+      this.collapsedState = !this.collapsedState;
     },
   },
 });

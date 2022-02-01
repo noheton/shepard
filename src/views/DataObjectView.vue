@@ -74,7 +74,7 @@
       :text="currentDataObject.description"
     />
 
-    <GenericCollapse v-if="attributeItems.length" title="Attributes" visible>
+    <GenericCollapse v-if="attributeItems.length" title="Attributes">
       <b-table striped small :items="attributeItems"> </b-table>
     </GenericCollapse>
 
@@ -82,7 +82,6 @@
       v-if="currentDataObject.parentId"
       id="parentCollapse"
       title="Parent"
-      visible
     >
       <DataObjectElement
         :collection-id="currentCollectionId"
@@ -90,15 +89,11 @@
       />
     </GenericCollapse>
 
-    <GenericCollapse
-      id="relatedObjectsCollapse"
-      title="Related Objects"
-      visible
-    >
+    <GenericCollapse id="relatedObjectsCollapse" title="Related Objects">
       <RelatedObjectsTable :current-data-object="currentDataObject" />
     </GenericCollapse>
 
-    <GenericCollapse id="referencesCollapse" title="References" visible>
+    <GenericCollapse id="referencesCollapse" title="References">
       <ReferencesTable :current-data-object="currentDataObject" />
     </GenericCollapse>
 

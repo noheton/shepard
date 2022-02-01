@@ -1,7 +1,6 @@
 <template>
   <div>
-    <h4>Api Keys List</h4>
-    <b-input-group class="component">
+    <b-input-group class="mb-2">
       <b-form-input
         v-model="newName"
         class="fixed-height"
@@ -12,25 +11,11 @@
         <b-button variant="primary" @click="handleCreate()"> Create </b-button>
       </b-input-group-append>
     </b-input-group>
-    <b-modal
-      id="created-apikey-modal"
-      ref="modal"
-      title="Created Api Key"
-      ok-only
-      @ok="createdApiKey = undefined"
-    >
-      <div v-if="createdApiKey">
-        <h6>Successfully created!</h6>
-        <p>{{ createdApiKey.name }} | {{ createdApiKey.uid }}</p>
-        <b-button size="sm" variant="primary" @click="copyApiKey()">
-          Copy Api Key
-        </b-button>
-      </div>
-    </b-modal>
     <div>
       <b-list-group>
         <b-list-group-item v-for="(apiKey, index) in apiKeys" :key="index">
-          {{ apiKey.name }}
+          <b><GenericName :name="apiKey.name" :word-count="60" /></b>
+          UID: {{ apiKey.uid }}
           <b-button
             v-b-modal.delete-confirmation-modal
             v-b-tooltip.hover
@@ -45,6 +30,7 @@
         </b-list-group-item>
       </b-list-group>
     </div>
+    <ApiKeyModal :created-api-key="createdApiKey" @ok="handleCreated()" />
     <DeleteConfirmationModal
       v-if="currentApiKey"
       modal-id="delete-confirmation-modal"
@@ -61,6 +47,8 @@
 
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
 import { ApiKeyVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
 import { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
@@ -78,6 +66,8 @@ export default (
 ).extend({
   components: {
     DeleteConfirmationModal,
+    ApiKeyModal,
+    GenericName,
   },
   mixins: [ApiKeyVue],
   props: {
@@ -93,11 +83,6 @@ export default (
       createdApiKey: undefined,
       currentApiKey: undefined,
     } as ApiKeyListData;
-  },
-  watch: {
-    currentUsername() {
-      this.retrieveApiKeys();
-    },
   },
   mounted() {
     this.retrieveApiKeys();
@@ -115,10 +100,6 @@ export default (
           console.log(error);
         });
     },
-    copyApiKey() {
-      if (!this.createdApiKey || !this.createdApiKey.jwt) return;
-      navigator.clipboard.writeText(this.createdApiKey.jwt);
-    },
     handleCreate() {
       this.apiKeyApi
         ?.createApiKey({
@@ -127,7 +108,6 @@ export default (
         })
         .then(response => {
           this.createdApiKey = response;
-          this.$bvModal.show("created-apikey-modal");
         })
         .catch(e => {
           const error = "Error while creating api key: " + e.statusText;
@@ -139,6 +119,9 @@ export default (
           this.newName = "";
         });
     },
+    handleCreated() {
+      this.createdApiKey = undefined;
+    },
     handleDelete(uid: string) {
       this.apiKeyApi
         ?.deleteApiKey({ username: this.currentUsername, apikeyUid: uid })
@@ -148,6 +131,7 @@ export default (
           emitter.emit("error", error);
         })
         .finally(() => {
+          this.currentApiKey = undefined;
           this.retrieveApiKeys();
         });
     },
