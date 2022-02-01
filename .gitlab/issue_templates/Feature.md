@@ -60,4 +60,4 @@ paste in screenshots or mockups of your new feature
 
 - #<issue number>
 
-/label ~issue::feature
+/label ~"issue::feature"
