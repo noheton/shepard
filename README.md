@@ -17,8 +17,3 @@ Information about the deployment can be found [here](https://gitlab.com/dlr-shep
 
 Shepard is open for contributions.
 Information on how to contribute can be found [here](CONTRIBUTING.md).
-
-## Important Links
-
-- [Maven Reports](https://dlr-shepard.gitlab.io/backend/)
-- [Current OpenAPI definition](https://gitlab.com/dlr-shepard/backend/-/jobs/artifacts/master/file/target/openapi/openapi.yaml?job=build)
