@@ -14,6 +14,13 @@ Please note we have a code of conduct, please follow it in all your interactions
 
 ## Table of Contents
 
+- [Code of Conduct](#code-of-conduct)
+- [I don't want to read this whole thing I just have a question!](#i-dont-want-to-read-this-whole-thing-i-just-have-a-question)
+- [Useful Links](#useful-links)
+- [Setting Up a Developing Environment](#setting-up-a-developing-environment)
+- [How Can I Contribute?](#how-can-i-contribute)
+- [Code Review Checklist](#code-review-checklist)
+
 ## Code of Conduct
 
 Everyone participating in this project is asked to conduct themselves in a reasonable and proper manner.
@@ -32,7 +39,7 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 - [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/user-guide.html)
 - [Tomcat Documentation](https://tomcat.apache.org/tomcat-10.0-doc/index.html)
 
-## Setting up a develping environment
+## Setting up a developing environment
 
 ### Downloads
 
