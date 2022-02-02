@@ -20,7 +20,6 @@ Before creating a merge request, please read this first:
 <!--
 Description of how the API behaves differently now.
 If you have the permission, please also add the label "Breaking Change" to this merge request.
-/label ~"Breaking Change"
 -->
 
 ## Description
