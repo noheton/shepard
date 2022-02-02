@@ -17,8 +17,8 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
 		var query = String.format("MATCH %s %s %s", getObjectPart("ug", "UserGroup", false),
 				getReadableByPart("ug", username), getReturnPart("ug"));
 		var result = new ArrayList<UserGroup>();
-		for (var col : findByQuery(query, Collections.emptyMap())) {
-			result.add(col);
+		for (var userGroup : findByQuery(query, Collections.emptyMap())) {
+			result.add(userGroup);
 		}
 		return result;
 	}

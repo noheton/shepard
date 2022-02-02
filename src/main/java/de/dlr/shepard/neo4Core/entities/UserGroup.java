@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.entities;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.neo4j.ogm.annotation.NodeEntity;
@@ -20,7 +21,7 @@ public class UserGroup extends AbstractEntity {
 	private String name;
 
 	@Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
-	private ArrayList<User> users;
+	private List<User> users = new ArrayList<>();
 
 	@Override
 	public int hashCode() {

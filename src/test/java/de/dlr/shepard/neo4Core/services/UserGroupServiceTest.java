@@ -1,8 +1,11 @@
 package de.dlr.shepard.neo4Core.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -18,6 +21,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.dao.UserGroupDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
@@ -137,18 +141,72 @@ public class UserGroupServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteUserGroupTest() {
-		var user = new User("user");
-		var date = new Date(23);
 		var userGroup = new UserGroup();
 		userGroup.setId(1L);
+		var permissions = new Permissions();
+		permissions.setId(2L);
 
-		when(userDAO.find("user")).thenReturn(user);
-		when(dateHelper.getDate()).thenReturn(date);
 		when(userGroupDAO.find(1L)).thenReturn(userGroup);
 		when(userGroupDAO.delete(1L)).thenReturn(true);
+		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
+		when(permissionsDAO.delete(2L)).thenReturn(true);
 
 		var result = service.deleteUserGroup(1L);
 		assertTrue(result);
+	}
+
+	@Test
+	public void deleteUserGroupTest_noPermissions() {
+		var userGroup = new UserGroup();
+		userGroup.setId(1L);
+
+		when(userGroupDAO.find(1L)).thenReturn(userGroup);
+		when(userGroupDAO.delete(1L)).thenReturn(true);
+		when(permissionsDAO.findByEntity(1L)).thenReturn(null);
+
+		var result = service.deleteUserGroup(1L);
+		assertTrue(result);
+	}
+
+	@Test
+	public void deleteUserGroupTest_permissionsFailed() {
+		var userGroup = new UserGroup();
+		userGroup.setId(1L);
+		var permissions = new Permissions();
+		permissions.setId(2L);
+
+		when(userGroupDAO.find(1L)).thenReturn(userGroup);
+		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
+		when(permissionsDAO.delete(2L)).thenReturn(false);
+
+		var result = service.deleteUserGroup(1L);
+		assertFalse(result);
+		verify(userGroupDAO, never()).delete(1L);
+	}
+
+	@Test
+	public void deleteUserGroupTest_notFound() {
+		when(userGroupDAO.find(1L)).thenReturn(null);
+
+		var result = service.deleteUserGroup(1L);
+		assertFalse(result);
+		verify(userGroupDAO, never()).delete(1L);
+	}
+
+	@Test
+	public void deleteUserGroupTest_failed() {
+		var userGroup = new UserGroup();
+		userGroup.setId(1L);
+		var permissions = new Permissions();
+		permissions.setId(2L);
+
+		when(userGroupDAO.find(1L)).thenReturn(userGroup);
+		when(userGroupDAO.delete(1L)).thenReturn(false);
+		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
+		when(permissionsDAO.delete(2L)).thenReturn(true);
+
+		var result = service.deleteUserGroup(1L);
+		assertFalse(result);
 	}
 
 }

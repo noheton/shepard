@@ -52,8 +52,16 @@ public class UserGroupService {
 	}
 
 	public boolean deleteUserGroup(Long id) {
-		var result = userGroupDAO.delete(id);
-		return result;
+		var old = userGroupDAO.find(id);
+		if (old == null)
+			return false;
+
+		var permissions = permissionsDAO.findByEntity(id);
+		var permissionsResult = permissions == null || permissionsDAO.delete(permissions.getId());
+		if (!permissionsResult)
+			return false;
+
+		return userGroupDAO.delete(id);
 	}
 
 	private ArrayList<User> fetchUsers(String[] usernames) {

@@ -69,9 +69,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	public Response getUserGroup(@PathParam(Constants.USERGROUPID) Long usergroupId) {
 		log.info("Received GET request from user {} with id {}", securityContext.getUserPrincipal().getName(),
 				usergroupId);
-		System.out.println("id in endpoint: " + usergroupId);
 		UserGroup ret = userGroupService.getUserGroup(usergroupId);
-		System.out.println("ret: " + ret);
 		if (ret == null)
 			return Response.status(404).build();
 		return Response.ok(new UserGroupIO(ret)).build();
