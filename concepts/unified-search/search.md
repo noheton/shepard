@@ -115,8 +115,8 @@ The following logical objects are supported:
     },
     {
       "property": "attributes.a",
-      "value": "b",
-      "operator": "eq"
+      "value": [1, 2, 3],
+      "operator": "in"
     },
     {
       "OR": [
