@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
+import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.Constants;
 import jakarta.validation.Valid;
@@ -32,6 +34,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Context
 	private SecurityContext securityContext;
 	private UserGroupService userGroupService = new UserGroupService();
+	private PermissionsService permissionsService = new PermissionsService();
 
 	@POST
 	@Override
@@ -44,9 +47,9 @@ public class UserGroupRestImpl implements UserGroupRest {
 	}
 
 	@PUT
-	@Path("/{" + Constants.USERGROUPID + "}")
+	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
-	public Response updateUserGroup(@PathParam(Constants.USERGROUPID) Long id, @Valid UserGroupIO userGroup) {
+	public Response updateUserGroup(@PathParam(Constants.USERGROUP_ID) Long id, @Valid UserGroupIO userGroup) {
 		log.info("Received PUT request from user {} with id {}", securityContext.getUserPrincipal().getName(), id);
 		UserGroup updatedUserGroup = userGroupService.updateUserGroup(id, userGroup,
 				securityContext.getUserPrincipal().getName());
@@ -54,9 +57,9 @@ public class UserGroupRestImpl implements UserGroupRest {
 	}
 
 	@DELETE
-	@Path("/{" + Constants.USERGROUPID + "}")
+	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
-	public Response deleteUserGroup(@PathParam(Constants.USERGROUPID) Long id) {
+	public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
 		log.info("Received DELETE request with parameters: id: {} from user {}", id,
 				securityContext.getUserPrincipal().getName());
 		return userGroupService.deleteUserGroup(id) ? Response.status(204).build()
@@ -64,9 +67,9 @@ public class UserGroupRestImpl implements UserGroupRest {
 	}
 
 	@GET
-	@Path("/{" + Constants.USERGROUPID + "}")
+	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
-	public Response getUserGroup(@PathParam(Constants.USERGROUPID) Long usergroupId) {
+	public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long usergroupId) {
 		log.info("Received GET request from user {} with id {}", securityContext.getUserPrincipal().getName(),
 				usergroupId);
 		UserGroup ret = userGroupService.getUserGroup(usergroupId);
@@ -85,6 +88,27 @@ public class UserGroupRestImpl implements UserGroupRest {
 			result.add(new UserGroupIO(userGroup));
 		}
 		return Response.ok(result).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.getPermissionsByEntity(userGroupId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@PUT
+	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
+	@Override
+	public Response editUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId,
+			@Valid PermissionsIO permissions) {
+		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
+		var perms = permissionsService.updatePermissions(permissions, userGroupId);
+		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

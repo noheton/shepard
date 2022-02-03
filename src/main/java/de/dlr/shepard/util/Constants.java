@@ -12,7 +12,7 @@ public class Constants {
 	public static final String USERS = "users";
 	public static final String USERNAME = "username";
 	public static final String USERGROUP = "usergroup";
-	public static final String USERGROUPID = "usergroupId";
+	public static final String USERGROUP_ID = "usergroupId";
 
 	public static final String APIKEY = "apikey";
 	public static final String APIKEYS = "apikeys";

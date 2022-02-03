@@ -1,5 +1,6 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,5 +46,18 @@ public interface UserGroupRest {
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response deleteUserGroup(Long id);
+
+	@Tag(name = Constants.USERGROUP)
+	@Operation(description = "Get permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getUserGroupPermissions(long userGroupId);
+
+	@Tag(name = Constants.USERGROUP)
+	@Operation(description = "Edit permissions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response editUserGroupPermissions(long userGroupId,
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 }
