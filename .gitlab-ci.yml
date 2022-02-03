@@ -142,7 +142,7 @@ build:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipTests package -P prod
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} -DskipTests package -P prod
   artifacts:
     when: always
     expire_in: 2 days
