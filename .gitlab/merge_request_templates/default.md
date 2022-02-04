@@ -30,9 +30,9 @@ This is how the page looks now
 ### Checklist
 
 - [ ] The code compiles without any warnings.
-- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/frontend/-/blob/master/CONTRIBUTING.md#code-review-checklist)
-- [ ] The documentation has been added/updated
-- [ ] `package-lock.json` was not changed unless I added or edited dependencies
+- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/frontend/-/blob/master/CONTRIBUTING.md#code-review-checklist).
+- [ ] The documentation has been added/updated.
+- [ ] `package-lock.json` was not changed unless I added or edited dependencies.
 
 ### Related Issues
 
