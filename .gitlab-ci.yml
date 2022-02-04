@@ -21,9 +21,9 @@ stages:
   - build
   - upload
 
-.version_number: &version_number
-  - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
-  - echo ${VERSION_NUMBER}
+.version_number:
+  script:
+    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d '-' -f 1-2 | tr - . ).${CI_PIPELINE_IID}
 
 .prepare_npm: &prepare_npm
   - NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
@@ -41,7 +41,7 @@ lint:
 build:
   stage: build
   before_script:
-    - *version_number
+    - !reference [.version_number, script]
     - *prepare_npm
   script:
     - npm install --progress=false
@@ -51,24 +51,37 @@ build:
     paths:
       - dist/
 
-upload_docker:
+.upload_docker: &upload_docker
   image: docker:latest
   stage: upload
-  needs:
-    - build
-  dependencies:
-    - build
+  needs: [build]
+  dependencies: [build]
   services:
     - name: docker:dind
+
+upload_docker_dev:
+  <<: *upload_docker
   before_script:
-    - *version_number
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" ${CI_REGISTRY}
-    - docker info
+    - !reference [.version_number, script]
+    - export VERSION_NUMBER=${VERSION_NUMBER}dev
+    - echo ${VERSION_NUMBER}
   script:
-    - ls -hal dist/
+    - docker build -t ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER} -t ${CI_REGISTRY_IMAGE}:dev .
+    - docker push ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER}
+    - docker push ${CI_REGISTRY_IMAGE}:dev
+  only:
+    - master
+
+upload_docker:
+  <<: *upload_docker
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" ${CI_REGISTRY}
+    - !reference [.version_number, script]
+    - echo ${VERSION_NUMBER}
+  script:
     - docker build -t ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER} -t ${CI_REGISTRY_IMAGE}:latest .
     - docker push ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER}
     - docker push ${CI_REGISTRY_IMAGE}:latest
   only:
-    refs:
-      - /^.*-release$/
+    - /^.*-release$/
