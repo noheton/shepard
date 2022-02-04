@@ -94,7 +94,7 @@ The following logical objects are supported:
 - `le` (*lower or equal*, has `value`)
 - `eq` (*equals*, has `value`)
 - `contains` (*contains*, has `value`)
-- `in` (*in*, has a list of `value`)
+- `in` (*in*, has a list of `values`)
 
 ```json
 {
