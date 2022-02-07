@@ -35,7 +35,7 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 ## Useful Links
 
 - [Frontend Documentation](https://gitlab.com/dlr-shepard/documentation/-/wikis/Frontend)
-- [Vue.js Documentation](https://vuejs.org/v2/guide/)
+- [Vue.js Documentation](https://v2.vuejs.org/v2/guide/)
 - [BootstrapVue](https://bootstrap-vue.org/)
 - [Material Design Icons](https://materialdesignicons.com/)
 
@@ -132,7 +132,7 @@ To keep up with current developments, it is a good idea to occasionally [rebase]
 - Changes that do not belong to an existing merge request are implemented in a separate merge request.
 - The existing package structure is not violated by the new code.
 - Use the latest JavaScript standard.
-- Define components using Vue [Single File Components](https://vuejs.org/v2/guide/single-file-components.html).
+- Define components using Vue [Single File Components](https://v2.vuejs.org/v2/guide/single-file-components.html).
 - Do not include unnecassary packages.
 - Included packages should be backed by company or large community.
 - Do not change the `package-lock.json` unless you have included or updated a package.
