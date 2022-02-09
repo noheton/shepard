@@ -106,7 +106,7 @@
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
-      :entity-id="currentFileId"
+      :entity-id="currentFileContainerId"
       :old-permissions="permissions"
       @update="updatePermissions($event)"
     />
@@ -166,7 +166,7 @@ export default (
     } as FileData;
   },
   computed: {
-    currentFileId(): number {
+    currentFileContainerId(): number {
       return Number(this.$router.currentRoute.params.fileId);
     },
   },
@@ -179,7 +179,7 @@ export default (
     retrieveFileContainer() {
       this.fileApi
         ?.getFileContainer({
-          fileContainerId: this.currentFileId,
+          fileContainerId: this.currentFileContainerId,
         })
         .then(response => {
           this.currentFileContainer = response;
@@ -193,7 +193,7 @@ export default (
     retrieveFileList() {
       this.fileApi
         ?.getAllFiles({
-          fileContainerId: this.currentFileId,
+          fileContainerId: this.currentFileContainerId,
         })
         .then(response => {
           this.fileList = response;
@@ -205,7 +205,7 @@ export default (
     },
     handleDeleteContainer() {
       this.fileApi
-        ?.deleteFileContainer({ fileContainerId: this.currentFileId })
+        ?.deleteFileContainer({ fileContainerId: this.currentFileContainerId })
         .then(() => {
           this.$router.push({ name: "FilesList" });
         })
@@ -272,7 +272,7 @@ export default (
     },
     retrievePermissions() {
       this.fileApi
-        ?.getFilePermissions({ fileContainerId: this.currentFileId })
+        ?.getFilePermissions({ fileContainerId: this.currentFileContainerId })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -286,7 +286,7 @@ export default (
     updatePermissions(perms: Permissions) {
       this.fileApi
         ?.editFilePermissions({
-          fileContainerId: this.currentFileId,
+          fileContainerId: this.currentFileContainerId,
           permissions: perms,
         })
         .then(response => {

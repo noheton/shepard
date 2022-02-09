@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentTimeseries" class="timeseries-container">
+  <div v-if="currentTimeseriesContainer" class="timeseries-container">
     <div class="component">
       <b-button-group class="float-right">
         <b-button
@@ -20,13 +20,13 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentTimeseries.name }}</h3>
+      <h3>{{ currentTimeseriesContainer.name }}</h3>
       <p>
-        <b>ID:</b> {{ currentTimeseries.id }}<br />
-        <b>Database:</b> {{ currentTimeseries.database }}<br />
+        <b>ID:</b> {{ currentTimeseriesContainer.id }}<br />
+        <b>Database:</b> {{ currentTimeseriesContainer.database }}<br />
         <CreatedByLine
-          :created-at="currentTimeseries.createdAt"
-          :created-by="currentTimeseries.createdBy"
+          :created-at="currentTimeseriesContainer.createdAt"
+          :created-by="currentTimeseriesContainer.createdBy"
           tooltip
         />
       </p>
@@ -36,7 +36,7 @@
       modal-name="Confirm to delete timeseries container"
       :modal-text="
         'Do you really want do delete the timeseries container with name ' +
-        currentTimeseries.name +
+        currentTimeseriesContainer.name +
         '?'
       "
       @confirmation="handleDelete()"
@@ -44,7 +44,7 @@
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
-      :entity-id="currentTimeseriesId"
+      :entity-id="currentTimeseriesContainerId"
       :old-permissions="permissions"
       @update="updatePermissions($event)"
     />
@@ -61,7 +61,7 @@ import { Permissions, TimeseriesContainer } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface TimeseriesData {
-  currentTimeseries?: TimeseriesContainer;
+  currentTimeseriesContainer?: TimeseriesContainer;
   permissions?: Permissions;
   managerAccess: boolean;
 }
@@ -73,28 +73,28 @@ export default (
   mixins: [TimeseriesVue],
   data() {
     return {
-      currentTimeseries: undefined,
+      currentTimeseriesContainer: undefined,
       permissions: undefined,
       managerAccess: false,
     } as TimeseriesData;
   },
   computed: {
-    currentTimeseriesId(): number {
+    currentTimeseriesContainerId(): number {
       return Number(this.$router.currentRoute.params.timeseriesId);
     },
   },
   mounted() {
-    this.retrieveTimeseries();
+    this.retrieveTimeseriesContainer();
     this.retrievePermissions();
   },
   methods: {
-    retrieveTimeseries() {
+    retrieveTimeseriesContainer() {
       this.timeseriesApi
         ?.getTimeseriesContainer({
-          timeseriesContainerId: this.currentTimeseriesId,
+          timeseriesContainerId: this.currentTimeseriesContainerId,
         })
         .then(response => {
-          this.currentTimeseries = response;
+          this.currentTimeseriesContainer = response;
         })
         .catch(e => {
           const error =
@@ -106,7 +106,7 @@ export default (
     handleDelete() {
       this.timeseriesApi
         ?.deleteTimeseriesContainer({
-          timeseriesContainerId: this.currentTimeseriesId,
+          timeseriesContainerId: this.currentTimeseriesContainerId,
         })
         .then(() => {
           this.$router.push({ name: "TimeseriesList" });
@@ -121,7 +121,7 @@ export default (
     retrievePermissions() {
       this.timeseriesApi
         ?.getTimeseriesPermissions({
-          timeseriesContainerId: this.currentTimeseriesId,
+          timeseriesContainerId: this.currentTimeseriesContainerId,
         })
         .then(response => {
           this.permissions = response;
@@ -136,7 +136,7 @@ export default (
     updatePermissions(perms: Permissions) {
       this.timeseriesApi
         ?.editTimeseriesPermissions({
-          timeseriesContainerId: this.currentTimeseriesId,
+          timeseriesContainerId: this.currentTimeseriesContainerId,
           permissions: perms,
         })
         .then(response => {

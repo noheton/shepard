@@ -162,6 +162,7 @@ import Vue, { VueConstructor } from "vue";
 
 interface StructuredDataData {
   currentStructuredDataContainer?: StructuredDataContainer;
+  currentStructuredData?: StructuredData;
   permissions?: Permissions;
   structuredDataList: StructuredData[];
   payloadMap: { [key: string]: string };
@@ -190,7 +191,6 @@ export default (
     return {
       currentStructuredDataContainer: undefined,
       currentStructuredData: undefined,
-      currentPayload: undefined,
       permissions: undefined,
       structuredDataList: [],
       payloadMap: {},
