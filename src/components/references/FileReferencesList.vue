@@ -107,12 +107,12 @@ import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import { FileReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
-import { FileReference } from "@dlr-shepard/shepard-client";
+import { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface FileListData {
   fileReferenceList: FileReference[];
-  files: { [key: string]: string };
+  files: { [key: string]: ShepardFile };
   downloadStarted: boolean;
   downloadActive: boolean;
   downloadError: boolean;
@@ -184,7 +184,7 @@ export default (
           fileReferenceId: id,
         })
         .then(response => {
-          const temp: { [key: string]: string } = {};
+          const temp: { [key: string]: ShepardFile } = {};
           response.forEach(payload => {
             if (payload?.oid) {
               temp[payload.oid] = payload;

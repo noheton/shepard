@@ -61,6 +61,16 @@ const routes: Array<RouteConfig> = [
     component: () => import("../views/User.vue"),
   },
   {
+    path: "/usergroups",
+    name: "UserGroupList",
+    component: () => import("../views/UserGroupList.vue"),
+  },
+  {
+    path: "/usergroups/:usergroupId",
+    name: "UserGroup",
+    component: () => import("../views/UserGroup.vue"),
+  },
+  {
     path: "/about",
     name: "About",
     // route level code-splitting

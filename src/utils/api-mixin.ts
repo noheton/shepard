@@ -15,6 +15,7 @@ import {
   TimeseriesReferenceApi,
   UriReferenceApi,
   UserApi,
+  UsergroupApi,
 } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
 import { mapGetters } from "vuex";
@@ -274,6 +275,21 @@ const SubscriptionVue = ApiVue.extend({
   },
 });
 
+interface UserGroupData {
+  userGroupApi?: UsergroupApi;
+}
+
+const UserGroupVue = ApiVue.extend({
+  data() {
+    return { userGroupApi: undefined } as UserGroupData;
+  },
+  methods: {
+    createApi() {
+      this.userGroupApi = new UsergroupApi(this.config);
+    },
+  },
+});
+
 export {
   CollectionVue,
   DataObjectVue,
@@ -290,4 +306,5 @@ export {
   ApiKeyVue,
   ReferenceVue,
   SubscriptionVue,
+  UserGroupVue,
 };

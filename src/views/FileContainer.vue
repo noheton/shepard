@@ -65,28 +65,33 @@
               v-b-tooltip.hover
               title="Delete"
               variant="dark"
+              @click="currentFile = file"
             >
               <DeleteIcon />
             </b-button>
           </b-button-group>
-          <DeleteConfirmationModal
-            modal-id="delete-file-confirmation-modal"
-            modal-name="Confirm to delete file"
-            :modal-text="
-              'Do you really want do delete the file with name ' +
-              file.filename +
-              '?'
-            "
-            @confirmation="handleDeleteFile(file.oid)"
-          />
         </b-list-group-item>
       </b-list-group>
     </div>
+
     <UploadFileModal
       modal-id="upload-file-to-container-modal"
       modal-name="Upload File To Container"
       @created="uploadFile($event)"
     />
+
+    <DeleteConfirmationModal
+      v-if="currentFile"
+      modal-id="delete-file-confirmation-modal"
+      modal-name="Confirm to delete file"
+      :modal-text="
+        'Do you really want do delete the file with name ' +
+        currentFile.filename +
+        '?'
+      "
+      @confirmation="handleDeleteFile(currentFile.oid)"
+    />
+
     <DeleteConfirmationModal
       modal-id="delete-container-confirmation-modal"
       modal-name="Confirm to delete file container"
@@ -118,7 +123,11 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import { FileVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
-import { FileContainer, Permissions } from "@dlr-shepard/shepard-client";
+import {
+  FileContainer,
+  Permissions,
+  ShepardFile,
+} from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface FileData {
@@ -127,7 +136,8 @@ interface FileData {
   downloadStarted: boolean;
   downloadActive: boolean;
   downloadError: boolean;
-  fileList: unknown[];
+  fileList: ShepardFile[];
+  currentFile?: ShepardFile;
   managerAccess: boolean;
 }
 
@@ -151,6 +161,7 @@ export default (
       downloadActive: false,
       downloadError: false,
       fileList: [],
+      currentFile: undefined,
       managerAccess: false,
     } as FileData;
   },

@@ -12,12 +12,12 @@
     >
       {{ createdAt.toString() }}
     </b-tooltip>
-    <small v-if="getAllUsers[createdBy]" :id="'by' + id">
-      by {{ getAllUsers[createdBy].lastName }},
-      {{ getAllUsers[createdBy].firstName }}
+    <small v-if="getUserFromCache(createdBy)" :id="'by' + id">
+      by {{ getUserFromCache(createdBy).lastName }},
+      {{ getUserFromCache(createdBy).firstName }}
     </small>
     <b-tooltip
-      v-if="tooltip && getAllUsers[createdBy]"
+      v-if="tooltip && getUserFromCache(createdBy)"
       :target="'by' + id"
       :delay="{ show: 500, hide: 100 }"
     >
@@ -28,7 +28,7 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { mapActions, mapGetters, mapMutations } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 
 export default Vue.extend({
   props: {
@@ -55,11 +55,7 @@ export default Vue.extend({
     };
   },
   computed: {
-    ...mapGetters("userCache", [
-      "isUserInCache",
-      "getUserFromCache",
-      "getAllUsers",
-    ]),
+    ...mapGetters("userCache", ["isUserInCache", "getUserFromCache"]),
   },
   updated() {
     this.retrieveUser();
@@ -69,7 +65,6 @@ export default Vue.extend({
   },
   methods: {
     ...mapActions("userCache", ["fetchUser"]),
-    ...mapMutations("userCache", ["addUserToCache"]),
     retrieveUser() {
       if (!this.isUserInCache(this.createdBy)) {
         this.fetchUser(this.createdBy);

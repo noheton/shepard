@@ -12,6 +12,7 @@
           <b-dropdown-item to="/structureddata">StructuredData</b-dropdown-item>
           <b-dropdown-item to="/timeseries">Timeseries</b-dropdown-item>
         </b-nav-item-dropdown>
+        <b-nav-item to="/usergroups">User Groups</b-nav-item>
         <b-nav-item to="/user">User</b-nav-item>
         <b-nav-item to="/about">About</b-nav-item>
       </b-navbar-nav>
