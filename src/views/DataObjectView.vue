@@ -102,7 +102,7 @@
       :current-data-object="currentDataObject"
       modal-id="edit-dataObject-modal"
       modal-name="Edit Data Object"
-      @dataObjectChanged="retrieveDataObject()"
+      @data-object-changed="retrieveDataObject()"
     />
     <DataObjectModal
       :current-collection-id="currentCollectionId"

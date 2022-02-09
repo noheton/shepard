@@ -77,7 +77,7 @@
       :current-collection="currentCollection"
       modal-id="edit-collection-modal"
       modal-name="Edit Collection"
-      @collectionChanged="retrieveCollection()"
+      @collection-changed="retrieveCollection()"
     />
     <DataObjectModal
       :current-collection-id="currentCollectionId"

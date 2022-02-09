@@ -29,13 +29,9 @@
         :default-size="perPage"
         :default-descending="descending"
         :default-order-by="orderBy"
-        @filterChanged="filterChanged($event)"
+        @filter-changed="filterChanged($event)"
       />
-      <GenericEntityList
-        :entities="containers"
-        @createEntity="createContainer($event)"
-        @deleteEntity="deleteContainer($event)"
-      />
+      <GenericEntityList :entities="containers" />
       <GenericCreateModal
         modal-id="create-timeseries-container-modal"
         modal-name="Create Timeseries Container"

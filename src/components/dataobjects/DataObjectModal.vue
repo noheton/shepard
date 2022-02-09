@@ -358,7 +358,7 @@ export default (
           dataObject: this.newDataObject,
         })
         .then(() => {
-          this.$emit("dataObjectChanged");
+          this.$emit("data-object-changed");
         })
         .catch(e => {
           const error = "Error while updating data object: " + e.statusText;

@@ -199,7 +199,7 @@ export default (
           collection: collection,
         })
         .then(() => {
-          this.$emit("collectionChanged");
+          this.$emit("collection-changed");
         })
         .catch(e => {
           const error = "Error while updating collection: " + e.statusText;

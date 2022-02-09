@@ -29,7 +29,7 @@
         :default-size="perPage"
         :default-descending="descending"
         :default-order-by="orderBy"
-        @filterChanged="filterChanged($event)"
+        @filter-changed="filterChanged($event)"
       />
       <GenericEntityList :entities="collections" />
 

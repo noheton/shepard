@@ -5,7 +5,7 @@
       :default-size="sizeSelected"
       :default-descending="descendingSelected"
       :default-order-by="orderBySelected"
-      @filterChanged="filterChanged($event)"
+      @filter-changed="filterChanged($event)"
     />
     <b-list-group>
       <DataObjectListItem

@@ -114,7 +114,7 @@ export default Vue.extend({
         orderBy: this.orderBy,
         descending: this.descending,
       } as FilterChangedData;
-      this.$emit("filterChanged", options);
+      this.$emit("filter-changed", options);
     },
     updatePage(nextPage: number) {
       this.currentPage = nextPage;
