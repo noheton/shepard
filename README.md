@@ -128,7 +128,7 @@ Also look at the provided URLs, as most URLs must end with a trailing slash.
 
 ### Read the logs
 
-Most containers log to STDOUT.
+Most containers log to `STDOUT`.
 Therefore, you can observe the logs via `docker-compose logs <containername>`.
 The shepard backend also uses this method, but additionally writes to log files.
 These log files contain detailed log messages from the system and may contain important information about an issue.
