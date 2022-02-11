@@ -44,6 +44,7 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 ### Downloads
 
 - Node JS and NPM: <https://nodejs.org/en/>
+- Vue CLI: <https://cli.vuejs.org/>
 - Visual Studio Code: <https://code.visualstudio.com/>
 - Vetur: <https://marketplace.visualstudio.com/items?itemName=octref.vetur>
 - Vue Devtools for Firefox: <https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/>
@@ -51,9 +52,10 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 
 ### Installation
 
-- install Node JS
+- install Node JS and NPM
+- install Vue CLI `npm install -g @vue/cli`
 - install Visual Studio Code and the Vetur Plugin
-- checkout the repository
+- clone Git repository
 - open comand line, type in `npm install .`
 
 ### Local backend
