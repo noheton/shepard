@@ -58,6 +58,7 @@ import FilterListLine, {
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { CollectionVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
+import { totalRows } from "@/utils/helpers";
 import {
   Collection,
   CollectionApi,
@@ -67,7 +68,7 @@ import Vue, { VueConstructor } from "vue";
 
 interface ExploreData {
   collectionApi?: CollectionApi;
-  collections: Collection[];
+  collections?: Collection[];
   perPage: number;
   currentPage: number;
   orderBy: string;
@@ -82,7 +83,7 @@ export default (
   mixins: [CollectionVue],
   data() {
     return {
-      collections: [],
+      collections: undefined,
       perPage: 10,
       currentPage: 1,
       orderBy: "createdAt",
@@ -92,10 +93,13 @@ export default (
   },
   computed: {
     totalRows(): number {
-      if (this.collections.length < this.perPage) {
-        return this.currentPage * this.perPage;
-      }
-      return (this.currentPage + 1) * this.perPage;
+      if (this.collections)
+        return totalRows(
+          this.collections.length,
+          this.perPage,
+          this.currentPage,
+        );
+      else return 0;
     },
   },
   mounted() {

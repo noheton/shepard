@@ -57,6 +57,7 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { TimeseriesVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
+import { totalRows } from "@/utils/helpers";
 import {
   GetAllTimeseriesContainersOrderByEnum,
   TimeseriesContainer,
@@ -89,10 +90,13 @@ export default (
   },
   computed: {
     totalRows(): number {
-      if (this.containers.length < this.perPage) {
-        return this.currentPage * this.perPage;
-      }
-      return (this.currentPage + 1) * this.perPage;
+      if (this.containers)
+        return totalRows(
+          this.containers.length,
+          this.perPage,
+          this.currentPage,
+        );
+      else return 0;
     },
   },
   mounted() {
