@@ -18,7 +18,6 @@ The changes can be implemented once the Merge Request has been approved and merg
 ## Content of this repository
 
 - General architecture descriptions
-- General regulations
 - A confirmed roadmap
 - Proposals
 
