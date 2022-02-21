@@ -52,11 +52,11 @@
 		<logback.version>1.2.10</logback.version>
 		<lombok.version>1.18.22</lombok.version>
 		<mockito.version>4.3.1</mockito.version>
-		<mongodb.version>4.4.1</mongodb.version>
-		<neo4j.version>3.2.28</neo4j.version>
+		<mongodb.version>4.5.0</mongodb.version>
+		<neo4j.version>3.2.29</neo4j.version>
 		<opencsv.version>5.5.2</opencsv.version>
-		<restassured.version>4.5.0</restassured.version>
-		<swagger.version>2.1.12</swagger.version>
+		<restassured.version>4.5.1</restassured.version>
+		<swagger.version>2.1.13</swagger.version>
 		<tomcat.version>10.0.16</tomcat.version>
 	</properties>
 
@@ -134,7 +134,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>3.10.0</version>
+				<version>3.11.0</version>
 			</plugin>
 
 			<!-- ####### Tests ####### -->
@@ -206,7 +206,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven3-plugin</artifactId>
-				<version>1.9.9</version>
+				<version>1.9.10</version>
 				<configuration>
 					<skip>${skipITs}</skip>
 					<container>
@@ -272,7 +272,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.1.2</version>
+				<version>3.2.1</version>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -282,7 +282,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>versions-maven-plugin</artifactId>
-				<version>2.8.1</version>
+				<version>2.9.0</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
