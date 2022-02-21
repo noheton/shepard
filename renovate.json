@@ -27,6 +27,7 @@
       "allowedVersions": "<11"
     }
   ],
+  "prHourlyLimit": 0,
   "labels": ["dependencies"],
   "dependencyDashboard": true
 }
