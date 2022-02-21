@@ -7,8 +7,24 @@
       "allowedVersions": "<3"
     },
     {
+      "matchPackageNames": ["vue-router"],
+      "allowedVersions": "<4"
+    },
+    {
+      "matchPackageNames": ["vuex"],
+      "allowedVersions": "<4"
+    },
+    {
       "matchPackageNames": ["bootstrap"],
       "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["eslint"],
+      "allowedVersions": "<7"
+    },
+    {
+      "matchPackageNames": ["sass-loader"],
+      "allowedVersions": "<11"
     }
   ],
   "labels": ["dependencies"],
