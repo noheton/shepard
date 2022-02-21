@@ -1,8 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
+  "extends": ["config:base"],
   "packageRules": [
     {
       "matchPackageNames": ["vue"],
@@ -11,7 +9,7 @@
     {
       "matchPackageNames": ["bootstrap"],
       "allowedVersions": "<5"
-    },
+    }
   ],
   "labels": ["dependencies"],
   "dependencyDashboard": true
