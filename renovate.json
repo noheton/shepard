@@ -5,6 +5,10 @@
     {
       "matchPackageNames": ["influxdb"],
       "allowedVersions": "<2"
+    },
+    {
+      "matchPackagePatterns": ["tomcat(-.+)?"],
+      "groupName": "tomcat"
     }
   ],
   "prHourlyLimit": 0,

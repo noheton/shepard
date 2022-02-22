@@ -10,7 +10,7 @@
 build_cppclient:
   stage: build_clients
   image:
-    name: openapitools/openapi-generator-cli:${OPENAPI_VERSION}
+    name: openapitools/openapi-generator-cli:v5.3.1
     entrypoint: [""]
   needs: [build]
   dependencies: [build]
