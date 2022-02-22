@@ -29,7 +29,7 @@
 import getEnv from "@/utils/env";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import Vue from "vue";
-import { version } from "../../package.json";
+import { version as appVersion } from "../../package.json";
 
 interface AboutData {
   backend?: unknown;
@@ -42,7 +42,7 @@ export default Vue.extend({
   data() {
     return {
       backend: undefined,
-      appVersion: version,
+      appVersion: appVersion,
       clientVersion: clientVersion,
       backendUrl: getEnv("VUE_APP_BACKEND"),
     } as AboutData;

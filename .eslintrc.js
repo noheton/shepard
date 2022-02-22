@@ -7,13 +7,16 @@ module.exports = {
     "plugin:vue/recommended",
     "eslint:recommended",
     "@vue/typescript/recommended",
+    "plugin:prettier/recommended",
     "@vue/prettier",
-    "@vue/prettier/@typescript-eslint",
+    "@vue/eslint-config-typescript",
+    "@vue/eslint-config-prettier",
   ],
   parserOptions: {
     ecmaVersion: 2020,
   },
   rules: {
+    "vue/multi-word-component-names": "off",
     "no-console": "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
   },

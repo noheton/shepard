@@ -17,14 +17,6 @@
     {
       "matchPackageNames": ["bootstrap"],
       "allowedVersions": "<5"
-    },
-    {
-      "matchPackageNames": ["eslint"],
-      "allowedVersions": "<7"
-    },
-    {
-      "matchPackageNames": ["sass-loader"],
-      "allowedVersions": "<11"
     }
   ],
   "prHourlyLimit": 0,

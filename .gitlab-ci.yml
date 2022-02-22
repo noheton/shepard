@@ -17,6 +17,7 @@ include:
   - template: Dependency-Scanning.gitlab-ci.yml
 
 stages:
+  - install
   - test
   - build
   - upload
@@ -29,6 +30,13 @@ stages:
   - NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
   - NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
   - echo //gitlab.com/api/v4/packages/npm/:_authToken=${CI_JOB_TOKEN} >> .npmrc
+
+install:
+  stage: install
+  before_script:
+    - *prepare_npm
+  script:
+    - npm install --progress=false
 
 lint:
   stage: test
