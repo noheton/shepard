@@ -39,13 +39,11 @@
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.22.0</assertj.version>
-		<bind-api.version>3.0.1</bind-api.version>
 		<commons.version>2.11.0</commons.version>
 		<equalsverifier.version>3.9</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.22</influxdb.version>
 		<janino.version>3.1.6</janino.version>
-		<jaxb-impl.version>3.0.2</jaxb-impl.version>
 		<jersey.version>3.0.3</jersey.version>
 		<jjwt.version>0.11.2</jjwt.version>
 		<junit.version>5.8.2</junit.version>
@@ -411,6 +409,13 @@
 			<version>${jersey.version}</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-jaxb -->
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-jaxb</artifactId>
+			<version>${jersey.version}</version>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
@@ -423,22 +428,6 @@
 			<groupId>org.glassfish.jersey.ext</groupId>
 			<artifactId>jersey-bean-validation</artifactId>
 			<version>${jersey.version}</version>
-		</dependency>
-
-		<!-- ####### XML Binding ####### -->
-		<!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
-		<dependency>
-			<groupId>jakarta.xml.bind</groupId>
-			<artifactId>jakarta.xml.bind-api</artifactId>
-			<version>${bind-api.version}</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-impl -->
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-			<version>${jaxb-impl.version}</version>
-			<scope>runtime</scope>
 		</dependency>
 
 		<!-- ####### CSV ####### -->
