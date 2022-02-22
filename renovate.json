@@ -9,6 +9,10 @@
     {
       "matchPackagePatterns": ["tomcat(-.+)?"],
       "groupName": "tomcat"
+    },
+    {
+      "matchPackagePatterns": ["(.*)maven(.*)-plugin(.*)"],
+      "groupName": "maven plugins"
     }
   ],
   "prHourlyLimit": 0,
