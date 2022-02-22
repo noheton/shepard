@@ -44,7 +44,7 @@ stages:
 
 format-prettier:
   stage: test
-  image: node:14-slim
+  image: node:17-slim
   before_script:
     - npm install -g prettier
   script:
