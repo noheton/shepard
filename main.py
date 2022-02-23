@@ -8,42 +8,47 @@ from gitlab.v4.objects.merge_requests import MergeRequest
 from gitlab.v4.objects.projects import Project
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
+DEPENDENCY_BUMP_LABEL = "dependencies"
 TEMPLATE_FILE = "release_notes.md"
 TOKEN_FILE = "token.txt"
 
+GITLAB_INSTANCE = "https://gitlab.com"
 PROJECTS = {"backend": 27250272, "frontend": 27250279}
 
 
 def get_changes(
     project: Project, merged_after: str
-) -> Tuple[List[MergeRequest], List[MergeRequest]]:
+) -> Tuple[List[MergeRequest], List[MergeRequest], List[MergeRequest]]:
     breaking_changes: List[MergeRequest] = []
+    dependency_changes: List[MergeRequest] = []
     other_changes: List[MergeRequest] = []
 
-    mrs = project.mergerequests.list(
+    merge_requests = project.mergerequests.list(
         state="merged",
         order_by="updated_at",
         updated_after=merged_after,
         target_branch=project.default_branch,
     )
 
-    for mr in mrs:
-        if mr.merged_at < merged_after:
+    for merge_request in merge_requests:
+        if merge_request.merged_at < merged_after:
             continue
-        if BREAKING_CHANGE_LABEL in mr.labels:
-            breaking_changes.append(mr)
+        if BREAKING_CHANGE_LABEL in merge_request.labels:
+            breaking_changes.append(merge_request)
+        elif DEPENDENCY_BUMP_LABEL in merge_request.labels:
+            dependency_changes.append(merge_request)
         else:
-            other_changes.append(mr)
+            other_changes.append(merge_request)
 
-    return (breaking_changes, other_changes)
+    return (breaking_changes, dependency_changes, other_changes)
 
 
-def get_mr_list(mrs: List[MergeRequest]) -> str:
+def get_mr_list(merge_requests: List[MergeRequest]) -> str:
     result = ""
-    for mr in mrs:
+    for merge_request in merge_requests:
         if len(result) > 0:
             result = result + "\n"
-        result = result + f"- {mr.title} ({mr.web_url})"
+        result = result + f"- {merge_request.title} ({merge_request.web_url})"
     return result
 
 
@@ -68,21 +73,21 @@ def get_release_tag() -> str:
     return now.strftime("%Y.%m.%d-release")
 
 
-if __name__ == "__main__":
+def create_release() -> int:
     token = ""
-    with open(TOKEN_FILE, "r") as f:
-        token = f.read()
-    instance = Gitlab("https://gitlab.com", token)
+    with open(TOKEN_FILE, "r", encoding="UTF-8") as token_file:
+        token = token_file.read()
+    instance = Gitlab(GITLAB_INSTANCE, token)
 
     project_name = input("Project: ")
     try:
         project = instance.projects.get(PROJECTS[project_name])
     except KeyError as ex:
         print(f"Project {ex} could not be found")
-        sys.exit(1)
+        return 1
 
     latest_release = project.releases.list()[0]
-    breaking, others = get_changes(project, latest_release.released_at)
+    breaking, _dependencies, others = get_changes(project, latest_release.released_at)
     release_tag = get_release_tag()
 
     print({project.name_with_namespace})
@@ -101,9 +106,9 @@ if __name__ == "__main__":
 
     approve = input("OK? (y/N) ")
     if approve != "y":
-        sys.exit(1)
+        return 1
 
-    release = project.releases.create(
+    project.releases.create(
         {
             "name": title,
             "tag_name": release_tag,
@@ -112,4 +117,8 @@ if __name__ == "__main__":
         }
     )
     print("Successfully released")
-    sys.exit(0)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(create_release())

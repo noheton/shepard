@@ -1,3 +1,6 @@
-black
-Jinja2
-python-gitlab
+black==22.1.0
+flake8==4.0.1
+isort==5.10.1
+Jinja2==3.0.1
+pylint==2.12.2
+python-gitlab==2.10.0

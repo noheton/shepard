@@ -1,4 +1,4 @@
-image: python:latest
+image: python:10
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
@@ -14,3 +14,15 @@ before_script:
 black:
   script:
     - python -m black main.py --check
+
+isort:
+  script:
+    - python -m isort main.py --check
+
+flake8:
+  script:
+    - python -m flake8 main.py
+
+pylint:
+  script:
+    - python -m pylint main.py
