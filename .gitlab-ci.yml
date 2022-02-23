@@ -1,0 +1,16 @@
+image: python:latest
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cache/pip
+    - venv/
+
+before_script:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install -r requirements.txt
+
+black:
+  script:
+    - python -m black main.py --check
