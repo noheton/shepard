@@ -16,21 +16,27 @@
     ></b-form-select>
 
     <h5>Individual Permissions</h5>
-    <b-input-group prepend="Username">
+    <b-input-group prepend="Username or GroupID">
       <b-form-input
-        v-model="username"
-        :state="validUser"
-        @change="fetchUser()"
+        v-model="usernameOrGroupId"
+        :state="validUser || validUserGroup"
+        @change="fetch()"
       ></b-form-input>
       <b-input-group-append>
         <b-dropdown text="Add">
           <b-dropdown-item :disabled="!validUser" @click="setOwner()">
             Owner
           </b-dropdown-item>
-          <b-dropdown-item :disabled="!validUser" @click="addReader()">
+          <b-dropdown-item
+            :disabled="!validUser && !validUserGroup"
+            @click="addReader()"
+          >
             Reader
           </b-dropdown-item>
-          <b-dropdown-item :disabled="!validUser" @click="addWriter()">
+          <b-dropdown-item
+            :disabled="!validUser && !validUserGroup"
+            @click="addWriter()"
+          >
             Writer
           </b-dropdown-item>
           <b-dropdown-item :disabled="!validUser" @click="addManager()">
@@ -42,9 +48,12 @@
     <small v-if="currentUser">
       <em> {{ currentUser.firstName }} {{ currentUser.lastName }} </em>
     </small>
+    <small v-else-if="currentUserGroup">
+      <em> {{ currentUserGroup.name }} </em>
+    </small>
     <small v-else>Please enter a valid username</small>
 
-    <div>Owner</div>
+    <div class="mt-3">Owner</div>
     <b-list-group>
       <b-list-group-item
         v-if="owner"
@@ -57,79 +66,144 @@
       </b-list-group-item>
     </b-list-group>
 
-    <div>Reader</div>
-    <b-list-group>
-      <b-list-group-item
-        v-for="(user, index) in reader"
-        :key="user.username"
-        class="d-flex justify-content-between align-items-center"
-      >
-        {{ user.firstName }} {{ user.lastName }}
-        <b-button variant="light" size="sm" @click="reader.splice(index, 1)">
-          <DeleteIcon />
-        </b-button>
-      </b-list-group-item>
-    </b-list-group>
+    <b-row class="mt-3">
+      <b-col cols="4">
+        <div>Reader</div>
+        <b-list-group>
+          <b-list-group-item
+            v-for="(user, index) in reader"
+            :key="user.username"
+            class="d-flex justify-content-between align-items-center"
+          >
+            <div>
+              <UserIcon :size="18" /> {{ user.firstName }} {{ user.lastName }}
+            </div>
+            <b-button
+              variant="light"
+              size="sm"
+              @click="reader.splice(index, 1)"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-list-group-item>
 
-    <div>Writer</div>
-    <b-list-group>
-      <b-list-group-item
-        v-for="(user, index) in writer"
-        :key="user.username"
-        class="d-flex justify-content-between align-items-center"
-      >
-        {{ user.firstName }} {{ user.lastName }}
-        <b-button variant="light" size="sm" @click="writer.splice(index, 1)">
-          <DeleteIcon />
-        </b-button>
-      </b-list-group-item>
-    </b-list-group>
-
-    <div>Manager</div>
-    <b-list-group>
-      <b-list-group-item
-        v-for="(user, index) in manager"
-        :key="user.username"
-        class="d-flex justify-content-between align-items-center"
-      >
-        {{ user.firstName }} {{ user.lastName }}
-        <b-button variant="light" size="sm" @click="manager.splice(index, 1)">
-          <DeleteIcon />
-        </b-button>
-      </b-list-group-item>
-    </b-list-group>
+          <b-list-group-item
+            v-for="(group, index) in readerGroup"
+            :key="group.name"
+            class="d-flex justify-content-between align-items-center"
+          >
+            <div><UserGroupIcon :size="18" /> {{ group.name }}</div>
+            <b-button
+              variant="light"
+              size="sm"
+              @click="readerGroup.splice(index, 1)"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-list-group-item>
+        </b-list-group>
+      </b-col>
+      <b-col cols="4">
+        <div>Writer</div>
+        <b-list-group>
+          <b-list-group-item
+            v-for="(user, index) in writer"
+            :key="user.username"
+            class="d-flex justify-content-between align-items-center"
+          >
+            <div>
+              <UserIcon :size="18" /> {{ user.firstName }}
+              {{ user.lastName }}
+            </div>
+            <b-button
+              variant="light"
+              size="sm"
+              @click="writer.splice(index, 1)"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-list-group-item>
+          <b-list-group-item
+            v-for="(group, index) in writerGroup"
+            :key="group.name"
+            class="d-flex justify-content-between align-items-center"
+          >
+            <div><UserGroupIcon :size="18" /> {{ group.name }}</div>
+            <b-button
+              variant="light"
+              size="sm"
+              @click="writerGroup.splice(index, 1)"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-list-group-item>
+        </b-list-group>
+      </b-col>
+      <b-col cols="4">
+        <div>Manager</div>
+        <b-list-group>
+          <b-list-group-item
+            v-for="(user, index) in manager"
+            :key="user.username"
+            class="d-flex justify-content-between align-items-center"
+          >
+            <div>
+              <UserIcon :size="18" /> {{ user.firstName }} {{ user.lastName }}
+            </div>
+            <b-button
+              variant="light"
+              size="sm"
+              @click="manager.splice(index, 1)"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-list-group-item>
+        </b-list-group>
+      </b-col>
+    </b-row>
   </b-modal>
 </template>
 
 <script lang="ts">
-import { UserVue } from "@/utils/api-mixin";
+import { UserGroupVue, UserVue } from "@/utils/api-mixin";
 import {
   Permissions,
   PermissionsPermissionTypeEnum,
   User,
+  UserApi,
+  UserGroup,
+  UsergroupApi,
 } from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
 interface PermissionsModalData {
-  username: string;
+  usernameOrGroupId: string;
   validUser?: boolean;
+  validUserGroup?: boolean;
   currentUser?: User;
+  currentUserGroup?: UserGroup;
   owner?: User;
   reader: User[];
+  readerGroup: UserGroup[];
   writer: User[];
-  manager: User[];
+  writerGroup: UserGroup[];
+  manager: Array<User>;
   permissionOptions: { value: PermissionsPermissionTypeEnum; text: string }[];
   permissionType?: PermissionsPermissionTypeEnum;
 }
 
 function initialState(): PermissionsModalData {
   return {
-    username: "",
+    usernameOrGroupId: "",
     validUser: undefined,
+    validUserGroup: undefined,
     currentUser: undefined,
+    currentUserGroup: undefined,
     owner: undefined,
     reader: [],
+    readerGroup: [],
     writer: [],
+    writerGroup: [],
     manager: [],
     permissionOptions: [
       {
@@ -150,9 +224,11 @@ function initialState(): PermissionsModalData {
 }
 
 export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UserVue>>
+  Vue as VueConstructor<
+    Vue & InstanceType<typeof UserVue> & InstanceType<typeof UserGroupVue>
+  >
 ).extend({
-  mixins: [UserVue],
+  mixins: [UserVue, UserGroupVue],
   props: {
     modalId: {
       type: String,
@@ -181,19 +257,32 @@ export default (
       Object.assign(this.$data, initialState());
       this.parseOldPermissions();
     },
+    resetInput() {
+      this.usernameOrGroupId = "";
+      this.validUser = undefined;
+      this.validUserGroup = undefined;
+    },
     handleOk() {
       const perms: Permissions = {
         permissionType: this.permissionType,
         owner: this.owner?.username,
         reader: [],
-        manager: [],
+        readerGroupIds: [],
         writer: [],
+        writerGroupIds: [],
+        manager: [],
       };
       this.reader.forEach(u => {
         if (u.username) perms.reader.push(u.username);
       });
+      this.readerGroup.forEach(g => {
+        if (g.id) perms.readerGroupIds?.push(g.id);
+      });
       this.writer.forEach(u => {
         if (u.username) perms.writer.push(u.username);
+      });
+      this.writerGroup.forEach(g => {
+        if (g.id) perms.writerGroupIds?.push(g.id);
       });
       this.manager.forEach(u => {
         if (u.username) perms.manager.push(u.username);
@@ -203,6 +292,7 @@ export default (
     setOwner() {
       if (this.currentUser) {
         this.owner = this.currentUser;
+        this.resetInput();
       }
     },
     addReader() {
@@ -211,6 +301,15 @@ export default (
           !this.reader.some(user => user.username == this.currentUser?.username)
         )
           this.reader.push(this.currentUser);
+        this.resetInput();
+      } else if (this.currentUserGroup && this.currentUserGroup.name) {
+        if (
+          !this.readerGroup.some(
+            group => group.name == this.currentUserGroup?.name,
+          )
+        )
+          this.readerGroup.push(this.currentUserGroup);
+        this.resetInput();
       }
     },
     addWriter() {
@@ -220,6 +319,15 @@ export default (
           !this.writer.some(user => user.username == this.currentUser?.username)
         )
           this.writer.push(this.currentUser);
+        this.resetInput();
+      } else if (this.currentUserGroup && this.currentUserGroup.name) {
+        if (
+          !this.writerGroup.some(
+            group => group.name == this.currentUserGroup?.name,
+          )
+        )
+          this.writerGroup.push(this.currentUserGroup);
+        this.resetInput();
       }
     },
     addManager() {
@@ -232,16 +340,30 @@ export default (
           )
         )
           this.manager.push(this.currentUser);
+        this.resetInput();
+      }
+    },
+    fetch() {
+      if (!this.usernameOrGroupId) {
+        this.validUser = undefined;
+        this.currentUser = undefined;
+        this.validUserGroup = undefined;
+        this.currentUserGroup = undefined;
+        return;
+      }
+      if (Number(this.usernameOrGroupId)) {
+        this.fetchUserGroups();
+        this.validUser = false;
+        this.currentUser = undefined;
+      } else {
+        this.fetchUser();
+        this.validUserGroup = false;
+        this.currentUserGroup = undefined;
       }
     },
     fetchUser() {
-      if (!this.username) {
-        this.validUser = undefined;
-        this.currentUser = undefined;
-        return;
-      }
       this.userApi
-        ?.getUser({ username: this.username })
+        ?.getUser({ username: this.usernameOrGroupId })
         .then(currentUser => {
           this.currentUser = currentUser;
           this.validUser = true;
@@ -251,6 +373,20 @@ export default (
           console.log(error);
           this.currentUser = undefined;
           this.validUser = false;
+        });
+    },
+    fetchUserGroups() {
+      this.userGroupApi
+        ?.getUserGroup({ usergroupId: Number(this.usernameOrGroupId) })
+        .then(currentUserGroup => {
+          this.currentUserGroup = currentUserGroup;
+          this.validUserGroup = true;
+        })
+        .catch(e => {
+          const error = "Error while getting userGroup: " + e.statusText;
+          console.log(error);
+          this.currentUserGroup = undefined;
+          this.validUserGroup = false;
         });
     },
     parseOldPermissions() {
@@ -269,16 +405,30 @@ export default (
           ?.getUser({ username: username })
           .then(user => this.reader.push(user));
       });
+      perms.readerGroupIds?.forEach(groupId => {
+        this.userGroupApi
+          ?.getUserGroup({ usergroupId: groupId })
+          .then(usergroup => this.readerGroup.push(usergroup));
+      });
       perms.writer.forEach(username => {
         this.userApi
           ?.getUser({ username: username })
           .then(user => this.writer.push(user));
+      });
+      perms.writerGroupIds?.forEach(groupId => {
+        this.userGroupApi
+          ?.getUserGroup({ usergroupId: groupId })
+          .then(usergroup => this.writerGroup.push(usergroup));
       });
       perms.manager.forEach(username => {
         this.userApi
           ?.getUser({ username: username })
           .then(user => this.manager.push(user));
       });
+    },
+    createApi() {
+      this.userApi = new UserApi(this.config);
+      this.userGroupApi = new UsergroupApi(this.config);
     },
   },
 });
@@ -291,6 +441,6 @@ h5 {
 
 .list-group-item {
   padding: 0rem;
-  padding-left: 1rem;
+  padding-left: 0.5rem;
 }
 </style>

@@ -1,4 +1,6 @@
 import Vue from "vue";
+import Account from "vue-material-design-icons/Account.vue";
+import AccountGroup from "vue-material-design-icons/AccountGroup.vue";
 import AccountLock from "vue-material-design-icons/AccountLock.vue";
 import ChartLine from "vue-material-design-icons/ChartLine.vue";
 import ChevronDown from "vue-material-design-icons/ChevronDown.vue";
@@ -43,3 +45,6 @@ Vue.component("OpenIcon", FolderOpen);
 Vue.component("PermissionsIcon", AccountLock);
 Vue.component("DownloadIcon", FileDownloadOutline);
 Vue.component("CopyIcon", ContentCopy);
+
+Vue.component("UserIcon", Account);
+Vue.component("UserGroupIcon", AccountGroup);
