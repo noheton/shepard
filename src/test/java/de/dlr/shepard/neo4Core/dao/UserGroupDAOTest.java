@@ -59,7 +59,7 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
-		String query = "MATCH (ug:UserGroup { deleted: false }) WHERE NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		String query = "MATCH (ug:UserGroup { deleted: false }) WHERE NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})) MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
 		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(username);
 		verify(session).query(UserGroup.class, query, Collections.emptyMap());

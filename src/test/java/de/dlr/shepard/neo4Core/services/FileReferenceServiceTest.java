@@ -17,9 +17,9 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
@@ -29,6 +29,8 @@ import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 
 public class FileReferenceServiceTest extends BaseTestCase {
@@ -50,6 +52,9 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private DateHelper dateHelper;
+
+	@Mock
+	private PermissionsUtil permissionsUtil;
 
 	@InjectMocks
 	private FileReferenceService service;
@@ -259,10 +264,25 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var result = new NamedInputStream(null, "myInputStream");
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
 		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
-		var actual = service.getPayload(1L, "oid");
+		var actual = service.getPayload(1L, "oid", "bob");
 
 		assertEquals(result, actual);
+	}
+
+	@Test
+	public void getPayloadTest_NotAllowed() {
+		var container = new FileContainer(20L);
+		container.setMongoId("mongoId");
+		var ref = new FileReference(1L);
+		ref.setFileContainer(container);
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
+		var actual = service.getPayload(1L, "oid", "bob");
+
+		assertNull(actual);
 	}
 
 	@Test

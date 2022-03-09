@@ -33,6 +33,8 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 
 public class TimeseriesReferenceServiceTest extends BaseTestCase {
@@ -54,6 +56,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private DateHelper dateHelper;
+
+	@Mock
+	private PermissionsUtil permissionsUtil;
 
 	@InjectMocks
 	private TimeseriesReferenceService service;
@@ -232,11 +237,37 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(50L, 7)));
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
 		when(timeseriesService.getTimeseriesList(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
 				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(List.of(payload));
 
-		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"));
+		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+				"bob");
 		assertEquals(List.of(payload), actual);
+	}
+
+	@Test
+	public void getPayloadTest_notAllowed() {
+		var container = new TimeseriesContainer(2L);
+		container.setDatabase("Database");
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var ref = new TimeseriesReference() {
+			{
+				setId(1L);
+				setEnd(321);
+				setStart(123);
+				setTimeseries(List.of(ts));
+				setTimeseriesContainer(container);
+
+			}
+		};
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
+
+		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+				"bob");
+		assertEquals(0, actual.size());
 	}
 
 	@Test
@@ -257,11 +288,37 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
 		when(timeseriesService.exportTimeseries(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
 				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(is);
 
-		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"));
+		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+				"bob");
 		assertEquals(is, actual);
+	}
+
+	@Test
+	public void exportTest_notAllowed() throws IOException {
+		var container = new TimeseriesContainer(2L);
+		container.setDatabase("Database");
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var ref = new TimeseriesReference() {
+			{
+				setId(1L);
+				setEnd(321);
+				setStart(123);
+				setTimeseries(List.of(ts));
+				setTimeseriesContainer(container);
+
+			}
+		};
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
+
+		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+				"bob");
+		assertNull(actual);
 	}
 
 }

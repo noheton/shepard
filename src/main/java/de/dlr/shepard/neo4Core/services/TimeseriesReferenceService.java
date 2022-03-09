@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +17,8 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +30,7 @@ public class TimeseriesReferenceService {
 	private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
+	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	public List<TimeseriesReference> getAllTimeseriesReferences(long dataObjectId) {
 		var references = timeseriesReferenceDAO.findByDataObject(dataObjectId);
@@ -80,25 +84,30 @@ public class TimeseriesReferenceService {
 	}
 
 	public List<TimeseriesPayload> getPayload(long timeseriesId, AggregateFunction function, Long groupBy,
-			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
+			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet,
+			String username) {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
+		var containerId = ref.getTimeseriesContainer().getId();
+		var database = ref.getTimeseriesContainer().getDatabase();
 
-		var payload = timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(),
-				ref.getTimeseriesContainer().getDatabase(), ref.getTimeseries(), function, groupBy, devicesFilterSet,
-				locationsFilterSet, symbolicNameFilterSet);
-
-		return payload;
+		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
+			return timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
+					function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+		}
+		return Collections.emptyList();
 	}
 
 	public InputStream export(long timeseriesId, AggregateFunction function, Long groupBy, Set<String> devicesFilterSet,
-			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username) throws IOException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
+		var containerId = ref.getTimeseriesContainer().getId();
+		var database = ref.getTimeseriesContainer().getDatabase();
 
-		var stream = timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(),
-				ref.getTimeseriesContainer().getDatabase(), ref.getTimeseries(), function, groupBy, devicesFilterSet,
-				locationsFilterSet, symbolicNameFilterSet);
-
-		return stream;
+		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
+			return timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
+					function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+		}
+		return null;
 	}
 
 }

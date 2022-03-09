@@ -97,7 +97,8 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId) {
 		log.info("Received GET STRUCTURED DATA PAYLOAD request with reference Id {} from user {}", structuredDataId,
 				securityContext.getUserPrincipal().getName());
-		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId);
+		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId,
+				securityContext.getUserPrincipal().getName());
 		return Response.ok(payload).build();
 	}
 
@@ -110,7 +111,8 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 			@PathParam(Constants.OID) String oid) {
 		log.info("Received GET SPECIFIC STRUCTURED DATA PAYLOAD request with reference Id {} and Oid {} from user {}",
 				structuredDataId, oid, securityContext.getUserPrincipal().getName());
-		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid);
+		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid,
+				securityContext.getUserPrincipal().getName());
 		return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
 	}
 

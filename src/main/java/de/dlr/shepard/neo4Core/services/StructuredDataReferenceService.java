@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -13,6 +14,8 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +28,7 @@ public class StructuredDataReferenceService {
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private StructuredDataService structuredDataService = new StructuredDataService();
+	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	public StructuredDataReference createStructuredDataReference(long dataObjectId,
 			StructuredDataReferenceIO structuredDataReference, String username) throws InvalidBodyException {
@@ -93,9 +97,15 @@ public class StructuredDataReferenceService {
 		return true;
 	}
 
-	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId) {
+	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
+
+		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			// Not allowed
+			return Collections.emptyList();
+
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
 		for (var structuredData : structuredDatas) {
@@ -108,10 +118,14 @@ public class StructuredDataReferenceService {
 		return result;
 	}
 
-	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid) {
+	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
-		var result = structuredDataService.getPayload(mongoId, oid);
-		return result;
+
+		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
+			return structuredDataService.getPayload(mongoId, oid);
+		}
+		return null;
 	}
 }

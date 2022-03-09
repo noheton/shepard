@@ -29,6 +29,8 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 
 public class StructuredDataReferenceServiceTest extends BaseTestCase {
@@ -50,6 +52,9 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private DateHelper dateHelper;
+
+	@Mock
+	private PermissionsUtil permissionsUtil;
 
 	@InjectMocks
 	private StructuredDataReferenceService service;
@@ -253,7 +258,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 	@Test
 	public void getAllPayloadTest() {
-		var container = new StructuredDataContainer();
+		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
@@ -265,16 +270,34 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var payloadB = new StructuredDataPayload(structuredDataB, "json2");
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
 		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
 		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(payloadB);
 
-		var actual = service.getAllPayloads(1L);
+		var actual = service.getAllPayloads(1L, "bob");
 		assertEquals(List.of(payloadA, payloadB), actual);
 	}
 
 	@Test
+	public void getAllPayloadTest_notAllowed() {
+		var container = new StructuredDataContainer(20L);
+		container.setMongoId("mongoId");
+		var ref = new StructuredDataReference(1L);
+		ref.setStructuredDataContainer(container);
+		var structuredDataA = new StructuredData("abc");
+		var structuredDataB = new StructuredData("def");
+		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
+
+		var actual = service.getAllPayloads(1L, "bob");
+		assertEquals(0, actual.size());
+	}
+
+	@Test
 	public void getAllPayloadTest_unknownOid() {
-		var container = new StructuredDataContainer();
+		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
@@ -285,30 +308,32 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
 		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
 		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(null);
 
-		var actual = service.getAllPayloads(1L);
+		var actual = service.getAllPayloads(1L, "bob");
 		assertEquals(List.of(payloadA, new StructuredDataPayload(structuredDataB, null)), actual);
 	}
 
 	@Test
 	public void getAllPayloadTest_isNull() {
-		var container = new StructuredDataContainer();
+		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
 		ref.setStructuredDatas(Collections.emptyList());
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
 
-		var actual = service.getAllPayloads(1L);
+		var actual = service.getAllPayloads(1L, "bob");
 		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
 	public void getPayloadTest() {
-		var container = new StructuredDataContainer();
+		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
@@ -318,9 +343,26 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
 
 		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
 		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
 
-		var actual = service.getPayload(1L, "abc");
+		var actual = service.getPayload(1L, "abc", "bob");
 		assertEquals(payloadA, actual);
+	}
+
+	@Test
+	public void getPayloadTest_notAllowed() {
+		var container = new StructuredDataContainer(20L);
+		container.setMongoId("mongoId");
+		var ref = new StructuredDataReference(1L);
+		ref.setStructuredDataContainer(container);
+		var structuredDataA = new StructuredData("abc");
+		ref.setStructuredDatas(List.of(structuredDataA));
+
+		when(dao.find(1L)).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
+
+		var actual = service.getPayload(1L, "abc", "bob");
+		assertNull(actual);
 	}
 }

@@ -170,8 +170,9 @@ public abstract class GenericDAO<T> {
 		String ret = String.format("WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) "
 				+ "OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) "
 				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) "
-				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"}))", variable,
-				variable, username, variable, variable);
+				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) "
+				+ "OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"}))",
+				variable, variable, username, variable, variable, variable, username);
 		return ret;
 	}
 

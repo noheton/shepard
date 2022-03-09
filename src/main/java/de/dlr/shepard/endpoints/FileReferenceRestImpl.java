@@ -98,7 +98,8 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId, @PathParam(Constants.OID) String oid) {
 		log.info("Received GET FILE PAYLOAD request with reference Id {} and Oid {} from user {}", fileReferenceId, oid,
 				securityContext.getUserPrincipal().getName());
-		var payload = fileReferenceService.getPayload(fileReferenceId, oid);
+		var payload = fileReferenceService.getPayload(fileReferenceId, oid,
+				securityContext.getUserPrincipal().getName());
 		return payload != null
 				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
 						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()

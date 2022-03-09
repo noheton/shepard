@@ -3,15 +3,17 @@ package de.dlr.shepard.neo4Core.services;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
+import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,6 +26,7 @@ public class FileReferenceService {
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private FileService fileService = new FileService();
+	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	public List<FileReference> getAllFileReferences(long dataObjectId) {
 		var references = fileReferenceDAO.findByDataObject(dataObjectId);
@@ -76,15 +79,18 @@ public class FileReferenceService {
 		return true;
 	}
 
-	public NamedInputStream getPayload(long fileId, String oid) {
-		FileReference reference = fileReferenceDAO.find(fileId);
-		String containerId = reference.getFileContainer().getMongoId();
-		var result = fileService.getPayload(containerId, oid);
-		return result;
+	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) {
+		FileReference reference = fileReferenceDAO.find(fileReferenceId);
+		long containerId = reference.getFileContainer().getId();
+		String mongoId = reference.getFileContainer().getMongoId();
+		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
+			return fileService.getPayload(mongoId, oid);
+		}
+		return null;
 	}
 
-	public List<ShepardFile> getFiles(long fileId) {
-		FileReference reference = fileReferenceDAO.find(fileId);
+	public List<ShepardFile> getFiles(long fileReferenceId) {
+		FileReference reference = fileReferenceDAO.find(fileReferenceId);
 		return reference.getFiles();
 	}
 

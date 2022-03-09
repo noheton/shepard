@@ -109,7 +109,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		log.info("Received GET PAYLOAD request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 		var payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
-				locationFilterTag, symbolicNameFilterTag);
+				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
 		return Response.ok(payload).build();
 	}
 
@@ -127,7 +127,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		log.info("Received EXPORT PAYLOAD request with reference Id {} from user {}", timeseriesId,
 				securityContext.getUserPrincipal().getName());
 		var stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, deviceFilterTag,
-				locationFilterTag, symbolicNameFilterTag);
+				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
 		return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
 	}
 
