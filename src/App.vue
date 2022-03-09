@@ -45,8 +45,6 @@ export default Vue.extend({
 .view {
   margin: auto;
   max-width: 850px;
-  overflow-wrap: break-word;
-  word-break: break-word;
 }
 
 .component {
@@ -58,15 +56,6 @@ export default Vue.extend({
   border: solid;
   border-color: red;
   opacity: 0.6;
-}
-
-h3 {
-  font-weight: bold;
-}
-
-h4 {
-  margin-top: 30px;
-  margin-bottom: 10px;
 }
 
 .small-button b-button {
