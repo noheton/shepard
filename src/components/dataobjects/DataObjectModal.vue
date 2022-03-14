@@ -42,14 +42,14 @@
               v-model="possibleParent.id"
               type="number"
               placeholder="ID"
-              @blur="validateDataObject(possibleParent)"
+              @blur="validateParent()"
             >
             </b-form-input>
           </b-col>
           <b-col cols="5">
             <b-form-input
               v-model="possibleParent.name"
-              :class="{ validationField: validationError }"
+              :state="validParent"
               readonly
               placeholder="Name"
             >
@@ -70,13 +70,13 @@
                 v-model="predecessor.id"
                 type="number"
                 placeholder="ID"
-                @blur="validateDataObject(predecessor)"
+                @blur="validatePredecessor(i)"
               ></b-form-input>
             </b-col>
             <b-col cols="5">
               <b-form-input
                 v-model="predecessor.name"
-                :class="{ validationField: validationError }"
+                :state="validPredecessors[i]"
                 readonly
                 placeholder="Name"
               ></b-form-input>
@@ -86,12 +86,7 @@
                 v-show="i == possiblePredecessors.length - 1"
                 class="small-button"
                 variant="success"
-                @click="
-                  possiblePredecessors.push({
-                    id: undefined,
-                    name: '',
-                  })
-                "
+                @click="addPredecessor()"
               >
                 <CreateIcon />
               </b-button>
@@ -101,7 +96,7 @@
                 v-show="i || (!i && possiblePredecessors.length > 1)"
                 class="small-button"
                 variant="danger"
-                @click="possiblePredecessors.splice(i, 1)"
+                @click="removePredecessor(i)"
               >
                 <RemoveIcon />
               </b-button>
@@ -137,12 +132,7 @@
                   v-show="i == possibleAttributes.length - 1"
                   class="small-button"
                   variant="success"
-                  @click="
-                    possibleAttributes.push({
-                      key: '',
-                      value: '',
-                    })
-                  "
+                  @click="addAttribute()"
                 >
                   <CreateIcon />
                 </b-button>
@@ -152,7 +142,7 @@
                   v-show="i || (!i && possibleAttributes.length > 1)"
                   class="small-button"
                   variant="danger"
-                  @click="possibleAttributes.splice(i, 1)"
+                  @click="removeAttribute(i)"
                 >
                   <RemoveIcon />
                 </b-button>
@@ -171,16 +161,17 @@ import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType, VueConstructor } from "vue";
 
+interface PossibleDataObject {
+  id?: number;
+  name: string;
+}
+
 interface DataObjectModalData {
   newDataObject: DataObject;
-  possibleParent: {
-    id?: number;
-    name: string;
-  };
-  possiblePredecessors: {
-    id?: number;
-    name: string;
-  }[];
+  validParent?: boolean;
+  validPredecessors: Array<boolean | undefined>;
+  possibleParent: PossibleDataObject;
+  possiblePredecessors: PossibleDataObject[];
   possibleAttributes: {
     key: string;
     value: string;
@@ -213,16 +204,12 @@ export default (
 
   data() {
     return {
-      newDataObject: {},
-      possibleParent: { id: 0, name: "" },
-      possiblePredecessors: [] as {
-        id?: number;
-        name: string;
-      }[],
-      possibleAttributes: [] as {
-        key: string;
-        value: string;
-      }[],
+      newDataObject: { name: "" },
+      validParent: undefined,
+      validPredecessors: [],
+      possibleParent: { id: undefined, name: "" },
+      possiblePredecessors: [],
+      possibleAttributes: [],
       validationError: false,
     } as DataObjectModalData;
   },
@@ -238,7 +225,7 @@ export default (
 
       if (this.currentDataObject?.parentId) {
         let parent = { id: this.currentDataObject.parentId, name: "" };
-        this.validateDataObject(parent);
+        this.validateParent();
         this.possibleParent = parent;
       } else {
         this.possibleParent = {
@@ -251,11 +238,17 @@ export default (
         this.currentDataObject?.predecessorIds &&
         this.currentDataObject?.predecessorIds.length > 0
       ) {
-        this.currentDataObject?.predecessorIds?.forEach(element => {
-          let pre = { id: element, name: "" };
-          this.validateDataObject(pre);
-          this.possiblePredecessors.push(pre);
-        });
+        for (
+          let i = 0;
+          i < this.currentDataObject?.predecessorIds.length;
+          i++
+        ) {
+          this.possiblePredecessors.push({
+            id: this.currentDataObject?.predecessorIds[i],
+            name: "",
+          });
+          this.validatePredecessor(i);
+        }
       } else {
         this.possiblePredecessors.push({
           id: undefined,
@@ -306,22 +299,85 @@ export default (
       }
     },
 
-    validateDataObject(obj: { id: number; name: string }) {
-      this.dataObjectApi
-        ?.getDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: obj.id,
-        })
-        .then(response => {
-          obj.name = response.name ? response.name : "";
-          this.validationError = false;
-        })
-        .catch(e => {
-          obj.name = "";
-          const error = "Error while validating data object: " + e.statusText;
-          console.log(error);
-          this.validationError = true;
+    addAttribute() {
+      this.possibleAttributes.push({
+        key: "",
+        value: "",
+      });
+    },
+
+    removeAttribute(i: number) {
+      this.possibleAttributes.splice(i, 1);
+    },
+
+    addPredecessor() {
+      this.possiblePredecessors.push({
+        id: undefined,
+        name: "",
+      });
+      this.validPredecessors.push(undefined);
+    },
+
+    removePredecessor(i: number) {
+      this.possiblePredecessors.splice(i, 1);
+      this.validPredecessors.splice(i, 1);
+    },
+
+    validateParent() {
+      if (this.possibleParent.id == undefined) {
+        this.possibleParent.name = "";
+        this.validParent = undefined;
+      } else {
+        this.getDataObject(this.possibleParent.id).then(response => {
+          if (response) {
+            this.possibleParent.name = response.name ? response.name : "";
+            if (this.possibleParent.name == "") {
+              this.validParent = undefined;
+            } else {
+              this.validParent = true;
+            }
+          } else {
+            this.possibleParent.name = "";
+            this.validParent = false;
+          }
         });
+      }
+    },
+
+    validatePredecessor(i: number) {
+      if (this.possiblePredecessors[i].id == undefined) {
+        this.possiblePredecessors[i].name = "";
+        this.validParent = undefined;
+      } else {
+        this.getDataObject(this.possiblePredecessors[i].id!).then(response => {
+          if (response) {
+            this.possiblePredecessors[i].name = response.name
+              ? response.name
+              : "";
+            if (this.possiblePredecessors[i].name == "") {
+              this.validPredecessors[i] = undefined;
+            } else {
+              this.validPredecessors[i] = true;
+            }
+          } else {
+            this.possiblePredecessors[i].name = "";
+            this.validPredecessors[i] = false;
+          }
+        });
+      }
+    },
+
+    async getDataObject(id: number): Promise<DataObject | undefined> {
+      let dataObject: DataObject | undefined;
+      try {
+        dataObject = await this.dataObjectApi?.getDataObject({
+          collectionId: this.currentCollectionId,
+          dataObjectId: id,
+        });
+      } catch (e) {
+        return undefined;
+      }
+      return dataObject;
     },
 
     create() {

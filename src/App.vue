@@ -57,10 +57,4 @@ export default Vue.extend({
   border-color: red;
   opacity: 0.6;
 }
-
-.small-button b-button {
-  width: 40px;
-  height: 40px;
-  padding: 0px;
-}
 </style>
