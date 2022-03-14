@@ -60,7 +60,6 @@
               <b-col cols="1">
                 <b-button
                   v-show="i == possibleAttributes.length - 1"
-                  class="small-button"
                   variant="success"
                   @click="
                     possibleAttributes.push({
@@ -75,7 +74,6 @@
               <b-col cols="1">
                 <b-button
                   v-show="i || (!i && possibleAttributes.length > 1)"
-                  class="small-button"
                   variant="danger"
                   @click="possibleAttributes.splice(i, 1)"
                 >
