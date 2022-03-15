@@ -176,7 +176,6 @@ interface DataObjectModalData {
     key: string;
     value: string;
   }[];
-  validationError: boolean;
 }
 
 export default (
@@ -210,7 +209,10 @@ export default (
       possibleParent: { id: undefined, name: "" },
       possiblePredecessors: [],
       possibleAttributes: [],
+<<<<<<< HEAD
       validationError: false,
+=======
+>>>>>>> 44a1346051d9ef13089956a2026203e583a578a6
     } as DataObjectModalData;
   },
 
@@ -221,7 +223,7 @@ export default (
         : { name: "" };
       this.possiblePredecessors = [];
       this.possibleAttributes = [];
-      this.validationError = false;
+      this.validPredecessors = [undefined];
 
       if (this.currentDataObject?.parentId) {
         let parent = { id: this.currentDataObject.parentId, name: "" };
@@ -349,6 +351,10 @@ export default (
         this.possiblePredecessors[i].name = "";
         this.validParent = undefined;
       } else {
+<<<<<<< HEAD
+=======
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+>>>>>>> 44a1346051d9ef13089956a2026203e583a578a6
         this.getDataObject(this.possiblePredecessors[i].id!).then(response => {
           if (response) {
             this.possiblePredecessors[i].name = response.name
@@ -363,6 +369,11 @@ export default (
             this.possiblePredecessors[i].name = "";
             this.validPredecessors[i] = false;
           }
+<<<<<<< HEAD
+=======
+          this.validPredecessors = [...this.validPredecessors];
+          this.possiblePredecessors = [...this.possiblePredecessors];
+>>>>>>> 44a1346051d9ef13089956a2026203e583a578a6
         });
       }
     },
