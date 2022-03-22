@@ -16,8 +16,10 @@ import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
+import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
+import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.search.QueryType;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.ResultTriple;
@@ -30,7 +32,7 @@ import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class StructuredDataSearchTest extends BaseTestCaseIT {
+public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	private static String containerURL;
 	private static RequestSpecification containerRequestSpec;
 	private static CollectionIO collection;
@@ -56,6 +58,12 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 	private static StructuredDataReferenceIO referenceSuccessor;
 	private static String searchURL;
 	private static RequestSpecification searchRequestSpec;
+	private static UserWithApiKey user1;
+	private static String jws1;
+	private static RequestSpecification searchRequestSpec1;
+	private static UserWithApiKey user2;
+	private static String jws2;
+	private static RequestSpecification searchRequestSpec2;
 
 	@BeforeAll
 	public static void setUp() {
@@ -111,6 +119,14 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 		searchURL = String.format("%s/search", baseURL);
 		searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws).build();
+		user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
+		jws1 = user1.getApiKey().getJws();
+		searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
+				.addHeader("X-API-KEY", jws1).build();
+		user2 = getNewUserWithApiKey("user2" + System.currentTimeMillis());
+		jws2 = user2.getApiKey().getJws();
+		searchRequestSpec2 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
+				.addHeader("X-API-KEY", jws2).build();
 	}
 
 	@Test
@@ -308,6 +324,96 @@ public class StructuredDataSearchTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(9)
+	public void testFindViaPredecessorCycleUnauthorized() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(cyclicSuccessor.getId());
+		TraversalRules[] traversalRules = { TraversalRules.predecessors };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "success: {$eq: 0}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(0, result.getResultSet().length);
+	}
+
+	@Test
+	@Order(10)
+	public void testFindViaPredecessorCyclePermissionsReader() {
+		String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
+		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
+		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()
+				.statusCode(200).extract().as(PermissionsIO.class);
+		String[] reader = { user1.getUser().getUsername() };
+		permissions.setReader(reader);
+		given().spec(permissionsSpecification).body(permissions).when().put(permissionsURL).then().statusCode(200)
+				.extract().as(PermissionsIO.class);
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(cyclicSuccessor.getId());
+		TraversalRules[] traversalRules = { TraversalRules.predecessors };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "success: {$eq: 0}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(1, result.getResultSet().length);
+	}
+
+	@Test
+	@Order(11)
+	public void testFindViaPredecessorCycleReaderGroup() {
+		String userGroupURL = String.format("%s/usergroup", baseURL);
+		UserGroupIO userGroup = new UserGroupIO();
+		userGroup.setName("userGroup");
+		userGroup.setUsernames(new String[] { user2.getUser().getUsername() });
+		RequestSpecification userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(userGroupURL).addHeader("X-API-KEY", jws).build();
+		UserGroupIO userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+
+		String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
+		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
+		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()
+				.statusCode(200).extract().as(PermissionsIO.class);
+		long[] readerGroupsIds = { userGroupCreated.getId() };
+		permissions.setReaderGroupIds(readerGroupsIds);
+		given().spec(permissionsSpecification).body(permissions).when().put(permissionsURL).then().statusCode(200)
+				.extract().as(PermissionsIO.class);
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(cyclicSuccessor.getId());
+		TraversalRules[] traversalRules = { TraversalRules.predecessors };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "success: {$eq: 0}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec2).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(1, result.getResultSet().length);
+	}
+
+	@Test
+	@Order(12)
 	public void testDoNotFindViaDeletedNode() {
 		deleteDataObject(secondChild);
 		SearchBody searchBody = new SearchBody();

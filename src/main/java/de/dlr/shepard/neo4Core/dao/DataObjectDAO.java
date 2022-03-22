@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
@@ -39,26 +40,26 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 
 		if (params.hasParentId()) {
 			if (params.getParentId() == -1) {
-				where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: false}))";
+				where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
 			} else {
-				match += "<-[:has_child]-(parent:DataObject {deleted: false})";
+				match += "<-[:has_child]-(parent:DataObject {deleted: FALSE})";
 				where += " AND ID(parent)=" + params.getParentId();
 			}
 		}
 
 		if (params.hasPredecessorId()) {
 			if (params.getPredecessorId() == -1) {
-				where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: false}))";
+				where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
 			} else {
-				match += "<-[:has_successor]-(predecessor:DataObject {deleted: false})";
+				match += "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE})";
 				where += " AND ID(predecessor)=" + params.getPredecessorId();
 			}
 		}
 		if (params.hasSuccessorId()) {
 			if (params.getSuccessorId() == -1) {
-				where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: false}))";
+				where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
 			} else {
-				match += "-[:has_successor]->(successor:DataObject {deleted: false})";
+				match += "-[:has_successor]->(successor:DataObject {deleted: FALSE})";
 				where += " AND ID(successor)=" + params.getSuccessorId();
 			}
 		}
@@ -130,5 +131,11 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		if (obj.getCollection() != null && obj.getCollection().getId().equals(collectionId))
 			return true;
 		return false;
+	}
+
+	public List<DataObject> getDataObjectsByQuery(String query) {
+		var queryResult = findByQuery(query, Collections.emptyMap());
+		List<DataObject> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
+		return ret;
 	}
 }

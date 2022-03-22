@@ -7,9 +7,7 @@ import lombok.Data;
 @Data
 public class SearchScope {
 
-	@NotNull
 	private Long collectionId;
-	@NotNull
 	private Long dataObjectId;
 	@NotNull
 	private TraversalRules[] traversalRules;

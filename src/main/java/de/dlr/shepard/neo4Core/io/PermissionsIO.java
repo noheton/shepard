@@ -30,9 +30,9 @@ public class PermissionsIO {
 	@NotNull
 	private String[] writer;
 
-	private long[] readerGroupIds = new long[0];
+	private long[] readerGroupIds = {};
 
-	private long[] writerGroupIds = new long[0];
+	private long[] writerGroupIds = {};
 
 	@NotNull
 	private String[] manager;

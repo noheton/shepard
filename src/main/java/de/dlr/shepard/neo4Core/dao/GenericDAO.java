@@ -127,13 +127,13 @@ public abstract class GenericDAO<T> {
 	}
 
 	private String getObjectPartWithName(String variable, String type) {
-		var namePart = "{ name : $name, deleted: false }";
+		var namePart = "{ name : $name, deleted: FALSE }";
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}
 
 	private String getObjectPartWithoutName(String variable, String type) {
-		var namePart = "{ deleted: false }";
+		var namePart = "{ deleted: FALSE }";
 		var result = String.format("(%s:%s %s)", variable, type, namePart);
 		return result;
 	}
@@ -148,8 +148,8 @@ public abstract class GenericDAO<T> {
 
 	protected String getReturnPart(String entity, boolean omitIncoming) {
 		var baseString = omitIncoming
-				? "MATCH path=(%s)-[*0..1]->(n) WHERE n.deleted = false or n.deleted IS NULL RETURN %s, nodes(path), relationships(path)"
-				: "MATCH path=(%s)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL RETURN %s, nodes(path), relationships(path)";
+				? "MATCH path=(%s)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)"
+				: "MATCH path=(%s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)";
 		var result = String.format(baseString, entity, entity);
 		return result;
 	}
@@ -166,18 +166,34 @@ public abstract class GenericDAO<T> {
 		return ret;
 	}
 
+	// TODO: move to PermissionsUtil as static method
 	protected String getReadableByPart(String variable, String username) {
-		String ret = String.format("WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) "
-				+ "OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) "
-				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) "
-				+ "OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) "
-				+ "OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"}))",
+		String ret = String.format(
+				"""
+						WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"}))""",
 				variable, variable, username, variable, variable, variable, username);
 		return ret;
 	}
 
-	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long startId) {
-		String ret = "MATCH path = ";
+	protected String getReadableByPartWithoutWhere(String variable, String username) {
+		String ret = String.format(
+				"""
+						(NOT exists((%s)-[:has_permissions]->(:Permissions)) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"})))""",
+				variable, variable, username, variable, variable, variable, username);
+		return ret;
+	}
+
+	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
+			String userName) {
+		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
 		ret = ret + switch (traversalRule) {
 		case children -> "(d:DataObject)-[:has_child*0..]->(e:DataObject)";
 		case parents -> "(d:DataObject)<-[:has_child*0..]-(e:DataObject)";
@@ -185,18 +201,20 @@ public abstract class GenericDAO<T> {
 		case predecessors -> "(d:DataObject)<-[:has_successor*0..]-(e:DataObject)";
 		};
 		ret = ret + "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
-		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
-		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
+		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+		ret = ret + " AND " + getReadableByPartWithoutWhere("col", userName);
+		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		ret = ret + getReturnPart("ret", false);
 		return ret;
 	}
 
-	protected String getSearchForReachableReferencesQuery(long startId) {
+	protected String getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
 		String ret;
-		ret = "MATCH path = (d:DataObject)-[hr:has_reference]->";
+		ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->";
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
-		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId;
-		ret = ret + " and NONE(node IN ns WHERE (node.deleted = TRUE)) ";
+		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+		ret = ret + " AND " + getReadableByPartWithoutWhere("col", userName);
+		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		String returnPart = getReturnPart("ret", false);
 		ret = ret + returnPart;
 		return ret;

@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,17 +106,15 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		responseBody.setResultSet(resultTriples);
 		responseBody.setSearchParams(searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(dataObjectId))
+		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
 				.thenReturn(emptyStructuredDataReferenceResponse);
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(firstDocument);
 		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
-		// define expected values
-		HashSet<StructuredDataReference> expectedRet = new HashSet<StructuredDataReference>();
-		expectedRet.add(structuredDataReference1);
 		// test
-		assertEquals(structuredDataSearcher.search(searchBody), responseBody);
+		String userName = "user1";
+		assertEquals(structuredDataSearcher.search(searchBody, userName), responseBody);
 	}
 
 	@Test
@@ -170,17 +167,70 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		responseBody.setResultSet(resultTriples);
 		responseBody.setSearchParams(searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, dataObjectId))
-				.thenReturn(emptyStructuredDataReferenceResponse);
+		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
+				"user1")).thenReturn(emptyStructuredDataReferenceResponse);
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(firstDocument);
 		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
-		// define expected values
-		HashSet<StructuredDataReference> expectedRet = new HashSet<StructuredDataReference>();
-		expectedRet.add(structuredDataReference1);
 		// test
-		assertEquals(structuredDataSearcher.search(searchBody), responseBody);
+		String userName = "user1";
+		assertEquals(structuredDataSearcher.search(searchBody, userName), responseBody);
 	}
 
+	@Test
+	public void emptyQueryResult() {
+		// create StructuredDataReferences
+		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
+			{
+				setDeleted(false);
+				setId(1L);
+				setName("reference1");
+			}
+		};
+		StructuredData structuredData = new StructuredData();
+		structuredData.setOid("61371f2889b108615688e22e");
+		ArrayList<StructuredData> structuredDatas = new ArrayList<StructuredData>();
+		structuredDatas.add(structuredData);
+		structuredDataReference1.setStructuredDatas(structuredDatas);
+		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
+		String mongoID = "61371f2889b108615688e22e";
+		structuredDataContainer1.setMongoId(mongoID);
+		structuredDataContainer1.setId(2L);
+		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
+		// create SearchBody
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		SearchScope scope = new SearchScope();
+		scope.setCollectionId(collectionId);
+		scope.setDataObjectId(dataObjectId);
+		scope.setTraversalRules(traversalRules);
+		SearchScope scopes[] = { scope };
+		String query = "xwert: {$gt: 0}";
+		QueryType queryType = QueryType.StructuredData;
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQuery(query);
+		searchParams.setQueryType(queryType);
+		SearchBody searchBody = new SearchBody();
+		searchBody.setScopes(scopes);
+		searchBody.setSearchParams(searchParams);
+		// create ResponseBody
+		ResultTriple[] resultTriples = new ResultTriple[0];
+		ResponseBody responseBody = new ResponseBody();
+		responseBody.setResultSet(resultTriples);
+		responseBody.setSearchParams(searchBody.getSearchParams());
+		// configure Mocks
+		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
+				"user1")).thenReturn(emptyStructuredDataReferenceResponse);
+		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+		when(mongoQueryResult.first()).thenReturn(null);
+		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
+		// test
+		String userName = "user1";
+		assertEquals(structuredDataSearcher.search(searchBody, userName), responseBody);
+	}
 }

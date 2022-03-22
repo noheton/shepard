@@ -40,8 +40,8 @@ public class DataObjectReferenceDAOTest extends BaseTestCase {
 		ref2.setDataObject(obj2);
 
 		var query = """
-				MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference { deleted: false }) WHERE ID(d)=1 \
-				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = false or n.deleted IS NULL \
+				MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference { deleted: FALSE }) WHERE ID(d)=1 \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
 				RETURN r, nodes(path), relationships(path)""";
 		when(session.query(DataObjectReference.class, query, Collections.emptyMap()))
 				.thenReturn(List.of(ref, ref2, ref3));

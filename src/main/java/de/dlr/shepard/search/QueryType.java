@@ -2,6 +2,6 @@ package de.dlr.shepard.search;
 
 public enum QueryType {
 
-	StructuredData;
+	StructuredData, Collection, DataObject, Reference;
 
 }

@@ -115,4 +115,11 @@ public class Constants {
 	public static final String FUNCTION = "function";
 	public static final String GROUP_BY = "group_by";
 
+	// Search
+	public static final String OP_PROPERTY = "property";
+	public static final String OP_VALUE = "value";
+	public static final String OP_OPERATOR = "operator";
+	public static final String COLLECTION_IN_QUERY = "col";
+	public static final String DATAOBJECT_IN_QUERY = "do";
+	public static final String REFERENCE_IN_QUERY = "br";
 }

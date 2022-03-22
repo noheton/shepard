@@ -23,6 +23,10 @@ public class UserGroup extends AbstractEntity {
 	@Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
 	private List<User> users = new ArrayList<>();
 
+	public UserGroup(long id) {
+		super(id);
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

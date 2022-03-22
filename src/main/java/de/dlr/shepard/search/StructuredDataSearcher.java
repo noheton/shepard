@@ -3,6 +3,7 @@ package de.dlr.shepard.search;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bson.Document;
 
@@ -23,14 +24,14 @@ public class StructuredDataSearcher implements ISearcher {
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
 
 	@Override
-	public ResponseBody search(SearchBody searchBody) {
-		HashSet<StructuredDataReference> reachableReferences = getAllStructuredDataReferencesFromBody(searchBody);
+	public ResponseBody search(SearchBody searchBody, String userName) {
+		Set<StructuredDataReference> reachableReferences = getAllStructuredDataReferencesFromBody(searchBody, userName);
 		return getStructuredDataResponse(reachableReferences, searchBody);
 	}
 
-	private ResponseBody getStructuredDataResponse(HashSet<StructuredDataReference> reachableReferences,
+	private ResponseBody getStructuredDataResponse(Set<StructuredDataReference> reachableReferences,
 			SearchBody searchBody) {
-		HashSet<Long> matchingReferencesIds = new HashSet<Long>();
+		Set<Long> matchingReferencesIds = new HashSet<>();
 		String mongoContainerId;
 		MongoCollection<Document> mongoContainer;
 		List<StructuredData> structuredDatas;
@@ -43,7 +44,7 @@ public class StructuredDataSearcher implements ISearcher {
 			mongoContainerId = reference.getStructuredDataContainer().getMongoId();
 			mongoContainer = mongoDBConnector.getDatabase().getCollection(mongoContainerId);
 			structuredDatas = reference.getStructuredDatas();
-			mongoStructuredDataIds = new ArrayList<String>();
+			mongoStructuredDataIds = new ArrayList<>();
 			for (StructuredData structuredData : structuredDatas) {
 				mongoStructuredDataId = structuredData.getOid();
 				mongoStructuredDataIds.add(makeMongoQueryId(mongoStructuredDataId));
@@ -69,29 +70,31 @@ public class StructuredDataSearcher implements ISearcher {
 		responseBody.setResultSet(resultTriples);
 		responseBody.setSearchParams(searchBody.getSearchParams());
 		return responseBody;
-
 	}
 
-	private HashSet<StructuredDataReference> getAllStructuredDataReferencesFromBody(SearchBody searchBody) {
-		HashSet<StructuredDataReference> ret = new HashSet<StructuredDataReference>();
+	private Set<StructuredDataReference> getAllStructuredDataReferencesFromBody(SearchBody searchBody,
+			String userName) {
+		Set<StructuredDataReference> ret = new HashSet<>();
 		SearchScope[] searchScopes = searchBody.getScopes();
 		for (SearchScope searchScope : searchScopes)
-			ret.addAll(getAllStructuredaDataReferencesFromScope(searchScope));
+			ret.addAll(getAllStructuredaDataReferencesFromScope(searchScope, userName));
 		return ret;
 	}
 
-	private HashSet<StructuredDataReference> getAllStructuredaDataReferencesFromScope(SearchScope searchScope) {
-		HashSet<StructuredDataReference> ret = new HashSet<StructuredDataReference>();
+	private Set<StructuredDataReference> getAllStructuredaDataReferencesFromScope(SearchScope searchScope,
+			String userName) {
+		Set<StructuredDataReference> ret = new HashSet<>();
 		TraversalRules[] traversalRules = searchScope.getTraversalRules();
 		long startId = searchScope.getDataObjectId();
+		long collectionId = searchScope.getCollectionId();
 		if (traversalRules.length == 0) {
 			List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-					.findReachableReferences(startId);
+					.findReachableReferences(collectionId, startId, userName);
 			ret.addAll(reachableReferences);
 		} else {
 			for (TraversalRules traversalRule : traversalRules) {
 				List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-						.findReachableReferences(traversalRule, startId);
+						.findReachableReferences(traversalRule, collectionId, startId, userName);
 				ret.addAll(reachableReferences);
 			}
 		}

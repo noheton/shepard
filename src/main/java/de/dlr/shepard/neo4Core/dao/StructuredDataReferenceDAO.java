@@ -30,15 +30,16 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 		return StructuredDataReference.class;
 	}
 
-	public List<StructuredDataReference> findReachableReferences(TraversalRules traversalRule, long startId) {
-		String query = getSearchForReachableReferencesQuery(traversalRule, startId);
+	public List<StructuredDataReference> findReachableReferences(TraversalRules traversalRule, long collectionId,
+			long startId, String userName) {
+		String query = getSearchForReachableReferencesQuery(traversalRule, collectionId, startId, userName);
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
 	}
 
-	public List<StructuredDataReference> findReachableReferences(long startId) {
-		String query = getSearchForReachableReferencesQuery(startId);
+	public List<StructuredDataReference> findReachableReferences(long collectionId, long startId, String userName) {
+		String query = getSearchForReachableReferencesQuery(collectionId, startId, userName);
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;

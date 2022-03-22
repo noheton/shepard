@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import org.neo4j.ogm.model.Result;
 
@@ -69,6 +70,12 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 		Map<String, Object> map = idResult.iterator().next();
 		Object o = map.get("id(d)");
 		return (Long) o;
+	}
+
+	public List<BasicReference> getBasicReferencesByQuery(String query) {
+		var queryResult = findByQuery(query, Collections.emptyMap());
+		List<BasicReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
+		return ret;
 	}
 
 }

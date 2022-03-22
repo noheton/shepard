@@ -22,6 +22,7 @@ public class CollectionTest extends BaseTestCaseIT {
 	private static String collectionsURL;
 	private static CollectionIO collection;
 	private static RequestSpecification requestSpecification;
+	private static String name;
 
 	@BeforeAll
 	public static void setUp() {
@@ -34,7 +35,8 @@ public class CollectionTest extends BaseTestCaseIT {
 	@Order(1)
 	public void postCollectionTest_Successful() {
 		var payload = new CollectionIO();
-		payload.setName("CollectionDummy");
+		name = "CollectionDummy" + System.currentTimeMillis();
+		payload.setName(name);
 		payload.setDescription("My Description");
 		payload.setAttributes(Map.of("a", "1", "b", "2"));
 		CollectionIO actual = given().spec(requestSpecification).body(payload).when().post().then().statusCode(201)
@@ -46,7 +48,7 @@ public class CollectionTest extends BaseTestCaseIT {
 		assertThat(actual.getDescription()).isEqualTo("My Description");
 		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getCreatedBy()).isEqualTo(username);
-		assertThat(actual.getName()).isEqualTo("CollectionDummy");
+		assertThat(actual.getName()).isEqualTo(name);
 		assertThat(actual.getDataObjectIds()).isEmpty();
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();
@@ -56,7 +58,7 @@ public class CollectionTest extends BaseTestCaseIT {
 	@Order(2)
 	public void postCollectionTest_WithoutAuth() {
 		var payload = new CollectionIO();
-		payload.setName("CollectionDummy");
+		payload.setName(name);
 
 		var wrongSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.build();
@@ -90,7 +92,7 @@ public class CollectionTest extends BaseTestCaseIT {
 	@Order(6)
 	public void getCollectionTest_withDataObject() {
 		var payload = new DataObjectIO();
-		payload.setName("CollectionDummy");
+		payload.setName(name);
 
 		DataObjectIO dataObject = given().spec(requestSpecification).body(payload).when()
 				.post(collectionsURL + "/" + collection.getId() + "/dataObjects").then().statusCode(201).extract()
