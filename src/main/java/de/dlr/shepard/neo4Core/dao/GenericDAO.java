@@ -10,6 +10,7 @@ import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.neo4j.NeoConnector;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
 import lombok.extern.slf4j.Slf4j;
@@ -166,31 +167,6 @@ public abstract class GenericDAO<T> {
 		return ret;
 	}
 
-	// TODO: move to PermissionsUtil as static method
-	protected String getReadableByPart(String variable, String username) {
-		String ret = String.format(
-				"""
-						WHERE NOT exists((%s)-[:has_permissions]->(:Permissions)) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"}))""",
-				variable, variable, username, variable, variable, variable, username);
-		return ret;
-	}
-
-	protected String getReadableByPartWithoutWhere(String variable, String username) {
-		String ret = String.format(
-				"""
-						(NOT exists((%s)-[:has_permissions]->(:Permissions)) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"%s\" })) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"%s\"})))""",
-				variable, variable, username, variable, variable, variable, username);
-		return ret;
-	}
-
 	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
 			String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
@@ -202,7 +178,7 @@ public abstract class GenericDAO<T> {
 		};
 		ret = ret + "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + getReadableByPartWithoutWhere("col", userName);
+		ret = ret + " AND " + PermissionsUtil.getReadableByQuery("col", userName);
 		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		ret = ret + getReturnPart("ret", false);
 		return ret;
@@ -213,7 +189,7 @@ public abstract class GenericDAO<T> {
 		ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->";
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + getReadableByPartWithoutWhere("col", userName);
+		ret = ret + " AND " + PermissionsUtil.getReadableByQuery("col", userName);
 		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
 		String returnPart = getReturnPart("ret", false);
 		ret = ret + returnPart;

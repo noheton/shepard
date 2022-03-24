@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.security.PermissionsUtil;
 
 public class UserGroupDAO extends GenericDAO<UserGroup> {
 
@@ -14,8 +15,8 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
 	}
 
 	public List<UserGroup> findAllUserGroups(String username) {
-		var query = String.format("MATCH %s %s %s", getObjectPart("ug", "UserGroup", false),
-				getReadableByPart("ug", username), getReturnPart("ug"));
+		var query = String.format("MATCH %s WHERE %s %s", getObjectPart("ug", "UserGroup", false),
+				PermissionsUtil.getReadableByQuery("ug", username), getReturnPart("ug"));
 		var result = new ArrayList<UserGroup>();
 		for (var userGroup : findByQuery(query, Collections.emptyMap())) {
 			result.add(userGroup);

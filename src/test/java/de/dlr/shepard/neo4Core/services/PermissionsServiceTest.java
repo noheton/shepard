@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,20 +76,11 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var reader = new User("reader");
 		var writer = new User("writer");
 		var manager = new User("manager");
-		var groupwriter = new User("groupwriter");
-		UserGroup writerGroup = new UserGroup();
-		ArrayList<User> writerGroupList = new ArrayList<User>();
-		writerGroupList.add(groupwriter);
+		List<User> writerGroupList = List.of(new User("groupwriter"));
+		UserGroup writerGroup = new UserGroup(12L);
 		writerGroup.setName("writerGroup");
-		writerGroup.setId(12L);
 		writerGroup.setUsers(writerGroupList);
-		List<UserGroup> writerGroupsList = new ArrayList<UserGroup>();
-		writerGroupsList.add(writerGroup);
-
-		UserGroup readerGroup = new UserGroup();
-		readerGroup.setId(null);
-		ArrayList<UserGroup> readerGroupsList = new ArrayList<UserGroup>();
-		readerGroupsList.add(readerGroup);
+		List<UserGroup> writerGroupsList = List.of(writerGroup);
 
 		var col = new Collection(2L);
 		var existing = new Permissions(1L);
@@ -99,9 +89,9 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var perms = new PermissionsIO() {
 			{
 				setOwner("owner");
-				setReader(new String[] { "reader" });
+				setReader(new String[] { "reader", "false" });
 				setWriter(new String[] { "writer" });
-				setWriterGroupIds(new long[] { 12L });
+				setWriterGroupIds(new long[] { 12L, -1L });
 				setManager(new String[] { "manager" });
 			}
 		};

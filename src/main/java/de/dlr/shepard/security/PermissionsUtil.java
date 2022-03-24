@@ -93,4 +93,16 @@ public class PermissionsUtil {
 		}
 		return ret;
 	}
+
+	public static String getReadableByQuery(String variable, String username) {
+		String ret = String.format(
+				"""
+						(NOT exists((%s)-[:has_permissions]->(:Permissions)) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "%s" })) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
+						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "%s"})))""",
+				variable, variable, username, variable, variable, variable, username);
+		return ret;
+	}
 }

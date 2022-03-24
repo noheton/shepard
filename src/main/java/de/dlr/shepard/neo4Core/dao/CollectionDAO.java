@@ -9,6 +9,7 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionDAO extends GenericDAO<Collection> {
@@ -33,8 +34,8 @@ public class CollectionDAO extends GenericDAO<Collection> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		var query = String.format("MATCH %s %s WITH c", getObjectPart("c", "Collection", params.hasName()),
-				getReadableByPart("c", username));
+		var query = String.format("MATCH %s WHERE %s WITH c", getObjectPart("c", "Collection", params.hasName()),
+				PermissionsUtil.getReadableByQuery("c", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}

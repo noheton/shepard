@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.dlr.shepard.exceptions.ShepardParserException;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -20,7 +21,7 @@ public class Neo4jEmitter {
 		try {
 			jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
 		} catch (Exception e) {
-			throw (new ShepardParserException("could not parse JSON\n" + e.getMessage()));
+			throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
 		}
 		return emitNeo4j(jsonNode, variable);
 	}
@@ -30,7 +31,7 @@ public class Neo4jEmitter {
 		try {
 			op = rootNode.fieldNames().next();
 		} catch (Exception e) {
-			throw (new ShepardParserException("error in parsing" + e.getMessage()));
+			throw new ShepardParserException("error in parsing" + e.getMessage());
 		}
 		if (op.equals(Constants.OP_PROPERTY) || op.equals(Constants.OP_VALUE) || op.equals(Constants.OP_OPERATOR)) {
 			return emitPrimitiveClause(rootNode, variable);
@@ -238,18 +239,9 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	// TODO: move as static method to PermissionUtils
 	private static String emitReadableByPart(String username) {
 		String variable = Constants.COLLECTION_IN_QUERY;
-		String ret = String.format(
-				"""
-						(NOT exists((%s)-[:has_permissions]->(:Permissions)) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "%s" })) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-						OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "%s"})))""",
-				variable, variable, username, variable, variable, variable, username);
-		return ret;
+		return PermissionsUtil.getReadableByQuery(variable, username);
 	}
 
 	public static String emitCollectionQuery(String searchBodyQuery, String userName) throws ShepardParserException {

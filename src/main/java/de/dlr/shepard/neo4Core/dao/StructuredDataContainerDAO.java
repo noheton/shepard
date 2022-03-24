@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContainer> {
@@ -18,8 +19,9 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s %s WITH c", getObjectPart("c", "StructuredDataContainer", params.hasName()),
-				getReadableByPart("c", username));
+		query = String.format("MATCH %s WHERE %s WITH c",
+				getObjectPart("c", "StructuredDataContainer", params.hasName()),
+				PermissionsUtil.getReadableByQuery("c", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
