@@ -34,8 +34,8 @@ public class DataObjectService {
 		var collection = collectionDAO.find(collectionId);
 		var user = userDAO.find(username);
 
-		var parent = findRelatedDataObject(collection.getId(), dataObject.getParentId());
-		var predecessors = findRelatedDataObjects(collection.getId(), dataObject.getPredecessorIds());
+		var parent = findRelatedDataObject(collection.getId(), dataObject.getParentId(), null);
+		var predecessors = findRelatedDataObjects(collection.getId(), dataObject.getPredecessorIds(), null);
 
 		var toCreate = new DataObject();
 		toCreate.setAttributes(dataObject.getAttributes());
@@ -97,8 +97,9 @@ public class DataObjectService {
 		var old = dataObjectDAO.find(dataObjectId);
 		var user = userDAO.find(username);
 
-		var parent = findRelatedDataObject(old.getCollection().getId(), dataObject.getParentId());
-		var predecessors = findRelatedDataObjects(old.getCollection().getId(), dataObject.getPredecessorIds());
+		var parent = findRelatedDataObject(old.getCollection().getId(), dataObject.getParentId(), dataObjectId);
+		var predecessors = findRelatedDataObjects(old.getCollection().getId(), dataObject.getPredecessorIds(),
+				dataObjectId);
 
 		old.setAttributes(dataObject.getAttributes());
 		old.setDescription(dataObject.getDescription());
@@ -145,24 +146,29 @@ public class DataObjectService {
 		return dataObject;
 	}
 
-	private List<DataObject> findRelatedDataObjects(long collectionId, long[] ids) throws InvalidBodyException {
-		if (ids == null)
-			return new ArrayList<DataObject>();
+	private List<DataObject> findRelatedDataObjects(long collectionId, long[] referencedIds, Long dataObjectId)
+			throws InvalidBodyException {
+		if (referencedIds == null)
+			return new ArrayList<>();
 
-		var result = new ArrayList<DataObject>(ids.length);
-		for (var id : ids) {
-			result.add(findRelatedDataObject(collectionId, id));
+		var result = new ArrayList<DataObject>(referencedIds.length);
+		for (var id : referencedIds) {
+			result.add(findRelatedDataObject(collectionId, id, dataObjectId));
 		}
 		return result;
 	}
 
-	private DataObject findRelatedDataObject(long collectionId, Long id) throws InvalidBodyException {
-		if (id == null)
+	private DataObject findRelatedDataObject(long collectionId, Long referencedId, Long dataObjectId)
+			throws InvalidBodyException {
+		if (referencedId == null)
 			return null;
+		else if (referencedId.equals(dataObjectId))
+			throw new InvalidBodyException("Self references are not allowed.");
 
-		DataObject dataObject = dataObjectDAO.find(id);
+		var dataObject = dataObjectDAO.find(referencedId);
 		if (dataObject == null || dataObject.isDeleted())
-			throw new InvalidBodyException(String.format("The DataObject with id %d could not be found.", id));
+			throw new InvalidBodyException(
+					String.format("The DataObject with id %d could not be found.", referencedId));
 
 		// Prevent cross collection references
 		if (!dataObject.getCollection().getId().equals(collectionId))

@@ -447,6 +447,32 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void updateDataObjectTest_SelfReferences() throws InvalidBodyException {
+		var collection = new Collection(100L);
+		var user = new User("bob");
+		var date = new Date(23);
+
+		var input = new DataObjectIO() {
+			{
+				setId(1L);
+				setPredecessorIds(new long[] { 1L });
+			}
+		};
+		var old = new DataObject() {
+			{
+				setId(1L);
+				setCollection(collection);
+			}
+		};
+
+		when(dao.find(1L)).thenReturn(old);
+		when(userDAO.find("bob")).thenReturn(user);
+		when(dateHelper.getDate()).thenReturn(date);
+
+		assertThrows(InvalidBodyException.class, () -> service.updateDataObject(1L, input, "bob"));
+	}
+
+	@Test
 	public void deleteDataObjectTest() {
 		var user = new User("bob");
 		var date = new Date(23);
