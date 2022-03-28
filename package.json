@@ -16,7 +16,7 @@
     "core-js": "3.21.1",
     "mitt": "3.0.0",
     "mutationobserver-shim": "0.3.7",
-    "nanoid": "3.3.1",
+    "nanoid": "3.3.2",
     "oidc-client": "1.11.5",
     "popper.js": "1.16.1",
     "portal-vue": "2.1.7",
