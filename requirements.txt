@@ -2,5 +2,5 @@ black==22.1.0
 flake8==4.0.1
 isort==5.10.1
 Jinja2==3.1.1
-pylint==2.12.2
+pylint==2.13.2
 python-gitlab==3.2.0
