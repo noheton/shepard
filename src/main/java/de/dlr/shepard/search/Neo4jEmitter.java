@@ -64,7 +64,7 @@ public class Neo4jEmitter {
 		return "(NOT(" + emitNeo4j(body, variable) + "))";
 	}
 
-	private static String emitPrimitiveClause(JsonNode node, String variable) {
+	private static String emitPrimitiveClause(JsonNode node, String variable) throws ShepardParserException {
 		String property = node.get(Constants.OP_PROPERTY).textValue();
 		if (property.equals("createdBy") || property.equals("updatedBy"))
 			return emitByPart(node, variable);
@@ -90,7 +90,7 @@ public class Neo4jEmitter {
 			ret = ret + variable + ".`" + node.get(Constants.OP_PROPERTY).textValue() + "` ";
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
 		if (node.get(Constants.OP_OPERATOR).textValue().equals("in")) {
-			ret = ret + " IN [";
+			ret = ret + "[";
 			Iterator<JsonNode> setArray = node.get(Constants.OP_VALUE).elements();
 			if (setArray.hasNext()) {
 				ret = ret + setArray.next();
@@ -107,7 +107,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitByPart(JsonNode node, String variable) {
+	private static String emitByPart(JsonNode node, String variable) throws ShepardParserException {
 		String ret = "(";
 		String by = "";
 		switch (node.get(Constants.OP_PROPERTY).textValue()) {
@@ -125,7 +125,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitTimeseriesContainerIdPart(JsonNode node, String variable) {
+	private static String emitTimeseriesContainerIdPart(JsonNode node, String variable) throws ShepardParserException {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:TimeseriesContainer) WHERE id(refCon) ";
@@ -135,7 +135,8 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitStructuredDataContainerIdPart(JsonNode node, String variable) {
+	private static String emitStructuredDataContainerIdPart(JsonNode node, String variable)
+			throws ShepardParserException {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:StructuredDataContainer) WHERE id(refCon) ";
@@ -145,7 +146,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitFileContainerIdPart(JsonNode node, String variable) {
+	private static String emitFileContainerIdPart(JsonNode node, String variable) throws ShepardParserException {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:FileContainer) WHERE id(refCon) ";
@@ -155,7 +156,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitReferencedDataObjectIdPart(JsonNode node, String variable) {
+	private static String emitReferencedDataObjectIdPart(JsonNode node, String variable) throws ShepardParserException {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO
 				+ "]->(refDo:DataObject) WHERE id(refDo) ";
@@ -165,7 +166,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitReferencedCollectionIdPart(JsonNode node, String variable) {
+	private static String emitReferencedCollectionIdPart(JsonNode node, String variable) throws ShepardParserException {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO
 				+ "]->(refCol:Collection) WHERE id(refCol) ";
@@ -175,8 +176,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitOperatorString(JsonNode node) {
-		String ret = "";
+	private static String emitOperatorString(JsonNode node) throws ShepardParserException {
 		String operator = node.textValue();
 		switch (operator) {
 		case "eq":
@@ -191,8 +191,11 @@ public class Neo4jEmitter {
 			return ">=";
 		case "le":
 			return "<=";
+		case "in":
+			return "IN";
+		default:
+			throw new ShepardParserException("unknown operator " + operator);
 		}
-		return ret;
 	}
 
 	private static String emitCollectionMatchPart() {

@@ -1,6 +1,7 @@
 package de.dlr.shepard.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -375,7 +376,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 				}
 				""";
 		String neo4jQuery = Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName);
-		String expected = "MATCH (col:Collection) WHERE (NOT((col.`attributes.b`   IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(col)";
+		String expected = "MATCH (col:Collection) WHERE (NOT((col.`attributes.b` IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(col)";
 		assertEquals(expected, neo4jQuery);
 	}
 
@@ -389,7 +390,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 				}
 				""";
 		String neo4jQuery = Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName);
-		String expected = "MATCH (col:Collection) WHERE (col.`attributes.b`   IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(col)";
+		String expected = "MATCH (col:Collection) WHERE (col.`attributes.b` IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(col)";
 		assertEquals(expected, neo4jQuery);
 	}
 
@@ -445,5 +446,20 @@ public class Neo4jEmitterTest extends BaseTestCase {
 				searchBodyQuery, userName);
 		String expected = "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(do:DataObject)  WHERE (do.`name` = \"MyName\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(do)";
 		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
+	public void invalidOperatorTest() throws ShepardParserException {
+		String searchBodyQuery = """
+				{
+				  "property": "name",
+				  "value": "MyName",
+				  "operator": "bla"
+				}
+				""";
+
+		assertThrows(ShepardParserException.class, () -> {
+			Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName);
+		});
 	}
 }
