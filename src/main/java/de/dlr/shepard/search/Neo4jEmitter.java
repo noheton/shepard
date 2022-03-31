@@ -1,6 +1,7 @@
 package de.dlr.shepard.search;
 
 import java.util.Iterator;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,9 @@ import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 
 public class Neo4jEmitter {
+
+	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
+			Constants.JSON_NOT, Constants.JSON_XOR);
 
 	private Neo4jEmitter() {
 	}
@@ -41,7 +45,9 @@ public class Neo4jEmitter {
 
 	private static String emitComplexClause(JsonNode node, String operator, String variable)
 			throws ShepardParserException {
-		if (operator.equals("NOT"))
+		if (!booleanOperators.contains(operator))
+			throw new ShepardParserException("unknown boolean operator: " + operator);
+		if (operator.equals(Constants.JSON_NOT))
 			return emitNotClause(node, variable);
 		else
 			return emitMultaryClause(node, operator, variable);
@@ -60,7 +66,7 @@ public class Neo4jEmitter {
 	}
 
 	private static String emitNotClause(JsonNode node, String variable) throws ShepardParserException {
-		JsonNode body = node.get("NOT");
+		JsonNode body = node.get(Constants.JSON_NOT);
 		return "(NOT(" + emitNeo4j(body, variable) + "))";
 	}
 
@@ -89,7 +95,7 @@ public class Neo4jEmitter {
 		else
 			ret = ret + variable + ".`" + node.get(Constants.OP_PROPERTY).textValue() + "` ";
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
-		if (node.get(Constants.OP_OPERATOR).textValue().equals("in")) {
+		if (node.get(Constants.OP_OPERATOR).textValue().equals(Constants.JSON_IN)) {
 			ret = ret + "[";
 			Iterator<JsonNode> setArray = node.get(Constants.OP_VALUE).elements();
 			if (setArray.hasNext()) {
@@ -100,9 +106,8 @@ public class Neo4jEmitter {
 			} else {
 				ret = ret + "]";
 			}
-		} else {
+		} else
 			ret = ret + node.get(Constants.OP_VALUE);
-		}
 		ret = ret + ")";
 		return ret;
 	}
@@ -179,22 +184,24 @@ public class Neo4jEmitter {
 	private static String emitOperatorString(JsonNode node) throws ShepardParserException {
 		String operator = node.textValue();
 		switch (operator) {
-		case "eq":
+		case Constants.JSON_EQ:
 			return "=";
-		case "contains":
+		case Constants.JSON_CONTAINS:
 			return "contains";
-		case "gt":
+		case Constants.JSON_GT:
 			return ">";
-		case "lt":
+		case Constants.JSON_LT:
 			return "<";
-		case "ge":
+		case Constants.JSON_GE:
 			return ">=";
-		case "le":
+		case Constants.JSON_LE:
 			return "<=";
-		case "in":
+		case Constants.JSON_IN:
 			return "IN";
+		case Constants.JSON_NE:
+			return "<>";
 		default:
-			throw new ShepardParserException("unknown operator " + operator);
+			throw new ShepardParserException("unknown comparison operator " + operator);
 		}
 	}
 

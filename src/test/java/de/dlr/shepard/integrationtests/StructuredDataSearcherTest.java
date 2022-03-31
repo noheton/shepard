@@ -156,6 +156,31 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(2)
+	public void testFindViaChildrenUniversalSyntaxAND() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(rootObject.getId());
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "{\"AND\": [{\"property\": \"number1\", \"value\": 3, \"operator\": \"ge\"},{\"property\": \"number1\",\"value\": 3, \"operator\": \"le\"}]}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(1, result.getResultSet().length);
+		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
+		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
+		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
+		assertEquals(query, result.getSearchParams().getQuery());
+	}
+
+	@Test
+	@Order(3)
 	public void testDoNotFindViaChildren() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -176,7 +201,40 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(3)
+	@Order(4)
+	public void testFindViaChildrenUniversalSyntaxOR() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(rootObject.getId());
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "{\"OR\": [{\"property\": \"number1\", \"value\": 3, \"operator\": \"ge\"},"
+				+ "{\"property\": \"number1\",\"value\": 3, \"operator\": \"le\"}]}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(2, result.getResultSet().length);
+		ResultTriple triple = new ResultTriple();
+		triple.setCollectionId(collection.getId());
+		triple.setDataObjectId(secondChild.getId());
+		triple.setReferenceId(reference.getId());
+		ResultTriple triple1 = new ResultTriple();
+		triple1.setCollectionId(collection.getId());
+		triple1.setDataObjectId(firstChild.getId());
+		triple1.setReferenceId(reference1.getId());
+		assertThat(result.getResultSet()).contains(triple);
+		assertThat(result.getResultSet()).contains(triple1);
+		assertEquals(query, result.getSearchParams().getQuery());
+	}
+
+	@Test
+	@Order(5)
 	public void testFindViaPredecessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -200,7 +258,34 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(4)
+	@Order(6)
+	public void testFindViaChildrenUniversalSyntaxNOT() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(rootObject.getId());
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "{\"NOT\": {\"property\": \"number1\", \"value\": 3, \"operator\": \"eq\"}}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(1, result.getResultSet().length);
+		ResultTriple triple1 = new ResultTriple();
+		triple1.setCollectionId(collection.getId());
+		triple1.setDataObjectId(firstChild.getId());
+		triple1.setReferenceId(reference1.getId());
+		assertThat(result.getResultSet()).contains(triple1);
+		assertEquals(query, result.getSearchParams().getQuery());
+	}
+
+	@Test
+	@Order(7)
 	public void testDoNotFindViaPredecessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -221,7 +306,35 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(5)
+	@Order(8)
+	public void testFindViaChildrenUniversalSyntaxDeMorgan() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		searchScope.setDataObjectId(rootObject.getId());
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "{\"NOT\": {\"OR\": [{\"property\": \"number1\", \"value\": 4, \"operator\": \"gt\"},"
+				+ " {\"property\": \"number1\", \"value\": 1, \"operator\": \"lt\"}]}}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		assertEquals(1, result.getResultSet().length);
+		ResultTriple triple = new ResultTriple();
+		triple.setCollectionId(collection.getId());
+		triple.setDataObjectId(secondChild.getId());
+		triple.setReferenceId(reference.getId());
+		assertThat(result.getResultSet()).contains(triple);
+		assertEquals(query, result.getSearchParams().getQuery());
+	}
+
+	@Test
+	@Order(9)
 	public void testFindViaParent() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -245,7 +358,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(6)
+	@Order(10)
 	public void testFindViaSuccessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -269,7 +382,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(7)
+	@Order(11)
 	public void testFindMultipleResults() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -302,7 +415,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(8)
+	@Order(12)
 	public void testFindViaPredecessorCycle() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -323,7 +436,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(9)
+	@Order(13)
 	public void testFindViaPredecessorCycleUnauthorized() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -344,7 +457,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(10)
+	@Order(14)
 	public void testFindViaPredecessorCyclePermissionsReader() {
 		String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
@@ -374,7 +487,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(11)
+	@Order(15)
 	public void testFindViaPredecessorCycleReaderGroup() {
 		String userGroupURL = String.format("%s/usergroup", baseURL);
 		UserGroupIO userGroup = new UserGroupIO();
@@ -413,7 +526,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(12)
+	@Order(16)
 	public void testDoNotFindViaDeletedNode() {
 		deleteDataObject(secondChild);
 		SearchBody searchBody = new SearchBody();

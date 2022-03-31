@@ -122,4 +122,16 @@ public class Constants {
 	public static final String COLLECTION_IN_QUERY = "col";
 	public static final String DATAOBJECT_IN_QUERY = "do";
 	public static final String REFERENCE_IN_QUERY = "br";
+	public static final String JSON_AND = "AND";
+	public static final String JSON_OR = "OR";
+	public static final String JSON_NOT = "NOT";
+	public static final String JSON_XOR = "XOR";
+	public static final String JSON_EQ = "eq";
+	public static final String JSON_CONTAINS = "contains";
+	public static final String JSON_GT = "gt";
+	public static final String JSON_LT = "lt";
+	public static final String JSON_GE = "ge";
+	public static final String JSON_LE = "le";
+	public static final String JSON_IN = "in";
+	public static final String JSON_NE = "ne";
 }

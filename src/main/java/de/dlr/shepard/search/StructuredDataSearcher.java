@@ -10,6 +10,7 @@ import org.bson.Document;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 
+import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
@@ -24,13 +25,13 @@ public class StructuredDataSearcher implements ISearcher {
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
 
 	@Override
-	public ResponseBody search(SearchBody searchBody, String userName) {
+	public ResponseBody search(SearchBody searchBody, String userName) throws ShepardParserException {
 		Set<StructuredDataReference> reachableReferences = getAllStructuredDataReferencesFromBody(searchBody, userName);
 		return getStructuredDataResponse(reachableReferences, searchBody);
 	}
 
 	private ResponseBody getStructuredDataResponse(Set<StructuredDataReference> reachableReferences,
-			SearchBody searchBody) {
+			SearchBody searchBody) throws ShepardParserException {
 		Set<Long> matchingReferencesIds = new HashSet<>();
 		String mongoContainerId;
 		MongoCollection<Document> mongoContainer;
@@ -50,7 +51,12 @@ public class StructuredDataSearcher implements ISearcher {
 				mongoStructuredDataIds.add(makeMongoQueryId(mongoStructuredDataId));
 			}
 			mongoQuery = "{_id: {$in: " + makeMongoQueryArray(mongoStructuredDataIds) + "}";
-			mongoQuery = mongoQuery + ", " + searchBody.getSearchParams().getQuery() + "}";
+			String mongoSearchQuery = searchBody.getSearchParams().getQuery();
+			// JSON queries start with { so they have to be translated to MongoDB syntax
+			// first
+			if (mongoSearchQuery.startsWith("{"))
+				mongoSearchQuery = MongoDBEmitter.emitMongoDB(mongoSearchQuery);
+			mongoQuery = mongoQuery + ", " + mongoSearchQuery + "}";
 			mongoQueryDocument = Document.parse(mongoQuery);
 			mongoQueryResult = mongoContainer.find(mongoQueryDocument);
 			if (mongoQueryResult.first() != null)
@@ -106,8 +112,7 @@ public class StructuredDataSearcher implements ISearcher {
 	}
 
 	private static String makeMongoQueryArray(List<String> strings) {
-		var ret = "[" + String.join(", ", strings) + "]";
-		return ret;
+		return "[" + String.join(", ", strings) + "]";
 	}
 
 }

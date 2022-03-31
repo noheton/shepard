@@ -92,6 +92,29 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(2)
+	public void neTest() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setTraversalRules(new TraversalRules[] {});
+		searchBody.setScopes(new SearchScope[] { searchScope });
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.Collection);
+		String query = String.format("""
+				{
+				  "property": "id",
+				  "value": %d,
+				  "operator": "ne"
+				}""", collection1.getId());
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		ResultTriple triple1 = new ResultTriple(collection1.getId(), null, null);
+		assertThat(result.getResultSet()).doesNotContain(triple1);
+	}
+
+	@Test
+	@Order(3)
 	public void findTwoOutOfTwoCollectionsTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -123,7 +146,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(3)
+	@Order(4)
 	public void findNoCollectionTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -155,7 +178,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(4)
+	@Order(5)
 	public void findByAndTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -188,7 +211,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(5)
+	@Order(6)
 	public void unauthorizedCollectionsSearchTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -220,7 +243,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(6)
+	@Order(7)
 	public void authorizedCollectionsSearchTest() {
 		String permissionsURL = baseURL + "/collections/" + collection1.getId() + "/permissions";
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
@@ -262,7 +285,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(7)
+	@Order(8)
 	public void collectionsSearchTestReaderGroup() {
 		String userGroupURL = String.format("%s/usergroup", baseURL);
 		UserGroupIO userGroup = new UserGroupIO();
@@ -302,6 +325,49 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 				      "operator": "le"
 				    }
 				]}""", collection1.getId(), collection2.getId());
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		ResultTriple triple1 = new ResultTriple(collection1.getId(), null, null);
+		ResultTriple triple2 = new ResultTriple(collection2.getId(), null, null);
+		assertThat(result.getResultSet()).contains(triple1);
+		assertThat(result.getResultSet()).contains(triple2);
+	}
+
+	@Test
+	@Order(8)
+	public void inTest() {
+		String userGroupURL = String.format("%s/usergroup", baseURL);
+		UserGroupIO userGroup = new UserGroupIO();
+		userGroup.setName("userGroup");
+		userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
+		RequestSpecification userGroupSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(userGroupURL).addHeader("X-API-KEY", jws).build();
+		UserGroupIO userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then()
+				.statusCode(201).extract().as(UserGroupIO.class);
+
+		String permissionsURL = baseURL + "/collections/" + collection2.getId() + "/permissions";
+		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
+		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()
+				.statusCode(200).extract().as(PermissionsIO.class);
+		long[] readerGroupIds = { userGroupCreated.getId() };
+		permissions.setReaderGroupIds(readerGroupIds);
+		given().spec(permissionsSpecification).body(permissions).when().put(permissionsURL).then().statusCode(200)
+				.extract().as(PermissionsIO.class);
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setTraversalRules(new TraversalRules[] {});
+		searchBody.setScopes(new SearchScope[] { searchScope });
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.Collection);
+		String query = String.format("""
+				{
+				  "property": "id",
+				  "value": [%d,%d],
+				  "operator": "in"
+				}""", collection1.getId(), collection2.getId());
 		searchParams.setQuery(query);
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()

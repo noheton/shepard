@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
@@ -57,7 +59,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getStructuredDataResponseTestEmpty() {
+	public void getStructuredDataResponseTestEmpty() throws ShepardParserException {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -66,10 +68,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		StructuredData structuredData = new StructuredData();
-		structuredData.setOid("61371f2889b108615688e22e");
-		ArrayList<StructuredData> structuredDatas = new ArrayList<StructuredData>();
-		structuredDatas.add(structuredData);
+		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -118,7 +117,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getStructuredDataResponseTestNotEmpty() {
+	public void getStructuredDataResponseTestNotEmpty() throws ShepardParserException {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -127,10 +126,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		StructuredData structuredData = new StructuredData();
-		structuredData.setOid("61371f2889b108615688e22e");
-		ArrayList<StructuredData> structuredDatas = new ArrayList<StructuredData>();
-		structuredDatas.add(structuredData);
+		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -179,7 +175,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emptyQueryResult() {
+	public void emptyQueryResult() throws ShepardParserException {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -188,10 +184,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		StructuredData structuredData = new StructuredData();
-		structuredData.setOid("61371f2889b108615688e22e");
-		ArrayList<StructuredData> structuredDatas = new ArrayList<StructuredData>();
-		structuredDatas.add(structuredData);
+		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -228,6 +221,70 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(null);
+		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
+		// test
+		String userName = "user1";
+		assertEquals(structuredDataSearcher.search(searchBody, userName), responseBody);
+	}
+
+	@Test
+	public void JSONQueryTest() throws ShepardParserException {
+		// create StructuredDataReferences
+		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
+			{
+				setDeleted(false);
+				setId(1L);
+				setName("reference1");
+			}
+		};
+		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
+		structuredDataReference1.setStructuredDatas(structuredDatas);
+		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
+		String mongoID = "61371f2889b108615688e22e";
+		structuredDataContainer1.setMongoId(mongoID);
+		structuredDataContainer1.setId(2L);
+		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
+		// create SearchBody
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
+		TraversalRules[] traversalRules = { TraversalRules.children };
+		SearchScope scope = new SearchScope();
+		scope.setCollectionId(collectionId);
+		scope.setDataObjectId(dataObjectId);
+		scope.setTraversalRules(traversalRules);
+		SearchScope scopes[] = { scope };
+		String JSONQuery = """
+				{
+				   "property":"number",
+				   "value":4,
+				   "operator":"eq"
+				}
+								""";
+		QueryType queryType = QueryType.StructuredData;
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQuery(JSONQuery);
+		searchParams.setQueryType(queryType);
+		SearchBody searchBody = new SearchBody();
+		searchBody.setScopes(scopes);
+		searchBody.setSearchParams(searchParams);
+		// create ResponseBody
+		ResultTriple[] resultTriples = new ResultTriple[1];
+		ResultTriple resultTriple = new ResultTriple();
+		resultTriple.setCollectionId(searchBody.getScopes()[0].getCollectionId());
+		resultTriple.setReferenceId(1L);
+		resultTriple.setDataObjectId(3L);
+		resultTriples[0] = resultTriple;
+		ResponseBody responseBody = new ResponseBody();
+		responseBody.setResultSet(resultTriples);
+		responseBody.setSearchParams(searchBody.getSearchParams());
+		// configure Mocks
+		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
+				"user1")).thenReturn(emptyStructuredDataReferenceResponse);
+		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+		when(mongoQueryResult.first()).thenReturn(firstDocument);
 		when(basicReferenceDAO.getDataObjectId(1L)).thenReturn(3L);
 		// test
 		String userName = "user1";

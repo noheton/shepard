@@ -31,6 +31,23 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
+	public void emitCollectionDataObjectReferenceQueryNeTest() throws ShepardParserException {
+		SearchScope scope = new SearchScope();
+		scope.setCollectionId(1L);
+		scope.setDataObjectId(2L);
+		String searchBodyQuery = """
+				{
+				  "property": "name",
+				  "value": "MyName",
+				  "operator": "ne"
+				}
+				""";
+		String neo4jQuery = Neo4jEmitter.emitCollectionDataObjectReferenceQuery(scope, searchBodyQuery, userName);
+		String expected = "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` <> \"MyName\") AND (id(col) = 1 AND id(do) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(do), id(br)";
+		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
 	public void emitCollectionDataObjectBasicReferenceQueryChildrenTest() throws ShepardParserException {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
