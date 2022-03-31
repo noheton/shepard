@@ -53,13 +53,13 @@
         >
           <b-button-group class="float-right">
             <b-button
-              v-b-modal.edit-structured-data-modal
+              v-b-modal.json-editor-modal
               v-b-tooltip.hover
-              title="not yet implemented"
+              title="Show Editor"
               variant="light"
-              disabled
+              @click="currentStructuredData = structuredData"
             >
-              <EditIcon />
+              <EyeIcon />
             </b-button>
             <b-button
               v-b-modal.delete-structured-data-confirmation-modal
@@ -77,29 +77,6 @@
             | {{ structuredData.oid }} |
             {{ new Date(structuredData.createdAt).toLocaleString() }}
           </div>
-
-          <small>
-            <b-link @click="toggleReadMore(structuredData.oid)">
-              <span v-if="readMore[structuredData.oid]"><CollapsIcon /></span>
-              <span v-else><ExtendIcon /></span>
-            </b-link>
-            <b>Payload:</b>
-            <b-link
-              v-if="payloadMap[structuredData.oid]"
-              title="Copy"
-              class="ml-1"
-              @click="copyPayload(structuredData.oid)"
-            >
-              <CopyIcon :size="15" />
-            </b-link>
-            <span v-if="payloadMap[structuredData.oid]">
-              <span v-if="readMore[structuredData.oid]">
-                <pre class="payload">{{
-                  payloadMap[structuredData.oid] | pretty
-                }}</pre>
-              </span>
-            </span>
-          </small>
         </b-list-group-item>
       </b-list-group>
     </div>
@@ -107,11 +84,6 @@
       modal-id="create-structured-data-modal"
       modal-name="Create Structured Data"
       @created="createStructuredData($event)"
-    />
-    <CreateStructuredDataModal
-      modal-id="edit-structured-data-modal"
-      modal-name="Edit Structured Data"
-      @created="editStructuredData($event)"
     />
     <DeleteConfirmationModal
       modal-id="delete-structured-data-container-confirmation-modal"
@@ -134,6 +106,13 @@
       "
       @confirmation="handleDeleteStructuredData(currentStructuredData.oid)"
     />
+    <JsonEditorModal
+      v-if="currentStructuredData"
+      modal-id="json-editor-modal"
+      modal-name="Structured Data"
+      :entity-id="currentStructuredDataContainerId"
+      :oid="currentStructuredData.oid"
+    />
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
@@ -149,6 +128,7 @@ import CreateStructuredDataModal from "@/components/containers/CreateStructuredD
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { StructuredDataVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
@@ -165,9 +145,7 @@ interface StructuredDataData {
   currentStructuredData?: StructuredData;
   permissions?: Permissions;
   structuredDataList: StructuredData[];
-  payloadMap: { [key: string]: string };
   managerAccess: boolean;
-  readMore: { [key: string]: boolean };
   deletedAlert: boolean;
 }
 
@@ -180,11 +158,7 @@ export default (
     PermissionsModal,
     GenericName,
     CreateStructuredDataModal,
-  },
-  filters: {
-    pretty: function (value: string) {
-      return JSON.stringify(JSON.parse(value), null, 2);
-    },
+    JsonEditorModal,
   },
   mixins: [StructuredDataVue],
   data() {
@@ -193,9 +167,7 @@ export default (
       currentStructuredData: undefined,
       permissions: undefined,
       structuredDataList: [],
-      payloadMap: {},
       managerAccess: false,
-      readMore: {},
       deletedAlert: false,
     } as StructuredDataData;
   },
@@ -239,23 +211,6 @@ export default (
           console.log(error);
         });
     },
-    retrievePayload(oid: string) {
-      this.structuredDataApi
-        ?.getStructuredData({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-          oid: oid,
-        })
-        .then(response => {
-          if (response.payload) this.payloadMap[oid] = response.payload;
-          this.payloadMap = { ...this.payloadMap };
-        })
-        .catch(e => {
-          const error =
-            "Error while fetching structured data payload: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
     createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
       if (this.currentStructuredDataContainer?.id)
         this.structuredDataApi
@@ -274,10 +229,6 @@ export default (
           })
           .finally();
     },
-    editStructuredData() {
-      console.log("noch nicht implementiert");
-    },
-
     handleDeleteStructuredDataContainer() {
       this.structuredDataApi
         ?.deleteStructuredDataContainer({
@@ -341,21 +292,6 @@ export default (
           console.log(error);
         });
     },
-    copyPayload(oid: string) {
-      const payload = this.payloadMap[oid];
-      if (payload) navigator.clipboard.writeText(payload);
-    },
-    toggleReadMore(oid: string) {
-      this.readMore[oid] = !this.readMore[oid];
-      this.readMore = { ...this.readMore };
-      if (!this.payloadMap[oid]) this.retrievePayload(oid);
-    },
   },
 });
 </script>
-
-<style scoped>
-.payload {
-  color: #e83e8c;
-}
-</style>

@@ -13,6 +13,7 @@ import ClipboardOutline from "vue-material-design-icons/ClipboardOutline.vue";
 import ContentCopy from "vue-material-design-icons/ContentCopy.vue";
 import DatabaseImportOutline from "vue-material-design-icons/DatabaseImportOutline.vue";
 import Delete from "vue-material-design-icons/Delete.vue";
+import EyeOutline from "vue-material-design-icons/EyeOutline.vue";
 import FileDocumentOutline from "vue-material-design-icons/FileDocumentOutline.vue";
 import FileDownloadOutline from "vue-material-design-icons/FileDownloadOutline.vue";
 import FolderOpen from "vue-material-design-icons/FolderOpen.vue";
@@ -45,6 +46,7 @@ Vue.component("OpenIcon", FolderOpen);
 Vue.component("PermissionsIcon", AccountLock);
 Vue.component("DownloadIcon", FileDownloadOutline);
 Vue.component("CopyIcon", ContentCopy);
+Vue.component("EyeIcon", EyeOutline);
 
 Vue.component("UserIcon", Account);
 Vue.component("UserGroupIcon", AccountGroup);
