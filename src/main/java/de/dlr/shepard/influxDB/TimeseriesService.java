@@ -71,7 +71,17 @@ public class TimeseriesService {
 			}
 
 		});
-		return new ArrayList<TimeseriesPayload>(timeseriesQueue);
+		return new ArrayList<>(timeseriesQueue);
+	}
+
+	/**
+	 * Returns a list of timeseries objects that are in the given database.
+	 *
+	 * @param database the given database
+	 * @return a list of timeseries objects
+	 */
+	public List<Timeseries> getTimeseriesAvailable(String database) {
+		return influxConnector.getTimeseriesAvailable(database);
 	}
 
 	/**

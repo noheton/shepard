@@ -141,4 +141,15 @@ public class TimeseriesContainerService {
 		return result;
 	}
 
+	/**
+	 * Returns a list of timeseries objects that are in the given database.
+	 *
+	 * @param timeseriesContainerId the given timeseries container
+	 * @return a list of timeseries objects
+	 */
+	public List<Timeseries> getTimeseriesAvailable(long timeseriesContainerId) {
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		return timeseriesService.getTimeseriesAvailable(timeseriesContainer.getDatabase());
+	}
+
 }

@@ -1,6 +1,8 @@
 package de.dlr.shepard.influxDB;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -10,6 +12,7 @@ import org.influxdb.dto.Pong;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
 import de.dlr.shepard.util.PropertiesHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -171,6 +174,45 @@ public class InfluxConnector implements IConnector {
 			return InfluxUtil.extractPayload(queryResult, timeseries);
 		}
 		return new TimeseriesPayload(timeseries, Collections.emptyList());
+	}
+
+	/**
+	 * Returns a list of timeseries objects that are in the given database.
+	 *
+	 * @param database the given database
+	 * @return a list of timeseries objects
+	 */
+	public List<Timeseries> getTimeseriesAvailable(String database) {
+		Query query = new Query(String.format("SHOW SERIES ON \"%s\"", database));
+		QueryResult queryResult = influxDB.query(query);
+		if (!InfluxUtil.isQueryResultValid(queryResult)) {
+			log.warn("There was an error while querying the Influxdb for available timeseries");
+			return Collections.emptyList();
+		}
+
+		var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
+		var result = new ArrayList<Timeseries>(values.size());
+		for (var value : values) {
+			var strRep = ((String) value.get(0)).split(",");
+			var timeseries = new Timeseries();
+			timeseries.setMeasurement(strRep[0]);
+			for (int i = 1; i < strRep.length; i++) {
+				var tag = strRep[i].split("=");
+				switch (tag[0]) {
+				case Constants.LOCATION:
+					timeseries.setLocation(tag[1]);
+					break;
+				case Constants.DEVICE:
+					timeseries.setDevice(tag[1]);
+					break;
+				case Constants.SYMBOLICNAME:
+					timeseries.setSymbolicName(tag[1]);
+					break;
+				}
+			}
+			result.add(timeseries);
+		}
+		return result;
 	}
 
 	private boolean databaseExist(String database) {

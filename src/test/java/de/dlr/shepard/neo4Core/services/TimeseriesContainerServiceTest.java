@@ -266,4 +266,17 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		assertNull(actual);
 	}
 
+	@Test
+	public void getTimeseriesAvailableTest() {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		var expected = List.of(new Timeseries("meas", "dev", "loc", "symName", "field"));
+
+		when(dao.find(1L)).thenReturn(container);
+		when(timeseriesService.getTimeseriesAvailable("database")).thenReturn(expected);
+
+		var actual = service.getTimeseriesAvailable(1L);
+		assertEquals(expected, actual);
+	}
+
 }

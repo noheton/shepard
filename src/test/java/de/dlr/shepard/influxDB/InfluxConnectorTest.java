@@ -276,6 +276,33 @@ public class InfluxConnectorTest extends BaseTestCase {
 		assertTrue(actualTimeseries.getPoints().isEmpty());
 	}
 
+	@Test
+	public void testGetTimeseriesAvailable() {
+		String queryString = "SHOW SERIES ON \"database\"";
+		var expected = List.of(new Timeseries("meas", "dev", "loc", "sym", null),
+				new Timeseries("different", "test", "bla", "badum", null));
+		when(influxDB.query(new Query(queryString)))
+				.thenReturn(getShowSeries(List.of(new Timeseries("meas", "dev", "loc", "sym", "field"),
+						new Timeseries("different", "test", "bla", "badum", "value"))));
+
+		var actual = connector.getTimeseriesAvailable("database");
+
+		assertEquals(expected, actual);
+	}
+
+	@Test
+	public void testGetTimeseriesAvailableWithError() {
+		String queryString = "SHOW SERIES ON \"database\"";
+		QueryResult queryResult = new QueryResult();
+		queryResult.setError("Some Error");
+
+		when(influxDB.query(new Query(queryString))).thenReturn(queryResult);
+
+		var actual = connector.getTimeseriesAvailable("database");
+
+		assertEquals(0, actual.size());
+	}
+
 	private TimeseriesPayload configureTimeseries(Object value) {
 		InfluxPoint influxPoint = new InfluxPoint(timestamp, value);
 		List<InfluxPoint> influxPoints = new ArrayList<InfluxPoint>();
@@ -308,6 +335,34 @@ public class InfluxConnectorTest extends BaseTestCase {
 				List<Object> value = new ArrayList<Object>();
 				value.add(databaseName);
 				valueList.add(value);
+				series.setValues(valueList);
+				seriesList.add(series);
+				result.setSeries(seriesList);
+				results.add(result);
+				return results;
+			}
+		};
+		return queryResult;
+	}
+
+	private QueryResult getShowSeries(List<Timeseries> timeseries) {
+
+		QueryResult queryResult = new QueryResult() {
+			List<Result> results;
+
+			@Override
+			public List<Result> getResults() {
+				results = new ArrayList<QueryResult.Result>();
+				Result result = new Result();
+				ArrayList<Series> seriesList = new ArrayList<Series>();
+				Series series = new Series();
+				List<List<Object>> valueList = new ArrayList<List<Object>>();
+				for (var ts : timeseries) {
+					List<Object> value = new ArrayList<Object>();
+					value.add(String.format("%s,device=%s,location=%s,symbolic_name=%s,bla=blub", ts.getMeasurement(),
+							ts.getDevice(), ts.getLocation(), ts.getSymbolicName()));
+					valueList.add(value);
+				}
 				series.setValues(valueList);
 				seriesList.add(series);
 				result.setSeries(seriesList);

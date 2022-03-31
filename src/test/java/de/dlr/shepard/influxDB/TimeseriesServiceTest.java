@@ -130,6 +130,14 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getTimeseriesAvailableTest() {
+		var expected = List.of(new Timeseries("meas", "dev", "loc", "sym", "field"));
+		when(connector.getTimeseriesAvailable("test")).thenReturn(expected);
+		var actual = service.getTimeseriesAvailable("test");
+		assertEquals(expected, actual);
+	}
+
+	@Test
 	public void exportTimeseriesTest() throws IOException {
 		var is = new ByteArrayInputStream("Hello World".getBytes());
 		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -27,6 +28,8 @@ public class TimeseriesTest extends BaseTestCaseIT {
 
 	private static TimeseriesContainerIO container;
 	private static TimeseriesPayload payload;
+	private static long start;
+	private static long end;
 
 	private static int numPoints = 32;
 
@@ -87,6 +90,9 @@ public class TimeseriesTest extends BaseTestCaseIT {
 			points.add(point);
 		}
 
+		start = points.get(0).getTimeInNanoseconds();
+		end = points.get(numPoints - 1).getTimeInNanoseconds();
+
 		payload = new TimeseriesPayload();
 		payload.setTimeseries(new Timeseries("meas", "dev", "loc", "symName", "field"));
 		payload.setPoints(points);
@@ -100,6 +106,27 @@ public class TimeseriesTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(5)
+	public void getTimeseriesAvailable() {
+		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
+				.then().statusCode(200).extract().as(Timeseries[].class);
+
+		assertThat(actual).contains(new Timeseries("meas", "dev", "loc", "symName", null));
+	}
+
+	@Test
+	@Order(6)
+	public void getTimeseriesPayload() {
+		var actual = given().spec(containerRequestSpec).when()
+				.queryParams(Map.of("measurement", "meas", "location", "loc", "device", "dev", "symbolic_name",
+						"symName", "field", "field", "start", start, "end", end))
+				.get(containerURL + "/" + container.getId() + "/payload").then().statusCode(200).extract()
+				.as(TimeseriesPayload.class);
+
+		assertThat(actual).isEqualTo(payload);
+	}
+
+	@Test
+	@Order(7)
 	public void deleteContainer() {
 		given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 
