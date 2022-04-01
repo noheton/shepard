@@ -28,6 +28,7 @@ public class Timeseries implements HasId {
 	private String symbolicName;
 
 	@NotBlank
+	@Schema(nullable = true)
 	private String field;
 
 	@Override
