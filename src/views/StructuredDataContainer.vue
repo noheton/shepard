@@ -110,7 +110,7 @@
       v-if="currentStructuredData"
       modal-id="json-editor-modal"
       modal-name="Structured Data"
-      :entity-id="currentStructuredDataContainerId"
+      :container-id="currentStructuredDataContainerId"
       :oid="currentStructuredData.oid"
     />
     <PermissionsModal

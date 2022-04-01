@@ -50,6 +50,7 @@
           >
             Container: {{ structuredDataReference.structuredDataContainerId }}
           </b-link>
+
           <b-button
             v-b-modal.structured-data-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -70,35 +71,27 @@
           :key="i"
         >
           <small v-if="structuredDatas[oid]">
-            <div v-if="structuredDatas[oid].structuredData.createdAt">
-              <b>Oid:</b> {{ oid }} | <b>Name:</b>
-              {{ structuredDatas[oid].structuredData.name }} |
+            <b-link
+              v-b-modal.json-editor-modal
+              v-b-tooltip.hover
+              title="Show Viewer"
+              @click="
+                (currentStructuredDataReference = structuredDataReference),
+                  (currentStructuredDataOid = oid)
+              "
+            >
+              <EyeIcon :size="19" />
+            </b-link>
+
+            <b> Oid:</b> <tt>{{ oid }}</tt> |
+            <span v-if="structuredDatas[oid].structuredData.createdAt">
               <b>Created at:</b>
-              {{
-                new Date(
-                  structuredDatas[oid].structuredData.createdAt,
-                ).toLocaleString()
-              }}
-            </div>
+              {{ convertDate(structuredDatas[oid].structuredData.createdAt) }}
+            </span>
             <div v-else><b>Oid:</b> {{ oid }}</div>
 
-            <b-link @click="toggleReadMore(oid)">
-              <span v-if="readMore[oid]"><CollapsIcon /></span>
-              <span v-else><ExtendIcon /></span>
-            </b-link>
-            <b>Payload:</b>
-            <b-link title="Copy" class="ml-1" @click="copyPayload(oid)">
-              <CopyIcon :size="15" />
-            </b-link>
-
-            <span v-if="structuredDatas[oid].payload">
-              <span v-if="readMore[oid]">
-                <pre class="payload">{{
-                  structuredDatas[oid].payload | pretty
-                }}</pre>
-              </span>
-            </span>
-            <span v-else>Payload is missing</span>
+            | <b>Name: </b>
+            {{ structuredDatas[oid].structuredData.name }}
           </small>
         </div>
       </b-list-group-item>
@@ -115,6 +108,13 @@
       "
       @confirmation="handleDelete(currentStructuredDataReference.id)"
     />
+    <JsonEditorModal
+      v-if="currentStructuredDataReference"
+      modal-id="json-editor-modal"
+      modal-name="Structured Data Reference"
+      :container-id="currentStructuredDataReference.structuredDataContainerId"
+      :oid="currentStructuredDataOid"
+    />
   </div>
 </template>
 
@@ -122,9 +122,11 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import { StructuredDataReferenceVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
+import { dateFormat } from "@/utils/helpers";
 import {
   StructuredDataPayload,
   StructuredDataReference,
@@ -135,9 +137,9 @@ interface StructuredDataListData {
   structuredDataList: StructuredDataReference[];
   structuredDatas: { [key: string]: StructuredDataPayload };
   currentStructuredDataReference?: StructuredDataReference;
+  currentStructuredDataOid?: string;
   createdAlert: boolean;
   deletedAlert: boolean;
-  readMore: { [key: string]: boolean };
 }
 
 export default (
@@ -148,11 +150,7 @@ export default (
     StructuredDataReferenceModal,
     DeleteConfirmationModal,
     GenericName,
-  },
-  filters: {
-    pretty: function (value: string) {
-      return JSON.stringify(JSON.parse(value), null, 2);
-    },
+    JsonEditorModal,
   },
 
   mixins: [StructuredDataReferenceVue],
@@ -171,9 +169,9 @@ export default (
       structuredDataList: [],
       structuredDatas: {},
       currentStructuredDataReference: undefined,
+      currentStructuredDataOid: undefined,
       createdAlert: false,
       deletedAlert: false,
-      readMore: {},
     } as StructuredDataListData;
   },
   mounted() {
@@ -260,13 +258,8 @@ export default (
           emitter.emit("error", error);
         });
     },
-    copyPayload(oid: string) {
-      const payload = this.structuredDatas[oid].payload;
-      if (payload) navigator.clipboard.writeText(payload);
-    },
-    toggleReadMore(oid: string) {
-      this.readMore[oid] = !this.readMore[oid];
-      this.readMore = { ...this.readMore };
+    convertDate(date: string) {
+      return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
 });

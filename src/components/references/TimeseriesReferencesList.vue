@@ -48,16 +48,26 @@
           >
             Container: {{ timeseriesItem.timeseriesContainerId }}
           </b-link>
-          <b-button
-            v-b-modal.timeseries-reference-delete-confirmation-modal
-            v-b-tooltip.hover
-            class="float-right"
-            title="Delete"
-            variant="dark"
-            @click="currentTimeseriesReference = timeseriesItem"
-          >
-            <DeleteIcon />
-          </b-button>
+          <b-button-group class="float-right">
+            <b-button
+              title="Download"
+              variant="light"
+              :disabled="downloadActive"
+              @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
+            >
+              <DownloadIcon />
+            </b-button>
+
+            <b-button
+              v-b-modal.timeseries-reference-delete-confirmation-modal
+              v-b-tooltip.hover
+              title="Delete"
+              variant="dark"
+              @click="currentTimeseriesReference = timeseriesItem"
+            >
+              <DeleteIcon />
+            </b-button>
+          </b-button-group>
         </div>
         <CreatedByLine
           :created-by="timeseriesItem.createdBy"
@@ -65,17 +75,11 @@
         />
         <small>
           <b>start:</b>
-          {{ new Date(timeseriesItem.start / 1e6).toLocaleString() }} |
+          {{ convertDate(timeseriesItem.start / 1e6) }}
+          |
           <b>end:</b>
-          {{ new Date(timeseriesItem.end / 1e6).toLocaleString() }}
+          {{ convertDate(timeseriesItem.end / 1e6) }}
         </small>
-        <b-link
-          class="float-right"
-          :disabled="downloadActive"
-          @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
-        >
-          <DownloadIcon />
-        </b-link>
         <b-table striped hover small :items="timeseriesItem.timeseries">
         </b-table>
       </b-list-group-item>
@@ -104,6 +108,7 @@ import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenc
 import { TimeseriesReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
+import { dateFormat } from "@/utils/helpers";
 import { TimeseriesReference } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -226,6 +231,9 @@ export default (
           console.log(error);
           emitter.emit("error", error);
         });
+    },
+    convertDate(date: string) {
+      return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
 });

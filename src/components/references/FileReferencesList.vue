@@ -65,20 +65,21 @@
         />
         <div v-for="(oid, i) in fileReference.fileOids" :key="i">
           <small v-if="files[oid]">
-            <b>Oid:</b> {{ oid }} | <b>Filename:</b> {{ files[oid].filename }}
-            <span v-if="files[oid].createdAt">
-              | <b>Created at:</b>
-              {{ new Date(files[oid].createdAt).toLocaleString() }}
-            </span>
             <b-link
-              class="float-right"
               :disabled="downloadActive"
               @click="
                 getFilePayload(fileReference.id, oid, files[oid].filename)
               "
             >
-              <DownloadIcon />
+              <DownloadIcon :size="18" />
             </b-link>
+            <b> Oid:</b> <tt>{{ oid }}</tt>
+            <span v-if="files[oid].createdAt">
+              | <b>Created at:</b>
+              {{ convertDate(files[oid].createdAt) }}
+            </span>
+            | <b>Filename:</b>
+            {{ files[oid].filename }}
           </small>
         </div>
       </b-list-group-item>
@@ -107,6 +108,7 @@ import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import { FileReferenceVue } from "@/utils/api-mixin";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
+import { dateFormat } from "@/utils/helpers";
 import { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
@@ -255,6 +257,11 @@ export default (
           console.log(error);
           emitter.emit("error", error);
         });
+    },
+
+    convertDate(date: string) {
+      console.log(this.fileReferenceList);
+      return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
 });
