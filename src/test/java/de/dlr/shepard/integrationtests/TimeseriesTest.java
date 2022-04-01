@@ -119,7 +119,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
 		var actual = given().spec(containerRequestSpec).when()
 				.queryParams(Map.of("measurement", "meas", "location", "loc", "device", "dev", "symbolic_name",
 						"symName", "field", "field", "start", start, "end", end))
-				.get(containerURL + "/" + container.getId() + "/payload").then().statusCode(200).extract()
+				.get(containerURL + "/" + container.getId() + "/payload/select").then().statusCode(200).extract()
 				.as(TimeseriesPayload.class);
 
 		assertThat(actual).isEqualTo(payload);

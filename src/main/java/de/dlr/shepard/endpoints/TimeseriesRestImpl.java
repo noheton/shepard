@@ -13,6 +13,7 @@ import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.TimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -120,17 +121,28 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
 	@Override
+	public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
+		log.info("Received GET TIMESERIES AVAILABLE request from user {}",
+				securityContext.getUserPrincipal().getName());
+		return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesId)).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload/select")
+	@Override
 	public Response getTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
-			@QueryParam(Constants.MEASUREMENT) String measurement, @QueryParam(Constants.LOCATION) String location,
-			@QueryParam(Constants.DEVICE) String device, @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
-			@QueryParam(Constants.FIELD) String field, @QueryParam(Constants.START) long start,
-			@QueryParam(Constants.END) long end, @QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
+			@QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
+			@QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
+			@QueryParam(Constants.SYMBOLICNAME) @Parameter(required = true) String symbolicName,
+			@QueryParam(Constants.FIELD) @Parameter(required = true) String field,
+			@QueryParam(Constants.START) @Parameter(required = true) long start,
+			@QueryParam(Constants.END) @Parameter(required = true) long end,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function,
 			@QueryParam(Constants.GROUP_BY) Long groupByInterval) {
 		log.info("Received GET TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
 
-		if (measurement == null && location == null && device == null && symbolicName == null && field == null) {
-			return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesId)).build();
-		} else if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
+		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 

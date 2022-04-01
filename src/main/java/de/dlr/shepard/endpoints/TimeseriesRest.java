@@ -53,8 +53,14 @@ public interface TimeseriesRest {
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) @Valid TimeseriesPayload payload);
 
 	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Get timeseries available")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Timeseries.class))))
+	Response getTimeseriesAvailable(long timeseriesId);
+
+	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
 	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
 			String field, long start, long end, AggregateFunction function, Long groupByInterval);
 
