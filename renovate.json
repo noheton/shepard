@@ -11,8 +11,8 @@
       "groupName": "tomcat"
     },
     {
-      "matchPackagePatterns": ["(.*)maven(.*)-plugin(.*)"],
-      "groupName": "maven plugins"
+      "matchPackagePatterns": ["swagger(-.+)?"],
+      "groupName": "swagger"
     }
   ],
   "prHourlyLimit": 0,
