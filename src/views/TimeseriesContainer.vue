@@ -30,6 +30,14 @@
           tooltip
         />
       </p>
+      <b-table
+        striped
+        hover
+        small
+        :items="timeseriesAvailable"
+        :fields="timeseriesFields"
+      >
+      </b-table>
     </div>
     <DeleteConfirmationModal
       modal-id="delete-confirmation-modal"
@@ -57,11 +65,17 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import { TimeseriesVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
-import { Permissions, TimeseriesContainer } from "@dlr-shepard/shepard-client";
+import {
+  Permissions,
+  Timeseries,
+  TimeseriesContainer,
+} from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface TimeseriesData {
   currentTimeseriesContainer?: TimeseriesContainer;
+  timeseriesAvailable: Timeseries[];
+  timeseriesFields: string[];
   permissions?: Permissions;
   managerAccess: boolean;
 }
@@ -74,6 +88,8 @@ export default (
   data() {
     return {
       currentTimeseriesContainer: undefined,
+      timeseriesAvailable: [],
+      timeseriesFields: ["measurement", "device", "location", "symbolicName"],
       permissions: undefined,
       managerAccess: false,
     } as TimeseriesData;
@@ -86,6 +102,7 @@ export default (
   mounted() {
     this.retrieveTimeseriesContainer();
     this.retrievePermissions();
+    this.retrieveTimeseriesAvailable();
   },
   methods: {
     retrieveTimeseriesContainer() {
@@ -99,6 +116,21 @@ export default (
         .catch(e => {
           const error =
             "Error while fetching timeseries container: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        });
+    },
+    retrieveTimeseriesAvailable() {
+      this.timeseriesApi
+        ?.getTimeseriesAvailable({
+          timeseriesContainerId: this.currentTimeseriesContainerId,
+        })
+        .then(response => {
+          this.timeseriesAvailable = response;
+        })
+        .catch(e => {
+          const error =
+            "Error while fetching timeseries available: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         });
