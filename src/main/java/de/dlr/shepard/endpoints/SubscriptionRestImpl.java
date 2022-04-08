@@ -18,12 +18,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Path(Constants.USERS + "/{" + Constants.USERNAME + "}/" + Constants.SUBSCRIPTIONS)
-@Slf4j
 public class SubscriptionRestImpl implements SubscriptionRest {
 
 	private SubscriptionService service = new SubscriptionService();
@@ -34,9 +32,6 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@GET
 	@Override
 	public Response getAllSubscriptions(@PathParam(Constants.USERNAME) String username) {
-		log.info("GET ALL request with parameters: username: {} from user {}", username,
-				securityContext.getUserPrincipal().getName());
-
 		var subscriptions = service.getAllSubscriptions(username);
 		var result = new ArrayList<SubscriptionIO>(subscriptions.size());
 		for (var sub : subscriptions) {
@@ -50,9 +45,6 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@Override
 	public Response getSubscription(@PathParam(Constants.USERNAME) String username,
 			@PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId) {
-		log.info("GET request with parameters: username: {}, id: {} from user {}", username, subscriptionId,
-				securityContext.getUserPrincipal().getName());
-
 		Subscription subscription = service.getSubscription(subscriptionId);
 		return subscription != null ? Response.ok(new SubscriptionIO(subscription)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -61,9 +53,6 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@POST
 	@Override
 	public Response createSubscription(@PathParam(Constants.USERNAME) String username, SubscriptionIO subscription) {
-		log.info("POST request with parameters: username: {} from user {}", username,
-				securityContext.getUserPrincipal().getName());
-
 		Subscription created = service.createSubscription(subscription, username);
 		return created != null ? Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build()
 				: Response.status(Status.BAD_REQUEST).build();
@@ -74,9 +63,6 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@Override
 	public Response deleteSubscription(@PathParam(Constants.USERNAME) String username,
 			@PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId) {
-		log.info("DELETE request with parameters: username: {}, id: {} from user {}", username, subscriptionId,
-				securityContext.getUserPrincipal().getName());
-
 		return service.deleteSubscription(subscriptionId) ? Response.status(204).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}

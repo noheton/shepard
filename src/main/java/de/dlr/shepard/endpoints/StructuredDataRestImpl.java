@@ -27,12 +27,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.STRUCTUREDDATAS)
-@Slf4j
 public class StructuredDataRestImpl implements StructuredDataRest {
 	private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
 	private PermissionsService permissionsService = new PermissionsService();
@@ -46,9 +44,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		log.info("Received GET ALL STRUCTURED DATA CONTAINER request from user {}",
-				securityContext.getUserPrincipal().getName());
-
 		var params = new QueryParamHelper();
 		if (name != null)
 			params = params.withName(name);
@@ -70,8 +65,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response getStructuredDataContainer(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		log.info("Received GET STRUCTURED DATA CONTAINER request with container Id {} from user {}", structuredDataId,
-				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId);
 		return Response.ok(new StructuredDataContainerIO(result)).build();
 	}
@@ -82,8 +75,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response deleteStructuredDataContainer(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		log.info("Received DELETE STRUCTURED DATA CONTAINER request with container Id {} from user {}",
-				structuredDataId, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.deleteStructuredDataContainer(structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -93,8 +84,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@POST
 	@Override
 	public Response createStructuredDataContainer(StructuredDataContainerIO structuredDataContainerIO) {
-		log.info("Received CREATE STRUCTUREDDATACONTAINER request from user {}",
-				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.createStructuredDataContainer(structuredDataContainerIO,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new StructuredDataContainerIO(result)).status(Status.CREATED).build();
@@ -106,7 +95,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			StructuredDataPayload payload) throws InvalidBodyException {
-		log.info("Received POST STRUCTUREDDATA request from user {}", securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -116,8 +104,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Override
 	public Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		log.info("Received GET ALL STRUCTURED DATAS request with container Id {} from user {}", structuredDataId,
-				securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId).getStructuredDatas();
 		return Response.ok(result).build();
 	}
@@ -127,8 +113,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response getStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			@PathParam(Constants.OID) String oid) {
-		log.info("Received GET STRUCTURED DATA request with container Id {} and Oid {} from user {}", structuredDataId,
-				oid, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
@@ -139,8 +123,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response deleteStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
 			@PathParam(Constants.OID) String oid) {
-		log.info("Received DELETE STRUCTURED DATA request with container Id {} and Oid {} from user {}",
-				structuredDataId, oid, securityContext.getUserPrincipal().getName());
 		var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -151,7 +133,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response getStructuredDataPermissions(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -162,7 +143,6 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response editStructuredDataPermissions(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId, @Valid PermissionsIO permissions) {
-		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();

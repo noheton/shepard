@@ -26,12 +26,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Path(Constants.USERGROUP)
-@Slf4j
 public class UserGroupRestImpl implements UserGroupRest {
 
 	@Context
@@ -42,9 +40,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@POST
 	@Override
 	public Response createUserGroup(@Valid UserGroupIO userGroup) {
-		var principal = securityContext.getUserPrincipal();
-		log.info("Received POST request from {} with parameters: userGroupname: {} from user {}", principal.getName(),
-				userGroup.getName(), securityContext.getUserPrincipal().getName());
 		var newUserGroup = userGroupService.createUserGroup(userGroup, securityContext.getUserPrincipal().getName());
 		return Response.ok(new UserGroupIO(newUserGroup)).status(Status.CREATED).build();
 	}
@@ -53,7 +48,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
 	public Response updateUserGroup(@PathParam(Constants.USERGROUP_ID) Long id, @Valid UserGroupIO userGroup) {
-		log.info("Received PUT request from user {} with id {}", securityContext.getUserPrincipal().getName(), id);
 		UserGroup updatedUserGroup = userGroupService.updateUserGroup(id, userGroup,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new UserGroupIO(updatedUserGroup)).build();
@@ -63,8 +57,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
 	public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
-		log.info("Received DELETE request with parameters: id: {} from user {}", id,
-				securityContext.getUserPrincipal().getName());
 		return userGroupService.deleteUserGroup(id) ? Response.status(204).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
@@ -73,8 +65,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
 	public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long usergroupId) {
-		log.info("Received GET request from user {} with id {}", securityContext.getUserPrincipal().getName(),
-				usergroupId);
 		UserGroup ret = userGroupService.getUserGroup(usergroupId);
 		if (ret == null)
 			return Response.status(404).build();
@@ -87,8 +77,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 			@QueryParam(Constants.QP_SIZE) Integer size,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
-
 		var params = new QueryParamHelper();
 		if (page != null && size != null)
 			params = params.withPageAndSize(page, size);
@@ -107,7 +95,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(userGroupId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -118,7 +105,6 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Override
 	public Response editUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId,
 			@Valid PermissionsIO permissions) {
-		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, userGroupId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();

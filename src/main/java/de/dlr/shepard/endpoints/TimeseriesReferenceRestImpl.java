@@ -23,13 +23,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
 		+ Constants.DATAOBJECT_ID + "}/" + Constants.TIMESERIES_REFERENCES)
-@Slf4j
 public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();
 
@@ -40,8 +38,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Override
 	public Response getAllTimeseriesReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
-
 		var references = timeseriesReferenceService.getAllTimeseriesReferences(dataObjectId);
 		var result = new ArrayList<TimeseriesReferenceIO>(references.size());
 		for (var reference : references) {
@@ -57,9 +53,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		log.info("Received GET request with reference Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesReferenceService.getTimeseriesReference(timeseriesId);
 
 		return Response.ok(new TimeseriesReferenceIO(result)).build();
@@ -71,8 +64,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference)
 			throws InvalidBodyException {
-		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesReferenceService.createTimeseriesReference(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 
@@ -86,9 +77,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		log.info("Received DELETE request with reference Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesReferenceService.deleteTimeseriesReference(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -106,8 +94,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
-		log.info("Received GET PAYLOAD request with reference Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
 		var payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
 				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
 		return Response.ok(payload).build();
@@ -124,8 +110,6 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {
-		log.info("Received EXPORT PAYLOAD request with reference Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
 		var stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, deviceFilterTag,
 				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
 		return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();

@@ -39,9 +39,6 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	@GET
 	@Override
 	public Response getAllApiKeys(@PathParam(Constants.USERNAME) String username) {
-		log.info("Received GET ALL request with parameters: userID: {} from user {}", username,
-				securityContext.getUserPrincipal().getName());
-
 		var apiKeys = apiKeyService.getAllApiKeys(username);
 		var result = new ArrayList<ApiKeyIO>(apiKeys.size());
 
@@ -56,8 +53,6 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	@Override
 	public Response getApiKey(@PathParam(Constants.USERNAME) String username,
 			@PathParam(Constants.APIKEY_UID) String apiKeyUid) {
-		log.info("Received GET request with parameters: userID: {} apiKeyUid: {} from user {}", username, apiKeyUid,
-				securityContext.getUserPrincipal().getName());
 		UUID uid;
 		try {
 			uid = UUID.fromString(apiKeyUid);
@@ -72,10 +67,6 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	@POST
 	@Override
 	public Response createApiKey(@PathParam(Constants.USERNAME) String username, ApiKeyIO apiKey) {
-		var principal = securityContext.getUserPrincipal();
-		log.info("Received POST request from {} with parameters: username: {} and new entity: name: {} from user {}",
-				principal.getName(), username, apiKey.getName(), securityContext.getUserPrincipal().getName());
-
 		ApiKey created = apiKeyService.createApiKey(apiKey, username, uriInfo.getBaseUri().toString());
 		return Response.ok(new ApiKeyWithJWTIO(created)).status(Status.CREATED).build();
 	}
@@ -85,9 +76,6 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 	@Override
 	public Response deleteApiKey(@PathParam(Constants.USERNAME) String username,
 			@PathParam(Constants.APIKEY_UID) String apiKeyUid) {
-		log.info("Received DELETE request with parameters: userID: {} apiKeyID: {} from user {}", username, apiKeyUid,
-				securityContext.getUserPrincipal().getName());
-
 		UUID uid;
 		try {
 			uid = UUID.fromString(apiKeyUid);

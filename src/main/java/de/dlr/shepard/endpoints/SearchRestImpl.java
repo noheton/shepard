@@ -28,9 +28,9 @@ public class SearchRestImpl implements SearchRest {
 	@POST
 	@Override
 	public Response search(SearchBody body) throws ShepardParserException {
-		var principal = securityContext.getUserPrincipal();
-		log.info("Received SEARCH REQUEST from user {}", principal.getName());
-		ResponseBody ret = searcher.search(body, principal.getName());
+		log.info("Search for {} with query: {}", body.getSearchParams().getQueryType(),
+				body.getSearchParams().getQuery());
+		ResponseBody ret = searcher.search(body, securityContext.getUserPrincipal().getName());
 		return Response.ok(ret).build();
 
 	}

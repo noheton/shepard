@@ -15,9 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Path(Constants.USERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -32,7 +30,6 @@ public class UserRestImpl implements UserRest {
 	@Override
 	public Response getCurrentUser() {
 		JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
-		log.info("Received GET CURRENT USER request with parameters: username: {}", principal.getUsername());
 		User currentUser = userService.getUser(principal.getUsername());
 		return currentUser == null ? Response.status(Status.NOT_FOUND).build()
 				: Response.ok(new UserIO(currentUser)).build();
@@ -43,9 +40,6 @@ public class UserRestImpl implements UserRest {
 	@Path("/{" + Constants.USERNAME + "}")
 	@Override
 	public Response getUser(@PathParam(Constants.USERNAME) String username) {
-		log.info("Received GET request with parameters: userID: {} from user {}", username,
-				securityContext.getUserPrincipal().getName());
-
 		User user = userService.getUser(username);
 		return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
 	}

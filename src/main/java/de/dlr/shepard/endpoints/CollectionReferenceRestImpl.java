@@ -20,13 +20,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
 		+ Constants.DATAOBJECT_ID + "}/" + Constants.COLLECTION_REFERENCES)
-@Slf4j
 public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();
 
@@ -37,7 +35,6 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Override
 	public Response getAllCollectionReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 		var references = collectionReferenceService.getAllCollectionReferences(dataObjectId);
 		var result = new ArrayList<CollectionReferenceIO>(references.size());
 		for (var reference : references) {
@@ -52,8 +49,6 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response getCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		log.info("Received GET request with reference Id {} from user {}", collectionReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var result = collectionReferenceService.getCollectionReference(collectionReferenceId);
 		return Response.ok(new CollectionReferenceIO(result)).build();
 	}
@@ -64,7 +59,6 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference)
 			throws InvalidBodyException {
-		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
 		var result = collectionReferenceService.createCollectionReference(dataObjectId, collectionReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
@@ -77,8 +71,6 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response deleteCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		log.info("Received DELETE request with reference Id {} from user {}", collectionReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var result = collectionReferenceService.deleteCollectionReference(collectionReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -91,8 +83,6 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response getCollectionReferencePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		log.info("Received GET PAYLOAD request with reference Id {} from user {}", collectionReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var payload = collectionReferenceService.getPayload(collectionReferenceId);
 		return payload != null ? Response.ok(new CollectionIO(payload)).build()
 				: Response.status(Status.NOT_FOUND).build();

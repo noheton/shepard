@@ -26,12 +26,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Path(Constants.COLLECTIONS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Slf4j
 public class CollectionRestImpl implements CollectionRest {
 	private CollectionService collectionService = new CollectionService();
 	private PermissionsService permissionsService = new PermissionsService();
@@ -45,8 +43,6 @@ public class CollectionRestImpl implements CollectionRest {
 			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
-
 		var params = new QueryParamHelper();
 		if (name != null)
 			params = params.withName(name);
@@ -67,9 +63,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}")
 	@Override
 	public Response getCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		log.info("Received GET request with parameters: collectionID: {} from user {}", collectionId,
-				securityContext.getUserPrincipal().getName());
-
 		Collection collection = collectionService.getCollection(collectionId);
 		return Response.ok(new CollectionIO(collection)).build();
 	}
@@ -77,9 +70,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@POST
 	@Override
 	public Response createCollection(CollectionIO collection) {
-		log.info("Received POST request with new entity: name: {} from user {}", collection.getName(),
-				securityContext.getUserPrincipal().getName());
-
 		Collection newCollection = collectionService.createCollection(collection,
 				securityContext.getUserPrincipal().getName());
 
@@ -91,10 +81,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@Subscribable
 	@Override
 	public Response updateCollection(@PathParam(Constants.COLLECTION_ID) long collectionId, CollectionIO collection) {
-		log.info(
-				"Received PUT request with parameters: collectionID: {} and new entity: collectionName: {} from user {}",
-				collectionId, collection.getName(), securityContext.getUserPrincipal().getName());
-
 		Collection updatedCollection = collectionService.updateCollection(collectionId, collection,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionIO(updatedCollection)).build();
@@ -105,9 +91,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@Subscribable
 	@Override
 	public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		log.info("Received DELETE request with parameters: collectionID: {} from user {}", collectionId,
-				securityContext.getUserPrincipal().getName());
-
 		return collectionService.deleteCollection(collectionId, securityContext.getUserPrincipal().getName())
 				? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -117,7 +100,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -128,7 +110,6 @@ public class CollectionRestImpl implements CollectionRest {
 	@Override
 	public Response editCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@Valid PermissionsIO permissions) {
-		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();

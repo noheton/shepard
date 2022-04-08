@@ -29,12 +29,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.FILES)
-@Slf4j
 public class FileRestImpl implements FileRest {
 	private FileContainerService fileContainerService = new FileContainerService();
 	private PermissionsService permissionsService = new PermissionsService();
@@ -48,8 +46,6 @@ public class FileRestImpl implements FileRest {
 			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		log.info("Received GET ALL FILE CONTAINER request from user {}", securityContext.getUserPrincipal().getName());
-
 		var params = new QueryParamHelper();
 		if (name != null)
 			params = params.withName(name);
@@ -70,8 +66,6 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}")
 	@Override
 	public Response getFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		log.info("Received GET FILE CONTAINER request with container Id {} from user {}", fileContainerId,
-				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.getFileContainer(fileContainerId);
 		return Response.ok(new FileContainerIO(result)).build();
 	}
@@ -79,7 +73,6 @@ public class FileRestImpl implements FileRest {
 	@POST
 	@Override
 	public Response createFileContainer(FileContainerIO fileContainer) {
-		log.info("Received CREATE FILE CONTAINER request from user {}", securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.createFileContainer(fileContainer,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileContainerIO(result)).status(Status.CREATED).build();
@@ -90,8 +83,6 @@ public class FileRestImpl implements FileRest {
 	@Subscribable
 	@Override
 	public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		log.info("Received DELETE FILE CONTAINER request with container Id {} from user {}", fileContainerId,
-				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.deleteFileContainer(fileContainerId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -102,8 +93,6 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
 	@Override
 	public Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		log.info("Received GET ALL FILES request with container Id {} from user {}", fileContainerId,
-				securityContext.getUserPrincipal().getName());
 		var payload = fileContainerService.getFileContainer(fileContainerId).getFiles();
 		return Response.ok(payload).build();
 	}
@@ -114,8 +103,6 @@ public class FileRestImpl implements FileRest {
 	@Override
 	public Response getFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@PathParam(Constants.OID) String oid) {
-		log.info("Received GET FILE request with container Id {} and Oid {} from user {}", fileContainerId, oid,
-				securityContext.getUserPrincipal().getName());
 		var payload = fileContainerService.getFile(fileContainerId, oid);
 		return payload != null
 				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
@@ -129,8 +116,6 @@ public class FileRestImpl implements FileRest {
 	@Override
 	public Response deleteFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@PathParam(Constants.OID) String oid) {
-		log.info("Received DELETE FILE request with container Id {} and Oid {} from user {}", fileContainerId, oid,
-				securityContext.getUserPrincipal().getName());
 		var result = fileContainerService.deleteFile(fileContainerId, oid);
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -144,8 +129,6 @@ public class FileRestImpl implements FileRest {
 	public Response createFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@FormDataParam(Constants.FILE) InputStream fileInputStream,
 			@FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData) {
-		log.info("Received POST FILE request with file {} from user {}", fileMetaData,
-				securityContext.getUserPrincipal().getName());
 		String fileName = fileMetaData.getFileName();
 		var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
@@ -156,7 +139,6 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(fileContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -167,7 +149,6 @@ public class FileRestImpl implements FileRest {
 	@Override
 	public Response editFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@Valid PermissionsIO permissions) {
-		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, fileContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();

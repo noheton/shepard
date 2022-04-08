@@ -20,13 +20,11 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
 		+ Constants.DATAOBJECT_ID + "}/" + Constants.DATAOBJECT_REFERENCES)
-@Slf4j
 public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	private DataObjectReferenceService dataObjectReferenceService = new DataObjectReferenceService();
 
@@ -37,7 +35,6 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	@Override
 	public Response getAllDataObjectReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
 		var references = dataObjectReferenceService.getAllDataObjectReferences(dataObjectId);
 		var result = new ArrayList<DataObjectReferenceIO>(references.size());
 		for (var reference : references) {
@@ -52,8 +49,6 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response getDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		log.info("Received GET request with reference Id {} from user {}", dataObjectReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var result = dataObjectReferenceService.getDataObjectReference(dataObjectReferenceId);
 		return Response.ok(new DataObjectReferenceIO(result)).build();
 	}
@@ -64,7 +59,6 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response createDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectReferenceIO dataObjectReference)
 			throws InvalidBodyException {
-		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
 		var result = dataObjectReferenceService.createDataObjectReference(dataObjectId, dataObjectReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new DataObjectReferenceIO(result)).status(Status.CREATED).build();
@@ -77,8 +71,6 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response deleteDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		log.info("Received DELETE request with reference Id {} from user {}", dataObjectReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var result = dataObjectReferenceService.deleteDataObjectReference(dataObjectReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -91,8 +83,6 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response getDataObjectReferencePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		log.info("Received GET PAYLOAD request with reference Id {} from user {}", dataObjectReferenceId,
-				securityContext.getUserPrincipal().getName());
 		var payload = dataObjectReferenceService.getPayload(dataObjectReferenceId);
 		return payload != null ? Response.ok(new DataObjectIO(payload)).build()
 				: Response.status(Status.NOT_FOUND).build();

@@ -29,12 +29,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.TIMESERIES)
-@Slf4j
 public class TimeseriesRestImpl implements TimeseriesRest {
 	private TimeseriesContainerService timeseriesContainerService = new TimeseriesContainerService();
 	private PermissionsService permissionsService = new PermissionsService();
@@ -48,8 +46,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		log.info("Received GET ALL request from user {}", securityContext.getUserPrincipal().getName());
-
 		var params = new QueryParamHelper();
 		if (name != null)
 			params = params.withName(name);
@@ -70,9 +66,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
 	@Override
 	public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		log.info("Received GET request with container Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesContainerService.getTimeseriesContainer(timeseriesId);
 
 		return Response.ok(new TimeseriesContainerIO(result)).build();
@@ -81,8 +74,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@POST
 	@Override
 	public Response createTimeseriesContainer(TimeseriesContainerIO timeseriesContainer) {
-		log.info("Received POST request with from user {}", securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesContainerService.createTimeseriesContainer(timeseriesContainer,
 				securityContext.getUserPrincipal().getName());
 
@@ -94,9 +85,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Subscribable
 	@Override
 	public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		log.info("Received DELETE request with container Id {} from user {}", timeseriesId,
-				securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesContainerService.deleteTimeseriesContainer(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
@@ -110,8 +98,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Override
 	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			TimeseriesPayload payload) {
-		log.info("Received POST TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
-
 		var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);
 
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
@@ -122,8 +108,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
 	@Override
 	public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		log.info("Received GET TIMESERIES AVAILABLE request from user {}",
-				securityContext.getUserPrincipal().getName());
 		return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesId)).build();
 	}
 
@@ -140,8 +124,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
 			@QueryParam(Constants.FUNCTION) AggregateFunction function,
 			@QueryParam(Constants.GROUP_BY) Long groupByInterval) {
-		log.info("Received GET TIMESERIES request from user {}", securityContext.getUserPrincipal().getName());
-
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
@@ -157,7 +139,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		log.info("Received GET PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.getPermissionsByEntity(timeseriesId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
@@ -168,7 +149,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Override
 	public Response editTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			@Valid PermissionsIO permissions) {
-		log.info("Received PUT PERMISSIONS request from user {}", securityContext.getUserPrincipal().getName());
 		var perms = permissionsService.updatePermissions(permissions, timeseriesId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
