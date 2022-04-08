@@ -68,9 +68,7 @@ public class CollectionService {
 	 */
 	public List<Collection> getAllCollections(QueryParamHelper params, String username) {
 		var queryResult = collectionDAO.findAllCollections(params, username);
-
 		var collections = queryResult.stream().map(this::cutDeleted).toList();
-
 		return collections;
 	}
 
@@ -107,7 +105,6 @@ public class CollectionService {
 	public boolean deleteCollection(long collectionId, String username) {
 		var date = dateHelper.getDate();
 		var user = userDAO.find(username);
-
 		var result = collectionDAO.deleteCollection(collectionId, user, date);
 		return result;
 	}

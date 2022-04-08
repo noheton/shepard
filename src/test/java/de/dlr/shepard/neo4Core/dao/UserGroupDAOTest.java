@@ -17,6 +17,8 @@ import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class UserGroupDAOTest extends BaseTestCase {
 
@@ -54,14 +56,47 @@ public class UserGroupDAOTest extends BaseTestCase {
 	}
 
 	@Test
-	public void findAllUserGroupsTest() {
+	public void findAllUserGroupsTestFullParams() {
+		QueryParamHelper params = new QueryParamHelper();
+		params = params.withPageAndSize(3, 4);
+		params = params.withOrderByAttribute(DataObjectAttributes.name, false);
 		var userGroup = new UserGroup();
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
-		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  ORDER BY toLower(ug.name) SKIP $offset LIMIT $size MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
 		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
-		var actual = dao.findAllUserGroups(username);
+		var actual = dao.findAllUserGroups(params, username);
+		verify(session).query(UserGroup.class, query, Collections.emptyMap());
+		assertEquals(List.of(userGroup), actual);
+	}
+
+	@Test
+	public void findAllUserGroupsTestNoPagination() {
+		QueryParamHelper params = new QueryParamHelper();
+		params = params.withOrderByAttribute(DataObjectAttributes.name, false);
+		var userGroup = new UserGroup();
+		userGroup.setName("AKP");
+		userGroup.setId(1L);
+		String username = "user";
+		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  ORDER BY toLower(ug.name) MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
+		var actual = dao.findAllUserGroups(params, username);
+		verify(session).query(UserGroup.class, query, Collections.emptyMap());
+		assertEquals(List.of(userGroup), actual);
+	}
+
+	@Test
+	public void findAllUserGroupsTestNoOrderBy() {
+		QueryParamHelper params = new QueryParamHelper();
+		params = params.withPageAndSize(3, 4);
+		var userGroup = new UserGroup();
+		userGroup.setName("AKP");
+		userGroup.setId(1L);
+		String username = "user";
+		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  SKIP $offset LIMIT $size MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
+		var actual = dao.findAllUserGroups(params, username);
 		verify(session).query(UserGroup.class, query, Collections.emptyMap());
 		assertEquals(List.of(userGroup), actual);
 	}

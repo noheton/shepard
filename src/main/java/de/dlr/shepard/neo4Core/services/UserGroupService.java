@@ -12,6 +12,7 @@ import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class UserGroupService {
 
@@ -20,8 +21,8 @@ public class UserGroupService {
 	private PermissionsDAO permissionsDAO = new PermissionsDAO();
 	private DateHelper dateHelper = new DateHelper();
 
-	public List<UserGroup> getAllUserGroups(String username) {
-		return userGroupDAO.findAllUserGroups(username);
+	public List<UserGroup> getAllUserGroups(QueryParamHelper params, String username) {
+		return userGroupDAO.findAllUserGroups(params, username);
 	}
 
 	public UserGroup getUserGroup(Long userGroupId) {

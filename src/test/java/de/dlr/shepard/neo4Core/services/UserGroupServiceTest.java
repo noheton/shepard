@@ -26,6 +26,7 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class UserGroupServiceTest extends BaseTestCase {
 
@@ -95,8 +96,9 @@ public class UserGroupServiceTest extends BaseTestCase {
 	@Test
 	public void getAllUserGroupsTest() {
 		List<UserGroup> allUserGroups = new ArrayList<UserGroup>();
-		when(userGroupDAO.findAllUserGroups("user1")).thenReturn(allUserGroups);
-		assertEquals(service.getAllUserGroups("user1").size(), 0);
+		QueryParamHelper params = new QueryParamHelper();
+		when(userGroupDAO.findAllUserGroups(params, "user1")).thenReturn(allUserGroups);
+		assertEquals(service.getAllUserGroups(params, "user1").size(), 0);
 	}
 
 	@Test

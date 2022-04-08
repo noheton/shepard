@@ -2,6 +2,7 @@ package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -19,7 +20,7 @@ public interface UserGroupRest {
 	@Operation(description = "Get all usergroups")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserGroupIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllUserGroups();
+	Response getAllUserGroups(Integer page, Integer size, DataObjectAttributes orderAttribute, Boolean orderDesc);
 
 	@Tag(name = Constants.USERGROUP)
 	@Operation(description = "Get usergroup")
