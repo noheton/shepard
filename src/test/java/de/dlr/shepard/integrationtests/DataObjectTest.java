@@ -2,6 +2,7 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
+import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -20,21 +22,61 @@ import io.restassured.specification.RequestSpecification;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectTest extends BaseTestCaseIT {
 	private static CollectionIO collection;
+	private static CollectionIO collectionForOrderByTest;
 	private static RequestSpecification requestSpecification;
+	private static RequestSpecification orderByRequestSpecification;
 
 	private static String dataObjectsURL;
+	private static String orderByDataObjectsURL;
 	private static DataObjectIO dataObject;
 	private static DataObjectIO child;
 	private static DataObjectIO successor;
 	private static DataObjectIO successorAndChild;
+	private static DataObjectIO aDataObject;
+	private static DataObjectIO bDataObject;
+	private static DataObjectIO cDataObject;
+	private static DataObjectIO dDataObject;
+	private static DataObjectIO eDataObject;
+	private static DataObjectIO fDataObject;
 
 	@BeforeAll
 	public static void setUp() {
 		collection = createCollection("DataObjectTestCollection");
+		collectionForOrderByTest = createCollection("OrderByTestCollection");
 
 		dataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL, collection.getId());
+		orderByDataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL,
+				collectionForOrderByTest.getId());
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(dataObjectsURL)
 				.addHeader("X-API-KEY", jws).build();
+		orderByRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(orderByDataObjectsURL).addHeader("X-API-KEY", jws).build();
+
+		var aInput = new DataObjectIO();
+		aInput.setName("a");
+		aDataObject = given().spec(orderByRequestSpecification).body(aInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+		var bInput = new DataObjectIO();
+		bInput.setName("b");
+		bDataObject = given().spec(orderByRequestSpecification).body(bInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+		var cInput = new DataObjectIO();
+		cInput.setName("c");
+		cDataObject = given().spec(orderByRequestSpecification).body(cInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+		var dInput = new DataObjectIO();
+		dInput.setName("d");
+		dDataObject = given().spec(orderByRequestSpecification).body(dInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+		var eInput = new DataObjectIO();
+		eInput.setName("e");
+		eDataObject = given().spec(orderByRequestSpecification).body(eInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+		var fInput = new DataObjectIO();
+		fInput.setName("f");
+		fDataObject = given().spec(orderByRequestSpecification).body(fInput).when().post().then().statusCode(201)
+				.extract().as(DataObjectIO.class);
+
 	}
 
 	@Test
@@ -303,4 +345,95 @@ public class DataObjectTest extends BaseTestCaseIT {
 
 		given().spec(requestSpecification).when().get(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
 	}
+
+	@Test
+	@Order(18)
+	public void getOrderByName() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.name).when().get().then().statusCode(200).extract()
+				.as(DataObjectIO[].class);
+		assertEquals(response[0], aDataObject);
+		assertEquals(response[1], bDataObject);
+		assertEquals(response[2], cDataObject);
+		assertEquals(response[3], dDataObject);
+		assertEquals(response[4], eDataObject);
+		assertEquals(response[5], fDataObject);
+	}
+
+	@Test
+	@Order(19)
+	public void getOrderByNameDesc() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.name).queryParam("orderDesc", true).when().get().then()
+				.statusCode(200).extract().as(DataObjectIO[].class);
+		assertEquals(response[0], fDataObject);
+		assertEquals(response[1], eDataObject);
+		assertEquals(response[2], dDataObject);
+		assertEquals(response[3], cDataObject);
+		assertEquals(response[4], bDataObject);
+		assertEquals(response[5], aDataObject);
+	}
+
+	@Test
+	@Order(19)
+	public void getOrderByCreatedAt() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false).when().get()
+				.then().statusCode(200).extract().as(DataObjectIO[].class);
+		assertEquals(response[0], aDataObject);
+		assertEquals(response[1], bDataObject);
+		assertEquals(response[2], cDataObject);
+		assertEquals(response[3], dDataObject);
+		assertEquals(response[4], eDataObject);
+		assertEquals(response[5], fDataObject);
+	}
+
+	@Test
+	@Order(20)
+	public void getOrderByCreatedFirstPage() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
+				.queryParam("page", 0).queryParam("size", 3).when().get().then().statusCode(200).extract()
+				.as(DataObjectIO[].class);
+		assertEquals(response[0], aDataObject);
+		assertEquals(response[1], bDataObject);
+		assertEquals(response[2], cDataObject);
+	}
+
+	@Test
+	@Order(21)
+	public void getOrderByCreatedSecondPage() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
+				.queryParam("page", 1).queryParam("size", 3).when().get().then().statusCode(200).extract()
+				.as(DataObjectIO[].class);
+		assertEquals(response[0], dDataObject);
+		assertEquals(response[1], eDataObject);
+		assertEquals(response[2], fDataObject);
+	}
+
+	@Test
+	@Order(22)
+	public void getOrderByCreatedDescSecondPage() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)
+				.queryParam("page", 1).queryParam("size", 3).when().get().then().statusCode(200).extract()
+				.as(DataObjectIO[].class);
+		assertEquals(response[0], cDataObject);
+		assertEquals(response[1], bDataObject);
+		assertEquals(response[2], aDataObject);
+	}
+
+	@Test
+	@Order(23)
+	public void getOrderByCreatedDescFirstPage() {
+		DataObjectIO[] response = given().spec(orderByRequestSpecification)
+				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)
+				.queryParam("page", 0).queryParam("size", 3).when().get().then().statusCode(200).extract()
+				.as(DataObjectIO[].class);
+		assertEquals(response[0], fDataObject);
+		assertEquals(response[1], eDataObject);
+		assertEquals(response[2], dDataObject);
+	}
+
 }
