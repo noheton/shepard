@@ -10,10 +10,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
+import org.influxdb.dto.BatchPoints;
+import org.influxdb.dto.Point;
 import org.influxdb.dto.QueryResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
 
@@ -102,105 +110,86 @@ public class InfluxUtilTest extends BaseTestCase {
 		assertEquals(expected, actual);
 	}
 
-	@Test
-	public void createBatchTest_expectedTypeString() {
+	private static Stream<Arguments> createBatchTest() {
+		// @formatter:off
+		return Stream.of(
+				// String
+				Arguments.of("test", "string", "test", "string"),
+				Arguments.of(123, "string", "123", "string"),
+				Arguments.of(true, "string", "true", "string"),
+				Arguments.of(Byte.valueOf("64"), "string", "64", "string"),
+				Arguments.of("test", "", "test", "string"),
+				// Double
+				Arguments.of("123", "float", 123d, "double"),
+				Arguments.of(123, "float", 123d, "double"),
+				Arguments.of(Byte.valueOf("64"), "float", 64d, "double"),
+				Arguments.of(123, "", 123d, "double"),
+				// Long
+				Arguments.of("123", "integer", 123L, "long"),
+				Arguments.of(123, "integer", 123L, "long"),
+				Arguments.of(Byte.valueOf("64"), "integer", 64L, "long"),
+				// Boolean
+				Arguments.of("true", "boolean", true, "boolean"),
+				Arguments.of(false, "boolean", false, "boolean"),
+				Arguments.of(Byte.valueOf("64"), "boolean", false, "boolean"),
+				Arguments.of(true, "", true, "boolean")
+				);
+		// @formatter:on
+	}
+
+	@ParameterizedTest
+	@MethodSource
+	public void createBatchTest(Object value, String expectedType, Object converted, String clazz) {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, 123);
-		var payload = new TimeseriesPayload(ts, List.of(point));
+		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(1634711033000000L, value)));
 
-		var actual = InfluxUtil.createBatch("db", payload, "string");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=\"123\" 1634711033000000";
+		var point = Point.measurement("meas").tag(Map.of("device", "dev", "location", "loc", "symbolic_name", "name"))
+				.time(1634711033000000L, TimeUnit.NANOSECONDS);
+		switch (clazz) {
+		case "string":
+			point.addField("field", (String) converted);
+			break;
+		case "double":
+			point.addField("field", (Double) converted);
+			break;
+		case "long":
+			point.addField("field", (Long) converted);
+			break;
+		case "boolean":
+			point.addField("field", (Boolean) converted);
+			break;
+		}
 
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
+		var actual = InfluxUtil.createBatch("db", payload, expectedType);
+		var expected = BatchPoints.database("db").point(point.build()).build();
+
+		assertEquals(expected, actual);
 	}
 
 	@Test
-	public void createBatchTest_int() {
+	public void createBatchTest_NFE() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, 123);
-		var payload = new TimeseriesPayload(ts, List.of(point));
+		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(1634711033000000L, "test"),
+				new InfluxPoint(1634711033000000L, "123"), new InfluxPoint(1634711033000000L, "bla")));
 
-		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=123.0 1634711033000000";
+		var point = Point.measurement("meas").tag(Map.of("device", "dev", "location", "loc", "symbolic_name", "name"))
+				.time(1634711033000000L, TimeUnit.NANOSECONDS).addField("field", 123d).build();
 
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
+		var actual = InfluxUtil.createBatch("db", payload, "float");
+		var expected = BatchPoints.database("db").point(point).build();
+
+		assertEquals(expected, actual);
 	}
 
 	@Test
-	public void createBatchTest_float() {
+	public void createBatchTest_Null() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, 123.5);
-		var payload = new TimeseriesPayload(ts, List.of(point));
+		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(1634711033000000L, null)));
 
 		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=123.5 1634711033000000";
+		var expected = BatchPoints.database("db").build();
 
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
-	}
-
-	@Test
-	public void createBatchTest_boolean() {
-		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, true);
-		var payload = new TimeseriesPayload(ts, List.of(point));
-
-		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=true 1634711033000000";
-
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
-	}
-
-	@Test
-	public void createBatchTest_string() {
-		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, "bla");
-		var payload = new TimeseriesPayload(ts, List.of(point));
-
-		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=\"bla\" 1634711033000000";
-
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
-	}
-
-	@Test
-	public void createBatchTest_byte() {
-		byte b = 123;
-		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, b);
-		var payload = new TimeseriesPayload(ts, List.of(point));
-
-		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=123.0 1634711033000000";
-
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
-	}
-
-	@Test
-	public void createBatchTest_object() {
-		var obj = new Object();
-		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var point = new InfluxPoint(1634711033000000L, obj);
-		var payload = new TimeseriesPayload(ts, List.of(point));
-
-		var actual = InfluxUtil.createBatch("db", payload, "");
-		var expected = "meas,device=dev,location=loc,symbolic_name=name field=\"" + obj.toString()
-				+ "\" 1634711033000000";
-
-		assertEquals("db", actual.getDatabase());
-		assertEquals(1, actual.getPoints().size());
-		assertEquals(expected, actual.getPoints().get(0).lineProtocol());
+		assertEquals(expected, actual);
 	}
 
 	@Test

@@ -1,6 +1,11 @@
 package de.dlr.shepard.endpoints;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.AggregateFunction;
@@ -133,6 +138,47 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 				groupByInterval);
 
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/export")
+	@Override
+	public Response exportTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
+			@QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
+			@QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
+			@QueryParam(Constants.SYMBOLICNAME) @Parameter(required = true) String symbolicName,
+			@QueryParam(Constants.FIELD) @Parameter(required = true) String field,
+			@QueryParam(Constants.START) @Parameter(required = true) long start,
+			@QueryParam(Constants.END) @Parameter(required = true) long end,
+			@QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.GROUP_BY) Long groupByInterval) throws IOException {
+
+		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
+
+		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+		var result = timeseriesContainerService.exportTimeseries(timeseriesId, timeseries, start, end, function,
+				groupByInterval);
+		return result != null
+				? Response.ok(result, MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"").build()
+				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@POST
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/import")
+	@Subscribable
+	@Override
+	public Response importTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+			@FormDataParam(Constants.FILE) InputStream fileInputStream,
+			@FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData) throws IOException {
+		var result = timeseriesContainerService.importTimeseries(timeseriesId, fileInputStream);
+
+		return result ? Response.ok().build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@GET

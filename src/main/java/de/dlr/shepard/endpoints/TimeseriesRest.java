@@ -1,5 +1,10 @@
 package de.dlr.shepard.endpoints;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -8,6 +13,7 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +21,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public interface TimeseriesRest {
@@ -63,6 +70,22 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
 			String field, long start, long end, AggregateFunction function, Long groupByInterval);
+
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Export timeseries payload")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response exportTimeseries(long timeseriesId, String measurement, String location, String device,
+			String symbolicName, String field, long start, long end, AggregateFunction function, Long groupByInterval)
+			throws IOException;
+
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Import timeseries payload")
+	@ApiResponse(description = "ok", responseCode = "200")
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response importTimeseries(long timeseriesId,
+			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "Timeseries as CSV")) InputStream fileInputStream,
+			@Parameter(hidden = true) FormDataContentDisposition fileMetaData) throws IOException;
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get permissions")

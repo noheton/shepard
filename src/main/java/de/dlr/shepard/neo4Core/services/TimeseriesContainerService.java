@@ -1,5 +1,8 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.influxDB.AggregateFunction;
@@ -149,7 +152,38 @@ public class TimeseriesContainerService {
 	 */
 	public List<Timeseries> getTimeseriesAvailable(long timeseriesContainerId) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
+			return Collections.emptyList();
+		}
 		return timeseriesService.getTimeseriesAvailable(timeseriesContainer.getDatabase());
+	}
+
+	public InputStream exportTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
+			AggregateFunction function, Long groupByInterval) throws IOException {
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
+			return null;
+		}
+		var result = timeseriesService.exportTimeseries(start, end, timeseriesContainer.getDatabase(),
+				List.of(timeseries), function, groupByInterval, Collections.emptySet(), Collections.emptySet(),
+				Collections.emptySet());
+		return result;
+	}
+
+	public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
+		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
+			return false;
+		}
+		var result = timeseriesService.importTimeseries(timeseriesContainer.getDatabase(), stream);
+		if (!result.isBlank()) {
+			log.error("Failed to import timeseries with error: {}", result);
+			return false;
+		}
+		return true;
 	}
 
 }

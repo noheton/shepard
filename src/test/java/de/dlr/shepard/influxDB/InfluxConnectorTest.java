@@ -104,15 +104,14 @@ public class InfluxConnectorTest extends BaseTestCase {
 	@Test
 	public void testSaveTimeseries() {
 		String queryString = String.format("SHOW FIELD KEYS ON \"%s\" FROM %s", database, measurement);
-		int value = 10;
+		var value = 10.0;
 		TimeseriesPayload timeseries = configureTimeseries(value);
 		BatchPoints points = BatchPoints.database(database).build();
 		Builder pointBuilder = configurePointBuilder(timeseries);
-		pointBuilder.time(timestamp, TimeUnit.NANOSECONDS).addField(timeseries.getTimeseries().getField(),
-				Integer.valueOf(value).doubleValue());
+		pointBuilder.time(timestamp, TimeUnit.NANOSECONDS).addField(timeseries.getTimeseries().getField(), value);
 		points.point(pointBuilder.build());
 
-		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey("int"));
+		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey("float"));
 		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(getShowDatabases(database));
 
 		var actual = connector.saveTimeseries(database, timeseries);

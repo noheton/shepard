@@ -46,8 +46,8 @@ public class TimeseriesService {
 	 * Queries the database for many timeseries in parallel. Returns a list of
 	 * timeseries. If the filter sets are empty, no filtering takes place.
 	 *
-	 * @param startTimeStamp        The beginning of the timeseries
-	 * @param endTimeStamp          The end of the timeseries
+	 * @param start                 The beginning of the timeseries
+	 * @param end                   The end of the timeseries
 	 * @param database              The database to be queried
 	 * @param timeseriesList        The list of timeseries whose points are queried
 	 * @param function              The aggregate function
@@ -57,14 +57,14 @@ public class TimeseriesService {
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
 	 * @return a list of timeseries with influx points
 	 */
-	public List<TimeseriesPayload> getTimeseriesList(long startTimeStamp, long endTimeStamp, String database,
+	public List<TimeseriesPayload> getTimeseriesList(long start, long end, String database,
 			List<Timeseries> timeseriesList, AggregateFunction function, Long groupByInterval,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
 		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
 		timeseriesList.parallelStream().forEach(timeseries -> {
 			TimeseriesPayload payload = null;
 			if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
-				payload = getTimeseries(startTimeStamp, endTimeStamp, database, timeseries, function, groupByInterval);
+				payload = getTimeseries(start, end, database, timeseries, function, groupByInterval);
 			}
 			if (payload != null) {
 				timeseriesQueue.add(payload);
@@ -82,6 +82,51 @@ public class TimeseriesService {
 	 */
 	public List<Timeseries> getTimeseriesAvailable(String database) {
 		return influxConnector.getTimeseriesAvailable(database);
+	}
+
+	/**
+	 * Export timeseries as CSV File. If the filter sets are empty, no filtering
+	 * takes place.
+	 *
+	 * @param start                 The beginning of the timeseries
+	 * @param end                   The end of the timeseries
+	 * @param database              The database to be queried
+	 * @param timeseriesList        The list of timeseries whose points are queried
+	 * @param function              The aggregate function
+	 * @param groupByInterval       The time interval measurements get grouped by
+	 * @param devicesFilterSet      A set of allowed devices or an empty set
+	 * @param locationsFilterSet    A set of allowed locations or an empty set
+	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
+	 * @return InputStream containing the CSV file
+	 * @throws IOException When the CSV file could not be written
+	 */
+	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseriesList,
+			AggregateFunction function, Long groupByInterval, Set<String> devicesFilterSet,
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
+		var payload = getTimeseriesList(start, end, database, timeseriesList, function, groupByInterval,
+				devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+		var stream = csvConverter.convertToCsv(payload);
+		return stream;
+	}
+
+	/**
+	 * Import multiple timeseries from a CSV file
+	 *
+	 * @param database The database to write to
+	 * @param stream   The InputStream containing the CSV file
+	 * @return An error if there was a problem, empty string if all went well
+	 * @throws IOException When the CSV file could not be read
+	 */
+	public String importTimeseries(String database, InputStream stream) throws IOException {
+		List<String> errors = new ArrayList<>();
+		var timeseriesList = csvConverter.convertToPayload(stream);
+		for (var timeseries : timeseriesList) {
+			var error = createTimeseries(database, timeseries);
+			if (!error.isBlank()) {
+				errors.add(error);
+			}
+		}
+		return String.join(", ", errors);
 	}
 
 	/**
@@ -113,15 +158,6 @@ public class TimeseriesService {
 			symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
 		}
 		return deviceMatches && locatioMatches && symbolicNameMatches;
-	}
-
-	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseries,
-			AggregateFunction function, Long groupByInterval, Set<String> devicesFilterSet,
-			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
-		var payload = getTimeseriesList(start, end, database, timeseries, function, groupByInterval, devicesFilterSet,
-				locationsFilterSet, symbolicNameFilterSet);
-		var stream = csvConverter.convertToCsv(payload);
-		return stream;
 	}
 
 }

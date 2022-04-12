@@ -62,7 +62,7 @@ public class CsvConverterTest extends BaseTestCase {
 		var p2String = new InfluxPoint(234L, "123");
 		var p3String = new InfluxPoint(345L, "true");
 		var p4String = new InfluxPoint(465L, "another string");
-		var p5String = new InfluxPoint(567L, "");
+		var p5String = new InfluxPoint(567L, null);
 
 		var payload = service.convertToPayload(new ByteArrayInputStream(csv.getBytes()));
 		var payload1 = new TimeseriesPayload(ts1, List.of(p1String, p2String, p3String, p4String, p5String));

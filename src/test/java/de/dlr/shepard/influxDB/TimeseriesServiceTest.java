@@ -147,4 +147,18 @@ public class TimeseriesServiceTest extends BaseTestCase {
 		assertEquals(is, actual);
 	}
 
+	@Test
+	public void importTimeseriesTest() throws IOException {
+		var is = new ByteArrayInputStream("Hello World".getBytes());
+		var errorPayload = new TimeseriesPayload(new Timeseries("meas", "dev", "loc", "sym", "field"),
+				List.of(new InfluxPoint(123, "asdf")));
+
+		when(converter.convertToPayload(is)).thenReturn(List.of(payload, errorPayload));
+		when(connector.saveTimeseries("db", payload)).thenReturn("");
+		when(connector.saveTimeseries("db", errorPayload)).thenReturn("error");
+
+		var actual = service.importTimeseries("db", is);
+		assertEquals("error", actual);
+	}
+
 }

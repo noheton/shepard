@@ -24,6 +24,10 @@ public final class InfluxUtil {
 	}
 
 	private static final long MULTIPLIER_NANO = 1000000000L;
+	private static final String FIELD_FLOAT = "float";
+	private static final String FIELD_INT = "integer";
+	private static final String FIELD_STRING = "string";
+	private static final String FIELD_BOOL = "boolean";
 
 	/**
 	 * Build an influx query with the given parameters.
@@ -85,6 +89,7 @@ public final class InfluxUtil {
 	 * @return influx batch points
 	 */
 	public static BatchPoints createBatch(String database, TimeseriesPayload timeseriesPayload, String expectedType) {
+		String error = "";
 		BatchPoints batchPoints = BatchPoints.database(database).build();
 		var influxPoints = timeseriesPayload.getPoints();
 		var timeseries = timeseriesPayload.getTimeseries();
@@ -95,21 +100,46 @@ public final class InfluxUtil {
 					.tag(Constants.SYMBOLICNAME, timeseries.getSymbolicName())
 					.time(influxPoint.getTimeInNanoseconds(), TimeUnit.NANOSECONDS);
 			Object value = influxPoint.getValue();
-			if ("string".equalsIgnoreCase(expectedType)) {
+
+			if (expectedType.equals(FIELD_STRING)) {
+				// Expected type is string, we use value.toString()
 				pointBuilder.addField(timeseries.getField(), value.toString());
-			} else if (value instanceof String stringValue) {
-				pointBuilder.addField(timeseries.getField(), stringValue);
-			} else if (value instanceof Number numberValue) {
+			} else if (value instanceof Number numberValue
+					&& (expectedType.equals(FIELD_FLOAT) || expectedType.isBlank())) {
+				// value is a number and float or nothing is expected
 				pointBuilder.addField(timeseries.getField(), numberValue.doubleValue());
-			} else if (value instanceof Boolean booleanValue) {
+			} else if (value instanceof Number numberValue && expectedType.equals(FIELD_INT)) {
+				// value is a number and int or nothing is expected
+				pointBuilder.addField(timeseries.getField(), numberValue.longValue());
+			} else if (value instanceof Boolean booleanValue
+					&& (expectedType.equals(FIELD_BOOL) || expectedType.isBlank())) {
+				// value is a boolean and boolean or nothing is expected
 				pointBuilder.addField(timeseries.getField(), booleanValue);
-			} else {
-				pointBuilder.addField(timeseries.getField(), value.toString());
+			} else if (value != null) {
+				// value is another object
+				var stringValue = value.toString();
+				try {
+					switch (expectedType) {
+					case FIELD_FLOAT -> pointBuilder.addField(timeseries.getField(), Double.parseDouble(stringValue));
+					case FIELD_INT -> pointBuilder.addField(timeseries.getField(), Long.parseLong(stringValue));
+					case FIELD_BOOL -> pointBuilder.addField(timeseries.getField(), Boolean.parseBoolean(stringValue));
+					default -> pointBuilder.addField(timeseries.getField(), stringValue);
+					}
+				} catch (NumberFormatException e) {
+					if (error.isBlank())
+						// log the first error
+						error = String.format("Invalid influx point, cannot cast %s into %s", stringValue,
+								expectedType);
+				}
 			}
-			batchPoints.point(pointBuilder.build());
+			if (pointBuilder.hasFields())
+				batchPoints.point(pointBuilder.build());
 		}
+		if (!error.isBlank())
+			log.error(error);
 
 		return batchPoints;
+
 	}
 
 	/**

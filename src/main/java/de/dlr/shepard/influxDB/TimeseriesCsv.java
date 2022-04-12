@@ -30,6 +30,5 @@ public class TimeseriesCsv {
 	private String field;
 
 	@CsvBindByName
-	private String value;
-
+	private Object value;
 }

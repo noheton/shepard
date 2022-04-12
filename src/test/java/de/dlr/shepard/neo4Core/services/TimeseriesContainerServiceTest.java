@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -277,6 +280,119 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		var actual = service.getTimeseriesAvailable(1L);
 		assertEquals(expected, actual);
+	}
+
+	@Test
+	public void getTimeseriesAvailableTest_containerNull() {
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.getTimeseriesAvailable(1L);
+		assertEquals(0, actual.size());
+	}
+
+	@Test
+	public void getTimeseriesAvailableTest_containerDeleted() {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		container.setDeleted(true);
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.getTimeseriesAvailable(1L);
+		assertEquals(0, actual.size());
+	}
+
+	@Test
+	public void exportTimeseriesTest() throws IOException {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var start = 123L;
+		var end = 456L;
+		var payload = new ByteArrayInputStream("123".getBytes());
+
+		when(dao.find(1L)).thenReturn(container);
+		when(timeseriesService.exportTimeseries(start, end, "database", List.of(ts), AggregateFunction.MEAN, 10L,
+				Collections.emptySet(), Collections.emptySet(), Collections.emptySet())).thenReturn(payload);
+
+		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		assertEquals(payload, actual);
+	}
+
+	@Test
+	public void exportTimeseriesTest_containerNull() throws IOException {
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var start = 123L;
+		var end = 456L;
+
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		assertNull(actual);
+	}
+
+	@Test
+	public void exportTimeseriesTest_containerDeleted() throws IOException {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		container.setDeleted(true);
+		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var start = 123L;
+		var end = 456L;
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		assertNull(actual);
+	}
+
+	@Test
+	public void importTimeseriesTest() throws IOException {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		var payload = new ByteArrayInputStream("123".getBytes());
+
+		when(dao.find(1L)).thenReturn(container);
+		when(timeseriesService.importTimeseries("database", payload)).thenReturn("");
+
+		var actual = service.importTimeseries(1L, payload);
+		assertTrue(actual);
+	}
+
+	@Test
+	public void importTimeseriesTest_Error() throws IOException {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		var payload = new ByteArrayInputStream("123".getBytes());
+
+		when(dao.find(1L)).thenReturn(container);
+		when(timeseriesService.importTimeseries("database", payload)).thenReturn("error");
+
+		var actual = service.importTimeseries(1L, payload);
+		assertFalse(actual);
+	}
+
+	@Test
+	public void importTimeseriesTest_containerNull() throws IOException {
+		var payload = new ByteArrayInputStream("123".getBytes());
+
+		when(dao.find(1L)).thenReturn(null);
+
+		var actual = service.importTimeseries(1L, payload);
+		assertFalse(actual);
+	}
+
+	@Test
+	public void importTimeseriesTest_containerDeleted() throws IOException {
+		var container = new TimeseriesContainer(1L);
+		container.setDatabase("database");
+		container.setDeleted(true);
+		var payload = new ByteArrayInputStream("123".getBytes());
+
+		when(dao.find(1L)).thenReturn(container);
+
+		var actual = service.importTimeseries(1L, payload);
+		assertFalse(actual);
 	}
 
 }
