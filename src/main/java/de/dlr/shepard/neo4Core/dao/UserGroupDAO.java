@@ -23,7 +23,7 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		var query = String.format("MATCH %s WHERE %s ", getObjectPart("ug", "UserGroup", false),
+		var query = String.format("MATCH %s WHERE %s WITH ug", getObjectPart("ug", "UserGroup", false),
 				PermissionsUtil.getReadableByQuery("ug", username));
 		if (params.hasOrderByAttribute()) {
 			query += " " + getOrderByPart("ug", params.getOrderByAttribute(), params.getOrderDesc());

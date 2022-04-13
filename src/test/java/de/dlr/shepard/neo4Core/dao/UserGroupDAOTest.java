@@ -64,7 +64,14 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
-		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  ORDER BY toLower(ug.name) SKIP $offset LIMIT $size MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		String query = """
+				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
+				WITH ug ORDER BY toLower(ug.name) SKIP $offset LIMIT $size \
+				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
 		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
 		verify(session).query(UserGroup.class, query, Collections.emptyMap());
@@ -79,7 +86,14 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
-		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  ORDER BY toLower(ug.name) MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		String query = """
+				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
+				WITH ug ORDER BY toLower(ug.name) \
+				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
 		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
 		verify(session).query(UserGroup.class, query, Collections.emptyMap());
@@ -94,7 +108,14 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
-		String query = "MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"})))  SKIP $offset LIMIT $size MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)";
+		String query = """
+				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
+				WITH ug SKIP $offset LIMIT $size \
+				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
 		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
 		verify(session).query(UserGroup.class, query, Collections.emptyMap());
