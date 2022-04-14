@@ -44,8 +44,15 @@ public class UserGroupTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws).build();
 		userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then().statusCode(201)
 				.extract().as(UserGroupIO.class);
-		userGroup.setId(userGroupCreated.getId());
-		assertEquals(userGroup, userGroupCreated);
+		userGroup = userGroupCreated;
+
+		assertThat(userGroupCreated.getId()).isNotNull();
+		assertThat(userGroupCreated.getCreatedAt()).isNotNull();
+		assertThat(userGroupCreated.getCreatedBy()).isEqualTo("user");
+		assertThat(userGroupCreated.getName()).isEqualTo("userGroup");
+		assertThat(userGroupCreated.getUsernames()).containsExactly("user1");
+		assertThat(userGroupCreated.getUpdatedAt()).isNull();
+		assertThat(userGroupCreated.getUpdatedBy()).isNull();
 	}
 
 	@Test
@@ -75,9 +82,10 @@ public class UserGroupTest extends BaseTestCaseIT {
 		userGroupChanged = given().spec(userGroupSpecification).body(userGroup).when()
 				.put(userGroupURL + "/" + userGroupCreated.getId()).then().statusCode(200).extract()
 				.as(UserGroupIO.class);
-		assertEquals(userGroupChanged.getName(), "changedUserGroup");
-		assertEquals(userGroupChanged.getUsernames().length, 1);
-		assertEquals(userGroupChanged.getUsernames()[0], "user");
+		assertThat(userGroupChanged.getName()).isEqualTo("changedUserGroup");
+		assertThat(userGroupChanged.getUsernames()).containsExactly("user");
+		assertThat(userGroupChanged.getUpdatedAt()).isNotNull();
+		assertThat(userGroupChanged.getUpdatedBy()).isEqualTo("user");
 	}
 
 	@Test

@@ -7,8 +7,9 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -64,6 +65,9 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 12);
+		paramsMap.put("size", 4);
 		String query = """
 				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
@@ -72,9 +76,9 @@ public class UserGroupDAOTest extends BaseTestCase {
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
 				WITH ug ORDER BY toLower(ug.name) SKIP $offset LIMIT $size \
 				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
-		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
+		when(session.query(UserGroup.class, query, paramsMap)).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
-		verify(session).query(UserGroup.class, query, Collections.emptyMap());
+		verify(session).query(UserGroup.class, query, paramsMap);
 		assertEquals(List.of(userGroup), actual);
 	}
 
@@ -86,6 +90,7 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
+		Map<String, Object> paramsMap = new HashMap<>();
 		String query = """
 				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
@@ -94,9 +99,9 @@ public class UserGroupDAOTest extends BaseTestCase {
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
 				WITH ug ORDER BY toLower(ug.name) \
 				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
-		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
+		when(session.query(UserGroup.class, query, paramsMap)).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
-		verify(session).query(UserGroup.class, query, Collections.emptyMap());
+		verify(session).query(UserGroup.class, query, paramsMap);
 		assertEquals(List.of(userGroup), actual);
 	}
 
@@ -108,6 +113,9 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setName("AKP");
 		userGroup.setId(1L);
 		String username = "user";
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("offset", 12);
+		paramsMap.put("size", 4);
 		String query = """
 				MATCH (ug:UserGroup { deleted: FALSE }) WHERE (NOT exists((ug)-[:has_permissions]->(:Permissions)) \
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) \
@@ -116,9 +124,9 @@ public class UserGroupDAOTest extends BaseTestCase {
 				OR exists((ug)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) \
 				WITH ug SKIP $offset LIMIT $size \
 				MATCH path=(ug)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ug, nodes(path), relationships(path)""";
-		when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(List.of(userGroup));
+		when(session.query(UserGroup.class, query, paramsMap)).thenReturn(List.of(userGroup));
 		var actual = dao.findAllUserGroups(params, username);
-		verify(session).query(UserGroup.class, query, Collections.emptyMap());
+		verify(session).query(UserGroup.class, query, paramsMap);
 		assertEquals(List.of(userGroup), actual);
 	}
 

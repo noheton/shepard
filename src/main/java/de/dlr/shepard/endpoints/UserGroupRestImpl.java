@@ -6,7 +6,7 @@ import java.util.List;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
-import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
+import de.dlr.shepard.neo4Core.orderBy.UserGroupAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.Constants;
@@ -75,7 +75,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Override
 	public Response getAllUserGroups(@QueryParam(Constants.QP_PAGE) Integer page,
 			@QueryParam(Constants.QP_SIZE) Integer size,
-			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
 		var params = new QueryParamHelper();
 		if (page != null && size != null)
