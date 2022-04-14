@@ -61,13 +61,11 @@ import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   Collection,
-  CollectionApi,
   GetAllCollectionsOrderByEnum,
 } from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface ExploreData {
-  collectionApi?: CollectionApi;
   collections?: Collection[];
   perPage: number;
   currentPage: number;

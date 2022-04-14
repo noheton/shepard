@@ -22,6 +22,14 @@
       Successfully deleted
     </b-alert>
 
+    <FilterListLine
+      :max-objects="totalRows"
+      :default-page="currentPage"
+      :default-size="perPage"
+      :default-descending="descending"
+      :default-order-by="orderBy"
+      @filter-changed="filterChanged($event)"
+    />
     <div v-if="userGroupList == undefined">
       <Loading />
     </div>
@@ -39,6 +47,15 @@
       </b-list-group>
     </div>
 
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="perPage"
+      align="center"
+      size="sm"
+      @change="retrieveUserGroups($event)"
+    ></b-pagination>
+
     <GenericCreateModal
       modal-id="create-usergroup-modal"
       modal-name="Create User Group"
@@ -48,37 +65,78 @@
 </template>
 
 <script lang="ts">
+import FilterListLine, {
+  FilterChangedData,
+} from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import { UserGroupVue } from "@/utils/api-mixin";
 import { emitter } from "@/utils/event-bus";
-import { UserGroup } from "@dlr-shepard/shepard-client";
+import { totalRows } from "@/utils/helpers";
+import {
+  GetAllUserGroupsOrderByEnum,
+  UserGroup,
+} from "@dlr-shepard/shepard-client";
 import Vue, { VueConstructor } from "vue";
 
 interface UserGroupData {
   userGroupList?: UserGroup[];
   deletedAlert: boolean;
+  perPage: number;
+  currentPage: number;
+  orderBy: string;
+  descending: boolean;
 }
 
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof UserGroupVue>>
 ).extend({
-  components: { GenericCreateModal, GenericName, Loading },
+  components: { GenericCreateModal, GenericName, Loading, FilterListLine },
   mixins: [UserGroupVue],
   data() {
     return {
       userGroupList: undefined,
       deletedAlert: false,
+      perPage: 10,
+      currentPage: 1,
+      orderBy: "createdAt",
+      descending: false,
     } as UserGroupData;
   },
+  computed: {
+    totalRows(): number {
+      if (this.userGroupList)
+        return totalRows(
+          this.userGroupList.length,
+          this.perPage,
+          this.currentPage,
+        );
+      else return 0;
+    },
+  },
   mounted() {
-    this.retrieveUserGroups();
+    this.retrieveUserGroups(0);
   },
   methods: {
-    retrieveUserGroups() {
+    filterChanged(options: FilterChangedData) {
+      this.currentPage = options.currentPage;
+      this.perPage = options.currentSize;
+      this.descending = options.descending;
+      this.orderBy = options.orderBy;
+      this.retrieveUserGroups();
+    },
+    retrieveUserGroups(page?: number) {
+      const nextPage = page || this.currentPage;
+      const nextOrderBy = this
+        .orderBy as keyof typeof GetAllUserGroupsOrderByEnum as GetAllUserGroupsOrderByEnum;
       this.userGroupApi
-        ?.getAllUserGroups()
+        ?.getAllUserGroups({
+          size: this.perPage,
+          page: nextPage - 1,
+          orderBy: nextOrderBy,
+          orderDesc: this.descending,
+        })
         .then(response => {
           this.userGroupList = response;
         })
