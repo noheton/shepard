@@ -14,7 +14,7 @@
     "bootstrap-vue": "2.21.2",
     "jsoneditor": "9.7.4",
     "mitt": "3.0.0",
-    "nanoid": "3.3.2",
+    "nanoid": "3.3.3",
     "oidc-client": "1.11.5",
     "popper.js": "1.16.1",
     "portal-vue": "2.1.7",
