@@ -56,6 +56,11 @@ const routes: Array<RouteConfig> = [
     component: () => import("../views/TimeseriesContainer.vue"),
   },
   {
+    path: "/search",
+    name: "Search",
+    component: () => import("../views/Search.vue"),
+  },
+  {
     path: "/user",
     name: "User",
     component: () => import("../views/User.vue"),

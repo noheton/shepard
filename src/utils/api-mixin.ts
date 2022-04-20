@@ -8,6 +8,7 @@ import {
   FileApi,
   FileReferenceApi,
   ReferenceApi,
+  SearchApi,
   StructureddataApi,
   StructureddataReferenceApi,
   SubscriptionApi,
@@ -289,6 +290,20 @@ const UserGroupVue = ApiVue.extend({
     },
   },
 });
+interface SearchData {
+  searchApi?: SearchApi;
+}
+
+const SearchVue = ApiVue.extend({
+  data() {
+    return { searchApi: undefined } as SearchData;
+  },
+  methods: {
+    createApi() {
+      this.searchApi = new SearchApi(this.config);
+    },
+  },
+});
 
 export {
   CollectionVue,
@@ -307,4 +322,5 @@ export {
   ReferenceVue,
   SubscriptionVue,
   UserGroupVue,
+  SearchVue,
 };
