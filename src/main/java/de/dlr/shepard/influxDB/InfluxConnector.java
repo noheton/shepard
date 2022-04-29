@@ -79,12 +79,15 @@ public class InfluxConnector implements IConnector {
 	 *
 	 * @return True if connection exists, otherwise false.
 	 */
-	public boolean testConnection() {
-		Pong response = influxDB.ping();
-		if (response == null || response.getVersion().equalsIgnoreCase("unknown"))
+	@Override
+	public boolean alive() {
+		Pong response;
+		try {
+			response = influxDB.ping();
+		} catch (InfluxDBException ex) {
 			return false;
-		else
-			return true;
+		}
+		return response != null && !response.getVersion().equalsIgnoreCase("unknown");
 	}
 
 	/**

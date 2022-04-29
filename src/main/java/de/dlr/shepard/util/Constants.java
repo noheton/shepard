@@ -8,6 +8,8 @@ public class Constants {
 
 	public static final String API_KEY_HEADER = "X-API-KEY";
 
+	public static final String HEALTHZ = "healthz";
+
 	public static final String USER = "user";
 	public static final String USERS = "users";
 	public static final String USERNAME = "username";

@@ -3,6 +3,8 @@ package de.dlr.shepard.mongoDB;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
+import java.util.concurrent.TimeUnit;
+
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -10,6 +12,7 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
+import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -66,10 +69,12 @@ public class MongoDBConnector implements IConnector {
 
 		MongoCredential credential = MongoCredential.createCredential(username, authDB, password.toCharArray());
 
-		ConnectionString connectionString = new ConnectionString(String.format("mongodb://%s", host));
+		ConnectionString connectionString = new ConnectionString("mongodb://" + host);
 
-		MongoClientSettings settings = MongoClientSettings.builder().applyConnectionString(connectionString)
-				.credential(credential).codecRegistry(pojoCodecRegistry).build();
+		MongoClientSettings settings = MongoClientSettings.builder().credential(credential)
+				.applyConnectionString(connectionString)
+				.applyToClusterSettings(builder -> builder.serverSelectionTimeout(2, TimeUnit.SECONDS))
+				.codecRegistry(pojoCodecRegistry).build();
 
 		mongoClient = MongoClients.create(settings);
 		database = mongoClient.getDatabase("database");
@@ -81,6 +86,17 @@ public class MongoDBConnector implements IConnector {
 		if (mongoClient != null)
 			mongoClient.close();
 		return true;
+	}
+
+	@Override
+	public boolean alive() {
+		Document result;
+		try {
+			result = database.runCommand(new Document("buildInfo", "1"));
+		} catch (MongoException ex) {
+			return false;
+		}
+		return result.containsKey("ok");
 	}
 
 	public MongoDatabase getDatabase() {

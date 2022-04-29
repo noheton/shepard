@@ -8,4 +8,6 @@ public interface IConnector {
 	boolean connect();
 
 	boolean disconnect();
+
+	boolean alive();
 }

@@ -68,25 +68,31 @@ public class InfluxConnectorTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testConnectiontestPositive() {
+	public void testAlivePositive() {
 		Pong pong = new Pong();
 		pong.setVersion("MyVersion");
 		when(influxDB.ping()).thenReturn(pong);
-		assertTrue(connector.testConnection());
+		assertTrue(connector.alive());
 	}
 
 	@Test
-	public void testConnectiontestNegative() {
+	public void testAliveNegative() {
 		Pong pong = new Pong();
 		pong.setVersion("unknown");
 		when(influxDB.ping()).thenReturn(pong);
-		assertFalse(connector.testConnection());
+		assertFalse(connector.alive());
 	}
 
 	@Test
-	public void testConnectiontestNull() {
+	public void testAliveNull() {
 		when(influxDB.ping()).thenReturn(null);
-		assertFalse(connector.testConnection());
+		assertFalse(connector.alive());
+	}
+
+	@Test
+	public void testAliveException() {
+		when(influxDB.ping()).thenThrow(new InfluxDBException("Exception"));
+		assertFalse(connector.alive());
 	}
 
 	@Test

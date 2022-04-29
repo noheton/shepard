@@ -1,8 +1,11 @@
 package de.dlr.shepard.neo4j;
 
+import java.util.Collections;
+
 import org.neo4j.ogm.config.AutoIndexMode;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.exception.ConnectionException;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
 
@@ -74,6 +77,17 @@ public class NeoConnector implements IConnector {
 		if (sessionFactory != null)
 			sessionFactory.close();
 		return true;
+	}
+
+	@Override
+	public boolean alive() {
+		Result result;
+		try {
+			result = sessionFactory.openSession().query("MATCH (n) RETURN count(*) as count", Collections.emptyMap());
+		} catch (ConnectionException ex) {
+			return false;
+		}
+		return result.iterator().hasNext() && result.iterator().next().containsKey("count");
 	}
 
 	/**
