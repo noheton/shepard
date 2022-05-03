@@ -38,6 +38,20 @@ export default Vue.extend({
 </script>
 
 <style>
+body {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+h3 {
+  font-weight: bold;
+}
+
+h4 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
 #app {
   margin-bottom: 20%;
 }

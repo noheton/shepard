@@ -6,6 +6,7 @@
       size="lg"
       :title="modalName"
       @show="handlePrepare()"
+      @shown="startJsonEditor()"
       @ok="handleOk()"
     >
       <b-form-group>
@@ -24,40 +25,13 @@
           </b-row>
 
           <b-row class="mb-3">
-            <b-col cols="2"> JSON String </b-col>
+            <b-col cols="2"> JSON </b-col>
             <b-col cols="10">
-              <b-form-textarea
-                v-model="newStructuredDataPayload.payload"
-                variant="primary"
-                placeholder="Insert Structured Data Payload as valid JSON"
-                rows="3"
-                max-rows="6"
-                :state="validJSON"
-                @change="validateJSON(newStructuredDataPayload.payload)"
-              >
-              </b-form-textarea>
-            </b-col>
-          </b-row>
-          <b-row>
-            <b-col cols="2"> Preview </b-col>
-            <b-col cols="10">
-              <b-link @click="toggleReadMore()">
-                <span v-if="readMore"><CollapsIcon /></span>
-                <span v-else><ExtendIcon /></span>
-              </b-link>
-              <b>Payload:</b>
-              <span v-if="newStructuredDataPayload.payload">
-                <span v-if="readMore">
-                  <pre class="payload">{{
-                    newStructuredDataPayload.payload | pretty
-                  }}</pre>
-                </span>
-              </span>
+              <div id="jsoneditor"></div>
             </b-col>
           </b-row>
         </b-container>
       </b-form-group>
-      <div id="jsoneditor" ref="input"></div>
     </b-modal>
   </div>
 </template>
@@ -65,38 +39,27 @@
 <script lang="ts">
 import { StructuredDataVue } from "@/utils/api-mixin";
 import { StructuredDataPayload } from "@dlr-shepard/shepard-client";
+import JSONEditor, { JSONEditorOptions } from "jsoneditor";
+import "jsoneditor/dist/jsoneditor.css";
 import Vue, { VueConstructor } from "vue";
 
 interface CreateStructuredDataModalData {
   newStructuredDataPayload: StructuredDataPayload;
-  readMore: boolean;
-  newStructuredDataName?: string;
-  validJSON?: boolean;
+  newStructuredDataName: string;
+  jsoneditor?: JSONEditor;
 }
 
 function initialState(): CreateStructuredDataModalData {
   return {
     newStructuredDataPayload: {},
-    newStructuredDataName: undefined,
-    validJSON: undefined,
-    readMore: false,
+    newStructuredDataName: "",
+    jsoneditor: undefined,
   };
 }
 
 export default (
   Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
 ).extend({
-  filters: {
-    pretty: function (value: string) {
-      if (value) {
-        try {
-          return JSON.stringify(JSON.parse(value), null, 2);
-        } catch (e) {
-          console.log("no valid JSON");
-        }
-      }
-    },
-  },
   mixins: [StructuredDataVue],
   props: {
     modalId: {
@@ -115,38 +78,33 @@ export default (
   methods: {
     handlePrepare() {
       initialState();
-      if (this.newStructuredDataPayload.structuredData?.name)
-        this.newStructuredDataPayload.structuredData = {
-          name: this.newStructuredDataPayload.structuredData?.name,
-        };
-    },
-    validateJSON(payload: string) {
-      try {
-        JSON.parse(payload);
-        this.validJSON = true;
-      } catch (e) {
-        this.validJSON = false;
-      }
     },
 
     handleOk() {
-      this.newStructuredDataPayload.structuredData = {
-        name: this.newStructuredDataName,
+      this.newStructuredDataPayload = {
+        structuredData: { name: this.newStructuredDataName },
+        payload: "{}",
       };
-      if (!this.newStructuredDataPayload.payload)
-        this.newStructuredDataPayload.payload = "{}";
+      this.newStructuredDataPayload.payload = JSON.stringify(
+        this.jsoneditor?.get(),
+      );
 
       this.$emit("created", this.newStructuredDataPayload);
     },
-    toggleReadMore() {
-      this.readMore = !this.readMore;
+
+    startJsonEditor() {
+      // create the editor
+      const container = document.getElementById("jsoneditor");
+      const options = {
+        mode: "tree",
+        modes: ["code", "tree"], // allowed modes
+      } as JSONEditorOptions;
+      if (container) {
+        this.jsoneditor = new JSONEditor(container, options);
+      } else {
+        this.jsoneditor = undefined;
+      }
     },
   },
 });
 </script>
-
-<style scoped>
-.payload {
-  color: #e83e8c;
-}
-</style>

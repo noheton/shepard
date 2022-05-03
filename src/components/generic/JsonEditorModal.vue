@@ -23,13 +23,13 @@ import Vue, { VueConstructor } from "vue";
 
 interface JsonEditorData {
   structuredDataPayload?: string;
-  options: JSONEditorOptions;
+  jsoneditor?: JSONEditor;
 }
 
 function initialState(): JsonEditorData {
   return {
     structuredDataPayload: undefined,
-    options: {},
+    jsoneditor: undefined,
   };
 }
 
@@ -81,27 +81,27 @@ export default (
     startJsonEditor() {
       // create the editor
       const container = document.getElementById("jsoneditor");
-      this.options = {
+      const options = {
         mode: "view",
         modes: ["code", "view"], // allowed modes
-      };
-      let editor = undefined;
+      } as JSONEditorOptions;
+
       if (container) {
-        editor = new JSONEditor(container, this.options);
+        this.jsoneditor = new JSONEditor(container, options);
       } else {
-        editor = undefined;
+        this.jsoneditor = undefined;
       }
 
       // set json
-      if (editor && this.structuredDataPayload) {
-        editor.set(JSON.parse(this.structuredDataPayload));
+      if (this.jsoneditor && this.structuredDataPayload) {
+        this.jsoneditor.set(JSON.parse(this.structuredDataPayload));
       }
     },
   },
 });
 </script>
 
-<style type="text/css">
+<style>
 #jsoneditor {
   height: 600px;
   border-color: dark;
