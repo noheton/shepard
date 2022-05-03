@@ -8,150 +8,100 @@
     @show="reset()"
     @ok="handleOk()"
   >
-    <b-form-group>
-      <b-container>
-        <b-row class="mb-3">
-          <b-col cols="3"> Name </b-col>
-          <b-col cols="9">
-            <b-form-input
-              v-model="newTimeseriesReference.name"
-              placeholder="Name"
-              required
-            ></b-form-input>
-          </b-col>
-        </b-row>
+    <b-container>
+      <b-form-group label-cols="3" label="Name" label-for="input-name">
+        <b-form-input
+          id="input-name"
+          v-model="newTimeseriesReference.name"
+          placeholder="Name"
+          required
+        ></b-form-input>
+      </b-form-group>
 
-        <b-row class="mb-3">
-          <b-col cols="3"> Container ID </b-col>
-          <b-col cols="9">
-            <b-form-input
-              v-model="currentContainerId"
-              placeholder="Timeseries container id"
-              type="number"
-              required
-              :state="validContainer"
-              @blur="fetchContainer()"
-            ></b-form-input>
-            <small v-if="currentContainer">
-              <em> {{ currentContainer.name }} </em>
-            </small>
-            <small v-else>Please enter a valid container id</small>
-          </b-col>
-        </b-row>
+      <b-form-group label-cols="3" label="Container ID" label-for="input-id">
+        <b-form-input
+          id="input-id"
+          v-model="currentContainerId"
+          placeholder="Timeseries container id"
+          type="number"
+          required
+          :state="validContainer"
+          @blur="fetchContainer()"
+        ></b-form-input>
+        <small v-if="currentContainer">
+          <em> {{ currentContainer.name }} </em>
+        </small>
+        <small v-else>Please enter a valid container id</small>
+      </b-form-group>
 
-        <b-row class="mb-1">
-          <b-col cols="6"> Start </b-col>
-          <b-col cols="6"> End </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="6">
-            <b-form-input
+      <b-row class="mb-3">
+        <b-col cols="6">
+          <b-form-group label="Start">
+            <b-form-datepicker
               v-model="startDate"
-              type="date"
+              class="mb-1"
               required
-            ></b-form-input>
-          </b-col>
-          <b-col cols="6">
-            <b-form-input v-model="endDate" type="date" required></b-form-input>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-3">
-          <b-col cols="6">
-            <b-form-input
+            ></b-form-datepicker>
+            <b-form-timepicker
               v-model="startTime"
-              type="time"
+              class="mb-1"
+              show-seconds
+              now-button
+              reset-button
               required
-            ></b-form-input>
-          </b-col>
-          <b-col cols="6">
-            <b-form-input v-model="endTime" type="time" required></b-form-input>
-          </b-col>
-        </b-row>
+            ></b-form-timepicker>
+          </b-form-group>
+        </b-col>
 
-        <b-row class="mb-1">
-          <b-col cols="12"> Add timeseries </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="12">
-            <b-form-input
-              v-model="measurment"
-              placeholder="Measurment"
-              :state="validTimeseries"
-            ></b-form-input>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="6">
-            <b-form-input
-              v-model="device"
-              placeholder="Device"
-              :state="validTimeseries"
-            ></b-form-input>
-          </b-col>
-          <b-col cols="6">
-            <b-form-input
-              v-model="location"
-              placeholder="Location"
-              :state="validTimeseries"
-            ></b-form-input>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="6">
-            <b-form-input
-              v-model="symbolicName"
-              placeholder="Symbolic Name"
-              :state="validTimeseries"
-            ></b-form-input>
-          </b-col>
-          <b-col cols="6">
-            <b-form-input
-              v-model="field"
-              placeholder="Field"
-              :state="validTimeseries"
-            ></b-form-input>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-3 text-right">
-          <b-col cols="12">
-            <b-button class="mr-2" variant="primary" @click="handleClear()">
-              Clear
-            </b-button>
-            <b-button variant="success" @click="handleAdd()"> Add </b-button>
-          </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="12"> Added timeseries </b-col>
-        </b-row>
-
-        <b-row class="mb-1">
-          <b-col cols="12">
-            <b-form-select
-              v-model="selectedTimeseries"
-              :options="timeseries"
-              :select-size="5"
-              multiple
+        <b-col cols="6">
+          <b-form-group label="End">
+            <b-form-datepicker
+              v-model="endDate"
+              class="mb-1"
               required
-            ></b-form-select>
-          </b-col>
-        </b-row>
+            ></b-form-datepicker>
+            <b-form-timepicker
+              v-model="endTime"
+              class="mb-1"
+              show-seconds
+              now-button
+              reset-button
+              required
+            ></b-form-timepicker>
+          </b-form-group>
+        </b-col>
+      </b-row>
 
-        <b-row class="mb-3 text-right">
-          <b-col cols="12">
-            <b-button variant="danger" @click="handleDelete()">
-              Remove selected
-            </b-button>
-          </b-col>
-        </b-row>
-      </b-container>
-    </b-form-group>
+      <b-form-group label="Choose timeseries">
+        <b-form-select
+          v-model="currentTimeseries"
+          class="mb-1"
+          :options="timeseriesAvailable"
+          required
+        ></b-form-select>
+        <b-input-group prepend="Field" class="mb-1">
+          <b-form-input v-model="field" placeholder="Field"></b-form-input>
+        </b-input-group>
+        <b-button class="float-right" variant="success" @click="handleAdd()">
+          Add
+        </b-button>
+      </b-form-group>
+
+      <b-form-group label="Added timeseries">
+        <b-form-select
+          v-model="selectedTimeseries"
+          class="mb-1"
+          :options="timeseries"
+          :select-size="5"
+          multiple
+          required
+        ></b-form-select>
+
+        <b-button class="float-right" variant="danger" @click="handleDelete()">
+          Remove selected
+        </b-button>
+      </b-form-group>
+    </b-container>
   </b-modal>
 </template>
 
@@ -165,18 +115,16 @@ import {
 import Vue, { VueConstructor } from "vue";
 
 interface Option {
-  value: Timeseries;
+  value: Timeseries | null;
   text: string;
 }
 
 interface TimeseriesRefernceModalData {
   newTimeseriesReference: TimeseriesReference;
+  timeseriesAvailable: Array<Option>;
+  currentTimeseries: Timeseries | null;
   timeseries: Array<Option>;
   selectedTimeseries: Array<Option>;
-  measurment: string;
-  device: string;
-  location: string;
-  symbolicName: string;
   field: string;
   startTime: string;
   endTime: string;
@@ -185,7 +133,6 @@ interface TimeseriesRefernceModalData {
   currentContainerId: string;
   currentContainer?: TimeseriesContainer;
   validContainer?: boolean;
-  validTimeseries?: boolean;
 }
 
 function initialState(): TimeseriesRefernceModalData {
@@ -197,13 +144,11 @@ function initialState(): TimeseriesRefernceModalData {
       start: 0,
       end: 0,
     },
+    timeseriesAvailable: [{ value: null, text: "Please select an option" }],
+    currentTimeseries: null,
     timeseries: [],
     selectedTimeseries: [],
-    measurment: "",
-    device: "",
-    location: "",
-    symbolicName: "",
-    field: "",
+    field: "value",
     startTime: "",
     endTime: "",
     startDate: "",
@@ -211,7 +156,17 @@ function initialState(): TimeseriesRefernceModalData {
     currentContainerId: "",
     currentContainer: undefined,
     validContainer: undefined,
-    validTimeseries: undefined,
+  };
+}
+
+function convertTimeseriesToOption(ts: Timeseries, field = true): Option {
+  const attrs = [ts.measurement, ts.device, ts.location, ts.symbolicName];
+  if (field) {
+    attrs.push(ts.field);
+  }
+  return {
+    value: { ...ts },
+    text: attrs.join(" - "),
   };
 }
 
@@ -238,34 +193,20 @@ export default (
     reset() {
       Object.assign(this.$data, initialState());
     },
+    resetSelection() {
+      this.timeseriesAvailable = [
+        { value: null, text: "Please select an option" },
+      ];
+      this.currentTimeseries = null;
+      this.timeseries = [];
+      this.selectedTimeseries = [];
+    },
     handleAdd() {
-      if (
-        !this.measurment ||
-        !this.device ||
-        !this.location ||
-        !this.symbolicName ||
-        !this.field
-      ) {
-        this.validTimeseries = false;
+      if (!this.currentTimeseries || !this.field) {
         return;
       }
-      this.validTimeseries = undefined;
-      const option: Option = {
-        value: {
-          measurement: this.measurment,
-          device: this.device,
-          location: this.location,
-          symbolicName: this.symbolicName,
-          field: this.field,
-        },
-        text: [
-          this.measurment,
-          this.device,
-          this.location,
-          this.symbolicName,
-          this.field,
-        ].join(" - "),
-      };
+      this.currentTimeseries.field = this.field;
+      const option = convertTimeseriesToOption(this.currentTimeseries);
 
       if (
         !this.timeseries.some(timeseries => timeseries.text === option.text)
@@ -284,15 +225,13 @@ export default (
       });
     },
     handleClear() {
-      this.measurment = "";
-      this.device = "";
-      this.location = "";
-      this.symbolicName = "";
+      this.currentTimeseries = null;
       this.field = "";
     },
     handleOk() {
       this.timeseries.forEach(option => {
-        this.newTimeseriesReference.timeseries.push(option.value);
+        if (option.value)
+          this.newTimeseriesReference.timeseries.push(option.value);
       });
       const startTimestamp = Date.parse(this.startDate + " " + this.startTime);
       const endTimestamp = Date.parse(this.endDate + " " + this.endTime);
@@ -301,11 +240,14 @@ export default (
       this.$emit("create", this.newTimeseriesReference);
     },
     fetchContainer() {
+      if (this.currentContainer?.id == +this.currentContainerId) return;
+      this.resetSelection();
       this.timeseriesApi
         ?.getTimeseriesContainer({
           timeseriesContainerId: +this.currentContainerId,
         })
         .then(container => {
+          this.fetchTimeseriesAvailable();
           this.currentContainer = container;
           this.validContainer = true;
           if (container.id)
@@ -317,6 +259,22 @@ export default (
           console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
+        });
+    },
+    fetchTimeseriesAvailable() {
+      this.timeseriesApi
+        ?.getTimeseriesAvailable({
+          timeseriesContainerId: +this.currentContainerId,
+        })
+        .then(result => {
+          this.timeseriesAvailable = result.map(ts =>
+            convertTimeseriesToOption(ts, false),
+          );
+        })
+        .catch(e => {
+          const error =
+            "Error while getting timeseries available: " + e.statusText;
+          console.log(error);
         });
     },
   },
