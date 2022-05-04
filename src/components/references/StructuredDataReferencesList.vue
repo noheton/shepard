@@ -39,18 +39,20 @@
         <div>
           <b><GenericName :name="structuredDataReference.name" /></b>
           | ID: {{ structuredDataReference.id }} |
-          <b-link
-            :to="{
-              name: 'StructuredData',
-              params: {
-                structuredDataId:
-                  structuredDataReference.structuredDataContainerId,
-              },
-            }"
-          >
-            Container: {{ structuredDataReference.structuredDataContainerId }}
-          </b-link>
-
+          <span v-if="structuredDataReference.structuredDataContainerId != -1">
+            <b-link
+              :to="{
+                name: 'StructuredData',
+                params: {
+                  structuredDataId:
+                    structuredDataReference.structuredDataContainerId,
+                },
+              }"
+            >
+              Container: {{ structuredDataReference.structuredDataContainerId }}
+            </b-link>
+          </span>
+          <span v-else class="text-danger">Container: Deleted</span>
           <b-button
             v-b-modal.structured-data-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -71,17 +73,20 @@
           :key="i"
         >
           <small v-if="structuredDatas[oid]">
-            <b-link
-              v-b-modal.json-editor-modal
-              v-b-tooltip.hover
-              title="Show Viewer"
-              @click="
-                (currentStructuredDataReference = structuredDataReference),
-                  (currentStructuredDataOid = oid)
-              "
-            >
-              <EyeIcon :size="19" />
-            </b-link>
+            <a v-if="structuredDataReference.structuredDataContainerId != -1">
+              <b-link
+                v-b-modal.json-editor-modal
+                v-b-tooltip.hover
+                title="Show Viewer"
+                @click="
+                  (currentStructuredDataReference = structuredDataReference),
+                    (currentStructuredDataOid = oid)
+                "
+              >
+                <EyeIcon :size="19" />
+              </b-link>
+            </a>
+            <a v-else><EyeIcon :size="19" class="text-danger" /></a>
 
             <b> Oid:</b> <tt>{{ oid }}</tt> |
             <span v-if="structuredDatas[oid].structuredData.createdAt">

@@ -40,14 +40,18 @@
         <div>
           <b><GenericName :name="fileReference.name" /></b> | ID:
           {{ fileReference.id }} |
-          <b-link
-            :to="{
-              name: 'Files',
-              params: { fileId: fileReference.fileContainerId },
-            }"
-          >
-            Container: {{ fileReference.fileContainerId }}
-          </b-link>
+          <span v-if="fileReference.fileContainerId != -1">
+            <b-link
+              :to="{
+                name: 'Files',
+                params: { fileId: fileReference.fileContainerId },
+              }"
+            >
+              Container: {{ fileReference.fileContainerId }}
+            </b-link>
+          </span>
+          <span v-else class="text-danger">Container: Deleted</span>
+
           <b-button
             v-b-modal.file-reference-delete-confirmation-modal
             v-b-tooltip.hover
@@ -65,14 +69,17 @@
         />
         <div v-for="(oid, i) in fileReference.fileOids" :key="i">
           <small v-if="files[oid]">
-            <b-link
-              :disabled="downloadActive"
-              @click="
-                getFilePayload(fileReference.id, oid, files[oid].filename)
-              "
-            >
-              <DownloadIcon :size="18" />
-            </b-link>
+            <a v-if="fileReference.fileContainerId != -1">
+              <b-link
+                :disabled="downloadActive"
+                @click="
+                  getFilePayload(fileReference.id, oid, files[oid].filename)
+                "
+              >
+                <DownloadIcon :size="18" />
+              </b-link>
+            </a>
+            <a v-else><DownloadIcon :size="18" class="text-danger" /></a>
             <b> Oid:</b> <tt>{{ oid }}</tt>
             <span v-if="files[oid].createdAt">
               | <b>Created at:</b>

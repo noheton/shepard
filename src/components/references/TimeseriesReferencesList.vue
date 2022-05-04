@@ -40,19 +40,25 @@
         <div>
           <b><GenericName :name="timeseriesItem.name" /></b> | ID:
           {{ timeseriesItem.id }} |
-          <b-link
-            :to="{
-              name: 'Timeseries',
-              params: { timeseriesId: timeseriesItem.timeseriesContainerId },
-            }"
-          >
-            Container: {{ timeseriesItem.timeseriesContainerId }}
-          </b-link>
+          <span v-if="timeseriesItem.timeseriesContainerId != -1">
+            <b-link
+              :to="{
+                name: 'Timeseries',
+                params: { timeseriesId: timeseriesItem.timeseriesContainerId },
+              }"
+            >
+              Container: {{ timeseriesItem.timeseriesContainerId }}
+            </b-link>
+          </span>
+          <span v-else class="text-danger">Container: Deleted</span>
+
           <b-button-group class="float-right">
             <b-button
               title="Download"
               variant="light"
-              :disabled="downloadActive"
+              :disabled="
+                downloadActive || timeseriesItem.timeseriesContainerId == -1
+              "
               @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
             >
               <DownloadIcon />
