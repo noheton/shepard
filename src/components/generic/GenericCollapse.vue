@@ -5,7 +5,7 @@
         <ExtendIcon />
       </span>
       <span v-else>
-        <CollapsIcon />
+        <CollapseIcon />
       </span>
       {{ title }}
     </h4>

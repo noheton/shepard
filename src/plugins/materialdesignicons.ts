@@ -35,7 +35,7 @@ Vue.component("FileIcon", FileDocumentOutline);
 Vue.component("DataObjectIcon", ClipboardOutline);
 
 Vue.component("HomeIcon", HomeOutline);
-Vue.component("CollapsIcon", ChevronUp);
+Vue.component("CollapseIcon", ChevronUp);
 Vue.component("ExtendIcon", ChevronDown);
 
 Vue.component("DeleteIcon", Delete);
