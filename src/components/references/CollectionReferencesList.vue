@@ -56,18 +56,22 @@
         />
         <small>
           {{ collectionItem.relationship }}:
-          <b-link
-            v-if="referencedList[collectionItem.id]"
-            :to="{
-              name: 'Collection',
-              params: {
-                collectionId: collectionItem.referencedCollectionId,
-              },
-            }"
-          >
-            <b>{{ referencedList[collectionItem.id].name }}</b> | ID:
-            {{ referencedList[collectionItem.id].id }}
-          </b-link>
+
+          <span v-if="collectionItem.referencedCollectionId != -1">
+            <b-link
+              v-if="referencedList[collectionItem.id]"
+              :to="{
+                name: 'Collection',
+                params: {
+                  collectionId: collectionItem.referencedCollectionId,
+                },
+              }"
+            >
+              <b>{{ referencedList[collectionItem.id].name }}</b> | ID:
+              {{ referencedList[collectionItem.id].id }}
+            </b-link>
+          </span>
+          <span v-else class="text-danger">Collection Deleted</span>
         </small>
       </b-list-group-item>
     </b-list-group>
