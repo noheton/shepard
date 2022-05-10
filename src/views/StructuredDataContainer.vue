@@ -130,7 +130,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import { StructuredDataVue } from "@/utils/api-mixin";
+import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
 import {
   Permissions,
@@ -138,7 +138,7 @@ import {
   StructuredDataContainer,
   StructuredDataPayload,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface StructuredDataData {
   currentStructuredDataContainer?: StructuredDataContainer;
@@ -149,9 +149,7 @@ interface StructuredDataData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     DeleteConfirmationModal,
@@ -160,7 +158,6 @@ export default (
     CreateStructuredDataModal,
     JsonEditorModal,
   },
-  mixins: [StructuredDataVue],
   data() {
     return {
       currentStructuredDataContainer: undefined,
@@ -183,10 +180,9 @@ export default (
   },
   methods: {
     retrieveStructuredDataContainer() {
-      this.structuredDataApi
-        ?.getStructuredDataContainer({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-        })
+      StructuredDataService.getStructuredDataContainer({
+        structureddataContainerId: this.currentStructuredDataContainerId,
+      })
         .then(response => {
           this.currentStructuredDataContainer = response;
         })
@@ -198,10 +194,9 @@ export default (
         });
     },
     retrieveStructuredDataList() {
-      this.structuredDataApi
-        ?.getAllStructuredDatas({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-        })
+      StructuredDataService.getAllStructuredDatas({
+        structureddataContainerId: this.currentStructuredDataContainerId,
+      })
         .then(response => {
           this.structuredDataList = response;
         })
@@ -213,11 +208,10 @@ export default (
     },
     createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
       if (this.currentStructuredDataContainer?.id)
-        this.structuredDataApi
-          ?.createStructuredData({
-            structureddataContainerId: this.currentStructuredDataContainer.id,
-            structuredDataPayload: newStructuredDataPayload,
-          })
+        StructuredDataService.createStructuredData({
+          structureddataContainerId: this.currentStructuredDataContainer.id,
+          structuredDataPayload: newStructuredDataPayload,
+        })
           .then(() => {
             this.retrieveStructuredDataList();
           })
@@ -230,10 +224,9 @@ export default (
           .finally();
     },
     handleDeleteStructuredDataContainer() {
-      this.structuredDataApi
-        ?.deleteStructuredDataContainer({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-        })
+      StructuredDataService.deleteStructuredDataContainer({
+        structureddataContainerId: this.currentStructuredDataContainerId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.$router.push({ name: "StructuredDatasList" });
@@ -247,11 +240,10 @@ export default (
     },
     handleDeleteStructuredData(oid: string) {
       if (this.currentStructuredDataContainer?.id)
-        this.structuredDataApi
-          ?.deleteStructuredData({
-            structureddataContainerId: this.currentStructuredDataContainer?.id,
-            oid: oid,
-          })
+        StructuredDataService.deleteStructuredData({
+          structureddataContainerId: this.currentStructuredDataContainer?.id,
+          oid: oid,
+        })
           .then(() => {
             this.deletedAlert = true;
             this.retrieveStructuredDataList();
@@ -264,10 +256,9 @@ export default (
           });
     },
     retrievePermissions() {
-      this.structuredDataApi
-        ?.getStructuredDataPermissions({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-        })
+      StructuredDataService.getStructuredDataPermissions({
+        structureddataContainerId: this.currentStructuredDataContainerId,
+      })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -279,16 +270,15 @@ export default (
         });
     },
     updatePermissions(perms: Permissions) {
-      this.structuredDataApi
-        ?.editStructuredDataPermissions({
-          structureddataContainerId: this.currentStructuredDataContainerId,
-          permissions: perms,
-        })
+      StructuredDataService.editStructuredDataPermissions({
+        structureddataContainerId: this.currentStructuredDataContainerId,
+        permissions: perms,
+      })
         .then(response => {
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while editing permissons: " + e.statusText;
+          const error = "Error while updating permissons: " + e.statusText;
           console.log(error);
         });
     },

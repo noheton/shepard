@@ -56,9 +56,9 @@
 </template>
 
 <script lang="ts">
-import { FileVue } from "@/utils/api-mixin";
+import FileService from "@/services/fileService";
 import { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface Option {
   value: string;
@@ -89,10 +89,7 @@ function initialState(): FileReferenceModelData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
-).extend({
-  mixins: [FileVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -119,10 +116,9 @@ export default (
     },
 
     fetchContainer() {
-      this.fileApi
-        ?.getFileContainer({
-          fileContainerId: +this.currentContainerId,
-        })
+      FileService.getFileContainer({
+        fileContainerId: +this.currentContainerId,
+      })
         .then(container => {
           this.currentContainer = container;
           this.validContainer = true;
@@ -131,7 +127,7 @@ export default (
             this.newFileReference.fileContainerId = container.id;
         })
         .catch(e => {
-          const error = "Error while getting file container: " + e.statusText;
+          const error = "Error while fetching file container: " + e.statusText;
           console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
@@ -139,10 +135,9 @@ export default (
     },
 
     fetchFiles() {
-      this.fileApi
-        ?.getAllFiles({
-          fileContainerId: +this.currentContainerId,
-        })
+      FileService.getAllFiles({
+        fileContainerId: +this.currentContainerId,
+      })
         .then(response => {
           response.forEach(file => {
             if (!file.oid) {
@@ -156,7 +151,7 @@ export default (
           });
         })
         .catch(e => {
-          const error = "Error while getting all files: " + e.statusText;
+          const error = "Error while fetching all files: " + e.statusText;
           console.log(error);
         });
     },

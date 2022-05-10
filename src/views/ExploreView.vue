@@ -56,14 +56,14 @@ import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { CollectionVue } from "@/utils/api-mixin";
+import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   Collection,
   GetAllCollectionsOrderByEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface ExploreData {
   collections?: Collection[];
@@ -74,11 +74,8 @@ interface ExploreData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
-).extend({
+export default Vue.extend({
   components: { GenericEntityList, FilterListLine, CollectionModal },
-  mixins: [CollectionVue],
   data() {
     return {
       collections: undefined,
@@ -115,13 +112,12 @@ export default (
       const nextPage = page || this.currentPage;
       const nextOrderBy = this
         .orderBy as keyof typeof GetAllCollectionsOrderByEnum as GetAllCollectionsOrderByEnum;
-      this.collectionApi
-        ?.getAllCollections({
-          size: this.perPage,
-          page: nextPage - 1,
-          orderBy: nextOrderBy,
-          orderDesc: this.descending,
-        })
+      CollectionService.getAllCollections({
+        size: this.perPage,
+        page: nextPage - 1,
+        orderBy: nextOrderBy,
+        orderDesc: this.descending,
+      })
         .then(response => {
           this.collections = response;
         })

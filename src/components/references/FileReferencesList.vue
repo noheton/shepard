@@ -112,12 +112,12 @@ import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
-import { FileReferenceVue } from "@/utils/api-mixin";
+import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface FileListData {
   fileReferenceList: FileReference[];
@@ -130,9 +130,7 @@ interface FileListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof FileReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     DownloadAlert,
@@ -140,7 +138,6 @@ export default (
     DeleteConfirmationModal,
     GenericName,
   },
-  mixins: [FileReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -168,11 +165,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.fileReferenceApi
-        ?.getAllFileReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      FileReferenceService.getAllFileReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.fileReferenceList = response;
           this.fileReferenceList.forEach(reference => {
@@ -186,12 +182,11 @@ export default (
     },
 
     getFiles(id: number) {
-      this.fileReferenceApi
-        ?.getFiles({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          fileReferenceId: id,
-        })
+      FileReferenceService.getFiles({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        fileReferenceId: id,
+      })
         .then(response => {
           const temp: { [key: string]: ShepardFile } = {};
           response.forEach(payload => {
@@ -210,13 +205,12 @@ export default (
     getFilePayload(fileReferenceId: number, oid: string, filename: string) {
       this.downloadStarted = true;
       this.downloadActive = true;
-      this.fileReferenceApi
-        ?.getFilePayload({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          fileReferenceId: fileReferenceId,
-          oid: oid,
-        })
+      FileReferenceService.getFilePayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        fileReferenceId: fileReferenceId,
+        oid: oid,
+      })
         .then(response => {
           downloadFile(response, filename);
         })
@@ -230,12 +224,11 @@ export default (
     },
 
     create(newReference: FileReference) {
-      this.fileReferenceApi
-        ?.createFileReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          fileReference: newReference,
-        })
+      FileReferenceService.createFileReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        fileReference: newReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.fileReferenceList = [response].concat(this.fileReferenceList);
@@ -249,12 +242,11 @@ export default (
     },
 
     handleDelete(fileReferenceId: number) {
-      this.fileReferenceApi
-        ?.deleteFileReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          fileReferenceId: fileReferenceId,
-        })
+      FileReferenceService.deleteFileReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        fileReferenceId: fileReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();

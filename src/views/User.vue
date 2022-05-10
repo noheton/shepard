@@ -36,24 +36,21 @@
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
-import { UserVue } from "@/utils/api-mixin";
+import UserService from "@/services/userService";
 import { User } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface UserData {
   userId?: number;
   user?: User;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UserVue>>
-).extend({
+export default Vue.extend({
   components: {
     ApiKeyList,
     SubscriptionList,
     GenericCollapse,
   },
-  mixins: [UserVue],
   data() {
     return {
       userId: undefined,
@@ -65,8 +62,7 @@ export default (
   },
   methods: {
     fetchUser() {
-      this.userApi
-        ?.getCurrentUser()
+      UserService.getCurrentUser()
         .then(response => {
           this.user = response;
         })

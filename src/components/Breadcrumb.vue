@@ -6,8 +6,8 @@
 </template>
 
 <script lang="ts">
-import { DataObjectVue } from "@/utils/api-mixin";
-import Vue, { VueConstructor } from "vue";
+import DataObjectService from "@/services/dataObjectService";
+import Vue from "vue";
 import { Location } from "vue-router";
 
 interface Breadcrumb {
@@ -66,10 +66,7 @@ interface BreadcrumbData {
   items: Array<Breadcrumb>;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
-).extend({
-  mixins: [DataObjectVue],
+export default Vue.extend({
   data() {
     return {
       parentId: undefined,
@@ -101,11 +98,10 @@ export default (
   },
   methods: {
     retrieveDataObject() {
-      this.dataObjectApi
-        ?.getDataObject({
-          collectionId: +this.collectionId,
-          dataObjectId: +this.dataObjectId,
-        })
+      DataObjectService.getDataObject({
+        collectionId: +this.collectionId,
+        dataObjectId: +this.dataObjectId,
+      })
         .then(response => {
           if (response.parentId) this.parentId = response.parentId;
           else this.parentId = undefined;

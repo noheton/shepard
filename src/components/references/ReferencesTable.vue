@@ -53,7 +53,6 @@ import FileReferencesList from "@/components/references/FileReferencesList.vue";
 import StructuredDataReferencesList from "@/components/references/StructuredDataReferencesList.vue";
 import TimeseriesReferencesList from "@/components/references/TimeseriesReferencesList.vue";
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
-import { ReferenceVue } from "@/utils/api-mixin";
 import { DataObject } from "@dlr-shepard/shepard-client";
 import Vue, { PropType } from "vue";
 
@@ -66,7 +65,6 @@ export default Vue.extend({
     CollectionReferencesList,
     DataObjectReferencesList,
   },
-  mixins: [ReferenceVue],
   props: {
     currentDataObject: {
       type: Object as PropType<DataObject>,

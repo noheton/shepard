@@ -56,12 +56,12 @@
 </template>
 
 <script lang="ts">
-import { StructuredDataVue } from "@/utils/api-mixin";
+import StructuredDataService from "@/services/structuredDataService";
 import {
   StructuredDataContainer,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface Option {
   value: string;
@@ -92,10 +92,7 @@ function initialState(): StructuredDataReferenceModelData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
-).extend({
-  mixins: [StructuredDataVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -122,10 +119,9 @@ export default (
     },
 
     fetchContainer() {
-      this.structuredDataApi
-        ?.getStructuredDataContainer({
-          structureddataContainerId: +this.currentContainerId,
-        })
+      StructuredDataService.getStructuredDataContainer({
+        structureddataContainerId: +this.currentContainerId,
+      })
         .then(container => {
           this.currentContainer = container;
           this.validContainer = true;
@@ -136,7 +132,7 @@ export default (
         })
         .catch(e => {
           const error =
-            "Error while getting structured data container: " + e.statusText;
+            "Error while fetching structured data container: " + e.statusText;
           console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
@@ -144,10 +140,9 @@ export default (
     },
 
     fetchStructuredData() {
-      this.structuredDataApi
-        ?.getAllStructuredDatas({
-          structureddataContainerId: +this.currentContainerId,
-        })
+      StructuredDataService.getAllStructuredDatas({
+        structureddataContainerId: +this.currentContainerId,
+      })
         .then(response => {
           response.forEach(strdata => {
             if (!strdata.oid) {

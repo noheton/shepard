@@ -165,16 +165,15 @@
 </template>
 
 <script lang="ts">
-import { UserGroupVue, UserVue } from "@/utils/api-mixin";
+import UserGroupService from "@/services/userGroupService";
+import UserService from "@/services/userService";
 import {
   Permissions,
   PermissionsPermissionTypeEnum,
   User,
-  UserApi,
   UserGroup,
-  UsergroupApi,
 } from "@dlr-shepard/shepard-client";
-import Vue, { PropType, VueConstructor } from "vue";
+import Vue, { PropType } from "vue";
 
 interface PermissionsModalData {
   usernameOrGroupId: string;
@@ -223,12 +222,7 @@ function initialState(): PermissionsModalData {
   };
 }
 
-export default (
-  Vue as VueConstructor<
-    Vue & InstanceType<typeof UserVue> & InstanceType<typeof UserGroupVue>
-  >
-).extend({
-  mixins: [UserVue, UserGroupVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -362,28 +356,28 @@ export default (
       }
     },
     fetchUser() {
-      this.userApi
-        ?.getUser({ username: this.usernameOrGroupId })
+      UserService.getUser({ username: this.usernameOrGroupId })
         .then(currentUser => {
           this.currentUser = currentUser;
           this.validUser = true;
         })
         .catch(e => {
-          const error = "Error while getting user: " + e.statusText;
+          const error = "Error while fetching user: " + e.statusText;
           console.log(error);
           this.currentUser = undefined;
           this.validUser = false;
         });
     },
     fetchUserGroups() {
-      this.userGroupApi
-        ?.getUserGroup({ usergroupId: Number(this.usernameOrGroupId) })
+      UserGroupService.getUserGroup({
+        usergroupId: Number(this.usernameOrGroupId),
+      })
         .then(currentUserGroup => {
           this.currentUserGroup = currentUserGroup;
           this.validUserGroup = true;
         })
         .catch(e => {
-          const error = "Error while getting userGroup: " + e.statusText;
+          const error = "Error while fetching userGroup: " + e.statusText;
           console.log(error);
           this.currentUserGroup = undefined;
           this.validUserGroup = false;
@@ -396,39 +390,35 @@ export default (
         this.permissionType = perms.permissionType;
       }
       if (perms.owner) {
-        this.userApi
-          ?.getUser({ username: perms.owner })
-          .then(owner => (this.owner = owner));
+        UserService.getUser({ username: perms.owner }).then(
+          owner => (this.owner = owner),
+        );
       }
       perms.reader.forEach(username => {
-        this.userApi
-          ?.getUser({ username: username })
-          .then(user => this.reader.push(user));
+        UserService.getUser({ username: username }).then(user =>
+          this.reader.push(user),
+        );
       });
       perms.readerGroupIds?.forEach(groupId => {
-        this.userGroupApi
-          ?.getUserGroup({ usergroupId: groupId })
-          .then(usergroup => this.readerGroup.push(usergroup));
+        UserGroupService.getUserGroup({ usergroupId: groupId }).then(
+          usergroup => this.readerGroup.push(usergroup),
+        );
       });
       perms.writer.forEach(username => {
-        this.userApi
-          ?.getUser({ username: username })
-          .then(user => this.writer.push(user));
+        UserService.getUser({ username: username }).then(user =>
+          this.writer.push(user),
+        );
       });
       perms.writerGroupIds?.forEach(groupId => {
-        this.userGroupApi
-          ?.getUserGroup({ usergroupId: groupId })
-          .then(usergroup => this.writerGroup.push(usergroup));
+        UserGroupService.getUserGroup({ usergroupId: groupId }).then(
+          usergroup => this.writerGroup.push(usergroup),
+        );
       });
       perms.manager.forEach(username => {
-        this.userApi
-          ?.getUser({ username: username })
-          .then(user => this.manager.push(user));
+        UserService.getUser({ username: username }).then(user =>
+          this.manager.push(user),
+        );
       });
-    },
-    createApi() {
-      this.userApi = new UserApi(this.config);
-      this.userGroupApi = new UsergroupApi(this.config);
     },
   },
 });

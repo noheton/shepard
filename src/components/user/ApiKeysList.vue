@@ -49,10 +49,10 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
-import { ApiKeyVue } from "@/utils/api-mixin";
+import ApiKeyService from "@/services/apiKeyService";
 import { emitter } from "@/utils/event-bus";
 import { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface ApiKeyListData {
   apiKeys: ApiKey[];
@@ -61,15 +61,12 @@ interface ApiKeyListData {
   currentApiKey?: ApiKey;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof ApiKeyVue>>
-).extend({
+export default Vue.extend({
   components: {
     DeleteConfirmationModal,
     ApiKeyModal,
     GenericName,
   },
-  mixins: [ApiKeyVue],
   props: {
     currentUsername: {
       type: String,
@@ -90,8 +87,7 @@ export default (
   methods: {
     retrieveApiKeys() {
       if (!this.currentUsername) return;
-      this.apiKeyApi
-        ?.getAllApiKeys({ username: this.currentUsername })
+      ApiKeyService.getAllApiKeys({ username: this.currentUsername })
         .then(response => {
           this.apiKeys = response;
         })
@@ -101,11 +97,10 @@ export default (
         });
     },
     handleCreate() {
-      this.apiKeyApi
-        ?.createApiKey({
-          username: this.currentUsername,
-          apiKey: { name: this.newName } as ApiKey,
-        })
+      ApiKeyService.createApiKey({
+        username: this.currentUsername,
+        apiKey: { name: this.newName } as ApiKey,
+      })
         .then(response => {
           this.createdApiKey = response;
         })
@@ -123,8 +118,10 @@ export default (
       this.createdApiKey = undefined;
     },
     handleDelete(uid: string) {
-      this.apiKeyApi
-        ?.deleteApiKey({ username: this.currentUsername, apikeyUid: uid })
+      ApiKeyService.deleteApiKey({
+        username: this.currentUsername,
+        apikeyUid: uid,
+      })
         .catch(e => {
           const error = "Error while deleting api key: " + e.statusText;
           console.log(error);

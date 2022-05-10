@@ -89,10 +89,10 @@
 </template>
 
 <script lang="ts">
-import { CollectionVue } from "@/utils/api-mixin";
+import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { Collection } from "@dlr-shepard/shepard-client";
-import Vue, { PropType, VueConstructor } from "vue";
+import Vue, { PropType } from "vue";
 
 interface CollectionModalData {
   newCollection: Collection;
@@ -103,10 +103,7 @@ interface CollectionModalData {
   validationError: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
-).extend({
-  mixins: [CollectionVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -171,10 +168,9 @@ export default (
       }
     },
     createCollection(collection: Collection) {
-      this.collectionApi
-        ?.createCollection({
-          collection: collection,
-        })
+      CollectionService.createCollection({
+        collection: collection,
+      })
         .then(response => {
           this.$router.push({
             name: "Collection",
@@ -191,11 +187,10 @@ export default (
     },
     updateCollection(collection: Collection) {
       if (!this.currentCollection.id) return;
-      this.collectionApi
-        ?.updateCollection({
-          collectionId: this.currentCollection.id,
-          collection: collection,
-        })
+      CollectionService.updateCollection({
+        collectionId: this.currentCollection.id,
+        collection: collection,
+      })
         .then(() => {
           this.$emit("collection-changed");
         })

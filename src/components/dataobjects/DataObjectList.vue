@@ -22,12 +22,12 @@ import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue"
 import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
-import { DataObjectVue } from "@/utils/api-mixin";
+import DataObjectService from "@/services/dataObjectService";
 import {
   DataObject,
   GetAllDataObjectsOrderByEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface DataObjectListData {
   dataObjects: DataObject[];
@@ -37,11 +37,8 @@ interface DataObjectListData {
   currentPage: number;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
-).extend({
+export default Vue.extend({
   components: { DataObjectListItem, FilterListLine },
-  mixins: [DataObjectVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -98,17 +95,16 @@ export default (
       const nextPage = page || this.currentPage;
       const nextOrderBy = this
         .orderBySelected as keyof typeof GetAllDataObjectsOrderByEnum as GetAllDataObjectsOrderByEnum;
-      this.dataObjectApi
-        ?.getAllDataObjects({
-          collectionId: this.currentCollectionId,
-          parentId: this.parentId,
-          predecessorId: this.predecessorId,
-          successorId: this.successorId,
-          size: this.sizeSelected,
-          orderBy: nextOrderBy,
-          orderDesc: this.descendingSelected,
-          page: nextPage - 1,
-        })
+      DataObjectService?.getAllDataObjects({
+        collectionId: this.currentCollectionId,
+        parentId: this.parentId,
+        predecessorId: this.predecessorId,
+        successorId: this.successorId,
+        size: this.sizeSelected,
+        orderBy: nextOrderBy,
+        orderDesc: this.descendingSelected,
+        page: nextPage - 1,
+      })
         .then(response => {
           this.dataObjects = response;
         })

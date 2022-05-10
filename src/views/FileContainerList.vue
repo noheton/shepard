@@ -55,14 +55,14 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { FileVue } from "@/utils/api-mixin";
+import FileService from "@/services/fileService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   FileContainer,
   GetAllFileContainersOrderByEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface FilesListData {
   containers?: FileContainer[];
@@ -73,11 +73,8 @@ interface FilesListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
-).extend({
+export default Vue.extend({
   components: { GenericEntityList, FilterListLine, GenericCreateModal },
-  mixins: [FileVue],
   data() {
     return {
       containers: undefined,
@@ -114,13 +111,12 @@ export default (
       const nextPage = page || this.currentPage;
       const nextOrderBy = this
         .orderBy as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
-      this.fileApi
-        ?.getAllFileContainers({
-          size: this.perPage,
-          page: nextPage - 1,
-          orderBy: nextOrderBy,
-          orderDesc: this.descending,
-        })
+      FileService.getAllFileContainers({
+        size: this.perPage,
+        page: nextPage - 1,
+        orderBy: nextOrderBy,
+        orderDesc: this.descending,
+      })
         .then(response => {
           this.containers = response;
         })
@@ -131,10 +127,9 @@ export default (
         });
     },
     createContainer(newName: string) {
-      this.fileApi
-        ?.createFileContainer({
-          fileContainer: { name: newName } as FileContainer,
-        })
+      FileService.createFileContainer({
+        fileContainer: { name: newName } as FileContainer,
+      })
         .then(response => {
           this.$router.push({
             name: "Files",

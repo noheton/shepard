@@ -56,14 +56,14 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { StructuredDataVue } from "@/utils/api-mixin";
+import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   GetAllStructuredDataContainersOrderByEnum,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface StructuredDatasListData {
   containers?: StructuredDataContainer[];
@@ -74,11 +74,8 @@ interface StructuredDatasListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
-).extend({
+export default Vue.extend({
   components: { GenericEntityList, FilterListLine, GenericCreateModal },
-  mixins: [StructuredDataVue],
   data() {
     return {
       containers: undefined,
@@ -115,13 +112,12 @@ export default (
       const nextPage = page || this.currentPage;
       const nextOrderBy = this
         .orderBy as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
-      this.structuredDataApi
-        ?.getAllStructuredDataContainers({
-          size: this.perPage,
-          page: nextPage - 1,
-          orderBy: nextOrderBy,
-          orderDesc: this.descending,
-        })
+      StructuredDataService.getAllStructuredDataContainers({
+        size: this.perPage,
+        page: nextPage - 1,
+        orderBy: nextOrderBy,
+        orderDesc: this.descending,
+      })
         .then(response => {
           this.containers = response;
         })
@@ -133,10 +129,9 @@ export default (
         });
     },
     createContainer(newName: string) {
-      this.structuredDataApi
-        ?.createStructuredDataContainer({
-          structuredDataContainer: { name: newName } as StructuredDataContainer,
-        })
+      StructuredDataService.createStructuredDataContainer({
+        structuredDataContainer: { name: newName } as StructuredDataContainer,
+      })
         .then(response => {
           this.$router.push({
             name: "StructuredData",

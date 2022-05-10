@@ -156,10 +156,10 @@
 </template>
 
 <script lang="ts">
-import { DataObjectVue } from "@/utils/api-mixin";
+import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { PropType, VueConstructor } from "vue";
+import Vue, { PropType } from "vue";
 
 interface PossibleDataObject {
   id?: number;
@@ -178,10 +178,7 @@ interface DataObjectModalData {
   }[];
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
-).extend({
-  mixins: [DataObjectVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -326,30 +323,36 @@ export default (
         this.possibleParent.name = "";
         this.validParent = undefined;
       } else {
-        this.getDataObject(this.possibleParent.id).then(response => {
-          if (response) {
+        DataObjectService.getDataObject({
+          collectionId: this.currentCollectionId,
+          dataObjectId: this.possibleParent.id,
+        })
+          .then(response => {
             this.possibleParent.name = response.name ? response.name : "";
             if (this.possibleParent.name == "") {
               this.validParent = undefined;
             } else {
               this.validParent = true;
             }
-          } else {
+          })
+          .catch(() => {
             this.possibleParent.name = "";
             this.validParent = false;
-          }
-        });
+          });
       }
     },
 
     validatePredecessor(i: number) {
-      if (this.possiblePredecessors[i].id == undefined) {
+      const id = this.possiblePredecessors[i].id;
+      if (id == undefined) {
         this.possiblePredecessors[i].name = "";
         this.validParent = undefined;
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.getDataObject(this.possiblePredecessors[i].id!).then(response => {
-          if (response) {
+        DataObjectService.getDataObject({
+          collectionId: this.currentCollectionId,
+          dataObjectId: id,
+        })
+          .then(response => {
             this.possiblePredecessors[i].name = response.name
               ? response.name
               : "";
@@ -358,35 +361,21 @@ export default (
             } else {
               this.validPredecessors[i] = true;
             }
-          } else {
+            this.validPredecessors = [...this.validPredecessors];
+            this.possiblePredecessors = [...this.possiblePredecessors];
+          })
+          .catch(() => {
             this.possiblePredecessors[i].name = "";
             this.validPredecessors[i] = false;
-          }
-          this.validPredecessors = [...this.validPredecessors];
-          this.possiblePredecessors = [...this.possiblePredecessors];
-        });
+          });
       }
-    },
-
-    async getDataObject(id: number): Promise<DataObject | undefined> {
-      let dataObject: DataObject | undefined;
-      try {
-        dataObject = await this.dataObjectApi?.getDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: id,
-        });
-      } catch (e) {
-        return undefined;
-      }
-      return dataObject;
     },
 
     create() {
-      this.dataObjectApi
-        ?.createDataObject({
-          collectionId: this.currentCollectionId,
-          dataObject: this.newDataObject,
-        })
+      DataObjectService.createDataObject({
+        collectionId: this.currentCollectionId,
+        dataObject: this.newDataObject,
+      })
         .then(response => {
           this.$router.push({
             name: "DataObject",
@@ -408,12 +397,11 @@ export default (
         console.log("Unknown dataObject id");
         return;
       }
-      this.dataObjectApi
-        ?.updateDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.newDataObject.id,
-          dataObject: this.newDataObject,
-        })
+      DataObjectService.updateDataObject({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.newDataObject.id,
+        dataObject: this.newDataObject,
+      })
         .then(() => {
           this.$emit("data-object-changed");
         })

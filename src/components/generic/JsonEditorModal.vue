@@ -15,11 +15,11 @@
 </template>
 
 <script lang="ts">
-import { StructuredDataVue } from "@/utils/api-mixin";
+import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
 import JSONEditor, { JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface JsonEditorData {
   structuredDataPayload?: string;
@@ -33,10 +33,7 @@ function initialState(): JsonEditorData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
-).extend({
-  mixins: [StructuredDataVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -61,11 +58,10 @@ export default (
   },
   methods: {
     retrievePayload() {
-      this.structuredDataApi
-        ?.getStructuredData({
-          structureddataContainerId: this.containerId,
-          oid: this.oid,
-        })
+      StructuredDataService.getStructuredData({
+        structureddataContainerId: this.containerId,
+        oid: this.oid,
+      })
         .then(response => {
           if (response.payload) this.structuredDataPayload = response.payload;
           this.startJsonEditor();

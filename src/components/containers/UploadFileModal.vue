@@ -20,17 +20,13 @@
 </template>
 
 <script lang="ts">
-import { FileVue } from "@/utils/api-mixin";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface UploadFileModalData {
   newFile?: Blob;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
-).extend({
-  mixins: [FileVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,

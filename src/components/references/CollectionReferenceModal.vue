@@ -54,9 +54,9 @@
 </template>
 
 <script lang="ts">
-import { CollectionVue } from "@/utils/api-mixin";
+import CollectionService from "@/services/collectionService";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface CollectionReferenceModelData {
   newCollectionReference: CollectionReference;
@@ -78,10 +78,7 @@ function initialState(): CollectionReferenceModelData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
-).extend({
-  mixins: [CollectionVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -100,10 +97,9 @@ export default (
       Object.assign(this.$data, initialState());
     },
     fetchCollection() {
-      this.collectionApi
-        ?.getCollection({
-          collectionId: +this.currentCollectionId,
-        })
+      CollectionService.getCollection({
+        collectionId: +this.currentCollectionId,
+      })
         .then(collection => {
           this.currentCollection = collection;
           this.validCollection = true;
@@ -111,7 +107,7 @@ export default (
             this.newCollectionReference.referencedCollectionId = collection.id;
         })
         .catch(e => {
-          const error = "Error while getting collection: " + e.statusText;
+          const error = "Error while fetching collection: " + e.statusText;
           console.log(error);
           this.currentCollection = undefined;
           this.validCollection = false;

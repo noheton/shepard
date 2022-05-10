@@ -101,10 +101,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import UserModal from "@/components/user/UserModal.vue";
-import { UserGroupVue } from "@/utils/api-mixin";
+import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
 import { Permissions, UserGroup } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 import { mapActions, mapGetters } from "vuex";
 
 interface UserGroupData {
@@ -116,16 +116,13 @@ interface UserGroupData {
   managerAccess: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UserGroupVue>>
-).extend({
+export default Vue.extend({
   components: {
     DeleteConfirmationModal,
     PermissionsModal,
     GenericName,
     UserModal,
   },
-  mixins: [UserGroupVue],
   data() {
     return {
       currentUserGroup: undefined,
@@ -162,10 +159,9 @@ export default (
     },
 
     retrieveUserGroup() {
-      this.userGroupApi
-        ?.getUserGroup({
-          usergroupId: this.currentUserGroupId,
-        })
+      UserGroupService.getUserGroup({
+        usergroupId: this.currentUserGroupId,
+      })
         .then(response => {
           this.currentUserGroup = response;
         })
@@ -184,11 +180,10 @@ export default (
     },
     updateUserGroup() {
       if (this.currentUserGroup)
-        this.userGroupApi
-          ?.updateUserGroup({
-            usergroupId: this.currentUserGroupId,
-            userGroup: this.currentUserGroup,
-          })
+        UserGroupService.updateUserGroup({
+          usergroupId: this.currentUserGroupId,
+          userGroup: this.currentUserGroup,
+        })
           .then(() => {
             this.retrieveUserGroup();
           })
@@ -199,10 +194,9 @@ export default (
           });
     },
     handleDeleteUserGroup() {
-      this.userGroupApi
-        ?.deleteUserGroup({
-          usergroupId: this.currentUserGroupId,
-        })
+      UserGroupService.deleteUserGroup({
+        usergroupId: this.currentUserGroupId,
+      })
         .then(() => {
           this.$router.push({
             name: "UserGroupList",
@@ -229,8 +223,9 @@ export default (
       }
     },
     retrievePermissions() {
-      this.userGroupApi
-        ?.getUserGroupPermissions({ usergroupId: this.currentUserGroupId })
+      UserGroupService.getUserGroupPermissions({
+        usergroupId: this.currentUserGroupId,
+      })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -242,16 +237,15 @@ export default (
         });
     },
     updatePermissions(perms: Permissions) {
-      this.userGroupApi
-        ?.editUserGroupPermissions({
-          usergroupId: this.currentUserGroupId,
-          permissions: perms,
-        })
+      UserGroupService.editUserGroupPermissions({
+        usergroupId: this.currentUserGroupId,
+        permissions: perms,
+      })
         .then(response => {
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while editing permissons: " + e.statusText;
+          const error = "Error while updating permissons: " + e.statusText;
           console.log(error);
         });
     },

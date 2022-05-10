@@ -129,14 +129,14 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
-import { StructuredDataReferenceVue } from "@/utils/api-mixin";
+import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import {
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface StructuredDataListData {
   structuredDataList: StructuredDataReference[];
@@ -147,9 +147,7 @@ interface StructuredDataListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     StructuredDataReferenceModal,
@@ -158,7 +156,6 @@ export default (
     JsonEditorModal,
   },
 
-  mixins: [StructuredDataReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -184,11 +181,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.structuredDataReferenceApi
-        ?.getAllStructuredDataReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      StructuredDataReferenceService.getAllStructuredDataReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.structuredDataList = response;
           this.structuredDataList.forEach(reference => {
@@ -203,12 +199,11 @@ export default (
     },
 
     retrieveStructuredDatas(id: number) {
-      this.structuredDataReferenceApi
-        ?.getStructuredDataPayload({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          structureddataReferenceId: id,
-        })
+      StructuredDataReferenceService.getStructuredDataPayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        structureddataReferenceId: id,
+      })
         .then(response => {
           const temp: { [key: string]: StructuredDataPayload } = {};
           response.forEach(payload => {
@@ -226,12 +221,11 @@ export default (
     },
 
     create(newReference: StructuredDataReference) {
-      this.structuredDataReferenceApi
-        ?.createStructuredDataReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          structuredDataReference: newReference,
-        })
+      StructuredDataReferenceService.createStructuredDataReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        structuredDataReference: newReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.structuredDataList = [response].concat(this.structuredDataList);
@@ -246,12 +240,11 @@ export default (
     },
 
     handleDelete(structureddataReferenceId: number) {
-      this.structuredDataReferenceApi
-        ?.deleteStructuredDataReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          structureddataReferenceId: structureddataReferenceId,
-        })
+      StructuredDataReferenceService.deleteStructuredDataReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        structureddataReferenceId: structureddataReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();

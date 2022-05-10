@@ -105,7 +105,7 @@
 </template>
 
 <script lang="ts">
-import { SearchVue } from "@/utils/api-mixin";
+import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
 import {
   ResponseBody,
@@ -115,7 +115,7 @@ import {
 } from "@dlr-shepard/shepard-client";
 import JSONEditor, { JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface SearchData {
   editor?: JSONEditor;
@@ -158,10 +158,7 @@ const initialJson = {
   ],
 };
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof SearchVue>>
-).extend({
-  mixins: [SearchVue],
+export default Vue.extend({
   data() {
     return initialState();
   },
@@ -203,27 +200,26 @@ export default (
       if (!this.editor) return;
       const searchQuery = JSON.stringify(this.editor.get());
 
-      this.searchApi
-        ?.search({
-          searchBody: {
-            scopes: [
-              {
-                collectionId: this.currentCollectionId,
-                dataObjectId: this.currentDataObjectId,
-                traversalRules: this.selectedTraversalRule,
-              },
-            ],
-            searchParams: {
-              query: searchQuery,
-              queryType: this.selectedQueryType,
+      SearchService.search({
+        searchBody: {
+          scopes: [
+            {
+              collectionId: this.currentCollectionId,
+              dataObjectId: this.currentDataObjectId,
+              traversalRules: this.selectedTraversalRule,
             },
+          ],
+          searchParams: {
+            query: searchQuery,
+            queryType: this.selectedQueryType,
           },
-        })
+        },
+      })
         .then(response => {
           this.searchData = response;
         })
         .catch(e => {
-          const error = "Error while getting search Data: " + e.statusText;
+          const error = "Error while fetching search Data: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
         })

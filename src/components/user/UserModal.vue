@@ -42,9 +42,9 @@
 </template>
 
 <script lang="ts">
-import { UserVue } from "@/utils/api-mixin";
+import UserService from "@/services/userService";
 import { User } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface AddUserModalData {
   username: string;
@@ -64,10 +64,7 @@ function initialState(): AddUserModalData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UserVue>>
-).extend({
-  mixins: [UserVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -99,14 +96,13 @@ export default (
         this.currentUser = undefined;
         return;
       }
-      this.userApi
-        ?.getUser({ username: this.username })
+      UserService.getUser({ username: this.username })
         .then(currentUser => {
           this.currentUser = currentUser;
           this.validUser = true;
         })
         .catch(e => {
-          const error = "Error while getting user: " + e.statusText;
+          const error = "Error while fetching user: " + e.statusText;
           console.log(error);
           this.currentUser = undefined;
           this.validUser = false;

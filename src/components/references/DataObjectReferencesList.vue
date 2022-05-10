@@ -95,10 +95,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
-import { DataObjectReferenceVue } from "@/utils/api-mixin";
+import DataObjectReferenceService from "@/services/dataObjectReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface DataObjectReferenceListData {
   dataObjectList: DataObjectReference[];
@@ -108,16 +108,13 @@ interface DataObjectReferenceListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     DataObjectReferenceModal,
     DeleteConfirmationModal,
     GenericName,
   },
-  mixins: [DataObjectReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -142,11 +139,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.dataObjectReferenceApi
-        ?.getAllDataObjectReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      DataObjectReferenceService.getAllDataObjectReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.dataObjectList = response;
           response.forEach(reference => {
@@ -160,12 +156,11 @@ export default (
         });
     },
     retrieveDataObject(referenceId: number) {
-      this.dataObjectReferenceApi
-        ?.getDataObjectReferencePayload({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          dataObjectReferenceId: referenceId,
-        })
+      DataObjectReferenceService.getDataObjectReferencePayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        dataObjectReferenceId: referenceId,
+      })
         .then(response => {
           const temp: { [key: number]: DataObject } = {};
           temp[referenceId] = response;
@@ -180,12 +175,11 @@ export default (
     },
 
     create(newReference: DataObjectReference) {
-      this.dataObjectReferenceApi
-        ?.createDataObjectReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          dataObjectReference: newReference,
-        })
+      DataObjectReferenceService.createDataObjectReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        dataObjectReference: newReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.dataObjectList = [response].concat(this.dataObjectList);
@@ -200,12 +194,11 @@ export default (
     },
 
     handleDelete(dataObjectReferenceId: number) {
-      this.dataObjectReferenceApi
-        ?.deleteDataObjectReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          dataObjectReferenceId: dataObjectReferenceId,
-        })
+      DataObjectReferenceService.deleteDataObjectReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        dataObjectReferenceId: dataObjectReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();

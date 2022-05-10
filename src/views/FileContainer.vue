@@ -120,7 +120,7 @@ import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import { FileVue } from "@/utils/api-mixin";
+import FileService from "@/services/fileService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import {
@@ -128,7 +128,7 @@ import {
   Permissions,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface FileData {
   currentFileContainer?: FileContainer;
@@ -141,9 +141,7 @@ interface FileData {
   managerAccess: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof FileVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     DeleteConfirmationModal,
@@ -152,7 +150,6 @@ export default (
     DownloadAlert,
     GenericName,
   },
-  mixins: [FileVue],
   data() {
     return {
       currentFileContainer: undefined,
@@ -177,10 +174,9 @@ export default (
   },
   methods: {
     retrieveFileContainer() {
-      this.fileApi
-        ?.getFileContainer({
-          fileContainerId: this.currentFileContainerId,
-        })
+      FileService.getFileContainer({
+        fileContainerId: this.currentFileContainerId,
+      })
         .then(response => {
           this.currentFileContainer = response;
         })
@@ -191,10 +187,9 @@ export default (
         });
     },
     retrieveFileList() {
-      this.fileApi
-        ?.getAllFiles({
-          fileContainerId: this.currentFileContainerId,
-        })
+      FileService.getAllFiles({
+        fileContainerId: this.currentFileContainerId,
+      })
         .then(response => {
           this.fileList = response;
         })
@@ -204,8 +199,9 @@ export default (
         });
     },
     handleDeleteContainer() {
-      this.fileApi
-        ?.deleteFileContainer({ fileContainerId: this.currentFileContainerId })
+      FileService.deleteFileContainer({
+        fileContainerId: this.currentFileContainerId,
+      })
         .then(() => {
           this.$router.push({ name: "FilesList" });
         })
@@ -217,11 +213,10 @@ export default (
     },
     uploadFile(newFile: Blob) {
       if (this.currentFileContainer?.id)
-        this.fileApi
-          ?.createFile({
-            fileContainerId: this.currentFileContainer?.id,
-            file: newFile,
-          })
+        FileService.createFile({
+          fileContainerId: this.currentFileContainer?.id,
+          file: newFile,
+        })
           .then(() => {
             this.retrieveFileList();
           })
@@ -236,11 +231,10 @@ export default (
       this.downloadStarted = true;
       this.downloadActive = true;
       if (this.currentFileContainer?.id)
-        this.fileApi
-          ?.getFile({
-            fileContainerId: this.currentFileContainer?.id,
-            oid: oid,
-          })
+        FileService.getFile({
+          fileContainerId: this.currentFileContainer?.id,
+          oid: oid,
+        })
           .then(response => {
             downloadFile(response, filename);
           })
@@ -256,11 +250,10 @@ export default (
 
     handleDeleteFile(oid: string) {
       if (this.currentFileContainer?.id)
-        this.fileApi
-          ?.deleteFile({
-            fileContainerId: this.currentFileContainer?.id,
-            oid: oid,
-          })
+        FileService.deleteFile({
+          fileContainerId: this.currentFileContainer?.id,
+          oid: oid,
+        })
           .catch(e => {
             const error = "Error while deleting file: " + e.statusText;
             console.log(error);
@@ -271,8 +264,9 @@ export default (
           });
     },
     retrievePermissions() {
-      this.fileApi
-        ?.getFilePermissions({ fileContainerId: this.currentFileContainerId })
+      FileService.getFilePermissions({
+        fileContainerId: this.currentFileContainerId,
+      })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -284,16 +278,15 @@ export default (
         });
     },
     updatePermissions(perms: Permissions) {
-      this.fileApi
-        ?.editFilePermissions({
-          fileContainerId: this.currentFileContainerId,
-          permissions: perms,
-        })
+      FileService.editFilePermissions({
+        fileContainerId: this.currentFileContainerId,
+        permissions: perms,
+      })
         .then(response => {
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while editing permissons: " + e.statusText;
+          const error = "Error while updating permissons: " + e.statusText;
           console.log(error);
         });
     },

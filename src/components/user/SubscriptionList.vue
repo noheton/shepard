@@ -53,13 +53,13 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
-import { SubscriptionVue } from "@/utils/api-mixin";
+import SubscriptionService from "@/services/subscriptionService";
 import { emitter } from "@/utils/event-bus";
 import {
   Subscription,
   SubscriptionRequestMethodEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface SubscriptionListData {
   subscriptions: Subscription[];
@@ -67,11 +67,8 @@ interface SubscriptionListData {
   requestMethods: string[];
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof SubscriptionVue>>
-).extend({
+export default Vue.extend({
   components: { DeleteConfirmationModal, SubscriptionModal, GenericName },
-  mixins: [SubscriptionVue],
   props: {
     currentUsername: {
       type: String,
@@ -91,8 +88,9 @@ export default (
   methods: {
     retrieveSubscriptions() {
       if (!this.currentUsername) return;
-      this.subscriptionApi
-        ?.getAllSubscriptions({ username: this.currentUsername })
+      SubscriptionService.getAllSubscriptions({
+        username: this.currentUsername,
+      })
         .then(response => {
           this.subscriptions = response;
         })
@@ -102,11 +100,10 @@ export default (
         });
     },
     handleCreate(subscription: Subscription) {
-      this.subscriptionApi
-        ?.createSubscription({
-          username: this.currentUsername,
-          subscription: subscription,
-        })
+      SubscriptionService.createSubscription({
+        username: this.currentUsername,
+        subscription: subscription,
+      })
         .then(response => {
           this.subscriptions.push(response);
         })
@@ -117,11 +114,10 @@ export default (
         });
     },
     handleDelete(id: number) {
-      this.subscriptionApi
-        ?.deleteSubscription({
-          username: this.currentUsername,
-          subscriptionId: id,
-        })
+      SubscriptionService.deleteSubscription({
+        username: this.currentUsername,
+        subscriptionId: id,
+      })
         .catch(e => {
           const error = "Error while deleting subscription: " + e.statusText;
           console.log(error);

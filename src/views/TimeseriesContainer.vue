@@ -63,14 +63,14 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import { TimeseriesVue } from "@/utils/api-mixin";
+import TimeseriesService from "@/services/timeseriesService";
 import { emitter } from "@/utils/event-bus";
 import {
   Permissions,
   Timeseries,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface TimeseriesData {
   currentTimeseriesContainer?: TimeseriesContainer;
@@ -80,11 +80,8 @@ interface TimeseriesData {
   managerAccess: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof TimeseriesVue>>
-).extend({
+export default Vue.extend({
   components: { CreatedByLine, DeleteConfirmationModal, PermissionsModal },
-  mixins: [TimeseriesVue],
   data() {
     return {
       currentTimeseriesContainer: undefined,
@@ -106,10 +103,9 @@ export default (
   },
   methods: {
     retrieveTimeseriesContainer() {
-      this.timeseriesApi
-        ?.getTimeseriesContainer({
-          timeseriesContainerId: this.currentTimeseriesContainerId,
-        })
+      TimeseriesService.getTimeseriesContainer({
+        timeseriesContainerId: this.currentTimeseriesContainerId,
+      })
         .then(response => {
           this.currentTimeseriesContainer = response;
         })
@@ -121,10 +117,9 @@ export default (
         });
     },
     retrieveTimeseriesAvailable() {
-      this.timeseriesApi
-        ?.getTimeseriesAvailable({
-          timeseriesContainerId: this.currentTimeseriesContainerId,
-        })
+      TimeseriesService.getTimeseriesAvailable({
+        timeseriesContainerId: this.currentTimeseriesContainerId,
+      })
         .then(response => {
           this.timeseriesAvailable = response;
         })
@@ -136,10 +131,9 @@ export default (
         });
     },
     handleDelete() {
-      this.timeseriesApi
-        ?.deleteTimeseriesContainer({
-          timeseriesContainerId: this.currentTimeseriesContainerId,
-        })
+      TimeseriesService.deleteTimeseriesContainer({
+        timeseriesContainerId: this.currentTimeseriesContainerId,
+      })
         .then(() => {
           this.$router.push({ name: "TimeseriesList" });
         })
@@ -151,10 +145,9 @@ export default (
         });
     },
     retrievePermissions() {
-      this.timeseriesApi
-        ?.getTimeseriesPermissions({
-          timeseriesContainerId: this.currentTimeseriesContainerId,
-        })
+      TimeseriesService.getTimeseriesPermissions({
+        timeseriesContainerId: this.currentTimeseriesContainerId,
+      })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -166,11 +159,10 @@ export default (
         });
     },
     updatePermissions(perms: Permissions) {
-      this.timeseriesApi
-        ?.editTimeseriesPermissions({
-          timeseriesContainerId: this.currentTimeseriesContainerId,
-          permissions: perms,
-        })
+      TimeseriesService.editTimeseriesPermissions({
+        timeseriesContainerId: this.currentTimeseriesContainerId,
+        permissions: perms,
+      })
         .then(response => {
           this.permissions = response;
         })

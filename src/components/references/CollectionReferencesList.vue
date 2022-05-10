@@ -95,10 +95,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
-import { CollectionReferenceVue } from "@/utils/api-mixin";
+import CollectionReferenceService from "@/services/collectionReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface CollectionListData {
   collectionList: CollectionReference[];
@@ -108,16 +108,13 @@ interface CollectionListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof CollectionReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     CollectionReferenceModal,
     DeleteConfirmationModal,
     GenericName,
   },
-  mixins: [CollectionReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -142,11 +139,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.collectionReferenceApi
-        ?.getAllCollectionReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      CollectionReferenceService.getAllCollectionReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.collectionList = response;
           response.forEach(reference => {
@@ -160,12 +156,11 @@ export default (
         });
     },
     retrieveCollection(referenceId: number) {
-      this.collectionReferenceApi
-        ?.getCollectionReferencePayload({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          collectionReferenceId: referenceId,
-        })
+      CollectionReferenceService.getCollectionReferencePayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        collectionReferenceId: referenceId,
+      })
         .then(response => {
           const temp: { [key: number]: Collection } = {};
           temp[referenceId] = response;
@@ -180,12 +175,11 @@ export default (
     },
 
     create(newReference: CollectionReference) {
-      this.collectionReferenceApi
-        ?.createCollectionReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          collectionReference: newReference,
-        })
+      CollectionReferenceService.createCollectionReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        collectionReference: newReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.collectionList = [response].concat(this.collectionList);
@@ -200,12 +194,11 @@ export default (
     },
 
     handleDelete(collectionReferenceId: number) {
-      this.collectionReferenceApi
-        ?.deleteCollectionReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          collectionReferenceId: collectionReferenceId,
-        })
+      CollectionReferenceService.deleteCollectionReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        collectionReferenceId: collectionReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();

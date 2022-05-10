@@ -70,10 +70,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
-import { UriReferenceVue } from "@/utils/api-mixin";
+import UriReferenceService from "@/services/uriReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { URIReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface URIListData {
   uriList: URIReference[];
@@ -82,16 +82,13 @@ interface URIListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UriReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     UriReferenceModal,
     DeleteConfirmationModal,
     GenericName,
   },
-  mixins: [UriReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -115,11 +112,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.uriReferenceApi
-        ?.getAllUriReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      UriReferenceService.getAllUriReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.uriList = response;
         })
@@ -130,12 +126,11 @@ export default (
     },
 
     create(newReference: URIReference) {
-      this.uriReferenceApi
-        ?.createUriReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          uRIReference: newReference,
-        })
+      UriReferenceService.createUriReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        uRIReference: newReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.uriList = [response].concat(this.uriList);
@@ -148,12 +143,11 @@ export default (
     },
 
     handleDelete(uriReferenceId: number) {
-      this.uriReferenceApi
-        ?.deleteUriReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          uriReferenceId: uriReferenceId,
-        })
+      UriReferenceService.deleteUriReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        uriReferenceId: uriReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();

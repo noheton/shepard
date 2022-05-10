@@ -106,13 +106,13 @@
 </template>
 
 <script lang="ts">
-import { TimeseriesVue } from "@/utils/api-mixin";
+import TimeseriesService from "@/services/timeseriesService";
 import {
   Timeseries,
   TimeseriesContainer,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface Option {
   value: Timeseries | null;
@@ -170,10 +170,7 @@ function convertTimeseriesToOption(ts: Timeseries, field = true): Option {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof TimeseriesVue>>
-).extend({
-  mixins: [TimeseriesVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -242,10 +239,9 @@ export default (
     fetchContainer() {
       if (this.currentContainer?.id == +this.currentContainerId) return;
       this.resetSelection();
-      this.timeseriesApi
-        ?.getTimeseriesContainer({
-          timeseriesContainerId: +this.currentContainerId,
-        })
+      TimeseriesService.getTimeseriesContainer({
+        timeseriesContainerId: +this.currentContainerId,
+      })
         .then(container => {
           this.fetchTimeseriesAvailable();
           this.currentContainer = container;
@@ -255,17 +251,16 @@ export default (
         })
         .catch(e => {
           const error =
-            "Error while getting timeseries container: " + e.statusText;
+            "Error while fetching timeseries container: " + e.statusText;
           console.log(error);
           this.currentContainer = undefined;
           this.validContainer = false;
         });
     },
     fetchTimeseriesAvailable() {
-      this.timeseriesApi
-        ?.getTimeseriesAvailable({
-          timeseriesContainerId: +this.currentContainerId,
-        })
+      TimeseriesService.getTimeseriesAvailable({
+        timeseriesContainerId: +this.currentContainerId,
+      })
         .then(result => {
           this.timeseriesAvailable = result.map(ts =>
             convertTimeseriesToOption(ts, false),
@@ -273,7 +268,7 @@ export default (
         })
         .catch(e => {
           const error =
-            "Error while getting timeseries available: " + e.statusText;
+            "Error while fetching timeseries available: " + e.statusText;
           console.log(error);
         });
     },

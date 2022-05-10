@@ -111,12 +111,12 @@ import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
-import { TimeseriesReferenceVue } from "@/utils/api-mixin";
+import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import { TimeseriesReference } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface TimeseriesListData {
   timeseriesList: TimeseriesReference[];
@@ -128,9 +128,7 @@ interface TimeseriesListData {
   deletedAlert: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof TimeseriesReferenceVue>>
-).extend({
+export default Vue.extend({
   components: {
     CreatedByLine,
     DownloadAlert,
@@ -138,7 +136,6 @@ export default (
     DeleteConfirmationModal,
     GenericName,
   },
-  mixins: [TimeseriesReferenceVue],
   props: {
     currentCollectionId: {
       type: Number,
@@ -165,11 +162,10 @@ export default (
   },
   methods: {
     retrieveReferences() {
-      this.timeseriesReferenceApi
-        ?.getAllTimeseriesReferences({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      TimeseriesReferenceService.getAllTimeseriesReferences({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.timeseriesList = response;
         })
@@ -182,12 +178,11 @@ export default (
     downloadCsv(referenceId: number, referenceName: string) {
       this.downloadStarted = true;
       this.downloadActive = true;
-      this.timeseriesReferenceApi
-        ?.exportTimeseriesPayload({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          timeseriesReferenceId: referenceId,
-        })
+      TimeseriesReferenceService.exportTimeseriesPayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        timeseriesReferenceId: referenceId,
+      })
         .then(response => {
           downloadFile(response, referenceName + ".csv");
         })
@@ -202,12 +197,11 @@ export default (
     },
 
     handleDelete(timeseriesReferenceId: number) {
-      this.timeseriesReferenceApi
-        ?.deleteTimeseriesReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          timeseriesReferenceId: timeseriesReferenceId,
-        })
+      TimeseriesReferenceService.deleteTimeseriesReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        timeseriesReferenceId: timeseriesReferenceId,
+      })
         .then(() => {
           this.deletedAlert = true;
           this.retrieveReferences();
@@ -221,12 +215,11 @@ export default (
     },
 
     handleCreate(timeseriesReference: TimeseriesReference) {
-      this.timeseriesReferenceApi
-        ?.createTimeseriesReference({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-          timeseriesReference: timeseriesReference,
-        })
+      TimeseriesReferenceService.createTimeseriesReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        timeseriesReference: timeseriesReference,
+      })
         .then(response => {
           this.createdAlert = true;
           this.timeseriesList = [response].concat(this.timeseriesList);

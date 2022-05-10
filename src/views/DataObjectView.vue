@@ -132,10 +132,10 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
-import { DataObjectVue } from "@/utils/api-mixin";
+import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface DataObjectData {
   currentDataObject?: DataObject;
@@ -143,9 +143,7 @@ interface DataObjectData {
   screenWidth: number;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
-).extend({
+export default Vue.extend({
   components: {
     GenericCollapse,
     GenericDescription,
@@ -156,7 +154,6 @@ export default (
     DataObjectElement,
     DeleteConfirmationModal,
   },
-  mixins: [DataObjectVue],
   data() {
     return {
       currentDataObject: undefined,
@@ -184,11 +181,10 @@ export default (
       }
     },
     retrieveDataObject() {
-      this.dataObjectApi
-        ?.getDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      DataObjectService.getDataObject({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(response => {
           this.currentDataObject = response;
           this.attributeItems = [];
@@ -206,11 +202,10 @@ export default (
         });
     },
     handleDelete() {
-      this.dataObjectApi
-        ?.deleteDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.currentDataObjectId,
-        })
+      DataObjectService.deleteDataObject({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+      })
         .then(() => {
           this.$router.push({
             name: "Collection",

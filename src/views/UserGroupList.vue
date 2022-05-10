@@ -71,14 +71,14 @@ import FilterListLine, {
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
-import { UserGroupVue } from "@/utils/api-mixin";
+import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   GetAllUserGroupsOrderByEnum,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface UserGroupData {
   userGroupList?: UserGroup[];
@@ -89,11 +89,8 @@ interface UserGroupData {
   descending: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof UserGroupVue>>
-).extend({
+export default Vue.extend({
   components: { GenericCreateModal, GenericName, Loading, FilterListLine },
-  mixins: [UserGroupVue],
   data() {
     return {
       userGroupList: undefined,
@@ -130,13 +127,12 @@ export default (
       const nextPage = page || this.currentPage;
       const nextOrderBy = this
         .orderBy as keyof typeof GetAllUserGroupsOrderByEnum as GetAllUserGroupsOrderByEnum;
-      this.userGroupApi
-        ?.getAllUserGroups({
-          size: this.perPage,
-          page: nextPage - 1,
-          orderBy: nextOrderBy,
-          orderDesc: this.descending,
-        })
+      UserGroupService.getAllUserGroups({
+        size: this.perPage,
+        page: nextPage - 1,
+        orderBy: nextOrderBy,
+        orderDesc: this.descending,
+      })
         .then(response => {
           this.userGroupList = response;
         })
@@ -147,10 +143,9 @@ export default (
         });
     },
     createUserGroup(newName: string) {
-      this.userGroupApi
-        ?.createUserGroup({
-          userGroup: { name: newName, usernames: [] } as UserGroup,
-        })
+      UserGroupService.createUserGroup({
+        userGroup: { name: newName, usernames: [] } as UserGroup,
+      })
         .then(response => {
           this.$router.push({
             name: "UserGroup",

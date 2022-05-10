@@ -37,11 +37,10 @@
 </template>
 
 <script lang="ts">
-import { StructuredDataVue } from "@/utils/api-mixin";
 import { StructuredDataPayload } from "@dlr-shepard/shepard-client";
 import JSONEditor, { JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface CreateStructuredDataModalData {
   newStructuredDataPayload: StructuredDataPayload;
@@ -57,10 +56,7 @@ function initialState(): CreateStructuredDataModalData {
   };
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof StructuredDataVue>>
-).extend({
-  mixins: [StructuredDataVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,

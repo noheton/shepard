@@ -8,19 +8,16 @@
 
 <script lang="ts">
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
-import { DataObjectVue } from "@/utils/api-mixin";
+import DataObjectService from "@/services/dataObjectService";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface RelatedObjectsTableData {
   dataObject?: DataObject;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof DataObjectVue>>
-).extend({
+export default Vue.extend({
   components: { DataObjectListItem },
-  mixins: [DataObjectVue],
   props: {
     collectionId: {
       type: Number,
@@ -41,11 +38,10 @@ export default (
   },
   methods: {
     retrieveDataObjects() {
-      this.dataObjectApi
-        ?.getDataObject({
-          collectionId: this.collectionId,
-          dataObjectId: this.dataObjectId,
-        })
+      DataObjectService.getDataObject({
+        collectionId: this.collectionId,
+        dataObjectId: this.dataObjectId,
+      })
         .then(response => {
           this.dataObject = response;
         })

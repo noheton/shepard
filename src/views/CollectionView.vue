@@ -113,10 +113,10 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import { CollectionVue } from "@/utils/api-mixin";
+import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { Collection, Permissions } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface CollectionData {
   currentCollection?: Collection;
@@ -125,9 +125,7 @@ interface CollectionData {
   managerAccess: boolean;
 }
 
-export default (
-  Vue as VueConstructor<Vue & InstanceType<typeof CollectionVue>>
-).extend({
+export default Vue.extend({
   components: {
     GenericCollapse,
     GenericDescription,
@@ -138,7 +136,6 @@ export default (
     DeleteConfirmationModal,
     PermissionsModal,
   },
-  mixins: [CollectionVue],
   data() {
     return {
       currentCollection: undefined,
@@ -158,8 +155,9 @@ export default (
   },
   methods: {
     retrieveCollection() {
-      this.collectionApi
-        ?.getCollection({ collectionId: this.currentCollectionId })
+      CollectionService.getCollection({
+        collectionId: this.currentCollectionId,
+      })
         .then(response => {
           this.currentCollection = response;
           this.attributeItems = [];
@@ -177,8 +175,9 @@ export default (
         });
     },
     handleDelete() {
-      this.collectionApi
-        ?.deleteCollection({ collectionId: this.currentCollectionId })
+      CollectionService.deleteCollection({
+        collectionId: this.currentCollectionId,
+      })
         .then(() => {
           this.$router.push({ name: "Explore" });
         })
@@ -189,8 +188,9 @@ export default (
         });
     },
     retrievePermissions() {
-      this.collectionApi
-        ?.getCollectionPermissions({ collectionId: this.currentCollectionId })
+      CollectionService.getCollectionPermissions({
+        collectionId: this.currentCollectionId,
+      })
         .then(response => {
           this.permissions = response;
           this.managerAccess = true;
@@ -202,16 +202,15 @@ export default (
         });
     },
     updatePermissions(perms: Permissions) {
-      this.collectionApi
-        ?.editCollectionPermissions({
-          collectionId: this.currentCollectionId,
-          permissions: perms,
-        })
+      CollectionService.editCollectionPermissions({
+        collectionId: this.currentCollectionId,
+        permissions: perms,
+      })
         .then(response => {
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while editing permissons: " + e.statusText;
+          const error = "Error while updating permissons: " + e.statusText;
           console.log(error);
         });
     },

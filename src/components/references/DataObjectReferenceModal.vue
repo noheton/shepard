@@ -73,15 +73,14 @@
 </template>
 
 <script lang="ts">
-import { CollectionVue, DataObjectVue } from "@/utils/api-mixin";
+import CollectionService from "@/services/collectionService";
+import DataObjectService from "@/services/dataObjectService";
 import {
   Collection,
-  CollectionApi,
   DataObject,
-  DataObjectApi,
   DataObjectReference,
 } from "@dlr-shepard/shepard-client";
-import Vue, { VueConstructor } from "vue";
+import Vue from "vue";
 
 interface Option {
   text: string;
@@ -114,14 +113,7 @@ function initialState(): DataObjectReferenceModelData {
   };
 }
 
-export default (
-  Vue as VueConstructor<
-    Vue &
-      InstanceType<typeof CollectionVue> &
-      InstanceType<typeof DataObjectVue>
-  >
-).extend({
-  mixins: [CollectionVue, DataObjectVue],
+export default Vue.extend({
   props: {
     modalId: {
       type: String,
@@ -140,10 +132,9 @@ export default (
       Object.assign(this.$data, initialState());
     },
     fetchCollection() {
-      this.collectionApi
-        ?.getCollection({
-          collectionId: +this.currentCollectionId,
-        })
+      CollectionService.getCollection({
+        collectionId: +this.currentCollectionId,
+      })
         .then(collection => {
           this.currentCollection = collection;
           this.validCollection = true;
@@ -156,32 +147,27 @@ export default (
           });
         })
         .catch(e => {
-          const error = "Error while getting collection: " + e.statusText;
+          const error = "Error while fetching collection: " + e.statusText;
           console.log(error);
           this.currentCollection = undefined;
           this.validCollection = false;
         });
     },
     fetchDataObject() {
-      this.dataObjectApi
-        ?.getDataObject({
-          collectionId: +this.currentCollectionId,
-          dataObjectId: +this.currentDataObjectId,
-        })
+      DataObjectService.getDataObject({
+        collectionId: +this.currentCollectionId,
+        dataObjectId: +this.currentDataObjectId,
+      })
         .then(dataObject => {
           this.currentDataObject = dataObject;
           if (dataObject.id)
             this.newDataObjectReference.referencedDataObjectId = dataObject.id;
         })
         .catch(e => {
-          const error = "Error while getting data object: " + e.statusText;
+          const error = "Error while fetching data object: " + e.statusText;
           console.log(error);
           this.currentDataObject = undefined;
         });
-    },
-    createApi() {
-      this.collectionApi = new CollectionApi(this.config);
-      this.dataObjectApi = new DataObjectApi(this.config);
     },
   },
 });
