@@ -58,6 +58,7 @@ test:
     - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipITs verify -P test
     - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
     - ls -hal target
+  coverage: "/Total.*?([0-9]{1,3})%/"
   artifacts:
     when: always
     expire_in: 2 days
