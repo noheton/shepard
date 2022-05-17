@@ -14,6 +14,32 @@
 
       <h4 class="mb-4">Explore Collections</h4>
 
+      <b-input-group class="mb-3">
+        <b-form-input
+          v-model="userInput"
+          placeholder="Name, Username, ID or Description"
+        ></b-form-input>
+        <b-input-group-append>
+          <b-button
+            v-b-modal.searchDataModal
+            variant="dark"
+            @click="inlineSearch()"
+          >
+            Search
+          </b-button>
+        </b-input-group-append>
+      </b-input-group>
+
+      <b-modal
+        id="searchDataModal"
+        title="Result Set"
+        size="lg"
+        ok-only
+        @show="handlePrepare()"
+      >
+        <GenericEntityList :entities="collectionsResultSet" />
+      </b-modal>
+
       <b-alert
         :show="deletedAlert"
         dismissible
@@ -57,21 +83,27 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import CollectionService from "@/services/collectionService";
+import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
   Collection,
   GetAllCollectionsOrderByEnum,
+  ResponseBody,
+  SearchParamsQueryTypeEnum,
 } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
 
 interface ExploreData {
   collections?: Collection[];
+  collectionsResultSet: Collection[];
   perPage: number;
   currentPage: number;
   orderBy: string;
   descending: boolean;
   deletedAlert: boolean;
+  searchData: ResponseBody;
+  userInput: string;
 }
 
 export default Vue.extend({
@@ -79,11 +111,14 @@ export default Vue.extend({
   data() {
     return {
       collections: undefined,
+      collectionsResultSet: [],
       perPage: 10,
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
       deletedAlert: false,
+      searchData: {},
+      userInput: "",
     } as ExploreData;
   },
   computed: {
@@ -126,6 +161,78 @@ export default Vue.extend({
           console.log(error);
           emitter.emit("error", error);
         });
+    },
+
+    handlePrepare() {
+      this.collectionsResultSet = [];
+    },
+
+    retrieveCollectionById(collectionId: number) {
+      CollectionService.getCollection({
+        collectionId: collectionId,
+      })
+        .then(response => {
+          this.collectionsResultSet.push(response);
+        })
+        .catch(e => {
+          const error = "Error while fetching collection: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        });
+    },
+
+    inlineSearch() {
+      let searchQuery = {
+        OR: [
+          {
+            property: "name",
+            value: this.userInput,
+            operator: "contains",
+          },
+          {
+            property: "createdBy",
+            value: this.userInput,
+            operator: "contains",
+          },
+          {
+            property: "description",
+            value: this.userInput,
+            operator: "contains",
+          },
+          {
+            property: "id",
+            value: Number(this.userInput),
+            operator: "eq",
+          },
+        ],
+      };
+      SearchService.search({
+        searchBody: {
+          scopes: [
+            {
+              traversalRules: [],
+            },
+          ],
+          searchParams: {
+            query: JSON.stringify(searchQuery),
+            queryType: SearchParamsQueryTypeEnum.Collection,
+          },
+        },
+      })
+        .then(response => {
+          this.searchData = response;
+          response.resultSet?.forEach(result => {
+            if (result.collectionId) {
+              this.retrieveCollectionById(result.collectionId);
+            }
+          });
+        })
+        .catch(e => {
+          const error = "Error while fetching search Data: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        })
+        .finally();
     },
   },
 });
