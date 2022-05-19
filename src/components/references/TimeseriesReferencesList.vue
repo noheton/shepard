@@ -27,10 +27,11 @@
       @create="handleCreate($event)"
     />
 
-    <DownloadAlert
-      :download-active="downloadActive"
-      :download-started="downloadStarted"
-      :download-error="downloadError"
+    <ProcessAlert
+      :process-name="Download"
+      :process-active="downloadActive"
+      :process-started="downloadStarted"
+      :process-error="downloadError"
     />
     <b-list-group>
       <b-list-group-item
@@ -107,9 +108,9 @@
 
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
@@ -131,7 +132,7 @@ interface TimeseriesListData {
 export default Vue.extend({
   components: {
     CreatedByLine,
-    DownloadAlert,
+    ProcessAlert,
     TimeseriesReferenceModal,
     DeleteConfirmationModal,
     GenericName,

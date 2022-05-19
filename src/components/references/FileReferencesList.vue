@@ -27,10 +27,11 @@
       @create="create($event)"
     />
 
-    <DownloadAlert
-      :download-active="downloadActive"
-      :download-started="downloadStarted"
-      :download-error="downloadError"
+    <ProcessAlert
+      :prcess-name="Download"
+      :process-active="downloadActive"
+      :process-started="downloadStarted"
+      :process-error="downloadError"
     />
     <b-list-group>
       <b-list-group-item
@@ -108,9 +109,9 @@
 
 <script lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
@@ -133,7 +134,7 @@ interface FileListData {
 export default Vue.extend({
   components: {
     CreatedByLine,
-    DownloadAlert,
+    ProcessAlert,
     FileReferenceModal,
     DeleteConfirmationModal,
     GenericName,

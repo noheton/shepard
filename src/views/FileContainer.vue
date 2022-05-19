@@ -38,10 +38,21 @@
           tooltip
         />
       </p>
-      <DownloadAlert
-        :download-active="downloadActive"
-        :download-started="downloadStarted"
-        :download-error="downloadError"
+      <ProcessAlert
+        process-name="Download"
+        :process-active="downloadActive"
+        :process-started="downloadStarted"
+        :process-error="downloadError"
+        @process-message-dismissed="downloadStarted = false"
+        @error-message-dismissed="downloadError = false"
+      />
+      <ProcessAlert
+        process-name="Upload"
+        :process-active="uploadActive"
+        :process-started="uploadStarted"
+        :process-error="uploadError"
+        @process-message-dismissed="uploadStarted = false"
+        @error-message-dismissed="uploadError = false"
       />
 
       <b-list-group>
@@ -116,10 +127,10 @@
 <script lang="ts">
 import UploadFileModal from "@/components/containers/UploadFileModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import DownloadAlert from "@/components/DownloadAlert.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
@@ -136,6 +147,9 @@ interface FileData {
   downloadStarted: boolean;
   downloadActive: boolean;
   downloadError: boolean;
+  uploadStarted: boolean;
+  uploadActive: boolean;
+  uploadError: boolean;
   fileList: ShepardFile[];
   currentFile?: ShepardFile;
   managerAccess: boolean;
@@ -147,7 +161,7 @@ export default Vue.extend({
     DeleteConfirmationModal,
     PermissionsModal,
     UploadFileModal,
-    DownloadAlert,
+    ProcessAlert,
     GenericName,
   },
   data() {
@@ -157,6 +171,9 @@ export default Vue.extend({
       downloadStarted: false,
       downloadActive: false,
       downloadError: false,
+      uploadStarted: false,
+      uploadActive: false,
+      uploadError: false,
       fileList: [],
       currentFile: undefined,
       managerAccess: false,
@@ -212,6 +229,8 @@ export default Vue.extend({
         });
     },
     uploadFile(newFile: Blob) {
+      this.uploadStarted = true;
+      this.uploadActive = true;
       if (this.currentFileContainer?.id)
         FileService.createFile({
           fileContainerId: this.currentFileContainer?.id,
@@ -224,8 +243,12 @@ export default Vue.extend({
             const error = "Error while uploading File: " + e.statusText;
             console.log(error);
             emitter.emit("error", error);
+            this.uploadStarted = false;
+            this.uploadError = true;
           })
-          .finally();
+          .finally(() => {
+            this.uploadActive = false;
+          });
     },
     downloadFile(oid: string, filename: string) {
       this.downloadStarted = true;
@@ -245,7 +268,9 @@ export default Vue.extend({
             this.downloadStarted = false;
             this.downloadError = true;
           })
-          .finally(() => (this.downloadActive = false));
+          .finally(() => {
+            this.downloadActive = false;
+          });
     },
 
     handleDeleteFile(oid: string) {
