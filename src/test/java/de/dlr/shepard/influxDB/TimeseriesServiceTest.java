@@ -21,7 +21,7 @@ import de.dlr.shepard.BaseTestCase;
 public class TimeseriesServiceTest extends BaseTestCase {
 
 	@Mock
-	private InfluxConnector connector;
+	private InfluxDBConnector connector;
 
 	@Mock
 	private CsvConverter converter;

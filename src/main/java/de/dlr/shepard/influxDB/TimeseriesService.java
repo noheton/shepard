@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TimeseriesService {
 
-	private InfluxConnector influxConnector = InfluxConnector.getInstance();
+	private InfluxDBConnector influxConnector = InfluxDBConnector.getInstance();
 	private CsvConverter csvConverter = new CsvConverter();
 
 	/**

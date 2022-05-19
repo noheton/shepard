@@ -23,15 +23,15 @@ import lombok.extern.slf4j.Slf4j;
  * Influx database is accessed directly by using query strings.
  */
 @Slf4j
-public class InfluxConnector implements IConnector {
+public class InfluxDBConnector implements IConnector {
 
 	private InfluxDB influxDB;
-	private static InfluxConnector instance = null;
+	private static InfluxDBConnector instance = null;
 
 	/**
 	 * Private constructor
 	 */
-	private InfluxConnector() {
+	private InfluxDBConnector() {
 	}
 
 	/**
@@ -40,9 +40,9 @@ public class InfluxConnector implements IConnector {
 	 *
 	 * @return The one and only InfluxConnector instance.
 	 */
-	public static InfluxConnector getInstance() {
+	public static InfluxDBConnector getInstance() {
 		if (instance == null) {
-			instance = new InfluxConnector();
+			instance = new InfluxDBConnector();
 		}
 		return instance;
 	}

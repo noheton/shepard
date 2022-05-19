@@ -1,6 +1,6 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.influxDB.InfluxConnector;
+import de.dlr.shepard.influxDB.InfluxDBConnector;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.neo4Core.io.HealthzIO;
 import de.dlr.shepard.neo4j.NeoConnector;
@@ -23,16 +23,16 @@ public class HealthzRestImpl implements HealthzRest {
 
 	private static IConnector neo4j = NeoConnector.getInstance();
 	private static IConnector mongodb = MongoDBConnector.getInstance();
-	private static IConnector influx = InfluxConnector.getInstance();
+	private static IConnector influxdb = InfluxDBConnector.getInstance();
 
 	@GET
 	@Override
 	public Response getServerHealth() {
 		var neo4jAlive = neo4j.alive();
 		var mongodbAlive = mongodb.alive();
-		var influxAlive = influx.alive();
-		var result = new HealthzIO(neo4jAlive, mongodbAlive, influxAlive);
-		if (neo4jAlive && mongodbAlive && influxAlive)
+		var influxdbAlive = influxdb.alive();
+		var result = new HealthzIO(neo4jAlive, mongodbAlive, influxdbAlive);
+		if (neo4jAlive && mongodbAlive && influxdbAlive)
 			return Response.ok(result).build();
 		log.error("UNHEALTY: {}", result);
 		return Response.status(Status.SERVICE_UNAVAILABLE).entity(result).build();

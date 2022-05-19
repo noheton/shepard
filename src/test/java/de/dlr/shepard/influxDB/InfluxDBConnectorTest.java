@@ -34,13 +34,13 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.Constants;
 
-public class InfluxConnectorTest extends BaseTestCase {
+public class InfluxDBConnectorTest extends BaseTestCase {
 
 	@Mock
 	private InfluxDB influxDB;
 
 	@InjectMocks
-	private InfluxConnector connector;
+	private InfluxDBConnector connector;
 
 	private final String database = "my_database";
 	private final String measurement = "my_measurement";
@@ -60,10 +60,10 @@ public class InfluxConnectorTest extends BaseTestCase {
 
 	@Test
 	public void testGetInstance() {
-		var actual = InfluxConnector.getInstance();
+		var actual = InfluxDBConnector.getInstance();
 		assertNotNull(actual);
 
-		var second = InfluxConnector.getInstance();
+		var second = InfluxDBConnector.getInstance();
 		assertEquals(actual, second);
 	}
 

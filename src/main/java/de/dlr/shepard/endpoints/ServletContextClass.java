@@ -1,6 +1,6 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.influxDB.InfluxConnector;
+import de.dlr.shepard.influxDB.InfluxDBConnector;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.IConnector;
@@ -12,7 +12,7 @@ public class ServletContextClass implements ServletContextListener {
 
 	private static IConnector neo4j = NeoConnector.getInstance();
 	private static IConnector mongodb = MongoDBConnector.getInstance();
-	private static IConnector influx = InfluxConnector.getInstance();
+	private static IConnector influxdb = InfluxDBConnector.getInstance();
 
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
@@ -21,14 +21,14 @@ public class ServletContextClass implements ServletContextListener {
 
 		neo4j.connect();
 		mongodb.connect();
-		influx.connect();
+		influxdb.connect();
 	}
 
 	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
 		neo4j.disconnect();
 		mongodb.disconnect();
-		influx.disconnect();
+		influxdb.disconnect();
 	}
 
 }
