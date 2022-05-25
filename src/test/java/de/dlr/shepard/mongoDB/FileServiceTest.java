@@ -11,7 +11,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
@@ -31,12 +35,12 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
-import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.Filters;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
+import jakarta.xml.bind.DatatypeConverter;
 
 public class FileServiceTest extends BaseTestCase {
 
@@ -75,21 +79,24 @@ public class FileServiceTest extends BaseTestCase {
 	@Test
 	public void getExistingFileTest() {
 		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
-		String fileoid = "60b73212cfa45d2d5baa795d";
+		ObjectId fileoid = new ObjectId("60b73212cfa45d2d5baa795d");
 		String name = "name";
+		String md5 = "md5";
 		Date date = new Date();
 		Document file = mock(Document.class);
 		@SuppressWarnings("unchecked")
 		FindIterable<Document> collectionReturn = mock(FindIterable.class);
 
 		when(database.getCollection(containerId)).thenReturn(collection);
-		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
+		when(collection.find(Filters.eq("_id", fileoid))).thenReturn(collectionReturn);
 		when(collectionReturn.first()).thenReturn(file);
-		when(file.getString("name")).thenReturn("name");
+		when(file.getObjectId("_id")).thenReturn(fileoid);
+		when(file.getString("name")).thenReturn(name);
 		when(file.getDate("createdAt")).thenReturn(date);
+		when(file.getString("md5")).thenReturn(md5);
 
-		var expected = new ShepardFile(fileoid, date, name);
-		var result = fileService.getFile(containerId, fileoid);
+		var expected = new ShepardFile(fileoid.toHexString(), date, name, md5);
+		var result = fileService.getFile(containerId, fileoid.toHexString());
 		assertEquals(expected, result);
 	}
 
@@ -118,18 +125,19 @@ public class FileServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileTest() {
+	public void createFileTest() throws NoSuchAlgorithmException, IOException {
 		ObjectId oid = new ObjectId();
 		ObjectId moid = new ObjectId();
 		String fileName = "fileName";
+		String md5 = DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest());
 		InputStream inputStream = mock(InputStream.class);
 		String mongoid = "mongoid";
 		Date date = new Date();
 
 		when(dateHelper.getDate()).thenReturn(date);
 		when(database.getCollection(mongoid)).thenReturn(collection);
-		when(gridBucket.uploadFromStream(eq(fileName), eq(inputStream), any(GridFSUploadOptions.class)))
-				.thenReturn(oid);
+		when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
+		when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -139,9 +147,9 @@ public class FileServiceTest extends BaseTestCase {
 			}
 		}).when(collection).insertOne(any(Document.class));
 
-		var newFile = new Document("_id", moid).append("name", fileName).append("container", mongoid)
-				.append("FileMongoId", oid.toHexString()).append("createdAt", date);
-		var expected = new ShepardFile(moid.toHexString(), date, fileName);
+		var newFile = new Document("_id", moid).append("name", fileName).append("FileMongoId", oid.toHexString())
+				.append("createdAt", date).append("md5", md5);
+		var expected = new ShepardFile(moid.toHexString(), date, fileName, md5);
 		var result = fileService.createFile(mongoid, fileName, inputStream);
 		assertEquals(expected, result);
 		verify(collection).insertOne(newFile);

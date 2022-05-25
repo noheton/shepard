@@ -108,7 +108,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var container = new FileContainer(300L);
 		container.setMongoId("mongoId");
 		var date = new Date(30L);
-		var fileComplete = new ShepardFile("oid", "name");
+		var fileComplete = new ShepardFile("oid", new Date(), "name", "md5");
 		var input = new FileReferenceIO() {
 			{
 				setName("MyName");
@@ -287,7 +287,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Test
 	public void getFilesTest() {
-		var files = List.of(new ShepardFile("a", "b"), new ShepardFile("c", "d"));
+		var files = List.of(new ShepardFile("a", new Date(), "b", "c"), new ShepardFile("d", new Date(), "e", "f"));
 		var ref = new FileReference(1L);
 		ref.setFiles(files);
 

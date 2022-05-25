@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ public class FileContainerTest extends BaseTestCase {
 
 	@Test
 	public void addFileTest() {
-		var toAdd = new ShepardFile("newOid", "filename");
+		var toAdd = new ShepardFile("newOid", new Date(), "filename", "md5");
 		var container = new FileContainer(1L);
 		container.addFile(toAdd);
 		assertEquals(List.of(toAdd), container.getFiles());

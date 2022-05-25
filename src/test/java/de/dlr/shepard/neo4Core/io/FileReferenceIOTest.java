@@ -32,7 +32,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
 		var container = new FileContainer(3L);
-		var file = new ShepardFile("oid", "name");
+		var file = new ShepardFile("oid", new Date(), "name", "md5");
 
 		var obj = new FileReference(1L);
 		obj.setCreatedAt(date);
@@ -62,7 +62,7 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var date = new Date();
 		var user = new User("bob");
 		var dataObject = new DataObject(2L);
-		var file = new ShepardFile("oid", "name");
+		var file = new ShepardFile("oid", new Date(), "name", "md5");
 
 		var obj = new FileReference(1L);
 		obj.setCreatedAt(date);

@@ -4,9 +4,13 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -19,6 +23,7 @@ import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import jakarta.xml.bind.DatatypeConverter;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class FileTest extends BaseTestCaseIT {
@@ -78,8 +83,13 @@ public class FileTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(4)
-	public void uploadFile() throws URISyntaxException {
+	public void uploadFile() throws URISyntaxException, NoSuchAlgorithmException, FileNotFoundException, IOException {
 		var newFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		try (var stream = new FileInputStream(newFile)) {
+			md.update(stream.readAllBytes());
+		}
+		var md5 = DatatypeConverter.printHexBinary(md.digest());
 		var actual = given().spec(fileRequestSpec).multiPart(newFile).when()
 				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
 				.as(ShepardFile.class);
@@ -88,6 +98,7 @@ public class FileTest extends BaseTestCaseIT {
 		assertThat(actual.getOid()).isNotBlank();
 		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getFilename()).isEqualTo("test.txt");
+		assertThat(actual.getMd5()).isEqualToIgnoringCase(md5);
 	}
 
 	@Test

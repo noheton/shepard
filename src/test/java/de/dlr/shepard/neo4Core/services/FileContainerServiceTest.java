@@ -171,7 +171,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void createFileTest() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		var file = new ShepardFile("oid", "filename");
+		var file = new ShepardFile("oid", new Date(), "name", "md5");
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
@@ -240,13 +240,16 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteFileTest() {
+		var file1 = new ShepardFile("abc", new Date(), "name", "md5");
+		var file2 = new ShepardFile("123", new Date(), "name", "md5");
+
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		container.setFiles(List.of(new ShepardFile("abc", "def"), new ShepardFile("123", "456")));
+		container.setFiles(List.of(file1, file2));
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setFiles(List.of(new ShepardFile("123", "456")));
+		updated.setFiles(List.of(file2));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(true);
@@ -258,13 +261,16 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteFileTest_deletedFalse() {
+		var file1 = new ShepardFile("abc", new Date(), "name", "md5");
+		var file2 = new ShepardFile("123", new Date(), "name", "md5");
+
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		container.setFiles(List.of(new ShepardFile("abc", "def"), new ShepardFile("123", "456")));
+		container.setFiles(List.of(file1, file2));
 
 		var updated = new FileContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setFiles(List.of(new ShepardFile("123", "456")));
+		updated.setFiles(List.of(file2));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(false);

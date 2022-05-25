@@ -19,8 +19,8 @@ public class FileConverterTest extends BaseTestCase {
 	@Test
 	public void toGraphPropertyTest() {
 		var date = new Date();
-		var file1 = new ShepardFile("oid", date, "name");
-		var file2 = new ShepardFile("", date, "");
+		var file1 = new ShepardFile("oid", date, "name", "md5");
+		var file2 = new ShepardFile("", date, "", "");
 		var file3 = new ShepardFile();
 		var files = List.of(file1, file2, file3);
 		var actual = converter.toGraphProperty(files);
@@ -32,8 +32,8 @@ public class FileConverterTest extends BaseTestCase {
 	@Test
 	public void toEntityAttribute() {
 		var date = new Date();
-		var file1 = new ShepardFile("oid", date, "name");
-		var file2 = new ShepardFile("", date, "");
+		var file1 = new ShepardFile("oid", date, "name", "md5");
+		var file2 = new ShepardFile("", date, "", "");
 		var file3 = new ShepardFile();
 		var files = List.of(makeString(file1), makeString(file2), makeString(file3));
 		var actual = converter.toEntityAttribute(files);
@@ -61,6 +61,11 @@ public class FileConverterTest extends BaseTestCase {
 		builder.append(",\"filename\":");
 		if (file.getFilename() != null)
 			builder.append(String.format("\"%s\"", file.getFilename()));
+		else
+			builder.append("null");
+		builder.append(",\"md5\":");
+		if (file.getMd5() != null)
+			builder.append(String.format("\"%s\"", file.getMd5()));
 		else
 			builder.append("null");
 		builder.append("}");

@@ -17,19 +17,19 @@ public class ShepardFile extends AbstractMongoObject {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private String filename;
+	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
+	private String md5;
 
-	public ShepardFile(String oid, String filename) {
-		super(oid);
-		this.filename = filename;
-	}
-
-	public ShepardFile(Date createdAt, String filename) {
+	public ShepardFile(Date createdAt, String filename, String md5) {
 		setCreatedAt(createdAt);
 		this.filename = filename;
+		this.md5 = md5;
 	}
 
-	public ShepardFile(String oid, Date createdAt, String filename) {
+	public ShepardFile(String oid, Date createdAt, String filename, String md5) {
 		super(oid, createdAt);
 		this.filename = filename;
+		this.md5 = md5;
 	}
+
 }

@@ -3,16 +3,19 @@ package de.dlr.shepard.mongoDB;
 import static com.mongodb.client.model.Filters.eq;
 
 import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.gridfs.GridFSBucket;
-import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
+import jakarta.xml.bind.DatatypeConverter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,9 +24,9 @@ public class FileService {
 	private static final int CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MiB
 	private static final String ID_ATTR = "_id";
 	private static final String FILENAME_ATTR = "name";
-	private static final String CONTAINER_ATTR = "container";
 	private static final String FILEID_ATTR = "FileMongoId";
 	private static final String CREATEDAT_ATTR = "createdAt";
+	private static final String MD5_ATTR = "md5";
 
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
 	private UUIDHelper uuidHelper = new UUIDHelper();
@@ -41,15 +44,21 @@ public class FileService {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return null;
 		}
-		GridFSBucket gridBucket = mongoDBConnector.createBucket();
-		GridFSUploadOptions uploadOptions = new GridFSUploadOptions().chunkSizeBytes(CHUNK_SIZE_BYTES);
-		String fileMongoId = gridBucket.uploadFromStream(fileName, inputStream, uploadOptions).toString();
-		var createdAt = dateHelper.getDate();
-		var doc = new Document(FILENAME_ATTR, fileName).append(CONTAINER_ATTR, mongoid).append(FILEID_ATTR, fileMongoId)
-				.append(CREATEDAT_ATTR, createdAt);
+
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			log.error("No Such Algorithm while uploading file");
+			return null;
+		}
+		DigestInputStream dis = new DigestInputStream(inputStream, md);
+		String fileMongoId = mongoDBConnector.createBucket().withChunkSizeBytes(CHUNK_SIZE_BYTES)
+				.uploadFromStream(fileName, dis).toHexString();
+		var file = new ShepardFile(dateHelper.getDate(), fileName, DatatypeConverter.printHexBinary(md.digest()));
+		var doc = toDocument(file).append(FILEID_ATTR, fileMongoId);
 		collection.insertOne(doc);
-		var oid = doc.getObjectId(ID_ATTR).toHexString();
-		var file = new ShepardFile(oid, createdAt, fileName);
+		file.setOid(doc.getObjectId(ID_ATTR).toHexString());
 		return file;
 	}
 
@@ -83,8 +92,7 @@ public class FileService {
 			log.error("Could not find file with oid: {}", fileoid);
 			return null;
 		}
-		var file = new ShepardFile(fileoid, doc.getDate(CREATEDAT_ATTR), doc.getString(FILENAME_ATTR));
-		return file;
+		return toShepardFile(doc);
 	}
 
 	public boolean deleteFileContainer(String mongoid) {
@@ -115,6 +123,20 @@ public class FileService {
 		var gridBucket = mongoDBConnector.createBucket();
 		gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
 		return true;
+	}
+
+	private static ShepardFile toShepardFile(Document doc) {
+		var file = new ShepardFile(doc.getObjectId(ID_ATTR).toHexString(), doc.getDate(CREATEDAT_ATTR),
+				doc.getString(FILENAME_ATTR), doc.getString(MD5_ATTR));
+		return file;
+	}
+
+	private static Document toDocument(ShepardFile file) {
+		var doc = new Document().append(CREATEDAT_ATTR, file.getCreatedAt()).append(FILENAME_ATTR, file.getFilename())
+				.append(MD5_ATTR, file.getMd5());
+		if (file.getOid() != null)
+			doc.append(ID_ATTR, new ObjectId(file.getOid()));
+		return doc;
 	}
 
 }
