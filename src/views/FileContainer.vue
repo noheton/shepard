@@ -60,6 +60,8 @@
           <div class="float-left">
             <b><GenericName :name="file.filename" :word-count="40" /></b> |
             {{ file.oid }} | {{ new Date(file.createdAt).toLocaleString() }}
+            <br />
+            <em v-if="file.md5"> md5: {{ file.md5 }} </em>
           </div>
           <b-button-group class="float-right">
             <b-button

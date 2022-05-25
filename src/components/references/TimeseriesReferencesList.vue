@@ -16,6 +16,12 @@
     >
       Successfully deleted
     </b-alert>
+    <ProcessAlert
+      process-name="Download"
+      :process-active="downloadActive"
+      :process-started="downloadStarted"
+      :process-error="downloadError"
+    />
 
     <b-button v-b-modal.create-time-ref-modal class="mb-3" variant="primary">
       Create new Reference
@@ -27,12 +33,6 @@
       @create="handleCreate($event)"
     />
 
-    <ProcessAlert
-      :process-name="Download"
-      :process-active="downloadActive"
-      :process-started="downloadStarted"
-      :process-error="downloadError"
-    />
     <b-list-group>
       <b-list-group-item
         v-for="(timeseriesItem, index) in timeseriesList"

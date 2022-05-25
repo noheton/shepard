@@ -16,6 +16,12 @@
     >
       Successfully deleted
     </b-alert>
+    <ProcessAlert
+      process-name="Download"
+      :process-active="downloadActive"
+      :process-started="downloadStarted"
+      :process-error="downloadError"
+    />
 
     <b-button v-b-modal.create-file-ref-modal class="mb-3" variant="primary">
       Create new Reference
@@ -27,12 +33,6 @@
       @create="create($event)"
     />
 
-    <ProcessAlert
-      :prcess-name="Download"
-      :process-active="downloadActive"
-      :process-started="downloadStarted"
-      :process-error="downloadError"
-    />
     <b-list-group>
       <b-list-group-item
         v-for="(fileReference, index) in fileReferenceList"
@@ -260,7 +260,6 @@ export default Vue.extend({
     },
 
     convertDate(date: string) {
-      console.log(this.fileReferenceList);
       return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
