@@ -3,5 +3,7 @@
   "extends": ["config:base"],
   "prHourlyLimit": 0,
   "labels": ["dependencies"],
+  "stabilityDays": 3,
+  "prCreation": "not-pending",
   "dependencyDashboard": true
 }
