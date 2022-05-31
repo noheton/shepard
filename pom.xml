@@ -38,7 +38,7 @@
 		<skipITs>${skipTests}</skipITs>
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<assertj.version>3.22.0</assertj.version>
+		<assertj.version>3.23.0</assertj.version>
 		<commons.version>2.11.0</commons.version>
 		<equalsverifier.version>3.10</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
