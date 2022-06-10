@@ -30,8 +30,8 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.security.PermissionType;
 import de.dlr.shepard.util.DateHelper;
-import de.dlr.shepard.util.PermissionType;
 
 public class TimeseriesContainerServiceTest extends BaseTestCase {
 

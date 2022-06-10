@@ -13,7 +13,6 @@ import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
-import de.dlr.shepard.util.PermissionType;
 import jakarta.ws.rs.core.PathSegment;
 
 public class PermissionsUtil {

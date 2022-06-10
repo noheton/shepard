@@ -5,7 +5,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
-import de.dlr.shepard.util.PermissionType;
+import de.dlr.shepard.security.PermissionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotNull;
