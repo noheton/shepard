@@ -153,7 +153,7 @@ export default Vue.extend({
       }
     },
     handleOk() {
-      let attributes: { [key: string]: string } = {};
+      const attributes: { [key: string]: string } = {};
       this.possibleAttributes.forEach(attr => {
         if (attr.key != "") {
           attributes[attr.key] = attr.value;

@@ -182,7 +182,7 @@ export default Vue.extend({
     },
 
     inlineSearch() {
-      let searchQuery = {
+      const searchQuery = {
         OR: [
           {
             property: "name",

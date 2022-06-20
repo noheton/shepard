@@ -216,12 +216,11 @@ export default Vue.extend({
         : { name: "" };
       this.possiblePredecessors = [];
       this.possibleAttributes = [];
-      this.validPredecessors = [undefined];
+      this.validPredecessors = [];
 
       if (this.currentDataObject?.parentId) {
-        let parent = { id: this.currentDataObject.parentId, name: "" };
         this.validateParent();
-        this.possibleParent = parent;
+        this.possibleParent = { id: this.currentDataObject.parentId, name: "" };
       } else {
         this.possibleParent = {
           id: undefined,
@@ -271,7 +270,7 @@ export default Vue.extend({
         this.newDataObject.parentId = this.possibleParent.id;
       }
 
-      let preIds: number[] = [];
+      const preIds: number[] = [];
       this.possiblePredecessors.forEach(pre => {
         if (pre.id) {
           preIds.push(pre.id);
@@ -279,7 +278,7 @@ export default Vue.extend({
       });
       this.newDataObject.predecessorIds = preIds;
 
-      let attributes: { [key: string]: string } = {};
+      const attributes: { [key: string]: string } = {};
       this.possibleAttributes.forEach(attr => {
         if (attr.key != "") {
           attributes[attr.key] = attr.value;

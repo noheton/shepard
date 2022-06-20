@@ -175,7 +175,7 @@ export default Vue.extend({
   },
   methods: {
     scrollTo(element: string) {
-      var el = this.$el.querySelector(element);
+      const el = this.$el.querySelector(element);
       if (el) {
         el.scrollIntoView();
       }
