@@ -75,27 +75,23 @@
             <div table>
               <div class="pl-2 resultHeader">Result</div>
 
-              <b-table
-                sticky-header="766px"
-                striped
-                hover
-                selectable
-                select-mode="single"
-                head-variant="dark"
-                class="table table-sm table-bordered"
-                :items="searchData.resultSet"
-                @row-selected="rowSelected"
-              >
-              </b-table>
-              <div
-                v-if="
-                  searchData.resultSet != undefined &&
-                  searchData.resultSet.length == 0
-                "
-                class="pl-2"
-              >
-                no results
+              <div v-if="searchData != undefined">
+                <b-table
+                  v-if="searchData.resultSet.length > 0"
+                  sticky-header="766px"
+                  striped
+                  hover
+                  selectable
+                  select-mode="single"
+                  head-variant="dark"
+                  class="table table-sm table-bordered"
+                  :items="searchData.resultSet"
+                  @row-selected="rowSelected"
+                >
+                </b-table>
+                <div v-else class="pl-2">no results</div>
               </div>
+              <Loading v-if="loading" />
             </div>
           </b-col>
         </b-row>
@@ -105,6 +101,7 @@
 </template>
 
 <script lang="ts">
+import Loading from "@/components/generic/Loading.vue";
 import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
 import {
@@ -125,7 +122,8 @@ interface SearchData {
   queryTypeOptions: object;
   selectedTraversalRule: Array<SearchScopeTraversalRulesEnum>;
   selectedQueryType: SearchParamsQueryTypeEnum;
-  searchData: ResponseBody;
+  searchData?: ResponseBody;
+  loading: boolean;
 }
 
 function initialState(): SearchData {
@@ -137,7 +135,8 @@ function initialState(): SearchData {
     selectedQueryType: SearchParamsQueryTypeEnum.Collection,
     traversalRuleOptions: Object.values(SearchScopeTraversalRulesEnum),
     queryTypeOptions: Object.values(SearchParamsQueryTypeEnum),
-    searchData: {},
+    searchData: undefined,
+    loading: false,
   };
 }
 
@@ -159,6 +158,7 @@ const initialJson = {
 };
 
 export default Vue.extend({
+  components: { Loading },
   data() {
     return initialState();
   },
@@ -199,6 +199,8 @@ export default Vue.extend({
       // get actual json of the JsonEditor
       if (!this.editor) return;
       const searchQuery = JSON.stringify(this.editor.get());
+      this.searchData = undefined;
+      this.loading = true;
 
       SearchService.search({
         searchBody: {
@@ -223,7 +225,9 @@ export default Vue.extend({
           console.log(error);
           emitter.emit("error", error);
         })
-        .finally();
+        .finally(() => {
+          this.loading = false;
+        });
     },
 
     rowSelected(items: Array<ResultTriple>) {
