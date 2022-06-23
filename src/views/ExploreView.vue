@@ -18,15 +18,10 @@
         <b-form-input
           v-model="userInput"
           placeholder="Name, Username, ID or Description"
+          @keyup.enter="inlineSearch()"
         ></b-form-input>
         <b-input-group-append>
-          <b-button
-            v-b-modal.searchDataModal
-            variant="dark"
-            @click="inlineSearch()"
-          >
-            Search
-          </b-button>
+          <b-button variant="dark" @click="inlineSearch()"> Search </b-button>
         </b-input-group-append>
       </b-input-group>
 
@@ -37,7 +32,11 @@
         ok-only
         @show="handlePrepare()"
       >
-        <GenericEntityList :entities="collectionsResultSet" />
+        <GenericEntityList
+          v-if="collectionsFound == collectionsResultSet.length"
+          :entities="collectionsResultSet"
+        />
+        <Loading v-else />
       </b-modal>
 
       <b-alert
@@ -82,6 +81,7 @@ import FilterListLine, {
   FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
@@ -89,7 +89,6 @@ import { totalRows } from "@/utils/helpers";
 import {
   Collection,
   GetAllCollectionsOrderByEnum,
-  ResponseBody,
   SearchParamsQueryTypeEnum,
 } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
@@ -97,27 +96,27 @@ import Vue from "vue";
 interface ExploreData {
   collections?: Collection[];
   collectionsResultSet: Collection[];
+  collectionsFound?: number;
   perPage: number;
   currentPage: number;
   orderBy: string;
   descending: boolean;
   deletedAlert: boolean;
-  searchData: ResponseBody;
   userInput: string;
 }
 
 export default Vue.extend({
-  components: { GenericEntityList, FilterListLine, CollectionModal },
+  components: { GenericEntityList, FilterListLine, CollectionModal, Loading },
   data() {
     return {
       collections: undefined,
       collectionsResultSet: [],
+      collectionsFound: undefined,
       perPage: 10,
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
       deletedAlert: false,
-      searchData: {},
       userInput: "",
     } as ExploreData;
   },
@@ -165,6 +164,7 @@ export default Vue.extend({
 
     handlePrepare() {
       this.collectionsResultSet = [];
+      this.collectionsFound = undefined;
     },
 
     retrieveCollectionById(collectionId: number) {
@@ -182,6 +182,7 @@ export default Vue.extend({
     },
 
     inlineSearch() {
+      this.$bvModal.show("searchDataModal");
       const searchQuery = {
         OR: [
           {
@@ -220,7 +221,7 @@ export default Vue.extend({
         },
       })
         .then(response => {
-          this.searchData = response;
+          this.collectionsFound = response.resultSet?.length || 0;
           response.resultSet?.forEach(result => {
             if (result.collectionId) {
               this.retrieveCollectionById(result.collectionId);
@@ -231,8 +232,7 @@ export default Vue.extend({
           const error = "Error while fetching search Data: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
-        })
-        .finally();
+        });
     },
   },
 });
