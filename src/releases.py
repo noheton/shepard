@@ -6,11 +6,9 @@ from gitlab.client import Gitlab
 from gitlab.v4.objects.merge_requests import MergeRequest
 from gitlab.v4.objects.projects import Project
 
-
 BREAKING_CHANGE_LABEL = "Breaking Change"
 DEPENDENCY_BUMP_LABEL = "dependencies"
 TEMPLATE_FILE = "release_notes.md"
-TOKEN_FILE = "token.txt"
 
 
 def get_changes(
@@ -70,10 +68,7 @@ def get_release_tag() -> str:
     return now.strftime("%Y.%m.%d-release")
 
 
-def create_release(gitlab_instance:str, project_id:int) -> int:
-    token = ""
-    with open(TOKEN_FILE, "r", encoding="UTF-8") as token_file:
-        token = token_file.read()
+def create_release(gitlab_instance: str, token: str, project_id: int) -> int:
     instance = Gitlab(gitlab_instance, token)
 
     try:
