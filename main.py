@@ -9,13 +9,13 @@ TOKEN_FILE = "token.txt"
 
 if __name__ == "__main__":
 
-    token = ""
+    TOKEN = ""
     with open(TOKEN_FILE, "r", encoding="UTF-8") as token_file:
-        token = token_file.read()
+        TOKEN = token_file.read()
 
     project_name = input("Project: ")
     if project_name not in PROJECTS:
         print(f"Project ID {project_name} is not known")
         sys.exit(1)
 
-    sys.exit(create_release(GITLAB_INSTANCE, token, PROJECTS[project_name]))
+    sys.exit(create_release(GITLAB_INSTANCE, TOKEN, PROJECTS[project_name]))

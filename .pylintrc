@@ -87,9 +87,6 @@ disable=raw-checker-failed,
         deprecated-pragma,
         use-symbolic-message-instead,
         fixme,
-        # black
-        C0330,
-        C0326,
         # docstrings
         missing-module-docstring,
         missing-class-docstring,
