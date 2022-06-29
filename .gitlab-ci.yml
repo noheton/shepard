@@ -24,7 +24,7 @@ stages:
 
 .version_number:
   script:
-    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d '-' -f 1-2 | tr - . ).${CI_PIPELINE_IID}
+    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
 
 .prepare_npm: &prepare_npm
   - NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
@@ -73,7 +73,7 @@ upload_docker_dev:
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" ${CI_REGISTRY}
     - !reference [.version_number, script]
-    - export VERSION_NUMBER=${VERSION_NUMBER}dev
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
   script:
     - docker build -t ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER} -t ${CI_REGISTRY_IMAGE}:dev .
