@@ -8,9 +8,8 @@ import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
-import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.neo4j.NeoConnector;
-import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
 import lombok.extern.slf4j.Slf4j;
@@ -120,53 +119,6 @@ public abstract class GenericDAO<T> {
 		return result.queryStatistics().containsUpdates();
 	}
 
-	protected String getObjectPart(String variable, String type, boolean hasName) {
-		if (hasName)
-			return getObjectPartWithName(variable, type);
-		else
-			return getObjectPartWithoutName(variable, type);
-	}
-
-	private String getObjectPartWithName(String variable, String type) {
-		var namePart = "{ name : $name, deleted: FALSE }";
-		var result = String.format("(%s:%s %s)", variable, type, namePart);
-		return result;
-	}
-
-	private String getObjectPartWithoutName(String variable, String type) {
-		var namePart = "{ deleted: FALSE }";
-		var result = String.format("(%s:%s %s)", variable, type, namePart);
-		return result;
-	}
-
-	protected String getPaginationPart() {
-		return "SKIP $offset LIMIT $size";
-	}
-
-	protected String getReturnPart(String entity) {
-		return getReturnPart(entity, false);
-	}
-
-	protected String getReturnPart(String entity, boolean omitIncoming) {
-		var baseString = omitIncoming
-				? "MATCH path=(%s)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)"
-				: "MATCH path=(%s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)";
-		var result = String.format(baseString, entity, entity);
-		return result;
-	}
-
-	protected String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
-		String ret;
-		boolean isString = orderByAttribute.isString();
-		if (!isString)
-			ret = "ORDER BY " + variable + "." + orderByAttribute;
-		else
-			ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
-		if (orderDesc != null && orderDesc == true)
-			ret = ret + " DESC";
-		return ret;
-	}
-
 	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
 			String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
@@ -178,9 +130,9 @@ public abstract class GenericDAO<T> {
 		};
 		ret = ret + "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + PermissionsUtil.getReadableByQuery("col", userName);
+		ret = ret + " AND " + CypherQueryHelper.getReadableByQuery("col", userName);
 		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
-		ret = ret + getReturnPart("ret", false);
+		ret = ret + CypherQueryHelper.getReturnPart("ret", false);
 		return ret;
 	}
 
@@ -189,9 +141,9 @@ public abstract class GenericDAO<T> {
 		ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->";
 		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
 		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + PermissionsUtil.getReadableByQuery("col", userName);
+		ret = ret + " AND " + CypherQueryHelper.getReadableByQuery("col", userName);
 		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
-		String returnPart = getReturnPart("ret", false);
+		String returnPart = CypherQueryHelper.getReturnPart("ret", false);
 		ret = ret + returnPart;
 		return ret;
 	}

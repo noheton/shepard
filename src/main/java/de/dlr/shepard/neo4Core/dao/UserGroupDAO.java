@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.UserGroup;
-import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class UserGroupDAO extends GenericDAO<UserGroup> {
@@ -22,15 +22,16 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		var query = String.format("MATCH %s WHERE %s WITH ug", getObjectPart("ug", "UserGroup", false),
-				PermissionsUtil.getReadableByQuery("ug", username));
+		var query = String.format("MATCH %s WHERE %s WITH ug",
+				CypherQueryHelper.getObjectPart("ug", "UserGroup", false),
+				CypherQueryHelper.getReadableByQuery("ug", username));
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("ug", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("ug", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("ug");
+		query += " " + CypherQueryHelper.getReturnPart("ug");
 		var result = new ArrayList<UserGroup>();
 		for (var userGroup : findByQuery(query, paramsMap)) {
 			result.add(userGroup);

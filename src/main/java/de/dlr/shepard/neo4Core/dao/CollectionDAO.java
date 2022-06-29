@@ -9,7 +9,7 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionDAO extends GenericDAO<Collection> {
@@ -34,15 +34,16 @@ public class CollectionDAO extends GenericDAO<Collection> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		var query = String.format("MATCH %s WHERE %s WITH c", getObjectPart("c", "Collection", params.hasName()),
-				PermissionsUtil.getReadableByQuery("c", username));
+		var query = String.format("MATCH %s WHERE %s WITH c",
+				CypherQueryHelper.getObjectPart("c", "Collection", params.hasName()),
+				CypherQueryHelper.getReadableByQuery("c", username));
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("c");
+		query += " " + CypherQueryHelper.getReturnPart("c");
 		var result = new ArrayList<Collection>();
 		for (var col : findByQuery(query, paramsMap)) {
 			if (matchName(col, params.getName())) {

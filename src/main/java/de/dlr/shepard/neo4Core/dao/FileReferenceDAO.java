@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.FileReference;
+import de.dlr.shepard.util.CypherQueryHelper;
 
 public class FileReferenceDAO extends GenericDAO<FileReference> {
 
 	public List<FileReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getObjectPart("r", "FileReference", false), dataObjectId) + getReturnPart("r");
+				CypherQueryHelper.getObjectPart("r", "FileReference", false), dataObjectId)
+				+ CypherQueryHelper.getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

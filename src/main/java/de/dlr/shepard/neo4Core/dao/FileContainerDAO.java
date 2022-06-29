@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.FileContainer;
-import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class FileContainerDAO extends GenericDAO<FileContainer> {
@@ -19,15 +19,16 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		query = String.format("MATCH %s WHERE %s WITH c", getObjectPart("c", "FileContainer", params.hasName()),
-				PermissionsUtil.getReadableByQuery("c", username));
+		query = String.format("MATCH %s WHERE %s WITH c",
+				CypherQueryHelper.getObjectPart("c", "FileContainer", params.hasName()),
+				CypherQueryHelper.getReadableByQuery("c", username));
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("c", true);
+		query += " " + CypherQueryHelper.getReturnPart("c", true);
 		var result = new ArrayList<FileContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

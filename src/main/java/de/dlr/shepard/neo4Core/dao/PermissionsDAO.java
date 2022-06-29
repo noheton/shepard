@@ -3,12 +3,13 @@ package de.dlr.shepard.neo4Core.dao;
 import java.util.Collections;
 
 import de.dlr.shepard.neo4Core.entities.Permissions;
+import de.dlr.shepard.util.CypherQueryHelper;
 
 public class PermissionsDAO extends GenericDAO<Permissions> {
 
 	public Permissions findByEntity(long entityId) {
 		String query = String.format("MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = %d ", entityId)
-				+ getReturnPart("p");
+				+ CypherQueryHelper.getReturnPart("p");
 		var permissions = findByQuery(query, Collections.emptyMap());
 		if (permissions.iterator().hasNext())
 			return permissions.iterator().next();

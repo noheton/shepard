@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
@@ -20,15 +20,16 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 
-		query = String.format("MATCH %s WHERE %s WITH c", getObjectPart("c", "TimeseriesContainer", params.hasName()),
-				PermissionsUtil.getReadableByQuery("c", username));
+		query = String.format("MATCH %s WHERE %s WITH c",
+				CypherQueryHelper.getObjectPart("c", "TimeseriesContainer", params.hasName()),
+				CypherQueryHelper.getReadableByQuery("c", username));
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("c", true);
+		query += " " + CypherQueryHelper.getReturnPart("c", true);
 		var result = new ArrayList<TimeseriesContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

@@ -10,6 +10,7 @@ import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class DataObjectDAO extends GenericDAO<DataObject> {
@@ -35,7 +36,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 		String match = "MATCH (c:Collection)-[hdo:has_dataobject]->"
-				+ getObjectPart("d", "DataObject", params.hasName());
+				+ CypherQueryHelper.getObjectPart("d", "DataObject", params.hasName());
 		String where = " WHERE ID(c)=" + collectionId;
 
 		if (params.hasParentId()) {
@@ -66,12 +67,12 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 
 		String query = match + where + " WITH d";
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("d", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("d", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("d");
+		query += " " + CypherQueryHelper.getReturnPart("d");
 		var result = new ArrayList<DataObject>();
 		for (var obj :
 

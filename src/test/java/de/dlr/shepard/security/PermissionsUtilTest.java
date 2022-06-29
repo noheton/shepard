@@ -387,19 +387,6 @@ public class PermissionsUtilTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getReadableByQueryTest() {
-		var expected = """
-				(NOT exists((var)-[:has_permissions]->(:Permissions)) \
-				OR exists((var)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
-				OR exists((var)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
-				OR exists((var)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
-				OR exists((var)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"})))""";
-		var actual = PermissionsUtil.getReadableByQuery("var", "bob");
-
-		assertEquals(expected, actual);
-	}
-
-	@Test
 	public void getRolesTest() {
 		var perms = new Permissions() {
 			{

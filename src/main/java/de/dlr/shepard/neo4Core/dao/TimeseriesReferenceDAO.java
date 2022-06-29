@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
+import de.dlr.shepard.util.CypherQueryHelper;
 
 public class TimeseriesReferenceDAO extends GenericDAO<TimeseriesReference> {
 
@@ -16,7 +17,8 @@ public class TimeseriesReferenceDAO extends GenericDAO<TimeseriesReference> {
 	 */
 	public List<TimeseriesReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getObjectPart("r", "TimeseriesReference", false), dataObjectId) + getReturnPart("r");
+				CypherQueryHelper.getObjectPart("r", "TimeseriesReference", false), dataObjectId)
+				+ CypherQueryHelper.getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

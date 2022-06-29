@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.URIReference;
+import de.dlr.shepard.util.CypherQueryHelper;
 
 public class URIReferenceDAO extends GenericDAO<URIReference> {
 
@@ -16,7 +17,8 @@ public class URIReferenceDAO extends GenericDAO<URIReference> {
 	 */
 	public List<URIReference> findByDataObject(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-				getObjectPart("r", "URIReference", false), dataObjectId) + getReturnPart("r");
+				CypherQueryHelper.getObjectPart("r", "URIReference", false), dataObjectId)
+				+ CypherQueryHelper.getReturnPart("r");
 
 		var queryResult = findByQuery(query, Collections.emptyMap());
 

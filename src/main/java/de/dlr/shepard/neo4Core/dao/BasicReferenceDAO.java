@@ -10,6 +10,7 @@ import java.util.stream.StreamSupport;
 import org.neo4j.ogm.model.Result;
 
 import de.dlr.shepard.neo4Core.entities.BasicReference;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class BasicReferenceDAO extends GenericDAO<BasicReference> {
@@ -35,14 +36,14 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 			paramsMap.put("size", params.getPagination().getSize());
 		}
 		query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r",
-				getObjectPart("r", "BasicReference", params.hasName()), dataObjectId);
+				CypherQueryHelper.getObjectPart("r", "BasicReference", params.hasName()), dataObjectId);
 		if (params.hasOrderByAttribute()) {
-			query += " " + getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
-			query += " " + getPaginationPart();
+			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + getReturnPart("r");
+		query += " " + CypherQueryHelper.getReturnPart("r");
 		var result = new ArrayList<BasicReference>();
 		for (var ref : findByQuery(query, paramsMap)) {
 			if (matchDataObject(ref, dataObjectId) && matchName(ref, params.getName())) {

@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.dlr.shepard.exceptions.ShepardParserException;
-import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.TraversalRules;
 
 public class Neo4jEmitter {
@@ -251,7 +251,7 @@ public class Neo4jEmitter {
 
 	private static String emitReadableByPart(String username) {
 		String variable = Constants.COLLECTION_IN_QUERY;
-		return PermissionsUtil.getReadableByQuery(variable, username);
+		return CypherQueryHelper.getReadableByQuery(variable, username);
 	}
 
 	public static String emitCollectionQuery(String searchBodyQuery, String userName) throws ShepardParserException {

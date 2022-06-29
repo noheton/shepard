@@ -24,8 +24,6 @@ import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
-import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
 import lombok.Data;
@@ -149,98 +147,6 @@ public class GenericDAOTest extends BaseTestCase {
 
 		var actual = dao.runQuery(query, params);
 		assertTrue(actual);
-	}
-
-	@Test
-	public void getReturnPartTest() {
-		var actual = dao.getReturnPart("entity");
-		assertEquals(
-				"MATCH path=(entity)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN entity, nodes(path), relationships(path)",
-				actual);
-	}
-
-	@Test
-	public void getReturnPartTest_omitIncoming() {
-		var actual = dao.getReturnPart("entity", true);
-		assertEquals(
-				"MATCH path=(entity)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN entity, nodes(path), relationships(path)",
-				actual);
-	}
-
-	@Test
-	public void getOrderByPartTestDesc() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.createdAt;
-		Boolean orderDesc = true;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY c.createdAt DESC", actual);
-	}
-
-	@Test
-	public void getOrderByPartTestNull() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.createdAt;
-		Boolean orderDesc = null;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY c.createdAt", actual);
-	}
-
-	@Test
-	public void getOrderByPartTestAsc() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.createdAt;
-		Boolean orderDesc = false;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY c.createdAt", actual);
-	}
-
-	@Test
-	public void getOrderByPartTestStringDesc() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.name;
-		Boolean orderDesc = true;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY toLower(c.name) DESC", actual);
-	}
-
-	@Test
-	public void getOrderByPartTestStringNull() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.name;
-		Boolean orderDesc = null;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY toLower(c.name)", actual);
-	}
-
-	@Test
-	public void getOrderByPartTestStringAsc() {
-		String variable = "c";
-		OrderByAttribute orderByAttribute = DataObjectAttributes.name;
-		Boolean orderDesc = null;
-		var actual = dao.getOrderByPart(variable, orderByAttribute, orderDesc);
-		assertEquals("ORDER BY toLower(c.name)", actual);
-	}
-
-	@Test
-	public void getObjectPartTest_WithName() {
-		String variable = "c";
-		String type = "Collection";
-		var actual = dao.getObjectPart(variable, type, true);
-		assertEquals("(c:Collection { name : $name, deleted: FALSE })", actual);
-	}
-
-	@Test
-	public void getObjectPartTest_WithoutName() {
-		String variable = "c";
-		String type = "Collection";
-		var actual = dao.getObjectPart(variable, type, false);
-		assertEquals("(c:Collection { deleted: FALSE })", actual);
-	}
-
-	@Test
-	public void getPaginationPartTest_WithPagination() {
-		var actual = dao.getPaginationPart();
-		assertEquals("SKIP $offset LIMIT $size", actual);
 	}
 
 	@Test
