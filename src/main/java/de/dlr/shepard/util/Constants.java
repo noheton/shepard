@@ -75,6 +75,8 @@ public class Constants {
 	public static final String PERMISSIONS = "permissions";
 	public static final String PERMISSION_ID = "permissionId";
 
+	public static final String ROLES = "roles";
+
 	public static final String OWNED_BY = "owned_by";
 	public static final String READABLE_BY = "readable_by";
 	public static final String WRITEABLE_BY = "writeable_by";

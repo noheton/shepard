@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.neo4Core.orderBy.UserGroupAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.validation.Valid;
@@ -108,6 +109,14 @@ public class UserGroupRestImpl implements UserGroupRest {
 		var perms = permissionsService.updatePermissions(permissions, userGroupId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.ROLES)
+	@Override
+	public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+		var roles = new PermissionsUtil().getRoles(userGroupId, securityContext.getUserPrincipal().getName());
+		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 }

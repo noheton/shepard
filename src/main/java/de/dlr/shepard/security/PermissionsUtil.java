@@ -5,8 +5,10 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
@@ -63,21 +65,16 @@ public class PermissionsUtil {
 			// No permissions
 			return true;
 
-		if (perms.getOwner() != null && username.equals(perms.getOwner().getUsername()))
+		if (isOwner(perms, username))
 			// Is owner
 			return true;
 
 		if (AccessType.Manage.equals(accessType)) {
-			return perms.getManager().stream().anyMatch(u -> username.equals(u.getUsername()));
+			return isManager(perms, username);
 		} else if (AccessType.Read.equals(accessType)) {
-			return PermissionType.Public.equals(perms.getPermissionType())
-					|| PermissionType.PublicReadable.equals(perms.getPermissionType())
-					|| perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()))
-					|| fetchUserNames(perms.getReaderGroups()).contains(username);
+			return isReader(perms, username);
 		} else if (AccessType.Write.equals(accessType)) {
-			return PermissionType.Public.equals(perms.getPermissionType())
-					|| perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()))
-					|| fetchUserNames(perms.getWriterGroups()).contains(username);
+			return isWriter(perms, username);
 		}
 
 		return false;
@@ -94,6 +91,34 @@ public class PermissionsUtil {
 		return ret;
 	}
 
+	public RolesIO getRoles(long entityId, String username) {
+		var perms = permissionsService.getPermissionsByEntity(entityId);
+		var roles = new RolesIO(isOwner(perms, username), isManager(perms, username), isWriter(perms, username),
+				isReader(perms, username));
+		return roles;
+	}
+
+	private boolean isOwner(Permissions perms, String username) {
+		return perms.getOwner() != null && username.equals(perms.getOwner().getUsername());
+	}
+
+	private boolean isManager(Permissions perms, String username) {
+		return perms.getManager().stream().anyMatch(u -> username.equals(u.getUsername()));
+	}
+
+	private boolean isReader(Permissions perms, String username) {
+		return PermissionType.Public.equals(perms.getPermissionType())
+				|| PermissionType.PublicReadable.equals(perms.getPermissionType())
+				|| perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()))
+				|| fetchUserNames(perms.getReaderGroups()).contains(username);
+	}
+
+	private boolean isWriter(Permissions perms, String username) {
+		return PermissionType.Public.equals(perms.getPermissionType())
+				|| perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()))
+				|| fetchUserNames(perms.getWriterGroups()).contains(username);
+	}
+
 	public static String getReadableByQuery(String variable, String username) {
 		String ret = String.format(
 				"""
@@ -105,4 +130,5 @@ public class PermissionsUtil {
 				variable, variable, username, variable, variable, variable, username);
 		return ret;
 	}
+
 }

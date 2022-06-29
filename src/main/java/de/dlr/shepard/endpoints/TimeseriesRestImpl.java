@@ -16,6 +16,7 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.TimeseriesContainerService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -198,5 +199,13 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		var perms = permissionsService.updatePermissions(permissions, timeseriesId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
+	@Override
+	public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
+		var roles = new PermissionsUtil().getRoles(timeseriesId, securityContext.getUserPrincipal().getName());
+		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 }

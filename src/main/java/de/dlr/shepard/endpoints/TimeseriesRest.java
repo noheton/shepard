@@ -9,6 +9,7 @@ import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
@@ -100,4 +101,9 @@ public interface TimeseriesRest {
 	Response editTimeseriesPermissions(long timeseriesId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
+	@Tag(name = Constants.TIMESERIES)
+	@Operation(description = "Get roles")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getTimeseriesRoles(long timeseriesId);
 }

@@ -1,6 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.neo4Core.orderBy.UserGroupAttributes;
 import de.dlr.shepard.util.Constants;
@@ -61,4 +62,9 @@ public interface UserGroupRest {
 	Response editUserGroupPermissions(long userGroupId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
+	@Tag(name = Constants.USERGROUP)
+	@Operation(description = "Get roles")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getUserGroupRoles(long userGroupId);
 }

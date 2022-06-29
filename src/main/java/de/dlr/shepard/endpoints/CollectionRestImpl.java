@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.CollectionService;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.validation.Valid;
@@ -113,6 +114,14 @@ public class CollectionRestImpl implements CollectionRest {
 		var perms = permissionsService.updatePermissions(permissions, collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.ROLES)
+	@Override
+	public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+		var roles = new PermissionsUtil().getRoles(collectionId, securityContext.getUserPrincipal().getName());
+		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 }

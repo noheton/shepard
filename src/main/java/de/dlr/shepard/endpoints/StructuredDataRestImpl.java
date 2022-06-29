@@ -10,6 +10,7 @@ import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.StructuredDataContainerService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.validation.Valid;
@@ -146,6 +147,14 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 		var perms = permissionsService.updatePermissions(permissions, structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.ROLES)
+	@Override
+	public Response getStructuredDataRoles(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+		var roles = new PermissionsUtil().getRoles(structuredDataId, securityContext.getUserPrincipal().getName());
+		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 }

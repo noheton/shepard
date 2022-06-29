@@ -18,6 +18,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
@@ -397,4 +398,19 @@ public class PermissionsUtilTest extends BaseTestCase {
 
 		assertEquals(expected, actual);
 	}
+
+	@Test
+	public void getRolesTest() {
+		var perms = new Permissions() {
+			{
+				setPermissionType(PermissionType.Public);
+			}
+		};
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+
+		var expected = new RolesIO(false, false, true, true);
+		var actual = util.getRoles(123, "bob");
+		assertEquals(expected, actual);
+	}
+
 }

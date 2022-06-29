@@ -12,6 +12,7 @@ import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.FileContainerService;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.validation.Valid;
@@ -153,4 +154,13 @@ public class FileRestImpl implements FileRest {
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
+
+	@GET
+	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.ROLES)
+	@Override
+	public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+		var roles = new PermissionsUtil().getRoles(fileContainerId, securityContext.getUserPrincipal().getName());
+		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+	}
+
 }
