@@ -28,7 +28,8 @@ stages:
 
 .version_number:
   script:
-    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d '-' -f 1-2 | tr - . ).${CI_PIPELINE_IID}
+    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
+    - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
 
 .only_branches:
   only:
@@ -55,7 +56,7 @@ test:
   before_script:
     - !reference [.version_number, script]
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipITs verify -P test
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} -DskipITs verify -P test
     - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
     - ls -hal target
   coverage: "/Total.*?([0-9]{1,3})%/"
@@ -89,7 +90,7 @@ integration-test:
   before_script:
     - !reference [.version_number, script]
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT -DskipUTs verify -P test
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} -DskipUTs verify -P test
     - ls -hal target
   artifacts:
     when: always
@@ -108,10 +109,9 @@ site:
   dependencies: [test]
   before_script:
     - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
   script:
     - ls -hal target
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER}-SNAPSHOT site -P test
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} site -P test
     - ls -hal target/site
   artifacts:
     when: always
@@ -142,9 +142,9 @@ build:
   stage: build
   before_script:
     - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
+    - echo ${VERSION_NUMBER_DEV}
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} -DskipTests package -P prod
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} -DskipTests package -P prod
   artifacts:
     when: always
     expire_in: 2 days
@@ -183,7 +183,7 @@ upload_docker_dev:
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" ${CI_REGISTRY}
     - !reference [.version_number, script]
-    - export VERSION_NUMBER=${VERSION_NUMBER}dev
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
   script:
     - docker build -t ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER} -t ${CI_REGISTRY_IMAGE}:dev .

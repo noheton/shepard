@@ -26,7 +26,7 @@ upload_cppclient_dev:
   extends: .only_master
   before_script:
     - !reference [.version_number, script]
-    - export VERSION_NUMBER=${VERSION_NUMBER}-dev
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
 upload_cppclient:

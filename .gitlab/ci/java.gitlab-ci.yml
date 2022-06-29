@@ -23,7 +23,7 @@ build_javaclient_dev:
   extends: .only_branches
   before_script:
     - !reference [.version_number, script]
-    - export VERSION_NUMBER=${VERSION_NUMBER}-SNAPSHOT
+    - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
     - echo ${VERSION_NUMBER}
 
 upload_javaclient_dev:

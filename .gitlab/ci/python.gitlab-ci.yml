@@ -27,7 +27,7 @@ build_pythonclient_dev:
   extends: .only_branches
   before_script:
     - !reference [.version_number, script]
-    - export VERSION_NUMBER=${VERSION_NUMBER}.dev0
+    - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
 upload_pythonclient_dev:
