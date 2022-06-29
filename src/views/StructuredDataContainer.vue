@@ -220,8 +220,7 @@ export default Vue.extend({
               "Error while creating Structured Data: " + e.statusText;
             console.log(error);
             emitter.emit("error", error);
-          })
-          .finally();
+          });
     },
     handleDeleteStructuredDataContainer() {
       StructuredDataService.deleteStructuredDataContainer({
