@@ -2,7 +2,9 @@ import Vue from "vue";
 import Account from "vue-material-design-icons/Account.vue";
 import AccountGroup from "vue-material-design-icons/AccountGroup.vue";
 import AccountLock from "vue-material-design-icons/AccountLock.vue";
+import AlertCircle from "vue-material-design-icons/AlertCircle.vue";
 import ChartLine from "vue-material-design-icons/ChartLine.vue";
+import CheckCircle from "vue-material-design-icons/CheckCircle.vue";
 import ChevronDown from "vue-material-design-icons/ChevronDown.vue";
 import ChevronUp from "vue-material-design-icons/ChevronUp.vue";
 import ClipboardArrowDownOutline from "vue-material-design-icons/ClipboardArrowDownOutline.vue";
@@ -50,3 +52,6 @@ Vue.component("EyeIcon", EyeOutline);
 
 Vue.component("UserIcon", Account);
 Vue.component("UserGroupIcon", AccountGroup);
+
+Vue.component("HealthyIcon", CheckCircle);
+Vue.component("UnhealthyIcon", AlertCircle);
