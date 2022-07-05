@@ -26,6 +26,7 @@
 </template>
 
 <script lang="ts">
+import { User } from "oidc-client";
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 
@@ -38,9 +39,9 @@ export default defineComponent({
     ]),
     claims() {
       if (this.oidcIsAuthenticated) {
-        return Object.keys(this.oidcUser).map(key => ({
-          key,
-          value: this.oidcUser[key],
+        return Object.entries(this.oidcUser as User).map(entry => ({
+          key: entry[0],
+          value: entry[1],
         }));
       }
       return [];
