@@ -2,6 +2,7 @@ package de.dlr.shepard.security;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -79,9 +80,9 @@ public class PermissionsUtil {
 		return false;
 	}
 
-	private HashSet<String> fetchUserNames(List<UserGroup> UserGroups) {
-		HashSet<String> ret = new HashSet<String>();
-		for (UserGroup userGroup : UserGroups) {
+	private Set<String> fetchUserNames(List<UserGroup> userGroups) {
+		Set<String> ret = new HashSet<String>();
+		for (UserGroup userGroup : userGroups) {
 			UserGroup fullUserGroup = userGroupService.getUserGroup(userGroup.getId());
 			for (User user : fullUserGroup.getUsers()) {
 				ret.add(user.getUsername());
@@ -92,6 +93,10 @@ public class PermissionsUtil {
 
 	public RolesIO getRoles(long entityId, String username) {
 		var perms = permissionsService.getPermissionsByEntity(entityId);
+		if (perms == null) {
+			// Legacy entity without permissions
+			return new RolesIO(false, true, true, true);
+		}
 		var roles = new RolesIO(isOwner(perms, username), isManager(perms, username), isWriter(perms, username),
 				isReader(perms, username));
 		return roles;
@@ -106,16 +111,18 @@ public class PermissionsUtil {
 	}
 
 	private boolean isReader(Permissions perms, String username) {
-		return PermissionType.Public.equals(perms.getPermissionType())
-				|| PermissionType.PublicReadable.equals(perms.getPermissionType())
-				|| perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()))
-				|| fetchUserNames(perms.getReaderGroups()).contains(username);
+		var pub = PermissionType.Public.equals(perms.getPermissionType());
+		var pubRead = PermissionType.PublicReadable.equals(perms.getPermissionType());
+		var reader = perms.getReader().stream().anyMatch(u -> username.equals(u.getUsername()));
+		var readerGroup = fetchUserNames(perms.getReaderGroups()).contains(username);
+		return pub || pubRead || reader || readerGroup;
 	}
 
 	private boolean isWriter(Permissions perms, String username) {
-		return PermissionType.Public.equals(perms.getPermissionType())
-				|| perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()))
-				|| fetchUserNames(perms.getWriterGroups()).contains(username);
+		var pub = PermissionType.Public.equals(perms.getPermissionType());
+		var writer = perms.getWriter().stream().anyMatch(u -> username.equals(u.getUsername()));
+		var writerGroup = fetchUserNames(perms.getWriterGroups()).contains(username);
+		return pub || writer || writerGroup;
 	}
 
 }

@@ -399,4 +399,13 @@ public class PermissionsUtilTest extends BaseTestCase {
 		assertEquals(expected, actual);
 	}
 
+	@Test
+	public void getRolesTest_null() {
+		when(permissionsService.getPermissionsByEntity(123)).thenReturn(null);
+
+		var expected = new RolesIO(false, true, true, true);
+		var actual = util.getRoles(123, "bob");
+		assertEquals(expected, actual);
+	}
+
 }
