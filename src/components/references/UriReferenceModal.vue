@@ -39,7 +39,7 @@
 
 <script lang="ts">
 import { URIReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface URIReferenceModelData {
   newURIReference: URIReference;
@@ -54,7 +54,7 @@ function initialState(): URIReferenceModelData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

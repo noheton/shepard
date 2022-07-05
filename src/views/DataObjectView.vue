@@ -135,7 +135,7 @@ import ReferencesTable from "@/components/references/ReferencesTable.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface DataObjectData {
   currentDataObject?: DataObject;
@@ -143,7 +143,7 @@ interface DataObjectData {
   screenWidth: number;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     GenericCollapse,
     GenericDescription,

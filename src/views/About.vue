@@ -28,7 +28,7 @@
 <script lang="ts">
 import getEnv from "@/utils/env";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { version as appVersion } from "../../package.json";
 
 interface AboutData {
@@ -38,7 +38,7 @@ interface AboutData {
   backendUrl: string;
 }
 
-export default Vue.extend({
+export default defineComponent({
   data() {
     return {
       backend: undefined,

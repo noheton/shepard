@@ -52,7 +52,7 @@ import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
 import ApiKeyService from "@/services/apiKeyService";
 import { emitter } from "@/utils/event-bus";
 import { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface ApiKeyListData {
   apiKeys: ApiKey[];
@@ -61,7 +61,7 @@ interface ApiKeyListData {
   currentApiKey?: ApiKey;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     DeleteConfirmationModal,
     ApiKeyModal,

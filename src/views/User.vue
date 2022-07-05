@@ -38,14 +38,14 @@ import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
 import UserService from "@/services/userService";
 import { User } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface UserData {
   userId?: number;
   user?: User;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     ApiKeyList,
     SubscriptionList,

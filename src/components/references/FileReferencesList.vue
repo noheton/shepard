@@ -118,7 +118,7 @@ import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface FileListData {
   fileReferenceList: FileReference[];
@@ -131,7 +131,7 @@ interface FileListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     ProcessAlert,

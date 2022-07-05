@@ -138,7 +138,7 @@ import {
   StructuredDataContainer,
   StructuredDataPayload,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface StructuredDataData {
   currentStructuredDataContainer?: StructuredDataContainer;
@@ -149,7 +149,7 @@ interface StructuredDataData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     DeleteConfirmationModal,

@@ -39,13 +39,13 @@ import {
   Subscription,
   SubscriptionRequestMethodEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface SubscriptionListData {
   subscriptionToCreate?: Subscription;
 }
 
-export default Vue.extend({
+export default defineComponent({
   data() {
     return {
       subscriptionToCreate: undefined,

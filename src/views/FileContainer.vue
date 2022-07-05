@@ -141,7 +141,7 @@ import {
   Permissions,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface FileData {
   currentFileContainer?: FileContainer;
@@ -157,7 +157,7 @@ interface FileData {
   managerAccess: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     DeleteConfirmationModal,

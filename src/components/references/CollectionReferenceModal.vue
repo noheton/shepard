@@ -56,7 +56,7 @@
 <script lang="ts">
 import CollectionService from "@/services/collectionService";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface CollectionReferenceModelData {
   newCollectionReference: CollectionReference;
@@ -78,7 +78,7 @@ function initialState(): CollectionReferenceModelData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

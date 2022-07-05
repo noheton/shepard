@@ -11,7 +11,8 @@
   >
     <div class="float-left">
       <div>
-        <b><GenericName :name="dataObject.name" :word-count="40" /></b> ID:
+        <b><GenericName :name="dataObject.name" :word-count="40" /></b>
+        ID:
         {{ dataObject.id }}
       </div>
       <CreatedByLine
@@ -19,19 +20,19 @@
         :created-at="dataObject.createdAt"
       />
     </div>
-    <div class="icon">
+    <div v-if="dataObject.referenceIds" class="icon">
       <ReferencesIcon title="References" />
       {{ dataObject.referenceIds.length }}
     </div>
-    <div class="icon">
+    <div v-if="dataObject.successorIds" class="icon">
       <SuccessorIcon title="Successors" />
       {{ dataObject.successorIds.length }}
     </div>
-    <div class="icon">
+    <div v-if="dataObject.predecessorIds" class="icon">
       <PredecessorIcon title="Predecessors" />
       {{ dataObject.predecessorIds.length }}
     </div>
-    <div class="icon">
+    <div v-if="dataObject.childrenIds" class="icon">
       <ChildIcon title="Children" />
       {{ dataObject.childrenIds.length }}
     </div>
@@ -47,9 +48,9 @@
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   components: { CreatedByLine, GenericName },
   props: {
     dataObject: {

@@ -91,7 +91,7 @@ import {
   GetAllCollectionsOrderByEnum,
   SearchParamsQueryTypeEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface ExploreData {
   collections?: Collection[];
@@ -105,7 +105,7 @@ interface ExploreData {
   userInput: string;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { GenericEntityList, FilterListLine, CollectionModal, Loading },
   data() {
     return {

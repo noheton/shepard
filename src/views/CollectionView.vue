@@ -116,7 +116,7 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { Collection, Permissions } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface CollectionData {
   currentCollection?: Collection;
@@ -125,7 +125,7 @@ interface CollectionData {
   managerAccess: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     GenericCollapse,
     GenericDescription,

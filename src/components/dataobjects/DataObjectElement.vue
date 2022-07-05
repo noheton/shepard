@@ -10,13 +10,13 @@
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface RelatedObjectsTableData {
   dataObject?: DataObject;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { DataObjectListItem },
   props: {
     collectionId: {

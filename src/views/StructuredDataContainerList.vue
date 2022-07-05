@@ -63,7 +63,7 @@ import {
   GetAllStructuredDataContainersOrderByEnum,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface StructuredDatasListData {
   containers?: StructuredDataContainer[];
@@ -74,7 +74,7 @@ interface StructuredDatasListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { GenericEntityList, FilterListLine, GenericCreateModal },
   data() {
     return {

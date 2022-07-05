@@ -18,9 +18,9 @@
 import Breadcrumb from "@/components/Breadcrumb.vue";
 import Navbar from "@/components/Navbar.vue";
 import { emitter } from "@/utils/event-bus";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   components: { Breadcrumb, Navbar },
   data() {
     return {

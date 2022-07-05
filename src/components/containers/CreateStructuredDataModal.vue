@@ -40,7 +40,7 @@
 import { StructuredDataPayload } from "@dlr-shepard/shepard-client";
 import JSONEditor, { JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface CreateStructuredDataModalData {
   newStructuredDataPayload: StructuredDataPayload;
@@ -56,7 +56,7 @@ function initialState(): CreateStructuredDataModalData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

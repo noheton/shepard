@@ -98,7 +98,7 @@ import DataObjectReferenceModal from "@/components/references/DataObjectReferenc
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface DataObjectReferenceListData {
   dataObjectList: DataObjectReference[];
@@ -108,7 +108,7 @@ interface DataObjectReferenceListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     DataObjectReferenceModal,

@@ -173,7 +173,7 @@ import {
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
 interface PermissionsModalData {
   usernameOrGroupId: string;
@@ -222,7 +222,7 @@ function initialState(): PermissionsModalData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

@@ -73,7 +73,7 @@ import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import UriReferenceService from "@/services/uriReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { URIReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface URIListData {
   uriList: URIReference[];
@@ -82,7 +82,7 @@ interface URIListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     UriReferenceModal,

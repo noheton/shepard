@@ -70,7 +70,7 @@ import {
   Timeseries,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface TimeseriesData {
   currentTimeseriesContainer?: TimeseriesContainer;
@@ -80,7 +80,7 @@ interface TimeseriesData {
   managerAccess: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { CreatedByLine, DeleteConfirmationModal, PermissionsModal },
   data() {
     return {

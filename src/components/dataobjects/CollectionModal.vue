@@ -92,7 +92,7 @@
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { Collection } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
 interface CollectionModalData {
   newCollection: Collection;
@@ -103,7 +103,7 @@ interface CollectionModalData {
   validationError: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

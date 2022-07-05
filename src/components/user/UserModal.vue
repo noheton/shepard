@@ -44,7 +44,7 @@
 <script lang="ts">
 import UserService from "@/services/userService";
 import { User } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface AddUserModalData {
   username: string;
@@ -64,7 +64,7 @@ function initialState(): AddUserModalData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

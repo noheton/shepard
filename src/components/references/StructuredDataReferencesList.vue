@@ -136,7 +136,7 @@ import {
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface StructuredDataListData {
   structuredDataList: StructuredDataReference[];
@@ -147,7 +147,7 @@ interface StructuredDataListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     StructuredDataReferenceModal,

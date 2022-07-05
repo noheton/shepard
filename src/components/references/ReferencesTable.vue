@@ -54,9 +54,9 @@ import StructuredDataReferencesList from "@/components/references/StructuredData
 import TimeseriesReferencesList from "@/components/references/TimeseriesReferencesList.vue";
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     TimeseriesReferencesList,
     StructuredDataReferencesList,

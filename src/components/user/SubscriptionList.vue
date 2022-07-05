@@ -59,7 +59,7 @@ import {
   Subscription,
   SubscriptionRequestMethodEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface SubscriptionListData {
   subscriptions: Subscription[];
@@ -67,7 +67,7 @@ interface SubscriptionListData {
   requestMethods: string[];
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { DeleteConfirmationModal, SubscriptionModal, GenericName },
   props: {
     currentUsername: {

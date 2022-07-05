@@ -6,7 +6,7 @@
     ok-only
     @ok="$emit('ok')"
   >
-    <div v-if="createdApiKey">
+    <div v-if="createdApiKey && createdApiKey.jwt">
       Successfully created Api Key named <em> {{ createdApiKey.name }} </em> !
       <code>
         {{ createdApiKey.jwt.substring(0, 50) + "... " }}
@@ -20,9 +20,9 @@
 
 <script lang="ts">
 import { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     createdApiKey: {
       type: Object as PropType<ApiKeyWithJWT>,

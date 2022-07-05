@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts">
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface ProcessAlertData {
   thisProcessStarted: boolean;
@@ -37,7 +37,7 @@ interface ProcessAlertData {
   thisProcessError: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     processName: {
       type: String,

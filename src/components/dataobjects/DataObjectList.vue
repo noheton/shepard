@@ -27,7 +27,7 @@ import {
   DataObject,
   GetAllDataObjectsOrderByEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface DataObjectListData {
   dataObjects: DataObject[];
@@ -37,7 +37,7 @@ interface DataObjectListData {
   currentPage: number;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { DataObjectListItem, FilterListLine },
   props: {
     currentCollectionId: {

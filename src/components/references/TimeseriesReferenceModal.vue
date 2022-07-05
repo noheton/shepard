@@ -112,7 +112,7 @@ import {
   TimeseriesContainer,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface Option {
   value: Timeseries | null;
@@ -170,7 +170,7 @@ function convertTimeseriesToOption(ts: Timeseries, field = true): Option {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

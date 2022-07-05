@@ -159,7 +159,7 @@
 import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { DataObject } from "@dlr-shepard/shepard-client";
-import Vue, { PropType } from "vue";
+import { defineComponent, PropType } from "vue";
 
 interface PossibleDataObject {
   id?: number;
@@ -178,7 +178,7 @@ interface DataObjectModalData {
   }[];
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

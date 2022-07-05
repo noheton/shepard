@@ -104,7 +104,7 @@ import UserModal from "@/components/user/UserModal.vue";
 import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
 import { Permissions, UserGroup } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 
 interface UserGroupData {
@@ -116,7 +116,7 @@ interface UserGroupData {
   managerAccess: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     DeleteConfirmationModal,
     PermissionsModal,

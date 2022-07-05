@@ -78,7 +78,7 @@ import {
   GetAllUserGroupsOrderByEnum,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface UserGroupData {
   userGroupList?: UserGroup[];
@@ -89,7 +89,7 @@ interface UserGroupData {
   descending: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { GenericCreateModal, GenericName, Loading, FilterListLine },
   data() {
     return {

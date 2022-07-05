@@ -19,7 +19,7 @@ import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
 import JSONEditor, { JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface JsonEditorData {
   structuredDataPayload?: string;
@@ -33,7 +33,7 @@ function initialState(): JsonEditorData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

@@ -62,7 +62,7 @@ import {
   FileContainer,
   GetAllFileContainersOrderByEnum,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface FilesListData {
   containers?: FileContainer[];
@@ -73,7 +73,7 @@ interface FilesListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: { GenericEntityList, FilterListLine, GenericCreateModal },
   data() {
     return {

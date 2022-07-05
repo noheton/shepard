@@ -98,7 +98,7 @@ import CollectionReferenceModal from "@/components/references/CollectionReferenc
 import CollectionReferenceService from "@/services/collectionReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface CollectionListData {
   collectionList: CollectionReference[];
@@ -108,7 +108,7 @@ interface CollectionListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     CollectionReferenceModal,

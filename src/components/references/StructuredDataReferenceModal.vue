@@ -61,7 +61,7 @@ import {
   StructuredDataContainer,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface Option {
   value: string;
@@ -92,7 +92,7 @@ function initialState(): StructuredDataReferenceModelData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     modalId: {
       type: String,

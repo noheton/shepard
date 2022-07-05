@@ -125,11 +125,11 @@
 <script lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import FileService from "@/services/fileService";
-import { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import FileService from "@/services/fileService";
 import { emitter } from "@/utils/event-bus";
+import { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
+import { defineComponent } from "vue";
 
 interface Option {
   value: string;
@@ -174,7 +174,7 @@ function initialState(): FileReferenceModelData {
   };
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     ProcessAlert,
   },

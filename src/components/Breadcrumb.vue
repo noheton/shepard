@@ -7,7 +7,7 @@
 
 <script lang="ts">
 import DataObjectService from "@/services/dataObjectService";
-import Vue from "vue";
+import { defineComponent } from "vue";
 import { Location } from "vue-router";
 
 interface Breadcrumb {
@@ -66,7 +66,7 @@ interface BreadcrumbData {
   items: Array<Breadcrumb>;
 }
 
-export default Vue.extend({
+export default defineComponent({
   data() {
     return {
       parentId: undefined,

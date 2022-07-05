@@ -117,7 +117,7 @@ import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import { TimeseriesReference } from "@dlr-shepard/shepard-client";
-import Vue from "vue";
+import { defineComponent } from "vue";
 
 interface TimeseriesListData {
   timeseriesList: TimeseriesReference[];
@@ -129,7 +129,7 @@ interface TimeseriesListData {
   deletedAlert: boolean;
 }
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     CreatedByLine,
     ProcessAlert,
@@ -232,7 +232,7 @@ export default Vue.extend({
           emitter.emit("error", error);
         });
     },
-    convertDate(date: string) {
+    convertDate(date: number) {
       return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
