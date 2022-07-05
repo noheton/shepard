@@ -188,7 +188,7 @@ export default defineComponent({
       default: "FileReferenceModal",
     },
   },
-
+  emits: ["create"],
   data() {
     return initialState();
   },

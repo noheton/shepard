@@ -51,7 +51,7 @@ export default defineComponent({
       default: "GenericCreateModal",
     },
   },
-
+  emits: ["create"],
   data() {
     return initialState();
   },

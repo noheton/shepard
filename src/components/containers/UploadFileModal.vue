@@ -37,7 +37,7 @@ export default defineComponent({
       default: "FileContainerModal",
     },
   },
-
+  emits: ["created"],
   data() {
     return {
       newFile: {},

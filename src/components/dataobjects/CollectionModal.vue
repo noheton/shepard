@@ -118,7 +118,7 @@ export default defineComponent({
       default: undefined,
     },
   },
-
+  emits: ["collection-changed"],
   data() {
     return {
       newCollection: {},

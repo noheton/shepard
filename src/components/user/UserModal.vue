@@ -75,6 +75,7 @@ export default defineComponent({
       default: "UserModal",
     },
   },
+  emits: ["add-user"],
   data() {
     return initialState();
   },

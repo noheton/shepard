@@ -181,7 +181,7 @@ export default defineComponent({
       default: "TimeseriesReferenceModal",
     },
   },
-
+  emits: ["create"],
   data() {
     return initialState();
   },

@@ -103,7 +103,7 @@ export default defineComponent({
       default: "StructuredDataReferenceModal",
     },
   },
-
+  emits: ["create"],
   data() {
     return initialState();
   },

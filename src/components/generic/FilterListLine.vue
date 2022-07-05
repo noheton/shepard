@@ -77,6 +77,7 @@ export default defineComponent({
       default: false,
     },
   },
+  emits: ["filter-changed"],
   data() {
     return {
       currentPage: this.defaultPage,

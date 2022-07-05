@@ -197,7 +197,7 @@ export default defineComponent({
       default: undefined,
     },
   },
-
+  emits: ["data-object-changed"],
   data() {
     return {
       newDataObject: { name: "" },

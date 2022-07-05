@@ -67,7 +67,7 @@ export default defineComponent({
       default: "CreateStructuredDataModal",
     },
   },
-
+  emits: ["created"],
   data() {
     return initialState();
   },
