@@ -1,7 +1,115 @@
+<script setup lang="ts">
+import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
+import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
+import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericCollapse from "@/components/generic/GenericCollapse.vue";
+import GenericDescription from "@/components/generic/GenericDescription.vue";
+import PermissionsModal from "@/components/PermissionsModal.vue";
+import CollectionService from "@/services/collectionService";
+import { emitter } from "@/utils/event-bus";
+import { useRouter } from "@/utils/helpers";
+import { Collection, Permissions, Roles } from "@dlr-shepard/shepard-client";
+import { computed, onMounted, Ref, ref } from "vue";
+
+const router = useRouter();
+const currentCollectionId = computed(() => {
+  return Number(router.currentRoute.params.collectionId);
+});
+
+const currentCollection: Ref<Collection | undefined> = ref();
+const attributeItems: Ref<Array<{ key: string; value: string }>> = ref([]);
+function retrieveCollection() {
+  CollectionService.getCollection({
+    collectionId: currentCollectionId.value,
+  })
+    .then(response => {
+      currentCollection.value = response;
+      attributeItems.value = [];
+      if (currentCollection.value.attributes !== undefined) {
+        Object.entries(currentCollection.value.attributes).forEach(
+          ([key, value]) =>
+            attributeItems.value.push({ key: key, value: value }),
+        );
+      }
+    })
+    .catch(e => {
+      const error = "Error while fetching collection: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+
+const permissions: Ref<Permissions | undefined> = ref();
+function retrievePermissions() {
+  CollectionService.getCollectionPermissions({
+    collectionId: currentCollectionId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      const error = "Error while fetching permissons: " + e.statusText;
+      console.log(error);
+    });
+}
+function updatePermissions(perms: Permissions) {
+  CollectionService.editCollectionPermissions({
+    collectionId: currentCollectionId.value,
+    permissions: perms,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      const error = "Error while updating permissons: " + e.statusText;
+      console.log(error);
+    });
+}
+
+const roles: Ref<Roles | undefined> = ref();
+function retrieveRoles() {
+  CollectionService.getCollectionRoles({
+    collectionId: currentCollectionId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      const error = "Error while fetching roles: " + e.statusText;
+      console.log(error);
+    });
+}
+
+function handleDelete() {
+  CollectionService.deleteCollection({
+    collectionId: currentCollectionId.value,
+  })
+    .then(() => {
+      router.push({ name: "Explore" });
+    })
+    .catch(e => {
+      const error = "Error while deleting collection: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+
+onMounted(() => {
+  retrieveCollection();
+  retrieveRoles();
+  retrievePermissions();
+});
+</script>
+
 <template>
   <div v-if="currentCollection" class="collection">
     <div>
-      <b-button-group class="float-right">
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
         <b-button
           v-b-modal.create-data-object-modal
           v-b-tooltip.hover
@@ -19,7 +127,7 @@
           <EditIcon />
         </b-button>
         <b-button
-          v-if="managerAccess"
+          v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -36,9 +144,28 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentCollection.name }}</h3>
+      <h3>
+        {{ currentCollection.name }}
+        <span v-if="roles">
+          <ManagerIcon
+            v-if="roles.owner || roles.manager"
+            v-b-tooltip.hover
+            title="Manager"
+          />
+          <WriterIcon
+            v-else-if="roles.writer"
+            v-b-tooltip.hover
+            title="Writer"
+          />
+          <ReaderIcon
+            v-else-if="roles.reader"
+            v-b-tooltip.hover
+            title="Reader"
+          />
+        </span>
+      </h3>
     </div>
-    <p>
+    <div class="mb-3">
       Collection ID: {{ currentCollection.id }}
       <CreatedByLine
         :created-at="currentCollection.createdAt"
@@ -52,7 +179,7 @@
         updated
         tooltip
       />
-    </p>
+    </div>
 
     <GenericDescription
       v-if="currentCollection.description"
@@ -64,7 +191,7 @@
     </GenericCollapse>
 
     <GenericCollapse
-      v-if="currentCollection.dataObjectIds.length"
+      v-if="currentCollection.dataObjectIds?.length"
       title="Data Objects"
     >
       <DataObjectList
@@ -103,120 +230,6 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
-import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
-import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericCollapse from "@/components/generic/GenericCollapse.vue";
-import GenericDescription from "@/components/generic/GenericDescription.vue";
-import PermissionsModal from "@/components/PermissionsModal.vue";
-import CollectionService from "@/services/collectionService";
-import { emitter } from "@/utils/event-bus";
-import { Collection, Permissions } from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface CollectionData {
-  currentCollection?: Collection;
-  permissions?: Permissions;
-  attributeItems: Array<{ key: string; value: string }>;
-  managerAccess: boolean;
-}
-
-export default defineComponent({
-  components: {
-    GenericCollapse,
-    GenericDescription,
-    CreatedByLine,
-    DataObjectList,
-    DataObjectModal,
-    CollectionModal,
-    DeleteConfirmationModal,
-    PermissionsModal,
-  },
-  data() {
-    return {
-      currentCollection: undefined,
-      permissions: undefined,
-      attributeItems: [],
-      managerAccess: false,
-    } as CollectionData;
-  },
-  computed: {
-    currentCollectionId(): number {
-      return Number(this.$router.currentRoute.params.collectionId);
-    },
-  },
-  mounted() {
-    this.retrieveCollection();
-    this.retrievePermissions();
-  },
-  methods: {
-    retrieveCollection() {
-      CollectionService.getCollection({
-        collectionId: this.currentCollectionId,
-      })
-        .then(response => {
-          this.currentCollection = response;
-          this.attributeItems = [];
-          if (this.currentCollection?.attributes !== undefined) {
-            Object.entries(this.currentCollection.attributes).forEach(
-              ([key, value]) =>
-                this.attributeItems.push({ key: key, value: value }),
-            );
-          }
-        })
-        .catch(e => {
-          const error = "Error while fetching collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    handleDelete() {
-      CollectionService.deleteCollection({
-        collectionId: this.currentCollectionId,
-      })
-        .then(() => {
-          this.$router.push({ name: "Explore" });
-        })
-        .catch(e => {
-          const error = "Error while deleting collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    retrievePermissions() {
-      CollectionService.getCollectionPermissions({
-        collectionId: this.currentCollectionId,
-      })
-        .then(response => {
-          this.permissions = response;
-          this.managerAccess = true;
-        })
-        .catch(e => {
-          const error = "Error while fetching permissons: " + e.statusText;
-          console.log(error);
-          this.managerAccess = e.status != 403;
-        });
-    },
-    updatePermissions(perms: Permissions) {
-      CollectionService.editCollectionPermissions({
-        collectionId: this.currentCollectionId,
-        permissions: perms,
-      })
-        .then(response => {
-          this.permissions = response;
-        })
-        .catch(e => {
-          const error = "Error while updating permissons: " + e.statusText;
-          console.log(error);
-        });
-    },
-  },
-});
-</script>
 
 <style scoped>
 .listElement {

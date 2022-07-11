@@ -1,7 +1,10 @@
 import Vue from "vue";
 import Account from "vue-material-design-icons/Account.vue";
+import AccountCog from "vue-material-design-icons/AccountCog.vue";
+import AccountEdit from "vue-material-design-icons/AccountEdit.vue";
+import AccountEye from "vue-material-design-icons/AccountEye.vue";
 import AccountGroup from "vue-material-design-icons/AccountGroup.vue";
-import AccountLock from "vue-material-design-icons/AccountLock.vue";
+import AccountStar from "vue-material-design-icons/AccountStar.vue";
 import AlertCircle from "vue-material-design-icons/AlertCircle.vue";
 import ChartLine from "vue-material-design-icons/ChartLine.vue";
 import CheckCircle from "vue-material-design-icons/CheckCircle.vue";
@@ -45,13 +48,16 @@ Vue.component("EditIcon", Pencil);
 Vue.component("CreateIcon", Plus);
 Vue.component("RemoveIcon", Minus);
 Vue.component("OpenIcon", FolderOpen);
-Vue.component("PermissionsIcon", AccountLock);
+Vue.component("PermissionsIcon", AccountCog);
 Vue.component("DownloadIcon", FileDownloadOutline);
 Vue.component("CopyIcon", ContentCopy);
 Vue.component("EyeIcon", EyeOutline);
 
 Vue.component("UserIcon", Account);
 Vue.component("UserGroupIcon", AccountGroup);
+Vue.component("ReaderIcon", AccountEye);
+Vue.component("WriterIcon", AccountEdit);
+Vue.component("ManagerIcon", AccountStar);
 
 Vue.component("HealthyIcon", CheckCircle);
 Vue.component("UnhealthyIcon", AlertCircle);

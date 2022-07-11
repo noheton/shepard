@@ -29,7 +29,7 @@
         </b-button>
       </b-button-group>
       <h3>{{ currentFileContainer.name }}</h3>
-      <p>
+      <div class="mb-3">
         <b>ID:</b> {{ currentFileContainer.id }}<br />
         <b>Oid:</b> {{ currentFileContainer.oid }}<br />
         <CreatedByLine
@@ -37,7 +37,7 @@
           :created-by="currentFileContainer.createdBy"
           tooltip
         />
-      </p>
+      </div>
       <ProcessAlert
         process-name="Download"
         :process-active="downloadActive"

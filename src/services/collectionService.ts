@@ -6,6 +6,7 @@ import {
   GetAllCollectionsRequest,
   GetCollectionPermissionsRequest,
   GetCollectionRequest,
+  GetCollectionRolesRequest,
   UpdateCollectionRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
@@ -44,5 +45,10 @@ export default class CollectionService {
   static editCollectionPermissions(params: EditCollectionPermissionsRequest) {
     const api = new CollectionApi(getConfiguration());
     return api.editCollectionPermissions(params);
+  }
+
+  static getCollectionRoles(params: GetCollectionRolesRequest) {
+    const api = new CollectionApi(getConfiguration());
+    return api.getCollectionRoles(params);
   }
 }

@@ -21,7 +21,7 @@
         </b-button>
       </b-button-group>
       <h3>{{ currentTimeseriesContainer.name }}</h3>
-      <p>
+      <div class="mb-3">
         <b>ID:</b> {{ currentTimeseriesContainer.id }}<br />
         <b>Database:</b> {{ currentTimeseriesContainer.database }}<br />
         <CreatedByLine
@@ -29,7 +29,7 @@
           :created-by="currentTimeseriesContainer.createdBy"
           tooltip
         />
-      </p>
+      </div>
       <b-table
         striped
         hover

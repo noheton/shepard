@@ -37,7 +37,7 @@
         </b-button>
       </b-button-group>
       <h3>{{ currentStructuredDataContainer.name }}</h3>
-      <p>
+      <div class="mb-3">
         <b>ID:</b> {{ currentStructuredDataContainer.id }}<br />
         <b>Oid:</b> {{ currentStructuredDataContainer.oid }}<br />
         <CreatedByLine
@@ -45,7 +45,7 @@
           :created-by="currentStructuredDataContainer.createdBy"
           tooltip
         />
-      </p>
+      </div>
       <b-list-group>
         <b-list-group-item
           v-for="(structuredData, index) in structuredDataList"

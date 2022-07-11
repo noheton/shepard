@@ -9,6 +9,7 @@ import {
   GetStructuredDataContainerRequest,
   GetStructuredDataPermissionsRequest,
   GetStructuredDataRequest,
+  GetStructuredDataRolesRequest,
   StructureddataApi,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
@@ -72,5 +73,10 @@ export default class StructuredDataService {
   ) {
     const api = new StructureddataApi(getConfiguration());
     return api.getAllStructuredDataContainers(params);
+  }
+
+  static getStructuredDataRoles(params: GetStructuredDataRolesRequest) {
+    const api = new StructureddataApi(getConfiguration());
+    return api.getStructuredDataRoles(params);
   }
 }

@@ -10,6 +10,7 @@ import {
   GetFileContainerRequest,
   GetFilePermissionsRequest,
   GetFileRequest,
+  GetFileRolesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 
@@ -62,5 +63,10 @@ export default class FileService {
   static getAllFileContainers(params: GetAllFileContainersRequest) {
     const api = new FileApi(getConfiguration());
     return api.getAllFileContainers(params);
+  }
+
+  static getFileRoles(params: GetFileRolesRequest) {
+    const api = new FileApi(getConfiguration());
+    return api.getFileRoles(params);
   }
 }
