@@ -101,7 +101,7 @@ public final class InfluxUtil {
 					.time(influxPoint.getTimeInNanoseconds(), TimeUnit.NANOSECONDS);
 			Object value = influxPoint.getValue();
 
-			if (expectedType.equals(FIELD_STRING)) {
+			if (value != null && expectedType.equals(FIELD_STRING)) {
 				// Expected type is string, we use value.toString()
 				pointBuilder.addField(timeseries.getField(), value.toString());
 			} else if (value instanceof Number numberValue
@@ -116,7 +116,7 @@ public final class InfluxUtil {
 				// value is a boolean and boolean or nothing is expected
 				pointBuilder.addField(timeseries.getField(), booleanValue);
 			} else if (value != null) {
-				// value is another object
+				// value has to be casted
 				var stringValue = value.toString();
 				try {
 					switch (expectedType) {
@@ -128,8 +128,8 @@ public final class InfluxUtil {
 				} catch (NumberFormatException e) {
 					if (error.isBlank())
 						// log the first error
-						error = String.format("Invalid influx point, cannot cast %s into %s", stringValue,
-								expectedType);
+						error = String.format("Invalid influx point detected, cannot cast type %s into type %s",
+								stringValue, expectedType);
 				}
 			}
 			if (pointBuilder.hasFields())

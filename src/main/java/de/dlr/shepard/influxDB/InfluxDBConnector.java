@@ -136,7 +136,7 @@ public class InfluxDBConnector implements IConnector {
 		try {
 			influxDB.write(batchPoints);
 		} catch (InfluxDBException e) {
-			log.error("InfluxdbException while writing points: {}", e.getMessage());
+			log.error("InfluxdbException while writing payload {}: {}", payload.getTimeseries(), e.getMessage());
 			return e.getMessage();
 		}
 		return "";
