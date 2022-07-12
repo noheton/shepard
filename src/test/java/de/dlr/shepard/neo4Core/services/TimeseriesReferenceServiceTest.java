@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
@@ -220,7 +221,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() {
+	public void getPayloadTest() throws InvalidAuthException {
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -247,7 +248,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() {
+	public void getPayloadTest_notAllowed() throws InvalidAuthException {
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -265,13 +266,13 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
-		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
-				"bob");
-		assertEquals(0, actual.size());
+		assertThrows(InvalidAuthException.class, () -> {
+			service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+		});
 	}
 
 	@Test
-	public void exportTest() throws IOException {
+	public void exportTest() throws IOException, InvalidAuthException {
 		var is = new ByteArrayInputStream("Hello World".getBytes());
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
@@ -298,7 +299,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void exportTest_notAllowed() throws IOException {
+	public void exportTest_notAllowed() throws IOException, InvalidAuthException {
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -316,9 +317,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
-		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
-				"bob");
-		assertNull(actual);
+		assertThrows(InvalidAuthException.class, () -> {
+			service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+		});
 	}
 
 }

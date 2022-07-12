@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
@@ -256,7 +257,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() {
+	public void getPayloadTest() throws InvalidAuthException {
 		var container = new FileContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);
@@ -272,7 +273,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_NotAllowed() {
+	public void getPayloadTest_NotAllowed() throws InvalidAuthException {
 		var container = new FileContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);
@@ -280,9 +281,10 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
-		var actual = service.getPayload(1L, "oid", "bob");
 
-		assertNull(actual);
+		assertThrows(InvalidAuthException.class, () -> {
+			service.getPayload(1L, "oid", "bob");
+		});
 	}
 
 	@Test

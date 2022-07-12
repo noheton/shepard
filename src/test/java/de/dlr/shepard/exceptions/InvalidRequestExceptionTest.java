@@ -22,7 +22,7 @@ public class InvalidRequestExceptionTest extends BaseTestCase {
 
 	@Test
 	public void testGetStatusCode() {
-		var obj = new InvalidRequestException("Message");
+		var obj = new InvalidRequestException();
 		assertEquals(400, obj.getStatusCode());
 	}
 }

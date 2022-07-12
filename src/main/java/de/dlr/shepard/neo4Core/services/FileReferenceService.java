@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
@@ -79,14 +80,14 @@ public class FileReferenceService {
 		return true;
 	}
 
-	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) {
+	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) throws InvalidAuthException {
 		FileReference reference = fileReferenceDAO.find(fileReferenceId);
 		long containerId = reference.getFileContainer().getId();
 		String mongoId = reference.getFileContainer().getMongoId();
-		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
-			return fileService.getPayload(mongoId, oid);
-		}
-		return null;
+		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			throw new InvalidAuthException();
+
+		return fileService.getPayload(mongoId, oid);
 	}
 
 	public List<ShepardFile> getFiles(long fileReferenceId) {

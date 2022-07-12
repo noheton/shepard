@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
@@ -257,7 +258,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest() {
+	public void getAllPayloadTest() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -279,7 +280,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest_notAllowed() {
+	public void getAllPayloadTest_notAllowed() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -291,12 +292,13 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
 
-		var actual = service.getAllPayloads(1L, "bob");
-		assertEquals(0, actual.size());
+		assertThrows(InvalidAuthException.class, () -> {
+			service.getAllPayloads(1L, "bob");
+		});
 	}
 
 	@Test
-	public void getAllPayloadTest_unknownOid() {
+	public void getAllPayloadTest_unknownOid() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -317,7 +319,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest_isNull() {
+	public void getAllPayloadTest_isNull() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -332,7 +334,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() {
+	public void getPayloadTest() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -351,7 +353,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() {
+	public void getPayloadTest_notAllowed() throws InvalidAuthException {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -362,7 +364,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
 
-		var actual = service.getPayload(1L, "abc", "bob");
-		assertNull(actual);
+		assertThrows(InvalidAuthException.class, () -> {
+			service.getPayload(1L, "abc", "bob");
+		});
 	}
 }

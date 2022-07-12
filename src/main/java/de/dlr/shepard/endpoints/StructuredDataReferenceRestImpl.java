@@ -1,9 +1,12 @@
 package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -82,9 +85,14 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId) {
-		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(payload).build();
+		List<StructuredDataPayload> payload;
+		try {
+			payload = structuredDataReferenceService.getAllPayloads(structuredDataId,
+					securityContext.getUserPrincipal().getName());
+			return Response.ok(payload).build();
+		} catch (InvalidAuthException e) {
+			return Response.status(Status.FORBIDDEN).build();
+		}
 	}
 
 	@GET
@@ -94,9 +102,14 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId,
 			@PathParam(Constants.OID) String oid) {
-		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid,
-				securityContext.getUserPrincipal().getName());
-		return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
+		StructuredDataPayload payload;
+		try {
+			payload = structuredDataReferenceService.getPayload(structuredDataId, oid,
+					securityContext.getUserPrincipal().getName());
+			return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
+		} catch (InvalidAuthException e) {
+			return Response.status(Status.FORBIDDEN).build();
+		}
 	}
 
 }

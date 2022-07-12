@@ -20,7 +20,7 @@ public class ShepardParserExceptionTest {
 
 	@Test
 	public void testGetStatusCode() {
-		var obj = new ShepardParserException("Message");
+		var obj = new ShepardParserException();
 		assertEquals(400, obj.getStatusCode());
 	}
 

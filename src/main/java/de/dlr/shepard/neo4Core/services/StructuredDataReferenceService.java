@@ -1,9 +1,9 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
@@ -97,14 +97,14 @@ public class StructuredDataReferenceService {
 		return true;
 	}
 
-	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username) {
+	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username)
+			throws InvalidAuthException {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			// Not allowed
-			return Collections.emptyList();
+			throw new InvalidAuthException();
 
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
@@ -118,14 +118,15 @@ public class StructuredDataReferenceService {
 		return result;
 	}
 
-	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username) {
+	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username)
+			throws InvalidAuthException {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 
-		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
-			return structuredDataService.getPayload(mongoId, oid);
-		}
-		return null;
+		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			throw new InvalidAuthException();
+
+		return structuredDataService.getPayload(mongoId, oid);
 	}
 }

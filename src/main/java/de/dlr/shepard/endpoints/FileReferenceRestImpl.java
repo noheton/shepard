@@ -3,8 +3,10 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
@@ -85,12 +87,18 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFilePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId, @PathParam(Constants.OID) String oid) {
-		var payload = fileReferenceService.getPayload(fileReferenceId, oid,
-				securityContext.getUserPrincipal().getName());
-		return payload != null
-				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
-						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
-				: Response.status(Status.NOT_FOUND).build();
+		NamedInputStream payload;
+		try {
+			payload = fileReferenceService.getPayload(fileReferenceId, oid,
+					securityContext.getUserPrincipal().getName());
+			return payload != null
+					? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
+							.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
+					: Response.status(Status.NOT_FOUND).build();
+		} catch (InvalidAuthException e) {
+			return Response.status(Status.FORBIDDEN).build();
+		}
+
 	}
 
 	@GET

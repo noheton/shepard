@@ -3,10 +3,10 @@ package de.dlr.shepard.neo4Core.services;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -85,29 +85,30 @@ public class TimeseriesReferenceService {
 
 	public List<TimeseriesPayload> getPayload(long timeseriesId, AggregateFunction function, Long groupBy,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet,
-			String username) {
+			String username) throws InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
 
-		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
-			return timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
-					function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
-		}
-		return Collections.emptyList();
+		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			throw new InvalidAuthException();
+
+		return timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
+				function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
 	public InputStream export(long timeseriesId, AggregateFunction function, Long groupBy, Set<String> devicesFilterSet,
-			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username) throws IOException {
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username)
+			throws IOException, InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
 
-		if (permissionsUtil.isAllowed(containerId, AccessType.Read, username)) {
-			return timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
-					function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
-		}
-		return null;
+		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			throw new InvalidAuthException();
+
+		return timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
+				groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
 }

@@ -6,23 +6,23 @@ import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
 
-public class InvalidBodyExceptionTest extends BaseTestCase {
+public class InvalidAuthExceptionTest extends BaseTestCase {
 
 	@Test
 	public void testDefaultConstructor() {
-		var obj = new InvalidBodyException();
-		assertEquals("Some of the values provided in the JSON Body are incorrect", obj.getMessage());
+		var obj = new InvalidAuthException();
+		assertEquals("Invalid authentication or authorization", obj.getMessage());
 	}
 
 	@Test
 	public void testConstructor() {
-		var obj = new InvalidBodyException("Message");
+		var obj = new InvalidAuthException("Message");
 		assertEquals("Message", obj.getMessage());
 	}
 
 	@Test
 	public void testGetStatusCode() {
-		var obj = new InvalidBodyException();
-		assertEquals(400, obj.getStatusCode());
+		var obj = new InvalidAuthException();
+		assertEquals(403, obj.getStatusCode());
 	}
 }

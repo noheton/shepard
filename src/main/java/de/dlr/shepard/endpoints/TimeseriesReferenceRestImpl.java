@@ -1,12 +1,16 @@
 package de.dlr.shepard.endpoints;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -94,9 +98,14 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
-		var payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
-				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
-		return Response.ok(payload).build();
+		List<TimeseriesPayload> payload;
+		try {
+			payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
+					locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
+			return Response.ok(payload).build();
+		} catch (InvalidAuthException e) {
+			return Response.status(Status.FORBIDDEN).build();
+		}
 	}
 
 	@GET
@@ -110,9 +119,14 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {
-		var stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, deviceFilterTag,
-				locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
-		return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
+		InputStream stream;
+		try {
+			stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, deviceFilterTag,
+					locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
+			return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
+		} catch (InvalidAuthException e) {
+			return Response.status(Status.FORBIDDEN).build();
+		}
 	}
 
 }

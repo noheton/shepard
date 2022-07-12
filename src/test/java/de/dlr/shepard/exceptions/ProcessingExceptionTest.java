@@ -16,7 +16,7 @@ public class ProcessingExceptionTest extends BaseTestCase {
 
 	@Test
 	public void testGetStatusCode() {
-		var obj = new ProcessingException("Message");
+		var obj = new ProcessingException("");
 		assertEquals(500, obj.getStatusCode());
 	}
 }
