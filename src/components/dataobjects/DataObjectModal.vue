@@ -1,3 +1,235 @@
+<script setup lang="ts">
+import DataObjectService from "@/services/dataObjectService";
+import { emitter } from "@/utils/event-bus";
+import { useRouter } from "@/utils/helpers";
+import { DataObject } from "@dlr-shepard/shepard-client";
+import { PropType, ref, Ref } from "vue";
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "dataObjectModal",
+  },
+  modalName: {
+    type: String,
+    default: "dataObjectModal",
+  },
+  currentCollectionId: {
+    type: Number,
+    required: true,
+  },
+  currentDataObject: {
+    type: Object as PropType<DataObject>,
+    default: undefined,
+  },
+});
+
+const emit = defineEmits(["data-object-changed"]);
+
+const router = useRouter();
+const newDataObject: Ref<DataObject> = ref({ name: "" });
+const validParent: Ref<boolean | undefined> = ref(undefined);
+const validPredecessors: Ref<Array<boolean | undefined>> = ref([]);
+const possibleParent: Ref<DataObject> = ref({ name: "" });
+const possiblePredecessors: Ref<Array<DataObject>> = ref([]);
+const possibleAttributes: Ref<{ key: string; value: string }[]> = ref([]);
+
+function prepare() {
+  newDataObject.value = props.currentDataObject
+    ? { ...props.currentDataObject }
+    : { name: "" };
+  possiblePredecessors.value = [];
+  possibleAttributes.value = [];
+  validPredecessors.value = [];
+
+  if (props.currentDataObject?.parentId) {
+    validateParent();
+    possibleParent.value = { id: props.currentDataObject.parentId, name: "" };
+  } else {
+    possibleParent.value = {
+      id: undefined,
+      name: "",
+    };
+  }
+
+  if (
+    props.currentDataObject?.predecessorIds &&
+    props.currentDataObject?.predecessorIds.length > 0
+  ) {
+    for (let i = 0; i < props.currentDataObject?.predecessorIds.length; i++) {
+      possiblePredecessors.value.push({
+        id: props.currentDataObject?.predecessorIds[i],
+        name: "",
+      });
+      validatePredecessor(i);
+    }
+  } else {
+    possiblePredecessors.value.push({
+      id: undefined,
+      name: "",
+    });
+  }
+
+  if (props.currentDataObject?.attributes) {
+    Object.entries(props.currentDataObject?.attributes).forEach(
+      ([key, value]) => {
+        possibleAttributes.value.push({ key: key, value: value });
+      },
+    );
+  }
+  if (possibleAttributes.value.length == 0) {
+    possibleAttributes.value.push({
+      key: "",
+      value: "",
+    });
+  }
+}
+
+function handleOk() {
+  if (possibleParent.value.id != undefined) {
+    newDataObject.value.parentId = possibleParent.value.id;
+  }
+
+  const preIds: number[] = [];
+  possiblePredecessors.value.forEach(pre => {
+    if (pre.id) {
+      preIds.push(pre.id);
+    }
+  });
+  newDataObject.value.predecessorIds = preIds;
+
+  const attributes: { [key: string]: string } = {};
+  possibleAttributes.value.forEach(attr => {
+    if (attr.key != "") {
+      attributes[attr.key] = attr.value;
+    }
+  });
+  newDataObject.value.attributes = attributes;
+
+  if (newDataObject.value.id) {
+    update();
+  } else {
+    create();
+  }
+}
+
+function addAttribute() {
+  possibleAttributes.value.push({
+    key: "",
+    value: "",
+  });
+}
+
+function removeAttribute(i: number) {
+  possibleAttributes.value.splice(i, 1);
+}
+
+function addPredecessor() {
+  possiblePredecessors.value.push({
+    id: undefined,
+    name: "",
+  });
+  validPredecessors.value.push(undefined);
+}
+
+function removePredecessor(i: number) {
+  possiblePredecessors.value.splice(i, 1);
+  validPredecessors.value.splice(i, 1);
+}
+
+function validateParent() {
+  if (possibleParent.value.id == undefined) {
+    possibleParent.value.name = "";
+    validParent.value = undefined;
+  } else {
+    DataObjectService.getDataObject({
+      collectionId: props.currentCollectionId,
+      dataObjectId: possibleParent.value.id,
+    })
+      .then(response => {
+        possibleParent.value.name = response.name ? response.name : "";
+        if (possibleParent.value.name == "") {
+          validParent.value = undefined;
+        } else {
+          validParent.value = true;
+        }
+      })
+      .catch(() => {
+        possibleParent.value.name = "";
+        validParent.value = false;
+      });
+  }
+}
+
+function validatePredecessor(i: number) {
+  const id = possiblePredecessors.value[i].id;
+  if (id == undefined) {
+    possiblePredecessors.value[i].name = "";
+    validParent.value = undefined;
+  } else {
+    DataObjectService.getDataObject({
+      collectionId: props.currentCollectionId,
+      dataObjectId: id,
+    })
+      .then(response => {
+        possiblePredecessors.value[i].name = response.name ? response.name : "";
+        if (possiblePredecessors.value[i].name == "") {
+          validPredecessors.value[i] = undefined;
+        } else {
+          validPredecessors.value[i] = true;
+        }
+        validPredecessors.value = [...validPredecessors.value];
+        possiblePredecessors.value = [...possiblePredecessors.value];
+      })
+      .catch(() => {
+        possiblePredecessors.value[i].name = "";
+        validPredecessors.value[i] = false;
+      });
+  }
+}
+
+function create() {
+  DataObjectService.createDataObject({
+    collectionId: props.currentCollectionId,
+    dataObject: newDataObject.value,
+  })
+    .then(response => {
+      router.push({
+        name: "DataObject",
+        params: {
+          collectionId: String(props.currentCollectionId),
+          dataObjectId: String(response.id),
+        },
+      });
+    })
+    .catch(e => {
+      const error = "Error while creating data object: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+
+function update() {
+  if (!newDataObject.value.id) {
+    console.log("Unknown dataObject id");
+    return;
+  }
+  DataObjectService.updateDataObject({
+    collectionId: props.currentCollectionId,
+    dataObjectId: newDataObject.value.id,
+    dataObject: newDataObject.value,
+  })
+    .then(() => {
+      emit("data-object-changed");
+    })
+    .catch(e => {
+      const error = "Error while updating data object: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+</script>
+
 <template>
   <b-modal
     :id="modalId"
@@ -154,262 +386,3 @@
     </b-form-group>
   </b-modal>
 </template>
-
-<script lang="ts">
-import DataObjectService from "@/services/dataObjectService";
-import { emitter } from "@/utils/event-bus";
-import { DataObject } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
-
-interface PossibleDataObject {
-  id?: number;
-  name: string;
-}
-
-interface DataObjectModalData {
-  newDataObject: DataObject;
-  validParent?: boolean;
-  validPredecessors: Array<boolean | undefined>;
-  possibleParent: PossibleDataObject;
-  possiblePredecessors: PossibleDataObject[];
-  possibleAttributes: {
-    key: string;
-    value: string;
-  }[];
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "dataObjectModal",
-    },
-    modalName: {
-      type: String,
-      default: "dataObjectModal",
-    },
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObject: {
-      type: Object as PropType<DataObject>,
-      default: undefined,
-    },
-  },
-  emits: ["data-object-changed"],
-  data() {
-    return {
-      newDataObject: { name: "" },
-      validParent: undefined,
-      validPredecessors: [],
-      possibleParent: { id: undefined, name: "" },
-      possiblePredecessors: [],
-      possibleAttributes: [],
-    } as DataObjectModalData;
-  },
-
-  methods: {
-    prepare() {
-      this.newDataObject = this.currentDataObject
-        ? { ...this.currentDataObject }
-        : { name: "" };
-      this.possiblePredecessors = [];
-      this.possibleAttributes = [];
-      this.validPredecessors = [];
-
-      if (this.currentDataObject?.parentId) {
-        this.validateParent();
-        this.possibleParent = { id: this.currentDataObject.parentId, name: "" };
-      } else {
-        this.possibleParent = {
-          id: undefined,
-          name: "",
-        };
-      }
-
-      if (
-        this.currentDataObject?.predecessorIds &&
-        this.currentDataObject?.predecessorIds.length > 0
-      ) {
-        for (
-          let i = 0;
-          i < this.currentDataObject?.predecessorIds.length;
-          i++
-        ) {
-          this.possiblePredecessors.push({
-            id: this.currentDataObject?.predecessorIds[i],
-            name: "",
-          });
-          this.validatePredecessor(i);
-        }
-      } else {
-        this.possiblePredecessors.push({
-          id: undefined,
-          name: "",
-        });
-      }
-
-      if (this.currentDataObject?.attributes) {
-        Object.entries(this.currentDataObject?.attributes).forEach(
-          ([key, value]) => {
-            this.possibleAttributes.push({ key: key, value: value });
-          },
-        );
-      }
-      if (this.possibleAttributes.length == 0) {
-        this.possibleAttributes.push({
-          key: "",
-          value: "",
-        });
-      }
-    },
-
-    handleOk() {
-      if (this.possibleParent.id != undefined) {
-        this.newDataObject.parentId = this.possibleParent.id;
-      }
-
-      const preIds: number[] = [];
-      this.possiblePredecessors.forEach(pre => {
-        if (pre.id) {
-          preIds.push(pre.id);
-        }
-      });
-      this.newDataObject.predecessorIds = preIds;
-
-      const attributes: { [key: string]: string } = {};
-      this.possibleAttributes.forEach(attr => {
-        if (attr.key != "") {
-          attributes[attr.key] = attr.value;
-        }
-      });
-      this.newDataObject.attributes = attributes;
-
-      if (this.newDataObject.id) {
-        this.update();
-      } else {
-        this.create();
-      }
-    },
-
-    addAttribute() {
-      this.possibleAttributes.push({
-        key: "",
-        value: "",
-      });
-    },
-
-    removeAttribute(i: number) {
-      this.possibleAttributes.splice(i, 1);
-    },
-
-    addPredecessor() {
-      this.possiblePredecessors.push({
-        id: undefined,
-        name: "",
-      });
-      this.validPredecessors.push(undefined);
-    },
-
-    removePredecessor(i: number) {
-      this.possiblePredecessors.splice(i, 1);
-      this.validPredecessors.splice(i, 1);
-    },
-
-    validateParent() {
-      if (this.possibleParent.id == undefined) {
-        this.possibleParent.name = "";
-        this.validParent = undefined;
-      } else {
-        DataObjectService.getDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: this.possibleParent.id,
-        })
-          .then(response => {
-            this.possibleParent.name = response.name ? response.name : "";
-            if (this.possibleParent.name == "") {
-              this.validParent = undefined;
-            } else {
-              this.validParent = true;
-            }
-          })
-          .catch(() => {
-            this.possibleParent.name = "";
-            this.validParent = false;
-          });
-      }
-    },
-
-    validatePredecessor(i: number) {
-      const id = this.possiblePredecessors[i].id;
-      if (id == undefined) {
-        this.possiblePredecessors[i].name = "";
-        this.validParent = undefined;
-      } else {
-        DataObjectService.getDataObject({
-          collectionId: this.currentCollectionId,
-          dataObjectId: id,
-        })
-          .then(response => {
-            this.possiblePredecessors[i].name = response.name
-              ? response.name
-              : "";
-            if (this.possiblePredecessors[i].name == "") {
-              this.validPredecessors[i] = undefined;
-            } else {
-              this.validPredecessors[i] = true;
-            }
-            this.validPredecessors = [...this.validPredecessors];
-            this.possiblePredecessors = [...this.possiblePredecessors];
-          })
-          .catch(() => {
-            this.possiblePredecessors[i].name = "";
-            this.validPredecessors[i] = false;
-          });
-      }
-    },
-
-    create() {
-      DataObjectService.createDataObject({
-        collectionId: this.currentCollectionId,
-        dataObject: this.newDataObject,
-      })
-        .then(response => {
-          this.$router.push({
-            name: "DataObject",
-            params: {
-              collectionId: String(this.currentCollectionId),
-              dataObjectId: String(response.id),
-            },
-          });
-        })
-        .catch(e => {
-          const error = "Error while creating data object: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-
-    update() {
-      if (!this.newDataObject.id) {
-        console.log("Unknown dataObject id");
-        return;
-      }
-      DataObjectService.updateDataObject({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.newDataObject.id,
-        dataObject: this.newDataObject,
-      })
-        .then(() => {
-          this.$emit("data-object-changed");
-        })
-        .catch(e => {
-          const error = "Error while updating data object: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-  },
-});
-</script>

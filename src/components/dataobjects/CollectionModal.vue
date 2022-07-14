@@ -1,3 +1,106 @@
+<script setup lang="ts">
+import CollectionService from "@/services/collectionService";
+import { emitter } from "@/utils/event-bus";
+import { useRouter } from "@/utils/helpers";
+import { Collection } from "@dlr-shepard/shepard-client";
+import { PropType, ref, Ref } from "vue";
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "collectionModal",
+  },
+  modalName: {
+    type: String,
+    default: "collectionModal",
+  },
+  currentCollection: {
+    type: Object as PropType<Collection>,
+    default: undefined,
+  },
+});
+
+const emit = defineEmits(["collection-changed"]);
+
+const router = useRouter();
+const newCollection: Ref<Collection> = ref({ name: "" });
+const possibleAttributes: Ref<{ key: string; value: string }[]> = ref([]);
+const validationError = ref(false);
+
+function prepare() {
+  newCollection.value = props.currentCollection
+    ? { ...props.currentCollection }
+    : { name: "" };
+  possibleAttributes.value = [];
+  validationError.value = false;
+
+  if (props.currentCollection?.attributes) {
+    Object.entries(props.currentCollection?.attributes).forEach(
+      ([key, value]) => {
+        possibleAttributes.value.push({ key: key, value: value });
+      },
+    );
+  }
+  if (possibleAttributes.value.length == 0) {
+    possibleAttributes.value.push({
+      key: "",
+      value: "",
+    });
+  }
+}
+
+function handleOk() {
+  const attributes: { [key: string]: string } = {};
+  possibleAttributes.value.forEach(attr => {
+    if (attr.key != "") {
+      attributes[attr.key] = attr.value;
+    }
+  });
+  newCollection.value.attributes = attributes;
+
+  if (props.currentCollection) {
+    updateCollection(newCollection.value);
+  } else {
+    createCollection(newCollection.value);
+  }
+}
+
+function createCollection(collection: Collection) {
+  CollectionService.createCollection({
+    collection: collection,
+  })
+    .then(response => {
+      router.push({
+        name: "Collection",
+        params: {
+          collectionId: String(response.id),
+        },
+      });
+    })
+    .catch(e => {
+      const error = "Error while creating collection: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+
+function updateCollection(collection: Collection) {
+  if (!props.currentCollection.id) return;
+  CollectionService.updateCollection({
+    collectionId: props.currentCollection.id,
+    collection: collection,
+  })
+    .then(() => {
+      emit("collection-changed");
+    })
+    .catch(e => {
+      const error = "Error while updating collection: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+</script>
+
 <template>
   <b-modal
     :id="modalId"
@@ -87,119 +190,3 @@
     </b-form-group>
   </b-modal>
 </template>
-
-<script lang="ts">
-import CollectionService from "@/services/collectionService";
-import { emitter } from "@/utils/event-bus";
-import { Collection } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
-
-interface CollectionModalData {
-  newCollection: Collection;
-  possibleAttributes: {
-    key: string;
-    value: string;
-  }[];
-  validationError: boolean;
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "collectionModal",
-    },
-    modalName: {
-      type: String,
-      default: "collectionModal",
-    },
-    currentCollection: {
-      type: Object as PropType<Collection>,
-      default: undefined,
-    },
-  },
-  emits: ["collection-changed"],
-  data() {
-    return {
-      newCollection: {},
-      possibleAttributes: [] as {
-        key: string;
-        value: string;
-      }[],
-      validationError: false,
-    } as CollectionModalData;
-  },
-
-  methods: {
-    prepare() {
-      this.newCollection = this.currentCollection
-        ? { ...this.currentCollection }
-        : { name: "" };
-      this.possibleAttributes = [];
-      this.validationError = false;
-
-      if (this.currentCollection?.attributes) {
-        Object.entries(this.currentCollection?.attributes).forEach(
-          ([key, value]) => {
-            this.possibleAttributes.push({ key: key, value: value });
-          },
-        );
-      }
-      if (this.possibleAttributes.length == 0) {
-        this.possibleAttributes.push({
-          key: "",
-          value: "",
-        });
-      }
-    },
-    handleOk() {
-      const attributes: { [key: string]: string } = {};
-      this.possibleAttributes.forEach(attr => {
-        if (attr.key != "") {
-          attributes[attr.key] = attr.value;
-        }
-      });
-      this.newCollection.attributes = attributes;
-
-      if (this.currentCollection) {
-        this.updateCollection(this.newCollection);
-      } else {
-        this.createCollection(this.newCollection);
-      }
-    },
-    createCollection(collection: Collection) {
-      CollectionService.createCollection({
-        collection: collection,
-      })
-        .then(response => {
-          this.$router.push({
-            name: "Collection",
-            params: {
-              collectionId: String(response.id),
-            },
-          });
-        })
-        .catch(e => {
-          const error = "Error while creating collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    updateCollection(collection: Collection) {
-      if (!this.currentCollection.id) return;
-      CollectionService.updateCollection({
-        collectionId: this.currentCollection.id,
-        collection: collection,
-      })
-        .then(() => {
-          this.$emit("collection-changed");
-        })
-        .catch(e => {
-          const error = "Error while updating collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-  },
-});
-</script>
