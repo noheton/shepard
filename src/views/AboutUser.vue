@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { User } from "oidc-client";
+import type { User } from "oidc-client";
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 

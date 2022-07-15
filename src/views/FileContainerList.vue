@@ -51,14 +51,14 @@
 
 <script lang="ts">
 import FilterListLine, {
-  FilterChangedData,
+  type FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
-import {
+import type {
   FileContainer,
   GetAllFileContainersOrderByEnum,
 } from "@dlr-shepard/shepard-client";

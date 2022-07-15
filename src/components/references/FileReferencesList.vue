@@ -117,7 +117,7 @@ import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
-import { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
+import type { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface FileListData {

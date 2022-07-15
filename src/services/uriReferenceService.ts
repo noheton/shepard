@@ -1,9 +1,9 @@
 import {
-  CreateUriReferenceRequest,
-  DeleteUriReferenceRequest,
-  GetAllUriReferencesRequest,
-  GetUriReferenceRequest,
   UriReferenceApi,
+  type CreateUriReferenceRequest,
+  type DeleteUriReferenceRequest,
+  type GetAllUriReferencesRequest,
+  type GetUriReferenceRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

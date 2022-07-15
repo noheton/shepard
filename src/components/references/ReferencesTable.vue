@@ -53,8 +53,8 @@ import FileReferencesList from "@/components/references/FileReferencesList.vue";
 import StructuredDataReferencesList from "@/components/references/StructuredDataReferencesList.vue";
 import TimeseriesReferencesList from "@/components/references/TimeseriesReferencesList.vue";
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
-import { DataObject } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
+import type { DataObject } from "@dlr-shepard/shepard-client";
+import { defineComponent, type PropType } from "vue";
 
 export default defineComponent({
   components: {

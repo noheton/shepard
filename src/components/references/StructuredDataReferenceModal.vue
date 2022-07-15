@@ -57,7 +57,7 @@
 
 <script lang="ts">
 import StructuredDataService from "@/services/structuredDataService";
-import {
+import type {
   StructuredDataContainer,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";

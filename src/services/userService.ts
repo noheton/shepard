@@ -1,4 +1,4 @@
-import { GetUserRequest, UserApi } from "@dlr-shepard/shepard-client";
+import { UserApi, type GetUserRequest } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class UserService {

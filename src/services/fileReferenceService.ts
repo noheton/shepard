@@ -1,11 +1,11 @@
 import {
-  CreateFileReferenceRequest,
-  DeleteFileReferenceRequest,
   FileReferenceApi,
-  GetAllFileReferencesRequest,
-  GetFilePayloadRequest,
-  GetFileReferenceRequest,
-  GetFilesRequest,
+  type CreateFileReferenceRequest,
+  type DeleteFileReferenceRequest,
+  type GetAllFileReferencesRequest,
+  type GetFilePayloadRequest,
+  type GetFileReferenceRequest,
+  type GetFilesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

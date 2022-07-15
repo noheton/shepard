@@ -56,8 +56,8 @@ import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
 import SubscriptionService from "@/services/subscriptionService";
 import { emitter } from "@/utils/event-bus";
 import {
-  Subscription,
   SubscriptionRequestMethodEnum,
+  type Subscription,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 

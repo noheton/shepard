@@ -1,10 +1,10 @@
 import {
-  CreateStructuredDataReferenceRequest,
-  DeleteStructuredDataReferenceRequest,
-  GetAllStructuredDataReferencesRequest,
-  GetStructuredDataPayloadRequest,
-  GetStructuredDataReferenceRequest,
   StructureddataReferenceApi,
+  type CreateStructuredDataReferenceRequest,
+  type DeleteStructuredDataReferenceRequest,
+  type GetAllStructuredDataReferencesRequest,
+  type GetStructuredDataPayloadRequest,
+  type GetStructuredDataReferenceRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

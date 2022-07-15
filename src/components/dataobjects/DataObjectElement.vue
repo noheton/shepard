@@ -9,7 +9,7 @@
 <script lang="ts">
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import DataObjectService from "@/services/dataObjectService";
-import { DataObject } from "@dlr-shepard/shepard-client";
+import type { DataObject } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface RelatedObjectsTableData {

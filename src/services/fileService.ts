@@ -1,16 +1,16 @@
 import {
-  CreateFileContainerRequest,
-  CreateFileRequest,
-  DeleteFileContainerRequest,
-  DeleteFileRequest,
-  EditFilePermissionsRequest,
   FileApi,
-  GetAllFileContainersRequest,
-  GetAllFilesRequest,
-  GetFileContainerRequest,
-  GetFilePermissionsRequest,
-  GetFileRequest,
-  GetFileRolesRequest,
+  type CreateFileContainerRequest,
+  type CreateFileRequest,
+  type DeleteFileContainerRequest,
+  type DeleteFileRequest,
+  type EditFilePermissionsRequest,
+  type GetAllFileContainersRequest,
+  type GetAllFilesRequest,
+  type GetFileContainerRequest,
+  type GetFilePermissionsRequest,
+  type GetFileRequest,
+  type GetFileRolesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

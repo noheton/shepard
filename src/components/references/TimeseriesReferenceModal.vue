@@ -107,7 +107,7 @@
 
 <script lang="ts">
 import TimeseriesService from "@/services/timeseriesService";
-import {
+import type {
   Timeseries,
   TimeseriesContainer,
   TimeseriesReference,

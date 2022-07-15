@@ -97,7 +97,10 @@ import GenericName from "@/components/generic/GenericName.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
 import { emitter } from "@/utils/event-bus";
-import { DataObject, DataObjectReference } from "@dlr-shepard/shepard-client";
+import type {
+  DataObject,
+  DataObjectReference,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface DataObjectReferenceListData {

@@ -103,7 +103,7 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import UserModal from "@/components/user/UserModal.vue";
 import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
-import { Permissions, UserGroup } from "@dlr-shepard/shepard-client";
+import type { Permissions, UserGroup } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 

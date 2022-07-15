@@ -65,7 +65,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import TimeseriesService from "@/services/timeseriesService";
 import { emitter } from "@/utils/event-bus";
-import {
+import type {
   Permissions,
   Timeseries,
   TimeseriesContainer,

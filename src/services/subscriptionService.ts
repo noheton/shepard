@@ -1,9 +1,9 @@
 import {
-  CreateSubscriptionRequest,
-  DeleteSubscriptionRequest,
-  GetAllSubscriptionsRequest,
-  GetSubscriptionRequest,
   SubscriptionApi,
+  type CreateSubscriptionRequest,
+  type DeleteSubscriptionRequest,
+  type GetAllSubscriptionsRequest,
+  type GetSubscriptionRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

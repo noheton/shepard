@@ -10,8 +10,12 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { useRouter } from "@/utils/helpers";
-import { Collection, Permissions, Roles } from "@dlr-shepard/shepard-client";
-import { computed, onMounted, Ref, ref } from "vue";
+import type {
+  Collection,
+  Permissions,
+  Roles,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, ref, type Ref } from "vue";
 
 const router = useRouter();
 const currentCollectionId = computed(() => {

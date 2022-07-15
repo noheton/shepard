@@ -17,7 +17,7 @@
 <script lang="ts">
 import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
-import JSONEditor, { JSONEditorOptions } from "jsoneditor";
+import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
 

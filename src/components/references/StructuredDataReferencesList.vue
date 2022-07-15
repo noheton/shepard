@@ -132,7 +132,7 @@ import StructuredDataReferenceModal from "@/components/references/StructuredData
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
-import {
+import type {
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";

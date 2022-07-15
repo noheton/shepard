@@ -55,7 +55,10 @@
 
 <script lang="ts">
 import CollectionService from "@/services/collectionService";
-import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
+import type {
+  Collection,
+  CollectionReference,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface CollectionReferenceModelData {

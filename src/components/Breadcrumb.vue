@@ -8,7 +8,7 @@
 <script lang="ts">
 import DataObjectService from "@/services/dataObjectService";
 import { defineComponent } from "vue";
-import { Location } from "vue-router";
+import type { Location } from "vue-router";
 
 interface Breadcrumb {
   text: string;

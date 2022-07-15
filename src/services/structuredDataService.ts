@@ -1,16 +1,16 @@
 import {
-  CreateStructuredDataContainerRequest,
-  CreateStructuredDataRequest,
-  DeleteStructuredDataContainerRequest,
-  DeleteStructuredDataRequest,
-  EditStructuredDataPermissionsRequest,
-  GetAllStructuredDataContainersRequest,
-  GetAllStructuredDatasRequest,
-  GetStructuredDataContainerRequest,
-  GetStructuredDataPermissionsRequest,
-  GetStructuredDataRequest,
-  GetStructuredDataRolesRequest,
   StructureddataApi,
+  type CreateStructuredDataContainerRequest,
+  type CreateStructuredDataRequest,
+  type DeleteStructuredDataContainerRequest,
+  type DeleteStructuredDataRequest,
+  type EditStructuredDataPermissionsRequest,
+  type GetAllStructuredDataContainersRequest,
+  type GetAllStructuredDatasRequest,
+  type GetStructuredDataContainerRequest,
+  type GetStructuredDataPermissionsRequest,
+  type GetStructuredDataRequest,
+  type GetStructuredDataRolesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

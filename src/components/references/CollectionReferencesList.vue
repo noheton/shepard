@@ -97,7 +97,10 @@ import GenericName from "@/components/generic/GenericName.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import CollectionReferenceService from "@/services/collectionReferenceService";
 import { emitter } from "@/utils/event-bus";
-import { Collection, CollectionReference } from "@dlr-shepard/shepard-client";
+import type {
+  Collection,
+  CollectionReference,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface CollectionListData {

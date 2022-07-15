@@ -66,7 +66,7 @@
 
 <script lang="ts">
 import FilterListLine, {
-  FilterChangedData,
+  type FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
@@ -74,7 +74,7 @@ import Loading from "@/components/generic/Loading.vue";
 import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
-import {
+import type {
   GetAllUserGroupsOrderByEnum,
   UserGroup,
 } from "@dlr-shepard/shepard-client";

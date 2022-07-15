@@ -105,12 +105,12 @@ import Loading from "@/components/generic/Loading.vue";
 import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
 import {
-  ResponseBody,
-  ResultTriple,
   SearchParamsQueryTypeEnum,
   SearchScopeTraversalRulesEnum,
+  type ResponseBody,
+  type ResultTriple,
 } from "@dlr-shepard/shepard-client";
-import JSONEditor, { JSONEditorOptions } from "jsoneditor";
+import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
 

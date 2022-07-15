@@ -2,8 +2,8 @@
 import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { useRouter } from "@/utils/helpers";
-import { DataObject } from "@dlr-shepard/shepard-client";
-import { PropType, ref, Ref } from "vue";
+import type { DataObject } from "@dlr-shepard/shepard-client";
+import { ref, type PropType, type Ref } from "vue";
 
 const props = defineProps({
   modalId: {

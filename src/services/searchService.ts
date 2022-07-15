@@ -1,4 +1,4 @@
-import { SearchApi, SearchRequest } from "@dlr-shepard/shepard-client";
+import { SearchApi, type SearchRequest } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SearchService {

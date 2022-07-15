@@ -136,7 +136,7 @@ import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
-import {
+import type {
   FileContainer,
   Permissions,
   ShepardFile,

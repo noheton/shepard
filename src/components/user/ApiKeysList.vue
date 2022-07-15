@@ -51,7 +51,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
 import ApiKeyService from "@/services/apiKeyService";
 import { emitter } from "@/utils/event-bus";
-import { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
+import type { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface ApiKeyListData {

@@ -1,10 +1,10 @@
 import {
   CollectionReferenceApi,
-  CreateCollectionReferenceRequest,
-  DeleteCollectionReferenceRequest,
-  GetAllCollectionReferencesRequest,
-  GetCollectionReferencePayloadRequest,
-  GetCollectionReferenceRequest,
+  type CreateCollectionReferenceRequest,
+  type DeleteCollectionReferenceRequest,
+  type GetAllCollectionReferencesRequest,
+  type GetCollectionReferencePayloadRequest,
+  type GetCollectionReferenceRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

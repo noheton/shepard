@@ -2,8 +2,8 @@
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { useRouter } from "@/utils/helpers";
-import { Collection } from "@dlr-shepard/shepard-client";
-import { PropType, ref, Ref } from "vue";
+import type { Collection } from "@dlr-shepard/shepard-client";
+import { ref, type PropType, type Ref } from "vue";
 
 const props = defineProps({
   modalId: {

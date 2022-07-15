@@ -75,7 +75,7 @@
 <script lang="ts">
 import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
-import {
+import type {
   Collection,
   DataObject,
   DataObjectReference,

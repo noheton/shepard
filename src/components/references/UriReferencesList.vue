@@ -72,7 +72,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import UriReferenceService from "@/services/uriReferenceService";
 import { emitter } from "@/utils/event-bus";
-import { URIReference } from "@dlr-shepard/shepard-client";
+import type { URIReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface URIListData {

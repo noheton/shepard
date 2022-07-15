@@ -134,7 +134,7 @@ import GenericDescription from "@/components/generic/GenericDescription.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
-import { DataObject } from "@dlr-shepard/shepard-client";
+import type { DataObject } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface DataObjectData {

@@ -1,8 +1,11 @@
-import { Configuration, User, UserApi } from "@dlr-shepard/shepard-client";
+import { Configuration, UserApi, type User } from "@dlr-shepard/shepard-client";
 import { nanoid } from "nanoid";
 import Vue from "vue";
 import Vuex from "vuex";
-import { VuexOidcClientSettings, vuexOidcCreateStoreModule } from "vuex-oidc";
+import {
+  vuexOidcCreateStoreModule,
+  type VuexOidcClientSettings,
+} from "vuex-oidc";
 import getEnv from "./env";
 
 Vue.use(Vuex);

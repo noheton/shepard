@@ -1,13 +1,13 @@
 import {
   CollectionApi,
-  CreateCollectionRequest,
-  DeleteCollectionRequest,
-  EditCollectionPermissionsRequest,
-  GetAllCollectionsRequest,
-  GetCollectionPermissionsRequest,
-  GetCollectionRequest,
-  GetCollectionRolesRequest,
-  UpdateCollectionRequest,
+  type CreateCollectionRequest,
+  type DeleteCollectionRequest,
+  type EditCollectionPermissionsRequest,
+  type GetAllCollectionsRequest,
+  type GetCollectionPermissionsRequest,
+  type GetCollectionRequest,
+  type GetCollectionRolesRequest,
+  type UpdateCollectionRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

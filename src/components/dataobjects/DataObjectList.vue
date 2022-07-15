@@ -20,12 +20,12 @@
 <script lang="ts">
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import FilterListLine, {
-  FilterChangedData,
+  type FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import DataObjectService from "@/services/dataObjectService";
 import {
-  DataObject,
   GetAllDataObjectsOrderByEnum,
+  type DataObject,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 

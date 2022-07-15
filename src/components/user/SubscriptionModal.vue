@@ -36,8 +36,8 @@
 
 <script lang="ts">
 import {
-  Subscription,
   SubscriptionRequestMethodEnum,
+  type Subscription,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 

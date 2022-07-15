@@ -168,12 +168,12 @@
 import UserGroupService from "@/services/userGroupService";
 import UserService from "@/services/userService";
 import {
-  Permissions,
   PermissionsPermissionTypeEnum,
-  User,
-  UserGroup,
+  type Permissions,
+  type User,
+  type UserGroup,
 } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
+import { defineComponent, type PropType } from "vue";
 
 interface PermissionsModalData {
   usernameOrGroupId: string;

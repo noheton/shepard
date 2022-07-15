@@ -19,8 +19,8 @@
 </template>
 
 <script lang="ts">
-import { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
+import type { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
+import { defineComponent, type PropType } from "vue";
 
 export default defineComponent({
   props: {

@@ -37,8 +37,8 @@
 </template>
 
 <script lang="ts">
-import { StructuredDataPayload } from "@dlr-shepard/shepard-client";
-import JSONEditor, { JSONEditorOptions } from "jsoneditor";
+import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
+import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
 

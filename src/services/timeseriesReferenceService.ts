@@ -1,10 +1,10 @@
 import {
-  CreateTimeseriesReferenceRequest,
-  DeleteTimeseriesReferenceRequest,
-  ExportTimeseriesPayloadRequest,
-  GetAllTimeseriesReferencesRequest,
-  GetTimeseriesReferenceRequest,
   TimeseriesReferenceApi,
+  type CreateTimeseriesReferenceRequest,
+  type DeleteTimeseriesReferenceRequest,
+  type ExportTimeseriesPayloadRequest,
+  type GetAllTimeseriesReferencesRequest,
+  type GetTimeseriesReferenceRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

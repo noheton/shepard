@@ -1,12 +1,12 @@
 import {
-  CreateUserGroupRequest,
-  DeleteUserGroupRequest,
-  EditUserGroupPermissionsRequest,
-  GetAllUserGroupsRequest,
-  GetUserGroupPermissionsRequest,
-  GetUserGroupRequest,
-  UpdateUserGroupRequest,
   UsergroupApi,
+  type CreateUserGroupRequest,
+  type DeleteUserGroupRequest,
+  type EditUserGroupPermissionsRequest,
+  type GetAllUserGroupsRequest,
+  type GetUserGroupPermissionsRequest,
+  type GetUserGroupRequest,
+  type UpdateUserGroupRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

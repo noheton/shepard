@@ -78,7 +78,7 @@
 <script lang="ts">
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine, {
-  FilterChangedData,
+  type FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import Loading from "@/components/generic/Loading.vue";
@@ -87,9 +87,9 @@ import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
 import { totalRows } from "@/utils/helpers";
 import {
-  Collection,
   GetAllCollectionsOrderByEnum,
   SearchParamsQueryTypeEnum,
+  type Collection,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 

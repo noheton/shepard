@@ -43,7 +43,7 @@
 
 <script lang="ts">
 import UserService from "@/services/userService";
-import { User } from "@dlr-shepard/shepard-client";
+import type { User } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface AddUserModalData {

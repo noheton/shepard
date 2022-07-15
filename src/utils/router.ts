@@ -1,6 +1,6 @@
 import store from "@/utils/vuex-store";
 import Vue from "vue";
-import VueRouter, { RouteConfig } from "vue-router";
+import VueRouter, { type RouteConfig } from "vue-router";
 import { vuexOidcCreateRouterMiddleware } from "vuex-oidc";
 
 Vue.use(VueRouter);

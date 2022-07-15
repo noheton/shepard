@@ -132,7 +132,7 @@ import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
-import {
+import type {
   Permissions,
   StructuredData,
   StructuredDataContainer,

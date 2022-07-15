@@ -1,9 +1,9 @@
 import {
   ApikeyApi,
-  CreateApiKeyRequest,
-  DeleteApiKeyRequest,
-  GetAllApiKeysRequest,
-  GetApiKeyRequest,
+  type CreateApiKeyRequest,
+  type DeleteApiKeyRequest,
+  type GetAllApiKeysRequest,
+  type GetApiKeyRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

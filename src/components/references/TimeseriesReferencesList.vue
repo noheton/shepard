@@ -116,7 +116,7 @@ import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
-import { TimeseriesReference } from "@dlr-shepard/shepard-client";
+import type { TimeseriesReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface TimeseriesListData {

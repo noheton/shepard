@@ -128,7 +128,7 @@
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
 import { emitter } from "@/utils/event-bus";
-import { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
+import type { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface Option {

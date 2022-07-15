@@ -1,10 +1,10 @@
 import {
-  CreateDataObjectRequest,
   DataObjectApi,
-  DeleteDataObjectRequest,
-  GetAllDataObjectsRequest,
-  GetDataObjectRequest,
-  UpdateDataObjectRequest,
+  type CreateDataObjectRequest,
+  type DeleteDataObjectRequest,
+  type GetAllDataObjectsRequest,
+  type GetDataObjectRequest,
+  type UpdateDataObjectRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

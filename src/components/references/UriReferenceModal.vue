@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { URIReference } from "@dlr-shepard/shepard-client";
+import type { URIReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface URIReferenceModelData {

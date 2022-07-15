@@ -28,8 +28,8 @@
 
 <script lang="ts">
 import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
-import { DataObject } from "@dlr-shepard/shepard-client";
-import { defineComponent, PropType } from "vue";
+import type { DataObject } from "@dlr-shepard/shepard-client";
+import { defineComponent, type PropType } from "vue";
 
 interface RelatedObjectsTableData {
   childrenIds: number[];

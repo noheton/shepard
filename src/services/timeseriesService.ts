@@ -1,14 +1,14 @@
 import {
-  CreateTimeseriesContainerRequest,
-  CreateTimeseriesRequest,
-  DeleteTimeseriesContainerRequest,
-  EditTimeseriesPermissionsRequest,
-  GetAllTimeseriesContainersRequest,
-  GetTimeseriesAvailableRequest,
-  GetTimeseriesContainerRequest,
-  GetTimeseriesPermissionsRequest,
-  GetTimeseriesRolesRequest,
   TimeseriesApi,
+  type CreateTimeseriesContainerRequest,
+  type CreateTimeseriesRequest,
+  type DeleteTimeseriesContainerRequest,
+  type EditTimeseriesPermissionsRequest,
+  type GetAllTimeseriesContainersRequest,
+  type GetTimeseriesAvailableRequest,
+  type GetTimeseriesContainerRequest,
+  type GetTimeseriesPermissionsRequest,
+  type GetTimeseriesRolesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 

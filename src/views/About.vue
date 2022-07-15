@@ -3,9 +3,9 @@ import Loading from "@/components/generic/Loading.vue";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
 import { emitter } from "@/utils/event-bus";
-import { Healthz } from "@dlr-shepard/shepard-client";
+import type { Healthz } from "@dlr-shepard/shepard-client";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
-import { onMounted, Ref, ref } from "vue";
+import { onMounted, ref, type Ref } from "vue";
 import { version as appVersion } from "../../package.json";
 
 const backendUrl = getEnv("VUE_APP_BACKEND");
