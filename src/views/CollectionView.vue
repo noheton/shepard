@@ -155,16 +155,19 @@ onMounted(() => {
             v-if="roles.owner || roles.manager"
             v-b-tooltip.hover
             title="Manager"
+            font-scale="0.8"
           />
           <WriterIcon
             v-else-if="roles.writer"
             v-b-tooltip.hover
             title="Writer"
+            font-scale="0.8"
           />
           <ReaderIcon
             v-else-if="roles.reader"
             v-b-tooltip.hover
             title="Reader"
+            font-scale="0.8"
           />
         </span>
       </h3>

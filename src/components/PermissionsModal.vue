@@ -75,9 +75,7 @@
             :key="user.username"
             class="d-flex justify-content-between align-items-center"
           >
-            <div>
-              <UserIcon :size="18" /> {{ user.firstName }} {{ user.lastName }}
-            </div>
+            <div><UserIcon /> {{ user.firstName }} {{ user.lastName }}</div>
             <b-button
               variant="light"
               size="sm"
@@ -92,7 +90,7 @@
             :key="group.name"
             class="d-flex justify-content-between align-items-center"
           >
-            <div><UserGroupIcon :size="18" /> {{ group.name }}</div>
+            <div><UserGroupIcon /> {{ group.name }}</div>
             <b-button
               variant="light"
               size="sm"
@@ -112,7 +110,7 @@
             class="d-flex justify-content-between align-items-center"
           >
             <div>
-              <UserIcon :size="18" /> {{ user.firstName }}
+              <UserIcon /> {{ user.firstName }}
               {{ user.lastName }}
             </div>
             <b-button
@@ -128,7 +126,7 @@
             :key="group.name"
             class="d-flex justify-content-between align-items-center"
           >
-            <div><UserGroupIcon :size="18" /> {{ group.name }}</div>
+            <div><UserGroupIcon /> {{ group.name }}</div>
             <b-button
               variant="light"
               size="sm"
@@ -147,9 +145,7 @@
             :key="user.username"
             class="d-flex justify-content-between align-items-center"
           >
-            <div>
-              <UserIcon :size="18" /> {{ user.firstName }} {{ user.lastName }}
-            </div>
+            <div><UserIcon /> {{ user.firstName }} {{ user.lastName }}</div>
             <b-button
               variant="light"
               size="sm"

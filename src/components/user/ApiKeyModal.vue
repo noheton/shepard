@@ -12,7 +12,7 @@
         {{ createdApiKey.jwt.substring(0, 50) + "... " }}
       </code>
       <b-link title="Copy Api Key" class="float-right" @click="copyApiKey()">
-        <CopyIcon :size="15" />
+        <CopyIcon />
       </b-link>
     </div>
   </b-modal>

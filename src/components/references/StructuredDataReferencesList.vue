@@ -83,10 +83,10 @@
                     (currentStructuredDataOid = oid)
                 "
               >
-                <EyeIcon :size="19" />
+                <EyeIcon />
               </b-link>
             </a>
-            <a v-else><EyeIcon :size="19" class="text-danger" /></a>
+            <a v-else><EyeIcon variant="danger" /></a>
 
             <b> Oid:</b> <tt>{{ oid }}</tt> |
             <span v-if="structuredDatas[oid].structuredData.createdAt">

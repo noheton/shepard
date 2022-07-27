@@ -70,13 +70,13 @@ onMounted(() => {
               v-if="value == 'healthy'"
               v-b-tooltip.hover
               title="healthy"
-              fill-color="green"
+              variant="success"
             />
             <UnhealthyIcon
               v-else
               v-b-tooltip.hover
               title="Unhealthy"
-              fill-color="red"
+              variant="danger"
             />
           </div>
         </b-list-group-item>

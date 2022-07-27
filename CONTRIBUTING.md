@@ -37,7 +37,6 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 - [Frontend Documentation](https://gitlab.com/dlr-shepard/documentation/-/wikis/Frontend)
 - [Vue.js Documentation](https://v2.vuejs.org/v2/guide/)
 - [BootstrapVue](https://bootstrap-vue.org/)
-- [Material Design Icons](https://materialdesignicons.com/)
 
 ## Setting Up a Developing Environment
 

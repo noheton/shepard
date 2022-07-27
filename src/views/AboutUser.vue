@@ -16,7 +16,7 @@
             class="float-right"
             @click="copyBearerToken()"
           >
-            <CopyIcon :size="15" />
+            <CopyIcon />
           </b-link>
         </b-list-group-item>
       </b-list-group>

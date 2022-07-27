@@ -77,10 +77,10 @@
                   getFilePayload(fileReference.id, oid, files[oid].filename)
                 "
               >
-                <DownloadIcon :size="18" />
+                <DownloadIcon />
               </b-link>
             </a>
-            <a v-else><DownloadIcon :size="18" class="text-danger" /></a>
+            <a v-else><DownloadIcon variant="danger" /></a>
             <b> Oid:</b> <tt>{{ oid }}</tt>
             <span v-if="files[oid].createdAt">
               | <b>Created at:</b>

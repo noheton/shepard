@@ -46,25 +46,25 @@
 
     <b-row class="section">
       <b-col @click="scrollTo('#parentCollapse')">
-        <ParentIcon title="Parents" />
+        <ParentIcon />
         <span v-if="currentDataObject.parentId"> 1 </span>
         <span v-else> 0 </span>
         Parents
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
-        <ChildIcon title="Children" />
+        <ChildIcon />
         {{ currentDataObject.childrenIds.length }} Children
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
-        <PredecessorIcon title="Predecessors" />
+        <PredecessorIcon />
         {{ currentDataObject.predecessorIds.length }} Predecessors
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
-        <SuccessorIcon title="Successors" />
+        <SuccessorIcon />
         {{ currentDataObject.successorIds.length }} Successors
       </b-col>
       <b-col @click="scrollTo('#referencesCollapse')">
-        <ReferencesIcon title="References" />
+        <ReferencesIcon />
         {{ currentDataObject.referenceIds.length }} References
       </b-col>
     </b-row>

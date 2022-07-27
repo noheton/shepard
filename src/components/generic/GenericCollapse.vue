@@ -2,10 +2,10 @@
   <div class="component">
     <h4 @click="toggleVisible()">
       <span v-if="collapsedState">
-        <ExtendIcon />
+        <ExtendIcon font-scale="0.5" />
       </span>
       <span v-else>
-        <CollapseIcon />
+        <CollapseIcon font-scale="0.5" />
       </span>
       {{ title }}
     </h4>
