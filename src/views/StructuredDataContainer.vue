@@ -73,7 +73,9 @@
           </b-button-group>
 
           <div>
-            <b><GenericName :name="structuredData.name" :word-count="40" /></b>
+            <b>
+              <GenericName :name="structuredData.name || ''" :word-count="40" />
+            </b>
             | {{ structuredData.oid }} |
             {{ new Date(structuredData.createdAt).toLocaleString() }}
           </div>

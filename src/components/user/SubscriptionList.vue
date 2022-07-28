@@ -17,8 +17,10 @@
           v-for="(subscription, index) in subscriptions"
           :key="index"
         >
-          <b><GenericName :name="subscription.name" :word-count="60" /></b> ID:
-          {{ subscription.id }} | {{ subscription.callbackURL }} |
+          <b>
+            <GenericName :name="subscription.name || ''" :word-count="60" />
+          </b>
+          ID: {{ subscription.id }} | {{ subscription.callbackURL }} |
           {{ subscription.subscribedURL }} | {{ subscription.requestMethod }}
           <b-button
             v-b-modal.delete-confirmation-modal

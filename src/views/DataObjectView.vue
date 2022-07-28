@@ -36,7 +36,7 @@
         tooltip
       />
       <CreatedByLine
-        v-if="currentDataObject.updatedBy"
+        v-if="currentDataObject.updatedAt && currentDataObject.updatedBy"
         :created-at="currentDataObject.updatedAt"
         :created-by="currentDataObject.updatedBy"
         updated
@@ -53,19 +53,19 @@
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <ChildIcon />
-        {{ currentDataObject.childrenIds.length }} Children
+        {{ currentDataObject.childrenIds?.length }} Children
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <PredecessorIcon />
-        {{ currentDataObject.predecessorIds.length }} Predecessors
+        {{ currentDataObject.predecessorIds?.length }} Predecessors
       </b-col>
       <b-col @click="scrollTo('#relatedObjectsCollapse')">
         <SuccessorIcon />
-        {{ currentDataObject.successorIds.length }} Successors
+        {{ currentDataObject.successorIds?.length }} Successors
       </b-col>
       <b-col @click="scrollTo('#referencesCollapse')">
         <ReferencesIcon />
-        {{ currentDataObject.referenceIds.length }} References
+        {{ currentDataObject.referenceIds?.length }} References
       </b-col>
     </b-row>
 
@@ -106,7 +106,7 @@
     />
     <DataObjectModal
       :current-collection-id="currentCollectionId"
-      :current-data-object="{ parentId: currentDataObject.id }"
+      :current-data-object="{ parentId: currentDataObject.id, name: '' }"
       modal-id="create-dataObject-modal"
       modal-name="Create Data Object"
     />

@@ -37,7 +37,7 @@
         :key="index"
       >
         <div>
-          <b><GenericName :name="dataObjectItem.name" /></b> | ID:
+          <b><GenericName :name="dataObjectItem.name || ''" /></b> | ID:
           {{ dataObjectItem.id }}
           <b-button
             v-b-modal.data-object-reference-delete-confirmation-modal

@@ -37,7 +37,7 @@
         :key="index"
       >
         <div>
-          <b><GenericName :name="collectionItem.name" /></b> | ID:
+          <b><GenericName :name="collectionItem.name || ''" /></b> | ID:
           {{ collectionItem.id }}
           <b-button
             v-b-modal.collection-reference-delete-confirmation-modal
@@ -85,7 +85,7 @@
         currentCollectionReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentCollectionReference.id)"
+      @confirmation="handleDelete(currentCollectionReference?.id)"
     />
   </div>
 </template>

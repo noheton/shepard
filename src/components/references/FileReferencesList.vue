@@ -39,7 +39,7 @@
         :key="index"
       >
         <div>
-          <b><GenericName :name="fileReference.name" /></b> | ID:
+          <b><GenericName :name="fileReference.name || ''" /></b> | ID:
           {{ fileReference.id }} |
           <span v-if="fileReference.fileContainerId != -1">
             <b-link
@@ -258,9 +258,8 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-
-    convertDate(date: string) {
-      return new Date(date).toLocaleString("en-GB", dateFormat);
+    convertDate(date: Date | undefined | null) {
+      if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
 });

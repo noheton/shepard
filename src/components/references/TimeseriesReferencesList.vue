@@ -39,7 +39,7 @@
         :key="index"
       >
         <div>
-          <b><GenericName :name="timeseriesItem.name" /></b> | ID:
+          <b><GenericName :name="timeseriesItem.name || ''" /></b> | ID:
           {{ timeseriesItem.id }} |
           <span v-if="timeseriesItem.timeseriesContainerId != -1">
             <b-link

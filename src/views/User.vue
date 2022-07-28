@@ -24,10 +24,10 @@
       </table>
     </div>
     <GenericCollapse v-if="user" title="Api Keys">
-      <ApiKeyList :current-username="user.username" />
+      <ApiKeyList :current-username="user.username || ''" />
     </GenericCollapse>
     <GenericCollapse v-if="user" title="Subscriptions">
-      <SubscriptionList :current-username="user.username" />
+      <SubscriptionList :current-username="user.username || ''" />
     </GenericCollapse>
   </div>
 </template>

@@ -14,7 +14,7 @@
     <div>
       <b-list-group>
         <b-list-group-item v-for="(apiKey, index) in apiKeys" :key="index">
-          <b><GenericName :name="apiKey.name" :word-count="60" /></b>
+          <b><GenericName :name="apiKey.name || ''" :word-count="60" /></b>
           UID: {{ apiKey.uid }}
           <b-button
             v-b-modal.delete-confirmation-modal
@@ -40,7 +40,7 @@
         currentApiKey.name +
         '?'
       "
-      @confirmation="handleDelete(currentApiKey.uid)"
+      @confirmation="handleDelete(currentApiKey?.uid)"
     />
   </div>
 </template>

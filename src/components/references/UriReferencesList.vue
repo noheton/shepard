@@ -30,7 +30,7 @@
     <b-list-group>
       <b-list-group-item v-for="(uriItem, index) in uriList" :key="index">
         <div>
-          <b><GenericName :name="uriItem.name" /></b> | ID:
+          <b><GenericName :name="uriItem.name || ''" /></b> | ID:
           {{ uriItem.id }}
           <b-button
             v-b-modal.uri-reference-delete-confirmation-modal

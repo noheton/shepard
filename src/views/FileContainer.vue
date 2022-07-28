@@ -58,8 +58,9 @@
       <b-list-group>
         <b-list-group-item v-for="(file, index) in fileList" :key="index">
           <div class="float-left">
-            <b><GenericName :name="file.filename" :word-count="40" /></b> |
-            {{ file.oid }} | {{ new Date(file.createdAt).toLocaleString() }}
+            <b><GenericName :name="file.filename || ''" :word-count="40" /></b>
+            | {{ file.oid }} |
+            {{ new Date(file.createdAt).toLocaleString() }}
             <br />
             <em v-if="file.md5"> md5: {{ file.md5 }} </em>
           </div>
@@ -69,7 +70,7 @@
               v-b-tooltip.hover
               title="Download"
               variant="success"
-              @click="downloadFile(file.oid, file.filename)"
+              @click="downloadFile(file.oid, file.filename || '')"
             >
               <DownloadIcon />
             </b-button>

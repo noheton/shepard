@@ -9,7 +9,7 @@
           :to="String(entity.id)"
           append
         >
-          <b><GenericName :name="entity.name" :word-count="60" /></b>
+          <b><GenericName :name="entity.name || ''" :word-count="60" /></b>
           ID: {{ entity.id }}
           <CreatedByLine
             :created-by="entity.createdBy"
@@ -25,7 +25,13 @@
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
-import { defineComponent } from "vue";
+import type {
+  Collection,
+  FileContainer,
+  StructuredDataContainer,
+  TimeseriesContainer,
+} from "@dlr-shepard/shepard-client";
+import { defineComponent, type PropType } from "vue";
 
 export default defineComponent({
   components: {
@@ -35,7 +41,14 @@ export default defineComponent({
   },
   props: {
     entities: {
-      type: Array,
+      type: Object as PropType<
+        Array<
+          | Collection
+          | FileContainer
+          | StructuredDataContainer
+          | TimeseriesContainer
+        >
+      >,
       default: undefined,
     },
   },

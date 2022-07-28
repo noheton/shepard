@@ -77,7 +77,7 @@
 
               <div v-if="searchData != undefined">
                 <b-table
-                  v-if="searchData.resultSet.length > 0"
+                  v-if="searchData.resultSet?.length > 0"
                   sticky-header="766px"
                   striped
                   hover

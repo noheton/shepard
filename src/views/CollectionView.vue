@@ -180,7 +180,7 @@ onMounted(() => {
         tooltip
       />
       <CreatedByLine
-        v-if="currentCollection.updatedBy"
+        v-if="currentCollection.updatedAt && currentCollection.updatedBy"
         :created-at="currentCollection.updatedAt"
         :created-by="currentCollection.updatedBy"
         updated

@@ -11,7 +11,7 @@
   >
     <div class="float-left">
       <div>
-        <b><GenericName :name="dataObject.name" :word-count="40" /></b>
+        <b><GenericName :name="dataObject.name || ''" :word-count="40" /></b>
         ID:
         {{ dataObject.id }}
       </div>

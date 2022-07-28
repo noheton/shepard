@@ -37,7 +37,7 @@
         :key="index"
       >
         <div>
-          <b><GenericName :name="structuredDataReference.name" /></b>
+          <b><GenericName :name="structuredDataReference.name || ''" /></b>
           | ID: {{ structuredDataReference.id }} |
           <span v-if="structuredDataReference.structuredDataContainerId != -1">
             <b-link
@@ -89,14 +89,14 @@
             <a v-else><EyeIcon variant="danger" /></a>
 
             <b> Oid:</b> <tt>{{ oid }}</tt> |
-            <span v-if="structuredDatas[oid].structuredData.createdAt">
+            <span v-if="structuredDatas[oid].structuredData?.createdAt">
               <b>Created at:</b>
-              {{ convertDate(structuredDatas[oid].structuredData.createdAt) }}
+              {{ convertDate(structuredDatas[oid].structuredData?.createdAt) }}
             </span>
             <div v-else><b>Oid:</b> {{ oid }}</div>
 
             | <b>Name: </b>
-            {{ structuredDatas[oid].structuredData.name }}
+            {{ structuredDatas[oid].structuredData?.name }}
           </small>
         </div>
       </b-list-group-item>
@@ -256,8 +256,8 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-    convertDate(date: string) {
-      return new Date(date).toLocaleString("en-GB", dateFormat);
+    convertDate(date: Date | undefined | null) {
+      if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
     },
   },
 });

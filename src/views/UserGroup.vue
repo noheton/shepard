@@ -215,8 +215,8 @@ export default defineComponent({
         this.updateUserGroup();
       });
     },
-    handleDeleteUser(delUser: string) {
-      if (this.currentUserGroup) {
+    handleDeleteUser(delUser: string | undefined) {
+      if (this.currentUserGroup && delUser) {
         this.currentUserGroup.usernames =
           this.currentUserGroup?.usernames.filter(user => user != delUser);
         this.updateUserGroup();

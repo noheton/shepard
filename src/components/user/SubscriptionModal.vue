@@ -1,8 +1,31 @@
+<script setup lang="ts">
+import {
+  SubscriptionRequestMethodEnum,
+  type Subscription,
+} from "@dlr-shepard/shepard-client";
+import { type Ref, ref } from "vue";
+
+const subscriptionToCreate: Ref<Subscription> = ref({
+  name: "",
+  subscribedURL: "",
+  requestMethod: SubscriptionRequestMethodEnum.Get,
+});
+const requestMethods = Object.values(SubscriptionRequestMethodEnum);
+
+function initSubscription() {
+  subscriptionToCreate.value = {
+    name: "",
+    subscribedURL: "",
+    requestMethod: SubscriptionRequestMethodEnum.Get,
+  };
+}
+</script>
+
 <template>
   <b-modal
     id="create-subscription-modal"
     title="Create Subscription"
-    @show="subscriptionToCreate = { requestMethod: 'GET' }"
+    @show="initSubscription"
     @ok="$emit('create', subscriptionToCreate)"
   >
     <div v-if="subscriptionToCreate">
@@ -33,24 +56,3 @@
     </div>
   </b-modal>
 </template>
-
-<script lang="ts">
-import {
-  SubscriptionRequestMethodEnum,
-  type Subscription,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface SubscriptionListData {
-  subscriptionToCreate?: Subscription;
-}
-
-export default defineComponent({
-  data() {
-    return {
-      subscriptionToCreate: undefined,
-      requestMethods: Object.values(SubscriptionRequestMethodEnum),
-    } as SubscriptionListData;
-  },
-});
-</script>
