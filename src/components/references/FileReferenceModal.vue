@@ -114,9 +114,9 @@
     <ProcessAlert
       process-name="Upload"
       :process-active="uploadActive"
-      :process-started="uploadStarted"
+      :process-finished="uploadFinished"
       :process-error="uploadError"
-      @process-message-dismissed="uploadStarted = false"
+      @success-message-dismissed="uploadFinished = false"
       @error-message-dismissed="uploadError = false"
     />
   </div>
@@ -147,7 +147,7 @@ interface FileReferenceModelData {
   containerSelection: "createNewContainer" | "useExistingContainer";
   fileSelection: "chooseUploadedFile" | "uploadNewFile";
   newFile?: Blob;
-  uploadStarted: boolean;
+  uploadFinished: boolean;
   uploadActive: boolean;
   uploadError: boolean;
 }
@@ -168,7 +168,7 @@ function initialState(): FileReferenceModelData {
     containerSelection: "useExistingContainer",
     fileSelection: "chooseUploadedFile",
     newFile: undefined,
-    uploadStarted: false,
+    uploadFinished: false,
     uploadActive: false,
     uploadError: false,
   };
@@ -307,7 +307,6 @@ export default defineComponent({
         });
     },
     async uploadFile(newFile: Blob, containerId: number) {
-      this.uploadStarted = true;
       this.uploadActive = true;
       let response = undefined;
       try {
@@ -315,11 +314,12 @@ export default defineComponent({
           fileContainerId: containerId,
           file: newFile,
         });
+        this.uploadFinished = false;
       } catch (e: any) {
         const error = "Error while uploading File: " + e.statusText;
         console.log(error);
         emitter.emit("error", error);
-        this.uploadStarted = false;
+        this.uploadFinished = false;
         this.uploadError = true;
       } finally {
         this.uploadActive = false;

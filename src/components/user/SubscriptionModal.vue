@@ -3,7 +3,7 @@ import {
   SubscriptionRequestMethodEnum,
   type Subscription,
 } from "@dlr-shepard/shepard-client";
-import { type Ref, ref } from "vue";
+import { ref, type Ref } from "vue";
 
 const subscriptionToCreate: Ref<Subscription> = ref({
   name: "",

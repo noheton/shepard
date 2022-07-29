@@ -1,78 +1,74 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+const emit = defineEmits([
+  "success-message-dismissed",
+  "error-message-dismissed",
+]);
+
+const props = defineProps({
+  processName: {
+    type: String,
+    default: "Process",
+  },
+  processActive: {
+    type: Boolean,
+    default: false,
+  },
+  processFinished: {
+    type: Boolean,
+    default: false,
+  },
+  processError: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const timeDelay = 5;
+const dismissCountDown = ref(timeDelay);
+
+function successMessageDismissed() {
+  emit("success-message-dismissed");
+  dismissCountDown.value = timeDelay;
+}
+
+function countDownChanged(countDown: number) {
+  dismissCountDown.value = countDown;
+  if (dismissCountDown.value == 0) successMessageDismissed();
+}
+</script>
+
 <template>
   <div>
     <b-alert
-      v-model="thisProcessStarted"
+      :show="props.processActive"
       variant="success"
-      dismissible
       class="d-flex align-items-center"
-      @dismissed="$emit('process-message-dismissed')"
     >
-      {{ processName }} started. Depending on the size of the file this may take
-      a while.
-      <b-spinner
-        :hidden="!thisProcessActive"
-        class="ml-auto"
-        small
-        type="grow"
-      ></b-spinner>
+      {{ props.processName }} started. Depending on the size of the file this
+      may take a while.
+      <b-spinner class="ml-auto" small type="grow"></b-spinner>
     </b-alert>
     <b-alert
-      v-model="thisProcessError"
+      :show="props.processError"
       variant="danger"
       dismissible
       class="d-flex align-items-center"
-      @dismissed="$emit('error-message-dismissed')"
+      @dismissed="emit('error-message-dismissed')"
     >
-      {{ processName }} failed
+      {{ props.processName }} failed
+    </b-alert>
+    <b-alert
+      :show="props.processFinished && dismissCountDown"
+      variant="success"
+      dismissible
+      class="d-flex align-items-center"
+      @dismissed="successMessageDismissed"
+      @dismiss-count-down="countDownChanged"
+    >
+      {{ props.processName }}. This alert will dismiss after
+      {{ dismissCountDown }} seconds...
     </b-alert>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-interface ProcessAlertData {
-  thisProcessStarted: boolean;
-  thisProcessActive: boolean;
-  thisProcessError: boolean;
-}
-
-export default defineComponent({
-  props: {
-    processName: {
-      type: String,
-      default: "Process",
-    },
-    processStarted: {
-      type: Boolean,
-      default: false,
-    },
-    processActive: {
-      type: Boolean,
-      default: false,
-    },
-    processError: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  data() {
-    return {
-      thisProcessStarted: false,
-      thisProcessActive: false,
-      thisProcessError: false,
-    } as ProcessAlertData;
-  },
-  watch: {
-    processStarted() {
-      this.thisProcessStarted = this.processStarted;
-    },
-    processActive() {
-      this.thisProcessActive = this.processActive;
-    },
-    processError() {
-      this.thisProcessError = this.processError;
-    },
-  },
-});
-</script>

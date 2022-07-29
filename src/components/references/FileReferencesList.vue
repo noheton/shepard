@@ -19,8 +19,10 @@
     <ProcessAlert
       process-name="Download"
       :process-active="downloadActive"
-      :process-started="downloadStarted"
+      :process-finished="downloadFinished"
       :process-error="downloadError"
+      @success-message-dismissed="downloadFinished = false"
+      @error-message-dismissed="downloadError = false"
     />
 
     <b-button v-b-modal.create-file-ref-modal class="mb-3" variant="primary">
@@ -123,7 +125,7 @@ import { defineComponent } from "vue";
 interface FileListData {
   fileReferenceList: FileReference[];
   files: { [key: string]: ShepardFile };
-  downloadStarted: boolean;
+  downloadFinished: boolean;
   downloadActive: boolean;
   downloadError: boolean;
   currentFileReference?: FileReference;
@@ -153,7 +155,7 @@ export default defineComponent({
     return {
       fileReferenceList: [],
       files: {},
-      downloadStarted: false,
+      downloadFinished: false,
       downloadActive: false,
       downloadError: false,
       currentFileReference: undefined,
@@ -204,7 +206,6 @@ export default defineComponent({
     },
 
     getFilePayload(fileReferenceId: number, oid: string, filename: string) {
-      this.downloadStarted = true;
       this.downloadActive = true;
       FileReferenceService.getFilePayload({
         collectionId: this.currentCollectionId,
@@ -214,11 +215,11 @@ export default defineComponent({
       })
         .then(response => {
           downloadFile(response, filename);
+          this.downloadFinished = true;
         })
         .catch(e => {
           const error = "Error while fetching file payload: " + e.statusText;
           console.log(error);
-          this.downloadStarted = false;
           this.downloadError = true;
         })
         .finally(() => (this.downloadActive = false));

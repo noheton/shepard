@@ -19,8 +19,10 @@
     <ProcessAlert
       process-name="Download"
       :process-active="downloadActive"
-      :process-started="downloadStarted"
+      :process-started="downloadFinished"
       :process-error="downloadError"
+      @success-message-dismissed="downloadFinished = false"
+      @error-message-dismissed="downloadError = false"
     />
 
     <b-button v-b-modal.create-time-ref-modal class="mb-3" variant="primary">
@@ -121,7 +123,7 @@ import { defineComponent } from "vue";
 
 interface TimeseriesListData {
   timeseriesList: TimeseriesReference[];
-  downloadStarted: boolean;
+  downloadFinished: boolean;
   downloadActive: boolean;
   downloadError: boolean;
   currentTimeseriesReference?: TimeseriesReference;
@@ -150,7 +152,7 @@ export default defineComponent({
   data() {
     return {
       timeseriesList: new Array<TimeseriesReference>(),
-      downloadStarted: false,
+      downloadFinished: false,
       downloadActive: false,
       downloadError: false,
       currentTimeseriesReference: undefined,
@@ -177,7 +179,6 @@ export default defineComponent({
         });
     },
     downloadCsv(referenceId: number, referenceName: string) {
-      this.downloadStarted = true;
       this.downloadActive = true;
       TimeseriesReferenceService.exportTimeseriesPayload({
         collectionId: this.currentCollectionId,
@@ -186,12 +187,12 @@ export default defineComponent({
       })
         .then(response => {
           downloadFile(response, referenceName + ".csv");
+          this.downloadFinished = true;
         })
         .catch(e => {
           const error =
             "Error while fetching timeseries payload: " + e.statusText;
           console.log(error);
-          this.downloadStarted = false;
           this.downloadError = true;
         })
         .finally(() => (this.downloadActive = false));

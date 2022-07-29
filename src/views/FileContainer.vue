@@ -41,17 +41,17 @@
       <ProcessAlert
         process-name="Download"
         :process-active="downloadActive"
-        :process-started="downloadStarted"
+        :process-finished="downloadFinished"
         :process-error="downloadError"
-        @process-message-dismissed="downloadStarted = false"
+        @success-message-dismissed="downloadFinished = false"
         @error-message-dismissed="downloadError = false"
       />
       <ProcessAlert
         process-name="Upload"
         :process-active="uploadActive"
-        :process-started="uploadStarted"
+        :process-finished="uploadFinished"
         :process-error="uploadError"
-        @process-message-dismissed="uploadStarted = false"
+        @success-message-dismissed="uploadFinished = false"
         @error-message-dismissed="uploadError = false"
       />
 
@@ -147,11 +147,11 @@ import { defineComponent } from "vue";
 interface FileData {
   currentFileContainer?: FileContainer;
   permissions?: Permissions;
-  downloadStarted: boolean;
   downloadActive: boolean;
+  downloadFinished: boolean;
   downloadError: boolean;
-  uploadStarted: boolean;
   uploadActive: boolean;
+  uploadFinished: boolean;
   uploadError: boolean;
   fileList: ShepardFile[];
   currentFile?: ShepardFile;
@@ -171,11 +171,11 @@ export default defineComponent({
     return {
       currentFileContainer: undefined,
       permissions: undefined,
-      downloadStarted: false,
       downloadActive: false,
+      downloadFinished: false,
       downloadError: false,
-      uploadStarted: false,
       uploadActive: false,
+      uploadFinished: false,
       uploadError: false,
       fileList: [],
       currentFile: undefined,
@@ -232,7 +232,6 @@ export default defineComponent({
         });
     },
     uploadFile(newFile: Blob) {
-      this.uploadStarted = true;
       this.uploadActive = true;
       if (this.currentFileContainer?.id)
         FileService.createFile({
@@ -241,12 +240,12 @@ export default defineComponent({
         })
           .then(() => {
             this.retrieveFileList();
+            this.uploadFinished = true;
           })
           .catch(e => {
             const error = "Error while uploading File: " + e.statusText;
             console.log(error);
             emitter.emit("error", error);
-            this.uploadStarted = false;
             this.uploadError = true;
           })
           .finally(() => {
@@ -254,7 +253,6 @@ export default defineComponent({
           });
     },
     downloadFile(oid: string, filename: string) {
-      this.downloadStarted = true;
       this.downloadActive = true;
       if (this.currentFileContainer?.id)
         FileService.getFile({
@@ -263,12 +261,12 @@ export default defineComponent({
         })
           .then(response => {
             downloadFile(response, filename);
+            this.downloadFinished = true;
           })
           .catch(e => {
             const error = "Error while fetching file: " + e.statusText;
             console.log(error);
             emitter.emit("error", error);
-            this.downloadStarted = false;
             this.downloadError = true;
           })
           .finally(() => {
