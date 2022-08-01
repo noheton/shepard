@@ -27,7 +27,7 @@ public class UserGroupTest extends BaseTestCaseIT {
 	private static UserGroupIO userGroupChanged;
 
 	@BeforeAll
-	private static void setUp() {
+	public static void setUp() {
 		userGroupURL = String.format("%s/usergroup", baseURL);
 		user = getNewUserWithApiKey("user");
 		user1 = getNewUserWithApiKey("user1");
