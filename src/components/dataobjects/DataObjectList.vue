@@ -67,7 +67,7 @@ export default defineComponent({
       currentPage: 1,
       descendingSelected: false,
       orderBySelected: GetAllDataObjectsOrderByEnum.CreatedAt,
-      sizeSelected: 10,
+      sizeSelected: 25,
     } as DataObjectListData;
   },
   computed: {
