@@ -202,6 +202,7 @@ onMounted(() => {
       title="Data Objects"
     >
       <DataObjectList
+        v-if="currentCollection.id"
         :current-collection-id="currentCollection.id"
         :parent-id="-1"
       />

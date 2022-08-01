@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="danger"
+      variant="dark"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -60,7 +60,7 @@
         currentUriReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentUriReference.id)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -142,11 +142,12 @@ export default defineComponent({
         });
     },
 
-    handleDelete(uriReferenceId: number) {
+    handleDelete() {
+      if (!this.currentUriReference?.id) return;
       UriReferenceService.deleteUriReference({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,
-        uriReferenceId: uriReferenceId,
+        uriReferenceId: this.currentUriReference.id,
       })
         .then(() => {
           this.deletedAlert = true;

@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="danger"
+      variant="dark"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -56,7 +56,11 @@
         />
         <small>
           {{ dataObjectItem.relationship }}:
-          <span v-if="dataObjectItem.referencedDataObjectId != -1">
+          <span
+            v-if="
+              dataObjectItem.id && dataObjectItem.referencedDataObjectId != -1
+            "
+          >
             <b-link
               v-if="referencedList[dataObjectItem.id]"
               :to="{
@@ -85,7 +89,7 @@
         currentDataObjectReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentDataObjectReference.id)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -196,11 +200,12 @@ export default defineComponent({
         });
     },
 
-    handleDelete(dataObjectReferenceId: number) {
+    handleDelete() {
+      if (!this.currentDataObjectReference?.id) return;
       DataObjectReferenceService.deleteDataObjectReference({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,
-        dataObjectReferenceId: dataObjectReferenceId,
+        dataObjectReferenceId: this.currentDataObjectReference.id,
       })
         .then(() => {
           this.deletedAlert = true;

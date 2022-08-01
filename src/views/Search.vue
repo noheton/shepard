@@ -46,10 +46,7 @@
                 <b-form-group>
                   <b-form-checkbox-group
                     v-model="selectedTraversalRule"
-                    :disabled="
-                      selectedQueryType == 'Collection' ||
-                      [undefined, ''].includes(currentDataObjectId)
-                    "
+                    :disabled="traversalRulesDisabled"
                     :options="traversalRuleOptions"
                   >
                   </b-form-checkbox-group>
@@ -77,7 +74,7 @@
 
               <div v-if="searchData != undefined">
                 <b-table
-                  v-if="searchData.resultSet?.length > 0"
+                  v-if="searchData.resultSet && searchData.resultSet.length > 0"
                   sticky-header="766px"
                   striped
                   hover
@@ -112,7 +109,7 @@ import {
 } from "@dlr-shepard/shepard-client";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
-import { defineComponent } from "vue";
+import Vue from "vue";
 
 interface SearchData {
   editor?: JSONEditor;
@@ -157,10 +154,19 @@ const initialJson = {
   ],
 };
 
-export default defineComponent({
+export default Vue.extend({
   components: { Loading },
   data() {
     return initialState();
+  },
+  computed: {
+    traversalRulesDisabled(): boolean {
+      return (
+        this.selectedQueryType == "Collection" ||
+        this.currentDataObjectId == undefined ||
+        this.currentDataObjectId.toString() == ""
+      );
+    },
   },
   mounted() {
     this.jsonEditor();

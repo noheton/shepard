@@ -46,7 +46,7 @@
         currentSubscription.name +
         '?'
       "
-      @confirmation="handleDelete(currentSubscription.id)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -115,10 +115,11 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-    handleDelete(id: number) {
+    handleDelete() {
+      if (!this.currentSubscription?.id) return;
       SubscriptionService.deleteSubscription({
         username: this.currentUsername,
-        subscriptionId: id,
+        subscriptionId: this.currentSubscription.id,
       })
         .catch(e => {
           const error = "Error while deleting subscription: " + e.statusText;

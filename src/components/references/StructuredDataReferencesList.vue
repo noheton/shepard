@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="danger"
+      variant="dark"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -111,10 +111,10 @@
         currentStructuredDataReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentStructuredDataReference.id)"
+      @confirmation="handleDelete()"
     />
     <JsonEditorModal
-      v-if="currentStructuredDataReference"
+      v-if="currentStructuredDataReference && currentStructuredDataOid"
       modal-id="json-editor-modal"
       modal-name="Structured Data Reference"
       :container-id="currentStructuredDataReference.structuredDataContainerId"
@@ -239,11 +239,12 @@ export default defineComponent({
         });
     },
 
-    handleDelete(structureddataReferenceId: number) {
+    handleDelete() {
+      if (!this.currentStructuredDataReference?.id) return;
       StructuredDataReferenceService.deleteStructuredDataReference({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,
-        structureddataReferenceId: structureddataReferenceId,
+        structureddataReferenceId: this.currentStructuredDataReference.id,
       })
         .then(() => {
           this.deletedAlert = true;

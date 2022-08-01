@@ -40,7 +40,7 @@
         currentApiKey.name +
         '?'
       "
-      @confirmation="handleDelete(currentApiKey?.uid)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -117,10 +117,11 @@ export default defineComponent({
     handleCreated() {
       this.createdApiKey = undefined;
     },
-    handleDelete(uid: string) {
+    handleDelete() {
+      if (!this.currentApiKey?.uid) return;
       ApiKeyService.deleteApiKey({
         username: this.currentUsername,
-        apikeyUid: uid,
+        apikeyUid: this.currentApiKey.uid,
       })
         .catch(e => {
           const error = "Error while deleting api key: " + e.statusText;

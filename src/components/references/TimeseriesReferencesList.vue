@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="danger"
+      variant="dark"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -62,7 +62,10 @@
               :disabled="
                 downloadActive || timeseriesItem.timeseriesContainerId == -1
               "
-              @click="downloadCsv(timeseriesItem.id, timeseriesItem.name)"
+              @click="
+                if (timeseriesItem.id)
+                  downloadCsv(timeseriesItem.id, timeseriesItem.name || '');
+              "
             >
               <DownloadIcon />
             </b-button>
@@ -103,7 +106,7 @@
         currentTimeseriesReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentTimeseriesReference.id)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -198,11 +201,12 @@ export default defineComponent({
         .finally(() => (this.downloadActive = false));
     },
 
-    handleDelete(timeseriesReferenceId: number) {
+    handleDelete() {
+      if (!this.currentTimeseriesReference?.id) return;
       TimeseriesReferenceService.deleteTimeseriesReference({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,
-        timeseriesReferenceId: timeseriesReferenceId,
+        timeseriesReferenceId: this.currentTimeseriesReference.id,
       })
         .then(() => {
           this.deletedAlert = true;

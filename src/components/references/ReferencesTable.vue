@@ -1,6 +1,10 @@
 <template>
   <b-card no-body>
-    <b-tabs card lazy>
+    <b-tabs
+      v-if="currentDataObject.collectionId && currentDataObject.id"
+      card
+      lazy
+    >
       <b-tab title="Timeseries">
         <TimeseriesReferencesList
           :current-collection-id="currentDataObject.collectionId"

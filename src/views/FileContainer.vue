@@ -57,7 +57,7 @@
 
       <b-list-group>
         <b-list-group-item v-for="(file, index) in fileList" :key="index">
-          <div class="float-left">
+          <div v-if="file.createdAt" class="float-left">
             <b><GenericName :name="file.filename || ''" :word-count="40" /></b>
             | {{ file.oid }} |
             {{ new Date(file.createdAt).toLocaleString() }}
@@ -70,7 +70,10 @@
               v-b-tooltip.hover
               title="Download"
               variant="success"
-              @click="downloadFile(file.oid, file.filename || '')"
+              @click="
+                if (file.oid != undefined)
+                  downloadFile(file.oid, file.filename);
+              "
             >
               <DownloadIcon />
             </b-button>
@@ -103,7 +106,7 @@
         currentFile.filename +
         '?'
       "
-      @confirmation="handleDeleteFile(currentFile.oid)"
+      @confirmation="handleDeleteFile()"
     />
 
     <DeleteConfirmationModal
@@ -252,7 +255,7 @@ export default defineComponent({
             this.uploadActive = false;
           });
     },
-    downloadFile(oid: string, filename: string) {
+    downloadFile(oid: string, filename?: string) {
       this.downloadActive = true;
       if (this.currentFileContainer?.id)
         FileService.getFile({
@@ -274,20 +277,20 @@ export default defineComponent({
           });
     },
 
-    handleDeleteFile(oid: string) {
-      if (this.currentFileContainer?.id)
-        FileService.deleteFile({
-          fileContainerId: this.currentFileContainer?.id,
-          oid: oid,
+    handleDeleteFile() {
+      if (!this.currentFile?.oid || !this.currentFileContainer?.id) return;
+      FileService.deleteFile({
+        fileContainerId: this.currentFileContainer?.id,
+        oid: this.currentFile.oid,
+      })
+        .catch(e => {
+          const error = "Error while deleting file: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
         })
-          .catch(e => {
-            const error = "Error while deleting file: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
-          })
-          .finally(() => {
-            this.retrieveFileList();
-          });
+        .finally(() => {
+          this.retrieveFileList();
+        });
     },
     retrievePermissions() {
       FileService.getFilePermissions({

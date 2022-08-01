@@ -4,7 +4,7 @@
       <b-alert
         :show="deletedAlert"
         dismissible
-        variant="danger"
+        variant="dark"
         @dismissed="deletedAlert = false"
       >
         Successfully deleted
@@ -77,7 +77,7 @@
               <GenericName :name="structuredData.name || ''" :word-count="40" />
             </b>
             | {{ structuredData.oid }} |
-            {{ new Date(structuredData.createdAt).toLocaleString() }}
+            {{ new Date(structuredData.createdAt || "").toLocaleString() }}
           </div>
         </b-list-group-item>
       </b-list-group>
@@ -106,10 +106,10 @@
         currentStructuredData.name +
         '?'
       "
-      @confirmation="handleDeleteStructuredData(currentStructuredData.oid)"
+      @confirmation="handleDeleteStructuredData()"
     />
     <JsonEditorModal
-      v-if="currentStructuredData"
+      v-if="currentStructuredData && currentStructuredData.oid"
       modal-id="json-editor-modal"
       modal-name="Structured Data"
       :container-id="currentStructuredDataContainerId"
@@ -239,22 +239,25 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-    handleDeleteStructuredData(oid: string) {
-      if (this.currentStructuredDataContainer?.id)
-        StructuredDataService.deleteStructuredData({
-          structureddataContainerId: this.currentStructuredDataContainer?.id,
-          oid: oid,
+    handleDeleteStructuredData() {
+      if (
+        !this.currentStructuredDataContainer?.id ||
+        !this.currentStructuredData?.oid
+      )
+        return;
+      StructuredDataService.deleteStructuredData({
+        structureddataContainerId: this.currentStructuredDataContainer?.id,
+        oid: this.currentStructuredData.oid,
+      })
+        .then(() => {
+          this.deletedAlert = true;
+          this.retrieveStructuredDataList();
         })
-          .then(() => {
-            this.deletedAlert = true;
-            this.retrieveStructuredDataList();
-          })
-          .catch(e => {
-            const error =
-              "Error while deleting Structured Data: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
-          });
+        .catch(e => {
+          const error = "Error while deleting Structured Data: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        });
     },
     retrievePermissions() {
       StructuredDataService.getStructuredDataPermissions({

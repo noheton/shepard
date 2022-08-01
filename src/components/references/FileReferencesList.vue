@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="danger"
+      variant="dark"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -70,13 +70,14 @@
           :created-by="fileReference.createdBy"
           :created-at="fileReference.createdAt"
         />
-        <div v-for="(oid, i) in fileReference.fileOids" :key="i">
+        <div v-for="(oid, jndex) in fileReference.fileOids" :key="jndex">
           <small v-if="files[oid]">
             <a v-if="fileReference.fileContainerId != -1">
               <b-link
                 :disabled="downloadActive"
                 @click="
-                  getFilePayload(fileReference.id, oid, files[oid].filename)
+                  if (fileReference.id)
+                    getFilePayload(fileReference.id, oid, files[oid].filename);
                 "
               >
                 <DownloadIcon />
@@ -104,7 +105,7 @@
         currentFileReference.name +
         '?'
       "
-      @confirmation="handleDelete(currentFileReference.id)"
+      @confirmation="handleDelete()"
     />
   </div>
 </template>
@@ -205,7 +206,7 @@ export default defineComponent({
         });
     },
 
-    getFilePayload(fileReferenceId: number, oid: string, filename: string) {
+    getFilePayload(fileReferenceId: number, oid: string, filename?: string) {
       this.downloadActive = true;
       FileReferenceService.getFilePayload({
         collectionId: this.currentCollectionId,
@@ -243,11 +244,12 @@ export default defineComponent({
         });
     },
 
-    handleDelete(fileReferenceId: number) {
+    handleDelete() {
+      if (!this.currentFileReference?.id) return;
       FileReferenceService.deleteFileReference({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,
-        fileReferenceId: fileReferenceId,
+        fileReferenceId: this.currentFileReference.id,
       })
         .then(() => {
           this.deletedAlert = true;

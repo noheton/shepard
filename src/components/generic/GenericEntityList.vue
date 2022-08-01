@@ -1,10 +1,37 @@
+<script setup lang="ts">
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
+import type {
+  Collection,
+  FileContainer,
+  StructuredDataContainer,
+  TimeseriesContainer,
+} from "@dlr-shepard/shepard-client";
+import type { PropType } from "vue";
+
+const props = defineProps({
+  entities: {
+    type: Array as PropType<
+      Array<
+        | Collection
+        | FileContainer
+        | StructuredDataContainer
+        | TimeseriesContainer
+      >
+    >,
+    default: undefined,
+  },
+});
+</script>
+
 <template>
   <div>
-    <div v-if="entities == undefined"><Loading /></div>
+    <div v-if="props.entities == undefined"><Loading /></div>
     <div v-else>
       <b-list-group class="mb-2">
         <b-list-group-item
-          v-for="(entity, index) in entities"
+          v-for="(entity, index) in props.entities"
           :key="index"
           :to="String(entity.id)"
           append
@@ -20,45 +47,6 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import Loading from "@/components/generic/Loading.vue";
-import type {
-  Collection,
-  FileContainer,
-  StructuredDataContainer,
-  TimeseriesContainer,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent, type PropType } from "vue";
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    GenericName,
-    Loading,
-  },
-  props: {
-    entities: {
-      type: Object as PropType<
-        Array<
-          | Collection
-          | FileContainer
-          | StructuredDataContainer
-          | TimeseriesContainer
-        >
-      >,
-      default: undefined,
-    },
-  },
-  data() {
-    return {
-      loaded: false,
-    };
-  },
-});
-</script>
 
 <style scoped>
 .fixed-height {
