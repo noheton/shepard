@@ -14,15 +14,6 @@
       <h4>Timeseries Containers</h4>
       <br />
 
-      <b-alert
-        :show="deletedAlert"
-        dismissible
-        variant="dark"
-        @dismissed="deletedAlert = false"
-      >
-        Successfully deleted
-      </b-alert>
-
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -70,7 +61,6 @@ interface TimeseriesListData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
-  deletedAlert: boolean;
 }
 
 export default defineComponent({
@@ -82,7 +72,6 @@ export default defineComponent({
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
-      deletedAlert: false,
     } as TimeseriesListData;
   },
   computed: {

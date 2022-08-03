@@ -1,6 +1,14 @@
 <template>
   <div v-if="currentFileContainer" class="file-container">
     <div class="component">
+      <b-alert
+        :show="deletedAlert"
+        dismissible
+        variant="dark"
+        @dismissed="deletedAlert = false"
+      >
+        Successfully deleted
+      </b-alert>
       <b-button-group class="float-right">
         <b-button
           v-b-modal.upload-file-to-container-modal
@@ -159,6 +167,7 @@ interface FileData {
   fileList: ShepardFile[];
   currentFile?: ShepardFile;
   managerAccess: boolean;
+  deletedAlert: boolean;
 }
 
 export default defineComponent({
@@ -183,6 +192,7 @@ export default defineComponent({
       fileList: [],
       currentFile: undefined,
       managerAccess: false,
+      deletedAlert: false,
     } as FileData;
   },
   computed: {
@@ -282,14 +292,14 @@ export default defineComponent({
       FileService.deleteFile({
         fileContainerId: this.currentFileContainer?.id,
         oid: this.currentFile.oid,
+      }).then(() =>{
+          this.deletedAlert = true;
+          this.retrieveFileList();
       })
         .catch(e => {
           const error = "Error while deleting file: " + e.statusText;
           console.log(error);
           emitter.emit("error", error);
-        })
-        .finally(() => {
-          this.retrieveFileList();
         });
     },
     retrievePermissions() {

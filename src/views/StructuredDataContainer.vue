@@ -229,7 +229,6 @@ export default defineComponent({
         structureddataContainerId: this.currentStructuredDataContainerId,
       })
         .then(() => {
-          this.deletedAlert = true;
           this.$router.push({ name: "StructuredDatasList" });
         })
         .catch(e => {

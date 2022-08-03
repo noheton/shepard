@@ -13,15 +13,6 @@
 
     <h4 class="mb-4">User Groups</h4>
 
-    <b-alert
-      :show="deletedAlert"
-      dismissible
-      variant="dark"
-      @dismissed="deletedAlert = false"
-    >
-      Successfully deleted
-    </b-alert>
-
     <FilterListLine
       :max-objects="totalRows"
       :default-page="currentPage"
@@ -82,7 +73,6 @@ import Vue from "vue";
 
 interface UserGroupData {
   userGroupList?: UserGroup[];
-  deletedAlert: boolean;
   perPage: number;
   currentPage: number;
   orderBy: string;
@@ -94,7 +84,6 @@ export default Vue.extend({
   data() {
     return {
       userGroupList: undefined,
-      deletedAlert: false,
       perPage: 10,
       currentPage: 1,
       orderBy: "createdAt",

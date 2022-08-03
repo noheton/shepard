@@ -39,15 +39,6 @@
         <Loading v-else />
       </b-modal>
 
-      <b-alert
-        :show="deletedAlert"
-        dismissible
-        variant="dark"
-        @dismissed="deletedAlert = false"
-      >
-        Successfully deleted
-      </b-alert>
-
       <FilterListLine
         :max-objects="totalRows"
         :default-page="currentPage"
@@ -101,7 +92,6 @@ interface ExploreData {
   currentPage: number;
   orderBy: string;
   descending: boolean;
-  deletedAlert: boolean;
   userInput: string;
 }
 
@@ -116,7 +106,6 @@ export default Vue.extend({
       currentPage: 1,
       orderBy: "createdAt",
       descending: false,
-      deletedAlert: false,
       userInput: "",
     } as ExploreData;
   },
