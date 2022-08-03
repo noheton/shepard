@@ -5,6 +5,6 @@ declare global {
 }
 
 export default function getEnv(name: string): string {
-  if (!window.configs) return process.env[name];
-  return window.configs[name] || process.env[name];
+  if (!window.configs) return import.meta.env[name];
+  return window.configs[name] || import.meta.env[name];
 }

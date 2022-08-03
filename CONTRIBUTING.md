@@ -45,7 +45,8 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 - Node JS and NPM: <https://nodejs.org/en/>
 - Vue CLI: <https://cli.vuejs.org/>
 - Visual Studio Code: <https://code.visualstudio.com/>
-- Vetur: <https://marketplace.visualstudio.com/items?itemName=octref.vetur>
+- Volar: <https://marketplace.visualstudio.com/items?itemName=Vue.volar>
+- TypeScript Vue Plugin (Volar) <https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin>
 - Vue Devtools for Firefox: <https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/>
 - Vue Devtools for Chrome: <https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd>
 
@@ -53,9 +54,16 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 
 - install Node JS and NPM
 - install Vue CLI `npm install -g @vue/cli`
-- install Visual Studio Code and the Vetur Plugin
+- install Visual Studio Code and the recommended plugins
 - clone Git repository
 - open comand line, type in `npm install .`
+
+### Type Support for `.vue` Imports in TS (optional)
+
+1. Disable the built-in TypeScript Extension
+   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
+   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
+2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
 
 ### Local backend
 

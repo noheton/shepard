@@ -12,12 +12,12 @@ Vue.use(Vuex);
 
 // OIDC
 const loco = window.location;
-const appRootUrl = `${loco.protocol}//${loco.host}${process.env.BASE_URL}`;
+const appRootUrl = `${loco.protocol}//${loco.host}${import.meta.env.BASE_URL}`;
 console.log(appRootUrl);
 
 const clientSettings = {
-  authority: getEnv("VUE_APP_OIDC_AUTHORITY"),
-  clientId: getEnv("VUE_APP_CLIENT_ID"),
+  authority: getEnv("VITE_OIDC_AUTHORITY"),
+  clientId: getEnv("VITE_CLIENT_ID"),
   redirectUri: appRootUrl + "oidc-callback",
   responseType: "code",
   scope: "openid email profile",
@@ -74,7 +74,7 @@ const userCache = {
       if (context.getters.isUserPending(username)) return;
       context.commit("addUserToPending", username);
       const conf = new Configuration({
-        basePath: getEnv("VUE_APP_BACKEND"),
+        basePath: getEnv("VITE_BACKEND"),
         accessToken: context.rootState.oidcStore.access_token,
       });
       const userApi = new UserApi(conf);
@@ -94,7 +94,7 @@ export default new Vuex.Store({
   modules: {
     oidcStore: vuexOidcCreateStoreModule(clientSettings, {
       namespaced: true,
-      routeBase: process.env.BASE_URL,
+      routeBase: import.meta.env.BASE_URL,
     }),
     userCache: userCache,
   },

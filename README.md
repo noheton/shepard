@@ -17,7 +17,7 @@ Information on how to contribute can be found [here](CONTRIBUTING.md).
 - Install node modules: `npm install`
 - Update packages: `npm update`
 - Find outdated packages: `npm outdated`
-- Compile for development: `npm run serve`
+- Run dev server: `npm run dev`
 - Run linter: `npm run lint`
 - Fix linting issues: `npm run fix`
 - Compile for production: `npm run build`

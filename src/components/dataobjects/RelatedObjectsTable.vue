@@ -1,6 +1,6 @@
 <template>
   <b-card no-body>
-    <b-tabs card>
+    <b-tabs v-if="currentDataObject.collectionId" card>
       <b-tab title="Children" :disabled="!childrenIds.length">
         <DataObjectList
           :current-collection-id="currentDataObject.collectionId"
