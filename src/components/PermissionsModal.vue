@@ -163,11 +163,12 @@
 <script lang="ts">
 import UserGroupService from "@/services/userGroupService";
 import UserService from "@/services/userService";
-import {
+import { permissionOptions } from "@/utils/helpers";
+import type {
   PermissionsPermissionTypeEnum,
-  type Permissions,
-  type User,
-  type UserGroup,
+  Permissions,
+  User,
+  UserGroup,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent, type PropType } from "vue";
 
@@ -200,20 +201,7 @@ function initialState(): PermissionsModalData {
     writer: [],
     writerGroup: [],
     manager: [],
-    permissionOptions: [
-      {
-        value: PermissionsPermissionTypeEnum.Private,
-        text: "Private",
-      },
-      {
-        value: PermissionsPermissionTypeEnum.PublicReadable,
-        text: "Public Readable",
-      },
-      {
-        value: PermissionsPermissionTypeEnum.Public,
-        text: "Public",
-      },
-    ],
+    permissionOptions: permissionOptions,
     permissionType: undefined,
   };
 }

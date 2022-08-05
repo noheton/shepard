@@ -1,3 +1,101 @@
+<script setup lang="ts">
+import FilterListLine, {
+  type FilterChangedData,
+} from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
+import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import FileService from "@/services/fileService";
+import { emitter } from "@/utils/event-bus";
+import { getTotalRows, useRouter } from "@/utils/helpers";
+import type {
+  FileContainer,
+  GetAllFileContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
+} from "@dlr-shepard/shepard-client";
+import { computed, type ComputedRef, onMounted, type Ref, ref } from "vue";
+
+const router = useRouter();
+const containers: Ref<FileContainer[] | undefined> = ref();
+const perPage = ref(10);
+const currentPage = ref(1);
+const orderBy = ref("createdAt");
+const descending = ref(false);
+
+onMounted(() => {
+  retrieveContainers();
+});
+
+const totalRows: ComputedRef<number> = computed(() => {
+  if (containers.value)
+    return getTotalRows(
+      containers.value.length,
+      perPage.value,
+      currentPage.value,
+    );
+  else return 0;
+});
+
+function filterChanged(options: FilterChangedData) {
+  currentPage.value = options.currentPage;
+  perPage.value = options.currentSize;
+  descending.value = options.descending;
+  orderBy.value = options.orderBy;
+  retrieveContainers();
+}
+
+function retrieveContainers(page?: number) {
+  const nextPage = page || currentPage.value;
+  const nextOrderBy =
+    orderBy.value as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
+  FileService.getAllFileContainers({
+    size: perPage.value,
+    page: nextPage - 1,
+    orderBy: nextOrderBy,
+    orderDesc: descending.value,
+  })
+    .then(response => {
+      containers.value = response;
+    })
+    .catch(e => {
+      const error = "Error while fetching file containers: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+
+function createContainer(options: {
+  name: string;
+  perms: PermissionsPermissionTypeEnum;
+}) {
+  FileService.createFileContainer({
+    fileContainer: { name: options.name } as FileContainer,
+  })
+    .then(async response => {
+      if (response.id) {
+        const perms = await FileService.getFilePermissions({
+          fileContainerId: response.id,
+        });
+        perms.permissionType = options.perms;
+        await FileService.editFilePermissions({
+          fileContainerId: response.id,
+          permissions: perms,
+        });
+        router.push({
+          name: "Files",
+          params: {
+            fileId: String(response.id),
+          },
+        });
+      }
+    })
+    .catch(e => {
+      const error = "Error while creating file container: " + e.statusText;
+      console.log(error);
+      emitter.emit("error", error);
+    });
+}
+</script>
+
 <template>
   <div class="file-container-list">
     <div class="component">
@@ -39,100 +137,3 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
-import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
-import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import FileService from "@/services/fileService";
-import { emitter } from "@/utils/event-bus";
-import { totalRows } from "@/utils/helpers";
-import type {
-  FileContainer,
-  GetAllFileContainersOrderByEnum,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface FilesListData {
-  containers?: FileContainer[];
-  perPage: number;
-  currentPage: number;
-  orderBy: string;
-  descending: boolean;
-}
-
-export default defineComponent({
-  components: { GenericEntityList, FilterListLine, GenericCreateModal },
-  data() {
-    return {
-      containers: undefined,
-      perPage: 10,
-      currentPage: 1,
-      orderBy: "createdAt",
-      descending: false,
-    } as FilesListData;
-  },
-  computed: {
-    totalRows(): number {
-      if (this.containers)
-        return totalRows(
-          this.containers.length,
-          this.perPage,
-          this.currentPage,
-        );
-      else return 0;
-    },
-  },
-  mounted() {
-    this.retrieveContainers();
-  },
-  methods: {
-    filterChanged(options: FilterChangedData) {
-      this.currentPage = options.currentPage;
-      this.perPage = options.currentSize;
-      this.descending = options.descending;
-      this.orderBy = options.orderBy;
-      this.retrieveContainers();
-    },
-    retrieveContainers(page?: number) {
-      const nextPage = page || this.currentPage;
-      const nextOrderBy = this
-        .orderBy as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
-      FileService.getAllFileContainers({
-        size: this.perPage,
-        page: nextPage - 1,
-        orderBy: nextOrderBy,
-        orderDesc: this.descending,
-      })
-        .then(response => {
-          this.containers = response;
-        })
-        .catch(e => {
-          const error = "Error while fetching file containers: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    createContainer(newName: string) {
-      FileService.createFileContainer({
-        fileContainer: { name: newName } as FileContainer,
-      })
-        .then(response => {
-          this.$router.push({
-            name: "Files",
-            params: {
-              fileId: String(response.id),
-            },
-          });
-        })
-        .catch(e => {
-          const error = "Error while creating file container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-  },
-});
-</script>

@@ -49,9 +49,10 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { emitter } from "@/utils/event-bus";
-import { totalRows } from "@/utils/helpers";
+import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllStructuredDataContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -78,7 +79,7 @@ export default defineComponent({
   computed: {
     totalRows(): number {
       if (this.containers)
-        return totalRows(
+        return getTotalRows(
           this.containers.length,
           this.perPage,
           this.currentPage,
@@ -117,17 +118,33 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-    createContainer(newName: string) {
+    createContainer(options: {
+      name: string;
+      perms: PermissionsPermissionTypeEnum;
+    }) {
       StructuredDataService.createStructuredDataContainer({
-        structuredDataContainer: { name: newName } as StructuredDataContainer,
+        structuredDataContainer: {
+          name: options.name,
+        } as StructuredDataContainer,
       })
-        .then(response => {
-          this.$router.push({
-            name: "StructuredData",
-            params: {
-              structuredDataId: String(response.id),
-            },
-          });
+        .then(async response => {
+          if (response.id) {
+            const perms =
+              await StructuredDataService.getStructuredDataPermissions({
+                structureddataContainerId: response.id,
+              });
+            perms.permissionType = options.perms;
+            await StructuredDataService.editStructuredDataPermissions({
+              structureddataContainerId: response.id,
+              permissions: perms,
+            });
+            this.$router.push({
+              name: "StructuredData",
+              params: {
+                structuredDataId: String(response.id),
+              },
+            });
+          }
         })
         .catch(e => {
           const error =

@@ -1,9 +1,38 @@
+<script setup lang="ts">
+import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+import { type Ref, ref } from "vue";
+import { permissionOptions } from "@/utils/helpers";
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "GenericCreateModal",
+  },
+  modalName: {
+    type: String,
+    default: "GenericCreateModal",
+  },
+});
+
+const emit = defineEmits(["create"]);
+const newObject: Ref<{ name: string; perms: PermissionsPermissionTypeEnum }> =
+  ref({ name: "", perms: PermissionsPermissionTypeEnum.Private });
+
+function handlePrepare() {
+  newObject.value = { name: "", perms: PermissionsPermissionTypeEnum.Private };
+}
+
+function handleOK() {
+  emit("create", newObject.value);
+}
+</script>
+
 <template>
   <b-modal
-    :id="modalId"
+    :id="props.modalId"
     ref="modal"
     size="lg"
-    :title="modalName"
+    :title="props.modalName"
     lazy
     @show="handlePrepare()"
     @ok="handleOK()"
@@ -20,49 +49,18 @@
             ></b-form-input>
           </b-col>
         </b-row>
+
+        <b-row class="mb-3">
+          <b-col cols="3"> Permission </b-col>
+          <b-col cols="9">
+            <b-form-select
+              v-model="newObject.perms"
+              class="mb-3"
+              :options="permissionOptions"
+            ></b-form-select>
+          </b-col>
+        </b-row>
       </b-container>
     </b-form-group>
   </b-modal>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-interface GenericCreateModelData {
-  newObject: Record<string, unknown>;
-}
-
-function initialState(): GenericCreateModelData {
-  return {
-    newObject: {
-      name: "",
-    },
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "GenericCreateModal",
-    },
-    modalName: {
-      type: String,
-      default: "GenericCreateModal",
-    },
-  },
-  emits: ["create"],
-  data() {
-    return initialState();
-  },
-
-  methods: {
-    handlePrepare() {
-      Object.assign(this.$data, initialState());
-    },
-    handleOK() {
-      this.$emit("create", this.newObject.name);
-    },
-  },
-});
-</script>

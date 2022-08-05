@@ -48,9 +48,10 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import TimeseriesService from "@/services/timeseriesService";
 import { emitter } from "@/utils/event-bus";
-import { totalRows } from "@/utils/helpers";
+import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllTimeseriesContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -77,7 +78,7 @@ export default defineComponent({
   computed: {
     totalRows(): number {
       if (this.containers)
-        return totalRows(
+        return getTotalRows(
           this.containers.length,
           this.perPage,
           this.currentPage,
@@ -116,17 +117,31 @@ export default defineComponent({
           emitter.emit("error", error);
         });
     },
-    createContainer(newName: string) {
+    createContainer(options: {
+      name: string;
+      perms: PermissionsPermissionTypeEnum;
+    }) {
       TimeseriesService.createTimeseriesContainer({
-        timeseriesContainer: { name: newName } as TimeseriesContainer,
+        timeseriesContainer: { name: options.name } as TimeseriesContainer,
       })
-        .then(response => {
-          this.$router.push({
-            name: "Timeseries",
-            params: {
-              timeseriesId: String(response.id),
-            },
-          });
+        .then(async response => {
+          if (response.id) {
+            const perms = await TimeseriesService.getTimeseriesPermissions({
+              timeseriesContainerId: response.id,
+            });
+            perms.permissionType = options.perms;
+            await TimeseriesService.editTimeseriesPermissions({
+              timeseriesContainerId: response.id,
+              permissions: perms,
+            });
+
+            this.$router.push({
+              name: "Timeseries",
+              params: {
+                timeseriesId: String(response.id),
+              },
+            });
+          }
         })
         .catch(e => {
           const error =

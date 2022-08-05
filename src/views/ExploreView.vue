@@ -76,7 +76,7 @@ import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { emitter } from "@/utils/event-bus";
-import { totalRows } from "@/utils/helpers";
+import { getTotalRows } from "@/utils/helpers";
 import {
   GetAllCollectionsOrderByEnum,
   SearchParamsQueryTypeEnum,
@@ -112,7 +112,7 @@ export default Vue.extend({
   computed: {
     totalRows(): number {
       if (this.collections)
-        return totalRows(
+        return getTotalRows(
           this.collections.length,
           this.perPage,
           this.currentPage,

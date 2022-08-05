@@ -2,8 +2,12 @@
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
 import { useRouter } from "@/utils/helpers";
-import type { Collection } from "@dlr-shepard/shepard-client";
+import {
+  type Collection,
+  PermissionsPermissionTypeEnum,
+} from "@dlr-shepard/shepard-client";
 import { ref, type PropType, type Ref } from "vue";
+import { permissionOptions } from "@/utils/helpers";
 
 const props = defineProps({
   modalId: {
@@ -26,6 +30,10 @@ const router = useRouter();
 const newCollection: Ref<Collection> = ref({ name: "" });
 const possibleAttributes: Ref<{ key: string; value: string }[]> = ref([]);
 const validationError = ref(false);
+
+const newPermissionType: Ref<PermissionsPermissionTypeEnum> = ref(
+  PermissionsPermissionTypeEnum.Private,
+);
 
 function prepare() {
   newCollection.value = props.currentCollection
@@ -69,13 +77,23 @@ function createCollection(collection: Collection) {
   CollectionService.createCollection({
     collection: collection,
   })
-    .then(response => {
-      router.push({
-        name: "Collection",
-        params: {
-          collectionId: String(response.id),
-        },
-      });
+    .then(async response => {
+      if (response.id) {
+        const perms = await CollectionService.getCollectionPermissions({
+          collectionId: response.id,
+        });
+        perms.permissionType = newPermissionType.value;
+        await CollectionService.editCollectionPermissions({
+          collectionId: response.id,
+          permissions: perms,
+        });
+        router.push({
+          name: "Collection",
+          params: {
+            collectionId: String(response.id),
+          },
+        });
+      }
     })
     .catch(e => {
       const error = "Error while creating collection: " + e.statusText;
@@ -137,6 +155,18 @@ function updateCollection(collection: Collection) {
             </b-form-textarea>
           </b-col>
         </b-row>
+
+        <b-row v-if="currentCollection == undefined" class="mb-3">
+          <b-col cols="2"> Permission </b-col>
+          <b-col cols="8">
+            <b-form-select
+              v-model="newPermissionType"
+              class="mb-3"
+              :options="permissionOptions"
+            ></b-form-select>
+          </b-col>
+        </b-row>
+
         <p>Attributes</p>
         <div class="mt-3">
           <b-form-group

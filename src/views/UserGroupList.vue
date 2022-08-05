@@ -64,9 +64,10 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import UserGroupService from "@/services/userGroupService";
 import { emitter } from "@/utils/event-bus";
-import { totalRows } from "@/utils/helpers";
+import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllUserGroupsOrderByEnum,
+  PermissionsPermissionTypeEnum,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
@@ -93,7 +94,7 @@ export default Vue.extend({
   computed: {
     totalRows(): number {
       if (this.userGroupList)
-        return totalRows(
+        return getTotalRows(
           this.userGroupList.length,
           this.perPage,
           this.currentPage,
@@ -131,17 +132,31 @@ export default Vue.extend({
           emitter.emit("error", error);
         });
     },
-    createUserGroup(newName: string) {
+    createUserGroup(options: {
+      name: string;
+      perms: PermissionsPermissionTypeEnum;
+    }) {
       UserGroupService.createUserGroup({
-        userGroup: { name: newName, usernames: [] } as UserGroup,
+        userGroup: { name: options.name, usernames: [] } as UserGroup,
       })
-        .then(response => {
-          this.$router.push({
-            name: "UserGroup",
-            params: {
-              usergroupId: String(response.id),
-            },
-          });
+        .then(async response => {
+          if (response.id) {
+            const perms = await UserGroupService.getUserGroupPermissions({
+              usergroupId: response.id,
+            });
+            perms.permissionType = options.perms;
+            await UserGroupService.editUserGroupPermissions({
+              usergroupId: response.id,
+              permissions: perms,
+            });
+
+            this.$router.push({
+              name: "UserGroup",
+              params: {
+                usergroupId: String(response.id),
+              },
+            });
+          }
         })
         .catch(e => {
           const error = "Error while creating a usergroup: " + e.statusText;

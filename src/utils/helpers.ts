@@ -1,4 +1,4 @@
-export function totalRows(
+export function getTotalRows(
   entities: number,
   perPage: number,
   currentPage: number,
@@ -32,3 +32,22 @@ export function useRouter() {
   if (instance) return instance.proxy.$router;
   else return undefined as never;
 }
+
+import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+export const permissionOptions: {
+  value: PermissionsPermissionTypeEnum;
+  text: string;
+}[] = [
+  {
+    value: PermissionsPermissionTypeEnum.Private,
+    text: "Private",
+  },
+  {
+    value: PermissionsPermissionTypeEnum.PublicReadable,
+    text: "Public Readable",
+  },
+  {
+    value: PermissionsPermissionTypeEnum.Public,
+    text: "Public",
+  },
+];
