@@ -292,10 +292,11 @@ export default defineComponent({
       FileService.deleteFile({
         fileContainerId: this.currentFileContainer?.id,
         oid: this.currentFile.oid,
-      }).then(() =>{
+      })
+        .then(() => {
           this.deletedAlert = true;
           this.retrieveFileList();
-      })
+        })
         .catch(e => {
           const error = "Error while deleting file: " + e.statusText;
           console.log(error);

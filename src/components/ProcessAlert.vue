@@ -67,7 +67,8 @@ function countDownChanged(countDown: number) {
       @dismissed="successMessageDismissed"
       @dismiss-count-down="countDownChanged"
     >
-      {{ props.processName }}. This message will dismiss after {{ dismissCountDown }} seconds...
+      {{ props.processName }}. This message will dismiss after
+      {{ dismissCountDown }} seconds...
     </b-alert>
   </div>
 </template>
