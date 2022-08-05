@@ -48,7 +48,7 @@
             <b-link
               :to="{
                 name: 'Timeseries',
-                params: { TimeseriesId: timeseriesItem.timeseriesContainerId },
+                params: { timeseriesId: timeseriesItem.timeseriesContainerId },
               }"
             >
               Container: {{ timeseriesItem.timeseriesContainerId }}
@@ -62,6 +62,7 @@
               v-b-tooltip.hover
               title="Plot Data"
               variant="primary"
+              :disabled="timeseriesItem.timeseriesContainerId == -1"
               @click="handlePlotData(timeseriesItem)"
             >
               <PlottingIcon />
@@ -242,6 +243,7 @@ export default defineComponent({
           this.currentTimeseriesPayload = response;
         })
         .catch(e => {
+          this.currentTimeseriesPayload = [];
           const error =
             "Error while fetching timeseries payload: " + e.statusText;
           console.log(error);
