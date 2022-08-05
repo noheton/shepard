@@ -4,6 +4,7 @@ import {
   type DeleteTimeseriesReferenceRequest,
   type ExportTimeseriesPayloadRequest,
   type GetAllTimeseriesReferencesRequest,
+  type GetTimeseriesPayloadRequest,
   type GetTimeseriesReferenceRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
@@ -32,5 +33,10 @@ export default class TimeseriesReferenceService {
   static exportTimeseriesPayload(params: ExportTimeseriesPayloadRequest) {
     const api = new TimeseriesReferenceApi(getConfiguration());
     return api.exportTimeseriesPayload(params);
+  }
+
+  static getTimeseriesPayload(params: GetTimeseriesPayloadRequest) {
+    const api = new TimeseriesReferenceApi(getConfiguration());
+    return api.getTimeseriesPayload(params);
   }
 }

@@ -57,6 +57,17 @@
 
           <b-button-group class="float-right">
             <b-button
+              v-b-modal.plotting_modal
+              v-b-tooltip.hover
+              title="Plot Data"
+              variant="primary"
+              @click="handlePlotData(timeseriesItem)"
+            >
+              <PlottingIcon />
+            </b-button>
+
+            <b-button
+              v-b-tooltip.hover
               title="Download"
               variant="light"
               :disabled="
@@ -69,7 +80,6 @@
             >
               <DownloadIcon />
             </b-button>
-
             <b-button
               v-b-modal.timeseries-reference-delete-confirmation-modal
               v-b-tooltip.hover
@@ -108,6 +118,12 @@
       "
       @confirmation="handleDelete()"
     />
+
+    <TimeseriesPlottingModal
+      modal-id="plotting_modal"
+      :modal-name="plottingModalName"
+      :timeseries-payload-list="currentTimeseriesPayload"
+    />
   </div>
 </template>
 
@@ -116,12 +132,16 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import TimeseriesPlottingModal from "@/components/references/TimeseriesPlottingModal.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
-import type { TimeseriesReference } from "@dlr-shepard/shepard-client";
+import type {
+  TimeseriesReference,
+  TimeseriesPayload,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface TimeseriesListData {
@@ -132,6 +152,8 @@ interface TimeseriesListData {
   currentTimeseriesReference?: TimeseriesReference;
   createdAlert: boolean;
   deletedAlert: boolean;
+  currentTimeseriesPayload: TimeseriesPayload[];
+  plottingModalName: string;
 }
 
 export default defineComponent({
@@ -139,6 +161,7 @@ export default defineComponent({
     CreatedByLine,
     ProcessAlert,
     TimeseriesReferenceModal,
+    TimeseriesPlottingModal,
     DeleteConfirmationModal,
     GenericName,
   },
@@ -154,13 +177,15 @@ export default defineComponent({
   },
   data() {
     return {
-      timeseriesList: new Array<TimeseriesReference>(),
+      timeseriesList: [],
       downloadFinished: false,
       downloadActive: false,
       downloadError: false,
       currentTimeseriesReference: undefined,
       createdAlert: false,
       deletedAlert: false,
+      currentTimeseriesPayload: [],
+      plottingModalName: "",
     } as TimeseriesListData;
   },
   mounted() {
@@ -200,7 +225,26 @@ export default defineComponent({
         })
         .finally(() => (this.downloadActive = false));
     },
-
+    handlePlotData(timeseriesItem: TimeseriesReference) {
+      if (timeseriesItem.id) this.fetchTimeseriePayload(timeseriesItem.id);
+      if (timeseriesItem.name) this.plottingModalName = timeseriesItem.name;
+    },
+    fetchTimeseriePayload(referenceId: number) {
+      TimeseriesReferenceService.getTimeseriesPayload({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        timeseriesReferenceId: referenceId,
+      })
+        .then(response => {
+          this.currentTimeseriesPayload = response;
+        })
+        .catch(e => {
+          const error =
+            "Error while fetching timeseries payload: " + e.statusText;
+          console.log(error);
+          emitter.emit("error", error);
+        });
+    },
     handleDelete() {
       if (!this.currentTimeseriesReference?.id) return;
       TimeseriesReferenceService.deleteTimeseriesReference({

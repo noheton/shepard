@@ -12,6 +12,7 @@ import BootstrapVue, {
   BIconEye,
   BIconFiles,
   BIconFolder2Open,
+  BIconGraphUp,
   BIconKeyFill,
   BIconLockFill,
   BIconPencil,
@@ -56,3 +57,5 @@ Vue.component("ManagerIcon", BIconKeyFill);
 
 Vue.component("HealthyIcon", BIconCheckCircle);
 Vue.component("UnhealthyIcon", BIconXCircle);
+
+Vue.component("PlottingIcon", BIconGraphUp);

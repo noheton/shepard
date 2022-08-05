@@ -15,6 +15,7 @@
     "@dlr-shepard/shepard-client": "2022.8.1142-dev",
     "bootstrap": "4.6.2",
     "bootstrap-vue": "2.22.0",
+    "chart.js": "3.9.1",
     "jsoneditor": "9.9.0",
     "mitt": "3.0.0",
     "nanoid": "4.0.0",
@@ -22,12 +23,14 @@
     "popper.js": "1.16.1",
     "portal-vue": "2.1.7",
     "vue": "2.7.8",
+    "vue-chartjs": "4.1.1",
     "vue-router": "3.5.4",
     "vuex": "3.6.2",
     "vuex-oidc": "3.11.1"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "1.1.4",
+    "@types/chart.js": "2.9.37",
     "@types/jsoneditor": "9.5.1",
     "@types/node": "18.6.3",
     "@vitejs/plugin-vue2": "1.1.2",
