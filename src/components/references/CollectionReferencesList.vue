@@ -31,7 +31,8 @@
       @create="create($event)"
     />
 
-    <b-list-group>
+    <div v-if="collectionList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item
         v-for="(collectionItem, index) in collectionList"
         :key="index"
@@ -106,9 +107,10 @@ import type {
   CollectionReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface CollectionListData {
-  collectionList: CollectionReference[];
+  collectionList?: CollectionReference[];
   referencedList: { [key: number]: Collection };
   currentCollectionReference?: CollectionReference;
   createdAlert: boolean;
@@ -121,6 +123,7 @@ export default defineComponent({
     CollectionReferenceModal,
     DeleteConfirmationModal,
     GenericName,
+    Loading,
   },
   props: {
     currentCollectionId: {
@@ -134,7 +137,7 @@ export default defineComponent({
   },
   data() {
     return {
-      collectionList: new Array<CollectionReference>(),
+      collectionList: undefined,
       referencedList: {},
       currentCollectionReference: undefined,
       createdAlert: false,
@@ -189,7 +192,7 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.collectionList = [response].concat(this.collectionList);
+          this.collectionList = [response].concat(this.collectionList || []);
           if (response.id) this.retrieveCollection(response.id);
         })
         .catch(e => {

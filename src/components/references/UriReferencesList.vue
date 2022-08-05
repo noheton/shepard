@@ -27,7 +27,8 @@
       @create="create($event)"
     />
 
-    <b-list-group>
+    <div v-if="uriList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item v-for="(uriItem, index) in uriList" :key="index">
         <div>
           <b><GenericName :name="uriItem.name || ''" /></b> | ID:
@@ -74,9 +75,10 @@ import UriReferenceService from "@/services/uriReferenceService";
 import { emitter } from "@/utils/event-bus";
 import type { URIReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface URIListData {
-  uriList: URIReference[];
+  uriList?: URIReference[];
   currentUriReference?: URIReference;
   createdAlert: boolean;
   deletedAlert: boolean;
@@ -88,6 +90,7 @@ export default defineComponent({
     UriReferenceModal,
     DeleteConfirmationModal,
     GenericName,
+    Loading,
   },
   props: {
     currentCollectionId: {
@@ -101,7 +104,7 @@ export default defineComponent({
   },
   data() {
     return {
-      uriList: new Array<URIReference>(),
+      uriList: undefined,
       currentUriReference: undefined,
       createdAlert: false,
       deletedAlert: false,
@@ -133,7 +136,7 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.uriList = [response].concat(this.uriList);
+          this.uriList = [response].concat(this.uriList || []);
         })
         .catch(e => {
           const error = "Error while creating URI reference: " + e.statusText;

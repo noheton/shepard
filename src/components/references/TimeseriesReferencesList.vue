@@ -35,7 +35,8 @@
       @create="handleCreate($event)"
     />
 
-    <b-list-group>
+    <div v-if="timeseriesList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item
         v-for="(timeseriesItem, index) in timeseriesList"
         :key="index"
@@ -47,7 +48,7 @@
             <b-link
               :to="{
                 name: 'Timeseries',
-                params: { timeseriesId: timeseriesItem.timeseriesContainerId },
+                params: { TimeseriesId: timeseriesItem.timeseriesContainerId },
               }"
             >
               Container: {{ timeseriesItem.timeseriesContainerId }}
@@ -143,9 +144,10 @@ import type {
   TimeseriesPayload,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface TimeseriesListData {
-  timeseriesList: TimeseriesReference[];
+  timeseriesList?: TimeseriesReference[];
   downloadFinished: boolean;
   downloadActive: boolean;
   downloadError: boolean;
@@ -164,6 +166,7 @@ export default defineComponent({
     TimeseriesPlottingModal,
     DeleteConfirmationModal,
     GenericName,
+    Loading,
   },
   props: {
     currentCollectionId: {
@@ -177,7 +180,7 @@ export default defineComponent({
   },
   data() {
     return {
-      timeseriesList: [],
+      timeseriesList: undefined,
       downloadFinished: false,
       downloadActive: false,
       downloadError: false,
@@ -272,7 +275,7 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.timeseriesList = [response].concat(this.timeseriesList);
+          this.timeseriesList = [response].concat(this.timeseriesList || []);
         })
         .catch(e => {
           const error =

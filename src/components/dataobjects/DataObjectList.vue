@@ -7,7 +7,8 @@
       :default-order-by="orderBySelected"
       @filter-changed="filterChanged($event)"
     />
-    <b-list-group>
+    <div v-if="dataObjects == undefined"><Loading /></div>
+    <b-list-group v-else>
       <DataObjectListItem
         v-for="(dataObject, index) in dataObjects"
         :key="index"
@@ -28,9 +29,10 @@ import {
   type DataObject,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface DataObjectListData {
-  dataObjects: DataObject[];
+  dataObjects?: DataObject[];
   sizeSelected: number;
   orderBySelected: string;
   descendingSelected: boolean;
@@ -38,7 +40,7 @@ interface DataObjectListData {
 }
 
 export default defineComponent({
-  components: { DataObjectListItem, FilterListLine },
+  components: { DataObjectListItem, FilterListLine, Loading },
   props: {
     currentCollectionId: {
       type: Number,
@@ -63,7 +65,7 @@ export default defineComponent({
   },
   data() {
     return {
-      dataObjects: [],
+      dataObjects: undefined,
       currentPage: 1,
       descendingSelected: false,
       orderBySelected: GetAllDataObjectsOrderByEnum.CreatedAt,
@@ -74,9 +76,13 @@ export default defineComponent({
     totalRows(): number {
       if (this.maxObjects) {
         return this.maxObjects;
-      } else if (this.dataObjects.length < this.sizeSelected) {
+      } else if (
+        this.dataObjects &&
+        this.dataObjects.length < this.sizeSelected
+      ) {
         return this.currentPage * this.sizeSelected;
       }
+
       return (this.currentPage + 1) * this.sizeSelected;
     },
   },

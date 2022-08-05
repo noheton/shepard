@@ -34,8 +34,8 @@
       modal-name="Create File Reference"
       @create="create($event)"
     />
-
-    <b-list-group>
+    <div v-if="fileReferenceList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item
         v-for="(fileReference, index) in fileReferenceList"
         :key="index"
@@ -122,9 +122,10 @@ import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import type { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface FileListData {
-  fileReferenceList: FileReference[];
+  fileReferenceList?: FileReference[];
   files: { [key: string]: ShepardFile };
   downloadFinished: boolean;
   downloadActive: boolean;
@@ -141,6 +142,7 @@ export default defineComponent({
     FileReferenceModal,
     DeleteConfirmationModal,
     GenericName,
+    Loading,
   },
   props: {
     currentCollectionId: {
@@ -154,7 +156,7 @@ export default defineComponent({
   },
   data() {
     return {
-      fileReferenceList: [],
+      fileReferenceList: undefined,
       files: {},
       downloadFinished: false,
       downloadActive: false,
@@ -234,7 +236,9 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.fileReferenceList = [response].concat(this.fileReferenceList);
+          this.fileReferenceList = [response].concat(
+            this.fileReferenceList || [],
+          );
           if (response.id) this.retrieveReferences();
         })
         .catch(e => {

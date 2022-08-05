@@ -31,7 +31,8 @@
       @create="create($event)"
     />
 
-    <b-list-group>
+    <div v-if="dataObjectList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item
         v-for="(dataObjectItem, index) in dataObjectList"
         :key="index"
@@ -106,9 +107,10 @@ import type {
   DataObjectReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface DataObjectReferenceListData {
-  dataObjectList: DataObjectReference[];
+  dataObjectList?: DataObjectReference[];
   referencedList: { [key: number]: DataObject };
   currentDataObjectReference?: DataObjectReference;
   createdAlert: boolean;
@@ -121,6 +123,7 @@ export default defineComponent({
     DataObjectReferenceModal,
     DeleteConfirmationModal,
     GenericName,
+    Loading,
   },
   props: {
     currentCollectionId: {
@@ -134,7 +137,7 @@ export default defineComponent({
   },
   data() {
     return {
-      dataObjectList: new Array<DataObjectReference>(),
+      dataObjectList: undefined,
       referencedList: {},
       currentDataObjectReference: undefined,
       createdAlert: false,
@@ -189,7 +192,7 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.dataObjectList = [response].concat(this.dataObjectList);
+          this.dataObjectList = [response].concat(this.dataObjectList || []);
           if (response.id) this.retrieveDataObject(response.id);
         })
         .catch(e => {

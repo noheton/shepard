@@ -31,7 +31,8 @@
       @create="create($event)"
     />
 
-    <b-list-group>
+    <div v-if="structuredDataList == undefined"><Loading /></div>
+    <b-list-group v-else>
       <b-list-group-item
         v-for="(structuredDataReference, index) in structuredDataList"
         :key="index"
@@ -137,9 +138,10 @@ import type {
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
+import Loading from "@/components/generic/Loading.vue";
 
 interface StructuredDataListData {
-  structuredDataList: StructuredDataReference[];
+  structuredDataList?: StructuredDataReference[];
   structuredDatas: { [key: string]: StructuredDataPayload };
   currentStructuredDataReference?: StructuredDataReference;
   currentStructuredDataOid?: string;
@@ -154,6 +156,7 @@ export default defineComponent({
     DeleteConfirmationModal,
     GenericName,
     JsonEditorModal,
+    Loading,
   },
 
   props: {
@@ -168,7 +171,7 @@ export default defineComponent({
   },
   data() {
     return {
-      structuredDataList: [],
+      structuredDataList: undefined,
       structuredDatas: {},
       currentStructuredDataReference: undefined,
       currentStructuredDataOid: undefined,
@@ -228,7 +231,9 @@ export default defineComponent({
       })
         .then(response => {
           this.createdAlert = true;
-          this.structuredDataList = [response].concat(this.structuredDataList);
+          this.structuredDataList = [response].concat(
+            this.structuredDataList || [],
+          );
           if (response.id) this.retrieveStructuredDatas(response.id);
         })
         .catch(e => {
