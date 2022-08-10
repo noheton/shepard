@@ -21,11 +21,22 @@
     <div class="plot">
       <b-button
         v-b-tooltip.hover
-        title="ShowPlot"
+        title="Show Plot"
         variant="success"
         @click="plotData()"
       >
         Show Plot
+      </b-button>
+      <b-button
+        id="exportButton"
+        v-b-tooltip.hover
+        title="Save Plot to .PNG"
+        variant="success"
+        class="ml-1"
+        :disabled="!plotShown"
+        @click="savePlot()"
+      >
+        Save Plot
       </b-button>
       <Scatter
         v-if="chartData.datasets.length > 0"
@@ -63,6 +74,7 @@ interface TimeseriesPlottingModalData {
   checkedTSList: TimeseriesPayload[];
   counter: number;
   returnColor: number[];
+  plotShown: boolean;
 }
 
 function initialState(): TimeseriesPlottingModalData {
@@ -92,6 +104,7 @@ function initialState(): TimeseriesPlottingModalData {
     checkedTSList: [],
     counter: 0,
     returnColor: [],
+    plotShown: false,
   };
 }
 
@@ -182,9 +195,22 @@ export default defineComponent({
         this.counter = this.counter + 1;
       });
       this.counter = 0;
+      this.plotShown = true;
     },
     reset() {
       Object.assign(this.$data, initialState());
+    },
+    savePlot() {
+      // saveData() inspired by https://github.com/apertureless/vue-chartjs/issues/89#issuecomment-292718708
+      const plottingImage = document.getElementById(
+        "scatter-chart",
+      ) as HTMLCanvasElement | null;
+      if (plottingImage != null) {
+        const link = document.createElement("a");
+        link.download = this.modalName.replace(/[<>:"/\\|?* ]/g, "_");
+        link.href = plottingImage.toDataURL("image/png");
+        link.click();
+      }
     },
   },
 });
