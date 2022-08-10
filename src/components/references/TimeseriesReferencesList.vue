@@ -122,9 +122,11 @@
     />
 
     <TimeseriesPlottingModal
+      v-if="currentTimeseriesReference"
       modal-id="plotting_modal"
-      :modal-name="plottingModalName"
+      :modal-name="currentTimeseriesReference.name || undefined"
       :timeseries-payload-list="currentTimeseriesPayload"
+      :timeseries-start-time="currentTimeseriesReference.start"
     />
   </div>
 </template>
@@ -156,7 +158,6 @@ interface TimeseriesListData {
   createdAlert: boolean;
   deletedAlert: boolean;
   currentTimeseriesPayload: TimeseriesPayload[];
-  plottingModalName: string;
 }
 
 export default defineComponent({
@@ -189,7 +190,6 @@ export default defineComponent({
       createdAlert: false,
       deletedAlert: false,
       currentTimeseriesPayload: [],
-      plottingModalName: "",
     } as TimeseriesListData;
   },
   mounted() {
@@ -231,7 +231,7 @@ export default defineComponent({
     },
     handlePlotData(timeseriesItem: TimeseriesReference) {
       if (timeseriesItem.id) this.fetchTimeseriePayload(timeseriesItem.id);
-      if (timeseriesItem.name) this.plottingModalName = timeseriesItem.name;
+      this.currentTimeseriesReference = timeseriesItem;
     },
     fetchTimeseriePayload(referenceId: number) {
       TimeseriesReferenceService.getTimeseriesPayload({

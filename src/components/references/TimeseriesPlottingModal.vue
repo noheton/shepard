@@ -78,7 +78,7 @@ function initialState(): TimeseriesPlottingModalData {
         x: {
           title: {
             display: true,
-            text: "Time",
+            text: "Time in s",
           },
         },
         y: {
@@ -108,6 +108,10 @@ export default defineComponent({
     },
     timeseriesPayloadList: {
       type: Array as PropType<TimeseriesPayload[]>,
+      required: true,
+    },
+    timeseriesStartTime: {
+      type: Number,
       required: true,
     },
   },
@@ -163,7 +167,7 @@ export default defineComponent({
           })
           .map(point => {
             return {
-              x: Number(point.timestamp) / 1e6,
+              x: (Number(point.timestamp) - this.timeseriesStartTime) / 1e9,
               y: Number(point.value),
             };
           });
