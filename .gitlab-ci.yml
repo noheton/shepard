@@ -44,6 +44,7 @@ stages:
     - /^.*-release$/
 
 format-prettier:
+  extends: .only_branches
   stage: test
   image: node:18-slim
   before_script:
@@ -52,6 +53,7 @@ format-prettier:
     - npx prettier --check .
 
 test:
+  extends: .only_branches
   stage: test
   before_script:
     - !reference [.version_number, script]
@@ -72,6 +74,7 @@ test:
         - target/surefire-reports/*.xml
 
 integration-test:
+  extends: .only_branches
   stage: test
   variables:
     NEO4J_AUTH: neo4j/shepard
