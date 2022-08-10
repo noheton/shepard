@@ -165,8 +165,8 @@ import UserGroupService from "@/services/userGroupService";
 import UserService from "@/services/userService";
 import { permissionOptions } from "@/utils/helpers";
 import type {
-  PermissionsPermissionTypeEnum,
   Permissions,
+  PermissionsPermissionTypeEnum,
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";

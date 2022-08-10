@@ -70,12 +70,12 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import UriReferenceService from "@/services/uriReferenceService";
 import { emitter } from "@/utils/event-bus";
 import type { URIReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface URIListData {
   uriList?: URIReference[];

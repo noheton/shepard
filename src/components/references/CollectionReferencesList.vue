@@ -99,6 +99,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import CollectionReferenceService from "@/services/collectionReferenceService";
 import { emitter } from "@/utils/event-bus";
@@ -107,7 +108,6 @@ import type {
   CollectionReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface CollectionListData {
   collectionList?: CollectionReference[];

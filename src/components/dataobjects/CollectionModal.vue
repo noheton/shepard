@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import CollectionService from "@/services/collectionService";
 import { emitter } from "@/utils/event-bus";
-import { useRouter } from "@/utils/helpers";
+import { permissionOptions as pOptions, useRouter } from "@/utils/helpers";
 import {
-  type Collection,
   PermissionsPermissionTypeEnum,
+  type Collection,
 } from "@dlr-shepard/shepard-client";
 import { ref, type PropType, type Ref } from "vue";
-import { permissionOptions } from "@/utils/helpers";
 
 const props = defineProps({
   modalId: {
@@ -23,6 +22,7 @@ const props = defineProps({
     default: undefined,
   },
 });
+const permissionOptions = pOptions;
 
 const emit = defineEmits(["collection-changed"]);
 

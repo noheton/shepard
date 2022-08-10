@@ -114,6 +114,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
@@ -122,7 +123,6 @@ import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import type { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface FileListData {
   fileReferenceList?: FileReference[];

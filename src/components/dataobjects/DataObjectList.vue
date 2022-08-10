@@ -23,13 +23,13 @@ import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue"
 import FilterListLine, {
   type FilterChangedData,
 } from "@/components/generic/FilterListLine.vue";
+import Loading from "@/components/generic/Loading.vue";
 import DataObjectService from "@/services/dataObjectService";
 import {
   GetAllDataObjectsOrderByEnum,
   type DataObject,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface DataObjectListData {
   dataObjects?: DataObject[];

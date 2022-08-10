@@ -99,6 +99,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
 import { emitter } from "@/utils/event-bus";
@@ -107,7 +108,6 @@ import type {
   DataObjectReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface DataObjectReferenceListData {
   dataObjectList?: DataObjectReference[];

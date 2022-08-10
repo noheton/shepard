@@ -135,6 +135,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import TimeseriesPlottingModal from "@/components/references/TimeseriesPlottingModal.vue";
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
@@ -143,11 +144,10 @@ import { downloadFile } from "@/utils/download";
 import { emitter } from "@/utils/event-bus";
 import { dateFormat } from "@/utils/helpers";
 import type {
-  TimeseriesReference,
   TimeseriesPayload,
+  TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface TimeseriesListData {
   timeseriesList?: TimeseriesReference[];

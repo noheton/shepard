@@ -12,7 +12,7 @@ import type {
   GetAllFileContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
 } from "@dlr-shepard/shepard-client";
-import { computed, type ComputedRef, onMounted, type Ref, ref } from "vue";
+import { computed, onMounted, ref, type ComputedRef, type Ref } from "vue";
 
 const router = useRouter();
 const containers: Ref<FileContainer[] | undefined> = ref();

@@ -129,6 +129,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
+import Loading from "@/components/generic/Loading.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { emitter } from "@/utils/event-bus";
@@ -138,7 +139,6 @@ import type {
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
-import Loading from "@/components/generic/Loading.vue";
 
 interface StructuredDataListData {
   structuredDataList?: StructuredDataReference[];

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { permissionOptions as pOptions } from "@/utils/helpers";
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
-import { type Ref, ref } from "vue";
-import { permissionOptions } from "@/utils/helpers";
+import { ref, type Ref } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -13,6 +13,7 @@ const props = defineProps({
     default: "GenericCreateModal",
   },
 });
+const permissionOptions = pOptions;
 
 const emit = defineEmits(["create"]);
 const newObject: Ref<{ name: string; perms: PermissionsPermissionTypeEnum }> =
