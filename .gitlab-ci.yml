@@ -45,6 +45,8 @@ lint:
   script:
     - npm install --progress=false
     - npm run lint
+  only:
+    - branches
 
 build:
   stage: build
