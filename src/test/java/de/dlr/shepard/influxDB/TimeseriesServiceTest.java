@@ -1,6 +1,7 @@
 package de.dlr.shepard.influxDB;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidBodyException;
 
 public class TimeseriesServiceTest extends BaseTestCase {
 
@@ -38,11 +40,22 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	private Long groupBy = 10L;
 
 	@Test
-	public void createTimeseriesTest() {
+	public void createTimeseriesTest() throws InvalidBodyException {
 		when(connector.saveTimeseries("database", payload)).thenReturn("");
-
+		when(connector.databaseExist("database")).thenReturn(true);
 		var actual = service.createTimeseries("database", payload);
 		assertEquals("", actual);
+	}
+
+	@Test
+	public void createTimeseriesTestException() throws InvalidBodyException {
+		Timeseries buggyts = new Timeseries("meas", "de/v", "loc", "symName", "field");
+		TimeseriesPayload buggypayload = new TimeseriesPayload(buggyts, List.of(new InfluxPoint(123L, "value")));
+		Exception exception = assertThrows(InvalidBodyException.class, () -> {
+			service.createTimeseries("database", buggypayload);
+		});
+		assertEquals(exception.getMessage(),
+				"device should not contain whitespaces or dots or slashes or commas: de/\n" + "");
 	}
 
 	@Test
@@ -148,17 +161,24 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void importTimeseriesTest() throws IOException {
+	public void importTimeseriesNonexistingDatabaseTest() throws IOException, InvalidBodyException {
 		var is = new ByteArrayInputStream("Hello World".getBytes());
 		var errorPayload = new TimeseriesPayload(new Timeseries("meas", "dev", "loc", "sym", "field"),
 				List.of(new InfluxPoint(123, "asdf")));
-
-		when(converter.convertToPayload(is)).thenReturn(List.of(payload, errorPayload));
-		when(connector.saveTimeseries("db", payload)).thenReturn("");
-		when(connector.saveTimeseries("db", errorPayload)).thenReturn("error");
-
+		when(converter.convertToPayload(is)).thenReturn(List.of(errorPayload));
+		when(connector.databaseExist("db")).thenReturn(false);
 		var actual = service.importTimeseries("db", is);
-		assertEquals("error", actual);
+		assertEquals("The database db does not exist", actual);
+	}
+
+	@Test
+	public void importTimeseriesTest() throws IOException, InvalidBodyException {
+		var is = new ByteArrayInputStream("Hello World".getBytes());
+		when(converter.convertToPayload(is)).thenReturn(List.of(payload));
+		when(connector.databaseExist("db")).thenReturn(true);
+		when(connector.saveTimeseries("db", payload)).thenReturn("    ");
+		var actual = service.importTimeseries("db", is);
+		assertEquals("", actual);
 	}
 
 }

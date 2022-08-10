@@ -175,40 +175,6 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testSaveTimeseriesWithoutDatabase() {
-		String queryString = String.format("SHOW FIELD KEYS ON %s FROM %s", "anotherDatabase", measurement);
-		int value = 10;
-		TimeseriesPayload timeseries = configureTimeseries(value);
-
-		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey(""));
-		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(getShowDatabases(database));
-
-		var actual = connector.saveTimeseries("anotherDatabase", timeseries);
-		assertEquals("The database anotherDatabase does not exist", actual);
-		verify(influxDB, never()).query(new Query("CREATE DATABASE anotherDatabase"));
-	}
-
-	@Test
-	public void testSaveTimeseriesWithDatabaseError() {
-		String queryString = String.format("SHOW FIELD KEYS ON %s FROM %s", database, measurement);
-		int value = 10;
-		TimeseriesPayload timeseries = configureTimeseries(value);
-
-		QueryResult queryResult = new QueryResult() {
-			{
-				setError("error");
-			}
-		};
-
-		when(influxDB.query(new Query(queryString))).thenReturn(getFieldKey(""));
-		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(queryResult);
-
-		var actual = connector.saveTimeseries(database, timeseries);
-		assertEquals("The database " + database + " does not exist", actual);
-		verify(influxDB, never()).query(new Query("CREATE DATABASE " + database));
-	}
-
-	@Test
 	public void testSaveTimeseriesException() {
 		String queryString = String.format("SHOW FIELD KEYS ON %s FROM %s", database, measurement);
 		Object value = new Object();
@@ -306,6 +272,27 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 		var actual = connector.getTimeseriesAvailable("database");
 
 		assertEquals(0, actual.size());
+	}
+
+	@Test
+	public void testDatabaseDoesNotExist() {
+		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(getShowDatabases(database));
+		boolean exists = connector.databaseExist("db");
+		assertFalse(exists);
+	}
+
+	@Test
+	public void testDatabaseExists() {
+		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(getShowDatabases(database));
+		boolean exists = connector.databaseExist(database);
+		assertTrue(exists);
+	}
+
+	@Test
+	public void testDatabaseExistQueryResultNotValid() {
+		when(influxDB.query(new Query("SHOW DATABASES"))).thenReturn(null);
+		boolean exists = connector.databaseExist(database);
+		assertFalse(exists);
 	}
 
 	private TimeseriesPayload configureTimeseries(Object value) {

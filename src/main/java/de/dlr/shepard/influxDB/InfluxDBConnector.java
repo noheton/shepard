@@ -125,14 +125,9 @@ public class InfluxDBConnector implements IConnector {
 	 * @return An error if there was a problem, empty string if all went well
 	 */
 	public String saveTimeseries(String database, TimeseriesPayload payload) {
-		if (!databaseExist(database)) {
-			return String.format("The database %s does not exist", database);
-		}
-
 		var timeseries = payload.getTimeseries();
 		var expectedType = getExpectedDatatype(database, timeseries.getMeasurement(), timeseries.getField());
 		var batchPoints = InfluxUtil.createBatch(database, payload, expectedType);
-
 		try {
 			influxDB.write(batchPoints);
 		} catch (InfluxDBException e) {
@@ -218,7 +213,7 @@ public class InfluxDBConnector implements IConnector {
 		return result;
 	}
 
-	private boolean databaseExist(String database) {
+	public boolean databaseExist(String database) {
 		QueryResult queryResult = influxDB.query(new Query("SHOW DATABASES"));
 		if (!InfluxUtil.isQueryResultValid(queryResult)) {
 			log.warn("There was an error while querying the Influxdb for databases");

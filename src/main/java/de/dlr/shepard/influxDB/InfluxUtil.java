@@ -182,4 +182,58 @@ public final class InfluxUtil {
 
 		return true;
 	}
+
+	public static String sanitize(Timeseries timeseries) {
+		String ret = "";
+		String[] forbiddenSubstrings = { " ", ".", "/", "," };
+		String device = timeseries.getDevice();
+		int devicePos = device.length();
+		String field = timeseries.getField();
+		int fieldPos = field.length();
+		String measurement = timeseries.getMeasurement();
+		int measurementPos = measurement.length();
+		String location = timeseries.getLocation();
+		int locationPos = location.length();
+		String symbolicName = timeseries.getSymbolicName();
+		int symbolicNamePos = symbolicName.length();
+		for (String forbiddenSubstring : forbiddenSubstrings) {
+			int devicePosTemp = device.indexOf(forbiddenSubstring);
+			if (devicePosTemp != -1)
+				devicePos = Math.min(devicePos, devicePosTemp);
+			int fieldPosTemp = field.indexOf(forbiddenSubstring);
+			if (fieldPosTemp != -1)
+				fieldPos = Math.min(fieldPos, fieldPosTemp);
+			int measurementPosTemp = measurement.indexOf(forbiddenSubstring);
+			if (measurementPosTemp != -1)
+				measurementPos = Math.min(measurementPos, measurementPosTemp);
+			int locationPosTemp = location.indexOf(forbiddenSubstring);
+			if (locationPosTemp != -1)
+				locationPos = Math.min(locationPos, locationPosTemp);
+			int symbolicNamePosTemp = symbolicName.indexOf(forbiddenSubstring);
+			if (symbolicNamePosTemp != -1)
+				symbolicNamePos = Math.min(symbolicNamePos, symbolicNamePosTemp);
+
+		}
+		if (devicePos != device.length()) {
+			ret = ret + "device should not contain whitespaces or dots or slashes or commas: ";
+			ret = ret + device.substring(0, devicePos + 1) + "\n";
+		}
+		if (fieldPos != field.length()) {
+			ret = ret + "field should not contain whitespaces or dots or slashes or commas: ";
+			ret = ret + field.substring(0, fieldPos + 1) + "\n";
+		}
+		if (measurementPos != measurement.length()) {
+			ret = ret + "measurement should not contain whitespaces or dots or slashes or commas: ";
+			ret = ret + measurement.substring(0, measurementPos + 1) + "\n";
+		}
+		if (locationPos != location.length()) {
+			ret = ret + "location should not contain whitespaces or dots or slashes or commas: ";
+			ret = ret + location.substring(0, locationPos + 1) + "\n";
+		}
+		if (symbolicNamePos != symbolicName.length()) {
+			ret = ret + "symbolicName should not contain whitespaces or dots or slashes or commas: ";
+			ret = ret + symbolicName.substring(0, symbolicNamePos + 1) + "\n";
+		}
+		return ret;
+	}
 }

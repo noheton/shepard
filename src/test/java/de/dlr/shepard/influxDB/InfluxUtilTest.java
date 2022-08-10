@@ -343,4 +343,22 @@ public class InfluxUtilTest extends BaseTestCase {
 		assertFalse(actual);
 	}
 
+	@Test
+	public void sanitizeTestExceptField() {
+		Timeseries ts = new Timeseries("meas urement", "dev.ice", "loc/action", "n,ame", "field");
+		String sanitize = InfluxUtil.sanitize(ts);
+		assertEquals(sanitize,
+				"device should not contain whitespaces or dots or slashes or commas: dev.\n"
+						+ "measurement should not contain whitespaces or dots or slashes or commas: meas \n"
+						+ "location should not contain whitespaces or dots or slashes or commas: loc/\n"
+						+ "symbolicName should not contain whitespaces or dots or slashes or commas: n,\n" + "");
+	}
+
+	@Test
+	public void sanitizeTestOnlyField() {
+		Timeseries ts = new Timeseries("measurement", "device", "locaction", "name", "fi eld");
+		String sanitize = InfluxUtil.sanitize(ts);
+		assertEquals(sanitize, "field should not contain whitespaces or dots or slashes or commas: fi \n" + "");
+	}
+
 }

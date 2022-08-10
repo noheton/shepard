@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
@@ -173,7 +174,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest() {
+	public void createTimeseriesTest() throws InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -187,7 +188,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_isNull() {
+	public void createTimeseriesTest_isNull() throws InvalidBodyException {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
@@ -198,7 +199,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_isDeleted() {
+	public void createTimeseriesTest_isDeleted() throws InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		container.setDeleted(true);
@@ -212,7 +213,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_influxIssue() {
+	public void createTimeseriesTest_influxIssue() throws InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -347,7 +348,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void importTimeseriesTest() throws IOException {
+	public void importTimeseriesTest() throws IOException, InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var payload = new ByteArrayInputStream("123".getBytes());
@@ -360,7 +361,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void importTimeseriesTest_Error() throws IOException {
+	public void importTimeseriesTest_Error() throws IOException, InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var payload = new ByteArrayInputStream("123".getBytes());
@@ -373,7 +374,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void importTimeseriesTest_containerNull() throws IOException {
+	public void importTimeseriesTest_containerNull() throws IOException, InvalidBodyException {
 		var payload = new ByteArrayInputStream("123".getBytes());
 
 		when(dao.find(1L)).thenReturn(null);
@@ -383,7 +384,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void importTimeseriesTest_containerDeleted() throws IOException {
+	public void importTimeseriesTest_containerDeleted() throws IOException, InvalidBodyException {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		container.setDeleted(true);

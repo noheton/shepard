@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.AggregateFunction;
 import de.dlr.shepard.influxDB.Timeseries;
@@ -103,7 +104,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Subscribable
 	@Override
 	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
-			TimeseriesPayload payload) {
+			TimeseriesPayload payload) throws InvalidBodyException {
 		var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);
 
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
@@ -176,7 +177,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Override
 	public Response importTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			@FormDataParam(Constants.FILE) InputStream fileInputStream,
-			@FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData) throws IOException {
+			@FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData)
+			throws IOException, InvalidBodyException {
 		var result = timeseriesContainerService.importTimeseries(timeseriesId, fileInputStream);
 
 		return result ? Response.ok().build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();

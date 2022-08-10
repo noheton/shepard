@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
+
 public class TimeseriesService {
 
 	private InfluxDBConnector influxConnector = InfluxDBConnector.getInstance();
@@ -19,8 +21,15 @@ public class TimeseriesService {
 	 * @param database The database to be queried
 	 * @param payload  the Timeseries with InfluxPoints to be created
 	 * @return An error if there was a problem, empty string if all went well
+	 * @throws InvalidBodyException
 	 */
-	public String createTimeseries(String database, TimeseriesPayload payload) {
+	public String createTimeseries(String database, TimeseriesPayload payload) throws InvalidBodyException {
+		String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());
+		if (sanityCheck.length() != 0)
+			throw new InvalidBodyException(sanityCheck);
+		if (!influxConnector.databaseExist(database)) {
+			return String.format("The database %s does not exist", database);
+		}
 		return influxConnector.saveTimeseries(database, payload);
 	}
 
@@ -115,9 +124,11 @@ public class TimeseriesService {
 	 * @param database The database to write to
 	 * @param stream   The InputStream containing the CSV file
 	 * @return An error if there was a problem, empty string if all went well
-	 * @throws IOException When the CSV file could not be read
+	 * @throws IOException          If the CSV file could not be read
+	 * @throws InvalidBodyException If the attributes of a timerseries constructed
+	 *                              from the stream contain forbidden characters
 	 */
-	public String importTimeseries(String database, InputStream stream) throws IOException {
+	public String importTimeseries(String database, InputStream stream) throws IOException, InvalidBodyException {
 		List<String> errors = new ArrayList<>();
 		var timeseriesList = csvConverter.convertToPayload(stream);
 		for (var timeseries : timeseriesList) {
