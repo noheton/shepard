@@ -15,15 +15,15 @@ import type {
   Permissions,
   Roles,
 } from "@dlr-shepard/shepard-client";
-import { computed, onMounted, ref, type Ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 const router = useRouter();
 const currentCollectionId = computed(() => {
   return Number(router.currentRoute.params.collectionId);
 });
 
-const currentCollection: Ref<Collection | undefined> = ref();
-const attributeItems: Ref<Array<{ key: string; value: string }>> = ref([]);
+const currentCollection = ref<Collection | undefined>();
+const attributeItems = ref<Array<{ key: string; value: string }>>([]);
 function retrieveCollection() {
   CollectionService.getCollection({
     collectionId: currentCollectionId.value,
@@ -45,7 +45,7 @@ function retrieveCollection() {
     });
 }
 
-const permissions: Ref<Permissions | undefined> = ref();
+const permissions = ref<Permissions | undefined>();
 function retrievePermissions() {
   CollectionService.getCollectionPermissions({
     collectionId: currentCollectionId.value,
@@ -72,7 +72,7 @@ function updatePermissions(perms: Permissions) {
     });
 }
 
-const roles: Ref<Roles | undefined> = ref();
+const roles = ref<Roles | undefined>();
 function retrieveRoles() {
   CollectionService.getCollectionRoles({
     collectionId: currentCollectionId.value,

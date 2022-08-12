@@ -3,9 +3,9 @@ import {
   SubscriptionRequestMethodEnum,
   type Subscription,
 } from "@dlr-shepard/shepard-client";
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
 
-const subscriptionToCreate: Ref<Subscription> = ref({
+const subscriptionToCreate = ref<Subscription>({
   name: "",
   subscribedURL: "",
   requestMethod: SubscriptionRequestMethodEnum.Get,

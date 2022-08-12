@@ -3,7 +3,7 @@ import DataObjectService from "@/services/dataObjectService";
 import { emitter } from "@/utils/event-bus";
 import { useRouter } from "@/utils/helpers";
 import type { DataObject } from "@dlr-shepard/shepard-client";
-import { ref, type PropType, type Ref } from "vue";
+import { ref, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -27,12 +27,12 @@ const props = defineProps({
 const emit = defineEmits(["data-object-changed"]);
 
 const router = useRouter();
-const newDataObject: Ref<DataObject> = ref({ name: "" });
-const validParent: Ref<boolean | undefined> = ref(undefined);
-const validPredecessors: Ref<Array<boolean | undefined>> = ref([]);
-const possibleParent: Ref<DataObject> = ref({ name: "" });
-const possiblePredecessors: Ref<Array<DataObject>> = ref([]);
-const possibleAttributes: Ref<{ key: string; value: string }[]> = ref([]);
+const newDataObject = ref<DataObject>({ name: "" });
+const validParent = ref<boolean | undefined>();
+const validPredecessors = ref<Array<boolean | undefined>>([]);
+const possibleParent = ref<DataObject>({ name: "" });
+const possiblePredecessors = ref<Array<DataObject>>([]);
+const possibleAttributes = ref<{ key: string; value: string }[]>([]);
 
 function prepare() {
   newDataObject.value = props.currentDataObject

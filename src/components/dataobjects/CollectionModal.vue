@@ -6,7 +6,7 @@ import {
   PermissionsPermissionTypeEnum,
   type Collection,
 } from "@dlr-shepard/shepard-client";
-import { ref, type PropType, type Ref } from "vue";
+import { ref, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -27,11 +27,11 @@ const permissionOptions = pOptions;
 const emit = defineEmits(["collection-changed"]);
 
 const router = useRouter();
-const newCollection: Ref<Collection> = ref({ name: "" });
-const possibleAttributes: Ref<{ key: string; value: string }[]> = ref([]);
+const newCollection = ref<Collection>({ name: "" });
+const possibleAttributes = ref<{ key: string; value: string }[]>([]);
 const validationError = ref(false);
 
-const newPermissionType: Ref<PermissionsPermissionTypeEnum> = ref(
+const newPermissionType = ref<PermissionsPermissionTypeEnum>(
   PermissionsPermissionTypeEnum.Private,
 );
 

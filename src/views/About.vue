@@ -5,12 +5,12 @@ import getEnv from "@/utils/env";
 import { emitter } from "@/utils/event-bus";
 import type { Healthz } from "@dlr-shepard/shepard-client";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
-import { onMounted, ref, type Ref } from "vue";
+import { onMounted, ref } from "vue";
 import { version as appVersion } from "../../package.json";
 
 const backendUrl = getEnv("VITE_BACKEND");
-const backend: Ref<{ info: { version: string } } | undefined> = ref();
-const health: Ref<Healthz | undefined> = ref();
+const backend = ref<{ info: { version: string } } | undefined>();
+const health = ref<Healthz | undefined>();
 
 function fetchBackend() {
   const openapiURL = backendUrl.split("/");

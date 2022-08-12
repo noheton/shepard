@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { permissionOptions as pOptions } from "@/utils/helpers";
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -16,8 +16,10 @@ const props = defineProps({
 const permissionOptions = pOptions;
 
 const emit = defineEmits(["create"]);
-const newObject: Ref<{ name: string; perms: PermissionsPermissionTypeEnum }> =
-  ref({ name: "", perms: PermissionsPermissionTypeEnum.Private });
+const newObject = ref<{ name: string; perms: PermissionsPermissionTypeEnum }>({
+  name: "",
+  perms: PermissionsPermissionTypeEnum.Private,
+});
 
 function handlePrepare() {
   newObject.value = { name: "", perms: PermissionsPermissionTypeEnum.Private };

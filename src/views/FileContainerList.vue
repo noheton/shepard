@@ -12,10 +12,10 @@ import type {
   GetAllFileContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
 } from "@dlr-shepard/shepard-client";
-import { computed, onMounted, ref, type ComputedRef, type Ref } from "vue";
+import { computed, onMounted, ref, type ComputedRef } from "vue";
 
 const router = useRouter();
-const containers: Ref<FileContainer[] | undefined> = ref();
+const containers = ref<FileContainer[] | undefined>();
 const perPage = ref(10);
 const currentPage = ref(1);
 const orderBy = ref("createdAt");
