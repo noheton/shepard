@@ -147,10 +147,11 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
 import { downloadFile } from "@/utils/download";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import type {
   FileContainer,
   Permissions,
+  ResponseError,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -214,9 +215,7 @@ export default defineComponent({
           this.currentFileContainer = response;
         })
         .catch(e => {
-          const error = "Error while fetching file container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching file container");
         });
     },
     retrieveFileList() {
@@ -239,9 +238,7 @@ export default defineComponent({
           this.$router.push({ name: "FilesList" });
         })
         .catch(e => {
-          const error = "Error while deleting file container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting file container");
         });
     },
     uploadFile(newFile: Blob) {
@@ -256,15 +253,14 @@ export default defineComponent({
             this.uploadFinished = true;
           })
           .catch(e => {
-            const error = "Error while uploading File: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
+            handleError(e as ResponseError, "uploading file");
             this.uploadError = true;
           })
           .finally(() => {
             this.uploadActive = false;
           });
     },
+
     downloadFile(oid: string, filename?: string) {
       this.downloadActive = true;
       if (this.currentFileContainer?.id)
@@ -277,9 +273,7 @@ export default defineComponent({
             this.downloadFinished = true;
           })
           .catch(e => {
-            const error = "Error while fetching file: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
+            handleError(e as ResponseError, "fetching file");
             this.downloadError = true;
           })
           .finally(() => {
@@ -298,9 +292,7 @@ export default defineComponent({
           this.retrieveFileList();
         })
         .catch(e => {
-          const error = "Error while deleting file: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting file");
         });
     },
     retrievePermissions() {

@@ -9,6 +9,18 @@
     >
       {{ errorString }}
     </b-alert>
+    <b-alert
+      :show="extendedErrorAlert"
+      dismissible
+      variant="danger"
+      @dismissed="extendedErrorAlert = false"
+    >
+      Error while {{ errorSituation }}: <b>{{ errorExeption }}</b>
+      <br />
+      <small>
+        <i>{{ errorMessage }}</i>
+      </small>
+    </b-alert>
     <Breadcrumb class="view" />
     <router-view :key="$route.fullPath" class="view" />
   </div>
@@ -17,18 +29,28 @@
 <script lang="ts">
 import Breadcrumb from "@/components/Breadcrumb.vue";
 import Navbar from "@/components/Navbar.vue";
-import { emitter } from "@/utils/event-bus";
 import { defineComponent } from "vue";
+import { emitter } from "./utils/event-bus";
 
 export default defineComponent({
   components: { Breadcrumb, Navbar },
   data() {
     return {
       errorString: "",
+      errorSituation: "",
+      errorExeption: "",
+      errorMessage: "",
       errorAlert: false,
+      extendedErrorAlert: false,
     };
   },
   created() {
+    emitter.on("extendedError", e => {
+      this.errorSituation = e.situation;
+      this.errorExeption = e.error.exception;
+      this.errorMessage = e.error.message;
+      this.extendedErrorAlert = true;
+    });
     emitter.on("error", e => {
       this.errorString = e;
       this.errorAlert = true;
