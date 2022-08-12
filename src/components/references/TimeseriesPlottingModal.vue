@@ -7,6 +7,7 @@
     lazy
     ok-only
     ok-title="Close"
+    no-close-on-backdrop
     @show="reset()"
   >
     <b-list-group>
@@ -84,6 +85,7 @@ function initialState(): TimeseriesPlottingModalData {
       datasets: [],
     },
     chartOptions: {
+      datasets: { scatter: { showLine: true, tension: 0.1 } },
       responsive: true,
       maintainAspectRatio: false,
       scales: {
