@@ -8,7 +8,7 @@
         </b-list-group-item>
         <b-list-group-item>
           <strong>Bearer Token: </strong>
-          <code>
+          <code v-if="oidcAccessToken">
             {{ oidcAccessToken.substring(0, 50) + "... " }}
           </code>
           <b-link

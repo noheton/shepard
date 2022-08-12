@@ -22,6 +22,7 @@ const clientSettings = {
   responseType: "code",
   scope: "openid email profile",
   automaticSilentRenew: true,
+  automaticSilentSignin: false,
   checkSessionInterval: 3000,
   accessTokenExpiringNotificationTime: 10,
   extraQueryParams: { nonce: nanoid() },

@@ -1,11 +1,11 @@
 import Vue from "vue";
-import VueRouter, { type RouteConfig } from "vue-router";
+import VueRouter from "vue-router";
 import { vuexOidcCreateRouterMiddleware } from "vuex-oidc";
 import store from "./vuex-store";
 
 Vue.use(VueRouter);
 
-const routes: Array<RouteConfig> = [
+const routes = [
   {
     path: "/",
     redirect: { name: "Explore" },
@@ -91,11 +91,6 @@ const routes: Array<RouteConfig> = [
     component: () => import("../views/OidcCallback.vue"),
   },
   {
-    path: "/oidc-popup-callback", // Needs to match popupRedirectUri in you oidcSettings
-    name: "oidcPopupCallback",
-    component: () => import("../views/OidcPopupCallback.vue"),
-  },
-  {
     path: "/oidc-callback-error", // Needs to match redirect_uri in you oidcSettings
     name: "oidcCallbackError",
     component: () => import("../views/OidcCallbackError.vue"),
@@ -108,8 +103,9 @@ const routes: Array<RouteConfig> = [
 const router = new VueRouter({
   mode: "history",
   base: import.meta.env.BASE_URL,
-  routes,
+  routes: routes,
 });
+
 router.beforeEach(vuexOidcCreateRouterMiddleware(store, "oidcStore"));
 
 export default router;
