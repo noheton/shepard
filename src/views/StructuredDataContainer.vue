@@ -133,9 +133,10 @@ import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import StructuredDataService from "@/services/structuredDataService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import type {
   Permissions,
+  ResponseError,
   StructuredData,
   StructuredDataContainer,
   StructuredDataPayload,
@@ -189,10 +190,7 @@ export default defineComponent({
           this.currentStructuredDataContainer = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching structured data container");
         });
     },
     retrieveStructuredDataList() {
@@ -218,10 +216,7 @@ export default defineComponent({
             this.retrieveStructuredDataList();
           })
           .catch(e => {
-            const error =
-              "Error while creating Structured Data: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
+            handleError(e as ResponseError, "creating Structured Data");
           });
     },
     handleDeleteStructuredDataContainer() {
@@ -232,10 +227,7 @@ export default defineComponent({
           this.$router.push({ name: "StructuredDatasList" });
         })
         .catch(e => {
-          const error =
-            "Error while deleting structured data container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting structured data container");
         });
     },
     handleDeleteStructuredData() {
@@ -253,9 +245,7 @@ export default defineComponent({
           this.retrieveStructuredDataList();
         })
         .catch(e => {
-          const error = "Error while deleting Structured Data: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting structured data");
         });
     },
     retrievePermissions() {

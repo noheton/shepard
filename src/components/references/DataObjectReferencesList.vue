@@ -102,10 +102,11 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import type {
   DataObject,
   DataObjectReference,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
@@ -196,10 +197,7 @@ export default defineComponent({
           if (response.id) this.retrieveDataObject(response.id);
         })
         .catch(e => {
-          const error =
-            "Error while creating data object reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating data object reference");
         });
     },
 
@@ -215,10 +213,7 @@ export default defineComponent({
           this.retrieveReferences();
         })
         .catch(e => {
-          const error =
-            "Error while deleting data object reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting data object reference");
         });
     },
   },

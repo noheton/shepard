@@ -50,8 +50,12 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
 import ApiKeyService from "@/services/apiKeyService";
-import { emitter } from "@/utils/event-bus";
-import type { ApiKey, ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type {
+  ApiKey,
+  ApiKeyWithJWT,
+  ResponseError,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface ApiKeyListData {
@@ -105,9 +109,7 @@ export default defineComponent({
           this.createdApiKey = response;
         })
         .catch(e => {
-          const error = "Error while creating api key: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating api key");
         })
         .finally(() => {
           this.retrieveApiKeys();
@@ -124,9 +126,7 @@ export default defineComponent({
         apikeyUid: this.currentApiKey.uid,
       })
         .catch(e => {
-          const error = "Error while deleting api key: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting api key");
         })
         .finally(() => {
           this.currentApiKey = undefined;

@@ -102,10 +102,11 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import CollectionReferenceService from "@/services/collectionReferenceService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import type {
   Collection,
   CollectionReference,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
@@ -196,10 +197,7 @@ export default defineComponent({
           if (response.id) this.retrieveCollection(response.id);
         })
         .catch(e => {
-          const error =
-            "Error while creating collection reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating collection reference");
         });
     },
 
@@ -215,10 +213,7 @@ export default defineComponent({
           this.retrieveReferences();
         })
         .catch(e => {
-          const error =
-            "Error while deleting collection reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting collection reference");
         });
     },
   },

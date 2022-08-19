@@ -63,11 +63,12 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import UserGroupService from "@/services/userGroupService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllUserGroupsOrderByEnum,
   PermissionsPermissionTypeEnum,
+  ResponseError,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
 import Vue from "vue";
@@ -127,9 +128,7 @@ export default Vue.extend({
           this.userGroupList = response;
         })
         .catch(e => {
-          const error = "Error while fetching Usergroups: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching Usergroups");
         });
     },
     createUserGroup(options: {
@@ -159,9 +158,7 @@ export default Vue.extend({
           }
         })
         .catch(e => {
-          const error = "Error while creating a usergroup: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating a usergroup");
         });
     },
   },

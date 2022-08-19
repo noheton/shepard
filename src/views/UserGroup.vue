@@ -102,8 +102,12 @@ import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import UserModal from "@/components/user/UserModal.vue";
 import UserGroupService from "@/services/userGroupService";
-import { emitter } from "@/utils/event-bus";
-import type { Permissions, UserGroup } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type {
+  Permissions,
+  ResponseError,
+  UserGroup,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 import { mapActions, mapGetters } from "vuex";
 
@@ -188,9 +192,7 @@ export default defineComponent({
             this.retrieveUserGroup();
           })
           .catch(e => {
-            const error = "Error while updating a user group: " + e.statusText;
-            console.log(error);
-            emitter.emit("error", error);
+            handleError(e as ResponseError, "updating a user group");
           });
     },
     handleDeleteUserGroup() {

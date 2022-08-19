@@ -48,11 +48,12 @@ import FilterListLine, {
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import StructuredDataService from "@/services/structuredDataService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllStructuredDataContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
+  ResponseError,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -112,10 +113,10 @@ export default defineComponent({
           this.containers = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data containers: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(
+            e as ResponseError,
+            "fetching structured data containers",
+          );
         });
     },
     createContainer(options: {
@@ -147,10 +148,7 @@ export default defineComponent({
           }
         })
         .catch(e => {
-          const error =
-            "Error while creating structured data container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating structured data container");
         });
     },
   },

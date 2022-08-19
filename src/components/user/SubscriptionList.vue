@@ -56,8 +56,9 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
 import SubscriptionService from "@/services/subscriptionService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import {
+  ResponseError,
   SubscriptionRequestMethodEnum,
   type Subscription,
 } from "@dlr-shepard/shepard-client";
@@ -110,9 +111,7 @@ export default defineComponent({
           this.subscriptions.push(response);
         })
         .catch(e => {
-          const error = "Error while creating subscription: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating subscription");
         });
     },
     handleDelete() {
@@ -122,9 +121,7 @@ export default defineComponent({
         subscriptionId: this.currentSubscription.id,
       })
         .catch(e => {
-          const error = "Error while deleting subscription: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting subscription");
         })
         .finally(() => {
           this.currentSubscription = undefined;

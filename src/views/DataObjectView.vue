@@ -133,8 +133,8 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
 import DataObjectService from "@/services/dataObjectService";
-import { emitter } from "@/utils/event-bus";
-import type { DataObject } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface DataObjectData {
@@ -196,9 +196,7 @@ export default defineComponent({
           }
         })
         .catch(e => {
-          const error = "Error while fetching data object: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching data object");
         });
     },
     handleDelete() {
@@ -215,9 +213,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error = "Error while deleting data object: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting data object");
         });
     },
   },

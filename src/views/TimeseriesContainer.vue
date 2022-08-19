@@ -64,9 +64,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import TimeseriesService from "@/services/timeseriesService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import type {
   Permissions,
+  ResponseError,
   Timeseries,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
@@ -110,10 +111,7 @@ export default defineComponent({
           this.currentTimeseriesContainer = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching timeseries container");
         });
     },
     retrieveTimeseriesAvailable() {
@@ -124,10 +122,7 @@ export default defineComponent({
           this.timeseriesAvailable = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries available: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching timeseries available");
         });
     },
     handleDelete() {
@@ -138,10 +133,7 @@ export default defineComponent({
           this.$router.push({ name: "TimeseriesList" });
         })
         .catch(e => {
-          const error =
-            "Error while deleting timeseries container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting timeseries container");
         });
     },
     retrievePermissions() {

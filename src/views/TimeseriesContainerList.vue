@@ -47,11 +47,12 @@ import FilterListLine, {
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import TimeseriesService from "@/services/timeseriesService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { getTotalRows } from "@/utils/helpers";
 import type {
   GetAllTimeseriesContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
+  ResponseError,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -111,10 +112,7 @@ export default defineComponent({
           this.containers = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries containers: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching timeseries containers");
         });
     },
     createContainer(options: {
@@ -144,10 +142,7 @@ export default defineComponent({
           }
         })
         .catch(e => {
-          const error =
-            "Error while creating timeseries container: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating timeseries container");
         });
     },
   },

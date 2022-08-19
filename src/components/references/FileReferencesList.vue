@@ -119,9 +119,13 @@ import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
-import type { FileReference, ShepardFile } from "@dlr-shepard/shepard-client";
+import type {
+  FileReference,
+  ResponseError,
+  ShepardFile,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface FileListData {
@@ -242,9 +246,7 @@ export default defineComponent({
           if (response.id) this.retrieveReferences();
         })
         .catch(e => {
-          const error = "Error while creating file reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating file reference");
         });
     },
 
@@ -260,9 +262,7 @@ export default defineComponent({
           this.retrieveReferences();
         })
         .catch(e => {
-          const error = "Error while deleting file reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting file reference");
         });
     },
     convertDate(date: Date | undefined | null) {

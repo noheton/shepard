@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DataObjectService from "@/services/dataObjectService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { useRouter } from "@/utils/helpers";
-import type { DataObject } from "@dlr-shepard/shepard-client";
+import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { ref, type PropType } from "vue";
 
 const props = defineProps({
@@ -203,9 +203,7 @@ function create() {
       });
     })
     .catch(e => {
-      const error = "Error while creating data object: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "creating data object");
     });
 }
 
@@ -223,9 +221,7 @@ function update() {
       emit("data-object-changed");
     })
     .catch(e => {
-      const error = "Error while updating data object: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "updating data object");
     });
 }
 </script>

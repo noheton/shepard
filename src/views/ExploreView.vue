@@ -75,10 +75,11 @@ import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { getTotalRows } from "@/utils/helpers";
 import {
   GetAllCollectionsOrderByEnum,
+  ResponseError,
   SearchParamsQueryTypeEnum,
   type Collection,
 } from "@dlr-shepard/shepard-client";
@@ -145,9 +146,7 @@ export default Vue.extend({
           this.collections = response;
         })
         .catch(e => {
-          const error = "Error while fetching collections: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching collections");
         });
     },
 
@@ -164,9 +163,7 @@ export default Vue.extend({
           this.collectionsResultSet.push(response);
         })
         .catch(e => {
-          const error = "Error while fetching collection: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching collection");
         });
     },
 
@@ -218,9 +215,7 @@ export default Vue.extend({
           });
         })
         .catch(e => {
-          const error = "Error while fetching search Data: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching search data");
         });
     },
   },

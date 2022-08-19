@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import CollectionService from "@/services/collectionService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { permissionOptions as pOptions, useRouter } from "@/utils/helpers";
 import {
   PermissionsPermissionTypeEnum,
+  ResponseError,
   type Collection,
 } from "@dlr-shepard/shepard-client";
 import { ref, type PropType } from "vue";
@@ -96,9 +97,7 @@ function createCollection(collection: Collection) {
       }
     })
     .catch(e => {
-      const error = "Error while creating collection: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "creating collection");
     });
 }
 
@@ -112,9 +111,7 @@ function updateCollection(collection: Collection) {
       emit("collection-changed");
     })
     .catch(e => {
-      const error = "Error while updating collection: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "updating collection");
     });
 }
 </script>

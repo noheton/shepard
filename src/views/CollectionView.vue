@@ -8,11 +8,12 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { useRouter } from "@/utils/helpers";
 import type {
   Collection,
   Permissions,
+  ResponseError,
   Roles,
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, ref } from "vue";
@@ -39,9 +40,7 @@ function retrieveCollection() {
       }
     })
     .catch(e => {
-      const error = "Error while fetching collection: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "fetching collection");
     });
 }
 
@@ -94,9 +93,7 @@ function handleDelete() {
       router.push({ name: "Explore" });
     })
     .catch(e => {
-      const error = "Error while deleting collection: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "deleting collection");
     });
 }
 

@@ -141,9 +141,10 @@ import TimeseriesPlottingModal from "@/components/references/TimeseriesPlottingM
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
+  ResponseError,
   TimeseriesPayload,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
@@ -244,28 +245,7 @@ export default defineComponent({
         })
         .catch(e => {
           this.currentTimeseriesPayload = [];
-          const error =
-            "Error while fetching timeseries payload: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
-        });
-    },
-    handleDelete() {
-      if (!this.currentTimeseriesReference?.id) return;
-      TimeseriesReferenceService.deleteTimeseriesReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        timeseriesReferenceId: this.currentTimeseriesReference.id,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveReferences();
-        })
-        .catch(e => {
-          const error =
-            "Error while deleting timeseries reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching timeseries payload");
         });
     },
 
@@ -280,12 +260,26 @@ export default defineComponent({
           this.timeseriesList = [response].concat(this.timeseriesList || []);
         })
         .catch(e => {
-          const error =
-            "Error while creating timeseries reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating timeseries reference");
         });
     },
+
+    handleDelete() {
+      if (!this.currentTimeseriesReference?.id) return;
+      TimeseriesReferenceService.deleteTimeseriesReference({
+        collectionId: this.currentCollectionId,
+        dataObjectId: this.currentDataObjectId,
+        timeseriesReferenceId: this.currentTimeseriesReference.id,
+      })
+        .then(() => {
+          this.deletedAlert = true;
+          this.retrieveReferences();
+        })
+        .catch(e => {
+          handleError(e as ResponseError, "deleting timeseries reference");
+        });
+    },
+
     convertDate(date: number) {
       return new Date(date).toLocaleString("en-GB", dateFormat);
     },

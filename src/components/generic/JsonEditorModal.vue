@@ -16,7 +16,8 @@
 
 <script lang="ts">
 import StructuredDataService from "@/services/structuredDataService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
+import type { ResponseError } from "@dlr-shepard/shepard-client";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
@@ -67,10 +68,7 @@ export default defineComponent({
           this.startJsonEditor();
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data payload: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching structured data payload");
         });
     },
 

@@ -100,8 +100,9 @@
 <script lang="ts">
 import Loading from "@/components/generic/Loading.vue";
 import SearchService from "@/services/searchService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import {
+  ResponseError,
   SearchParamsQueryTypeEnum,
   SearchScopeTraversalRulesEnum,
   type ResponseBody,
@@ -227,9 +228,7 @@ export default Vue.extend({
           this.searchData = response;
         })
         .catch(e => {
-          const error = "Error while fetching search Data: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "fetching search data");
         })
         .finally(() => {
           this.loading = false;

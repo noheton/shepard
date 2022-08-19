@@ -5,12 +5,13 @@ import FilterListLine, {
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { getTotalRows, useRouter } from "@/utils/helpers";
 import type {
   FileContainer,
   GetAllFileContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, ref, type ComputedRef } from "vue";
 
@@ -57,9 +58,7 @@ function retrieveContainers(page?: number) {
       containers.value = response;
     })
     .catch(e => {
-      const error = "Error while fetching file containers: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "fetching file containers");
     });
 }
 
@@ -89,9 +88,7 @@ function createContainer(options: {
       }
     })
     .catch(e => {
-      const error = "Error while creating file container: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "creating file container");
     });
 }
 </script>

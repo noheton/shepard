@@ -132,9 +132,10 @@ import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import Loading from "@/components/generic/Loading.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
-import { emitter } from "@/utils/event-bus";
+import { handleError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
+  ResponseError,
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
@@ -237,10 +238,7 @@ export default defineComponent({
           if (response.id) this.retrieveStructuredDatas(response.id);
         })
         .catch(e => {
-          const error =
-            "Error while creating structured data reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating structured data reference");
         });
     },
 
@@ -256,10 +254,7 @@ export default defineComponent({
           this.retrieveReferences();
         })
         .catch(e => {
-          const error =
-            "Error while deleting structured data reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting structured data reference");
         });
     },
     convertDate(date: Date | undefined | null) {

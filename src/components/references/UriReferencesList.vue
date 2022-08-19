@@ -73,8 +73,8 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
 import UriReferenceService from "@/services/uriReferenceService";
-import { emitter } from "@/utils/event-bus";
-import type { URIReference } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface URIListData {
@@ -139,9 +139,7 @@ export default defineComponent({
           this.uriList = [response].concat(this.uriList || []);
         })
         .catch(e => {
-          const error = "Error while creating URI reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "creating URI reference");
         });
     },
 
@@ -157,9 +155,7 @@ export default defineComponent({
           this.retrieveReferences();
         })
         .catch(e => {
-          const error = "Error while deleting URI reference: " + e.statusText;
-          console.log(error);
-          emitter.emit("error", error);
+          handleError(e as ResponseError, "deleting URI reference");
         });
     },
   },

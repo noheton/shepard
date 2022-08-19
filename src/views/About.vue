@@ -2,8 +2,8 @@
 import Loading from "@/components/generic/Loading.vue";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
-import { emitter } from "@/utils/event-bus";
-import type { Healthz } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type { Healthz, ResponseError } from "@dlr-shepard/shepard-client";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import { onMounted, ref } from "vue";
 import { version as appVersion } from "../../package.json";
@@ -27,9 +27,7 @@ function fetchHealtz() {
       health.value = response;
     })
     .catch(e => {
-      const error = "Error while fetching server health: " + e.statusText;
-      console.log(error);
-      emitter.emit("error", error);
+      handleError(e as ResponseError, "fetching server health");
     });
 }
 

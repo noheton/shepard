@@ -127,8 +127,12 @@
 
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
-import { emitter } from "@/utils/event-bus";
-import type { FileContainer, FileReference } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type {
+  FileContainer,
+  FileReference,
+  ResponseError,
+} from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface Option {
@@ -259,9 +263,7 @@ export default defineComponent({
           fileContainer: { name: newName } as FileContainer,
         });
       } catch (e: any) {
-        const error = "Error while creating file container: " + e.statusText;
-        console.log(error);
-        emitter.emit("error", error);
+        handleError(e as ResponseError, "creating file container");
       }
       return response;
     },
@@ -316,9 +318,7 @@ export default defineComponent({
         });
         this.uploadFinished = false;
       } catch (e: any) {
-        const error = "Error while uploading File: " + e.statusText;
-        console.log(error);
-        emitter.emit("error", error);
+        handleError(e as ResponseError, "uploading file");
         this.uploadFinished = false;
         this.uploadError = true;
       } finally {
