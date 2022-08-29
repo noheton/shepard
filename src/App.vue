@@ -7,14 +7,6 @@
       variant="danger"
       @dismissed="errorAlert = false"
     >
-      {{ errorString }}
-    </b-alert>
-    <b-alert
-      :show="extendedErrorAlert"
-      dismissible
-      variant="danger"
-      @dismissed="extendedErrorAlert = false"
-    >
       Error while {{ errorSituation }}: <b>{{ errorExeption }}</b>
       <br />
       <small>
@@ -36,23 +28,17 @@ export default defineComponent({
   components: { Breadcrumb, Navbar },
   data() {
     return {
-      errorString: "",
       errorSituation: "",
       errorExeption: "",
       errorMessage: "",
       errorAlert: false,
-      extendedErrorAlert: false,
     };
   },
   created() {
-    emitter.on("extendedError", e => {
+    emitter.on("error", e => {
       this.errorSituation = e.situation;
       this.errorExeption = e.error.exception;
       this.errorMessage = e.error.message;
-      this.extendedErrorAlert = true;
-    });
-    emitter.on("error", e => {
-      this.errorString = e;
       this.errorAlert = true;
     });
   },

@@ -18,7 +18,7 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
 export function handleError(e: ResponseError, situation: string) {
   parseResponseError(e as ResponseError).then(parsedError => {
     console.log(parsedError);
-    emitter.emit("extendedError", {
+    emitter.emit("error", {
       situation: situation,
       error: parsedError,
     });

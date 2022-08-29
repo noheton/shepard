@@ -7,8 +7,7 @@ export type ErrorType = {
 };
 
 type Events = {
-  error: string;
-  extendedError: {
+  error: {
     error: ErrorType;
     situation: string;
   };
