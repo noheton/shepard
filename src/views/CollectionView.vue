@@ -9,7 +9,6 @@ import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
-import { useRouter } from "@/utils/helpers";
 import type {
   Collection,
   Permissions,
@@ -17,6 +16,7 @@ import type {
   Roles,
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 const currentCollectionId = computed(() => {

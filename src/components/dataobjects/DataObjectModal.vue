@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
-import { useRouter } from "@/utils/helpers";
 import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { ref, type PropType } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
 
 const props = defineProps({
   modalId: {

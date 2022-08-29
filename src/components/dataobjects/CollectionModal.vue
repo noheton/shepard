@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
-import { permissionOptions as pOptions, useRouter } from "@/utils/helpers";
+import { permissionOptions as pOptions } from "@/utils/helpers";
 import {
   PermissionsPermissionTypeEnum,
   ResponseError,
   type Collection,
 } from "@dlr-shepard/shepard-client";
 import { ref, type PropType } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
 
 const props = defineProps({
   modalId: {

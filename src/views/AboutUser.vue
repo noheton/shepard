@@ -1,3 +1,40 @@
+<script setup lang="ts">
+import type { User } from "oidc-client";
+import { computed } from "vue";
+import { createVuexHelpers } from "vue2-helpers";
+
+const { useGetters, useActions } = createVuexHelpers();
+const oidcGetters = useGetters("oidcStore", [
+  "oidcAccessToken",
+  "oidcIsAuthenticated",
+  "oidcUser",
+]);
+const oidcActions = useActions("oidcStore", ["signOutOidc"]);
+const oidcAccessToken = computed<string | undefined>(() => {
+  return oidcGetters.oidcAccessToken.value;
+});
+
+const claims = computed<
+  {
+    key: string;
+    value: string;
+  }[]
+>(() => {
+  if (oidcGetters.oidcIsAuthenticated.value) {
+    return Object.entries(oidcGetters.oidcUser.value as User).map(entry => ({
+      key: entry[0],
+      value: entry[1],
+    }));
+  }
+  return [];
+});
+
+function copyBearerToken() {
+  if (oidcAccessToken.value)
+    navigator.clipboard.writeText(oidcAccessToken.value);
+}
+</script>
+
 <template>
   <div class="about-user">
     <div class="component">
@@ -21,38 +58,8 @@
         </b-list-group-item>
       </b-list-group>
     </div>
-    <b-button variant="danger" @click="signOutOidc()"> Sign out </b-button>
+    <b-button variant="danger" @click="oidcActions.signOutOidc">
+      Sign out
+    </b-button>
   </div>
 </template>
-
-<script lang="ts">
-import type { User } from "oidc-client";
-import { defineComponent } from "vue";
-import { mapActions, mapGetters } from "vuex";
-
-export default defineComponent({
-  computed: {
-    ...mapGetters("oidcStore", [
-      "oidcAccessToken",
-      "oidcIsAuthenticated",
-      "oidcUser",
-    ]),
-    claims() {
-      if (this.oidcIsAuthenticated) {
-        return Object.entries(this.oidcUser as User).map(entry => ({
-          key: entry[0],
-          value: entry[1],
-        }));
-      }
-      return [];
-    },
-  },
-  methods: {
-    ...mapActions("oidcStore", ["signOutOidc"]),
-    copyBearerToken() {
-      if (this.oidcAccessToken)
-        navigator.clipboard.writeText(this.oidcAccessToken);
-    },
-  },
-});
-</script>

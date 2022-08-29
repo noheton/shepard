@@ -1,3 +1,25 @@
+<script setup lang="ts">
+import { computed, type ComputedRef } from "vue";
+import { createVuexHelpers } from "vue2-helpers";
+
+const { useGetters } = createVuexHelpers();
+const oidcGetters = useGetters("oidcStore", [
+  "oidcIsAuthenticated",
+  "oidcUser",
+]);
+const fullName = computed(() => {
+  const user: ComputedRef<
+    | {
+        family_name: string;
+        given_name: string;
+      }
+    | undefined
+  > = oidcGetters.oidcUser;
+  if (user.value) return user.value.family_name + ", " + user.value.given_name;
+  else return "";
+});
+</script>
+
 <template>
   <b-navbar toggleable="lg" type="dark" variant="dark">
     <b-navbar-brand id="brand" tag="h1" class="mb-0" to="/">
@@ -18,30 +40,13 @@
         <b-nav-item to="/about">About</b-nav-item>
       </b-navbar-nav>
       <b-navbar-nav class="ml-auto">
-        <b-nav-item v-if="oidcIsAuthenticated" to="/about-user">
+        <b-nav-item v-if="oidcGetters.oidcIsAuthenticated" to="/about-user">
           Signed in as {{ fullName }}
         </b-nav-item>
       </b-navbar-nav>
     </b-collapse>
   </b-navbar>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-import { mapGetters } from "vuex";
-
-export default defineComponent({
-  computed: {
-    ...mapGetters("oidcStore", ["oidcIsAuthenticated", "oidcUser"]),
-    hasAccess(): boolean {
-      return this.oidcIsAuthenticated || this.$route.meta?.isPublic;
-    },
-    fullName(): string {
-      return this.oidcUser?.family_name + ", " + this.oidcUser?.given_name;
-    },
-  },
-});
-</script>
 
 <style scoped>
 #brand {

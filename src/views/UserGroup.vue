@@ -1,3 +1,150 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import PermissionsModal from "@/components/PermissionsModal.vue";
+import UserModal from "@/components/user/UserModal.vue";
+import UserGroupService from "@/services/userGroupService";
+import { handleError } from "@/utils/error-handling";
+import type {
+  Permissions,
+  ResponseError,
+  User,
+  UserGroup,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, onUpdated, ref, type Ref } from "vue";
+import { createVuexHelpers } from "vue2-helpers";
+import { useRoute, useRouter } from "vue2-helpers/vue-router";
+
+const currentUserGroup: Ref<UserGroup | undefined> = ref();
+const currentUser: Ref<string | undefined> = ref();
+const permissions: Ref<Permissions | undefined> = ref();
+const managerAccess = ref(false);
+
+const route = useRoute();
+const router = useRouter();
+const currentUserGroupId = computed(() => {
+  return Number(route.params.usergroupId);
+});
+
+const { useGetters, useActions } = createVuexHelpers();
+const userCacheGetters = useGetters("userCache", [
+  "isUserInCache",
+  "getUserFromCache",
+]);
+const userCacheActions = useActions("userCache", ["fetchUser"]);
+const isUserInCache: (username: string) => boolean =
+  userCacheGetters.isUserInCache.value;
+const getUserFromCache: (username: string) => User =
+  userCacheGetters.getUserFromCache.value;
+const fetchUser: (username: string) => void = userCacheActions.fetchUser;
+
+function retrieveUser() {
+  if (currentUserGroup.value)
+    currentUserGroup.value.usernames.forEach(user => {
+      if (!isUserInCache(user)) {
+        fetchUser(user);
+      }
+    });
+}
+
+function retrieveUserGroup() {
+  UserGroupService.getUserGroup({
+    usergroupId: currentUserGroupId.value,
+  })
+    .then(response => {
+      currentUserGroup.value = response;
+    })
+    .catch(e => {
+      const error = "Error while fetching user group: " + e.statusText;
+      console.log(error);
+    });
+}
+
+function updateUserGroup() {
+  if (currentUserGroup.value)
+    UserGroupService.updateUserGroup({
+      usergroupId: currentUserGroupId.value,
+      userGroup: currentUserGroup.value,
+    })
+      .then(() => {
+        retrieveUserGroup();
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "updating a user group");
+      });
+}
+
+function handleDeleteUserGroup() {
+  UserGroupService.deleteUserGroup({
+    usergroupId: currentUserGroupId.value,
+  })
+    .then(() => {
+      router.push({
+        name: "UserGroupList",
+      });
+    })
+    .catch(e => {
+      const error = "Error while deleting user group: " + e.statusText;
+      console.log(error);
+    });
+}
+
+function addUser(newUsernameList: Array<string>) {
+  newUsernameList.forEach(user => {
+    if (!currentUserGroup.value?.usernames.includes(user)) {
+      currentUserGroup.value?.usernames.push(user);
+    }
+    updateUserGroup();
+  });
+}
+
+function handleDeleteUser(delUser: string | undefined) {
+  if (currentUserGroup.value && delUser) {
+    currentUserGroup.value.usernames = currentUserGroup.value?.usernames.filter(
+      user => user != delUser,
+    );
+    updateUserGroup();
+  }
+}
+
+function retrievePermissions() {
+  UserGroupService.getUserGroupPermissions({
+    usergroupId: currentUserGroupId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+      managerAccess.value = true;
+    })
+    .catch(e => {
+      const error = "Error while fetching permissons: " + e.statusText;
+      console.log(error);
+      managerAccess.value = e.status != 403;
+    });
+}
+
+function updatePermissions(perms: Permissions) {
+  UserGroupService.editUserGroupPermissions({
+    usergroupId: currentUserGroupId.value,
+    permissions: perms,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      const error = "Error while updating permissons: " + e.statusText;
+      console.log(error);
+    });
+}
+
+onMounted(() => {
+  retrieveUserGroup();
+  retrievePermissions();
+});
+onUpdated(() => {
+  retrieveUser();
+});
+</script>
+
 <template>
   <div v-if="currentUserGroup">
     <div class="component">
@@ -95,162 +242,3 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import PermissionsModal from "@/components/PermissionsModal.vue";
-import UserModal from "@/components/user/UserModal.vue";
-import UserGroupService from "@/services/userGroupService";
-import { handleError } from "@/utils/error-handling";
-import type {
-  Permissions,
-  ResponseError,
-  UserGroup,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-import { mapActions, mapGetters } from "vuex";
-
-interface UserGroupData {
-  currentUserGroup?: UserGroup;
-  currentUser?: string;
-  newUser?: string;
-  validUser?: boolean;
-  permissions?: Permissions;
-  managerAccess: boolean;
-}
-
-export default defineComponent({
-  components: {
-    DeleteConfirmationModal,
-    PermissionsModal,
-    GenericName,
-    UserModal,
-  },
-  data() {
-    return {
-      currentUserGroup: undefined,
-      currentUser: undefined,
-      newUser: undefined,
-      validUser: undefined,
-      permissions: undefined,
-      managerAccess: false,
-    } as UserGroupData;
-  },
-  computed: {
-    currentUserGroupId(): number {
-      return Number(this.$router.currentRoute.params.usergroupId);
-    },
-    ...mapGetters("userCache", ["isUserInCache", "getUserFromCache"]),
-  },
-  updated() {
-    this.retrieveUser();
-  },
-  mounted() {
-    this.retrieveUserGroup();
-    this.retrievePermissions();
-  },
-
-  methods: {
-    ...mapActions("userCache", ["fetchUser"]),
-    retrieveUser() {
-      if (this.currentUserGroup)
-        this.currentUserGroup.usernames.forEach(user => {
-          if (!this.isUserInCache(user)) {
-            this.fetchUser(user);
-          }
-        });
-    },
-
-    retrieveUserGroup() {
-      UserGroupService.getUserGroup({
-        usergroupId: this.currentUserGroupId,
-      })
-        .then(response => {
-          this.currentUserGroup = response;
-        })
-        .catch(e => {
-          const error = "Error while fetching user group: " + e.statusText;
-          console.log(error);
-        });
-    },
-    validateUser() {
-      try {
-        this.fetchUser(this.newUser);
-        this.validUser = true;
-      } catch (error) {
-        this.validUser = false;
-      }
-    },
-    updateUserGroup() {
-      if (this.currentUserGroup)
-        UserGroupService.updateUserGroup({
-          usergroupId: this.currentUserGroupId,
-          userGroup: this.currentUserGroup,
-        })
-          .then(() => {
-            this.retrieveUserGroup();
-          })
-          .catch(e => {
-            handleError(e as ResponseError, "updating a user group");
-          });
-    },
-    handleDeleteUserGroup() {
-      UserGroupService.deleteUserGroup({
-        usergroupId: this.currentUserGroupId,
-      })
-        .then(() => {
-          this.$router.push({
-            name: "UserGroupList",
-          });
-        })
-        .catch(e => {
-          const error = "Error while deleting user group: " + e.statusText;
-          console.log(error);
-        });
-    },
-    addUser(newUsernameList: Array<string>) {
-      newUsernameList.forEach(user => {
-        if (!this.currentUserGroup?.usernames.includes(user)) {
-          this.currentUserGroup?.usernames.push(user);
-        }
-        this.updateUserGroup();
-      });
-    },
-    handleDeleteUser(delUser: string | undefined) {
-      if (this.currentUserGroup && delUser) {
-        this.currentUserGroup.usernames =
-          this.currentUserGroup?.usernames.filter(user => user != delUser);
-        this.updateUserGroup();
-      }
-    },
-    retrievePermissions() {
-      UserGroupService.getUserGroupPermissions({
-        usergroupId: this.currentUserGroupId,
-      })
-        .then(response => {
-          this.permissions = response;
-          this.managerAccess = true;
-        })
-        .catch(e => {
-          const error = "Error while fetching permissons: " + e.statusText;
-          console.log(error);
-          this.managerAccess = e.status != 403;
-        });
-    },
-    updatePermissions(perms: Permissions) {
-      UserGroupService.editUserGroupPermissions({
-        usergroupId: this.currentUserGroupId,
-        permissions: perms,
-      })
-        .then(response => {
-          this.permissions = response;
-        })
-        .catch(e => {
-          const error = "Error while updating permissons: " + e.statusText;
-          console.log(error);
-        });
-    },
-  },
-});
-</script>

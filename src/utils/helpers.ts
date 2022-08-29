@@ -20,19 +20,6 @@ export const dateFormat: Intl.DateTimeFormatOptions = {
   second: "2-digit",
 };
 
-// https://github.com/vuejs/vue-router/issues/3760#issuecomment-1178468293
-import { getCurrentInstance } from "vue";
-export function useRoute() {
-  const instance = getCurrentInstance();
-  if (instance) return instance.proxy.$route;
-  else return undefined as never;
-}
-export function useRouter() {
-  const instance = getCurrentInstance();
-  if (instance) return instance.proxy.$router;
-  else return undefined as never;
-}
-
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
 export const permissionOptions: {
   value: PermissionsPermissionTypeEnum;

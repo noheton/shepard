@@ -6,7 +6,7 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows, useRouter } from "@/utils/helpers";
+import { getTotalRows } from "@/utils/helpers";
 import type {
   FileContainer,
   GetAllFileContainersOrderByEnum,
@@ -14,6 +14,7 @@ import type {
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, ref, type ComputedRef } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 const containers = ref<FileContainer[] | undefined>();
