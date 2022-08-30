@@ -209,7 +209,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void getFileTest() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
-		var result = new NamedInputStream(null, "name");
+		var result = new NamedInputStream(null, "name", 123L);
 
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);

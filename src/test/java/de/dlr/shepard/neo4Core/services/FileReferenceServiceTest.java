@@ -262,7 +262,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);
 		ref.setFileContainer(container);
-		var result = new NamedInputStream(null, "myInputStream");
+		var result = new NamedInputStream(null, "myInputStream", 123L);
 
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);

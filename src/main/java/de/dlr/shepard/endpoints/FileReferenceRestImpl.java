@@ -92,8 +92,9 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 			payload = fileReferenceService.getPayload(fileReferenceId, oid,
 					securityContext.getUserPrincipal().getName());
 			return payload != null
-					? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
-							.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
+					? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
+							.header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
+							.header("Content-Length", payload.getSize()).build()
 					: Response.status(Status.NOT_FOUND).build();
 		} catch (InvalidAuthException e) {
 			return Response.status(Status.FORBIDDEN).build();

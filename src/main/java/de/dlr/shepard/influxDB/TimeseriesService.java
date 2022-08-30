@@ -21,7 +21,7 @@ public class TimeseriesService {
 	 * @param database The database to be queried
 	 * @param payload  the Timeseries with InfluxPoints to be created
 	 * @return An error if there was a problem, empty string if all went well
-	 * @throws InvalidBodyException
+	 * @throws InvalidBodyException in case of a failed sanityCheck
 	 */
 	public String createTimeseries(String database, TimeseriesPayload payload) throws InvalidBodyException {
 		String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());

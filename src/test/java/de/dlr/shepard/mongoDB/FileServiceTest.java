@@ -35,6 +35,8 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
+import com.mongodb.client.gridfs.GridFSFindIterable;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.model.Filters;
 
 import de.dlr.shepard.BaseTestCase;
@@ -198,20 +200,26 @@ public class FileServiceTest extends BaseTestCase {
 		String containerId = "4";
 		String fileoid = "60b73212cfa45d2d5baa795d";
 		String fileName = "FileName";
+		Long fileSize = 123L;
 		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
+		FindIterable<Document> collectionReturn = mock(FindIterable.class);
 		Document doc = mock(Document.class);
 		ObjectId oid = new ObjectId();
 		GridFSDownloadStream stream = mock(GridFSDownloadStream.class);
+		GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+		GridFSFile gridFsFile = mock(GridFSFile.class);
 
 		when(database.getCollection(containerId)).thenReturn(collection);
-		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
-		when(emptyCollectionReturn.first()).thenReturn(doc);
+		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
+		when(collectionReturn.first()).thenReturn(doc);
 		when(doc.getString("FileMongoId")).thenReturn(oid.toString());
 		when(doc.getString("name")).thenReturn(fileName);
 		when(gridBucket.openDownloadStream(oid)).thenReturn(stream);
+		when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+		when(filesCollectionReturn.first()).thenReturn(gridFsFile);
+		when(gridFsFile.getLength()).thenReturn(fileSize);
 
-		var expected = new NamedInputStream(stream, fileName);
+		var expected = new NamedInputStream(stream, fileName, fileSize);
 		var result = fileService.getPayload(containerId, fileoid);
 		assertEquals(expected, result);
 	}

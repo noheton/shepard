@@ -107,7 +107,7 @@ public class TimeseriesContainerService {
 	 * @param timeseriesContainerId identifies the TimeseriesContainer
 	 * @param payload               TimeseriesPayload to be created
 	 * @return created timeseries
-	 * @throws InvalidBodyException
+	 * @throws InvalidBodyException in case of a failed sanityCheck
 	 */
 	public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload)
 			throws InvalidBodyException {

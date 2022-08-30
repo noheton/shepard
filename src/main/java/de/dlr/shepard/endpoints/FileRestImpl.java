@@ -106,8 +106,9 @@ public class FileRestImpl implements FileRest {
 			@PathParam(Constants.OID) String oid) {
 		var payload = fileContainerService.getFile(fileContainerId, oid);
 		return payload != null
-				? Response.ok(payload.inputStream, MediaType.APPLICATION_OCTET_STREAM)
-						.header("Content-Disposition", "attachment; filename=\"" + payload.name + "\"").build()
+				? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
+						.header("Content-Length", payload.getSize()).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
 

@@ -7,8 +7,10 @@ import lombok.Value;
 @Value
 public class NamedInputStream {
 
-	public InputStream inputStream;
+	private InputStream inputStream;
 
-	public String name;
+	private String name;
+
+	private Long size;
 
 }

@@ -76,9 +76,11 @@ public class FileService {
 		}
 		var fileId = new ObjectId(payloadDocument.getString(FILEID_ATTR));
 		var filename = payloadDocument.getString(FILENAME_ATTR);
-		GridFSBucket gridBucket = mongoDBConnector.createBucket();
-		InputStream inputStream = gridBucket.openDownloadStream(fileId);
-		return new NamedInputStream(inputStream, filename);
+		var gridBucket = mongoDBConnector.createBucket();
+		var gridFsFile = gridBucket.find(eq(ID_ATTR, fileId)).first();
+		var inputStream = gridBucket.openDownloadStream(fileId);
+
+		return new NamedInputStream(inputStream, filename, gridFsFile.getLength());
 	}
 
 	public ShepardFile getFile(String containerId, String fileoid) {
