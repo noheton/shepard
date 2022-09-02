@@ -17,6 +17,10 @@
     {
       "matchPackageNames": ["bootstrap"],
       "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["typescipt"],
+      "allowedVersions": "<4.8"
     }
   ],
   "prHourlyLimit": 0,
