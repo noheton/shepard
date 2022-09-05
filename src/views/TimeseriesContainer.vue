@@ -64,7 +64,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import TimeseriesService from "@/services/timeseriesService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
@@ -145,8 +145,7 @@ export default defineComponent({
           this.managerAccess = true;
         })
         .catch(e => {
-          const error = "Error while fetching permissons: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching permissions");
           this.managerAccess = e.status != 403;
         });
     },
@@ -159,8 +158,7 @@ export default defineComponent({
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while edit permissons: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "updating permissons");
         });
     },
   },

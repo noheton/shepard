@@ -1,3 +1,6 @@
+import log from "loglevel";
+log.setDefaultLevel("info");
+
 import Vue from "vue";
 import App from "./App.vue";
 import "./plugins/bootstrap-vue";

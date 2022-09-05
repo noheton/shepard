@@ -57,7 +57,9 @@
 
 <script lang="ts">
 import StructuredDataService from "@/services/structuredDataService";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
+  ResponseError,
   StructuredDataContainer,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
@@ -131,9 +133,7 @@ export default defineComponent({
               container.id;
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data container: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching structured data container");
           this.currentContainer = undefined;
           this.validContainer = false;
         });
@@ -156,9 +156,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error =
-            "Error while getting all structured datas: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching all structured datas");
         });
     },
   },

@@ -75,10 +75,12 @@
 <script lang="ts">
 import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
+import { logError } from "@/utils/error-handling";
 import type {
   Collection,
   DataObject,
   DataObjectReference,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
@@ -147,8 +149,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error = "Error while fetching collection: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching collection");
           this.currentCollection = undefined;
           this.validCollection = false;
         });
@@ -164,8 +165,7 @@ export default defineComponent({
             this.newDataObjectReference.referencedDataObjectId = dataObject.id;
         })
         .catch(e => {
-          const error = "Error while fetching data object: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching data object");
           this.currentDataObject = undefined;
         });
     },

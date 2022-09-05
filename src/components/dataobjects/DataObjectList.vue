@@ -25,8 +25,10 @@ import FilterListLine, {
 } from "@/components/generic/FilterListLine.vue";
 import Loading from "@/components/generic/Loading.vue";
 import DataObjectService from "@/services/dataObjectService";
+import { handleError } from "@/utils/error-handling";
 import {
   GetAllDataObjectsOrderByEnum,
+  ResponseError,
   type DataObject,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
@@ -115,8 +117,7 @@ export default defineComponent({
           this.dataObjects = response;
         })
         .catch(e => {
-          const error = "Error while fetching data objects: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching data objects");
         });
     },
   },

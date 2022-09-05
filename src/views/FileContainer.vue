@@ -147,7 +147,7 @@ import PermissionsModal from "@/components/PermissionsModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
 import { downloadFile } from "@/utils/download";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   FileContainer,
   Permissions,
@@ -226,8 +226,7 @@ export default defineComponent({
           this.fileList = response;
         })
         .catch(e => {
-          const error = "Error while fetching file payload: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching file payload");
         });
     },
     handleDeleteContainer() {
@@ -304,8 +303,7 @@ export default defineComponent({
           this.managerAccess = true;
         })
         .catch(e => {
-          const error = "Error while fetching permissons: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching permissions");
           this.managerAccess = e.status != 403;
         });
     },
@@ -318,8 +316,7 @@ export default defineComponent({
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while updating permissons: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "updating permissons");
         });
     },
   },

@@ -37,7 +37,8 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
 import UserService from "@/services/userService";
-import type { User } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type { ResponseError, User } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface UserData {
@@ -67,8 +68,7 @@ export default defineComponent({
           this.user = response;
         })
         .catch(e => {
-          const error = "Error while fetching user: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching user");
         });
     },
     userTableItems() {

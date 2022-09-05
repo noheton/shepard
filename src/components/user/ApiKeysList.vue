@@ -96,8 +96,7 @@ export default defineComponent({
           this.apiKeys = response;
         })
         .catch(e => {
-          const error = "Error while fetching api keys: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching api keys");
         });
     },
     handleCreate() {

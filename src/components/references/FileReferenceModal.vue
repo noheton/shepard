@@ -127,7 +127,7 @@
 
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileService from "@/services/fileService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   FileContainer,
   FileReference,
@@ -280,8 +280,7 @@ export default defineComponent({
             this.newFileReference.fileContainerId = container.id;
         })
         .catch(e => {
-          const error = "Error while fetching file container: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching file container");
           this.currentContainer = undefined;
           this.validContainer = false;
         });
@@ -304,8 +303,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error = "Error while fetching all files: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching all files");
         });
     },
     async uploadFile(newFile: Blob, containerId: number) {

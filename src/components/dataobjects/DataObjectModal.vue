@@ -209,7 +209,6 @@ function create() {
 
 function update() {
   if (!newDataObject.value.id) {
-    console.log("Unknown dataObject id");
     return;
   }
   DataObjectService.updateDataObject({

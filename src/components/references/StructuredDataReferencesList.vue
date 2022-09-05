@@ -132,7 +132,7 @@ import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import Loading from "@/components/generic/Loading.vue";
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
   ResponseError,
@@ -196,9 +196,10 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data references: " + e.statusText;
-          console.log(error);
+          handleError(
+            e as ResponseError,
+            "fetching structured data references",
+          );
         });
     },
 
@@ -218,9 +219,7 @@ export default defineComponent({
           this.structuredDatas = { ...this.structuredDatas, ...temp };
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data payload: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching structured data payload");
         });
     },
 

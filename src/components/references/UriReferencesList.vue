@@ -123,8 +123,7 @@ export default defineComponent({
           this.uriList = response;
         })
         .catch(e => {
-          const error = "Error while fetching URI references: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching URI references");
         });
     },
 

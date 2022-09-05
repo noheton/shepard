@@ -8,7 +8,7 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   Collection,
   Permissions,
@@ -53,8 +53,7 @@ function retrievePermissions() {
       permissions.value = response;
     })
     .catch(e => {
-      const error = "Error while fetching permissons: " + e.statusText;
-      console.log(error);
+      logError(e as ResponseError, "fetching permissions");
     });
 }
 function updatePermissions(perms: Permissions) {
@@ -66,8 +65,7 @@ function updatePermissions(perms: Permissions) {
       permissions.value = response;
     })
     .catch(e => {
-      const error = "Error while updating permissons: " + e.statusText;
-      console.log(error);
+      handleError(e as ResponseError, "updating permissons");
     });
 }
 
@@ -80,8 +78,7 @@ function retrieveRoles() {
       roles.value = response;
     })
     .catch(e => {
-      const error = "Error while fetching roles: " + e.statusText;
-      console.log(error);
+      logError(e as ResponseError, "fetching roles");
     });
 }
 

@@ -13,7 +13,6 @@ Vue.use(Vuex);
 // OIDC
 const loco = window.location;
 const appRootUrl = `${loco.protocol}//${loco.host}${import.meta.env.BASE_URL}`;
-console.log(appRootUrl);
 
 const clientSettings = {
   authority: getEnv("VITE_OIDC_AUTHORITY"),

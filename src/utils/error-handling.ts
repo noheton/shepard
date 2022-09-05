@@ -1,4 +1,5 @@
 import type { ResponseError } from "@dlr-shepard/shepard-client";
+import log from "loglevel";
 import { emitter, type ErrorType } from "./event-bus";
 
 async function parseResponseError(error: ResponseError): Promise<ErrorType> {
@@ -17,10 +18,16 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
 
 export function handleError(e: ResponseError, situation: string) {
   parseResponseError(e as ResponseError).then(parsedError => {
-    console.log(parsedError);
+    log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
     emitter.emit("error", {
       situation: situation,
       error: parsedError,
     });
+  });
+}
+
+export function logError(e: ResponseError, situation: string) {
+  parseResponseError(e as ResponseError).then(parsedError => {
+    log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
   });
 }

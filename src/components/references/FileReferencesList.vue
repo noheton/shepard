@@ -119,7 +119,7 @@ import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
   FileReference,
@@ -186,8 +186,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error = "Error while fetching file references: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching file references");
         });
     },
 
@@ -207,8 +206,7 @@ export default defineComponent({
           this.files = { ...this.files, ...temp };
         })
         .catch(e => {
-          const error = "Error while fetching files: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching files");
         });
     },
 
@@ -225,8 +223,7 @@ export default defineComponent({
           this.downloadFinished = true;
         })
         .catch(e => {
-          const error = "Error while fetching file payload: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching file payload");
           this.downloadError = true;
         })
         .finally(() => (this.downloadActive = false));

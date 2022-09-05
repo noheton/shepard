@@ -133,7 +133,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import StructuredDataService from "@/services/structuredDataService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
@@ -201,9 +201,7 @@ export default defineComponent({
           this.structuredDataList = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching structured data payload: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching structured data payload");
         });
     },
     createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
@@ -257,8 +255,7 @@ export default defineComponent({
           this.managerAccess = true;
         })
         .catch(e => {
-          const error = "Error while fetching permissons: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching permissions");
           this.managerAccess = e.status != 403;
         });
     },
@@ -271,8 +268,7 @@ export default defineComponent({
           this.permissions = response;
         })
         .catch(e => {
-          const error = "Error while updating permissons: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "updating permissons");
         });
     },
   },

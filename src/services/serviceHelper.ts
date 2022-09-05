@@ -1,6 +1,6 @@
+import getEnv from "@/utils/env";
+import store from "@/utils/vuex-store";
 import { Configuration } from "@dlr-shepard/shepard-client";
-import getEnv from "../utils/env";
-import store from "../utils/vuex-store";
 
 export function getConfiguration(): Configuration {
   const token = store.getters["oidcStore/oidcAccessToken"];

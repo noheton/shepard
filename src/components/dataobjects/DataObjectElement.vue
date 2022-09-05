@@ -9,7 +9,8 @@
 <script lang="ts">
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import DataObjectService from "@/services/dataObjectService";
-import type { DataObject } from "@dlr-shepard/shepard-client";
+import { handleError } from "@/utils/error-handling";
+import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface RelatedObjectsTableData {
@@ -34,10 +35,10 @@ export default defineComponent({
     } as RelatedObjectsTableData;
   },
   mounted() {
-    this.retrieveDataObjects();
+    this.retrieveDataObject();
   },
   methods: {
-    retrieveDataObjects() {
+    retrieveDataObject() {
       DataObjectService.getDataObject({
         collectionId: this.collectionId,
         dataObjectId: this.dataObjectId,
@@ -46,8 +47,7 @@ export default defineComponent({
           this.dataObject = response;
         })
         .catch(e => {
-          const error = "Error while fetching Data Object: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching data object");
         });
     },
   },

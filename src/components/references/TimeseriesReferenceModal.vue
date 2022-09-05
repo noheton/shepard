@@ -107,7 +107,9 @@
 
 <script lang="ts">
 import TimeseriesService from "@/services/timeseriesService";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
+  ResponseError,
   Timeseries,
   TimeseriesContainer,
   TimeseriesReference,
@@ -250,9 +252,7 @@ export default defineComponent({
             this.newTimeseriesReference.timeseriesContainerId = container.id;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries container: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching timeseries container");
           this.currentContainer = undefined;
           this.validContainer = false;
         });
@@ -267,9 +267,7 @@ export default defineComponent({
           );
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries available: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching all timeseries");
         });
     },
   },

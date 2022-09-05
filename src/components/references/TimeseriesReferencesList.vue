@@ -141,7 +141,7 @@ import TimeseriesPlottingModal from "@/components/references/TimeseriesPlottingM
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
   ResponseError,
@@ -206,9 +206,7 @@ export default defineComponent({
           this.timeseriesList = response;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries references: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching timeseries references");
         });
     },
     downloadCsv(referenceId: number, referenceName: string) {
@@ -223,9 +221,7 @@ export default defineComponent({
           this.downloadFinished = true;
         })
         .catch(e => {
-          const error =
-            "Error while fetching timeseries payload: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching timeseries payload");
           this.downloadError = true;
         })
         .finally(() => (this.downloadActive = false));

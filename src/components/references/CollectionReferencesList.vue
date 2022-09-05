@@ -102,7 +102,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
 import CollectionReferenceService from "@/services/collectionReferenceService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   Collection,
   CollectionReference,
@@ -161,9 +161,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error =
-            "Error while fetching collection references: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching collection references");
         });
     },
     retrieveCollection(referenceId: number) {
@@ -178,10 +176,7 @@ export default defineComponent({
           this.referencedList = { ...this.referencedList, ...temp };
         })
         .catch(e => {
-          const error =
-            "Error while fetching collection reference payload: " +
-            e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching collection reference payload");
         });
     },
 

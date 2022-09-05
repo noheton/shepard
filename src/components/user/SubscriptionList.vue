@@ -98,8 +98,7 @@ export default defineComponent({
           this.subscriptions = response;
         })
         .catch(e => {
-          const error = "Error while fetching subscriptions: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching subscriptions");
         });
     },
     handleCreate(subscription: Subscription) {

@@ -102,7 +102,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   DataObject,
   DataObjectReference,
@@ -161,9 +161,7 @@ export default defineComponent({
           });
         })
         .catch(e => {
-          const error =
-            "Error while fetching data object references: " + e.statusText;
-          console.log(error);
+          handleError(e as ResponseError, "fetching data object references");
         });
     },
     retrieveDataObject(referenceId: number) {
@@ -178,10 +176,10 @@ export default defineComponent({
           this.referencedList = { ...this.referencedList, ...temp };
         })
         .catch(e => {
-          const error =
-            "Error while fetching data object reference payload: " +
-            e.statusText;
-          console.log(error);
+          logError(
+            e as ResponseError,
+            "fetching data object reference payload",
+          );
         });
     },
 

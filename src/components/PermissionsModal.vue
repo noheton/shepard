@@ -163,10 +163,12 @@
 <script lang="ts">
 import UserGroupService from "@/services/userGroupService";
 import UserService from "@/services/userService";
+import { logError } from "@/utils/error-handling";
 import { permissionOptions } from "@/utils/helpers";
 import type {
   Permissions,
   PermissionsPermissionTypeEnum,
+  ResponseError,
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
@@ -347,8 +349,7 @@ export default defineComponent({
           this.validUser = true;
         })
         .catch(e => {
-          const error = "Error while fetching user: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching user");
           this.currentUser = undefined;
           this.validUser = false;
         });
@@ -362,8 +363,7 @@ export default defineComponent({
           this.validUserGroup = true;
         })
         .catch(e => {
-          const error = "Error while fetching userGroup: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching user group");
           this.currentUserGroup = undefined;
           this.validUserGroup = false;
         });

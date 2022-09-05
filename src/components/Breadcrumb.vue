@@ -7,6 +7,8 @@
 
 <script lang="ts">
 import DataObjectService from "@/services/dataObjectService";
+import { logError } from "@/utils/error-handling";
+import type { ResponseError } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 import type { Location } from "vue-router";
 
@@ -108,8 +110,7 @@ export default defineComponent({
         })
         .catch(e => {
           this.parentId = undefined;
-          const error = "Error while fetching data objects: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching data objects");
         });
     },
     chooseBreadcrumb() {

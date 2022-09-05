@@ -21,8 +21,8 @@
 <script lang="ts">
 import Breadcrumb from "@/components/Breadcrumb.vue";
 import Navbar from "@/components/Navbar.vue";
+import { emitter } from "@/utils/event-bus";
 import { defineComponent } from "vue";
-import { emitter } from "./utils/event-bus";
 
 export default defineComponent({
   components: { Breadcrumb, Navbar },

@@ -55,9 +55,11 @@
 
 <script lang="ts">
 import CollectionService from "@/services/collectionService";
+import { logError } from "@/utils/error-handling";
 import type {
   Collection,
   CollectionReference,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
@@ -110,8 +112,7 @@ export default defineComponent({
             this.newCollectionReference.referencedCollectionId = collection.id;
         })
         .catch(e => {
-          const error = "Error while fetching collection: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching collection");
           this.currentCollection = undefined;
           this.validCollection = false;
         });

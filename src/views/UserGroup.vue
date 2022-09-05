@@ -4,7 +4,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import UserModal from "@/components/user/UserModal.vue";
 import UserGroupService from "@/services/userGroupService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
@@ -55,8 +55,7 @@ function retrieveUserGroup() {
       currentUserGroup.value = response;
     })
     .catch(e => {
-      const error = "Error while fetching user group: " + e.statusText;
-      console.log(error);
+      handleError(e as ResponseError, "fetching user group");
     });
 }
 
@@ -70,7 +69,7 @@ function updateUserGroup() {
         retrieveUserGroup();
       })
       .catch(e => {
-        handleError(e as ResponseError, "updating a user group");
+        handleError(e as ResponseError, "updating user group");
       });
 }
 
@@ -84,8 +83,7 @@ function handleDeleteUserGroup() {
       });
     })
     .catch(e => {
-      const error = "Error while deleting user group: " + e.statusText;
-      console.log(error);
+      handleError(e as ResponseError, "deleting user group");
     });
 }
 
@@ -116,8 +114,7 @@ function retrievePermissions() {
       managerAccess.value = true;
     })
     .catch(e => {
-      const error = "Error while fetching permissons: " + e.statusText;
-      console.log(error);
+      logError(e as ResponseError, "fetching permissions");
       managerAccess.value = e.status != 403;
     });
 }
@@ -131,8 +128,7 @@ function updatePermissions(perms: Permissions) {
       permissions.value = response;
     })
     .catch(e => {
-      const error = "Error while updating permissons: " + e.statusText;
-      console.log(error);
+      handleError(e as ResponseError, "updating permissons");
     });
 }
 

@@ -43,7 +43,8 @@
 
 <script lang="ts">
 import UserService from "@/services/userService";
-import type { User } from "@dlr-shepard/shepard-client";
+import { logError } from "@/utils/error-handling";
+import type { ResponseError, User } from "@dlr-shepard/shepard-client";
 import { defineComponent } from "vue";
 
 interface AddUserModalData {
@@ -103,8 +104,7 @@ export default defineComponent({
           this.validUser = true;
         })
         .catch(e => {
-          const error = "Error while fetching user: " + e.statusText;
-          console.log(error);
+          logError(e as ResponseError, "fetching user");
           this.currentUser = undefined;
           this.validUser = false;
         });
