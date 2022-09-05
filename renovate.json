@@ -19,7 +19,7 @@
       "allowedVersions": "<5"
     },
     {
-      "matchPackageNames": ["typescipt"],
+      "matchPackageNames": ["typescript"],
       "allowedVersions": "<4.8"
     }
   ],
