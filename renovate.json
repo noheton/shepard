@@ -5,5 +5,12 @@
   "labels": ["dependencies"],
   "stabilityDays": 3,
   "prCreation": "not-pending",
-  "dependencyDashboard": true
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "matchFiles": ["requirements.txt"],
+      "groupName": "all python dependencies",
+      "groupSlug": "all-python-deps"
+    }
+  ]
 }
