@@ -44,7 +44,7 @@
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.23</influxdb.version>
 		<janino.version>3.1.8</janino.version>
-		<jersey.version>3.0.7</jersey.version>
+		<jersey.version>3.0.8</jersey.version>
 		<jjwt.version>0.11.5</jjwt.version>
 		<junit.version>5.9.0</junit.version>
 		<logback.version>1.4.0</logback.version>
