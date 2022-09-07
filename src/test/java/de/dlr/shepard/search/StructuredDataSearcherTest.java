@@ -211,7 +211,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		// create ResponseBody
-		ResultTriple[] resultTriples = new ResultTriple[0];
+		ResultTriple[] resultTriples = {};
 		ResponseBody responseBody = new ResponseBody();
 		responseBody.setResultSet(resultTriples);
 		responseBody.setSearchParams(searchBody.getSearchParams());

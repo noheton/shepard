@@ -11,7 +11,8 @@ import de.dlr.shepard.util.Constants;
 
 public class MongoDBEmitter {
 
-	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR, Constants.JSON_NOT);
+	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
+			Constants.JSON_NOT);
 
 	private MongoDBEmitter() {
 	}
@@ -128,9 +129,9 @@ public class MongoDBEmitter {
 
 	private static String emitBooleanOperator(String operator) throws ShepardParserException {
 		switch (operator) {
-		case (Constants.JSON_AND):
+		case Constants.JSON_AND:
 			return "$and:";
-		case (Constants.JSON_OR):
+		case Constants.JSON_OR:
 			return "$or:";
 		default:
 			throw new ShepardParserException("unknown operator: " + operator);
@@ -139,9 +140,9 @@ public class MongoDBEmitter {
 
 	private static String emitNegatedBooleanOperator(String operator) throws ShepardParserException {
 		switch (operator) {
-		case (Constants.JSON_AND):
+		case Constants.JSON_AND:
 			return "$or:";
-		case (Constants.JSON_OR):
+		case Constants.JSON_OR:
 			return "$and:";
 		default:
 			throw new ShepardParserException("unknown operator: " + operator);
