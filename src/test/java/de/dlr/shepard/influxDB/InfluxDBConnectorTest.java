@@ -52,7 +52,7 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 	private final long start = 12345L;
 	private final long end = 67890L;
 	private final long groupBy = 10L;
-	private final AggregateFunction function = AggregateFunction.MEAN;
+	private final SingleValuedUnaryFunction function = SingleValuedUnaryFunction.MEAN;
 
 	private final Timeseries expectedTimeseries = new Timeseries(measurement, location, device, sym_name, field);
 	private final TimeseriesPayload expectedTimeseriesPayload = new TimeseriesPayload(expectedTimeseries,

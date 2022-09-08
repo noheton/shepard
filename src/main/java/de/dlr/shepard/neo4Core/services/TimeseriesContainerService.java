@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
@@ -136,7 +136,7 @@ public class TimeseriesContainerService {
 	 * @return TimeseriesPayload
 	 */
 	public TimeseriesPayload getTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
-			AggregateFunction function, Long groupByInterval) {
+			SingleValuedUnaryFunction function, Long groupByInterval) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
@@ -163,7 +163,7 @@ public class TimeseriesContainerService {
 	}
 
 	public InputStream exportTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
-			AggregateFunction function, Long groupByInterval) throws IOException {
+			SingleValuedUnaryFunction function, Long groupByInterval) throws IOException {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);

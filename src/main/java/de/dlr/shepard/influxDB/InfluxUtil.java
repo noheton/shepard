@@ -41,7 +41,7 @@ public final class InfluxUtil {
 	 * @return an influx query
 	 */
 	public static BoundParameterQuery buildQuery(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
 		var selectPart = (function != null)
 				? String.format("SELECT %s(\"%s\")", function.toString(), timeseries.getField())
 				: String.format("SELECT \"%s\"", timeseries.getField());

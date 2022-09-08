@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
@@ -51,7 +51,7 @@ public interface TimeseriesReferenceRest {
 	@Operation(description = "Get timeseries reference payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesPayload.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, AggregateFunction function,
+	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId, SingleValuedUnaryFunction function,
 			Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
 			Set<String> symbolicNameFilterTag);
 
@@ -60,7 +60,7 @@ public interface TimeseriesReferenceRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response exportTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId,
-			AggregateFunction function, Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
+			SingleValuedUnaryFunction function, Long groupBy, Set<String> deviceFilterTag, Set<String> locationFilterTag,
 			Set<String> symbolicNameFilterTag) throws IOException;
 
 }

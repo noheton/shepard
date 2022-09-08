@@ -19,7 +19,7 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -236,10 +236,10 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var end = 456L;
 
 		when(dao.find(1L)).thenReturn(container);
-		when(timeseriesService.getTimeseries(start, end, "database", ts, AggregateFunction.MEAN, 10L))
+		when(timeseriesService.getTimeseries(start, end, "database", ts, SingleValuedUnaryFunction.MEAN, 10L))
 				.thenReturn(payload);
 
-		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.getTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertEquals(payload, actual);
 	}
 
@@ -251,7 +251,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.getTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertNull(actual);
 	}
 
@@ -266,7 +266,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.getTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertNull(actual);
 	}
 
@@ -313,10 +313,10 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var payload = new ByteArrayInputStream("123".getBytes());
 
 		when(dao.find(1L)).thenReturn(container);
-		when(timeseriesService.exportTimeseries(start, end, "database", List.of(ts), AggregateFunction.MEAN, 10L,
+		when(timeseriesService.exportTimeseries(start, end, "database", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
 				Collections.emptySet(), Collections.emptySet(), Collections.emptySet())).thenReturn(payload);
 
-		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.exportTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertEquals(payload, actual);
 	}
 
@@ -328,7 +328,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.exportTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertNull(actual);
 	}
 
@@ -343,7 +343,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.exportTimeseries(1L, ts, start, end, AggregateFunction.MEAN, 10L);
+		var actual = service.exportTimeseries(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L);
 		assertNull(actual);
 	}
 

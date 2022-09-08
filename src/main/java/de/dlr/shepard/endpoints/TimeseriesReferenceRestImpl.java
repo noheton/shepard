@@ -9,7 +9,7 @@ import java.util.Set;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
@@ -94,7 +94,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
@@ -115,7 +115,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response exportTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {

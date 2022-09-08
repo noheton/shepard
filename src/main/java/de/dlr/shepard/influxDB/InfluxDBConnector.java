@@ -156,7 +156,7 @@ public class InfluxDBConnector implements IConnector {
 	 *         "symbolic_name"-tag.
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
 		Query query = InfluxUtil.buildQuery(startTimeStamp, endTimeStamp, database, timeseries, function,
 				groupByInterval);
 		log.debug("Influx Query: {}", query.getCommand());

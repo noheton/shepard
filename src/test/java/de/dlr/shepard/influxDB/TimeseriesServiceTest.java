@@ -36,7 +36,7 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	private Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 	private TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
-	private AggregateFunction function = AggregateFunction.MEAN;
+	private SingleValuedUnaryFunction function = SingleValuedUnaryFunction.MEAN;
 	private Long groupBy = 10L;
 
 	@Test

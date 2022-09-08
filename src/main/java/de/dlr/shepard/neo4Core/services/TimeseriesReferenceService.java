@@ -8,7 +8,7 @@ import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
@@ -83,7 +83,7 @@ public class TimeseriesReferenceService {
 		return true;
 	}
 
-	public List<TimeseriesPayload> getPayload(long timeseriesId, AggregateFunction function, Long groupBy,
+	public List<TimeseriesPayload> getPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet,
 			String username) throws InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
@@ -97,7 +97,7 @@ public class TimeseriesReferenceService {
 				function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
-	public InputStream export(long timeseriesId, AggregateFunction function, Long groupBy, Set<String> devicesFilterSet,
+	public InputStream export(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy, Set<String> devicesFilterSet,
 			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username)
 			throws IOException, InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);

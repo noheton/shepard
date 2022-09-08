@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -239,10 +239,10 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
-		when(timeseriesService.getTimeseriesList(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
+		when(timeseriesService.getTimeseriesList(123, 321, "Database", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
 				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(List.of(payload));
 
-		var actual = service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+		var actual = service.getPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
 				"bob");
 		assertEquals(List.of(payload), actual);
 	}
@@ -267,7 +267,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
 		assertThrows(InvalidAuthException.class, () -> {
-			service.getPayload(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+			service.getPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
 		});
 	}
 
@@ -290,10 +290,10 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
-		when(timeseriesService.exportTimeseries(123, 321, "Database", List.of(ts), AggregateFunction.MEAN, 10L,
+		when(timeseriesService.exportTimeseries(123, 321, "Database", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
 				Set.of("dev"), Set.of("loc"), Set.of("name"))).thenReturn(is);
 
-		var actual = service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
+		var actual = service.export(1L, SingleValuedUnaryFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"),
 				"bob");
 		assertEquals(is, actual);
 	}
@@ -318,7 +318,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
 		assertThrows(InvalidAuthException.class, () -> {
-			service.export(1L, AggregateFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+			service.export(1L, SingleValuedUnaryFunction.MEAN, 10L, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
 		});
 	}
 

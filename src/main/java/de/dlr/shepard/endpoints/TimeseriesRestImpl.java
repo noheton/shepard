@@ -9,7 +9,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.influxDB.AggregateFunction;
+import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
@@ -129,7 +129,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.FIELD) @Parameter(required = true) String field,
 			@QueryParam(Constants.START) @Parameter(required = true) long start,
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
 			@QueryParam(Constants.GROUP_BY) Long groupByInterval) {
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
 			return Response.status(Status.BAD_REQUEST).build();
@@ -154,7 +154,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.FIELD) @Parameter(required = true) String field,
 			@QueryParam(Constants.START) @Parameter(required = true) long start,
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
-			@QueryParam(Constants.FUNCTION) AggregateFunction function,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
 			@QueryParam(Constants.GROUP_BY) Long groupByInterval) throws IOException {
 
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {

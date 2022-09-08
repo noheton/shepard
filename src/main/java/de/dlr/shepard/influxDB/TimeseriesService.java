@@ -45,7 +45,7 @@ public class TimeseriesService {
 	 * @return timeseries with influx points
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, AggregateFunction function, Long groupByInterval) {
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
 		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries,
 				function, groupByInterval);
 		return payload;
@@ -67,7 +67,7 @@ public class TimeseriesService {
 	 * @return a list of timeseries with influx points
 	 */
 	public List<TimeseriesPayload> getTimeseriesList(long start, long end, String database,
-			List<Timeseries> timeseriesList, AggregateFunction function, Long groupByInterval,
+			List<Timeseries> timeseriesList, SingleValuedUnaryFunction function, Long groupByInterval,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
 		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
 		timeseriesList.parallelStream().forEach(timeseries -> {
@@ -110,7 +110,7 @@ public class TimeseriesService {
 	 * @throws IOException When the CSV file could not be written
 	 */
 	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseriesList,
-			AggregateFunction function, Long groupByInterval, Set<String> devicesFilterSet,
+			SingleValuedUnaryFunction function, Long groupByInterval, Set<String> devicesFilterSet,
 			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
 		var payload = getTimeseriesList(start, end, database, timeseriesList, function, groupByInterval,
 				devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
