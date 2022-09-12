@@ -37,37 +37,91 @@
       <b-row class="mb-3">
         <b-col cols="6">
           <b-form-group label="Start">
-            <b-form-datepicker
-              v-model="startDate"
-              class="mb-1"
-              required
-            ></b-form-datepicker>
-            <b-form-timepicker
-              v-model="startTime"
-              class="mb-1"
-              show-seconds
-              now-button
-              reset-button
-              required
-            ></b-form-timepicker>
+            <b-input-group class="mb-1">
+              <b-form-input
+                id="start-date"
+                v-model="startDate"
+                type="text"
+                placeholder="YYYY-MM-DD"
+                autocomplete="off"
+                required
+                @blur="startDate = validateDate(startDate)"
+              ></b-form-input>
+              <b-input-group-append>
+                <b-form-datepicker
+                  v-model="startDate"
+                  button-only
+                  right
+                  locale="en-US"
+                  aria-controls="start-date"
+                ></b-form-datepicker> </b-input-group-append
+            ></b-input-group>
+
+            <b-input-group class="mb-1">
+              <b-form-input
+                id="start-time"
+                v-model="startTime"
+                type="text"
+                placeholder="HH:mm:ss"
+                @blur="startTime = validateTime(startTime)"
+              ></b-form-input>
+              <b-input-group-append>
+                <b-form-timepicker
+                  v-model="startTime"
+                  button-only
+                  right
+                  show-seconds
+                  now-button
+                  required
+                  aria-controls="start-time"
+                ></b-form-timepicker>
+              </b-input-group-append>
+            </b-input-group>
           </b-form-group>
         </b-col>
 
         <b-col cols="6">
           <b-form-group label="End">
-            <b-form-datepicker
-              v-model="endDate"
-              class="mb-1"
-              required
-            ></b-form-datepicker>
-            <b-form-timepicker
-              v-model="endTime"
-              class="mb-1"
-              show-seconds
-              now-button
-              reset-button
-              required
-            ></b-form-timepicker>
+            <b-input-group class="mb-1">
+              <b-form-input
+                id="end-date"
+                v-model="endDate"
+                type="text"
+                placeholder="YYYY-MM-DD"
+                autocomplete="off"
+                required
+                @blur="endDate = validateDate(endDate)"
+              ></b-form-input>
+              <b-input-group-append>
+                <b-form-datepicker
+                  v-model="endDate"
+                  button-only
+                  right
+                  locale="en-US"
+                  aria-controls="end-date"
+                ></b-form-datepicker> </b-input-group-append
+            ></b-input-group>
+
+            <b-input-group class="mb-1">
+              <b-form-input
+                id="end-time"
+                v-model="endTime"
+                type="text"
+                placeholder="HH:mm:ss"
+                @blur="endTime = validateTime(endTime)"
+              ></b-form-input>
+              <b-input-group-append>
+                <b-form-timepicker
+                  v-model="endTime"
+                  button-only
+                  right
+                  show-seconds
+                  now-button
+                  required
+                  aria-controls="end-time"
+                ></b-form-timepicker>
+              </b-input-group-append>
+            </b-input-group>
           </b-form-group>
         </b-col>
       </b-row>
@@ -269,6 +323,14 @@ export default defineComponent({
         .catch(e => {
           handleError(e as ResponseError, "fetching all timeseries");
         });
+    },
+    validateDate(input: string) {
+      const parsed = Date.parse(input);
+      return isNaN(parsed) ? "" : new Date(parsed).toISOString().split("T")[0];
+    },
+    validateTime(input: string) {
+      const parsed = Date.parse("1970-01-01 " + input);
+      return isNaN(parsed) ? "" : new Date(parsed).toLocaleTimeString();
     },
   },
 });
