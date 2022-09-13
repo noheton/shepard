@@ -7,7 +7,7 @@
       variant="danger"
       @dismissed="errorAlert = false"
     >
-      Error while {{ errorSituation }}: <b>{{ errorExeption }}</b>
+      Error while {{ errorSituation }}: <b>{{ errorException }}</b>
       <br />
       <small>
         <i>{{ errorMessage }}</i>
@@ -29,7 +29,7 @@ export default defineComponent({
   data() {
     return {
       errorSituation: "",
-      errorExeption: "",
+      errorException: "",
       errorMessage: "",
       errorAlert: false,
     };
@@ -37,7 +37,7 @@ export default defineComponent({
   created() {
     emitter.on("error", e => {
       this.errorSituation = e.situation;
-      this.errorExeption = e.error.exception;
+      this.errorException = e.error.exception;
       this.errorMessage = e.error.message;
       this.errorAlert = true;
     });

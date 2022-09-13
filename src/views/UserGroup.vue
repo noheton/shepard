@@ -128,7 +128,7 @@ function updatePermissions(perms: Permissions) {
       permissions.value = response;
     })
     .catch(e => {
-      handleError(e as ResponseError, "updating permissons");
+      handleError(e as ResponseError, "updating permissions");
     });
 }
 

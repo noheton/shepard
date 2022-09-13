@@ -12,7 +12,7 @@
         />
       </b-tab>
 
-      <b-tab title="Strucured Data">
+      <b-tab title="Structured Data">
         <StructuredDataReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"

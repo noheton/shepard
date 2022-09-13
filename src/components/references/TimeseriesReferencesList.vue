@@ -227,10 +227,10 @@ export default defineComponent({
         .finally(() => (this.downloadActive = false));
     },
     handlePlotData(timeseriesItem: TimeseriesReference) {
-      if (timeseriesItem.id) this.fetchTimeseriePayload(timeseriesItem.id);
+      if (timeseriesItem.id) this.fetchTimeseriesPayload(timeseriesItem.id);
       this.currentTimeseriesReference = timeseriesItem;
     },
-    fetchTimeseriePayload(referenceId: number) {
+    fetchTimeseriesPayload(referenceId: number) {
       TimeseriesReferenceService.getTimeseriesPayload({
         collectionId: this.currentCollectionId,
         dataObjectId: this.currentDataObjectId,

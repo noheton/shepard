@@ -144,13 +144,13 @@ export default defineComponent({
         structureddataContainerId: +this.currentContainerId,
       })
         .then(response => {
-          response.forEach(strdata => {
-            if (!strdata.oid) {
+          response.forEach(structuredData => {
+            if (!structuredData.oid) {
               return;
             }
             const option: Option = {
-              value: strdata.oid,
-              text: strdata.oid + " - " + strdata.name,
+              value: structuredData.oid,
+              text: structuredData.oid + " - " + structuredData.name,
             };
             this.possibleOids.push(option);
           });

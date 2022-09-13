@@ -175,7 +175,7 @@ interface Option {
   text: string;
 }
 
-interface TimeseriesRefernceModalData {
+interface TimeseriesReferenceModalData {
   newTimeseriesReference: TimeseriesReference;
   timeseriesAvailable: Array<Option>;
   currentTimeseries: Timeseries | null;
@@ -191,7 +191,7 @@ interface TimeseriesRefernceModalData {
   validContainer?: boolean;
 }
 
-function initialState(): TimeseriesRefernceModalData {
+function initialState(): TimeseriesReferenceModalData {
   return {
     newTimeseriesReference: {
       name: "",

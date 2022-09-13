@@ -316,7 +316,7 @@ export default defineComponent({
           this.permissions = response;
         })
         .catch(e => {
-          handleError(e as ResponseError, "updating permissons");
+          handleError(e as ResponseError, "updating permissions");
         });
     },
   },

@@ -21,7 +21,7 @@ function fetchBackend() {
     .then(data => (backend.value = data));
 }
 
-function fetchHealtz() {
+function fetchHealthz() {
   HealthzService.getServerHealth()
     .then(response => {
       health.value = response;
@@ -41,7 +41,7 @@ function fetchHealtz() {
 
 onMounted(() => {
   fetchBackend();
-  fetchHealtz();
+  fetchHealthz();
 });
 </script>
 
