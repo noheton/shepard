@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -132,18 +133,19 @@ public class TimeseriesContainerService {
 	 * @param start                 The beginning of the timeseries
 	 * @param end                   The end of the timeseries
 	 * @param function              The aggregate function
-	 * @param groupByInterval       The time interval measurements get grouped by
+	 * @param groupBy               The time interval measurements get grouped by
+	 * @param fillOption            The fill option for missing values
 	 * @return TimeseriesPayload
 	 */
 	public TimeseriesPayload getTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
-			SingleValuedUnaryFunction function, Long groupByInterval) {
+			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
 		var result = timeseriesService.getTimeseries(start, end, timeseriesContainer.getDatabase(), timeseries,
-				function, groupByInterval);
+				function, groupBy, fillOption);
 		return result;
 	}
 
@@ -163,14 +165,14 @@ public class TimeseriesContainerService {
 	}
 
 	public InputStream exportTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
-			SingleValuedUnaryFunction function, Long groupByInterval) throws IOException {
+			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) throws IOException {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
 		var result = timeseriesService.exportTimeseries(start, end, timeseriesContainer.getDatabase(),
-				List.of(timeseries), function, groupByInterval, Collections.emptySet(), Collections.emptySet(),
+				List.of(timeseries), function, groupBy, fillOption, Collections.emptySet(), Collections.emptySet(),
 				Collections.emptySet());
 		return result;
 	}

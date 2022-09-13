@@ -52,7 +52,6 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 	private final long start = 12345L;
 	private final long end = 67890L;
 	private final long groupBy = 10L;
-	private final SingleValuedUnaryFunction function = SingleValuedUnaryFunction.MEAN;
 
 	private final Timeseries expectedTimeseries = new Timeseries(measurement, location, device, sym_name, field);
 	private final TimeseriesPayload expectedTimeseriesPayload = new TimeseriesPayload(expectedTimeseries,
@@ -217,8 +216,8 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 		when(influxDB.query(any(Query.class))).thenReturn(queryResult);
 
-		List<InfluxPoint> exp1 = connector.getTimeseries(start, end, database, expectedTimeseries, function, groupBy)
-				.getPoints();
+		List<InfluxPoint> exp1 = connector.getTimeseries(start, end, database, expectedTimeseries,
+				SingleValuedUnaryFunction.MEAN, groupBy, FillOption.LINEAR).getPoints();
 		assertEquals(5, (int) exp1.get(0).getValue());
 	}
 
@@ -229,8 +228,8 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 		doReturn(queryResult).when(influxDB).query(any(Query.class));
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
-				groupBy);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries,
+				SingleValuedUnaryFunction.MEAN, groupBy, FillOption.LINEAR);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());
@@ -240,8 +239,8 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 	public void testGetTimeseriesWithInfluxDBException() {
 		doThrow(InfluxDBException.class).when(influxDB).query(any(Query.class));
 
-		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries, function,
-				groupBy);
+		TimeseriesPayload actualTimeseries = connector.getTimeseries(start, end, database, expectedTimeseries,
+				SingleValuedUnaryFunction.MEAN, groupBy, FillOption.LINEAR);
 		assertThat(actualTimeseries).usingRecursiveComparison().ignoringFields("influxPoints")
 				.isEqualTo(expectedTimeseriesPayload);
 		assertTrue(actualTimeseries.getPoints().isEmpty());

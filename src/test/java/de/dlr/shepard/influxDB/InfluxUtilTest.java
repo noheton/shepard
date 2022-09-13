@@ -33,9 +33,9 @@ public class InfluxUtilTest extends BaseTestCase {
 	@Test
 	public void buildQueryTest() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, SingleValuedUnaryFunction.MEAN, 123L);
+		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, SingleValuedUnaryFunction.MEAN, 123L, FillOption.LINEAR);
 		var expected = String.format(baseQuery, "MEAN(\"field\")", "\"meas\"", 1, 2)
-				+ String.format(" GROUP BY time(%dns)", 123);
+				+ String.format(" GROUP BY time(%dns)", 123) + " fill(linear)";
 		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
 
 		assertEquals(expected, query.getCommand());
@@ -46,7 +46,20 @@ public class InfluxUtilTest extends BaseTestCase {
 	@Test
 	public void buildQueryTest_noFunction() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, null, 123L);
+		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, null, 123L, FillOption.LINEAR);
+		var expected = String.format(baseQuery, "\"field\"", "\"meas\"", 1, 2)
+				+ String.format(" GROUP BY time(%dns)", 123) + " fill(linear)";
+		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
+
+		assertEquals(expected, query.getCommand());
+		assertEquals("db", query.getDatabase());
+		assertEquals(params, URLDecoder.decode(query.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8));
+	}
+
+	@Test
+	public void buildQueryTest_noFill() {
+		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
+		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, null, 123L, null);
 		var expected = String.format(baseQuery, "\"field\"", "\"meas\"", 1, 2)
 				+ String.format(" GROUP BY time(%dns)", 123);
 		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
@@ -59,7 +72,7 @@ public class InfluxUtilTest extends BaseTestCase {
 	@Test
 	public void buildQueryTest_noGroupBy() {
 		var ts = new Timeseries("meas", "dev", "loc", "name", "field");
-		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, SingleValuedUnaryFunction.MEAN, null);
+		var query = InfluxUtil.buildQuery(1L, 2L, "db", ts, SingleValuedUnaryFunction.MEAN, null, null);
 		var expected = String.format(baseQuery, "MEAN(\"field\")", "\"meas\"", 1, 2);
 		var params = "{\"location\":\"loc\",\"device\":\"dev\",\"symbolic_name\":\"name\"}";
 

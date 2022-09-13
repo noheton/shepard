@@ -9,6 +9,7 @@ import java.util.Set;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
@@ -94,14 +95,16 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
+			@QueryParam(Constants.GROUP_BY) Long groupBy, @QueryParam(Constants.FILLOPTION) FillOption fillOption,
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
 		List<TimeseriesPayload> payload;
 		try {
-			payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, deviceFilterTag,
-					locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
+			payload = timeseriesReferenceService.getPayload(timeseriesId, function, groupBy, fillOption,
+					deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
+					securityContext.getUserPrincipal().getName());
 			return Response.ok(payload).build();
 		} catch (InvalidAuthException e) {
 			return Response.status(Status.FORBIDDEN).build();
@@ -115,13 +118,14 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response exportTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function, @QueryParam(Constants.GROUP_BY) Long groupBy,
+			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
+			@QueryParam(Constants.GROUP_BY) Long groupBy, @QueryParam(Constants.FILLOPTION) FillOption fillOption,
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {
 		InputStream stream;
 		try {
-			stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, deviceFilterTag,
+			stream = timeseriesReferenceService.export(timeseriesId, function, groupBy, fillOption, deviceFilterTag,
 					locationFilterTag, symbolicNameFilterTag, securityContext.getUserPrincipal().getName());
 			return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
 		} catch (InvalidAuthException e) {

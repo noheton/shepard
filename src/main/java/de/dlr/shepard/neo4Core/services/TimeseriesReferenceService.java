@@ -8,6 +8,7 @@ import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
@@ -84,8 +85,8 @@ public class TimeseriesReferenceService {
 	}
 
 	public List<TimeseriesPayload> getPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
-			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet,
-			String username) throws InvalidAuthException {
+			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+			Set<String> symbolicNameFilterSet, String username) throws InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
@@ -94,12 +95,12 @@ public class TimeseriesReferenceService {
 			throw new InvalidAuthException();
 
 		return timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
-				function, groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
-	public InputStream export(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy, Set<String> devicesFilterSet,
-			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username)
-			throws IOException, InvalidAuthException {
+	public InputStream export(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
+			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+			Set<String> symbolicNameFilterSet, String username) throws IOException, InvalidAuthException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
@@ -108,7 +109,7 @@ public class TimeseriesReferenceService {
 			throw new InvalidAuthException();
 
 		return timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
-				groupBy, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+				groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
 }

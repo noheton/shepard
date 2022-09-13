@@ -36,18 +36,19 @@ public class TimeseriesService {
 	/**
 	 * Queries the database for timeseries including aggregate functions.
 	 *
-	 * @param startTimeStamp  The beginning of the timeseries
-	 * @param endTimeStamp    The end of the timeseries
-	 * @param database        The database to be queried
-	 * @param timeseries      The timeseries whose points are queried
-	 * @param function        The aggregate function
-	 * @param groupByInterval The time interval measurements get grouped by
+	 * @param startTimeStamp The beginning of the timeseries
+	 * @param endTimeStamp   The end of the timeseries
+	 * @param database       The database to be queried
+	 * @param timeseries     The timeseries whose points are queried
+	 * @param function       The aggregate function
+	 * @param groupBy        The time interval measurements get grouped by
+	 * @param fillOption     The fill option for missing values
 	 * @return timeseries with influx points
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
 		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries,
-				function, groupByInterval);
+				function, groupBy, fillOption);
 		return payload;
 	}
 
@@ -60,20 +61,21 @@ public class TimeseriesService {
 	 * @param database              The database to be queried
 	 * @param timeseriesList        The list of timeseries whose points are queried
 	 * @param function              The aggregate function
-	 * @param groupByInterval       The time interval measurements get grouped by
+	 * @param groupBy               The time interval measurements get grouped by
+	 * @param fillOption            The fill option for missing values
 	 * @param devicesFilterSet      A set of allowed devices or an empty set
 	 * @param locationsFilterSet    A set of allowed locations or an empty set
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
 	 * @return a list of timeseries with influx points
 	 */
 	public List<TimeseriesPayload> getTimeseriesList(long start, long end, String database,
-			List<Timeseries> timeseriesList, SingleValuedUnaryFunction function, Long groupByInterval,
+			List<Timeseries> timeseriesList, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
 		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
 		timeseriesList.parallelStream().forEach(timeseries -> {
 			TimeseriesPayload payload = null;
 			if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
-				payload = getTimeseries(start, end, database, timeseries, function, groupByInterval);
+				payload = getTimeseries(start, end, database, timeseries, function, groupBy, fillOption);
 			}
 			if (payload != null) {
 				timeseriesQueue.add(payload);
@@ -102,7 +104,8 @@ public class TimeseriesService {
 	 * @param database              The database to be queried
 	 * @param timeseriesList        The list of timeseries whose points are queried
 	 * @param function              The aggregate function
-	 * @param groupByInterval       The time interval measurements get grouped by
+	 * @param groupBy               The time interval measurements get grouped by
+	 * @param fillOption            The fill option for missing values
 	 * @param devicesFilterSet      A set of allowed devices or an empty set
 	 * @param locationsFilterSet    A set of allowed locations or an empty set
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
@@ -110,9 +113,9 @@ public class TimeseriesService {
 	 * @throws IOException When the CSV file could not be written
 	 */
 	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseriesList,
-			SingleValuedUnaryFunction function, Long groupByInterval, Set<String> devicesFilterSet,
+			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> devicesFilterSet,
 			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
-		var payload = getTimeseriesList(start, end, database, timeseriesList, function, groupByInterval,
+		var payload = getTimeseriesList(start, end, database, timeseriesList, function, groupBy, fillOption,
 				devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 		var stream = csvConverter.convertToCsv(payload);
 		return stream;

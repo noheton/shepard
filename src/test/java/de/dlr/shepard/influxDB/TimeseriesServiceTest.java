@@ -36,8 +36,6 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	private Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 	private TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
-	private SingleValuedUnaryFunction function = SingleValuedUnaryFunction.MEAN;
-	private Long groupBy = 10L;
 
 	@Test
 	public void createTimeseriesTest() throws InvalidBodyException {
@@ -67,72 +65,81 @@ public class TimeseriesServiceTest extends BaseTestCase {
 
 	@Test
 	public void getTimeseriesTest() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseries(1, 2, "db", ts, function, groupBy);
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR);
 		assertEquals(payload, actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_noFilter() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Collections.emptySet(), Collections.emptySet());
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_allFilters() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("dev"), Set.of("loc"),
-				Set.of("symName"));
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("symName"));
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterLoc() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Set.of("loc"), Collections.emptySet());
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Set.of("loc"), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterDev() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("dev"),
-				Collections.emptySet(), Collections.emptySet());
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Set.of("dev"), Collections.emptySet(), Collections.emptySet());
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_filterName() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Collections.emptySet(), Set.of("symName"));
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(), Set.of("symName"));
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingLoc() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Set.of("wrong"), Collections.emptySet());
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Set.of("wrong"), Collections.emptySet());
 		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingDev() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Set.of("wrong"),
-				Collections.emptySet(), Collections.emptySet());
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Set.of("wrong"), Collections.emptySet(), Collections.emptySet());
 		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
 	public void getTimeseriesListTest_nonMatchingName() {
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
-		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Collections.emptySet(), Set.of("wrong"));
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
+		var actual = service.getTimeseriesList(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(), Set.of("wrong"));
 		assertEquals(Collections.emptyList(), actual);
 	}
 
@@ -153,10 +160,11 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	@Test
 	public void exportTimeseriesTest() throws IOException {
 		var is = new ByteArrayInputStream("Hello World".getBytes());
-		when(connector.getTimeseries(1, 2, "db", ts, function, groupBy)).thenReturn(payload);
+		when(connector.getTimeseries(1, 2, "db", ts, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR))
+				.thenReturn(payload);
 		when(converter.convertToCsv(List.of(payload))).thenReturn(is);
-		var actual = service.exportTimeseries(1, 2, "db", List.of(ts), function, groupBy, Collections.emptySet(),
-				Collections.emptySet(), Collections.emptySet());
+		var actual = service.exportTimeseries(1, 2, "db", List.of(ts), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 		assertEquals(is, actual);
 	}
 

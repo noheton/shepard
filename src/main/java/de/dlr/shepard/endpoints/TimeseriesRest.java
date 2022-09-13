@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -72,15 +73,16 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
-			String field, long start, long end, SingleValuedUnaryFunction function, Long groupByInterval);
+			String field, long start, long end, SingleValuedUnaryFunction function, Long groupBy,
+			FillOption fillOption);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Export timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response exportTimeseries(long timeseriesId, String measurement, String location, String device,
-			String symbolicName, String field, long start, long end, SingleValuedUnaryFunction function, Long groupByInterval)
-			throws IOException;
+			String symbolicName, String field, long start, long end, SingleValuedUnaryFunction function, Long groupBy,
+			FillOption fillOption) throws IOException;
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Import timeseries payload")

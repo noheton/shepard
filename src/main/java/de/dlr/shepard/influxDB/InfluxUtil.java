@@ -32,16 +32,17 @@ public final class InfluxUtil {
 	/**
 	 * Build an influx query with the given parameters.
 	 *
-	 * @param startTimeStamp  The beginning of the timeseries
-	 * @param endTimeStamp    The end of the timeseries
-	 * @param database        The database to be queried
-	 * @param timeseries      The timeseries whose points are queried
-	 * @param function        The aggregate function
-	 * @param groupByInterval The time interval measurements get grouped by
+	 * @param startTimeStamp The beginning of the timeseries
+	 * @param endTimeStamp   The end of the timeseries
+	 * @param database       The database to be queried
+	 * @param timeseries     The timeseries whose points are queried
+	 * @param function       The aggregate function
+	 * @param groupBy        The time interval measurements get grouped by
+	 * @param fillOption     The fill option for missing values
 	 * @return an influx query
 	 */
 	public static BoundParameterQuery buildQuery(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
 		var selectPart = (function != null)
 				? String.format("SELECT %s(\"%s\")", function.toString(), timeseries.getField())
 				: String.format("SELECT \"%s\"", timeseries.getField());
@@ -51,8 +52,11 @@ public final class InfluxUtil {
 				startTimeStamp, endTimeStamp);
 		var query = String.join(" ", selectPart, fromPart, wherePart);
 
-		if (groupByInterval != null) {
-			query += String.format(" GROUP BY time(%dns)", groupByInterval);
+		if (groupBy != null) {
+			query += String.format(" GROUP BY time(%dns)", groupBy);
+		}
+		if (fillOption != null) {
+			query += String.format(" fill(%s)", fillOption.toString().toLowerCase());
 		}
 		var parameterizedQuery = QueryBuilder.newQuery(query).forDatabase(database)
 				.bind("device", timeseries.getDevice()).bind("location", timeseries.getLocation())

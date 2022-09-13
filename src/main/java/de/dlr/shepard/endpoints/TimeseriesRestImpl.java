@@ -9,6 +9,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -130,14 +131,14 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.START) @Parameter(required = true) long start,
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
 			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
-			@QueryParam(Constants.GROUP_BY) Long groupByInterval) {
+			@QueryParam(Constants.GROUP_BY) Long groupBy, @QueryParam(Constants.FILLOPTION) FillOption fillOption) {
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-		var result = timeseriesContainerService.getTimeseries(timeseriesId, timeseries, start, end, function,
-				groupByInterval);
+		var result = timeseriesContainerService.getTimeseries(timeseriesId, timeseries, start, end, function, groupBy,
+				fillOption);
 
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
@@ -155,7 +156,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.START) @Parameter(required = true) long start,
 			@QueryParam(Constants.END) @Parameter(required = true) long end,
 			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
-			@QueryParam(Constants.GROUP_BY) Long groupByInterval) throws IOException {
+			@QueryParam(Constants.GROUP_BY) Long groupBy, @QueryParam(Constants.FILLOPTION) FillOption fillOption)
+			throws IOException {
 
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
 			return Response.status(Status.BAD_REQUEST).build();
@@ -163,7 +165,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 		var result = timeseriesContainerService.exportTimeseries(timeseriesId, timeseries, start, end, function,
-				groupByInterval);
+				groupBy, fillOption);
 		return result != null
 				? Response.ok(result, MediaType.APPLICATION_OCTET_STREAM)
 						.header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"").build()

@@ -144,21 +144,22 @@ public class InfluxDBConnector implements IConnector {
 	 * objects are in the given measurement of the specific database between the
 	 * start and the end timestamp.
 	 *
-	 * @param startTimeStamp  Start timestamp from which values should be returned
-	 * @param endTimeStamp    End timestamp to which values should be returned
-	 * @param database        Name of the database
-	 * @param timeseries      Specifies the data to load from database
-	 * @param function        The aggregate function
-	 * @param groupByInterval The time interval measurements get grouped by
+	 * @param startTimeStamp Start timestamp from which values should be returned
+	 * @param endTimeStamp   End timestamp to which values should be returned
+	 * @param database       Name of the database
+	 * @param timeseries     Specifies the data to load from database
+	 * @param function       The aggregate function
+	 * @param groupBy        The time interval measurements get grouped by
+	 * @param fillOption     The fill option for missing values
 	 * @return A Timeseries object containing a list of all InfluxPoints in the
 	 *         given measurement of the specific database between the two given
 	 *         timestamps matching the "device"-tag, the "location"-tag and the
 	 *         "symbolic_name"-tag.
 	 */
 	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
-			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupByInterval) {
-		Query query = InfluxUtil.buildQuery(startTimeStamp, endTimeStamp, database, timeseries, function,
-				groupByInterval);
+			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
+		Query query = InfluxUtil.buildQuery(startTimeStamp, endTimeStamp, database, timeseries, function, groupBy,
+				fillOption);
 		log.debug("Influx Query: {}", query.getCommand());
 		QueryResult queryResult;
 

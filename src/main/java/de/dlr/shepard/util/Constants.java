@@ -118,6 +118,7 @@ public class Constants {
 	public static final String END = "end";
 	public static final String FUNCTION = "function";
 	public static final String GROUP_BY = "group_by";
+	public static final String FILLOPTION = "fill_option";
 
 	// Search
 	public static final String OP_PROPERTY = "property";
