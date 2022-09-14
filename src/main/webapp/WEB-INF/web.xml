@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://Java.sun.com/xml/ns/javaee"
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-	version="3.0">
+	xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                      https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+	version="5.0" metadata-complete="true">
+
+	<display-name>shepard</display-name>
 
 	<listener>
 		<listener-class>de.dlr.shepard.endpoints.ServletContextClass</listener-class>
@@ -22,7 +25,10 @@
 		</init-param>
 		<init-param>
 			<param-name>cors.allowed.headers</param-name>
-			<param-value>Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization, X-API-KEY</param-value>
+			<param-value>Origin, Accept, X-Requested-With, Content-Type,
+				Access-Control-Request-Method, Access-Control-Request-Headers,
+				Authorization, X-API-KEY
+			</param-value>
 		</init-param>
 	</filter>
 	<filter-mapping>
@@ -30,8 +36,8 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
-	<!-- Backend Servlet declaration can be omitted in which case it would be automatically 
-		added by Jersey -->
+	<!-- Backend Servlet declaration can be omitted in which case it would be 
+		automatically added by Jersey -->
 	<servlet>
 		<servlet-name>de.dlr.shepard.Backend</servlet-name>
 	</servlet>
@@ -49,9 +55,5 @@
 		<servlet-name>OpenApi</servlet-name>
 		<url-pattern>/doc/*</url-pattern>
 	</servlet-mapping>
-
-	<error-page>
-		<location>/error.jsp</location>
-	</error-page>
 
 </web-app>
