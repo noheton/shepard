@@ -64,7 +64,18 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 2. change to the project root directory
 3. run `docker-compose up` (or `podman-compose up`)
 4. local instances of the databases will be launched without persistent storage
-5. quick tip: run the integration tests to fill your database with some content
+5. quick tip: run the integration tests to fill your databases with some content
+
+| Service           | URL                      | Comment                     |
+| ----------------- | ------------------------ | --------------------------- |
+| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_         |
+| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepard_  |
+| neo4j Frontend    | <http://localhost:7474>  |                             |
+| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_  |
+| mongodb Frontend  | <http://localhost:8084/> |                             |
+| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_ |
+| influxdb Frontend | <http://localhost:8888>  |                             |
+| Swagger UI        | <http://localhost:8082>  |                             |
 
 ### First run
 
