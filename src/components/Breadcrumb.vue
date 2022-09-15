@@ -1,21 +1,77 @@
-<template>
-  <div v-if="collectionId">
-    <b-breadcrumb class="breadcrumb" :items="items"></b-breadcrumb>
-    <hr />
-  </div>
-</template>
-
-<script lang="ts">
+<script setup lang="ts">
 import DataObjectService from "@/services/dataObjectService";
 import { logError } from "@/utils/error-handling";
 import type { ResponseError } from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
+import { computed, ref, watch } from "vue";
 import type { Location } from "vue-router";
+import { useRoute } from "vue2-helpers/vue-router";
 
 interface Breadcrumb {
   text: string;
   to?: Location;
   active: boolean;
+}
+
+const route = useRoute();
+
+const routeName = computed<string>(() => route.name || "");
+const collectionId = computed<string>(() => route.params.collectionId);
+const dataObjectId = computed<string>(() => route.params.dataObjectId);
+
+const parentId = ref<string | undefined>();
+
+watch(dataObjectId, newDataObjectId => {
+  if (newDataObjectId) retrieveParentId();
+  else parentId.value = undefined;
+});
+
+function retrieveParentId() {
+  DataObjectService.getDataObject({
+    collectionId: +collectionId.value,
+    dataObjectId: +dataObjectId.value,
+  })
+    .then(response => {
+      if (response.parentId) parentId.value = String(response.parentId);
+      else parentId.value = undefined;
+    })
+    .catch(e => {
+      parentId.value = undefined;
+      logError(e as ResponseError, "fetching data objects");
+    });
+}
+
+const items = computed<Breadcrumb[]>(() => chooseBreadcrumb());
+
+function chooseBreadcrumb() {
+  const ret: Breadcrumb[] = [];
+  if (routeName.value === "Explore") {
+    ret.push(getCollectionsBreadcrumb(true));
+  } else if (routeName.value === "Collection") {
+    ret.push(getCollectionsBreadcrumb(false));
+    ret.push(getCollectionBreadcrumb(true, collectionId.value));
+  } else if (routeName.value === "DataObject") {
+    ret.push(getCollectionsBreadcrumb(false));
+    ret.push(getCollectionBreadcrumb(false, collectionId.value));
+    if (parentId.value) {
+      ret.push(
+        getDataObjectBreadcrumb(
+          false,
+          collectionId.value,
+          parentId.value,
+          true,
+        ),
+      );
+    }
+    ret.push(
+      getDataObjectBreadcrumb(
+        true,
+        collectionId.value,
+        dataObjectId.value,
+        false,
+      ),
+    );
+  }
+  return ret;
 }
 
 function getCollectionsBreadcrumb(active: boolean): Breadcrumb {
@@ -62,90 +118,14 @@ function getDataObjectBreadcrumb(
     },
   };
 }
-
-interface BreadcrumbData {
-  parentId?: number;
-  items: Array<Breadcrumb>;
-}
-
-export default defineComponent({
-  data() {
-    return {
-      parentId: undefined,
-      items: [],
-    } as BreadcrumbData;
-  },
-  computed: {
-    collectionId(): string {
-      return this.$route.params.collectionId;
-    },
-    dataObjectId(): string {
-      return this.$route.params.dataObjectId;
-    },
-    routeName(): string {
-      return this.$route.name || "";
-    },
-  },
-  watch: {
-    dataObjectId() {
-      if (this.dataObjectId) this.retrieveDataObject();
-      else this.parentId = undefined;
-    },
-    routeName() {
-      this.chooseBreadcrumb();
-    },
-    parentId() {
-      this.chooseBreadcrumb();
-    },
-  },
-  methods: {
-    retrieveDataObject() {
-      DataObjectService.getDataObject({
-        collectionId: +this.collectionId,
-        dataObjectId: +this.dataObjectId,
-      })
-        .then(response => {
-          if (response.parentId) this.parentId = response.parentId;
-          else this.parentId = undefined;
-        })
-        .catch(e => {
-          this.parentId = undefined;
-          logError(e as ResponseError, "fetching data objects");
-        });
-    },
-    chooseBreadcrumb() {
-      this.items = [];
-      if (this.routeName === "Explore") {
-        this.items.push(getCollectionsBreadcrumb(true));
-      } else if (this.routeName === "Collection") {
-        this.items.push(getCollectionsBreadcrumb(false));
-        this.items.push(getCollectionBreadcrumb(true, this.collectionId));
-      } else if (this.routeName === "DataObject") {
-        this.items.push(getCollectionsBreadcrumb(false));
-        this.items.push(getCollectionBreadcrumb(false, this.collectionId));
-        if (this.parentId) {
-          this.items.push(
-            getDataObjectBreadcrumb(
-              false,
-              this.collectionId,
-              String(this.parentId),
-              true,
-            ),
-          );
-        }
-        this.items.push(
-          getDataObjectBreadcrumb(
-            true,
-            this.collectionId,
-            this.dataObjectId,
-            false,
-          ),
-        );
-      }
-    },
-  },
-});
 </script>
+
+<template>
+  <div v-if="collectionId">
+    <b-breadcrumb class="breadcrumb" :items="items"></b-breadcrumb>
+    <hr />
+  </div>
+</template>
 
 <style scoped>
 .breadcrumb {
