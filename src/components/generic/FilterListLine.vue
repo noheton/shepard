@@ -4,30 +4,28 @@
       <b-col>
         <b-pagination
           v-model="currentPage"
-          :per-page="currentSize"
+          class="float-left w-auto"
           :total-rows="maxObjects"
+          :per-page="currentSize"
           @change="updatePage($event)"
         ></b-pagination>
-      </b-col>
-      <b-col>
         <b-form-select
-          v-model="currentSize"
-          :options="sizeOptions"
-          @change="updateSize($event)"
+          v-model="descending"
+          class="ml-3 float-right w-auto"
+          :options="descendingOptions"
+          @change="updateDescending($event)"
         ></b-form-select>
-      </b-col>
-      <b-col>
         <b-form-select
           v-model="orderBy"
+          class="ml-3 float-right w-auto"
           :options="orderByOptions"
           @change="updateOrderBy($event)"
         ></b-form-select>
-      </b-col>
-      <b-col>
         <b-form-select
-          v-model="descending"
-          :options="descendingOptions"
-          @change="updateDescending($event)"
+          v-model="currentSize"
+          class="ml-3 float-right w-auto"
+          :options="sizeOptions"
+          @change="updateSize($event)"
         ></b-form-select>
       </b-col>
     </b-row>
