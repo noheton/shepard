@@ -9,7 +9,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardParserException;
 
 public class MongoDBEmitterTest extends BaseTestCase {
 
@@ -175,7 +174,7 @@ public class MongoDBEmitterTest extends BaseTestCase {
 
 	@ParameterizedTest
 	@MethodSource
-	public void queryTest(String input, String expected) throws ShepardParserException {
+	public void queryTest(String input, String expected) {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);

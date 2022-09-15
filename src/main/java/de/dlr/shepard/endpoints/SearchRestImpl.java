@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.Searcher;
@@ -27,7 +26,7 @@ public class SearchRestImpl implements SearchRest {
 
 	@POST
 	@Override
-	public Response search(SearchBody body) throws ShepardParserException {
+	public Response search(SearchBody body) {
 		log.info("Search for {} with query: {}", body.getSearchParams().getQueryType(),
 				body.getSearchParams().getQuery());
 		ResponseBody ret = searcher.search(body, securityContext.getUserPrincipal().getName());

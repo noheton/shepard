@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.util.Constants;
@@ -33,8 +32,7 @@ public interface StructuredDataReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createStructuredDataReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))) @Valid StructuredDataReferenceIO structuredDataReference)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))) @Valid StructuredDataReferenceIO structuredDataReference);
 
 	@Tag(name = Constants.STRUCTUREDDATA_REFERENCE)
 	@Operation(description = "Delete structureddata reference")

@@ -3,7 +3,6 @@ package de.dlr.shepard.endpoints;
 import java.io.IOException;
 import java.util.Set;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
@@ -39,8 +38,7 @@ public interface TimeseriesReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createTimeseriesReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))) @Valid TimeseriesReferenceIO timeseriesReference)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))) @Valid TimeseriesReferenceIO timeseriesReference);
 
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Delete timeseries reference")

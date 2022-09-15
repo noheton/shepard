@@ -23,6 +23,6 @@ public class InvalidBodyExceptionTest extends BaseTestCase {
 	@Test
 	public void testGetStatusCode() {
 		var obj = new InvalidBodyException();
-		assertEquals(400, obj.getStatusCode());
+		assertEquals(400, obj.getResponse().getStatus());
 	}
 }

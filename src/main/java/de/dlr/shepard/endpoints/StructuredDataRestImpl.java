@@ -2,7 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
@@ -95,7 +94,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Subscribable
 	@Override
 	public Response createStructuredData(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
-			StructuredDataPayload payload) throws InvalidBodyException {
+			StructuredDataPayload payload) {
 		var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();

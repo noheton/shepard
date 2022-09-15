@@ -36,7 +36,7 @@ public class CollectionReferenceService {
 	}
 
 	public CollectionReference createCollectionReference(long dataObjectId, CollectionReferenceIO collectionReference,
-			String username) throws InvalidBodyException {
+			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 

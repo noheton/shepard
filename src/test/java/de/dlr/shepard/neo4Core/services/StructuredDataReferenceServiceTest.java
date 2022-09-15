@@ -103,7 +103,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest() throws InvalidBodyException {
+	public void createStructuredDataReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new StructuredDataContainer(300L);
@@ -152,7 +152,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_notFound() throws InvalidBodyException {
+	public void createStructuredDataReferenceTest_notFound() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new StructuredDataContainer(300L);
@@ -199,7 +199,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_ContainerIsNull() throws InvalidBodyException {
+	public void createStructuredDataReferenceTest_ContainerIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new StructuredDataContainer(300L);
@@ -220,7 +220,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
+	public void createStructuredDataReferenceTest_ContainerIsDeleted() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var input = new StructuredDataReferenceIO() {
@@ -258,7 +258,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest() throws InvalidAuthException {
+	public void getAllPayloadTest() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -280,7 +280,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest_notAllowed() throws InvalidAuthException {
+	public void getAllPayloadTest_notAllowed() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -298,7 +298,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest_unknownOid() throws InvalidAuthException {
+	public void getAllPayloadTest_unknownOid() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -319,7 +319,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAllPayloadTest_isNull() throws InvalidAuthException {
+	public void getAllPayloadTest_isNull() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -334,7 +334,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() throws InvalidAuthException {
+	public void getPayloadTest() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
@@ -353,7 +353,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() throws InvalidAuthException {
+	public void getPayloadTest_notAllowed() {
 		var container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);

@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
@@ -103,10 +102,8 @@ public class StructuredDataContainerService {
 	 * @param structuredDataContainerID identifies the container
 	 * @param payload                   the payload to upload
 	 * @return StructuredData with the new oid
-	 * @throws InvalidBodyException when the given payload is not parsable
 	 */
-	public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload)
-			throws InvalidBodyException {
+	public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
 		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);

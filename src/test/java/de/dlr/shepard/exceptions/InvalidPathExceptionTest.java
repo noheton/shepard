@@ -23,6 +23,6 @@ public class InvalidPathExceptionTest extends BaseTestCase {
 	@Test
 	public void testGetStatusCode() {
 		var obj = new InvalidPathException();
-		assertEquals(404, obj.getStatusCode());
+		assertEquals(404, obj.getResponse().getStatus());
 	}
 }

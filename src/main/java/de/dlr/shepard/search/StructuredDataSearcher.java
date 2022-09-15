@@ -10,7 +10,6 @@ import org.bson.Document;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
@@ -25,13 +24,13 @@ public class StructuredDataSearcher implements ISearcher {
 	private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
 
 	@Override
-	public ResponseBody search(SearchBody searchBody, String userName) throws ShepardParserException {
+	public ResponseBody search(SearchBody searchBody, String userName) {
 		Set<StructuredDataReference> reachableReferences = getAllStructuredDataReferencesFromBody(searchBody, userName);
 		return getStructuredDataResponse(reachableReferences, searchBody);
 	}
 
 	private ResponseBody getStructuredDataResponse(Set<StructuredDataReference> reachableReferences,
-			SearchBody searchBody) throws ShepardParserException {
+			SearchBody searchBody) {
 		Set<Long> matchingReferencesIds = new HashSet<>();
 		String mongoContainerId;
 		MongoCollection<Document> mongoContainer;

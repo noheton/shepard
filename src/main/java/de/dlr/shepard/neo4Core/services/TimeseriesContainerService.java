@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
@@ -108,10 +107,8 @@ public class TimeseriesContainerService {
 	 * @param timeseriesContainerId identifies the TimeseriesContainer
 	 * @param payload               TimeseriesPayload to be created
 	 * @return created timeseries
-	 * @throws InvalidBodyException in case of a failed sanityCheck
 	 */
-	public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload)
-			throws InvalidBodyException {
+	public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
@@ -177,8 +174,7 @@ public class TimeseriesContainerService {
 		return result;
 	}
 
-	public boolean importTimeseries(long timeseriesContainerId, InputStream stream)
-			throws IOException, InvalidBodyException {
+	public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);

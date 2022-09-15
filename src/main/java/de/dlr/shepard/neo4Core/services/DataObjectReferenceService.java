@@ -34,7 +34,7 @@ public class DataObjectReferenceService {
 	}
 
 	public DataObjectReference createDataObjectReference(long dataObjectId, DataObjectReferenceIO dataObjectReference,
-			String username) throws InvalidBodyException {
+			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 

@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -43,7 +42,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	private static String userName = "user";
 
 	@Test
-	public void collectionIdNullDataObjectIdNullTest() throws ShepardParserException {
+	public void collectionIdNullDataObjectIdNullTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(null);
@@ -73,7 +72,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void dataObjectIdNullTest() throws ShepardParserException {
+	public void dataObjectIdNullTest() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
@@ -103,7 +102,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void nonEmptyTraversalRules() throws ShepardParserException {
+	public void nonEmptyTraversalRules() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
@@ -134,7 +133,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emptyTraversalRules() throws ShepardParserException {
+	public void emptyTraversalRules() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);

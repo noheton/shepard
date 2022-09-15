@@ -87,7 +87,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectReferenceTest() throws InvalidBodyException {
+	public void createDataObjectReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var date = new Date(30L);
@@ -133,7 +133,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsNull() throws InvalidBodyException {
+	public void createDataObjectReferenceTest_ReferencedIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var input = new DataObjectReferenceIO() {
@@ -152,7 +152,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsDeleted() throws InvalidBodyException {
+	public void createDataObjectReferenceTest_ReferencedIsDeleted() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var referenced = new DataObject(100L);

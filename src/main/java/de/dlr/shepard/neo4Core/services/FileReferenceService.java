@@ -43,8 +43,7 @@ public class FileReferenceService {
 		return fileReference;
 	}
 
-	public FileReference createFileReference(long dataObjectId, FileReferenceIO fileReference, String username)
-			throws InvalidBodyException {
+	public FileReference createFileReference(long dataObjectId, FileReferenceIO fileReference, String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 		var container = containerDAO.find(fileReference.getFileContainerId());
@@ -80,7 +79,7 @@ public class FileReferenceService {
 		return true;
 	}
 
-	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) throws InvalidAuthException {
+	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) {
 		FileReference reference = fileReferenceDAO.find(fileReferenceId);
 		long containerId = reference.getFileContainer().getId();
 		String mongoId = reference.getFileContainer().getMongoId();

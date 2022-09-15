@@ -14,16 +14,11 @@ public class InvalidBodyException extends ShepardException {
 	private static final long serialVersionUID = 8918170154141864994L;
 
 	public InvalidBodyException() {
-		super("Some of the values provided in the JSON Body are incorrect");
+		super("Some of the values provided in the JSON Body are incorrect", Status.BAD_REQUEST);
 	}
 
 	public InvalidBodyException(String message) {
-		super(message);
-	}
-
-	@Override
-	int getStatusCode() {
-		return Status.BAD_REQUEST.getStatusCode();
+		super(message, Status.BAD_REQUEST);
 	}
 
 }

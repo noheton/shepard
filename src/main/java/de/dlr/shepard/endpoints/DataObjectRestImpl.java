@@ -2,7 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
@@ -78,8 +77,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@POST
 	@Subscribable
 	@Override
-	public Response createDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId, DataObjectIO dataObject)
-			throws InvalidBodyException {
+	public Response createDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId, DataObjectIO dataObject) {
 		DataObject newDataObject = dataObjectService.createDataObject(collectionId, dataObject,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new DataObjectIO(newDataObject)).status(Status.CREATED).build();
@@ -90,8 +88,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Subscribable
 	@Override
 	public Response updateDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectIO dataObject)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectIO dataObject) {
 		DataObject updatedDataObject = dataObjectService.updateDataObject(dataObjectId, dataObject,
 				securityContext.getUserPrincipal().getName());
 		if (updatedDataObject == null) {

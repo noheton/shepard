@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
@@ -59,8 +58,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Subscribable
 	@Override
 	public Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference) {
 		var ref = structuredDataReferenceService.createStructuredDataReference(dataObjectId, structuredDataReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new StructuredDataReferenceIO(ref)).status(Status.CREATED).build();

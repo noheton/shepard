@@ -141,7 +141,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void collections_exists() throws InvalidPathException {
+	public void collections_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -172,7 +172,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void dataObject_exists() throws InvalidPathException {
+	public void dataObject_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -212,7 +212,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void user_exists() throws InvalidPathException {
+	public void user_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(usersSeg);
 		segments.add(userIdSeg);
@@ -238,7 +238,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void apiKey_exists() throws InvalidPathException {
+	public void apiKey_exists() {
 		UUID uid = UUID.randomUUID();
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(usersSeg);
@@ -306,7 +306,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void subscription_exists() throws InvalidPathException {
+	public void subscription_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(usersSeg);
 		segments.add(userIdSeg);
@@ -368,7 +368,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void timeseries_exist() throws InvalidPathException {
+	public void timeseries_exist() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(timeseriesSeg);
 		segments.add(timeseriesIdSeg);
@@ -382,7 +382,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void timeseries_notFound() throws InvalidPathException {
+	public void timeseries_notFound() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(timeseriesSeg);
 		segments.add(timeseriesIdSeg);
@@ -395,7 +395,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void timeseries_wrongUrl() throws InvalidPathException {
+	public void timeseries_wrongUrl() {
 		List<PathSegment> segments = new ArrayList<>();
 
 		segments.add(dummySeg);
@@ -410,7 +410,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void timeseriesReference_exists() throws InvalidPathException {
+	public void timeseriesReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -485,7 +485,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void structuredData_exist() throws InvalidPathException {
+	public void structuredData_exist() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(structuredDatasSeg);
 		segments.add(structuredDataIdSeg);
@@ -499,7 +499,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void structuredData_notFound() throws InvalidPathException {
+	public void structuredData_notFound() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(structuredDatasSeg);
 		segments.add(structuredDataIdSeg);
@@ -512,7 +512,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void structuredData_wrongUrl() throws InvalidPathException {
+	public void structuredData_wrongUrl() {
 		List<PathSegment> segments = new ArrayList<>();
 
 		segments.add(dummySeg);
@@ -527,7 +527,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void structuredDataReference_exists() throws InvalidPathException {
+	public void structuredDataReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -602,7 +602,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void file_exist() throws InvalidPathException {
+	public void file_exist() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(filesSeg);
 		segments.add(fileIdSeg);
@@ -616,7 +616,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void file_notFound() throws InvalidPathException {
+	public void file_notFound() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(filesSeg);
 		segments.add(fileIdSeg);
@@ -629,7 +629,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void file_wrongUrl() throws InvalidPathException {
+	public void file_wrongUrl() {
 		List<PathSegment> segments = new ArrayList<>();
 
 		segments.add(dummySeg);
@@ -644,7 +644,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void fileReference_exists() throws InvalidPathException {
+	public void fileReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -719,7 +719,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void uriReference_exists() throws InvalidPathException {
+	public void uriReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -794,7 +794,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void collectionReference_exists() throws InvalidPathException {
+	public void collectionReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -869,7 +869,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void dataObjectReference_exists() throws InvalidPathException {
+	public void dataObjectReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -944,7 +944,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void basicReference_exists() throws InvalidPathException {
+	public void basicReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -1019,13 +1019,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emptyUrl() throws InvalidPathException {
+	public void emptyUrl() {
 		List<PathSegment> segments = new ArrayList<>();
 		urlPathChecker.checkPathSegments(segments);
 	}
 
 	@Test
-	public void getPathElements_slashPathSegment() throws InvalidPathException {
+	public void getPathElements_slashPathSegment() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -1041,7 +1041,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPathElements_slashPathSegmentEmpty() throws InvalidPathException {
+	public void getPathElements_slashPathSegmentEmpty() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
@@ -1057,7 +1057,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPathElements_invalidNumber() throws InvalidPathException {
+	public void getPathElements_invalidNumber() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);

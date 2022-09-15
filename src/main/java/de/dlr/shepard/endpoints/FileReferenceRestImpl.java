@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.ShepardFile;
@@ -60,8 +59,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@Subscribable
 	@Override
 	public Response createFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, FileReferenceIO fileReference)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, FileReferenceIO fileReference) {
 		var ref = fileReferenceService.createFileReference(dataObjectId, fileReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();

@@ -1,7 +1,5 @@
 package de.dlr.shepard.search;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
-
 public class Searcher {
 
 	private ISearcher structuredDataSearcher = new StructuredDataSearcher();
@@ -9,7 +7,7 @@ public class Searcher {
 	private ISearcher dataObjectSearcher = new DataObjectSearcher();
 	private ISearcher referenceSearcher = new ReferenceSearcher();
 
-	public ResponseBody search(SearchBody searchBody, String userName) throws ShepardParserException {
+	public ResponseBody search(SearchBody searchBody, String userName) {
 		ResponseBody ret = null;
 		QueryType queryType = searchBody.getSearchParams().getQueryType();
 		switch (queryType) {

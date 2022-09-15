@@ -31,7 +31,7 @@ public class StructuredDataReferenceService {
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	public StructuredDataReference createStructuredDataReference(long dataObjectId,
-			StructuredDataReferenceIO structuredDataReference, String username) throws InvalidBodyException {
+			StructuredDataReferenceIO structuredDataReference, String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 		var container = containerDAO.find(structuredDataReference.getStructuredDataContainerId());
@@ -97,8 +97,7 @@ public class StructuredDataReferenceService {
 		return true;
 	}
 
-	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username)
-			throws InvalidAuthException {
+	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
@@ -118,8 +117,7 @@ public class StructuredDataReferenceService {
 		return result;
 	}
 
-	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username)
-			throws InvalidAuthException {
+	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();

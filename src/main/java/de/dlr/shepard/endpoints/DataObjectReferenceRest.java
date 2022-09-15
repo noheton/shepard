@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.Constants;
@@ -33,8 +32,7 @@ public interface DataObjectReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createDataObjectReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))) @Valid DataObjectReferenceIO dataObjectReference)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))) @Valid DataObjectReferenceIO dataObjectReference);
 
 	@Tag(name = Constants.DATAOBJECT_REFERENCE)
 	@Operation(description = "Delete dataObject reference")

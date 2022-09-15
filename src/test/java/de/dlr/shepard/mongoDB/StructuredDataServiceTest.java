@@ -74,7 +74,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest() throws InvalidBodyException {
+	public void createStructuredDataTest() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 		Date date = new Date();
 		ObjectId oid = new ObjectId();
@@ -101,7 +101,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_noStructuredData() throws InvalidBodyException {
+	public void createStructuredDataTest_noStructuredData() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 		Date date = new Date();
 		ObjectId oid = new ObjectId();
@@ -126,7 +126,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_mongoError() throws InvalidBodyException {
+	public void createStructuredDataTest_mongoError() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
 		when(database.getCollection("collection")).thenReturn(collection);
@@ -139,7 +139,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createStructuredDataTest_collectionIsNull() throws InvalidBodyException {
+	public void createStructuredDataTest_collectionIsNull() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
 		var expectedData = new StructuredData();

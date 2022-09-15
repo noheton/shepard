@@ -17,7 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ProcessingException;
+import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.GracePeriodUtil;
@@ -59,7 +59,7 @@ public class UserFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_Successful() throws IOException, ProcessingException {
+	public void testFilter_Successful() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
 		User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
@@ -142,12 +142,12 @@ public class UserFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_ProcessingException() throws IOException, ProcessingException {
+	public void testFilter_ProcessingException() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
 
 		when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
 		when(securityContext.getUserPrincipal()).thenReturn(p);
-		when(userinfoService.fetchUserinfo("Bearer abc")).thenThrow(new ProcessingException("Message"));
+		when(userinfoService.fetchUserinfo("Bearer abc")).thenThrow(new ShepardProcessingException("Message"));
 
 		filter.filter(requestContext);
 		verify(userService, never()).updateUser(any());
@@ -156,7 +156,7 @@ public class UserFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_InconsistentUsernames() throws IOException, ProcessingException {
+	public void testFilter_InconsistentUsernames() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
 		User u = new User("claus", "John", "Doe", "john.doe@example.com");
 
@@ -171,7 +171,7 @@ public class UserFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_UpdatedFailed() throws IOException, ProcessingException {
+	public void testFilter_UpdatedFailed() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
 		User u = new User("bob", "John", "Doe", "john.doe@example.com");
 

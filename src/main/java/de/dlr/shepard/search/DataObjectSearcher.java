@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
@@ -16,7 +15,7 @@ public class DataObjectSearcher implements ISearcher {
 	private static final String[] dovariables = { Constants.DATAOBJECT_IN_QUERY };
 
 	@Override
-	public ResponseBody search(SearchBody searchBody, String userName) throws ShepardParserException {
+	public ResponseBody search(SearchBody searchBody, String userName) {
 		Set<ResultTriple> resultTriples = new HashSet<>();
 		SearchScope[] scopes = searchBody.getScopes();
 		String searchBodyQuery = searchBody.getSearchParams().getQuery();

@@ -6,17 +6,17 @@ import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
 
-public class ProcessingExceptionTest extends BaseTestCase {
+public class ShepardProcessingExceptionTest extends BaseTestCase {
 
 	@Test
 	public void testConstructor() {
-		var obj = new ProcessingException("Message");
+		var obj = new ShepardProcessingException("Message");
 		assertEquals("Message", obj.getMessage());
 	}
 
 	@Test
 	public void testGetStatusCode() {
-		var obj = new ProcessingException("");
-		assertEquals(500, obj.getStatusCode());
+		var obj = new ShepardProcessingException("");
+		assertEquals(500, obj.getResponse().getStatus());
 	}
 }

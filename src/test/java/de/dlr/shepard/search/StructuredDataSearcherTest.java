@@ -18,7 +18,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
@@ -59,7 +58,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getStructuredDataResponseTestEmpty() throws ShepardParserException {
+	public void getStructuredDataResponseTestEmpty() {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -117,7 +116,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getStructuredDataResponseTestNotEmpty() throws ShepardParserException {
+	public void getStructuredDataResponseTestNotEmpty() {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -175,7 +174,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emptyQueryResult() throws ShepardParserException {
+	public void emptyQueryResult() {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{
@@ -228,7 +227,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void JSONQueryTest() throws ShepardParserException {
+	public void JSONQueryTest() {
 		// create StructuredDataReferences
 		StructuredDataReference structuredDataReference1 = new StructuredDataReference() {
 			{

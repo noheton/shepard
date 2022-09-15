@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,8 +31,7 @@ public interface URIReferenceRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = URIReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createUriReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = URIReferenceIO.class))) @Valid URIReferenceIO timeseriesReference)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = URIReferenceIO.class))) @Valid URIReferenceIO timeseriesReference);
 
 	@Tag(name = Constants.URI_REFERENCE)
 	@Operation(description = "Delete uri reference")

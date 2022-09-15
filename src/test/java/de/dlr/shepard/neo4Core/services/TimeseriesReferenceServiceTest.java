@@ -108,7 +108,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest() throws InvalidBodyException {
+	public void createTimeseriesReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new TimeseriesContainer(300L);
@@ -159,7 +159,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_ContainerIsNull() throws InvalidBodyException {
+	public void createTimeseriesReferenceTest_ContainerIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new TimeseriesContainer(300L);
@@ -182,7 +182,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
+	public void createTimeseriesReferenceTest_ContainerIsDeleted() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var input = new TimeseriesReferenceIO() {
@@ -222,7 +222,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() throws InvalidAuthException {
+	public void getPayloadTest() {
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -249,7 +249,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() throws InvalidAuthException {
+	public void getPayloadTest_notAllowed() {
 		var container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");

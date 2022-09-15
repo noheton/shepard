@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.util.Constants;
@@ -20,7 +19,6 @@ public interface SearchRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ResponseBody.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response search(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body)
-			throws ShepardParserException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body);
 
 }

@@ -7,16 +7,11 @@ public class ShepardParserException extends ShepardException {
 	private static final long serialVersionUID = 2L;
 
 	public ShepardParserException() {
-		super("A parser error occurred");
+		super("A parser error occurred", Status.BAD_REQUEST);
 	}
 
 	public ShepardParserException(String message) {
-		super(message);
-	}
-
-	@Override
-	int getStatusCode() {
-		return Status.BAD_REQUEST.getStatusCode();
+		super(message, Status.BAD_REQUEST);
 	}
 
 }

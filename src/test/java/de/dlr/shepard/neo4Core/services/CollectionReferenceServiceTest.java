@@ -90,7 +90,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createCollectionReferenceTest() throws InvalidBodyException {
+	public void createCollectionReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var date = new Date(30L);
@@ -136,7 +136,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createCollectionReferenceTest_ReferencedIsNull() throws InvalidBodyException {
+	public void createCollectionReferenceTest_ReferencedIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var input = new CollectionReferenceIO() {
@@ -155,7 +155,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createCollectionReferenceTest_ReferencedIsDeleted() throws InvalidBodyException {
+	public void createCollectionReferenceTest_ReferencedIsDeleted() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var referenced = new Collection(100L);

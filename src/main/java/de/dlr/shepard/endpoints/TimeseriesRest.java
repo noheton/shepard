@@ -5,7 +5,6 @@ import java.io.InputStream;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
@@ -60,8 +59,7 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = Timeseries.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createTimeseries(long timeseriesId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) @Valid TimeseriesPayload payload)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))) @Valid TimeseriesPayload payload);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries available")
@@ -90,7 +88,7 @@ public interface TimeseriesRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response importTimeseries(long timeseriesId,
 			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "Timeseries as CSV")) InputStream fileInputStream,
-			@Parameter(hidden = true) FormDataContentDisposition fileMetaData) throws IOException, InvalidBodyException;
+			@Parameter(hidden = true) FormDataContentDisposition fileMetaData) throws IOException;
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get permissions")

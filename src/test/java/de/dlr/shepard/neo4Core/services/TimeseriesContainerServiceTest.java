@@ -175,7 +175,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest() throws InvalidBodyException {
+	public void createTimeseriesTest() {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
@@ -189,7 +189,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_isNull() throws InvalidBodyException {
+	public void createTimeseriesTest_isNull() {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
@@ -200,7 +200,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_isDeleted() throws InvalidBodyException {
+	public void createTimeseriesTest_isDeleted() {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		container.setDeleted(true);
@@ -214,7 +214,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTest_influxIssue() throws InvalidBodyException {
+	public void createTimeseriesTest_influxIssue() {
 		var container = new TimeseriesContainer(1L);
 		container.setDatabase("database");
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");

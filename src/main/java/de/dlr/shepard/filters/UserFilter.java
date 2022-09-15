@@ -3,7 +3,7 @@ package de.dlr.shepard.filters;
 import java.io.IOException;
 
 import de.dlr.shepard.exceptions.ApiError;
-import de.dlr.shepard.exceptions.ProcessingException;
+import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.GracePeriodUtil;
@@ -48,7 +48,7 @@ public class UserFilter implements ContainerRequestFilter {
 			User user;
 			try {
 				user = getUserinfoService().fetchUserinfo(header);
-			} catch (ProcessingException e) {
+			} catch (ShepardProcessingException e) {
 				abort(requestContext, "User info could not be retrieved");
 				return;
 			}

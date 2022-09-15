@@ -17,7 +17,7 @@ public class MongoDBEmitter {
 	private MongoDBEmitter() {
 	}
 
-	public static String emitMongoDB(String query) throws ShepardParserException {
+	public static String emitMongoDB(String query) {
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = null;
 		try {
@@ -28,7 +28,7 @@ public class MongoDBEmitter {
 		return emitMongoDB(jsonNode);
 	}
 
-	private static String emitMongoDB(JsonNode rootNode) throws ShepardParserException {
+	private static String emitMongoDB(JsonNode rootNode) {
 		String op = rootNode.fieldNames().next();
 		if (Constants.OP_PROPERTY.equals(op) || Constants.OP_VALUE.equals(op) || Constants.OP_OPERATOR.equals(op)) {
 			return emitPrimitiveClause(rootNode);
@@ -36,7 +36,7 @@ public class MongoDBEmitter {
 		return emitComplexClause(rootNode, op);
 	}
 
-	private static String emitOperatorString(JsonNode node) throws ShepardParserException {
+	private static String emitOperatorString(JsonNode node) {
 		String operator = node.textValue();
 		switch (operator) {
 		case Constants.JSON_GT:
@@ -58,7 +58,7 @@ public class MongoDBEmitter {
 		}
 	}
 
-	private static String emitComplexClause(JsonNode node, String operator) throws ShepardParserException {
+	private static String emitComplexClause(JsonNode node, String operator) {
 		if (!booleanOperators.contains(operator))
 			throw new ShepardParserException("unknown boolean operator: " + operator);
 		if (operator.equals(Constants.JSON_NOT))
@@ -67,7 +67,7 @@ public class MongoDBEmitter {
 			return emitMultaryClause(node, operator);
 	}
 
-	private static String emitNegatedClause(JsonNode node) throws ShepardParserException {
+	private static String emitNegatedClause(JsonNode node) {
 		String op = node.fieldNames().next();
 		if (op.equals(Constants.OP_PROPERTY) || op.equals(Constants.OP_VALUE) || op.equals(Constants.OP_OPERATOR)) {
 			return emitNegatedPrimitiveClause(node);
@@ -75,14 +75,14 @@ public class MongoDBEmitter {
 		return emitNegatedComplexClause(node, op);
 	}
 
-	private static String emitNegatedComplexClause(JsonNode node, String operator) throws ShepardParserException {
+	private static String emitNegatedComplexClause(JsonNode node, String operator) {
 		if (operator.equals(Constants.JSON_NOT))
 			return emitMongoDB(node.get(Constants.JSON_NOT));
 		else
 			return emitNegatedMultaryClause(node, operator);
 	}
 
-	private static String emitNegatedPrimitiveClause(JsonNode node) throws ShepardParserException {
+	private static String emitNegatedPrimitiveClause(JsonNode node) {
 		String ret = "";
 		ret = ret + node.get(Constants.OP_PROPERTY).textValue() + ": {";
 		ret = ret + "$not: {";
@@ -91,7 +91,7 @@ public class MongoDBEmitter {
 		return ret;
 	}
 
-	private static String emitPrimitiveClause(JsonNode node) throws ShepardParserException {
+	private static String emitPrimitiveClause(JsonNode node) {
 		String ret = "";
 		String property = node.get(Constants.OP_PROPERTY).textValue();
 		ret = ret + property + ": {";
@@ -101,7 +101,7 @@ public class MongoDBEmitter {
 		return ret;
 	}
 
-	private static String emitMultaryClause(JsonNode node, String operator) throws ShepardParserException {
+	private static String emitMultaryClause(JsonNode node, String operator) {
 		String ret = "";
 		Iterator<JsonNode> argumentsArray = node.get(operator).elements();
 		ret = ret + emitBooleanOperator(operator) + " [{";
@@ -114,7 +114,7 @@ public class MongoDBEmitter {
 		return ret;
 	}
 
-	private static String emitNegatedMultaryClause(JsonNode node, String operator) throws ShepardParserException {
+	private static String emitNegatedMultaryClause(JsonNode node, String operator) {
 		String ret = "";
 		Iterator<JsonNode> argumentsArray = node.get(operator).elements();
 		ret = ret + emitNegatedBooleanOperator(operator) + " [{";
@@ -127,7 +127,7 @@ public class MongoDBEmitter {
 		return ret;
 	}
 
-	private static String emitBooleanOperator(String operator) throws ShepardParserException {
+	private static String emitBooleanOperator(String operator) {
 		switch (operator) {
 		case Constants.JSON_AND:
 			return "$and:";
@@ -138,7 +138,7 @@ public class MongoDBEmitter {
 		}
 	}
 
-	private static String emitNegatedBooleanOperator(String operator) throws ShepardParserException {
+	private static String emitNegatedBooleanOperator(String operator) {
 		switch (operator) {
 		case Constants.JSON_AND:
 			return "$or:";

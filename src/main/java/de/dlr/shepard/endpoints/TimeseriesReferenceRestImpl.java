@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -67,8 +66,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Subscribable
 	@Override
 	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference) {
 		var result = timeseriesReferenceService.createTimeseriesReference(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 

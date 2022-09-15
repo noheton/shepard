@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.util.Constants;
 
@@ -16,7 +15,7 @@ public class ReferenceSearcher implements ISearcher {
 	private static final String[] dobrvariables = { Constants.DATAOBJECT_IN_QUERY, Constants.REFERENCE_IN_QUERY };
 
 	@Override
-	public ResponseBody search(SearchBody searchBody, String userName) throws ShepardParserException {
+	public ResponseBody search(SearchBody searchBody, String userName) {
 		Set<ResultTriple> resultTriples = new HashSet<>();
 		SearchScope[] scopes = searchBody.getScopes();
 		String searchBodyQuery = searchBody.getSearchParams().getQuery();

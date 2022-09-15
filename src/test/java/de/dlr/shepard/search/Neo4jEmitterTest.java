@@ -41,8 +41,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 
 	@ParameterizedTest
 	@MethodSource
-	public void emitCollectionDataObjectReferenceQueryTest(String input, String expected)
-			throws ShepardParserException {
+	public void emitCollectionDataObjectReferenceQueryTest(String input, String expected) {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -87,7 +86,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	@ParameterizedTest
 	@MethodSource
 	public void emitCollectionDataObjectBasicReferenceQueryTest(String input, TraversalRules traversalRules,
-			String expected) throws ShepardParserException {
+			String expected) {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -97,7 +96,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitCollectionBasicReferenceQueryTest() throws ShepardParserException {
+	public void emitCollectionBasicReferenceQueryTest() {
 		String searchBodyQuery = """
 				{
 				  "property": "name",
@@ -111,7 +110,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitBasicReferenceQueryTest() throws ShepardParserException {
+	public void emitBasicReferenceQueryTest() {
 		String searchBodyQuery = """
 				{
 				  "property": "name",
@@ -125,7 +124,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitDataObjectQueryTest() throws ShepardParserException {
+	public void emitDataObjectQueryTest() {
 		String searchBodyQuery = """
 				{
 				  "property": "name",
@@ -139,7 +138,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitCollectionDataObjectDataObjectQueryTest() throws ShepardParserException {
+	public void emitCollectionDataObjectDataObjectQueryTest() {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -156,7 +155,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitCollectionDataObjectDataObjectQueryChildrenTest() throws ShepardParserException {
+	public void emitCollectionDataObjectDataObjectQueryChildrenTest() {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -174,7 +173,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void emitCollectionDataObjectQueryTest() throws ShepardParserException {
+	public void emitCollectionDataObjectQueryTest() {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -338,7 +337,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 
 	@ParameterizedTest
 	@MethodSource
-	public void emitCollectionQueryTest(String input, String expected) throws ShepardParserException {
+	public void emitCollectionQueryTest(String input, String expected) {
 		String neo4jQuery = Neo4jEmitter.emitCollectionQuery(input, userName);
 		assertEquals(expected, neo4jQuery);
 	}
@@ -383,7 +382,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	@ParameterizedTest
 	@MethodSource
 	public void emitCollectionDataObjectDataObjectQueryTraversalTest(String input, TraversalRules traversalRules,
-			String expected) throws ShepardParserException {
+			String expected) {
 		SearchScope scope = new SearchScope();
 		scope.setCollectionId(1L);
 		scope.setDataObjectId(2L);
@@ -393,7 +392,7 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void invalidOperatorTest() throws ShepardParserException {
+	public void invalidOperatorTest() {
 		String searchBodyQuery = """
 				{
 				  "property": "name",

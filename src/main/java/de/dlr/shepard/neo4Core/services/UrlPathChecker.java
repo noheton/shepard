@@ -43,9 +43,8 @@ public class UrlPathChecker {
 	 * entities. Throws an InvalidPathException in case of an error.
 	 *
 	 * @param pathSegments to process
-	 * @throws InvalidPathException in case of an invalid path
 	 */
-	public void checkPathSegments(List<PathSegment> pathSegments) throws InvalidPathException {
+	public void checkPathSegments(List<PathSegment> pathSegments) {
 		String errorString;
 		try {
 			errorString = check(pathSegments);

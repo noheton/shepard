@@ -21,9 +21,8 @@ public class TimeseriesService {
 	 * @param database The database to be queried
 	 * @param payload  the Timeseries with InfluxPoints to be created
 	 * @return An error if there was a problem, empty string if all went well
-	 * @throws InvalidBodyException in case of a failed sanityCheck
 	 */
-	public String createTimeseries(String database, TimeseriesPayload payload) throws InvalidBodyException {
+	public String createTimeseries(String database, TimeseriesPayload payload) {
 		String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());
 		if (sanityCheck.length() != 0)
 			throw new InvalidBodyException(sanityCheck);
@@ -127,11 +126,9 @@ public class TimeseriesService {
 	 * @param database The database to write to
 	 * @param stream   The InputStream containing the CSV file
 	 * @return An error if there was a problem, empty string if all went well
-	 * @throws IOException          If the CSV file could not be read
-	 * @throws InvalidBodyException If the attributes of a timerseries constructed
-	 *                              from the stream contain forbidden characters
+	 * @throws IOException If the CSV file could not be read
 	 */
-	public String importTimeseries(String database, InputStream stream) throws IOException, InvalidBodyException {
+	public String importTimeseries(String database, InputStream stream) throws IOException {
 		List<String> errors = new ArrayList<>();
 		var timeseriesList = csvConverter.convertToPayload(stream);
 		for (var timeseries : timeseriesList) {

@@ -2,7 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
@@ -57,8 +56,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Subscribable
 	@Override
 	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference) {
 		var result = collectionReferenceService.createCollectionReference(dataObjectId, collectionReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();

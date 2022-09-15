@@ -139,7 +139,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest() throws InvalidBodyException {
+	public void createDataObjectTest() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -195,7 +195,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_noEntites() throws InvalidBodyException {
+	public void createDataObjectTest_noEntites() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -239,7 +239,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_wrongParent() throws InvalidBodyException {
+	public void createDataObjectTest_wrongParent() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -262,7 +262,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_wrongPredecessor() throws InvalidBodyException {
+	public void createDataObjectTest_wrongPredecessor() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -285,7 +285,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_deletedParent() throws InvalidBodyException {
+	public void createDataObjectTest_deletedParent() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -310,7 +310,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_deletedPredecessor() throws InvalidBodyException {
+	public void createDataObjectTest_deletedPredecessor() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -335,7 +335,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_ParentWrongCollection() throws InvalidBodyException {
+	public void createDataObjectTest_ParentWrongCollection() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -361,7 +361,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createDataObjectTest_PredecessorWrongCollection() throws InvalidBodyException {
+	public void createDataObjectTest_PredecessorWrongCollection() {
 		var user = new User("bob");
 		var date = new Date(23);
 		var collection = new Collection(2L);
@@ -387,7 +387,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void updateDataObjectTest() throws InvalidBodyException {
+	public void updateDataObjectTest() {
 		var collection = new Collection(100L);
 		var user = new User("bob");
 		var date = new Date(23);
@@ -447,7 +447,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void updateDataObjectTest_SelfReferences() throws InvalidBodyException {
+	public void updateDataObjectTest_SelfReferences() {
 		var collection = new Collection(100L);
 		var user = new User("bob");
 		var date = new Date(23);

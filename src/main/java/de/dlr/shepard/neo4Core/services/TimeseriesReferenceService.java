@@ -48,7 +48,7 @@ public class TimeseriesReferenceService {
 	}
 
 	public TimeseriesReference createTimeseriesReference(long dataObjectId, TimeseriesReferenceIO timeseriesReference,
-			String username) throws InvalidBodyException {
+			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 		var container = timeseriesContainerDAO.find(timeseriesReference.getTimeseriesContainerId());
@@ -86,7 +86,7 @@ public class TimeseriesReferenceService {
 
 	public List<TimeseriesPayload> getPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
-			Set<String> symbolicNameFilterSet, String username) throws InvalidAuthException {
+			Set<String> symbolicNameFilterSet, String username) {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
@@ -100,7 +100,7 @@ public class TimeseriesReferenceService {
 
 	public InputStream export(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
-			Set<String> symbolicNameFilterSet, String username) throws IOException, InvalidAuthException {
+			Set<String> symbolicNameFilterSet, String username) throws IOException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();

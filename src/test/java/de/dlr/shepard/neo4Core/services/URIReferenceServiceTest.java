@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.URIReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -84,7 +83,7 @@ public class URIReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createURIReferenceTest() throws InvalidBodyException {
+	public void createURIReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var date = new Date(30L);

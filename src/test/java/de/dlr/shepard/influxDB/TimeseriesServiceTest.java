@@ -38,7 +38,7 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	private TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
 	@Test
-	public void createTimeseriesTest() throws InvalidBodyException {
+	public void createTimeseriesTest() {
 		when(connector.saveTimeseries("database", payload)).thenReturn("");
 		when(connector.databaseExist("database")).thenReturn(true);
 		var actual = service.createTimeseries("database", payload);
@@ -46,7 +46,7 @@ public class TimeseriesServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createTimeseriesTestException() throws InvalidBodyException {
+	public void createTimeseriesTestException() {
 		Timeseries buggyts = new Timeseries("meas", "de/v", "loc", "symName", "field");
 		TimeseriesPayload buggypayload = new TimeseriesPayload(buggyts, List.of(new InfluxPoint(123L, "value")));
 		Exception exception = assertThrows(InvalidBodyException.class, () -> {

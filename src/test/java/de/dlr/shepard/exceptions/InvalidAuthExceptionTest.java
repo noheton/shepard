@@ -23,6 +23,6 @@ public class InvalidAuthExceptionTest extends BaseTestCase {
 	@Test
 	public void testGetStatusCode() {
 		var obj = new InvalidAuthException();
-		assertEquals(403, obj.getStatusCode());
+		assertEquals(403, obj.getResponse().getStatus());
 	}
 }

@@ -20,7 +20,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ProcessingException;
+import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -68,7 +68,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFetchUser_Successful() throws ProcessingException, IllegalAccessException {
+	public void testFetchUser_Successful() throws IllegalAccessException {
 		var user = new User("name_fi", "first", "name", "first.name@example.com");
 		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
 				"name_fi");
@@ -83,7 +83,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFetchUser_DifferentSubject() throws ProcessingException, IllegalAccessException {
+	public void testFetchUser_DifferentSubject() throws IllegalAccessException {
 		var user = new User("name_fi", "first", "name", "first.name@example.com");
 		var userinfo = new Userinfo("name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
 
@@ -97,7 +97,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFetchUser_InvokeInit() throws ProcessingException, IllegalAccessException {
+	public void testFetchUser_InvokeInit() throws IllegalAccessException {
 		var user = new User("name_fi", "first", "name", "first.name@example.com");
 		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
 				"name_fi");
@@ -117,7 +117,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testInit_Successful() throws ProcessingException {
+	public void testInit_Successful() {
 		var conf = new OpenIdConfiguration("iss", "auth", "userinfo.endpoint", "jwks", new String[0], new String[0],
 				new String[0]);
 
@@ -129,33 +129,33 @@ public class UserinfoServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testInit_ReturnNull() throws ProcessingException {
+	public void testInit_ReturnNull() {
 		when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(null);
 
-		assertThrows(ProcessingException.class, service::init);
+		assertThrows(ShepardProcessingException.class, service::init);
 	}
 
 	@Test
-	public void testInit_ProcessingException() throws ProcessingException {
+	public void testInit_ProcessingException() {
 		when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new jakarta.ws.rs.ProcessingException("Message"));
 
-		assertThrows(ProcessingException.class, service::init);
+		assertThrows(ShepardProcessingException.class, service::init);
 	}
 
 	@Test
-	public void testFetchUser_ReturnNull() throws ProcessingException, IllegalAccessException {
+	public void testFetchUser_ReturnNull() throws IllegalAccessException {
 		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
 		when(invocation.invoke(Userinfo.class)).thenReturn(null);
 
-		assertThrows(ProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
+		assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
 	}
 
 	@Test
-	public void testFetchUser_ProcessingException() throws ProcessingException, IllegalAccessException {
+	public void testFetchUser_ProcessingException() throws IllegalAccessException {
 		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
 		when(invocation.invoke(Userinfo.class)).thenThrow(new jakarta.ws.rs.ProcessingException("Message"));
 
-		assertThrows(ProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
+		assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
 	}
 
 }

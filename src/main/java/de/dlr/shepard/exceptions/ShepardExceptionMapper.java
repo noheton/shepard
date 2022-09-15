@@ -1,5 +1,6 @@
 package de.dlr.shepard.exceptions;
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -11,8 +12,8 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
 	@Override
 	public Response toResponse(Exception exception) {
 		int status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
-		if (exception instanceof ShepardException shepardException) {
-			status = shepardException.getStatusCode();
+		if (exception instanceof WebApplicationException webException) {
+			status = webException.getResponse().getStatus();
 		}
 
 		return Response.status(status)

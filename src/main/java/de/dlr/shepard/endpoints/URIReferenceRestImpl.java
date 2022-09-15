@@ -2,7 +2,6 @@ package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
@@ -56,8 +55,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	@Subscribable
 	@Override
 	public Response createUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, URIReferenceIO timeseriesReference)
-			throws InvalidBodyException {
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, URIReferenceIO timeseriesReference) {
 		var result = uriReferenceService.createURIReference(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 

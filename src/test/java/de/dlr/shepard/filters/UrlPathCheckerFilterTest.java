@@ -49,7 +49,7 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_Successful() throws InvalidPathException, IOException {
+	public void testFilter_Successful() throws IOException {
 		PathSegment segment = mock(PathSegment.class);
 		var segments = List.of(segment);
 		when(uriInfo.getPathSegments()).thenReturn(segments);
@@ -60,7 +60,7 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testFilter_badPath() throws InvalidPathException, IOException {
+	public void testFilter_badPath() throws IOException {
 		PathSegment segment = mock(PathSegment.class);
 		var segments = List.of(segment);
 		when(uriInfo.getPathSegments()).thenReturn(segments);

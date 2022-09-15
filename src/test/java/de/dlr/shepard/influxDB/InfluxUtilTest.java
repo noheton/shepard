@@ -360,10 +360,12 @@ public class InfluxUtilTest extends BaseTestCase {
 	public void sanitizeTestExceptField() {
 		Timeseries ts = new Timeseries("meas urement", "dev.ice", "loc/action", "n,ame", "field");
 		String sanitize = InfluxUtil.sanitize(ts);
-		assertEquals("device should not contain whitespaces or dots or slashes or commas: dev.\n"
-				+ "measurement should not contain whitespaces or dots or slashes or commas: meas \n"
-				+ "location should not contain whitespaces or dots or slashes or commas: loc/\n"
-				+ "symbolicName should not contain whitespaces or dots or slashes or commas: n,\n", sanitize);
+		assertEquals("""
+				device should not contain whitespaces or dots or slashes or commas: dev.
+				measurement should not contain whitespaces or dots or slashes or commas: meas\s
+				location should not contain whitespaces or dots or slashes or commas: loc/
+				symbolicName should not contain whitespaces or dots or slashes or commas: n,
+				""", sanitize);
 	}
 
 	@Test

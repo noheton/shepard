@@ -3,7 +3,7 @@ package de.dlr.shepard.security;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import de.dlr.shepard.exceptions.ProcessingException;
+import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.PropertiesHelper;
 import jakarta.ws.rs.client.Client;
@@ -76,22 +76,22 @@ public class UserinfoService {
 		this.oidcConfidurationUrl = oidcAuthority + WELL_KNOWN_PATH;
 	}
 
-	protected void init() throws ProcessingException {
+	protected void init() {
 		var openIdConfiguration = getOpenIdConfiguration(oidcConfidurationUrl);
 		if (openIdConfiguration == null) {
-			throw new ProcessingException("Could not fetch openid configuration");
+			throw new ShepardProcessingException("Could not fetch openid configuration");
 		}
 		userinfoEndpoint = openIdConfiguration.getUserinfoEndpoint();
 	}
 
-	public User fetchUserinfo(String accessToken) throws ProcessingException {
+	public User fetchUserinfo(String accessToken) {
 		if (userinfoEndpoint == null) {
 			init();
 		}
 
 		var userinfo = getUserinfo(userinfoEndpoint, accessToken);
 		if (userinfo == null) {
-			throw new ProcessingException("Could not fetch userinfo");
+			throw new ShepardProcessingException("Could not fetch userinfo");
 		}
 		User user = parseUserFromUserinfo(userinfo);
 		return user;

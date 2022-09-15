@@ -30,8 +30,7 @@ public class StructuredDataService {
 		return mongoid;
 	}
 
-	public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload)
-			throws InvalidBodyException {
+	public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload) {
 		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
 		if (collection == null) {
 			log.error("Could not find container with mongoid: {}", mongoid);

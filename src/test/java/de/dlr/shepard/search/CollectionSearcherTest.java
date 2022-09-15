@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -25,7 +24,7 @@ public class CollectionSearcherTest extends BaseTestCase {
 	private static final String[] colvariables = { "col" };
 
 	@Test
-	public void test() throws ShepardParserException {
+	public void test() {
 		String userName = "user1";
 		Long collectionId = 1L;
 		TraversalRules[] traversalRules = {};

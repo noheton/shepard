@@ -19,7 +19,7 @@ public class Neo4jEmitter {
 	private Neo4jEmitter() {
 	}
 
-	private static String emitNeo4j(String jsonquery, String variable) throws ShepardParserException {
+	private static String emitNeo4j(String jsonquery, String variable) {
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode jsonNode = null;
 		try {
@@ -30,7 +30,7 @@ public class Neo4jEmitter {
 		return emitNeo4j(jsonNode, variable);
 	}
 
-	private static String emitNeo4j(JsonNode rootNode, String variable) throws ShepardParserException {
+	private static String emitNeo4j(JsonNode rootNode, String variable) {
 		String op = "";
 		try {
 			op = rootNode.fieldNames().next();
@@ -43,8 +43,7 @@ public class Neo4jEmitter {
 		return emitComplexClause(rootNode, op, variable);
 	}
 
-	private static String emitComplexClause(JsonNode node, String operator, String variable)
-			throws ShepardParserException {
+	private static String emitComplexClause(JsonNode node, String operator, String variable) {
 		if (!booleanOperators.contains(operator))
 			throw new ShepardParserException("unknown boolean operator: " + operator);
 		if (operator.equals(Constants.JSON_NOT))
@@ -53,8 +52,7 @@ public class Neo4jEmitter {
 			return emitMultaryClause(node, operator, variable);
 	}
 
-	private static String emitMultaryClause(JsonNode node, String operator, String variable)
-			throws ShepardParserException {
+	private static String emitMultaryClause(JsonNode node, String operator, String variable) {
 		Iterator<JsonNode> argumentsArray = node.get(operator).elements();
 		String firstArgument = emitNeo4j(argumentsArray.next(), variable);
 		String ret = "(" + firstArgument;
@@ -65,12 +63,12 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitNotClause(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitNotClause(JsonNode node, String variable) {
 		JsonNode body = node.get(Constants.JSON_NOT);
 		return "(NOT(" + emitNeo4j(body, variable) + "))";
 	}
 
-	private static String emitPrimitiveClause(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitPrimitiveClause(JsonNode node, String variable) {
 		String property = node.get(Constants.OP_PROPERTY).textValue();
 		if (property.equals("createdBy") || property.equals("updatedBy"))
 			return emitByPart(node, variable);
@@ -112,7 +110,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitByPart(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitByPart(JsonNode node, String variable) {
 		String ret = "(";
 		String by = "";
 		switch (node.get(Constants.OP_PROPERTY).textValue()) {
@@ -133,7 +131,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitTimeseriesContainerIdPart(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitTimeseriesContainerIdPart(JsonNode node, String variable) {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:TimeseriesContainer) WHERE id(refCon) ";
@@ -143,8 +141,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitStructuredDataContainerIdPart(JsonNode node, String variable)
-			throws ShepardParserException {
+	private static String emitStructuredDataContainerIdPart(JsonNode node, String variable) {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:StructuredDataContainer) WHERE id(refCon) ";
@@ -154,7 +151,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitFileContainerIdPart(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitFileContainerIdPart(JsonNode node, String variable) {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.IS_IN_CONTAINER
 				+ "]->(refCon:FileContainer) WHERE id(refCon) ";
@@ -164,7 +161,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitReferencedDataObjectIdPart(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitReferencedDataObjectIdPart(JsonNode node, String variable) {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO
 				+ "]->(refDo:DataObject) WHERE id(refDo) ";
@@ -174,7 +171,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitReferencedCollectionIdPart(JsonNode node, String variable) throws ShepardParserException {
+	private static String emitReferencedCollectionIdPart(JsonNode node, String variable) {
 		String ret = "(";
 		ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO
 				+ "]->(refCol:Collection) WHERE id(refCol) ";
@@ -184,7 +181,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitOperatorString(JsonNode node) throws ShepardParserException {
+	private static String emitOperatorString(JsonNode node) {
 		String operator = node.textValue();
 		switch (operator) {
 		case Constants.JSON_EQ:
@@ -257,7 +254,7 @@ public class Neo4jEmitter {
 		return CypherQueryHelper.getReadableByQuery(variable, username);
 	}
 
-	public static String emitCollectionQuery(String searchBodyQuery, String userName) throws ShepardParserException {
+	public static String emitCollectionQuery(String searchBodyQuery, String userName) {
 		String ret = "";
 		ret = ret + emitCollectionMatchPart();
 		ret = ret + " WHERE ";
@@ -270,8 +267,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	public static String emitCollectionDataObjectQuery(Long collectionId, String searchBodyQuery, String username)
-			throws ShepardParserException {
+	public static String emitCollectionDataObjectQuery(Long collectionId, String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
 		ret = ret + " WHERE ";
@@ -287,7 +283,7 @@ public class Neo4jEmitter {
 	}
 
 	public static String emitCollectionDataObjectDataObjectQuery(SearchScope scope, TraversalRules traversalRule,
-			String searchBodyQuery, String username) throws ShepardParserException {
+			String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectDataObjectMatchPart(traversalRule);
 		ret = ret + " WHERE ";
@@ -303,7 +299,7 @@ public class Neo4jEmitter {
 	}
 
 	public static String emitCollectionDataObjectDataObjectQuery(SearchScope scope, String searchBodyQuery,
-			String username) throws ShepardParserException {
+			String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
 		ret = ret + " WHERE ";
@@ -318,7 +314,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	public static String emitDataObjectQuery(String searchBodyQuery, String username) throws ShepardParserException {
+	public static String emitDataObjectQuery(String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
 		ret = ret + " WHERE ";
@@ -338,8 +334,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	public static String emitBasicReferenceQuery(String searchBodyQuery, String username)
-			throws ShepardParserException {
+	public static String emitBasicReferenceQuery(String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
 		ret = ret + " WHERE ";
@@ -352,8 +347,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	public static String emitCollectionBasicReferenceQuery(String searchBodyQuery, Long collectionId, String username)
-			throws ShepardParserException {
+	public static String emitCollectionBasicReferenceQuery(String searchBodyQuery, Long collectionId, String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
 		ret = ret + " WHERE ";
@@ -369,7 +363,7 @@ public class Neo4jEmitter {
 	}
 
 	public static String emitCollectionDataObjectBasicReferenceQuery(SearchScope scope, TraversalRules traversalRule,
-			String searchBodyQuery, String username) throws ShepardParserException {
+			String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectBasicReferenceMatchPart(traversalRule);
 		ret = ret + " WHERE ";
@@ -385,7 +379,7 @@ public class Neo4jEmitter {
 	}
 
 	public static String emitCollectionDataObjectReferenceQuery(SearchScope scope, String searchBodyQuery,
-			String username) throws ShepardParserException {
+			String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
 		ret = ret + " WHERE ";

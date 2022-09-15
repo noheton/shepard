@@ -8,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.util.TraversalRules;
 
 public class SearcherTest extends BaseTestCase {
@@ -29,7 +28,7 @@ public class SearcherTest extends BaseTestCase {
 	private Searcher searcher;
 
 	@Test
-	public void structuredDataSearchTest() throws ShepardParserException {
+	public void structuredDataSearchTest() {
 		String userName = "user1";
 		Long collectionId = 1L;
 		Long dataObjectId = 2L;
@@ -65,7 +64,7 @@ public class SearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void collectionSearchTest() throws ShepardParserException {
+	public void collectionSearchTest() {
 		String userName = "user1";
 		SearchScope scope = new SearchScope();
 		SearchScope scopes[] = { scope };
@@ -92,7 +91,7 @@ public class SearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void dataObjectSearchTest() throws ShepardParserException {
+	public void dataObjectSearchTest() {
 		String userName = "user1";
 		Long collectionId = 1L;
 		Long dataObjectId = 2L;
@@ -128,7 +127,7 @@ public class SearcherTest extends BaseTestCase {
 	}
 
 	@Test
-	public void referenceSearchTest() throws ShepardParserException {
+	public void referenceSearchTest() {
 		String userName = "user1";
 		Long collectionId = 1L;
 		Long dataObjectId = 2L;

@@ -27,10 +27,8 @@ public class DataObjectService {
 	 * @param dataObject   to be stored
 	 * @param username     of the related user
 	 * @return the stored DataObject with the auto generated id
-	 * @throws InvalidBodyException in case of an invalid dataObject
 	 */
-	public DataObject createDataObject(long collectionId, DataObjectIO dataObject, String username)
-			throws InvalidBodyException {
+	public DataObject createDataObject(long collectionId, DataObjectIO dataObject, String username) {
 		var collection = collectionDAO.find(collectionId);
 		var user = userDAO.find(username);
 
@@ -90,10 +88,8 @@ public class DataObjectService {
 	 * @param dataObject   DataObject entity for updating.
 	 * @param username     of the related user
 	 * @return updated DataObject.
-	 * @throws InvalidBodyException in case of an invalid dataObject
 	 */
-	public DataObject updateDataObject(long dataObjectId, DataObjectIO dataObject, String username)
-			throws InvalidBodyException {
+	public DataObject updateDataObject(long dataObjectId, DataObjectIO dataObject, String username) {
 		var old = dataObjectDAO.find(dataObjectId);
 		var user = userDAO.find(username);
 
@@ -146,8 +142,7 @@ public class DataObjectService {
 		return dataObject;
 	}
 
-	private List<DataObject> findRelatedDataObjects(long collectionId, long[] referencedIds, Long dataObjectId)
-			throws InvalidBodyException {
+	private List<DataObject> findRelatedDataObjects(long collectionId, long[] referencedIds, Long dataObjectId) {
 		if (referencedIds == null)
 			return new ArrayList<>();
 
@@ -158,8 +153,7 @@ public class DataObjectService {
 		return result;
 	}
 
-	private DataObject findRelatedDataObject(long collectionId, Long referencedId, Long dataObjectId)
-			throws InvalidBodyException {
+	private DataObject findRelatedDataObject(long collectionId, Long referencedId, Long dataObjectId) {
 		if (referencedId == null)
 			return null;
 		else if (referencedId.equals(dataObjectId))

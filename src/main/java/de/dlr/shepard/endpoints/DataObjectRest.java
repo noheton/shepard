@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
@@ -34,16 +33,14 @@ public interface DataObjectRest {
 	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response createDataObject(long collectionId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject);
 
 	@Tag(name = Constants.DATAOBJECT)
 	@Operation(description = "Update dataObject")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response updateDataObject(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject)
-			throws InvalidBodyException;
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectIO.class))) @Valid DataObjectIO dataObject);
 
 	@Tag(name = Constants.DATAOBJECT)
 	@Operation(description = "Delete dataObject")

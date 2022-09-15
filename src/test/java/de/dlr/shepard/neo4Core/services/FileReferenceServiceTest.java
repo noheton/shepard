@@ -103,7 +103,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceTest() throws InvalidBodyException {
+	public void createFileReferenceTest() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new FileContainer(300L);
@@ -151,7 +151,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceTest_newFileIsNull() throws InvalidBodyException {
+	public void createFileReferenceTest_newFileIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new FileContainer(300L);
@@ -198,7 +198,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceTest_ContainerIsNull() throws InvalidBodyException {
+	public void createFileReferenceTest_ContainerIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var container = new FileContainer(300L);
@@ -219,7 +219,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceTest_ContainerIsDeleted() throws InvalidBodyException {
+	public void createFileReferenceTest_ContainerIsDeleted() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
 		var input = new FileReferenceIO() {
@@ -257,7 +257,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest() throws InvalidAuthException {
+	public void getPayloadTest() {
 		var container = new FileContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);
@@ -273,7 +273,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getPayloadTest_NotAllowed() throws InvalidAuthException {
+	public void getPayloadTest_NotAllowed() {
 		var container = new FileContainer(20L);
 		container.setMongoId("mongoId");
 		var ref = new FileReference(1L);

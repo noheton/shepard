@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 
 import de.dlr.shepard.BaseTestCase;
+import jakarta.ws.rs.core.Response.Status;
 
 public class ShepardExceptionMapperTest extends BaseTestCase {
 
@@ -14,13 +15,8 @@ public class ShepardExceptionMapperTest extends BaseTestCase {
 
 	@Test
 	public void toResponseTest_different() {
-		var ex = new ShepardException("test") {
+		var ex = new ShepardException("test", Status.INTERNAL_SERVER_ERROR) {
 			private static final long serialVersionUID = 1L;
-
-			@Override
-			int getStatusCode() {
-				return 500;
-			}
 		};
 		var response = mapper.toResponse(ex);
 		var error = new ApiError(500, "", "test");
