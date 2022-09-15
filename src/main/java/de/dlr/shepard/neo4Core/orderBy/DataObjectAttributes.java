@@ -8,9 +8,7 @@ public enum DataObjectAttributes implements OrderByAttribute {
 	private static List<DataObjectAttributes> stringList = List.of(DataObjectAttributes.name);
 
 	private boolean isString(DataObjectAttributes dataObjectAttribute) {
-		if (stringList.contains(dataObjectAttribute))
-			return true;
-		return false;
+		return stringList.contains(dataObjectAttribute);
 	}
 
 	@Override

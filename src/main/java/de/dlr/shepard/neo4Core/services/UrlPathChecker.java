@@ -264,7 +264,7 @@ public class UrlPathChecker {
 	}
 
 	private HashMap<String, String> getPathElements(List<PathSegment> pathSegments) {
-		HashMap<String, String> pathElems = new HashMap<String, String>();
+		HashMap<String, String> pathElems = new HashMap<>();
 		for (int i = 0; i + 1 < pathSegments.size(); i = i + 2) {
 			String value = pathSegments.get(i).getPath();
 			String id = pathSegments.get(i + 1).getPath();

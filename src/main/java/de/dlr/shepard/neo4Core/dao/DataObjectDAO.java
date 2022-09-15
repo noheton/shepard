@@ -111,9 +111,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	}
 
 	private boolean matchName(DataObject obj, String name) {
-		if (name == null || name.equalsIgnoreCase(obj.getName()))
-			return true;
-		return false;
+		return name == null || name.equalsIgnoreCase(obj.getName());
 	}
 
 	private boolean matchRelated(List<DataObject> related, Long id) {
@@ -129,9 +127,7 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 	}
 
 	private boolean matchCollection(DataObject obj, long collectionId) {
-		if (obj.getCollection() != null && obj.getCollection().getId().equals(collectionId))
-			return true;
-		return false;
+		return obj.getCollection() != null && obj.getCollection().getId().equals(collectionId);
 	}
 
 	public List<DataObject> getDataObjectsByQuery(String query) {

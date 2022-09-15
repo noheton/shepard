@@ -77,9 +77,7 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	}
 
 	private boolean matchName(Collection col, String name) {
-		if (name == null || col.getName().equalsIgnoreCase(name))
-			return true;
-		return false;
+		return name == null || col.getName().equalsIgnoreCase(name);
 	}
 
 }

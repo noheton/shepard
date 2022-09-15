@@ -81,7 +81,7 @@ public class PermissionsUtil {
 	}
 
 	private Set<String> fetchUserNames(List<UserGroup> userGroups) {
-		Set<String> ret = new HashSet<String>();
+		Set<String> ret = new HashSet<>();
 		for (UserGroup userGroup : userGroups) {
 			UserGroup fullUserGroup = userGroupService.getUserGroup(userGroup.getId());
 			for (User user : fullUserGroup.getUsers()) {

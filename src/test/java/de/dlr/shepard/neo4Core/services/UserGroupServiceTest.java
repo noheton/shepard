@@ -80,7 +80,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		when(permissionsDAO.createOrUpdate(any())).thenReturn(null);
 
 		UserGroup actual = service.createUserGroup(input, "creator");
-		assertEquals(actual, created);
+		assertEquals(created, actual);
 	}
 
 	@Test
@@ -98,7 +98,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		List<UserGroup> allUserGroups = new ArrayList<UserGroup>();
 		QueryParamHelper params = new QueryParamHelper();
 		when(userGroupDAO.findAllUserGroups(params, "user1")).thenReturn(allUserGroups);
-		assertEquals(service.getAllUserGroups(params, "user1").size(), 0);
+		assertEquals(0, service.getAllUserGroups(params, "user1").size());
 	}
 
 	@Test
@@ -138,7 +138,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		when(userGroupDAO.createOrUpdate(oldGroup)).thenReturn(newGroup);
 
 		var actual = service.updateUserGroup(input.getId(), input, "updater");
-		assertEquals(actual, newGroup);
+		assertEquals(newGroup, actual);
 	}
 
 	@Test

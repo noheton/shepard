@@ -8,9 +8,7 @@ public enum ContainerAttributes implements OrderByAttribute {
 	private static List<ContainerAttributes> stringList = List.of(ContainerAttributes.name);
 
 	private boolean isString(ContainerAttributes containerAttribute) {
-		if (stringList.contains(containerAttribute))
-			return true;
-		return false;
+		return stringList.contains(containerAttribute);
 	}
 
 	@Override

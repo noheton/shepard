@@ -37,7 +37,7 @@ public class UserFilter implements ContainerRequestFilter {
 		UserService userService = getUserService();
 
 		var principal = requestContext.getSecurityContext().getUserPrincipal();
-		if (principal == null || !(principal instanceof JWTPrincipal)) {
+		if (!(principal instanceof JWTPrincipal)) {
 			log.warn("Unknown principal {}", principal);
 			abort(requestContext, "User could not be read from the request context");
 			return;

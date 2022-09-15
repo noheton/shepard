@@ -8,9 +8,7 @@ public enum UserGroupAttributes implements OrderByAttribute {
 	private static List<UserGroupAttributes> stringList = List.of(UserGroupAttributes.name);
 
 	private boolean isString(UserGroupAttributes userGroupAttributes) {
-		if (stringList.contains(userGroupAttributes))
-			return true;
-		return false;
+		return stringList.contains(userGroupAttributes);
 	}
 
 	@Override

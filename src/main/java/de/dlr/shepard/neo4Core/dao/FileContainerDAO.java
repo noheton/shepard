@@ -40,9 +40,7 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 	}
 
 	private boolean matchName(FileContainer container, String name) {
-		if (name == null || container.getName().equalsIgnoreCase(name))
-			return true;
-		return false;
+		return name == null || container.getName().equalsIgnoreCase(name);
 	}
 
 	@Override

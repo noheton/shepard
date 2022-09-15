@@ -61,7 +61,7 @@ public class UserGroupTest extends BaseTestCaseIT {
 		UserGroupIO userGroup = given().spec(userGroupSpecification).when()
 				.get(userGroupURL + "/" + userGroupCreated.getId()).then().statusCode(200).extract()
 				.as(UserGroupIO.class);
-		assertEquals(userGroup, userGroupCreated);
+		assertEquals(userGroupCreated, userGroup);
 	}
 
 	@Test

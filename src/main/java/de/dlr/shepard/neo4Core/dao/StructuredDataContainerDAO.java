@@ -40,9 +40,7 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 	}
 
 	private boolean matchName(StructuredDataContainer container, String name) {
-		if (name == null || container.getName().equalsIgnoreCase(name))
-			return true;
-		return false;
+		return name == null || container.getName().equalsIgnoreCase(name);
 	}
 
 	@Override

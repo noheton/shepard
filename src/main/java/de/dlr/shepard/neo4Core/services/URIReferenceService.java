@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.util.List;
 
-import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.URIReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -33,8 +32,7 @@ public class URIReferenceService {
 		return reference;
 	}
 
-	public URIReference createURIReference(long dataObjectId, URIReferenceIO uriReference, String username)
-			throws InvalidBodyException {
+	public URIReference createURIReference(long dataObjectId, URIReferenceIO uriReference, String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 

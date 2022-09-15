@@ -49,7 +49,7 @@ public class CypherQueryHelper {
 			ret = "ORDER BY " + variable + "." + orderByAttribute;
 		else
 			ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
-		if (orderDesc != null && orderDesc == true)
+		if (orderDesc != null && orderDesc)
 			ret = ret + " DESC";
 		return ret;
 	}

@@ -28,10 +28,10 @@ public class UserGroupIOTest extends BaseTestCase {
 		users.add(user);
 		group.setUsers(users);
 		var converted = new UserGroupIO(group);
-		assertEquals(converted.getId(), 1L);
-		assertEquals(converted.getName(), "group");
-		assertEquals(converted.getUsernames().length, 1);
-		assertEquals(converted.getUsernames()[0], "AKP");
+		assertEquals(1L, converted.getId());
+		assertEquals("group", converted.getName());
+		assertEquals(1, converted.getUsernames().length);
+		assertEquals("AKP", converted.getUsernames()[0]);
 	}
 
 }

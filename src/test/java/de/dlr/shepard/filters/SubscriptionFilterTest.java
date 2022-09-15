@@ -14,6 +14,8 @@ import java.util.concurrent.Executor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
@@ -123,59 +125,20 @@ public class SubscriptionFilterTest extends BaseTestCase {
 		verify(executor).execute(any());
 	}
 
-	@Test
-	public void testFilterNoMatch() {
+	@ParameterizedTest
+	@CsvSource({ "http://my.url/test2,200", "http://my.url/test/200/sub,100", "http://my.url/test/200/sub,400" })
+	public void testFilterNoExecution(String subscribedUrl, int statusCode) {
 		Subscription sub = new Subscription();
 		sub.setCallbackURL("http://callback.url/test");
 		sub.setId(200L);
 		sub.setName("MySub");
 		sub.setRequestMethod(RequestMethod.GET);
-		sub.setSubscribedURL("http://my.url/test2");
+		sub.setSubscribedURL(subscribedUrl);
 		List<Subscription> subs = List.of(sub);
 		Object noId = new Object();
 
 		when(request.getMethod()).thenReturn("GET");
-		when(response.getStatus()).thenReturn(200);
-		when(response.getEntity()).thenReturn(noId);
-		when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-
-		filter.filter(request, response);
-		verify(executor, never()).execute(any());
-	}
-
-	@Test
-	public void testFilterBadResponseBelow() {
-		Subscription sub = new Subscription();
-		sub.setCallbackURL("http://callback.url/test");
-		sub.setId(200L);
-		sub.setName("MySub");
-		sub.setRequestMethod(RequestMethod.GET);
-		sub.setSubscribedURL("http://my.url/test/200/sub");
-		List<Subscription> subs = List.of(sub);
-		Object noId = new Object();
-
-		when(request.getMethod()).thenReturn("GET");
-		when(response.getStatus()).thenReturn(100);
-		when(response.getEntity()).thenReturn(noId);
-		when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-
-		filter.filter(request, response);
-		verify(executor, never()).execute(any());
-	}
-
-	@Test
-	public void testFilterBadResponseAbove() {
-		Subscription sub = new Subscription();
-		sub.setCallbackURL("http://callback.url/test");
-		sub.setId(200L);
-		sub.setName("MySub");
-		sub.setRequestMethod(RequestMethod.GET);
-		sub.setSubscribedURL("http://my.url/test/200/sub");
-		List<Subscription> subs = List.of(sub);
-		Object noId = new Object();
-
-		when(request.getMethod()).thenReturn("GET");
-		when(response.getStatus()).thenReturn(400);
+		when(response.getStatus()).thenReturn(statusCode);
 		when(response.getEntity()).thenReturn(noId);
 		when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
 

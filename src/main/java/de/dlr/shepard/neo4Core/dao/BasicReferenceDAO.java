@@ -54,15 +54,11 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 	}
 
 	private boolean matchDataObject(BasicReference ref, long dataObjectId) {
-		if (ref.getDataObject() != null && ref.getDataObject().getId().equals(dataObjectId))
-			return true;
-		return false;
+		return ref.getDataObject() != null && ref.getDataObject().getId().equals(dataObjectId);
 	}
 
 	private boolean matchName(BasicReference ref, String name) {
-		if (name == null || ref.getName().equalsIgnoreCase(name))
-			return true;
-		return false;
+		return name == null || ref.getName().equalsIgnoreCase(name);
 	}
 
 	public long getDataObjectId(long referenceId) {

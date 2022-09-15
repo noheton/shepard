@@ -2,7 +2,6 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Map;
 
@@ -352,12 +351,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.name).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
-		assertEquals(response[0], aDataObject);
-		assertEquals(response[1], bDataObject);
-		assertEquals(response[2], cDataObject);
-		assertEquals(response[3], dDataObject);
-		assertEquals(response[4], eDataObject);
-		assertEquals(response[5], fDataObject);
+		assertThat(response).containsExactly(aDataObject, bDataObject, cDataObject, dDataObject, eDataObject,
+				fDataObject);
 	}
 
 	@Test
@@ -366,12 +361,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.name).queryParam("orderDesc", true).when().get().then()
 				.statusCode(200).extract().as(DataObjectIO[].class);
-		assertEquals(response[0], fDataObject);
-		assertEquals(response[1], eDataObject);
-		assertEquals(response[2], dDataObject);
-		assertEquals(response[3], cDataObject);
-		assertEquals(response[4], bDataObject);
-		assertEquals(response[5], aDataObject);
+		assertThat(response).containsExactly(fDataObject, eDataObject, dDataObject, cDataObject, bDataObject,
+				aDataObject);
 	}
 
 	@Test
@@ -380,12 +371,8 @@ public class DataObjectTest extends BaseTestCaseIT {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false).when().get()
 				.then().statusCode(200).extract().as(DataObjectIO[].class);
-		assertEquals(response[0], aDataObject);
-		assertEquals(response[1], bDataObject);
-		assertEquals(response[2], cDataObject);
-		assertEquals(response[3], dDataObject);
-		assertEquals(response[4], eDataObject);
-		assertEquals(response[5], fDataObject);
+		assertThat(response).containsExactly(aDataObject, bDataObject, cDataObject, dDataObject, eDataObject,
+				fDataObject);
 	}
 
 	@Test
@@ -395,9 +382,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
 				.queryParam("page", 0).queryParam("size", 3).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
-		assertEquals(response[0], aDataObject);
-		assertEquals(response[1], bDataObject);
-		assertEquals(response[2], cDataObject);
+		assertThat(response).containsExactly(aDataObject, bDataObject, cDataObject);
 	}
 
 	@Test
@@ -407,9 +392,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
 				.queryParam("page", 1).queryParam("size", 3).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
-		assertEquals(response[0], dDataObject);
-		assertEquals(response[1], eDataObject);
-		assertEquals(response[2], fDataObject);
+		assertThat(response).containsExactly(dDataObject, eDataObject, fDataObject);
 	}
 
 	@Test
@@ -419,9 +402,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)
 				.queryParam("page", 1).queryParam("size", 3).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
-		assertEquals(response[0], cDataObject);
-		assertEquals(response[1], bDataObject);
-		assertEquals(response[2], aDataObject);
+		assertThat(response).containsExactly(cDataObject, bDataObject, aDataObject);
 	}
 
 	@Test
@@ -431,9 +412,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)
 				.queryParam("page", 0).queryParam("size", 3).when().get().then().statusCode(200).extract()
 				.as(DataObjectIO[].class);
-		assertEquals(response[0], fDataObject);
-		assertEquals(response[1], eDataObject);
-		assertEquals(response[2], dDataObject);
+		assertThat(response).containsExactly(fDataObject, eDataObject, dDataObject);
 	}
 
 }

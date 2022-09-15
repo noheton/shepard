@@ -122,6 +122,9 @@ public class Neo4jEmitter {
 		case "updatedBy":
 			by = "updated_by";
 			break;
+		default:
+			// Ignore other properties
+			break;
 		}
 		ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE u.username ";
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";

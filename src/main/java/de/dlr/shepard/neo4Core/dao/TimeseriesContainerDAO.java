@@ -41,9 +41,7 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 	}
 
 	private boolean matchName(TimeseriesContainer container, String name) {
-		if (name == null || container.getName().equalsIgnoreCase(name))
-			return true;
-		return false;
+		return name == null || container.getName().equalsIgnoreCase(name);
 	}
 
 	@Override

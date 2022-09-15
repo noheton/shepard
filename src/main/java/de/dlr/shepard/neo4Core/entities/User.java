@@ -30,11 +30,11 @@ public class User implements HasId {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.SUBSCRIBED_BY, direction = Relationship.INCOMING)
-	private List<Subscription> subscriptions = new ArrayList<Subscription>();
+	private List<Subscription> subscriptions = new ArrayList<>();
 
 	@ToString.Exclude
 	@Relationship(type = Constants.BELONGS_TO, direction = Relationship.INCOMING)
-	private List<ApiKey> apiKeys = new ArrayList<ApiKey>();
+	private List<ApiKey> apiKeys = new ArrayList<>();
 
 	/**
 	 * For testing purposes only

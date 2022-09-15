@@ -22,23 +22,23 @@ public class DataObject extends AbstractDataObject {
 	private Collection collection;
 
 	@Relationship(type = Constants.HAS_REFERENCE)
-	private List<BasicReference> references = new ArrayList<BasicReference>();
+	private List<BasicReference> references = new ArrayList<>();
 
 	@Relationship(type = Constants.HAS_SUCCESSOR)
-	private List<DataObject> successors = new ArrayList<DataObject>();
+	private List<DataObject> successors = new ArrayList<>();
 
 	@Relationship(type = Constants.HAS_SUCCESSOR, direction = Relationship.INCOMING)
-	private List<DataObject> predecessors = new ArrayList<DataObject>();
+	private List<DataObject> predecessors = new ArrayList<>();
 
 	@Relationship(type = Constants.HAS_CHILD)
-	private List<DataObject> children = new ArrayList<DataObject>();
+	private List<DataObject> children = new ArrayList<>();
 
 	@Relationship(type = Constants.HAS_CHILD, direction = Relationship.INCOMING)
 	private DataObject parent;
 
 	@ToString.Exclude
 	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
-	private List<DataObjectReference> incoming = new ArrayList<DataObjectReference>();
+	private List<DataObjectReference> incoming = new ArrayList<>();
 
 	/**
 	 * For testing purposes only

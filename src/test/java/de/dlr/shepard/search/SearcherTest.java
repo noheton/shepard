@@ -61,7 +61,7 @@ public class SearcherTest extends BaseTestCase {
 		myResponseBody.setSearchParams(searchParams);
 		when(structuredDataSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
 		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(response, myResponseBody);
+		assertEquals(myResponseBody, response);
 	}
 
 	@Test
@@ -88,7 +88,7 @@ public class SearcherTest extends BaseTestCase {
 		myResponseBody.setSearchParams(searchParams);
 		when(collectionSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
 		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(response, myResponseBody);
+		assertEquals(myResponseBody, response);
 	}
 
 	@Test
@@ -124,7 +124,7 @@ public class SearcherTest extends BaseTestCase {
 		myResponseBody.setSearchParams(searchParams);
 		when(dataObjectSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
 		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(response, myResponseBody);
+		assertEquals(myResponseBody, response);
 	}
 
 	@Test
@@ -160,7 +160,7 @@ public class SearcherTest extends BaseTestCase {
 		myResponseBody.setSearchParams(searchParams);
 		when(referenceSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
 		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(response, myResponseBody);
+		assertEquals(myResponseBody, response);
 	}
 
 }

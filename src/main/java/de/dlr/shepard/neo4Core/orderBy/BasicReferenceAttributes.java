@@ -9,9 +9,7 @@ public enum BasicReferenceAttributes implements OrderByAttribute {
 			BasicReferenceAttributes.type);
 
 	private boolean isString(BasicReferenceAttributes referenceAttribute) {
-		if (stringList.contains(referenceAttribute))
-			return true;
-		return false;
+		return stringList.contains(referenceAttribute);
 	}
 
 	@Override

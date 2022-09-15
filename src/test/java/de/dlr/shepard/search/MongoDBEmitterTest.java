@@ -2,138 +2,68 @@ package de.dlr.shepard.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardParserException;
 
 public class MongoDBEmitterTest extends BaseTestCase {
 
-	@Test
-	public void queryEqTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+	private static Stream<Arguments> queryTest() {
+		var queryEq = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "eq"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$eq: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryNeTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$eq: \"MyName\"}");
+		var queryNe = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "ne"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$ne: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryGtTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$ne: \"MyName\"}");
+		var queryGt = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "gt"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$gt: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryLtTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$gt: \"MyName\"}");
+		var queryLt = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "lt"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$lt: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryGeTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$lt: \"MyName\"}");
+		var queryGe = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "ge"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$gte: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryLeTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$gte: \"MyName\"}");
+		var queryLe = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": "MyName",
 				  "operator": "le"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$lte: \"MyName\"}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryInTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$lte: \"MyName\"}");
+		var queryIn = Arguments.of("""
 				{
 				  "property": "name",
 				  "value": ["1","2"],
 				  "operator": "in"
 				}
-				""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$in: [\"1\",\"2\"]}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryNotTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$in: [\"1\",\"2\"]}");
+		var queryNot = Arguments.of("""
 				{
 				   "NOT":{
 				      "property":"name",
@@ -144,18 +74,8 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      "operator":"eq"
 				   }
 				}
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$not: {$eq: [\"1\",\"2\"]}}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryAndTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$not: {$eq: [\"1\",\"2\"]}}");
+		var queryAnd = Arguments.of("""
 				{
 				   "AND":[
 				      {
@@ -173,19 +93,8 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      }
 				   ]
 				}
-
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "$and: [{name: {$eq: [\"1\",\"2\"]}}, {number: {$eq: 4}}]";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryOrTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "$and: [{name: {$eq: [\"1\",\"2\"]}}, {number: {$eq: 4}}]");
+		var queryOr = Arguments.of("""
 				{
 				   "OR":[
 				      {
@@ -203,19 +112,8 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      }
 				   ]
 				}
-
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "$or: [{name: {$eq: [\"1\",\"2\"]}}, {number: {$eq: 4}}]";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryNotNotTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "$or: [{name: {$eq: [\"1\",\"2\"]}}, {number: {$eq: 4}}]");
+		var queryNotNot = Arguments.of("""
 				{
 				   "NOT":{
 				      "NOT":{
@@ -228,18 +126,8 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      }
 				   }
 				}
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "name: {$eq: [\"1\",\"2\"]}";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryNotOrTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "name: {$eq: [\"1\",\"2\"]}");
+		var queryNotOr = Arguments.of("""
 				{
 				   "NOT":{
 				      "OR":[
@@ -259,19 +147,8 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      ]
 				   }
 				}
-
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "$and: [{name: {$not: {$eq: [\"1\",\"2\"]}}}, {number: {$not: {$eq: 4}}}]";
-		assertEquals(expected, mongoDBQuery);
-	}
-
-	@Test
-	public void queryNotAndTest() throws ShepardParserException {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		String searchBodyQuery = """
+				""", "$and: [{name: {$not: {$eq: [\"1\",\"2\"]}}}, {number: {$not: {$eq: 4}}}]");
+		var queryNotAnd = Arguments.of("""
 				{
 				   "NOT":{
 				      "AND":[
@@ -291,10 +168,18 @@ public class MongoDBEmitterTest extends BaseTestCase {
 				      ]
 				   }
 				}
+				""", "$or: [{name: {$not: {$eq: [\"1\",\"2\"]}}}, {number: {$not: {$eq: 4}}}]");
+		return Stream.of(queryEq, queryNe, queryGt, queryLt, queryGe, queryLe, queryIn, queryNot, queryAnd, queryOr,
+				queryNotNot, queryNotOr, queryNotAnd);
+	}
 
-								""";
-		String mongoDBQuery = MongoDBEmitter.emitMongoDB(searchBodyQuery);
-		String expected = "$or: [{name: {$not: {$eq: [\"1\",\"2\"]}}}, {number: {$not: {$eq: 4}}}]";
+	@ParameterizedTest
+	@MethodSource
+	public void queryTest(String input, String expected) throws ShepardParserException {
+		SearchScope scope = new SearchScope();
+		scope.setCollectionId(1L);
+		scope.setDataObjectId(2L);
+		String mongoDBQuery = MongoDBEmitter.emitMongoDB(input);
 		assertEquals(expected, mongoDBQuery);
 	}
 

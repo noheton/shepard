@@ -11,7 +11,7 @@ public class GracePeriodUtil {
 
 	public GracePeriodUtil(int period) {
 		this.period = period;
-		lastSeen = new HashMap<String, Date>();
+		lastSeen = new HashMap<>();
 	}
 
 	public boolean elementIsKnown(String key) {

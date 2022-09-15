@@ -76,7 +76,7 @@ public class CsvConverter {
 				result.put(key, payload);
 			}
 		}
-		return new ArrayList<TimeseriesPayload>(result.values());
+		return new ArrayList<>(result.values());
 	}
 
 }

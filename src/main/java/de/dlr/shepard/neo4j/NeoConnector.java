@@ -66,7 +66,8 @@ public class NeoConnector implements IConnector {
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
-					log.info("Cannot sleep while waiting for neo4j Connection");
+					log.error("Cannot sleep while waiting for neo4j Connection");
+					Thread.currentThread().interrupt();
 				}
 			}
 		}

@@ -19,11 +19,11 @@ import lombok.ToString;
 public class Collection extends AbstractDataObject {
 
 	@Relationship(type = Constants.HAS_DATAOBJECT)
-	private List<DataObject> dataObjects = new ArrayList<DataObject>();
+	private List<DataObject> dataObjects = new ArrayList<>();
 
 	@ToString.Exclude
 	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
-	private List<CollectionReference> incoming = new ArrayList<CollectionReference>();
+	private List<CollectionReference> incoming = new ArrayList<>();
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_PERMISSIONS)

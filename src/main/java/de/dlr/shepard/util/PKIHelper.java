@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PKIHelper {
 
-	private final String RSA = "RSA";
+	private static final String RSA = "RSA";
 
 	private Path keysDir = Paths.get(System.getProperty("user.home"), ".shepard/keys");
 	private Path pubKey = Paths.get(keysDir.toString(), "public.key");

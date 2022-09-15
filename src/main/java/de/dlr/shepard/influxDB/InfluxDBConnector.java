@@ -61,9 +61,8 @@ public class InfluxDBConnector implements IConnector {
 		String password = helper.getProperty("influx.password");
 
 		influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password);
-		influxDB.enableBatch(BatchOptions.DEFAULTS.exceptionHandler((failedPoints, throwable) -> {
-			log.error("Exception while writing the following points: {}, Exception: {}", failedPoints, throwable);
-		}));
+		influxDB.enableBatch(BatchOptions.DEFAULTS.exceptionHandler((failedPoints, throwable) -> log
+				.error("Exception while writing the following points: {}, Exception: {}", failedPoints, throwable)));
 		return true;
 	}
 
@@ -206,6 +205,9 @@ public class InfluxDBConnector implements IConnector {
 					break;
 				case Constants.SYMBOLICNAME:
 					timeseries.setSymbolicName(tag[1]);
+					break;
+				default:
+					// Ignore additional tags
 					break;
 				}
 			}

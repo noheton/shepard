@@ -18,5 +18,5 @@ public class TimeseriesPayload {
 	private Timeseries timeseries;
 
 	@NotEmpty
-	private List<InfluxPoint> points = new ArrayList<InfluxPoint>();
+	private List<InfluxPoint> points = new ArrayList<>();
 }

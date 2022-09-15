@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PropertiesHelper {
-	private final String PROPERTIES = "db.properties";
+	private static final String PROPERTIES = "db.properties";
 
 	private Properties propertiesFile = new Properties();
 	private Map<String, String> environment = System.getenv();
