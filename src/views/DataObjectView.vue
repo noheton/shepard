@@ -98,12 +98,10 @@ function handleDelete() {
     });
 }
 
-const screenWidth = ref<number>(0);
 onMounted(() => {
   retrieveDataObject();
   retrieveRoles();
   retrievePermissions();
-  screenWidth.value = window.innerWidth;
 });
 </script>
 
