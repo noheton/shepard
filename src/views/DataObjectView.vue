@@ -1,33 +1,151 @@
-<template>
-  <div v-if="currentDataObject" class="dataObject">
-    <b-button-group class="float-right">
-      <b-button
-        v-b-modal.create-dataObject-modal
-        v-b-tooltip.hover
-        title="Create"
-        variant="primary"
-      >
-        <CreateIcon />
-      </b-button>
-      <b-button
-        v-b-modal.edit-dataObject-modal
-        v-b-tooltip.hover
-        title="Edit"
-        variant="light"
-      >
-        <EditIcon />
-      </b-button>
-      <b-button
-        v-b-modal.data-object-delete-confirmation-modal
-        v-b-tooltip.hover
-        title="Delete"
-        variant="dark"
-      >
-        <DeleteIcon />
-      </b-button>
-    </b-button-group>
+<script setup lang="ts">
+import DataObjectElement from "@/components/dataobjects/DataObjectElement.vue";
+import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
+import RelatedObjectsTable from "@/components/dataobjects/RelatedObjectsTable.vue";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericCollapse from "@/components/generic/GenericCollapse.vue";
+import GenericDescription from "@/components/generic/GenericDescription.vue";
+import ReferencesTable from "@/components/references/ReferencesTable.vue";
+import CollectionService from "@/services/collectionService";
+import DataObjectService from "@/services/dataObjectService";
+import { handleError, logError } from "@/utils/error-handling";
+import type {
+  DataObject,
+  Permissions,
+  ResponseError,
+  Roles,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
 
-    <h3>{{ currentDataObject.name }}</h3>
+const route = useRoute();
+const router = useRouter();
+
+const currentDataObject = ref<DataObject>();
+const attributeItems = ref<Array<{ key: string; value: string }>>([]);
+
+const currentCollectionId = computed<string>(() => route.params.collectionId);
+const currentDataObjectId = computed<string>(() => route.params.dataObjectId);
+
+const root = ref<HTMLElement | undefined>();
+function scrollTo(element: string) {
+  const el = root.value?.querySelector(element);
+  el?.scrollIntoView();
+}
+function retrieveDataObject() {
+  DataObjectService.getDataObject({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: +currentDataObjectId.value,
+  })
+    .then(response => {
+      currentDataObject.value = response;
+      attributeItems.value = [];
+      if (currentDataObject.value.attributes !== undefined) {
+        Object.entries(currentDataObject.value.attributes).forEach(
+          ([key, value]) =>
+            attributeItems.value.push({ key: key, value: value }),
+        );
+      }
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching data object");
+    });
+}
+
+const roles = ref<Roles | undefined>();
+function retrieveRoles() {
+  CollectionService.getCollectionRoles({
+    collectionId: +currentCollectionId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching roles");
+    });
+}
+
+const permissions = ref<Permissions | undefined>();
+function retrievePermissions() {
+  CollectionService.getCollectionPermissions({
+    collectionId: +currentCollectionId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching permissions");
+    });
+}
+
+function handleDelete() {
+  DataObjectService.deleteDataObject({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: +currentDataObjectId.value,
+  })
+    .then(() => {
+      router.push({
+        name: "Collection",
+        params: {
+          collectionId: currentCollectionId.value,
+        },
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting data object");
+    });
+}
+
+const screenWidth = ref<number>(0);
+onMounted(() => {
+  retrieveDataObject();
+  retrieveRoles();
+  retrievePermissions();
+  screenWidth.value = window.innerWidth;
+});
+</script>
+
+<template>
+  <div v-if="currentDataObject" ref="root" class="dataObject">
+    <div>
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
+        <b-button
+          v-b-modal.create-dataObject-modal
+          v-b-tooltip.hover
+          title="Create"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+        <b-button
+          v-b-modal.edit-dataObject-modal
+          v-b-tooltip.hover
+          title="Edit"
+          variant="light"
+        >
+          <EditIcon />
+        </b-button>
+        <b-button
+          v-b-modal.data-object-delete-confirmation-modal
+          v-b-tooltip.hover
+          title="Delete"
+          variant="dark"
+        >
+          <DeleteIcon />
+        </b-button>
+      </b-button-group>
+
+      <h3>
+        {{ currentDataObject.name }}
+        <CurrentRoleIcon :roles="roles" />
+      </h3>
+    </div>
+
     <div>
       Data Object ID: {{ currentDataObject.id }}
       <CreatedByLine
@@ -84,7 +202,7 @@
       title="Parent"
     >
       <DataObjectElement
-        :collection-id="currentCollectionId"
+        :collection-id="+currentCollectionId"
         :data-object-id="currentDataObject.parentId"
       />
     </GenericCollapse>
@@ -98,14 +216,14 @@
     </GenericCollapse>
 
     <DataObjectModal
-      :current-collection-id="currentCollectionId"
+      :current-collection-id="+currentCollectionId"
       :current-data-object="currentDataObject"
       modal-id="edit-dataObject-modal"
       modal-name="Edit Data Object"
       @data-object-changed="retrieveDataObject()"
     />
     <DataObjectModal
-      :current-collection-id="currentCollectionId"
+      :current-collection-id="+currentCollectionId"
       :current-data-object="{ parentId: currentDataObject.id, name: '' }"
       modal-id="create-dataObject-modal"
       modal-name="Create Data Object"
@@ -122,103 +240,6 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import DataObjectElement from "@/components/dataobjects/DataObjectElement.vue";
-import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
-import RelatedObjectsTable from "@/components/dataobjects/RelatedObjectsTable.vue";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericCollapse from "@/components/generic/GenericCollapse.vue";
-import GenericDescription from "@/components/generic/GenericDescription.vue";
-import ReferencesTable from "@/components/references/ReferencesTable.vue";
-import DataObjectService from "@/services/dataObjectService";
-import { handleError } from "@/utils/error-handling";
-import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface DataObjectData {
-  currentDataObject?: DataObject;
-  attributeItems: Array<{ key: string; value: string }>;
-  screenWidth: number;
-}
-
-export default defineComponent({
-  components: {
-    GenericCollapse,
-    GenericDescription,
-    CreatedByLine,
-    DataObjectModal,
-    ReferencesTable,
-    RelatedObjectsTable,
-    DataObjectElement,
-    DeleteConfirmationModal,
-  },
-  data() {
-    return {
-      currentDataObject: undefined,
-      attributeItems: [],
-      screenWidth: 0,
-    } as DataObjectData;
-  },
-  computed: {
-    currentCollectionId(): number {
-      return Number(this.$router.currentRoute.params.collectionId);
-    },
-    currentDataObjectId(): number {
-      return Number(this.$router.currentRoute.params.dataObjectId);
-    },
-  },
-  mounted() {
-    this.retrieveDataObject();
-    this.screenWidth = window.innerWidth;
-  },
-  methods: {
-    scrollTo(element: string) {
-      const el = this.$el.querySelector(element);
-      if (el) {
-        el.scrollIntoView();
-      }
-    },
-    retrieveDataObject() {
-      DataObjectService.getDataObject({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-      })
-        .then(response => {
-          this.currentDataObject = response;
-          this.attributeItems = [];
-          if (this.currentDataObject.attributes !== undefined) {
-            Object.entries(this.currentDataObject.attributes).forEach(
-              ([key, value]) =>
-                this.attributeItems.push({ key: key, value: value }),
-            );
-          }
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching data object");
-        });
-    },
-    handleDelete() {
-      DataObjectService.deleteDataObject({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-      })
-        .then(() => {
-          this.$router.push({
-            name: "Collection",
-            params: {
-              collectionId: String(this.currentCollectionId),
-            },
-          });
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting data object");
-        });
-    },
-  },
-});
-</script>
 
 <style scoped>
 .section {

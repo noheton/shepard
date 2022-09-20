@@ -17,6 +17,7 @@ import type {
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
 
 const router = useRouter();
 const currentCollectionId = computed(() => {
@@ -144,26 +145,7 @@ onMounted(() => {
       </b-button-group>
       <h3>
         {{ currentCollection.name }}
-        <span v-if="roles">
-          <ManagerIcon
-            v-if="roles.owner || roles.manager"
-            v-b-tooltip.hover
-            title="Manager"
-            font-scale="0.8"
-          />
-          <WriterIcon
-            v-else-if="roles.writer"
-            v-b-tooltip.hover
-            title="Writer"
-            font-scale="0.8"
-          />
-          <ReaderIcon
-            v-else-if="roles.reader"
-            v-b-tooltip.hover
-            title="Reader"
-            font-scale="0.8"
-          />
-        </span>
+        <CurrentRoleIcon :roles="roles" />
       </h3>
     </div>
     <div class="mb-3">

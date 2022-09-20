@@ -1,9 +1,128 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import PermissionsModal from "@/components/PermissionsModal.vue";
+import TimeseriesService from "@/services/timeseriesService";
+import { handleError, logError } from "@/utils/error-handling";
+import type {
+  Permissions,
+  ResponseError,
+  Roles,
+  Timeseries,
+  TimeseriesContainer,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
+
+const route = useRoute();
+const router = useRouter();
+
+const currentTimeseriesContainer = ref<TimeseriesContainer>();
+const timeseriesAvailable = ref<Array<Timeseries>>([]);
+const timeseriesFields = ref<Array<string>>([
+  "measurement",
+  "device",
+  "location",
+  "symbolicName",
+]);
+const permissions = ref<Permissions>();
+
+const currentTimeseriesContainerId = computed<string>(
+  () => route.params.timeseriesId,
+);
+
+function retrieveTimeseriesContainer() {
+  TimeseriesService.getTimeseriesContainer({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+  })
+    .then(response => {
+      currentTimeseriesContainer.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching timeseries container");
+    });
+}
+
+function retrieveTimeseriesAvailable() {
+  TimeseriesService.getTimeseriesAvailable({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+  })
+    .then(response => {
+      timeseriesAvailable.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching timeseries available");
+    });
+}
+
+function handleDelete() {
+  TimeseriesService.deleteTimeseriesContainer({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+  })
+    .then(() => {
+      router.push({ name: "TimeseriesList" });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting timeseries container");
+    });
+}
+
+function retrievePermissions() {
+  TimeseriesService.getTimeseriesPermissions({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching permissions");
+    });
+}
+
+function updatePermissions(perms: Permissions) {
+  TimeseriesService.editTimeseriesPermissions({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+    permissions: perms,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "updating permissions");
+    });
+}
+
+const roles = ref<Roles | undefined>();
+function retrieveRoles() {
+  TimeseriesService.getTimeseriesRoles({
+    timeseriesContainerId: +currentTimeseriesContainerId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching roles");
+    });
+}
+
+onMounted(() => {
+  retrieveTimeseriesContainer();
+  retrieveTimeseriesAvailable();
+  retrieveRoles();
+  retrievePermissions();
+});
+</script>
+
 <template>
   <div v-if="currentTimeseriesContainer" class="timeseries-container">
     <div class="component">
-      <b-button-group class="float-right">
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
         <b-button
-          v-if="managerAccess"
+          v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -20,7 +139,10 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentTimeseriesContainer.name }}</h3>
+      <h3>
+        {{ currentTimeseriesContainer.name }}
+        <CurrentRoleIcon :roles="roles" />
+      </h3>
       <div class="mb-3">
         <b>ID:</b> {{ currentTimeseriesContainer.id }}<br />
         <b>Database:</b> {{ currentTimeseriesContainer.database }}<br />
@@ -52,115 +174,9 @@
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
-      :entity-id="currentTimeseriesContainerId"
+      :entity-id="+currentTimeseriesContainerId"
       :old-permissions="permissions"
       @update="updatePermissions($event)"
     />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import PermissionsModal from "@/components/PermissionsModal.vue";
-import TimeseriesService from "@/services/timeseriesService";
-import { handleError, logError } from "@/utils/error-handling";
-import type {
-  Permissions,
-  ResponseError,
-  Timeseries,
-  TimeseriesContainer,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface TimeseriesData {
-  currentTimeseriesContainer?: TimeseriesContainer;
-  timeseriesAvailable: Timeseries[];
-  timeseriesFields: string[];
-  permissions?: Permissions;
-  managerAccess: boolean;
-}
-
-export default defineComponent({
-  components: { CreatedByLine, DeleteConfirmationModal, PermissionsModal },
-  data() {
-    return {
-      currentTimeseriesContainer: undefined,
-      timeseriesAvailable: [],
-      timeseriesFields: ["measurement", "device", "location", "symbolicName"],
-      permissions: undefined,
-      managerAccess: false,
-    } as TimeseriesData;
-  },
-  computed: {
-    currentTimeseriesContainerId(): number {
-      return Number(this.$router.currentRoute.params.timeseriesId);
-    },
-  },
-  mounted() {
-    this.retrieveTimeseriesContainer();
-    this.retrievePermissions();
-    this.retrieveTimeseriesAvailable();
-  },
-  methods: {
-    retrieveTimeseriesContainer() {
-      TimeseriesService.getTimeseriesContainer({
-        timeseriesContainerId: this.currentTimeseriesContainerId,
-      })
-        .then(response => {
-          this.currentTimeseriesContainer = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching timeseries container");
-        });
-    },
-    retrieveTimeseriesAvailable() {
-      TimeseriesService.getTimeseriesAvailable({
-        timeseriesContainerId: this.currentTimeseriesContainerId,
-      })
-        .then(response => {
-          this.timeseriesAvailable = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching timeseries available");
-        });
-    },
-    handleDelete() {
-      TimeseriesService.deleteTimeseriesContainer({
-        timeseriesContainerId: this.currentTimeseriesContainerId,
-      })
-        .then(() => {
-          this.$router.push({ name: "TimeseriesList" });
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting timeseries container");
-        });
-    },
-    retrievePermissions() {
-      TimeseriesService.getTimeseriesPermissions({
-        timeseriesContainerId: this.currentTimeseriesContainerId,
-      })
-        .then(response => {
-          this.permissions = response;
-          this.managerAccess = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching permissions");
-          this.managerAccess = e.status != 403;
-        });
-    },
-    updatePermissions(perms: Permissions) {
-      TimeseriesService.editTimeseriesPermissions({
-        timeseriesContainerId: this.currentTimeseriesContainerId,
-        permissions: perms,
-      })
-        .then(response => {
-          this.permissions = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "updating permissions");
-        });
-    },
-  },
-});
-</script>

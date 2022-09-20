@@ -1,3 +1,179 @@
+<script setup lang="ts">
+import UploadFileModal from "@/components/containers/UploadFileModal.vue";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import PermissionsModal from "@/components/PermissionsModal.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
+import FileService from "@/services/fileService";
+import { downloadFile } from "@/utils/download";
+import { handleError, logError } from "@/utils/error-handling";
+import type {
+  FileContainer,
+  Permissions,
+  ResponseError,
+  Roles,
+  ShepardFile,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
+
+const route = useRoute();
+const router = useRouter();
+
+const currentFileContainer = ref<FileContainer>();
+const permissions = ref<Permissions>();
+const currentFile = ref<ShepardFile>();
+const fileList = ref<Array<ShepardFile>>([]);
+
+const downloadActive = ref<boolean>(false);
+const downloadFinished = ref<boolean>(false);
+const downloadError = ref<boolean>(false);
+const uploadActive = ref<boolean>(false);
+const uploadFinished = ref<boolean>(false);
+const uploadError = ref<boolean>(false);
+const deletedAlert = ref<boolean>(false);
+
+const currentFileContainerId = computed<string>(() => route.params.fileId);
+
+function retrieveFileContainer() {
+  FileService.getFileContainer({
+    fileContainerId: +currentFileContainerId.value,
+  })
+    .then(response => {
+      currentFileContainer.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching file container");
+    });
+}
+
+function retrieveFileList() {
+  FileService.getAllFiles({
+    fileContainerId: +currentFileContainerId.value,
+  })
+    .then(response => {
+      fileList.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching file payload");
+    });
+}
+
+function handleDeleteContainer() {
+  FileService.deleteFileContainer({
+    fileContainerId: +currentFileContainerId.value,
+  })
+    .then(() => {
+      router.push({ name: "FilesList" });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting file container");
+    });
+}
+
+function uploadFile(newFile: Blob) {
+  uploadActive.value = true;
+  if (currentFileContainer.value?.id)
+    FileService.createFile({
+      fileContainerId: +currentFileContainer.value.id,
+      file: newFile,
+    })
+      .then(() => {
+        retrieveFileList();
+        uploadFinished.value = true;
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "uploading file");
+        uploadError.value = true;
+      })
+      .finally(() => {
+        uploadActive.value = false;
+      });
+}
+
+function hanldeDownloadFile(oid: string, filename?: string) {
+  downloadActive.value = true;
+  if (currentFileContainer.value?.id)
+    FileService.getFile({
+      fileContainerId: currentFileContainer.value?.id,
+      oid: oid,
+    })
+      .then(response => {
+        downloadFile(response, filename);
+        downloadFinished.value = true;
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "fetching file");
+        downloadError.value = true;
+      })
+      .finally(() => {
+        downloadActive.value = false;
+      });
+}
+
+function handleDeleteFile() {
+  if (!currentFile.value?.oid || !currentFileContainer.value?.id) return;
+  FileService.deleteFile({
+    fileContainerId: currentFileContainer.value?.id,
+    oid: currentFile.value.oid,
+  })
+    .then(() => {
+      deletedAlert.value = true;
+      retrieveFileList();
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting file");
+    });
+}
+
+function retrievePermissions() {
+  FileService.getFilePermissions({
+    fileContainerId: +currentFileContainerId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching permissions");
+    });
+}
+
+function updatePermissions(perms: Permissions) {
+  FileService.editFilePermissions({
+    fileContainerId: +currentFileContainerId.value,
+    permissions: perms,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "updating permissions");
+    });
+}
+
+const roles = ref<Roles | undefined>();
+function retrieveRoles() {
+  FileService.getFileRoles({
+    fileContainerId: +currentFileContainerId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching roles");
+    });
+}
+
+onMounted(() => {
+  retrieveFileContainer();
+  retrieveFileList();
+  retrieveRoles();
+  retrievePermissions();
+});
+</script>
+
 <template>
   <div v-if="currentFileContainer" class="file-container">
     <div class="component">
@@ -9,7 +185,10 @@
       >
         Successfully deleted
       </b-alert>
-      <b-button-group class="float-right">
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
         <b-button
           v-b-modal.upload-file-to-container-modal
           v-b-tooltip.hover
@@ -19,7 +198,7 @@
           <CreateIcon />
         </b-button>
         <b-button
-          v-if="managerAccess"
+          v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -36,7 +215,10 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentFileContainer.name }}</h3>
+      <h3>
+        {{ currentFileContainer.name }}
+        <CurrentRoleIcon :roles="roles" />
+      </h3>
       <div class="mb-3">
         <b>ID:</b> {{ currentFileContainer.id }}<br />
         <b>Oid:</b> {{ currentFileContainer.oid }}<br />
@@ -80,7 +262,7 @@
               variant="success"
               @click="
                 if (file.oid != undefined)
-                  downloadFile(file.oid, file.filename);
+                  hanldeDownloadFile(file.oid, file.filename);
               "
             >
               <DownloadIcon />
@@ -131,194 +313,9 @@
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
-      :entity-id="currentFileContainerId"
+      :entity-id="+currentFileContainerId"
       :old-permissions="permissions"
       @update="updatePermissions($event)"
     />
   </div>
 </template>
-
-<script lang="ts">
-import UploadFileModal from "@/components/containers/UploadFileModal.vue";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import PermissionsModal from "@/components/PermissionsModal.vue";
-import ProcessAlert from "@/components/ProcessAlert.vue";
-import FileService from "@/services/fileService";
-import { downloadFile } from "@/utils/download";
-import { handleError, logError } from "@/utils/error-handling";
-import type {
-  FileContainer,
-  Permissions,
-  ResponseError,
-  ShepardFile,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface FileData {
-  currentFileContainer?: FileContainer;
-  permissions?: Permissions;
-  downloadActive: boolean;
-  downloadFinished: boolean;
-  downloadError: boolean;
-  uploadActive: boolean;
-  uploadFinished: boolean;
-  uploadError: boolean;
-  fileList: ShepardFile[];
-  currentFile?: ShepardFile;
-  managerAccess: boolean;
-  deletedAlert: boolean;
-}
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    DeleteConfirmationModal,
-    PermissionsModal,
-    UploadFileModal,
-    ProcessAlert,
-    GenericName,
-  },
-  data() {
-    return {
-      currentFileContainer: undefined,
-      permissions: undefined,
-      downloadActive: false,
-      downloadFinished: false,
-      downloadError: false,
-      uploadActive: false,
-      uploadFinished: false,
-      uploadError: false,
-      fileList: [],
-      currentFile: undefined,
-      managerAccess: false,
-      deletedAlert: false,
-    } as FileData;
-  },
-  computed: {
-    currentFileContainerId(): number {
-      return Number(this.$router.currentRoute.params.fileId);
-    },
-  },
-  mounted() {
-    this.retrieveFileContainer();
-    this.retrieveFileList();
-    this.retrievePermissions();
-  },
-  methods: {
-    retrieveFileContainer() {
-      FileService.getFileContainer({
-        fileContainerId: this.currentFileContainerId,
-      })
-        .then(response => {
-          this.currentFileContainer = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching file container");
-        });
-    },
-    retrieveFileList() {
-      FileService.getAllFiles({
-        fileContainerId: this.currentFileContainerId,
-      })
-        .then(response => {
-          this.fileList = response;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching file payload");
-        });
-    },
-    handleDeleteContainer() {
-      FileService.deleteFileContainer({
-        fileContainerId: this.currentFileContainerId,
-      })
-        .then(() => {
-          this.$router.push({ name: "FilesList" });
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting file container");
-        });
-    },
-    uploadFile(newFile: Blob) {
-      this.uploadActive = true;
-      if (this.currentFileContainer?.id)
-        FileService.createFile({
-          fileContainerId: this.currentFileContainer?.id,
-          file: newFile,
-        })
-          .then(() => {
-            this.retrieveFileList();
-            this.uploadFinished = true;
-          })
-          .catch(e => {
-            handleError(e as ResponseError, "uploading file");
-            this.uploadError = true;
-          })
-          .finally(() => {
-            this.uploadActive = false;
-          });
-    },
-
-    downloadFile(oid: string, filename?: string) {
-      this.downloadActive = true;
-      if (this.currentFileContainer?.id)
-        FileService.getFile({
-          fileContainerId: this.currentFileContainer?.id,
-          oid: oid,
-        })
-          .then(response => {
-            downloadFile(response, filename);
-            this.downloadFinished = true;
-          })
-          .catch(e => {
-            handleError(e as ResponseError, "fetching file");
-            this.downloadError = true;
-          })
-          .finally(() => {
-            this.downloadActive = false;
-          });
-    },
-
-    handleDeleteFile() {
-      if (!this.currentFile?.oid || !this.currentFileContainer?.id) return;
-      FileService.deleteFile({
-        fileContainerId: this.currentFileContainer?.id,
-        oid: this.currentFile.oid,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveFileList();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting file");
-        });
-    },
-    retrievePermissions() {
-      FileService.getFilePermissions({
-        fileContainerId: this.currentFileContainerId,
-      })
-        .then(response => {
-          this.permissions = response;
-          this.managerAccess = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching permissions");
-          this.managerAccess = e.status != 403;
-        });
-    },
-    updatePermissions(perms: Permissions) {
-      FileService.editFilePermissions({
-        fileContainerId: this.currentFileContainerId,
-        permissions: perms,
-      })
-        .then(response => {
-          this.permissions = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "updating permissions");
-        });
-    },
-  },
-});
-</script>

@@ -1,3 +1,153 @@
+<script setup lang="ts">
+import CreateStructuredDataModal from "@/components/containers/CreateStructuredDataModal.vue";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
+import PermissionsModal from "@/components/PermissionsModal.vue";
+import StructuredDataService from "@/services/structuredDataService";
+import { handleError, logError } from "@/utils/error-handling";
+import type {
+  Permissions,
+  ResponseError,
+  Roles,
+  StructuredData,
+  StructuredDataContainer,
+  StructuredDataPayload,
+} from "@dlr-shepard/shepard-client";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
+
+const route = useRoute();
+const router = useRouter();
+
+const currentStructuredDataContainer = ref<StructuredDataContainer>();
+const currentStructuredData = ref<StructuredData>();
+const permissions = ref<Permissions>();
+const structuredDataList = ref<Array<StructuredData>>([]);
+
+const deletedAlert = ref<boolean>(false);
+
+const currentStructuredDataContainerId = computed<string>(
+  () => route.params.structuredDataId,
+);
+
+function retrieveStructuredDataContainer() {
+  StructuredDataService.getStructuredDataContainer({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+  })
+    .then(response => {
+      currentStructuredDataContainer.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching structured data container");
+    });
+}
+
+function retrieveStructuredDataList() {
+  StructuredDataService.getAllStructuredDatas({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+  })
+    .then(response => {
+      structuredDataList.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching structured data payload");
+    });
+}
+
+function createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
+  if (currentStructuredDataContainer.value?.id)
+    StructuredDataService.createStructuredData({
+      structureddataContainerId: currentStructuredDataContainer.value.id,
+      structuredDataPayload: newStructuredDataPayload,
+    })
+      .then(() => {
+        retrieveStructuredDataList();
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "creating Structured Data");
+      });
+}
+
+function handleDeleteStructuredDataContainer() {
+  StructuredDataService.deleteStructuredDataContainer({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+  })
+    .then(() => {
+      router.push({ name: "StructuredDatasList" });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting structured data container");
+    });
+}
+
+function handleDeleteStructuredData() {
+  if (
+    !currentStructuredDataContainer.value?.id ||
+    !currentStructuredData.value?.oid
+  )
+    return;
+  StructuredDataService.deleteStructuredData({
+    structureddataContainerId: +currentStructuredDataContainer.value.id,
+    oid: currentStructuredData.value.oid,
+  })
+    .then(() => {
+      deletedAlert.value = true;
+      retrieveStructuredDataList();
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting structured data");
+    });
+}
+
+function retrievePermissions() {
+  StructuredDataService.getStructuredDataPermissions({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching permissions");
+    });
+}
+
+function updatePermissions(perms: Permissions) {
+  StructuredDataService.editStructuredDataPermissions({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+    permissions: perms,
+  })
+    .then(response => {
+      permissions.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "updating permissions");
+    });
+}
+
+const roles = ref<Roles | undefined>();
+function retrieveRoles() {
+  StructuredDataService.getStructuredDataRoles({
+    structureddataContainerId: +currentStructuredDataContainerId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching roles");
+    });
+}
+
+onMounted(() => {
+  retrieveStructuredDataContainer();
+  retrieveStructuredDataList();
+  retrieveRoles();
+  retrievePermissions();
+});
+</script>
+
 <template>
   <div v-if="currentStructuredDataContainer" class="structured-data-container">
     <div class="component">
@@ -9,7 +159,10 @@
       >
         Successfully deleted
       </b-alert>
-      <b-button-group class="float-right">
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
         <b-button
           v-b-modal.create-structured-data-modal
           v-b-tooltip.hover
@@ -19,7 +172,7 @@
           <CreateIcon />
         </b-button>
         <b-button
-          v-if="managerAccess"
+          v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -36,7 +189,10 @@
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentStructuredDataContainer.name }}</h3>
+      <h3>
+        {{ currentStructuredDataContainer.name }}
+        <CurrentRoleIcon :roles="roles" />
+      </h3>
       <div class="mb-3">
         <b>ID:</b> {{ currentStructuredDataContainer.id }}<br />
         <b>Oid:</b> {{ currentStructuredDataContainer.oid }}<br />
@@ -112,165 +268,15 @@
       v-if="currentStructuredData && currentStructuredData.oid"
       modal-id="json-editor-modal"
       modal-name="Structured Data"
-      :container-id="currentStructuredDataContainerId"
+      :container-id="+currentStructuredDataContainerId"
       :oid="currentStructuredData.oid"
     />
     <PermissionsModal
       modal-id="permissions-modal"
       modal-name="Edit Permissions"
-      :entity-id="currentStructuredDataContainerId"
+      :entity-id="+currentStructuredDataContainerId"
       :old-permissions="permissions"
       @update="updatePermissions($event)"
     />
   </div>
 </template>
-
-<script lang="ts">
-import CreateStructuredDataModal from "@/components/containers/CreateStructuredDataModal.vue";
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
-import PermissionsModal from "@/components/PermissionsModal.vue";
-import StructuredDataService from "@/services/structuredDataService";
-import { handleError, logError } from "@/utils/error-handling";
-import type {
-  Permissions,
-  ResponseError,
-  StructuredData,
-  StructuredDataContainer,
-  StructuredDataPayload,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface StructuredDataData {
-  currentStructuredDataContainer?: StructuredDataContainer;
-  currentStructuredData?: StructuredData;
-  permissions?: Permissions;
-  structuredDataList: StructuredData[];
-  managerAccess: boolean;
-  deletedAlert: boolean;
-}
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    DeleteConfirmationModal,
-    PermissionsModal,
-    GenericName,
-    CreateStructuredDataModal,
-    JsonEditorModal,
-  },
-  data() {
-    return {
-      currentStructuredDataContainer: undefined,
-      currentStructuredData: undefined,
-      permissions: undefined,
-      structuredDataList: [],
-      managerAccess: false,
-      deletedAlert: false,
-    } as StructuredDataData;
-  },
-  computed: {
-    currentStructuredDataContainerId(): number {
-      return Number(this.$router.currentRoute.params.structuredDataId);
-    },
-  },
-  mounted() {
-    this.retrieveStructuredDataContainer();
-    this.retrieveStructuredDataList();
-    this.retrievePermissions();
-  },
-  methods: {
-    retrieveStructuredDataContainer() {
-      StructuredDataService.getStructuredDataContainer({
-        structureddataContainerId: this.currentStructuredDataContainerId,
-      })
-        .then(response => {
-          this.currentStructuredDataContainer = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching structured data container");
-        });
-    },
-    retrieveStructuredDataList() {
-      StructuredDataService.getAllStructuredDatas({
-        structureddataContainerId: this.currentStructuredDataContainerId,
-      })
-        .then(response => {
-          this.structuredDataList = response;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching structured data payload");
-        });
-    },
-    createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
-      if (this.currentStructuredDataContainer?.id)
-        StructuredDataService.createStructuredData({
-          structureddataContainerId: this.currentStructuredDataContainer.id,
-          structuredDataPayload: newStructuredDataPayload,
-        })
-          .then(() => {
-            this.retrieveStructuredDataList();
-          })
-          .catch(e => {
-            handleError(e as ResponseError, "creating Structured Data");
-          });
-    },
-    handleDeleteStructuredDataContainer() {
-      StructuredDataService.deleteStructuredDataContainer({
-        structureddataContainerId: this.currentStructuredDataContainerId,
-      })
-        .then(() => {
-          this.$router.push({ name: "StructuredDatasList" });
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting structured data container");
-        });
-    },
-    handleDeleteStructuredData() {
-      if (
-        !this.currentStructuredDataContainer?.id ||
-        !this.currentStructuredData?.oid
-      )
-        return;
-      StructuredDataService.deleteStructuredData({
-        structureddataContainerId: this.currentStructuredDataContainer?.id,
-        oid: this.currentStructuredData.oid,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveStructuredDataList();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting structured data");
-        });
-    },
-    retrievePermissions() {
-      StructuredDataService.getStructuredDataPermissions({
-        structureddataContainerId: this.currentStructuredDataContainerId,
-      })
-        .then(response => {
-          this.permissions = response;
-          this.managerAccess = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching permissions");
-          this.managerAccess = e.status != 403;
-        });
-    },
-    updatePermissions(perms: Permissions) {
-      StructuredDataService.editStructuredDataPermissions({
-        structureddataContainerId: this.currentStructuredDataContainerId,
-        permissions: perms,
-      })
-        .then(response => {
-          this.permissions = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "updating permissions");
-        });
-    },
-  },
-});
-</script>

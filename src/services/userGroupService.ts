@@ -6,6 +6,7 @@ import {
   type GetAllUserGroupsRequest,
   type GetUserGroupPermissionsRequest,
   type GetUserGroupRequest,
+  type GetUserGroupRolesRequest,
   type UpdateUserGroupRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
@@ -44,5 +45,9 @@ export default class UserGroupService {
   static editUserGroupPermissions(params: EditUserGroupPermissionsRequest) {
     const api = new UsergroupApi(getConfiguration());
     return api.editUserGroupPermissions(params);
+  }
+  static getUserGroupRoles(params: GetUserGroupRolesRequest) {
+    const api = new UsergroupApi(getConfiguration());
+    return api.getUserGroupRoles(params);
   }
 }

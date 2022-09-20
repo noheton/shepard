@@ -8,17 +8,18 @@ import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
+  Roles,
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
 import { computed, onMounted, onUpdated, ref, type Ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
+import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
 
 const currentUserGroup: Ref<UserGroup | undefined> = ref();
 const currentUser: Ref<string | undefined> = ref();
 const permissions: Ref<Permissions | undefined> = ref();
-const managerAccess = ref(false);
 
 const route = useRoute();
 const router = useRouter();
@@ -111,11 +112,9 @@ function retrievePermissions() {
   })
     .then(response => {
       permissions.value = response;
-      managerAccess.value = true;
     })
     .catch(e => {
       logError(e as ResponseError, "fetching permissions");
-      managerAccess.value = e.status != 403;
     });
 }
 
@@ -132,9 +131,23 @@ function updatePermissions(perms: Permissions) {
     });
 }
 
+const roles = ref<Roles | undefined>();
+function retrieveRoles() {
+  UserGroupService.getUserGroupRoles({
+    usergroupId: +currentUserGroupId.value,
+  })
+    .then(response => {
+      roles.value = response;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching roles");
+    });
+}
+
 onMounted(() => {
   retrieveUserGroup();
   retrievePermissions();
+  retrieveRoles();
 });
 onUpdated(() => {
   retrieveUser();
@@ -144,7 +157,10 @@ onUpdated(() => {
 <template>
   <div v-if="currentUserGroup">
     <div class="component">
-      <b-button-group class="float-right">
+      <b-button-group
+        v-if="!roles || roles.owner || roles.writer"
+        class="float-right"
+      >
         <b-button
           v-b-modal.add-new-user-modal
           v-b-tooltip.hover
@@ -154,7 +170,7 @@ onUpdated(() => {
           <CreateIcon />
         </b-button>
         <b-button
-          v-if="managerAccess"
+          v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -171,7 +187,10 @@ onUpdated(() => {
           <DeleteIcon />
         </b-button>
       </b-button-group>
-      <h3>{{ currentUserGroup.name }}</h3>
+      <h3>
+        {{ currentUserGroup.name }}
+        <CurrentRoleIcon :roles="roles" />
+      </h3>
       <p><b>ID:</b> {{ currentUserGroup.id }}<br /></p>
 
       <b-list-group v-if="currentUserGroup.usernames">
