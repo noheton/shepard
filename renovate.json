@@ -1,16 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
-  "prHourlyLimit": 0,
-  "labels": ["dependencies"],
-  "stabilityDays": 3,
-  "prCreation": "not-pending",
-  "dependencyDashboard": true,
   "packageRules": [
     {
       "matchFiles": ["requirements.txt"],
       "groupName": "all python dependencies",
       "groupSlug": "all-python-deps"
     }
-  ]
+  ],
+  "labels": ["dependencies"],
+  "dependencyDashboard": true
 }
