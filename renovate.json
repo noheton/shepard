@@ -23,9 +23,6 @@
       "allowedVersions": "<4.8"
     }
   ],
-  "prHourlyLimit": 0,
   "labels": ["dependencies"],
-  "stabilityDays": 3,
-  "prCreation": "not-pending",
   "dependencyDashboard": true
 }
