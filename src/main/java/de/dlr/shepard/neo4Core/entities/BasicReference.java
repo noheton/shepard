@@ -1,7 +1,5 @@
 package de.dlr.shepard.neo4Core.entities;
 
-import java.util.Objects;
-
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
@@ -16,8 +14,6 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @NoArgsConstructor
 public class BasicReference extends AbstractEntity {
-
-	private String name;
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_REFERENCE, direction = Relationship.INCOMING)
@@ -45,7 +41,6 @@ public class BasicReference extends AbstractEntity {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(name);
 		result = prime * result + HasId.hashcodeHelper(dataObject);
 		return result;
 	}
@@ -59,6 +54,6 @@ public class BasicReference extends AbstractEntity {
 		if (!(obj instanceof BasicReference))
 			return false;
 		BasicReference other = (BasicReference) obj;
-		return HasId.equalsHelper(dataObject, other.dataObject) && Objects.equals(name, other.name);
+		return HasId.equalsHelper(dataObject, other.dataObject);
 	}
 }

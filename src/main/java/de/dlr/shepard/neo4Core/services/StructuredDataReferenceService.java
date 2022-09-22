@@ -20,7 +20,8 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StructuredDataReferenceService {
+public class StructuredDataReferenceService
+		implements IReferenceService<StructuredDataReference, StructuredDataReferenceIO> {
 
 	private StructuredDataReferenceDAO structuredDataReferenceDAO = new StructuredDataReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
@@ -30,8 +31,9 @@ public class StructuredDataReferenceService {
 	private StructuredDataService structuredDataService = new StructuredDataService();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
-	public StructuredDataReference createStructuredDataReference(long dataObjectId,
-			StructuredDataReferenceIO structuredDataReference, String username) {
+	@Override
+	public StructuredDataReference createReference(long dataObjectId, StructuredDataReferenceIO structuredDataReference,
+			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 		var container = containerDAO.find(structuredDataReference.getStructuredDataContainerId());
@@ -57,7 +59,8 @@ public class StructuredDataReferenceService {
 		return structuredDataReferenceDAO.createOrUpdate(toCreate);
 	}
 
-	public List<StructuredDataReference> getAllStructuredDataReferences(long dataObjectId) {
+	@Override
+	public List<StructuredDataReference> getAllReferences(long dataObjectId) {
 		var references = structuredDataReferenceDAO.findByDataObject(dataObjectId);
 		return references;
 	}
@@ -69,7 +72,8 @@ public class StructuredDataReferenceService {
 	 *
 	 * @return the StructuredDataReference with the given id or null
 	 */
-	public StructuredDataReference getStructuredDataReference(long id) {
+	@Override
+	public StructuredDataReference getReference(long id) {
 		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.find(id);
 		if (structuredDataReference == null || structuredDataReference.isDeleted()) {
 			log.error("Structured Data Reference with id {} is null or deleted", id);
@@ -87,6 +91,7 @@ public class StructuredDataReferenceService {
 	 * @return a boolean to identify if the StructuredDataReference was successfully
 	 *         removed
 	 */
+	@Override
 	public boolean deleteReference(long structuredDataReferenceId, String username) {
 		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		var user = userDAO.find(username);

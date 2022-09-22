@@ -40,6 +40,8 @@ public abstract class AbstractEntity implements HasId {
 	@Relationship(type = Constants.UPDATED_BY)
 	private User updatedBy;
 
+	private String name;
+
 	/**
 	 * For testing purposes only
 	 *
@@ -53,7 +55,7 @@ public abstract class AbstractEntity implements HasId {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Objects.hash(id, deleted, createdAt, updatedAt);
+		result = prime * result + Objects.hash(id, deleted, createdAt, updatedAt, name);
 		result = prime * result + HasId.hashcodeHelper(createdBy);
 		result = prime * result + HasId.hashcodeHelper(updatedBy);
 		return result;
@@ -68,7 +70,7 @@ public abstract class AbstractEntity implements HasId {
 		AbstractEntity other = (AbstractEntity) obj;
 		return Objects.equals(id, other.id) && deleted == other.deleted && Objects.equals(createdAt, other.createdAt)
 				&& Objects.equals(updatedAt, other.updatedAt) && HasId.equalsHelper(createdBy, other.createdBy)
-				&& HasId.equalsHelper(updatedBy, other.updatedBy);
+				&& HasId.equalsHelper(updatedBy, other.updatedBy) && Objects.equals(name, other.name);
 	}
 
 	@Override

@@ -34,7 +34,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Override
 	public Response getAllCollectionReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = collectionReferenceService.getAllCollectionReferences(dataObjectId);
+		var references = collectionReferenceService.getAllReferences(dataObjectId);
 		var result = new ArrayList<CollectionReferenceIO>(references.size());
 		for (var reference : references) {
 			result.add(new CollectionReferenceIO(reference));
@@ -48,7 +48,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response getCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.getCollectionReference(collectionReferenceId);
+		var result = collectionReferenceService.getReference(collectionReferenceId);
 		return Response.ok(new CollectionReferenceIO(result)).build();
 	}
 
@@ -57,7 +57,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Override
 	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference) {
-		var result = collectionReferenceService.createCollectionReference(dataObjectId, collectionReference,
+		var result = collectionReferenceService.createReference(dataObjectId, collectionReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
 	}
@@ -69,7 +69,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response deleteCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.deleteCollectionReference(collectionReferenceId,
+		var result = collectionReferenceService.deleteReference(collectionReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();

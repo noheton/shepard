@@ -19,7 +19,7 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class FileReferenceService {
+public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
 
 	private FileReferenceDAO fileReferenceDAO = new FileReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
@@ -29,12 +29,13 @@ public class FileReferenceService {
 	private FileService fileService = new FileService();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
-	public List<FileReference> getAllFileReferences(long dataObjectId) {
+	public List<FileReference> getAllReferences(long dataObjectId) {
 		var references = fileReferenceDAO.findByDataObject(dataObjectId);
 		return references;
 	}
 
-	public FileReference getFileReference(long id) {
+	@Override
+	public FileReference getReference(long id) {
 		FileReference fileReference = fileReferenceDAO.find(id);
 		if (fileReference == null || fileReference.isDeleted()) {
 			log.error("File Reference with id {} is null or deleted", id);
@@ -43,7 +44,8 @@ public class FileReferenceService {
 		return fileReference;
 	}
 
-	public FileReference createFileReference(long dataObjectId, FileReferenceIO fileReference, String username) {
+	@Override
+	public FileReference createReference(long dataObjectId, FileReferenceIO fileReference, String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 		var container = containerDAO.find(fileReference.getFileContainerId());
@@ -69,6 +71,7 @@ public class FileReferenceService {
 		return fileReferenceDAO.createOrUpdate(toCreate);
 	}
 
+	@Override
 	public boolean deleteReference(long fileReferenceId, String username) {
 		FileReference fileReference = fileReferenceDAO.find(fileReferenceId);
 		var user = userDAO.find(username);

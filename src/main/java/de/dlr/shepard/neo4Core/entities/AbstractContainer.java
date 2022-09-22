@@ -1,7 +1,5 @@
 package de.dlr.shepard.neo4Core.entities;
 
-import java.util.Objects;
-
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
@@ -13,8 +11,6 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 public abstract class AbstractContainer extends AbstractEntity {
-
-	private String name;
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_PERMISSIONS)
@@ -33,7 +29,6 @@ public abstract class AbstractContainer extends AbstractEntity {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(name);
 		result = prime * result + HasId.hashcodeHelper(permissions);
 		return result;
 	}
@@ -47,7 +42,7 @@ public abstract class AbstractContainer extends AbstractEntity {
 		if (!(obj instanceof AbstractContainer))
 			return false;
 		AbstractContainer other = (AbstractContainer) obj;
-		return Objects.equals(name, other.name) && HasId.equalsHelper(permissions, other.permissions);
+		return HasId.equalsHelper(permissions, other.permissions);
 	}
 
 }

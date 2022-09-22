@@ -87,7 +87,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.TIMESERIES_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.TIMESERIES_REFERENCES));
-			var timeseriesReference = timeseriesReferenceService.getTimeseriesReference(id);
+			var timeseriesReference = timeseriesReferenceService.getReference(id);
 			String error = checkReference(timeseriesReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -96,7 +96,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.TIMESERIES) && pathSegments.get(0).getPath().equals(Constants.TIMESERIES)) {
 			long id = Long.parseLong(pathElems.get(Constants.TIMESERIES));
-			var timeseriesContainer = timeseriesContainerService.getTimeseriesContainer(id);
+			var timeseriesContainer = timeseriesContainerService.getContainer(id);
 			String error = checkContainer(timeseriesContainer);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -105,7 +105,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.STRUCTUREDDATA_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATA_REFERENCES));
-			var structuredDataReference = structuredDataReferenceService.getStructuredDataReference(id);
+			var structuredDataReference = structuredDataReferenceService.getReference(id);
 			String error = checkReference(structuredDataReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -115,7 +115,7 @@ public class UrlPathChecker {
 		if (pathElems.containsKey(Constants.STRUCTUREDDATAS)
 				&& pathSegments.get(0).getPath().equals(Constants.STRUCTUREDDATAS)) {
 			long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATAS));
-			var structuredDataContainer = structuredDataContainerService.getStructuredDataContainer(id);
+			var structuredDataContainer = structuredDataContainerService.getContainer(id);
 			String error = checkContainer(structuredDataContainer);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -124,7 +124,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.FILE_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.FILE_REFERENCES));
-			var fileReference = fileReferenceService.getFileReference(id);
+			var fileReference = fileReferenceService.getReference(id);
 			String error = checkReference(fileReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -133,7 +133,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.FILES) && pathSegments.get(0).getPath().equals(Constants.FILES)) {
 			long id = Long.parseLong(pathElems.get(Constants.FILES));
-			var fileContainer = fileContainerService.getFileContainer(id);
+			var fileContainer = fileContainerService.getContainer(id);
 			String error = checkContainer(fileContainer);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -142,7 +142,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.COLLECTION_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.COLLECTION_REFERENCES));
-			var collectionReference = collectionReferenceService.getCollectionReference(id);
+			var collectionReference = collectionReferenceService.getReference(id);
 			String error = checkReference(collectionReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -151,7 +151,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.DATAOBJECT_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.DATAOBJECT_REFERENCES));
-			var dataObjectReference = dataObjectReferenceService.getDataObjectReference(id);
+			var dataObjectReference = dataObjectReferenceService.getReference(id);
 			String error = checkReference(dataObjectReference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -160,7 +160,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.URI_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.URI_REFERENCES));
-			var uriReferences = uriReferenceService.getURIReference(id);
+			var uriReferences = uriReferenceService.getReference(id);
 			String error = checkReference(uriReferences, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -169,7 +169,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.BASIC_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.BASIC_REFERENCES));
-			var reference = basicReferenceService.getBasicReference(id);
+			var reference = basicReferenceService.getReference(id);
 			String error = checkReference(reference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();

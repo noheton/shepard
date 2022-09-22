@@ -376,7 +376,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(timeseriesIdSeg.getPath()).thenReturn("100");
 
 		var container = new TimeseriesContainer(100);
-		when(timeseriesContainerService.getTimeseriesContainer(100)).thenReturn(container);
+		when(timeseriesContainerService.getContainer(100)).thenReturn(container);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -388,7 +388,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(timeseriesIdSeg);
 
 		when(timeseriesIdSeg.getPath()).thenReturn("100");
-		when(timeseriesContainerService.getTimeseriesContainer(100)).thenReturn(null);
+		when(timeseriesContainerService.getContainer(100)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
@@ -406,7 +406,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(timeseriesIdSeg.getPath()).thenReturn("200");
 
 		urlPathChecker.checkPathSegments(segments);
-		verify(timeseriesContainerService, never()).getTimeseriesContainer(200);
+		verify(timeseriesContainerService, never()).getContainer(200);
 	}
 
 	@Test
@@ -429,7 +429,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getTimeseriesReference(104L)).thenReturn(reference);
+		when(timeseriesReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -451,7 +451,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getTimeseriesReference(104L)).thenReturn(null);
+		when(timeseriesReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -478,7 +478,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getTimeseriesReference(104L)).thenReturn(reference);
+		when(timeseriesReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -493,7 +493,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(structuredDataIdSeg.getPath()).thenReturn("100");
 
 		var container = new StructuredDataContainer(100);
-		when(structuredDataContainerService.getStructuredDataContainer(100)).thenReturn(container);
+		when(structuredDataContainerService.getContainer(100)).thenReturn(container);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -505,7 +505,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(structuredDataIdSeg);
 
 		when(structuredDataIdSeg.getPath()).thenReturn("100");
-		when(structuredDataContainerService.getStructuredDataContainer(100)).thenReturn(null);
+		when(structuredDataContainerService.getContainer(100)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
@@ -523,7 +523,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(structuredDataIdSeg.getPath()).thenReturn("200");
 
 		urlPathChecker.checkPathSegments(segments);
-		verify(structuredDataContainerService, never()).getStructuredDataContainer(200);
+		verify(structuredDataContainerService, never()).getContainer(200);
 	}
 
 	@Test
@@ -546,7 +546,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getStructuredDataReference(104L)).thenReturn(reference);
+		when(structuredDataReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -568,7 +568,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getStructuredDataReference(104L)).thenReturn(null);
+		when(structuredDataReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -595,7 +595,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getStructuredDataReference(104L)).thenReturn(reference);
+		when(structuredDataReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -610,7 +610,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(fileIdSeg.getPath()).thenReturn("100");
 
 		var container = new FileContainer(100);
-		when(fileContainerService.getFileContainer(100)).thenReturn(container);
+		when(fileContainerService.getContainer(100)).thenReturn(container);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -622,7 +622,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(fileIdSeg);
 
 		when(fileIdSeg.getPath()).thenReturn("100");
-		when(fileContainerService.getFileContainer(100)).thenReturn(null);
+		when(fileContainerService.getContainer(100)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
@@ -640,7 +640,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(fileIdSeg.getPath()).thenReturn("200");
 
 		urlPathChecker.checkPathSegments(segments);
-		verify(fileContainerService, never()).getFileContainer(200);
+		verify(fileContainerService, never()).getContainer(200);
 	}
 
 	@Test
@@ -663,7 +663,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getFileReference(104L)).thenReturn(reference);
+		when(fileReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -685,7 +685,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getFileReference(104L)).thenReturn(null);
+		when(fileReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -712,7 +712,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getFileReference(104L)).thenReturn(reference);
+		when(fileReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -738,7 +738,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getURIReference(104L)).thenReturn(reference);
+		when(uriReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -760,7 +760,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getURIReference(104L)).thenReturn(null);
+		when(uriReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -787,7 +787,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getURIReference(104L)).thenReturn(reference);
+		when(uriReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -813,7 +813,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(reference);
+		when(collectionReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -835,7 +835,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(null);
+		when(collectionReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -862,7 +862,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getCollectionReference(104L)).thenReturn(reference);
+		when(collectionReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -888,7 +888,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getDataObjectReference(104L)).thenReturn(reference);
+		when(dataObjectReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -910,7 +910,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getDataObjectReference(104L)).thenReturn(null);
+		when(dataObjectReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -937,7 +937,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getDataObjectReference(104L)).thenReturn(reference);
+		when(dataObjectReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -963,7 +963,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(dataObject);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getBasicReference(104L)).thenReturn(reference);
+		when(basicReferenceService.getReference(104L)).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -985,7 +985,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getBasicReference(104L)).thenReturn(null);
+		when(basicReferenceService.getReference(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -1012,7 +1012,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setDataObject(wrong);
 		when(collectionService.getCollection(100L)).thenReturn(collection);
 		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getBasicReference(104L)).thenReturn(reference);
+		when(basicReferenceService.getReference(104L)).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());

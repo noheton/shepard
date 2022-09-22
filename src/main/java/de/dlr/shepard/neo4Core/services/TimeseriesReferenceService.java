@@ -24,7 +24,7 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TimeseriesReferenceService {
+public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
 	private TimeseriesReferenceDAO timeseriesReferenceDAO = new TimeseriesReferenceDAO();
 	private TimeseriesService timeseriesService = new TimeseriesService();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
@@ -33,12 +33,14 @@ public class TimeseriesReferenceService {
 	private DateHelper dateHelper = new DateHelper();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
-	public List<TimeseriesReference> getAllTimeseriesReferences(long dataObjectId) {
+	@Override
+	public List<TimeseriesReference> getAllReferences(long dataObjectId) {
 		var references = timeseriesReferenceDAO.findByDataObject(dataObjectId);
 		return references;
 	}
 
-	public TimeseriesReference getTimeseriesReference(long id) {
+	@Override
+	public TimeseriesReference getReference(long id) {
 		var reference = timeseriesReferenceDAO.find(id);
 		if (reference == null || reference.isDeleted()) {
 			log.error("Timeseries Reference with id {} is null or deleted", id);
@@ -47,7 +49,8 @@ public class TimeseriesReferenceService {
 		return reference;
 	}
 
-	public TimeseriesReference createTimeseriesReference(long dataObjectId, TimeseriesReferenceIO timeseriesReference,
+	@Override
+	public TimeseriesReference createReference(long dataObjectId, TimeseriesReferenceIO timeseriesReference,
 			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
@@ -72,7 +75,8 @@ public class TimeseriesReferenceService {
 		return created;
 	}
 
-	public boolean deleteTimeseriesReference(long timeseriesId, String username) {
+	@Override
+	public boolean deleteReference(long timeseriesId, String username) {
 		var user = userDAO.find(username);
 
 		var old = timeseriesReferenceDAO.find(timeseriesId);

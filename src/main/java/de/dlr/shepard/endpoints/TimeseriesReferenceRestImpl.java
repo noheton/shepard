@@ -42,7 +42,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Override
 	public Response getAllTimeseriesReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = timeseriesReferenceService.getAllTimeseriesReferences(dataObjectId);
+		var references = timeseriesReferenceService.getAllReferences(dataObjectId);
 		var result = new ArrayList<TimeseriesReferenceIO>(references.size());
 		for (var reference : references) {
 			result.add(new TimeseriesReferenceIO(reference));
@@ -57,7 +57,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		var result = timeseriesReferenceService.getTimeseriesReference(timeseriesId);
+		var result = timeseriesReferenceService.getReference(timeseriesId);
 
 		return Response.ok(new TimeseriesReferenceIO(result)).build();
 	}
@@ -67,7 +67,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Override
 	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference) {
-		var result = timeseriesReferenceService.createTimeseriesReference(dataObjectId, timeseriesReference,
+		var result = timeseriesReferenceService.createReference(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 
 		return Response.ok(new TimeseriesReferenceIO(result)).status(Status.CREATED).build();
@@ -80,7 +80,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		var result = timeseriesReferenceService.deleteTimeseriesReference(timeseriesId,
+		var result = timeseriesReferenceService.deleteReference(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -110,7 +110,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	}
 
 	@GET
-	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/export")
+	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/" + Constants.EXPORT)
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Override
 	public Response exportTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,

@@ -18,7 +18,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class FileContainerService {
+public class FileContainerService implements IContainerService<FileContainer, FileContainerIO> {
 
 	private FileContainerDAO fileContainerDAO = new FileContainerDAO();
 	private PermissionsDAO permissionsDAO = new PermissionsDAO();
@@ -33,7 +33,8 @@ public class FileContainerService {
 	 * @param username        of the related user
 	 * @return the created FileContainer
 	 */
-	public FileContainer createFileContainer(FileContainerIO fileContainerIO, String username) {
+	@Override
+	public FileContainer createContainer(FileContainerIO fileContainerIO, String username) {
 		var user = userDAO.find(username);
 		var toCreate = new FileContainer();
 		toCreate.setCreatedAt(dateHelper.getDate());
@@ -52,7 +53,8 @@ public class FileContainerService {
 	 * @param id identifies the searched FileContainer
 	 * @return the FileContainer with matching id or null
 	 */
-	public FileContainer getFileContainer(long id) {
+	@Override
+	public FileContainer getContainer(long id) {
 		FileContainer fileContainer = fileContainerDAO.find(id);
 		if (fileContainer == null || fileContainer.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", id);
@@ -68,7 +70,8 @@ public class FileContainerService {
 	 * @param username the name of the user
 	 * @return a list of FileContainers
 	 */
-	public List<FileContainer> getAllFileContainers(QueryParamHelper params, String username) {
+	@Override
+	public List<FileContainer> getAllContainers(QueryParamHelper params, String username) {
 		var containers = fileContainerDAO.findAllFileContainers(params, username);
 		return containers;
 	}
@@ -80,7 +83,8 @@ public class FileContainerService {
 	 * @param username        the deleting user
 	 * @return a boolean to determine if FileContainer was successfully deleted
 	 */
-	public boolean deleteFileContainer(long fileContainerId, String username) {
+	@Override
+	public boolean deleteContainer(long fileContainerId, String username) {
 		var user = userDAO.find(username);
 		FileContainer fileContainer = fileContainerDAO.find(fileContainerId);
 		if (fileContainer == null) {

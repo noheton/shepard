@@ -13,18 +13,20 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class DataObjectReferenceService {
+public class DataObjectReferenceService implements IReferenceService<DataObjectReference, DataObjectReferenceIO> {
 	private DataObjectReferenceDAO dataObjectReferenceDAO = new DataObjectReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
-	public List<DataObjectReference> getAllDataObjectReferences(long dataObjectId) {
+	@Override
+	public List<DataObjectReference> getAllReferences(long dataObjectId) {
 		var references = dataObjectReferenceDAO.findByDataObject(dataObjectId);
 		return references;
 	}
 
-	public DataObjectReference getDataObjectReference(long dataObjectReferenceId) {
+	@Override
+	public DataObjectReference getReference(long dataObjectReferenceId) {
 		var reference = dataObjectReferenceDAO.find(dataObjectReferenceId);
 		if (reference == null || reference.isDeleted()) {
 			log.error("Data Object Reference with id {} is null or deleted", dataObjectReferenceId);
@@ -33,7 +35,8 @@ public class DataObjectReferenceService {
 		return reference;
 	}
 
-	public DataObjectReference createDataObjectReference(long dataObjectId, DataObjectReferenceIO dataObjectReference,
+	@Override
+	public DataObjectReference createReference(long dataObjectId, DataObjectReferenceIO dataObjectReference,
 			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
@@ -56,7 +59,8 @@ public class DataObjectReferenceService {
 		return created;
 	}
 
-	public boolean deleteDataObjectReference(long dataObjectReferenceId, String username) {
+	@Override
+	public boolean deleteReference(long dataObjectReferenceId, String username) {
 		var user = userDAO.find(username);
 
 		var old = dataObjectReferenceDAO.find(dataObjectReferenceId);

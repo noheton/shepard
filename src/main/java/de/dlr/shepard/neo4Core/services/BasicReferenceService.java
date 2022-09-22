@@ -23,7 +23,7 @@ public class BasicReferenceService {
 	 *
 	 * @return the BasicReference with the given id or null
 	 */
-	public BasicReference getBasicReference(long id) {
+	public BasicReference getReference(long id) {
 		BasicReference basicReference = basicReferenceDAO.find(id);
 		if (basicReference == null || basicReference.isDeleted()) {
 			log.error("Basic Reference with id {} is null or deleted", id);
@@ -51,7 +51,7 @@ public class BasicReferenceService {
 	 * @param username         identifies the user
 	 * @return a boolean to identify if the BasicReference was successfully removed
 	 */
-	public boolean deleteBasicReference(long basicReferenceId, String username) {
+	public boolean deleteReference(long basicReferenceId, String username) {
 		var user = userDAO.find(username);
 
 		var basicReference = basicReferenceDAO.find(basicReferenceId);

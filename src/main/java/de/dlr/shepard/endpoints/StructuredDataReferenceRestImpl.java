@@ -36,7 +36,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Override
 	public Response getAllStructuredDataReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = structuredDataReferenceService.getAllStructuredDataReferences(dataObjectId);
+		var references = structuredDataReferenceService.getAllReferences(dataObjectId);
 		var result = new ArrayList<StructuredDataReferenceIO>(references.size());
 		for (var ref : references) {
 			result.add(new StructuredDataReferenceIO(ref));
@@ -50,7 +50,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long referenceId) {
-		var ref = structuredDataReferenceService.getStructuredDataReference(referenceId);
+		var ref = structuredDataReferenceService.getReference(referenceId);
 		return Response.ok(new StructuredDataReferenceIO(ref)).build();
 	}
 
@@ -59,7 +59,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Override
 	public Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference) {
-		var ref = structuredDataReferenceService.createStructuredDataReference(dataObjectId, structuredDataReference,
+		var ref = structuredDataReferenceService.createReference(dataObjectId, structuredDataReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new StructuredDataReferenceIO(ref)).status(Status.CREATED).build();
 	}

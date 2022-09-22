@@ -54,7 +54,7 @@ public class FileRestImpl implements FileRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = fileContainerService.getAllFileContainers(params,
+		var containers = fileContainerService.getAllContainers(params,
 				securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<FileContainerIO>(containers.size());
 		for (var container : containers) {
@@ -67,14 +67,14 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}")
 	@Override
 	public Response getFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		var result = fileContainerService.getFileContainer(fileContainerId);
+		var result = fileContainerService.getContainer(fileContainerId);
 		return Response.ok(new FileContainerIO(result)).build();
 	}
 
 	@POST
 	@Override
 	public Response createFileContainer(FileContainerIO fileContainer) {
-		var result = fileContainerService.createFileContainer(fileContainer,
+		var result = fileContainerService.createContainer(fileContainer,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileContainerIO(result)).status(Status.CREATED).build();
 	}
@@ -84,7 +84,7 @@ public class FileRestImpl implements FileRest {
 	@Subscribable
 	@Override
 	public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		var result = fileContainerService.deleteFileContainer(fileContainerId,
+		var result = fileContainerService.deleteContainer(fileContainerId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -94,7 +94,7 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
 	@Override
 	public Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		var payload = fileContainerService.getFileContainer(fileContainerId).getFiles();
+		var payload = fileContainerService.getContainer(fileContainerId).getFiles();
 		return Response.ok(payload).build();
 	}
 

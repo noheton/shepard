@@ -71,7 +71,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getTimeseriesReference(1L);
+		var actual = service.getReference(1L);
 		assertEquals(ref, actual);
 	}
 
@@ -79,7 +79,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	public void getTimeseriesReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getTimeseriesReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -90,7 +90,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getTimeseriesReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -102,7 +102,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		dataObject.setReferences(List.of(ref1, ref2));
 
 		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllTimeseriesReferences(200L);
+		var actual = service.getAllReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);
 	}
@@ -154,7 +154,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 
-		var actual = service.createTimeseriesReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -178,7 +178,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(timeseriesContainerDAO.find(300L)).thenReturn(container);
 
-		assertThrows(InvalidBodyException.class, () -> service.createTimeseriesReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -199,7 +199,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(timeseriesContainerDAO.find(300L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createTimeseriesReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -215,7 +215,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dao.find(1L)).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteTimeseriesReference(1L, "Bob");
+		var actual = service.deleteReference(1L, "Bob");
 
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);

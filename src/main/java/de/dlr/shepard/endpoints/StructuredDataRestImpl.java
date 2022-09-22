@@ -51,7 +51,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = structuredDataContainerService.getAllStructuredDataContainers(params,
+		var containers = structuredDataContainerService.getAllContainers(params,
 				securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<StructuredDataContainerIO>(containers.size());
 		for (var container : containers) {
@@ -65,7 +65,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response getStructuredDataContainer(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId);
+		var result = structuredDataContainerService.getContainer(structuredDataId);
 		return Response.ok(new StructuredDataContainerIO(result)).build();
 	}
 
@@ -75,7 +75,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response deleteStructuredDataContainer(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		var result = structuredDataContainerService.deleteStructuredDataContainer(structuredDataId,
+		var result = structuredDataContainerService.deleteContainer(structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -84,7 +84,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@POST
 	@Override
 	public Response createStructuredDataContainer(StructuredDataContainerIO structuredDataContainerIO) {
-		var result = structuredDataContainerService.createStructuredDataContainer(structuredDataContainerIO,
+		var result = structuredDataContainerService.createContainer(structuredDataContainerIO,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new StructuredDataContainerIO(result)).status(Status.CREATED).build();
 	}
@@ -104,7 +104,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
 	@Override
 	public Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		var result = structuredDataContainerService.getStructuredDataContainer(structuredDataId).getStructuredDatas();
+		var result = structuredDataContainerService.getContainer(structuredDataId).getStructuredDatas();
 		return Response.ok(result).build();
 	}
 

@@ -14,8 +14,6 @@ import lombok.ToString;
 @NoArgsConstructor
 public abstract class AbstractDataObject extends AbstractEntity {
 
-	private String name;
-
 	private String description;
 
 	@ToString.Exclude
@@ -35,7 +33,7 @@ public abstract class AbstractDataObject extends AbstractEntity {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(attributes, description, name);
+		result = prime * result + Objects.hash(attributes, description);
 		return result;
 	}
 
@@ -48,8 +46,7 @@ public abstract class AbstractDataObject extends AbstractEntity {
 		if (!(obj instanceof AbstractDataObject))
 			return false;
 		AbstractDataObject other = (AbstractDataObject) obj;
-		return Objects.equals(attributes, other.attributes) && Objects.equals(description, other.description)
-				&& Objects.equals(name, other.name);
+		return Objects.equals(attributes, other.attributes) && Objects.equals(description, other.description);
 	}
 
 }

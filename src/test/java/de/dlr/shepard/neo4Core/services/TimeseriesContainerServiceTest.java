@@ -61,7 +61,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getTimeseriesContainer(1L);
+		var actual = service.getContainer(1L);
 		assertEquals(container, actual);
 	}
 
@@ -69,7 +69,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	public void getTimeseriesContainerTest_isNull() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getTimeseriesContainer(1L);
+		var actual = service.getContainer(1L);
 		assertNull(actual);
 	}
 
@@ -80,7 +80,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getTimeseriesContainer(1L);
+		var actual = service.getContainer(1L);
 		assertNull(actual);
 	}
 
@@ -91,7 +91,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.findAllTimeseriesContainers(null, "bob")).thenReturn(List.of(container1, container2));
 
-		var actual = service.getAllTimeseriesContainers(null, "bob");
+		var actual = service.getAllContainers(null, "bob");
 		assertEquals(List.of(container1, container2), actual);
 	}
 
@@ -130,7 +130,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
-		var actual = service.createTimeseriesContainer(input, "bob");
+		var actual = service.createContainer(input, "bob");
 		assertEquals(created, actual);
 		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
@@ -156,7 +156,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-		var actual = service.deleteTimeseriesContainer(1L, "bob");
+		var actual = service.deleteContainer(1L, "bob");
 		assertTrue(actual);
 		verify(timeseriesService).deleteDatabase("database");
 	}
@@ -170,7 +170,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		when(dateHelper.getDate()).thenReturn(date);
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.deleteTimeseriesContainer(1L, "bob");
+		var actual = service.deleteContainer(1L, "bob");
 		assertFalse(actual);
 	}
 

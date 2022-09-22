@@ -11,19 +11,21 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class URIReferenceService {
+public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
 
 	private URIReferenceDAO dao = new URIReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
-	public List<URIReference> getAllURIReferences(long dataObjectId) {
+	@Override
+	public List<URIReference> getAllReferences(long dataObjectId) {
 		var references = dao.findByDataObject(dataObjectId);
 		return references;
 	}
 
-	public URIReference getURIReference(long uriReferenceId) {
+	@Override
+	public URIReference getReference(long uriReferenceId) {
 		var reference = dao.find(uriReferenceId);
 		if (reference == null || reference.isDeleted()) {
 			log.error("URI Reference with id {} is null or deleted", uriReferenceId);
@@ -32,7 +34,8 @@ public class URIReferenceService {
 		return reference;
 	}
 
-	public URIReference createURIReference(long dataObjectId, URIReferenceIO uriReference, String username) {
+	@Override
+	public URIReference createReference(long dataObjectId, URIReferenceIO uriReference, String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
 
@@ -47,7 +50,8 @@ public class URIReferenceService {
 		return created;
 	}
 
-	public boolean deleteURIReference(long uriReferenceId, String username) {
+	@Override
+	public boolean deleteReference(long uriReferenceId, String username) {
 		var user = userDAO.find(username);
 
 		var old = dao.find(uriReferenceId);

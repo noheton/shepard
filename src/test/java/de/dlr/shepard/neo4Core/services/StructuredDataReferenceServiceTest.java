@@ -66,7 +66,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getStructuredDataReference(1L);
+		var actual = service.getReference(1L);
 		assertEquals(ref, actual);
 	}
 
@@ -74,7 +74,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	public void getStructuredDataReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getStructuredDataReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -85,7 +85,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getStructuredDataReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -97,7 +97,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		dataObject.setReferences(List.of(ref1, ref2));
 
 		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllStructuredDataReferences(200L);
+		var actual = service.getAllReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);
 	}
@@ -147,7 +147,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(structuredDataService.getPayload("MongoId", "oid"))
 				.thenReturn(new StructuredDataPayload(structuredData, "value"));
 
-		var actual = service.createStructuredDataReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -194,7 +194,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dateHelper.getDate()).thenReturn(date);
 		when(structuredDataService.getPayload("MongoId", "oid")).thenReturn(null);
 
-		var actual = service.createStructuredDataReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -216,7 +216,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
 
-		assertThrows(InvalidBodyException.class, () -> service.createStructuredDataReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -235,7 +235,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(structuredDataContainerDAO.find(300L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createStructuredDataReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test

@@ -18,8 +18,6 @@ import lombok.ToString;
 @NoArgsConstructor
 public class UserGroup extends AbstractEntity {
 
-	private String name;
-
 	@Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
 	private List<User> users = new ArrayList<>();
 
@@ -31,7 +29,7 @@ public class UserGroup extends AbstractEntity {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(name, users);
+		result = prime * result + Objects.hash(users);
 		return result;
 	}
 
@@ -44,7 +42,7 @@ public class UserGroup extends AbstractEntity {
 		if (!(obj instanceof UserGroup))
 			return false;
 		UserGroup other = (UserGroup) obj;
-		return Objects.equals(name, other.name) && Objects.equals(users, other.users);
+		return Objects.equals(users, other.users);
 	}
 
 }

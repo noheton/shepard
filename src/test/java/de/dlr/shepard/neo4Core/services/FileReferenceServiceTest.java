@@ -66,7 +66,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getFileReference(1L);
+		var actual = service.getReference(1L);
 		assertEquals(ref, actual);
 	}
 
@@ -74,7 +74,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	public void getFileReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getFileReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -85,7 +85,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getFileReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -97,7 +97,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		dataObject.setReferences(List.of(ref1, ref2));
 
 		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllFileReferences(200L);
+		var actual = service.getAllReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);
 	}
@@ -146,7 +146,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileService.getFile("mongoId", "oid")).thenReturn(fileComplete);
 
-		var actual = service.createFileReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -193,7 +193,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileService.getFile("mongoId", "oid")).thenReturn(null);
 
-		var actual = service.createFileReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -215,7 +215,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(fileContainerDAO.find(300L)).thenReturn(container);
 
-		assertThrows(InvalidBodyException.class, () -> service.createFileReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -234,7 +234,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(fileContainerDAO.find(300L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createFileReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test

@@ -22,7 +22,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TimeseriesContainerService {
+public class TimeseriesContainerService implements IContainerService<TimeseriesContainer, TimeseriesContainerIO> {
 
 	private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
 	private TimeseriesService timeseriesService = new TimeseriesService();
@@ -37,7 +37,8 @@ public class TimeseriesContainerService {
 	 * @param username            of the related user
 	 * @return the created timeseriesContainer
 	 */
-	public TimeseriesContainer createTimeseriesContainer(TimeseriesContainerIO timeseriesContainer, String username) {
+	@Override
+	public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainer, String username) {
 		var user = userDAO.find(username);
 
 		var toCreate = new TimeseriesContainer();
@@ -57,7 +58,8 @@ public class TimeseriesContainerService {
 	 * @param id identifies the searched TimeseriesContainer
 	 * @return the TimeseriesContainer with matching id or null
 	 */
-	public TimeseriesContainer getTimeseriesContainer(long id) {
+	@Override
+	public TimeseriesContainer getContainer(long id) {
 		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(id);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", id);
@@ -73,7 +75,8 @@ public class TimeseriesContainerService {
 	 * @param username the name of the user
 	 * @return a list of TimeseriesContainers
 	 */
-	public List<TimeseriesContainer> getAllTimeseriesContainers(QueryParamHelper params, String username) {
+	@Override
+	public List<TimeseriesContainer> getAllContainers(QueryParamHelper params, String username) {
 		var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, username);
 		return containers;
 	}
@@ -86,7 +89,8 @@ public class TimeseriesContainerService {
 	 * @return a boolean to determine if TimeseriesContainer was successfully
 	 *         deleted
 	 */
-	public boolean deleteTimeseriesContainer(long timeSeriesId, String username) {
+	@Override
+	public boolean deleteContainer(long timeSeriesId, String username) {
 		var user = userDAO.find(username);
 		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesId);
 		if (timeseriesContainer == null) {

@@ -41,7 +41,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getBasicReference(1L);
+		var actual = service.getReference(1L);
 		assertEquals(ref, actual);
 	}
 
@@ -49,7 +49,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 	public void getBasicReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getBasicReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -60,7 +60,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getBasicReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -91,7 +91,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteBasicReference(1L, "bob");
+		var actual = service.deleteReference(1L, "bob");
 
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);

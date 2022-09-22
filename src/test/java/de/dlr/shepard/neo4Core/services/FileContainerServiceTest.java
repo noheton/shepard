@@ -55,7 +55,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getFileContainer(1L);
+		var actual = service.getContainer(1L);
 		assertEquals(container, actual);
 	}
 
@@ -63,7 +63,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void getFileContainerTest_isNull() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getFileContainer(1L);
+		var actual = service.getContainer(1L);
 		assertNull(actual);
 	}
 
@@ -74,7 +74,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getFileContainer(1L);
+		var actual = service.getContainer(1L);
 		assertNull(actual);
 	}
 
@@ -85,7 +85,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		when(dao.findAllFileContainers(null, "bob")).thenReturn(List.of(container1, container2));
 
-		var actual = service.getAllFileContainers(null, "bob");
+		var actual = service.getAllContainers(null, "bob");
 		assertEquals(List.of(container1, container2), actual);
 	}
 
@@ -124,7 +124,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
-		var actual = service.createFileContainer(input, "bob");
+		var actual = service.createContainer(input, "bob");
 		assertEquals(created, actual);
 		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
@@ -150,7 +150,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 		when(fileService.deleteFileContainer("XYZ")).thenReturn(true);
 
-		var actual = service.deleteFileContainer(1L, "bob");
+		var actual = service.deleteContainer(1L, "bob");
 		assertTrue(actual);
 	}
 
@@ -163,7 +163,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		when(dateHelper.getDate()).thenReturn(date);
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.deleteFileContainer(1L, "bob");
+		var actual = service.deleteContainer(1L, "bob");
 		assertFalse(actual);
 	}
 

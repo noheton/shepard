@@ -60,7 +60,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = timeseriesContainerService.getAllTimeseriesContainers(params,
+		var containers = timeseriesContainerService.getAllContainers(params,
 				securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<TimeseriesContainerIO>(containers.size());
 		for (var container : containers) {
@@ -73,7 +73,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
 	@Override
 	public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		var result = timeseriesContainerService.getTimeseriesContainer(timeseriesId);
+		var result = timeseriesContainerService.getContainer(timeseriesId);
 
 		return Response.ok(new TimeseriesContainerIO(result)).build();
 	}
@@ -81,7 +81,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@POST
 	@Override
 	public Response createTimeseriesContainer(TimeseriesContainerIO timeseriesContainer) {
-		var result = timeseriesContainerService.createTimeseriesContainer(timeseriesContainer,
+		var result = timeseriesContainerService.createContainer(timeseriesContainer,
 				securityContext.getUserPrincipal().getName());
 
 		return Response.ok(new TimeseriesContainerIO(result)).status(Status.CREATED).build();
@@ -92,7 +92,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Subscribable
 	@Override
 	public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		var result = timeseriesContainerService.deleteTimeseriesContainer(timeseriesId,
+		var result = timeseriesContainerService.deleteContainer(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -144,7 +144,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@GET
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/export")
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
 	@Override
 	public Response exportTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,

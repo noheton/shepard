@@ -48,7 +48,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getReference(1L);
 		assertEquals(ref, actual);
 	}
 
@@ -56,7 +56,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	public void getDataObjectReferenceTest_notFound() {
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -67,7 +67,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(ref);
 
-		var actual = service.getDataObjectReference(1L);
+		var actual = service.getReference(1L);
 		assertNull(actual);
 	}
 
@@ -81,7 +81,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		dataObject.setReferences(List.of(ref1, ref2, ref3));
 
 		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllDataObjectReferences(200L);
+		var actual = service.getAllReferences(200L);
 
 		assertEquals(List.of(ref1, ref2), actual);
 	}
@@ -128,7 +128,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 
-		var actual = service.createDataObjectReference(200L, input, "Bob");
+		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
 	}
 
@@ -148,7 +148,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(dataObjectDAO.find(100L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createDataObjectReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -169,7 +169,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(dataObjectDAO.find(100L)).thenReturn(referenced);
 
-		assertThrows(InvalidBodyException.class, () -> service.createDataObjectReference(200L, input, "Bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
 
 	@Test
@@ -185,7 +185,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dao.find(1L)).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteDataObjectReference(1L, "Bob");
+		var actual = service.deleteReference(1L, "Bob");
 
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);

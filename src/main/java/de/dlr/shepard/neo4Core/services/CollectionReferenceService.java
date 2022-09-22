@@ -14,19 +14,21 @@ import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CollectionReferenceService {
+public class CollectionReferenceService implements IReferenceService<CollectionReference, CollectionReferenceIO> {
 	private CollectionReferenceDAO collectionReferenceDAO = new CollectionReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private CollectionDAO collectionDAO = new CollectionDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
-	public List<CollectionReference> getAllCollectionReferences(long dataObjectId) {
+	@Override
+	public List<CollectionReference> getAllReferences(long dataObjectId) {
 		var references = collectionReferenceDAO.findByDataObject(dataObjectId);
 		return references;
 	}
 
-	public CollectionReference getCollectionReference(long collectionReferenceId) {
+	@Override
+	public CollectionReference getReference(long collectionReferenceId) {
 		var reference = collectionReferenceDAO.find(collectionReferenceId);
 		if (reference == null || reference.isDeleted()) {
 			log.error("Collection Reference with id {} is null or deleted", collectionReferenceId);
@@ -35,7 +37,8 @@ public class CollectionReferenceService {
 		return reference;
 	}
 
-	public CollectionReference createCollectionReference(long dataObjectId, CollectionReferenceIO collectionReference,
+	@Override
+	public CollectionReference createReference(long dataObjectId, CollectionReferenceIO collectionReference,
 			String username) {
 		var user = userDAO.find(username);
 		var dataObject = dataObjectDAO.find(dataObjectId);
@@ -58,7 +61,8 @@ public class CollectionReferenceService {
 		return created;
 	}
 
-	public boolean deleteCollectionReference(long dataObjectReferenceId, String username) {
+	@Override
+	public boolean deleteReference(long dataObjectReferenceId, String username) {
 		var user = userDAO.find(username);
 
 		var old = collectionReferenceDAO.find(dataObjectReferenceId);

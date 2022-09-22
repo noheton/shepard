@@ -37,7 +37,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@Override
 	public Response getAllFileReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = fileReferenceService.getAllFileReferences(dataObjectId);
+		var references = fileReferenceService.getAllReferences(dataObjectId);
 		var result = new ArrayList<FileReferenceIO>(references.size());
 		for (var ref : references) {
 			result.add(new FileReferenceIO(ref));
@@ -51,7 +51,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long referenceId) {
-		var ref = fileReferenceService.getFileReference(referenceId);
+		var ref = fileReferenceService.getReference(referenceId);
 		return Response.ok(new FileReferenceIO(ref)).build();
 	}
 
@@ -60,7 +60,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@Override
 	public Response createFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, FileReferenceIO fileReference) {
-		var ref = fileReferenceService.createFileReference(dataObjectId, fileReference,
+		var ref = fileReferenceService.createReference(dataObjectId, fileReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();
 	}

@@ -17,7 +17,8 @@ import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StructuredDataContainerService {
+public class StructuredDataContainerService
+		implements IContainerService<StructuredDataContainer, StructuredDataContainerIO> {
 
 	private StructuredDataContainerDAO structuredDataContainerDAO = new StructuredDataContainerDAO();
 	private StructuredDataService structuredDataService = new StructuredDataService();
@@ -32,7 +33,8 @@ public class StructuredDataContainerService {
 	 * @param username                  of the related user
 	 * @return the created StructuredDataContainer
 	 */
-	public StructuredDataContainer createStructuredDataContainer(StructuredDataContainerIO structuredDataContainerIO,
+	@Override
+	public StructuredDataContainer createContainer(StructuredDataContainerIO structuredDataContainerIO,
 			String username) {
 		var user = userDAO.find(username);
 		String mongoid = structuredDataService.createStructuredDataContainer();
@@ -53,7 +55,8 @@ public class StructuredDataContainerService {
 	 * @param id identifies the searched StructuredDataContainer
 	 * @return the StructuredDataContainer with matching id or null
 	 */
-	public StructuredDataContainer getStructuredDataContainer(long id) {
+	@Override
+	public StructuredDataContainer getContainer(long id) {
 		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.find(id);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", id);
@@ -69,7 +72,8 @@ public class StructuredDataContainerService {
 	 * @param username the name of the user
 	 * @return a list of StructuredDataContainers
 	 */
-	public List<StructuredDataContainer> getAllStructuredDataContainers(QueryParamHelper params, String username) {
+	@Override
+	public List<StructuredDataContainer> getAllContainers(QueryParamHelper params, String username) {
 		var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params, username);
 		return containers;
 	}
@@ -82,7 +86,8 @@ public class StructuredDataContainerService {
 	 * @return a boolean to determine if StructuredDataContainer was successfully
 	 *         deleted
 	 */
-	public boolean deleteStructuredDataContainer(long structuredDataId, String username) {
+	@Override
+	public boolean deleteContainer(long structuredDataId, String username) {
 		var user = userDAO.find(username);
 		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.find(structuredDataId);
 		if (structuredDataContainer == null) {
