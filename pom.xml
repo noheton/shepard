@@ -50,7 +50,7 @@
 		<logback.version>1.4.3</logback.version>
 		<lombok.version>1.18.24</lombok.version>
 		<mockito.version>4.8.0</mockito.version>
-		<mongodb.version>4.7.1</mongodb.version>
+		<mongodb.version>4.7.2</mongodb.version>
 		<neo4j.version>3.2.37</neo4j.version>
 		<opencsv.version>5.7.0</opencsv.version>
 		<restassured.version>5.2.0</restassured.version>
