@@ -4,6 +4,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.dto.BatchPoints;
@@ -188,56 +189,46 @@ public final class InfluxUtil {
 	}
 
 	public static String sanitize(Timeseries timeseries) {
-		String ret = "";
-		String[] forbiddenSubstrings = { " ", ".", "/", "," };
-		String device = timeseries.getDevice();
-		int devicePos = device.length();
-		String field = timeseries.getField();
-		int fieldPos = field.length();
-		String measurement = timeseries.getMeasurement();
-		int measurementPos = measurement.length();
-		String location = timeseries.getLocation();
-		int locationPos = location.length();
-		String symbolicName = timeseries.getSymbolicName();
-		int symbolicNamePos = symbolicName.length();
-		for (String forbiddenSubstring : forbiddenSubstrings) {
-			int devicePosTemp = device.indexOf(forbiddenSubstring);
-			if (devicePosTemp != -1)
-				devicePos = Math.min(devicePos, devicePosTemp);
-			int fieldPosTemp = field.indexOf(forbiddenSubstring);
-			if (fieldPosTemp != -1)
-				fieldPos = Math.min(fieldPos, fieldPosTemp);
-			int measurementPosTemp = measurement.indexOf(forbiddenSubstring);
-			if (measurementPosTemp != -1)
-				measurementPos = Math.min(measurementPos, measurementPosTemp);
-			int locationPosTemp = location.indexOf(forbiddenSubstring);
-			if (locationPosTemp != -1)
-				locationPos = Math.min(locationPos, locationPosTemp);
-			int symbolicNamePosTemp = symbolicName.indexOf(forbiddenSubstring);
-			if (symbolicNamePosTemp != -1)
-				symbolicNamePos = Math.min(symbolicNamePos, symbolicNamePosTemp);
+		List<String> errors = new ArrayList<>();
 
+		String measurementString = sanitizeString(timeseries.getMeasurement());
+		String locationString = sanitizeString(timeseries.getLocation());
+		String deviceString = sanitizeString(timeseries.getDevice());
+		String symbolicNameString = sanitizeString(timeseries.getSymbolicName());
+		String fieldString = sanitizeString(timeseries.getField());
+
+		if (!measurementString.isEmpty()) {
+			errors.add("measurement " + measurementString);
 		}
-		if (devicePos != device.length()) {
-			ret = ret + "device should not contain whitespaces or dots or slashes or commas: ";
-			ret = ret + device.substring(0, devicePos + 1) + "\n";
+		if (!locationString.isEmpty()) {
+			errors.add("location " + locationString);
 		}
-		if (fieldPos != field.length()) {
-			ret = ret + "field should not contain whitespaces or dots or slashes or commas: ";
-			ret = ret + field.substring(0, fieldPos + 1) + "\n";
+		if (!deviceString.isEmpty()) {
+			errors.add("device " + deviceString);
 		}
-		if (measurementPos != measurement.length()) {
-			ret = ret + "measurement should not contain whitespaces or dots or slashes or commas: ";
-			ret = ret + measurement.substring(0, measurementPos + 1) + "\n";
+		if (!symbolicNameString.isEmpty()) {
+			errors.add("symbolicName " + symbolicNameString);
 		}
-		if (locationPos != location.length()) {
-			ret = ret + "location should not contain whitespaces or dots or slashes or commas: ";
-			ret = ret + location.substring(0, locationPos + 1) + "\n";
+		if (!fieldString.isEmpty()) {
+			errors.add("field " + fieldString);
 		}
-		if (symbolicNamePos != symbolicName.length()) {
-			ret = ret + "symbolicName should not contain whitespaces or dots or slashes or commas: ";
-			ret = ret + symbolicName.substring(0, symbolicNamePos + 1) + "\n";
+		return String.join("\n", errors);
+	}
+
+	private static String sanitizeString(String s) {
+		String[] forbiddenChars = { " ", ".", "/", "," };
+		if (s == null || s.isBlank()) {
+			return "should not be blank";
 		}
-		return ret;
+
+		for (String forbiddenChar : forbiddenChars) {
+			int pos = s.indexOf(forbiddenChar);
+			if (pos != -1) {
+				return "should not contain whitespaces or dots or slashes or commas: "
+						+ s.substring(0, pos + forbiddenChar.length());
+			}
+		}
+
+		return "";
 	}
 }

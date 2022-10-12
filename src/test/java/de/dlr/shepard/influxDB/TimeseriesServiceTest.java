@@ -52,8 +52,7 @@ public class TimeseriesServiceTest extends BaseTestCase {
 		Exception exception = assertThrows(InvalidBodyException.class, () -> {
 			service.createTimeseries("database", buggypayload);
 		});
-		assertEquals(exception.getMessage(),
-				"device should not contain whitespaces or dots or slashes or commas: de/\n" + "");
+		assertEquals("device should not contain whitespaces or dots or slashes or commas: de/", exception.getMessage());
 	}
 
 	@Test

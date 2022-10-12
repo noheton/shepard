@@ -4,16 +4,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
-import com.opencsv.exceptions.CsvFieldAssignmentException;
+import com.opencsv.exceptions.CsvException;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,8 +32,8 @@ public class CsvConverter {
 		for (var payload : payloads) {
 			try {
 				writer.write(convertPayloadToCsv(payload));
-			} catch (CsvFieldAssignmentException e) {
-				log.error("CsvFieldAssignmentException while writing stream");
+			} catch (CsvException e) {
+				log.error("CsvException while writing stream");
 			}
 		}
 
@@ -41,9 +44,14 @@ public class CsvConverter {
 
 	public List<TimeseriesPayload> convertToPayload(InputStream stream) throws IOException {
 		var reader = new InputStreamReader(stream);
-		var cb = new CsvToBeanBuilder<TimeseriesCsv>(reader).withType(TimeseriesCsv.class).build();
+		var cb = new CsvToBeanBuilder<TimeseriesCsv>(reader).withType(TimeseriesCsv.class)
+				.withErrorLocale(Locale.forLanguageTag("en")).withExceptionHandler(e -> {
+					var encoder = StandardCharsets.ISO_8859_1.newEncoder();
+					var message = encoder.canEncode(e.getMessage()) ? e.getMessage() : "Invalid CSV";
+					throw new InvalidBodyException(message);
+				}).build();
 
-		var result = cb.parse();
+		List<TimeseriesCsv> result = cb.parse();
 		reader.close();
 		return convertCsvToPayload(result);
 	}

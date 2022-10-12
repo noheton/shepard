@@ -361,18 +361,32 @@ public class InfluxUtilTest extends BaseTestCase {
 		Timeseries ts = new Timeseries("meas urement", "dev.ice", "loc/action", "n,ame", "field");
 		String sanitize = InfluxUtil.sanitize(ts);
 		assertEquals("""
-				device should not contain whitespaces or dots or slashes or commas: dev.
 				measurement should not contain whitespaces or dots or slashes or commas: meas\s
 				location should not contain whitespaces or dots or slashes or commas: loc/
-				symbolicName should not contain whitespaces or dots or slashes or commas: n,
-				""", sanitize);
+				device should not contain whitespaces or dots or slashes or commas: dev.
+				symbolicName should not contain whitespaces or dots or slashes or commas: n,""", sanitize);
 	}
 
-	@Test
-	public void sanitizeTestOnlyField() {
-		Timeseries ts = new Timeseries("measurement", "device", "locaction", "name", "fi eld");
+	@ParameterizedTest
+	@MethodSource
+	public void sanitizeTest(String input, String expected) {
+		Timeseries ts = new Timeseries("measurement", "device", "locaction", "name", input);
 		String sanitize = InfluxUtil.sanitize(ts);
-		assertEquals("field should not contain whitespaces or dots or slashes or commas: fi \n", sanitize);
+		assertEquals(expected, sanitize);
+	}
+
+	private static Stream<Arguments> sanitizeTest() {
+		// @formatter:off
+		return Stream.of(
+				Arguments.of(null, "field should not be blank"),
+				Arguments.of("", "field should not be blank"),
+				Arguments.of("fie ld", "field should not contain whitespaces or dots or slashes or commas: fie "),
+				Arguments.of("fie.ld", "field should not contain whitespaces or dots or slashes or commas: fie."),
+				Arguments.of("fie/ld", "field should not contain whitespaces or dots or slashes or commas: fie/"),
+				Arguments.of("fie,ld", "field should not contain whitespaces or dots or slashes or commas: fie,"),
+				Arguments.of("field", "")
+				);
+		// @formatter:on
 	}
 
 }

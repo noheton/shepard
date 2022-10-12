@@ -11,24 +11,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TimeseriesCsv {
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private long timestamp;
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private String measurement;
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private String device;
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private String location;
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private String symbolicName;
 
-	@CsvBindByName
+	@CsvBindByName(required = true)
 	private String field;
 
-	@CsvBindByName
+	@CsvBindByName(required = false)
 	private Object value;
 }
