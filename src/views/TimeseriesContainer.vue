@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UploadTimeseriesModal from "@/components/containers/UploadTimeseriesModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
@@ -54,6 +55,20 @@ function retrieveTimeseriesAvailable() {
     .catch(e => {
       handleError(e as ResponseError, "fetching timeseries available");
     });
+}
+
+function uploadTimeseries(newTimeseriesPayload: Blob) {
+  if (currentTimeseriesContainer.value?.id)
+    TimeseriesService.importTimeseries({
+      timeseriesContainerId: currentTimeseriesContainer.value.id,
+      file: newTimeseriesPayload,
+    })
+      .then(() => {
+        retrieveTimeseriesAvailable();
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "uploading timeseries");
+      });
 }
 
 function handleDelete() {
@@ -122,6 +137,14 @@ onMounted(() => {
         class="float-right"
       >
         <b-button
+          v-b-modal.upload-timeseries-modal
+          v-b-tooltip.hover
+          title="Upload Timeseries"
+          variant="primary"
+        >
+          <CreateIcon />
+        </b-button>
+        <b-button
           v-if="!roles || roles.owner || roles.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
@@ -161,6 +184,12 @@ onMounted(() => {
       >
       </b-table>
     </div>
+    <UploadTimeseriesModal
+      modal-id="upload-timeseries-modal"
+      modal-name="Upload Timeseries"
+      @uploaded="uploadTimeseries($event)"
+    />
+
     <DeleteConfirmationModal
       modal-id="delete-confirmation-modal"
       modal-name="Confirm to delete timeseries container"

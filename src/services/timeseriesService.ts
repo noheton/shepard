@@ -9,6 +9,7 @@ import {
   type GetTimeseriesContainerRequest,
   type GetTimeseriesPermissionsRequest,
   type GetTimeseriesRolesRequest,
+  type ImportTimeseriesRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 
@@ -50,5 +51,10 @@ export default class TimeseriesService {
   static getTimeseriesRoles(params: GetTimeseriesRolesRequest) {
     const api = new TimeseriesApi(getConfiguration());
     return api.getTimeseriesRoles(params);
+  }
+
+  static importTimeseries(params: ImportTimeseriesRequest) {
+    const api = new TimeseriesApi(getConfiguration());
+    return api.importTimeseries(params);
   }
 }
