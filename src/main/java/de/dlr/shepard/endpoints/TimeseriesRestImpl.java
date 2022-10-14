@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -130,7 +131,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			@QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
 			@QueryParam(Constants.GROUP_BY) Long groupBy, @QueryParam(Constants.FILLOPTION) FillOption fillOption) {
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
-			return Response.status(Status.BAD_REQUEST).build();
+			throw new InvalidRequestException("Some query params are missing");
 		}
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
@@ -157,7 +158,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 			throws IOException {
 
 		if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
-			return Response.status(Status.BAD_REQUEST).build();
+			throw new InvalidRequestException("Some query params are missing");
 		}
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);

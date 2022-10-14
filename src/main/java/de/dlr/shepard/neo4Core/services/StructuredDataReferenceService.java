@@ -108,7 +108,7 @@ public class StructuredDataReferenceService
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException();
+			throw new InvalidAuthException("You are not authorized to access this structured data");
 
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
@@ -128,7 +128,7 @@ public class StructuredDataReferenceService
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException();
+			throw new InvalidAuthException("You are not authorized to access this structured data");
 
 		return structuredDataService.getPayload(mongoId, oid);
 	}

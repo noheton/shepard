@@ -48,6 +48,7 @@ public class CsvConverter {
 				.withErrorLocale(Locale.forLanguageTag("en")).withExceptionHandler(e -> {
 					var encoder = StandardCharsets.ISO_8859_1.newEncoder();
 					var message = encoder.canEncode(e.getMessage()) ? e.getMessage() : "Invalid CSV";
+					log.error("CsvException while reading stream: {}", message);
 					throw new InvalidBodyException(message);
 				}).build();
 

@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
@@ -53,8 +54,8 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 		try {
 			uid = UUID.fromString(apiKeyUid);
 		} catch (IllegalArgumentException e) {
-			log.error("Given api key has no valid format: {}", apiKeyUid);
-			return Response.status(Status.BAD_REQUEST).build();
+			log.error("The given api key uid has an invalid format: {}", apiKeyUid);
+			throw new InvalidRequestException("The given api key uid has an invalid format");
 		}
 		ApiKey apiKey = apiKeyService.getApiKey(uid);
 		return Response.ok(new ApiKeyIO(apiKey)).build();
@@ -76,8 +77,8 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 		try {
 			uid = UUID.fromString(apiKeyUid);
 		} catch (IllegalArgumentException e) {
-			log.error("Given api key has no valid format: {}", apiKeyUid);
-			return Response.status(Status.BAD_REQUEST).build();
+			log.error("The given api key uid has an invalid format: {}", apiKeyUid);
+			throw new InvalidRequestException("The given api key uid has an invalid format");
 		}
 		return apiKeyService.deleteApiKey(uid) ? Response.status(204).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();

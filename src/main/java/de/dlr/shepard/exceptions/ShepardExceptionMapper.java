@@ -1,6 +1,7 @@
 package de.dlr.shepard.exceptions;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -17,7 +18,8 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
 		}
 
 		return Response.status(status)
-				.entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage())).build();
+				.entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage()))
+				.type(MediaType.APPLICATION_JSON).build();
 	}
 
 }

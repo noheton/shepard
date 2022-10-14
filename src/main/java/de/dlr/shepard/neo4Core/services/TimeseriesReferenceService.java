@@ -96,7 +96,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		var database = ref.getTimeseriesContainer().getDatabase();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException();
+			throw new InvalidAuthException("You are not authorized to access this timeseries");
 
 		return timeseriesService.getTimeseriesPayloadList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
@@ -110,7 +110,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		var database = ref.getTimeseriesContainer().getDatabase();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException();
+			throw new InvalidAuthException("You are not authorized to access this timeseries");
 
 		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
 				groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);

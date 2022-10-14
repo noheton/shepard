@@ -1,12 +1,8 @@
 package de.dlr.shepard.endpoints;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.mongoDB.NamedInputStream;
-import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -85,18 +81,13 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFilePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId, @PathParam(Constants.OID) String oid) {
-		NamedInputStream payload;
-		try {
-			payload = fileReferenceService.getPayload(fileReferenceId, oid,
-					securityContext.getUserPrincipal().getName());
-			return payload != null
-					? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
-							.header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
-							.header("Content-Length", payload.getSize()).build()
-					: Response.status(Status.NOT_FOUND).build();
-		} catch (InvalidAuthException e) {
-			return Response.status(Status.FORBIDDEN).build();
-		}
+		var payload = fileReferenceService.getPayload(fileReferenceId, oid,
+				securityContext.getUserPrincipal().getName());
+		return payload != null
+				? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
+						.header("Content-Length", payload.getSize()).build()
+				: Response.status(Status.NOT_FOUND).build();
 
 	}
 
@@ -106,7 +97,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFiles(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileId) {
-		List<ShepardFile> ret = fileReferenceService.getFiles(fileId);
+		var ret = fileReferenceService.getFiles(fileId);
 		return Response.ok(ret).build();
 	}
 

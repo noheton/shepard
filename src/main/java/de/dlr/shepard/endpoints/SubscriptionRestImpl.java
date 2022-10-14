@@ -50,7 +50,7 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	public Response createSubscription(@PathParam(Constants.USERNAME) String username, SubscriptionIO subscription) {
 		Subscription created = service.createSubscription(subscription, username);
 		return created != null ? Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build()
-				: Response.status(Status.BAD_REQUEST).build();
+				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 	@DELETE

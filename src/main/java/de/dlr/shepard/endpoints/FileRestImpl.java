@@ -54,8 +54,7 @@ public class FileRestImpl implements FileRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var containers = fileContainerService.getAllContainers(params,
-				securityContext.getUserPrincipal().getName());
+		var containers = fileContainerService.getAllContainers(params, securityContext.getUserPrincipal().getName());
 		var result = new ArrayList<FileContainerIO>(containers.size());
 		for (var container : containers) {
 			result.add(new FileContainerIO(container));
@@ -74,8 +73,7 @@ public class FileRestImpl implements FileRest {
 	@POST
 	@Override
 	public Response createFileContainer(FileContainerIO fileContainer) {
-		var result = fileContainerService.createContainer(fileContainer,
-				securityContext.getUserPrincipal().getName());
+		var result = fileContainerService.createContainer(fileContainer, securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileContainerIO(result)).status(Status.CREATED).build();
 	}
 

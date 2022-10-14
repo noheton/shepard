@@ -29,6 +29,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 	private FileService fileService = new FileService();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
+	@Override
 	public List<FileReference> getAllReferences(long dataObjectId) {
 		var references = fileReferenceDAO.findByDataObject(dataObjectId);
 		return references;
@@ -87,7 +88,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 		long containerId = reference.getFileContainer().getId();
 		String mongoId = reference.getFileContainer().getMongoId();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException();
+			throw new InvalidAuthException("You are not authorized to access this file");
 
 		return fileService.getPayload(mongoId, oid);
 	}
