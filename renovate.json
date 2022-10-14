@@ -24,5 +24,6 @@
     }
   ],
   "labels": ["dependencies"],
-  "dependencyDashboard": true
+  "dependencyDashboard": true,
+  "prHourlyLimit": 0
 }
