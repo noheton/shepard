@@ -74,7 +74,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Override
 	public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
 		var result = timeseriesContainerService.getContainer(timeseriesId);
-
 		return Response.ok(new TimeseriesContainerIO(result)).build();
 	}
 
@@ -106,7 +105,6 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
 			TimeseriesPayload payload) {
 		var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);
-
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
@@ -114,14 +112,14 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
 	@Override
-	public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesId)).build();
+	public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+		return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId)).build();
 	}
 
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload/select")
 	@Override
-	public Response getTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+	public Response getTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
 			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
 			@QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
 			@QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
@@ -136,8 +134,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		}
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-		var result = timeseriesContainerService.getTimeseries(timeseriesId, timeseries, start, end, function, groupBy,
-				fillOption);
+		var result = timeseriesContainerService.getTimeseriesPayload(timeseriesContainerId, timeseries, start, end,
+				function, groupBy, fillOption);
 
 		return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
 	}
@@ -146,7 +144,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
 	@Override
-	public Response exportTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+	public Response exportTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
 			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
 			@QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
 			@QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
@@ -163,8 +161,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 		}
 
 		var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-		var result = timeseriesContainerService.exportTimeseries(timeseriesId, timeseries, start, end, function,
-				groupBy, fillOption);
+		var result = timeseriesContainerService.exportTimeseriesPayload(timeseriesContainerId, timeseries, start, end,
+				function, groupBy, fillOption);
 		return result != null
 				? Response.ok(result, MediaType.APPLICATION_OCTET_STREAM)
 						.header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"").build()
@@ -187,8 +185,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		var perms = permissionsService.getPermissionsByEntity(timeseriesId);
+	public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+		var perms = permissionsService.getPermissionsByEntity(timeseriesContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -196,9 +194,9 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@PUT
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
-	public Response editTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+	public Response editTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
 			@Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, timeseriesId);
+		var perms = permissionsService.updatePermissions(permissions, timeseriesContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -206,8 +204,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@GET
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
 	@Override
-	public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId) {
-		var roles = new PermissionsUtil().getRoles(timeseriesId, securityContext.getUserPrincipal().getName());
+	public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+		var roles = new PermissionsUtil().getRoles(timeseriesContainerId, securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 }

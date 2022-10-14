@@ -88,7 +88,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		return true;
 	}
 
-	public List<TimeseriesPayload> getPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
+	public List<TimeseriesPayload> getTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
 			Set<String> symbolicNameFilterSet, String username) {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
@@ -98,11 +98,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			throw new InvalidAuthException();
 
-		return timeseriesService.getTimeseriesList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
+		return timeseriesService.getTimeseriesPayloadList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
-	public InputStream export(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
+	public InputStream exportTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
 			Set<String> symbolicNameFilterSet, String username) throws IOException {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
@@ -112,7 +112,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			throw new InvalidAuthException();
 
-		return timeseriesService.exportTimeseries(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
+		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
 				groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 

@@ -39,7 +39,7 @@ public interface TimeseriesRest {
 	@Operation(description = "Get timeseries container")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesContainer(long timeseriesId);
+	Response getTimeseriesContainer(long timeseriesContainerId);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Create a new timeseries container")
@@ -52,7 +52,7 @@ public interface TimeseriesRest {
 	@Operation(description = "Delete timeseries container")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteTimeseriesContainer(long timeseriesId);
+	Response deleteTimeseriesContainer(long timeseriesContainerId);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Upload timeseries to container")
@@ -64,21 +64,21 @@ public interface TimeseriesRest {
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries available")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = Timeseries.class))))
-	Response getTimeseriesAvailable(long timeseriesId);
+	Response getTimeseriesAvailable(long timeseriesContainerId);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesPayload.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseries(long timeseriesId, String measurement, String location, String device, String symbolicName,
-			String field, long start, long end, SingleValuedUnaryFunction function, Long groupBy,
+	Response getTimeseries(long timeseriesContainerId, String measurement, String location, String device,
+			String symbolicName, String field, long start, long end, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Export timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response exportTimeseries(long timeseriesId, String measurement, String location, String device,
+	Response exportTimeseries(long timeseriesContainerId, String measurement, String location, String device,
 			String symbolicName, String field, long start, long end, SingleValuedUnaryFunction function, Long groupBy,
 			FillOption fillOption) throws IOException;
 
@@ -86,7 +86,7 @@ public interface TimeseriesRest {
 	@Operation(description = "Import timeseries payload")
 	@ApiResponse(description = "ok", responseCode = "200")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response importTimeseries(long timeseriesId,
+	Response importTimeseries(long timeseriesContainerId,
 			@Parameter(required = true, schema = @Schema(type = "string", format = "binary", description = "Timeseries as CSV")) InputStream fileInputStream,
 			@Parameter(hidden = true) FormDataContentDisposition fileMetaData) throws IOException;
 
@@ -94,18 +94,18 @@ public interface TimeseriesRest {
 	@Operation(description = "Get permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesPermissions(long timeseriesId);
+	Response getTimeseriesPermissions(long timeseriesContainerId);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Edit permissions")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response editTimeseriesPermissions(long timeseriesId,
+	Response editTimeseriesPermissions(long timeseriesContainerId,
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
 
 	@Tag(name = Constants.TIMESERIES)
 	@Operation(description = "Get roles")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesRoles(long timeseriesId);
+	Response getTimeseriesRoles(long timeseriesContainerId);
 }

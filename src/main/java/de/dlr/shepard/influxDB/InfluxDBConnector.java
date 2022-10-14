@@ -123,7 +123,7 @@ public class InfluxDBConnector implements IConnector {
 	 * @param payload  Combines the required attributes in a structured way.
 	 * @return An error if there was a problem, empty string if all went well
 	 */
-	public String saveTimeseries(String database, TimeseriesPayload payload) {
+	public String saveTimeseriesPayload(String database, TimeseriesPayload payload) {
 		var timeseries = payload.getTimeseries();
 		var expectedType = getExpectedDatatype(database, timeseries.getMeasurement(), timeseries.getField());
 		var batchPoints = InfluxUtil.createBatch(database, payload, expectedType);
@@ -155,7 +155,7 @@ public class InfluxDBConnector implements IConnector {
 	 *         timestamps matching the "device"-tag, the "location"-tag and the
 	 *         "symbolic_name"-tag.
 	 */
-	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
+	public TimeseriesPayload getTimeseriesPayload(long startTimeStamp, long endTimeStamp, String database,
 			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
 		Query query = InfluxUtil.buildQuery(startTimeStamp, endTimeStamp, database, timeseries, function, groupBy,
 				fillOption);
@@ -187,7 +187,6 @@ public class InfluxDBConnector implements IConnector {
 			log.warn("There was an error while querying the Influxdb for available timeseries");
 			return Collections.emptyList();
 		}
-
 		var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
 		var result = new ArrayList<Timeseries>(values.size());
 		for (var value : values) {

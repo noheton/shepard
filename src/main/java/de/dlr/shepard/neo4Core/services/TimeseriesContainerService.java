@@ -55,14 +55,14 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	/**
 	 * Searches the TimeseriesContainer in Neo4j
 	 *
-	 * @param id identifies the searched TimeseriesContainer
+	 * @param timeSeriesContainerId identifies the searched TimeseriesContainer
 	 * @return the TimeseriesContainer with matching id or null
 	 */
 	@Override
-	public TimeseriesContainer getContainer(long id) {
-		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(id);
+	public TimeseriesContainer getContainer(long timeSeriesContainerId) {
+		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-			log.error("Timeseries Container with id {} is null or deleted", id);
+			log.error("Timeseries Container with id {} is null or deleted", timeSeriesContainerId);
 			return null;
 		}
 		return timeseriesContainer;
@@ -84,15 +84,16 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	/**
 	 * Deletes a TimeseriesContainer in Neo4j
 	 *
-	 * @param timeSeriesId identifies the TimeseriesContainer
-	 * @param username     of the related user
+	 * @param timeSeriesContainerId identifies the TimeseriesContainer
+	 * @param username              of the related user
 	 * @return a boolean to determine if TimeseriesContainer was successfully
 	 *         deleted
 	 */
+
 	@Override
-	public boolean deleteContainer(long timeSeriesId, String username) {
+	public boolean deleteContainer(long timeSeriesContainerId, String username) {
 		var user = userDAO.find(username);
-		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesId);
+		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesContainerId);
 		if (timeseriesContainer == null) {
 			return false;
 		}
@@ -138,14 +139,14 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 * @param fillOption            The fill option for missing values
 	 * @return TimeseriesPayload
 	 */
-	public TimeseriesPayload getTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
-			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
+	public TimeseriesPayload getTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start,
+			long end, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
-		var result = timeseriesService.getTimeseries(start, end, timeseriesContainer.getDatabase(), timeseries,
+		var result = timeseriesService.getTimeseriesPayload(start, end, timeseriesContainer.getDatabase(), timeseries,
 				function, groupBy, fillOption);
 		return result;
 	}
@@ -165,14 +166,14 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 		return timeseriesService.getTimeseriesAvailable(timeseriesContainer.getDatabase());
 	}
 
-	public InputStream exportTimeseries(long timeseriesContainerId, Timeseries timeseries, long start, long end,
+	public InputStream exportTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start, long end,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) throws IOException {
 		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
 		}
-		var result = timeseriesService.exportTimeseries(start, end, timeseriesContainer.getDatabase(),
+		var result = timeseriesService.exportTimeseriesPayload(start, end, timeseriesContainer.getDatabase(),
 				List.of(timeseries), function, groupBy, fillOption, Collections.emptySet(), Collections.emptySet(),
 				Collections.emptySet());
 		return result;

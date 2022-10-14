@@ -129,7 +129,6 @@ public class TimeseriesTest extends BaseTestCaseIT {
 	@Order(7)
 	public void deleteContainer() {
 		given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
-
 		given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
 	}
 

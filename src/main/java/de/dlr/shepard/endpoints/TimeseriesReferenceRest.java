@@ -31,7 +31,7 @@ public interface TimeseriesReferenceRest {
 	@Operation(description = "Get timeseries reference")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId);
+	Response getTimeseriesReference(long collectionId, long dataObjectId, long timeseriesReferenceId);
 
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Create a new timeseries reference")
@@ -44,13 +44,13 @@ public interface TimeseriesReferenceRest {
 	@Operation(description = "Delete timeseries reference")
 	@ApiResponse(description = "deleted", responseCode = "204")
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteTimeseriesReference(long collectionId, long dataObjectId, long timeseriesId);
+	Response deleteTimeseriesReference(long collectionId, long dataObjectId, long timeseriesReferenceId);
 
 	@Tag(name = Constants.TIMESERIES_REFERENCE)
 	@Operation(description = "Get timeseries reference payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TimeseriesPayload.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId,
+	Response getTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesReferenceId,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> deviceFilterTag,
 			Set<String> locationFilterTag, Set<String> symbolicNameFilterTag);
 
@@ -58,7 +58,7 @@ public interface TimeseriesReferenceRest {
 	@Operation(description = "Export timeseries reference payload")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response exportTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesId,
+	Response exportTimeseriesPayload(long collectionId, long dataObjectId, long timeseriesReferenceId,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> deviceFilterTag,
 			Set<String> locationFilterTag, Set<String> symbolicNameFilterTag) throws IOException;
 

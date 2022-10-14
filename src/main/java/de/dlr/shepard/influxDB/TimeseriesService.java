@@ -29,7 +29,7 @@ public class TimeseriesService {
 		if (!influxConnector.databaseExist(database)) {
 			return String.format("The database %s does not exist", database);
 		}
-		return influxConnector.saveTimeseries(database, payload);
+		return influxConnector.saveTimeseriesPayload(database, payload);
 	}
 
 	/**
@@ -44,9 +44,9 @@ public class TimeseriesService {
 	 * @param fillOption     The fill option for missing values
 	 * @return timeseries with influx points
 	 */
-	public TimeseriesPayload getTimeseries(long startTimeStamp, long endTimeStamp, String database,
+	public TimeseriesPayload getTimeseriesPayload(long startTimeStamp, long endTimeStamp, String database,
 			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
-		TimeseriesPayload payload = influxConnector.getTimeseries(startTimeStamp, endTimeStamp, database, timeseries,
+		TimeseriesPayload payload = influxConnector.getTimeseriesPayload(startTimeStamp, endTimeStamp, database, timeseries,
 				function, groupBy, fillOption);
 		return payload;
 	}
@@ -67,21 +67,21 @@ public class TimeseriesService {
 	 * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
 	 * @return a list of timeseries with influx points
 	 */
-	public List<TimeseriesPayload> getTimeseriesList(long start, long end, String database,
+	public List<TimeseriesPayload> getTimeseriesPayloadList(long start, long end, String database,
 			List<Timeseries> timeseriesList, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption,
 			Set<String> devicesFilterSet, Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) {
-		var timeseriesQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
+		var timeseriesPayloadQueue = new ConcurrentLinkedQueue<TimeseriesPayload>();
 		timeseriesList.parallelStream().forEach(timeseries -> {
 			TimeseriesPayload payload = null;
 			if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
-				payload = getTimeseries(start, end, database, timeseries, function, groupBy, fillOption);
+				payload = getTimeseriesPayload(start, end, database, timeseries, function, groupBy, fillOption);
 			}
 			if (payload != null) {
-				timeseriesQueue.add(payload);
+				timeseriesPayloadQueue.add(payload);
 			}
 
 		});
-		return new ArrayList<>(timeseriesQueue);
+		return new ArrayList<>(timeseriesPayloadQueue);
 	}
 
 	/**
@@ -111,10 +111,10 @@ public class TimeseriesService {
 	 * @return InputStream containing the CSV file
 	 * @throws IOException When the CSV file could not be written
 	 */
-	public InputStream exportTimeseries(long start, long end, String database, List<Timeseries> timeseriesList,
+	public InputStream exportTimeseriesPayload(long start, long end, String database, List<Timeseries> timeseriesList,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> devicesFilterSet,
 			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet) throws IOException {
-		var payload = getTimeseriesList(start, end, database, timeseriesList, function, groupBy, fillOption,
+		var payload = getTimeseriesPayloadList(start, end, database, timeseriesList, function, groupBy, fillOption,
 				devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 		var stream = csvConverter.convertToCsv(payload);
 		return stream;
