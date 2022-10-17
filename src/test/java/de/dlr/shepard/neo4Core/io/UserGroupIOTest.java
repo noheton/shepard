@@ -24,7 +24,7 @@ public class UserGroupIOTest extends BaseTestCase {
 		group.setName("group");
 		group.setId(1L);
 		User user = new User("AKP");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(user);
 		group.setUsers(users);
 		var converted = new UserGroupIO(group);

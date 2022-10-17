@@ -11,12 +11,12 @@ public class UserGroupTest extends BaseTestCase {
 
 	@Test
 	public void equalsContract() {
-		ArrayList<User> users1 = new ArrayList<User>();
+		ArrayList<User> users1 = new ArrayList<>();
 		User user1 = new User("user1");
 		user1.setApiKeys(null);
 		user1.setSubscriptions(null);
 		users1.add(user1);
-		ArrayList<User> users2 = new ArrayList<User>();
+		ArrayList<User> users2 = new ArrayList<>();
 		User user2 = new User("user2");
 		user2.setApiKeys(null);
 		user2.setSubscriptions(null);

@@ -74,7 +74,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		structuredDataContainer1.setMongoId(mongoID);
 		structuredDataContainer1.setId(2L);
 		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
-		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
 		Long collectionId = 1L;
@@ -132,7 +132,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		structuredDataContainer1.setMongoId(mongoID);
 		structuredDataContainer1.setId(2L);
 		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
-		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
 		Long collectionId = 1L;
@@ -190,7 +190,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		structuredDataContainer1.setMongoId(mongoID);
 		structuredDataContainer1.setId(2L);
 		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
-		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
 		Long collectionId = 1L;
@@ -243,7 +243,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		structuredDataContainer1.setMongoId(mongoID);
 		structuredDataContainer1.setId(2L);
 		structuredDataReference1.setStructuredDataContainer(structuredDataContainer1);
-		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<StructuredDataReference>();
+		ArrayList<StructuredDataReference> emptyStructuredDataReferenceResponse = new ArrayList<>();
 		emptyStructuredDataReferenceResponse.add(structuredDataReference1);
 		// create SearchBody
 		Long collectionId = 1L;

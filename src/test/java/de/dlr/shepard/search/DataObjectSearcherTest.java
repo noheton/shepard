@@ -55,7 +55,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		Long[] idTuple = { 1L, 2L };
-		ArrayList<Long[]> idTuples = new ArrayList<Long[]>();
+		ArrayList<Long[]> idTuples = new ArrayList<>();
 		idTuples.add(idTuple);
 		String searchQuery = Neo4jEmitter.emitDataObjectQuery(query, userName);
 		when(searchDAO.getIdsFromQuery(searchQuery, coldovariables)).thenReturn(idTuples);
@@ -84,7 +84,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		Long[] idTuple = { 2L };
-		ArrayList<Long[]> idTuples = new ArrayList<Long[]>();
+		ArrayList<Long[]> idTuples = new ArrayList<>();
 		idTuples.add(idTuple);
 		String searchQuery = Neo4jEmitter.emitCollectionDataObjectQuery(scope.getCollectionId(), query, userName);
 		when(searchDAO.getIdsFromQuery(searchQuery, dovariables)).thenReturn(idTuples);
@@ -113,7 +113,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		Long[] idTuple = { 2L };
-		ArrayList<Long[]> idTuples = new ArrayList<Long[]>();
+		ArrayList<Long[]> idTuples = new ArrayList<>();
 		idTuples.add(idTuple);
 		String searchQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectQuery(scope, scope.getTraversalRules()[0],
 				query, userName);
@@ -143,7 +143,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		Long[] idTuple = { 2L };
-		ArrayList<Long[]> idTuples = new ArrayList<Long[]>();
+		ArrayList<Long[]> idTuples = new ArrayList<>();
 		idTuples.add(idTuple);
 		String searchQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectQuery(scope, query, userName);
 		when(searchDAO.getIdsFromQuery(searchQuery, dovariables)).thenReturn(idTuples);

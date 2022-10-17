@@ -31,8 +31,8 @@ public class SearchDAOTest extends BaseTestCase {
 	public void getIdsFromQueryTest() {
 		String query = "query";
 		String[] variables = { "col" };
-		ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-		Map<String, Object> map = new HashMap<String, Object>();
+		ArrayList<Map<String, Object>> list = new ArrayList<>();
+		Map<String, Object> map = new HashMap<>();
 		map.put("id(col)", 123L);
 		list.add(map);
 		Iterator<Map<String, Object>> iterator = list.iterator();

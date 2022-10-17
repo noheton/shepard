@@ -250,7 +250,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		User user = new User("bob");
 		ApiKey apiKey = new ApiKey(uid);
-		ArrayList<ApiKey> apiKeyList = new ArrayList<ApiKey>();
+		ArrayList<ApiKey> apiKeyList = new ArrayList<>();
 		apiKeyList.add(apiKey);
 		user.setApiKeys(apiKeyList);
 		apiKey.setBelongsTo(user);
@@ -295,7 +295,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		User userAssociated = new User("carl");
 		ApiKey apiKey = new ApiKey(uid);
 		apiKey.setBelongsTo(userAssociated);
-		ArrayList<ApiKey> apiKeyList = new ArrayList<ApiKey>();
+		ArrayList<ApiKey> apiKeyList = new ArrayList<>();
 		apiKeyList.add(apiKey);
 		userAssociated.setApiKeys(apiKeyList);
 		when(userService.getUser("bob")).thenReturn(user);

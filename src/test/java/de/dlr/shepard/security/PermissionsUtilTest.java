@@ -223,10 +223,10 @@ public class PermissionsUtilTest extends BaseTestCase {
 		UserGroup writerGroup = new UserGroup();
 		writerGroup.setId(35L);
 		User writer = new User("principal");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(writer);
 		writerGroup.setUsers(users);
-		ArrayList<UserGroup> writerGroups = new ArrayList<UserGroup>();
+		ArrayList<UserGroup> writerGroups = new ArrayList<>();
 		writerGroups.add(writerGroup);
 		var perms = new Permissions() {
 			{
@@ -243,10 +243,10 @@ public class PermissionsUtilTest extends BaseTestCase {
 		UserGroup writerGroup = new UserGroup();
 		writerGroup.setId(35L);
 		User writer = new User("principal");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(writer);
 		writerGroup.setUsers(users);
-		ArrayList<UserGroup> writerGroups = new ArrayList<UserGroup>();
+		ArrayList<UserGroup> writerGroups = new ArrayList<>();
 		writerGroups.add(writerGroup);
 		var perms = new Permissions() {
 			{
@@ -263,10 +263,10 @@ public class PermissionsUtilTest extends BaseTestCase {
 		UserGroup readerGroup = new UserGroup();
 		readerGroup.setId(35L);
 		User reader = new User("principal");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(reader);
 		readerGroup.setUsers(users);
-		ArrayList<UserGroup> readerGroups = new ArrayList<UserGroup>();
+		ArrayList<UserGroup> readerGroups = new ArrayList<>();
 		readerGroups.add(readerGroup);
 		var perms = new Permissions() {
 			{
@@ -283,10 +283,10 @@ public class PermissionsUtilTest extends BaseTestCase {
 		UserGroup readerGroup = new UserGroup();
 		readerGroup.setId(35L);
 		User reader = new User("principal");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(reader);
 		readerGroup.setUsers(users);
-		ArrayList<UserGroup> readerGroups = new ArrayList<UserGroup>();
+		ArrayList<UserGroup> readerGroups = new ArrayList<>();
 		readerGroups.add(readerGroup);
 		var perms = new Permissions() {
 			{

@@ -183,26 +183,17 @@ public class Neo4jEmitter {
 
 	private static String emitOperatorString(JsonNode node) {
 		String operator = node.textValue();
-		switch (operator) {
-		case Constants.JSON_EQ:
-			return "=";
-		case Constants.JSON_CONTAINS:
-			return "contains";
-		case Constants.JSON_GT:
-			return ">";
-		case Constants.JSON_LT:
-			return "<";
-		case Constants.JSON_GE:
-			return ">=";
-		case Constants.JSON_LE:
-			return "<=";
-		case Constants.JSON_IN:
-			return "IN";
-		case Constants.JSON_NE:
-			return "<>";
-		default:
-			throw new ShepardParserException("unknown comparison operator " + operator);
-		}
+		return switch (operator) {
+		case Constants.JSON_EQ -> "=";
+		case Constants.JSON_CONTAINS -> "contains";
+		case Constants.JSON_GT -> ">";
+		case Constants.JSON_LT -> "<";
+		case Constants.JSON_GE -> ">=";
+		case Constants.JSON_LE -> "<=";
+		case Constants.JSON_IN -> "IN";
+		case Constants.JSON_NE -> "<>";
+		default -> throw new ShepardParserException("unknown comparison operator " + operator);
+		};
 	}
 
 	private static String emitCollectionMatchPart() {
@@ -411,60 +402,40 @@ public class Neo4jEmitter {
 	}
 
 	private static String emitCollectionDataObjectDataObjectMatchPart(TraversalRules traversalRule) {
-		String ret = "";
-		switch (traversalRule) {
-		case children:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
-			break;
-		case parents:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
-			break;
-		case successors:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
-			break;
-		case predecessors:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
-			break;
-		}
+		String ret = switch (traversalRule) {
+		case children -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" + Constants.DATAOBJECT_IN_QUERY
+				+ ":DataObject) ";
+		case parents -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" + Constants.DATAOBJECT_IN_QUERY
+				+ ":DataObject) ";
+		case successors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+		case predecessors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+		};
 		return ret;
 	}
 
 	private static String emitCollectionDataObjectBasicReferenceMatchPart(TraversalRules traversalRule) {
-		String ret = "";
-		switch (traversalRule) {
-		case children:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-					+ ":BasicReference) ";
-			break;
-		case parents:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-					+ ":BasicReference) ";
-			break;
-		case successors:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-					+ ":BasicReference) ";
-			break;
-		case predecessors:
-			ret = "MATCH (" + Constants.COLLECTION_IN_QUERY
-					+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
-					+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-					+ ":BasicReference) ";
-			break;
-		}
+		String ret = switch (traversalRule) {
+		case children -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" + Constants.DATAOBJECT_IN_QUERY
+				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference) ";
+		case parents -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" + Constants.DATAOBJECT_IN_QUERY
+				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference) ";
+		case successors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
+				+ ":BasicReference) ";
+		case predecessors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
+				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
+				+ ":BasicReference) ";
+		};
 		return ret;
 	}
 

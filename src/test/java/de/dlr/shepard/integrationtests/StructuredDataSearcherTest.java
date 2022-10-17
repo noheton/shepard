@@ -400,7 +400,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(2, result.getResultSet().length);
-		HashSet<ResultTriple> resultTriples = new HashSet<ResultTriple>();
+		HashSet<ResultTriple> resultTriples = new HashSet<>();
 		resultTriples.add(result.getResultSet()[0]);
 		resultTriples.add(result.getResultSet()[1]);
 		ResultTriple expectedResult0 = new ResultTriple();

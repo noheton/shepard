@@ -18,7 +18,6 @@ public class JWTPrincipal implements Principal {
 	private String[] roles;
 
 	public JWTPrincipal(String username, String keyId) {
-		super();
 		this.audience = null;
 		this.issuedFor = null;
 		this.username = username;

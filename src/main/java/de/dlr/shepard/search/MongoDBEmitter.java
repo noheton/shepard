@@ -38,24 +38,16 @@ public class MongoDBEmitter {
 
 	private static String emitOperatorString(JsonNode node) {
 		String operator = node.textValue();
-		switch (operator) {
-		case Constants.JSON_GT:
-			return "$gt";
-		case Constants.JSON_LT:
-			return "$lt";
-		case Constants.JSON_GE:
-			return "$gte";
-		case Constants.JSON_LE:
-			return "$lte";
-		case Constants.JSON_EQ:
-			return "$eq";
-		case Constants.JSON_IN:
-			return "$in";
-		case Constants.JSON_NE:
-			return "$ne";
-		default:
-			throw new ShepardParserException("unknown comparison operator " + operator);
-		}
+		return switch (operator) {
+		case Constants.JSON_GT -> "$gt";
+		case Constants.JSON_LT -> "$lt";
+		case Constants.JSON_GE -> "$gte";
+		case Constants.JSON_LE -> "$lte";
+		case Constants.JSON_EQ -> "$eq";
+		case Constants.JSON_IN -> "$in";
+		case Constants.JSON_NE -> "$ne";
+		default -> throw new ShepardParserException("unknown comparison operator " + operator);
+		};
 	}
 
 	private static String emitComplexClause(JsonNode node, String operator) {
@@ -128,25 +120,19 @@ public class MongoDBEmitter {
 	}
 
 	private static String emitBooleanOperator(String operator) {
-		switch (operator) {
-		case Constants.JSON_AND:
-			return "$and:";
-		case Constants.JSON_OR:
-			return "$or:";
-		default:
-			throw new ShepardParserException("unknown operator: " + operator);
-		}
+		return switch (operator) {
+		case Constants.JSON_AND -> "$and:";
+		case Constants.JSON_OR -> "$or:";
+		default -> throw new ShepardParserException("unknown operator: " + operator);
+		};
 	}
 
 	private static String emitNegatedBooleanOperator(String operator) {
-		switch (operator) {
-		case Constants.JSON_AND:
-			return "$or:";
-		case Constants.JSON_OR:
-			return "$and:";
-		default:
-			throw new ShepardParserException("unknown operator: " + operator);
-		}
+		return switch (operator) {
+		case Constants.JSON_AND -> "$or:";
+		case Constants.JSON_OR -> "$and:";
+		default -> throw new ShepardParserException("unknown operator: " + operator);
+		};
 	}
 
 }

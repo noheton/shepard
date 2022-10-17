@@ -93,16 +93,16 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
 				var valueList = new ArrayList<List<Object>>();
-				var value1 = new ArrayList<Object>();
+				var value1 = new ArrayList<>();
 				value1.add(sdf.format(t1));
 				value1.add(123);
 				valueList.add(value1);
-				var value2 = new ArrayList<Object>();
+				var value2 = new ArrayList<>();
 				value2.add(sdf.format(t2));
 				value2.add(456);
 				valueList.add(value2);
@@ -212,12 +212,12 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
 				var valueList = new ArrayList<List<Object>>();
-				var value = new ArrayList<Object>();
+				var value = new ArrayList<>();
 				value.add(123);
 				value.add(456);
 				valueList.add(value);
@@ -271,7 +271,7 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				return results;
 			}
 		};
@@ -286,7 +286,7 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
 				result.setError("error");
 				results.add(result);
@@ -304,9 +304,9 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				result.setSeries(seriesList);
 				results.add(result);
 				return results;
@@ -323,7 +323,7 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
 				result.setSeries(null);
 				results.add(result);
@@ -341,9 +341,9 @@ public class InfluxUtilTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
 				series.setValues(null);
 				seriesList.add(series);

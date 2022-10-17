@@ -135,12 +135,12 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
-				List<List<Object>> valueList = new ArrayList<List<Object>>();
-				List<Object> value = new ArrayList<Object>();
+				List<List<Object>> valueList = new ArrayList<>();
+				List<Object> value = new ArrayList<>();
 				value.add("AnotherField");
 				value.add("string");
 				valueList.add(value);
@@ -194,8 +194,8 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 	@Test
 	public void testGetTimeseriesWithValidRequestBody() {
-		List<List<Object>> values = new ArrayList<List<Object>>();
-		List<Object> value = new ArrayList<Object>();
+		List<List<Object>> values = new ArrayList<>();
+		List<Object> value = new ArrayList<>();
 		value.add(Instant.ofEpochMilli(System.currentTimeMillis()).toString());
 		value.add(5);
 		values.add(value);
@@ -204,11 +204,11 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 		series.setValues(values);
 
 		Result result = new Result();
-		List<Series> seriesList = new ArrayList<Series>();
+		List<Series> seriesList = new ArrayList<>();
 		seriesList.add(series);
 		result.setSeries(seriesList);
 
-		List<Result> resultList = new ArrayList<Result>();
+		List<Result> resultList = new ArrayList<>();
 		resultList.add(result);
 
 		QueryResult queryResult = new QueryResult();
@@ -296,7 +296,7 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 	private TimeseriesPayload configureTimeseries(Object value) {
 		InfluxPoint influxPoint = new InfluxPoint(timestamp, value);
-		List<InfluxPoint> influxPoints = new ArrayList<InfluxPoint>();
+		List<InfluxPoint> influxPoints = new ArrayList<>();
 		influxPoints.add(influxPoint);
 		var timeseries = new Timeseries(measurement, device, location, sym_name, field);
 		var payload = new TimeseriesPayload(timeseries, influxPoints);
@@ -318,12 +318,12 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
-				List<List<Object>> valueList = new ArrayList<List<Object>>();
-				List<Object> value = new ArrayList<Object>();
+				List<List<Object>> valueList = new ArrayList<>();
+				List<Object> value = new ArrayList<>();
 				value.add(databaseName);
 				valueList.add(value);
 				series.setValues(valueList);
@@ -343,13 +343,13 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
-				List<List<Object>> valueList = new ArrayList<List<Object>>();
+				List<List<Object>> valueList = new ArrayList<>();
 				for (var ts : timeseries) {
-					List<Object> value = new ArrayList<Object>();
+					List<Object> value = new ArrayList<>();
 					value.add(String.format("%s,device=%s,location=%s,symbolic_name=%s,bla=blub", ts.getMeasurement(),
 							ts.getDevice(), ts.getLocation(), ts.getSymbolicName()));
 					valueList.add(value);
@@ -370,12 +370,12 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 			@Override
 			public List<Result> getResults() {
-				results = new ArrayList<QueryResult.Result>();
+				results = new ArrayList<>();
 				Result result = new Result();
-				ArrayList<Series> seriesList = new ArrayList<Series>();
+				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
-				List<List<Object>> valueList = new ArrayList<List<Object>>();
-				List<Object> value = new ArrayList<Object>();
+				List<List<Object>> valueList = new ArrayList<>();
+				List<Object> value = new ArrayList<>();
 				value.add(field);
 				value.add(fieldKey);
 				valueList.add(value);

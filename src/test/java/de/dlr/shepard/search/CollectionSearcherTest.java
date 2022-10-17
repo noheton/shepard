@@ -53,7 +53,7 @@ public class CollectionSearcherTest extends BaseTestCase {
 		searchBody.setScopes(scopes);
 		searchBody.setSearchParams(searchParams);
 		Long[] collectionIds = { collectionId };
-		ArrayList<Long[]> collectionIdList = new ArrayList<Long[]>();
+		ArrayList<Long[]> collectionIdList = new ArrayList<>();
 		collectionIdList.add(collectionIds);
 		String searchQuery = Neo4jEmitter.emitCollectionQuery(searchBody.getSearchParams().getQuery(), userName);
 		when(searchDAO.getIdsFromQuery(searchQuery, colvariables)).thenReturn(collectionIdList);

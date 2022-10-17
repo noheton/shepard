@@ -66,7 +66,7 @@ public class HasIdTest extends BaseTestCase {
 
 	@Test
 	public void equalsHelpersTest_equal() {
-		List<HasId> nullList = new ArrayList<HasId>();
+		List<HasId> nullList = new ArrayList<>();
 		nullList.add(null);
 		assertTrue(HasId.equalsHelper(List.of(a), List.of(aEquals)));
 		assertFalse(HasId.equalsHelper(List.of(a), List.of(aDiffers)));
@@ -83,7 +83,7 @@ public class HasIdTest extends BaseTestCase {
 
 	@Test
 	public void hashCodeHelpersTest() {
-		List<HasId> nullList = new ArrayList<HasId>();
+		List<HasId> nullList = new ArrayList<>();
 		nullList.add(null);
 		assertEquals(0, HasId.hashcodeHelper((List<HasId>) null));
 		assertEquals(31, HasId.hashcodeHelper(nullList));

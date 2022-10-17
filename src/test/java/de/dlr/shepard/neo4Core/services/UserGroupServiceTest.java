@@ -60,7 +60,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		UserGroup toCreate = new UserGroup();
 		toCreate.setName("group");
 		var user = new User("user");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(user);
 		toCreate.setUsers(users);
 		toCreate.setCreatedBy(creator);
@@ -95,7 +95,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 
 	@Test
 	public void getAllUserGroupsTest() {
-		List<UserGroup> allUserGroups = new ArrayList<UserGroup>();
+		List<UserGroup> allUserGroups = new ArrayList<>();
 		QueryParamHelper params = new QueryParamHelper();
 		when(userGroupDAO.findAllUserGroups(params, "user1")).thenReturn(allUserGroups);
 		assertEquals(0, service.getAllUserGroups(params, "user1").size());
@@ -116,7 +116,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		UserGroup oldGroup = new UserGroup();
 		oldGroup.setName("group");
 		var user = new User("user");
-		ArrayList<User> users = new ArrayList<User>();
+		ArrayList<User> users = new ArrayList<>();
 		users.add(user);
 		oldGroup.setUsers(users);
 		oldGroup.setCreatedBy(creator);
