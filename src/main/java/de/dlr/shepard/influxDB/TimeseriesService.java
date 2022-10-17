@@ -46,8 +46,8 @@ public class TimeseriesService {
 	 */
 	public TimeseriesPayload getTimeseriesPayload(long startTimeStamp, long endTimeStamp, String database,
 			Timeseries timeseries, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
-		TimeseriesPayload payload = influxConnector.getTimeseriesPayload(startTimeStamp, endTimeStamp, database, timeseries,
-				function, groupBy, fillOption);
+		TimeseriesPayload payload = influxConnector.getTimeseriesPayload(startTimeStamp, endTimeStamp, database,
+				timeseries, function, groupBy, fillOption);
 		return payload;
 	}
 

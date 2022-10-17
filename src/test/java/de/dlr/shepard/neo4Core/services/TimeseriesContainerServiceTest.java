@@ -240,7 +240,8 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		when(timeseriesService.getTimeseriesPayload(start, end, "database", ts, SingleValuedUnaryFunction.MEAN, 10L,
 				FillOption.LINEAR)).thenReturn(payload);
 
-		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR);
+		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR);
 		assertEquals(payload, actual);
 	}
 
@@ -252,7 +253,8 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(null);
 
-		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR);
+		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR);
 		assertNull(actual);
 	}
 
@@ -267,7 +269,8 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(dao.find(1L)).thenReturn(container);
 
-		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR);
+		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR);
 		assertNull(actual);
 	}
 
@@ -314,9 +317,9 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var payload = new ByteArrayInputStream("123".getBytes());
 
 		when(dao.find(1L)).thenReturn(container);
-		when(timeseriesService.exportTimeseriesPayload(start, end, "database", List.of(ts), SingleValuedUnaryFunction.MEAN,
-				10L, FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(), Collections.emptySet()))
-				.thenReturn(payload);
+		when(timeseriesService.exportTimeseriesPayload(start, end, "database", List.of(ts),
+				SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(),
+				Collections.emptySet())).thenReturn(payload);
 
 		var actual = service.exportTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
 				FillOption.LINEAR);

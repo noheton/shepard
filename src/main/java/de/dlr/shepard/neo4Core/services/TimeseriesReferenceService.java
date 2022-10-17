@@ -88,8 +88,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		return true;
 	}
 
-	public List<TimeseriesPayload> getTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
-			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+	public List<TimeseriesPayload> getTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function,
+			Long groupBy, FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
 			Set<String> symbolicNameFilterSet, String username) {
 		var ref = timeseriesReferenceDAO.find(timeseriesId);
 		var containerId = ref.getTimeseriesContainer().getId();
@@ -112,8 +112,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			throw new InvalidAuthException("You are not authorized to access this timeseries");
 
-		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(), function,
-				groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
+				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
 }
