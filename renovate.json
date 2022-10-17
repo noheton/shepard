@@ -21,6 +21,10 @@
     {
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<4.8"
+    },
+    {
+      "matchSourceUrlPrefixes": ["https://github.com/johnsoncodehk/volar"],
+      "groupName": "Volar monorepo packages"
     }
   ],
   "labels": ["dependencies"],
