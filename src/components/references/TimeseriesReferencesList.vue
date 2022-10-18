@@ -21,8 +21,15 @@
       :process-active="downloadActive"
       :process-started="downloadFinished"
       :process-error="downloadError"
+      :process-error-message="downloadErrorMessage"
       @success-message-dismissed="downloadFinished = false"
       @error-message-dismissed="downloadError = false"
+    />
+    <ProcessAlert
+      process-name="Plotting"
+      :process-error="plottingError"
+      :process-error-message="plottingErrorMessage"
+      @error-message-dismissed="plottingError = false"
     />
 
     <b-button v-b-modal.create-time-ref-modal class="mb-3" variant="primary">
@@ -60,7 +67,7 @@
             <b-button
               v-b-modal.plotting_modal
               v-b-tooltip.hover
-              title="Plot Data"
+              title="Plotting"
               variant="primary"
               :disabled="timeseriesItem.timeseriesContainerId == -1"
               @click="handlePlotData(timeseriesItem)"
@@ -122,7 +129,7 @@
     />
 
     <TimeseriesPlottingModal
-      v-if="currentTimeseriesReference"
+      v-if="currentTimeseriesReference && !plottingError"
       modal-id="plotting_modal"
       :modal-name="currentTimeseriesReference.name || undefined"
       :timeseries-payload-list="currentTimeseriesPayload"
@@ -155,6 +162,10 @@ interface TimeseriesListData {
   downloadFinished: boolean;
   downloadActive: boolean;
   downloadError: boolean;
+  downloadErrorMessage: string;
+  plottingError: boolean;
+  plottingErrorMessage: string;
+
   currentTimeseriesReference?: TimeseriesReference;
   createdAlert: boolean;
   deletedAlert: boolean;
@@ -187,6 +198,9 @@ export default defineComponent({
       downloadFinished: false,
       downloadActive: false,
       downloadError: false,
+      downloadErrorMessage: "",
+      plottingError: false,
+      plottingErrorMessage: "",
       currentTimeseriesReference: undefined,
       createdAlert: false,
       deletedAlert: false,
@@ -223,6 +237,10 @@ export default defineComponent({
         .catch(e => {
           logError(e as ResponseError, "fetching timeseries payload");
           this.downloadError = true;
+          if (e.response.status == 403) {
+            this.downloadErrorMessage =
+              "Authentication Error: No permission to access this timeseries container";
+          }
         })
         .finally(() => (this.downloadActive = false));
     },
@@ -241,7 +259,12 @@ export default defineComponent({
         })
         .catch(e => {
           this.currentTimeseriesPayload = [];
-          handleError(e as ResponseError, "fetching timeseries payload");
+          logError(e as ResponseError, "fetching timeseries payload");
+          this.plottingError = true;
+          if (e.response.status == 403) {
+            this.plottingErrorMessage =
+              "Authentication Error: No permission to access this timeseries container";
+          }
         });
     },
 
