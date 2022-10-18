@@ -21,6 +21,7 @@
       :process-active="downloadActive"
       :process-finished="downloadFinished"
       :process-error="downloadError"
+      :process-error-message="downloadErrorMessage"
       @success-message-dismissed="downloadFinished = false"
       @error-message-dismissed="downloadError = false"
     />
@@ -134,6 +135,7 @@ interface FileListData {
   downloadFinished: boolean;
   downloadActive: boolean;
   downloadError: boolean;
+  downloadErrorMessage: string;
   currentFileReference?: FileReference;
   createdAlert: boolean;
   deletedAlert: boolean;
@@ -165,6 +167,7 @@ export default defineComponent({
       downloadFinished: false,
       downloadActive: false,
       downloadError: false,
+      downloadErrorMessage: "",
       currentFileReference: undefined,
       createdAlert: false,
       deletedAlert: false,
@@ -225,6 +228,10 @@ export default defineComponent({
         .catch(e => {
           logError(e as ResponseError, "fetching file payload");
           this.downloadError = true;
+          if (e.response.status == 403) {
+            this.downloadErrorMessage =
+              "Authentication Error: No permission to access this file container";
+          }
         })
         .finally(() => (this.downloadActive = false));
     },

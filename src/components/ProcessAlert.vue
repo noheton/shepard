@@ -23,6 +23,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  processErrorMessage: {
+    type: String,
+    default: undefined,
+  },
 });
 
 const timeDelay = 5;
@@ -57,7 +61,8 @@ function countDownChanged(countDown: number) {
       class="d-flex align-items-center"
       @dismissed="emit('error-message-dismissed')"
     >
-      {{ props.processName }} failed
+      <div v-if="processErrorMessage">{{ processErrorMessage }}</div>
+      <div v-else>{{ props.processName }} failed</div>
     </b-alert>
     <b-alert
       :show="props.processFinished && dismissCountDown"
