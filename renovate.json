@@ -19,6 +19,10 @@
       "allowedVersions": "<5"
     },
     {
+      "matchPackageNames": ["node", "@types/node"],
+      "groupName": "Node.js"
+    },
+    {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
       "groupName": "Volar monorepo packages"
     }
