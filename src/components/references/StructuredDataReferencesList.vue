@@ -73,31 +73,36 @@
           v-for="(oid, i) in structuredDataReference.structuredDataOids"
           :key="i"
         >
-          <small v-if="structuredDatas[oid]">
-            <a v-if="structuredDataReference.structuredDataContainerId != -1">
-              <b-link
-                v-b-modal.json-editor-modal
-                v-b-tooltip.hover
-                title="Show Viewer"
-                @click="
-                  (currentStructuredDataReference = structuredDataReference),
-                    (currentStructuredDataOid = oid)
-                "
-              >
-                <EyeIcon />
-              </b-link>
-            </a>
-            <a v-else><EyeIcon variant="danger" /></a>
+          <small>
+            <span v-if="structuredDataReference.structuredDataContainerId == -1"
+              ><EyeIcon variant="danger"
+            /></span>
+            <span v-else-if="!structuredDatas[oid]?.payload"
+              ><EyeIcon variant="danger"
+            /></span>
+            <b-link
+              v-else
+              v-b-modal.json-editor-modal
+              v-b-tooltip.hover
+              title="Show Viewer"
+              @click="
+                (currentStructuredDataReference = structuredDataReference),
+                  (currentStructuredDataOid = oid)
+              "
+            >
+              <EyeIcon />
+            </b-link>
 
-            <b> Oid:</b> <tt>{{ oid }}</tt> |
-            <span v-if="structuredDatas[oid].structuredData?.createdAt">
-              <b>Created at:</b>
+            <b> Oid:</b> <tt>{{ oid }}</tt>
+            <span v-if="structuredDatas[oid]?.structuredData?.createdAt">
+              | <b>Created at: </b>
               {{ convertDate(structuredDatas[oid].structuredData?.createdAt) }}
             </span>
-            <div v-else><b>Oid:</b> {{ oid }}</div>
 
-            | <b>Name: </b>
-            {{ structuredDatas[oid].structuredData?.name }}
+            <span v-if="structuredDatas[oid]?.structuredData?.name">
+              | <b>Name: </b>
+              {{ structuredDatas[oid].structuredData?.name }}
+            </span>
           </small>
         </div>
       </b-list-group-item>
