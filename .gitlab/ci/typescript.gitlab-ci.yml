@@ -14,7 +14,7 @@
 
 .upload_typescript: &upload_typescript
   stage: upload
-  image: node:18-slim
+  image: node:19-slim
   before_script:
     - cd clients/typescript
     - touch .npmrc

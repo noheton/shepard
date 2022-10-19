@@ -46,7 +46,7 @@ stages:
 format-prettier:
   extends: .only_branches
   stage: test
-  image: node:18-slim
+  image: node:19-slim
   before_script:
     - npm install -g prettier
   script:
