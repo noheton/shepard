@@ -1,11 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
-  "ignorePresets": ["workarounds:typesNodeVersioning"],
   "packageRules": [
     {
       "matchPackageNames": ["node", "@types/node"],
-      "groupName": "Node.js"
+      "groupName": "Node.js",
+      "versioning": "node"
     },
     {
       "matchPackageNames": ["vue"],
