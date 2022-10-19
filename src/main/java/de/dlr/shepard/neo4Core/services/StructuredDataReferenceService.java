@@ -106,11 +106,11 @@ public class StructuredDataReferenceService
 		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
+		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			throw new InvalidAuthException("You are not authorized to access this structured data");
+			return structuredDatas.stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
 
-		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
 		for (var structuredData : structuredDatas) {
 			var payload = structuredDataService.getPayload(mongoId, structuredData.getOid());

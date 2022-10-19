@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -289,12 +292,15 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var structuredDataB = new StructuredData("def");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
 
+		var payloadA = new StructuredDataPayload(structuredDataA, null);
+		var payloadB = new StructuredDataPayload(structuredDataB, null);
+
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
 
-		assertThrows(InvalidAuthException.class, () -> {
-			service.getAllPayloads(1L, "bob");
-		});
+		var actual = service.getAllPayloads(1L, "bob");
+		assertEquals(List.of(payloadA, payloadB), actual);
+		verify(structuredDataService, never()).getPayload(eq("mongoId"), any());
 	}
 
 	@Test
