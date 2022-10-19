@@ -1,7 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
+  "ignorePresets": ["workarounds:typesNodeVersioning"],
   "packageRules": [
+    {
+      "matchPackageNames": ["node", "@types/node"],
+      "groupName": "Node.js"
+    },
     {
       "matchPackageNames": ["vue"],
       "allowedVersions": "<3"
@@ -17,10 +22,6 @@
     {
       "matchPackageNames": ["bootstrap"],
       "allowedVersions": "<5"
-    },
-    {
-      "matchPackageNames": ["node", "@types/node"],
-      "groupName": "Node.js"
     },
     {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
