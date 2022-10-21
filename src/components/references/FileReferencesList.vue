@@ -231,6 +231,9 @@ export default defineComponent({
           if (e.response.status == 403) {
             this.downloadErrorMessage =
               "Authentication Error: No permission to access this file container";
+          } else if (e.response.status == 404) {
+            this.downloadErrorMessage =
+              "Not Found: File no longer exists in the container";
           }
         })
         .finally(() => (this.downloadActive = false));
