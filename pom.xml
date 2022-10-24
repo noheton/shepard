@@ -52,7 +52,7 @@
 		<mockito.version>4.8.1</mockito.version>
 		<mongodb.version>4.7.2</mongodb.version>
 		<neo4j.version>3.2.37</neo4j.version>
-		<opencsv.version>5.7.0</opencsv.version>
+		<opencsv.version>5.7.1</opencsv.version>
 		<restassured.version>5.2.0</restassured.version>
 		<swagger.version>2.2.4</swagger.version>
 		<tomcat.version>10.0.23</tomcat.version>
