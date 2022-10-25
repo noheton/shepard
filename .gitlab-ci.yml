@@ -46,7 +46,7 @@ stages:
 format-prettier:
   extends: .only_branches
   stage: test
-  image: node:19-slim
+  image: node:18-slim
   before_script:
     - npm install -g prettier
   script:
@@ -125,7 +125,7 @@ site:
 coverage:
   extends: .only_branches
   stage: build
-  image: haynes/jacoco2cobertura:latest
+  image: haynes/jacoco2cobertura:1.0.9
   needs: [test]
   dependencies: [test]
   script:
@@ -159,7 +159,7 @@ openapi-diff:
   extends: .only_branches
   stage: build_clients
   image:
-    name: openapitools/openapi-diff:latest
+    name: openapitools/openapi-diff:2.0.1
     entrypoint: [""]
   needs: [build]
   dependencies: [build]
@@ -173,7 +173,7 @@ openapi-diff:
   allow_failure: true
 
 .upload_docker: &upload_docker
-  image: docker:latest
+  image: docker:20.10
   stage: upload
   needs: [build]
   dependencies: [build]
