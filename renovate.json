@@ -5,6 +5,11 @@
     {
       "matchPackageNames": ["influxdb"],
       "allowedVersions": "<2"
+    },
+    {
+      "matchPackageNames": ["node"],
+      "matchManagers": ["gitlabci"],
+      "versioning": "node"
     }
   ],
   "labels": ["dependencies"],
