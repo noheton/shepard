@@ -14,7 +14,7 @@
 
 .upload_python: &upload_python
   stage: upload
-  image: python:3.10-slim
+  image: python:3.11-slim
   before_script:
     - python3 -m pip install wheel setuptools twine
   script:
