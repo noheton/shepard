@@ -58,7 +58,11 @@ function copyBearerToken() {
         </b-list-group-item>
       </b-list-group>
     </div>
-    <b-button variant="danger" @click="oidcActions.signOutOidc">
+    <b-button
+      class="float-right"
+      variant="danger"
+      @click="oidcActions.signOutOidc"
+    >
       Sign out
     </b-button>
   </div>

@@ -16,7 +16,7 @@
         @blur="validateUser()"
       ></b-form-input>
       <b-input-group-append>
-        <b-button text="Add" @click="addUser()">Add</b-button>
+        <b-button text="Add" variant="info" @click="addUser()"> Add </b-button>
       </b-input-group-append>
     </b-input-group>
 
@@ -33,7 +33,7 @@
         class="d-flex justify-content-between align-items-center"
       >
         {{ user.firstName }} {{ user.lastName }}
-        <b-button variant="light" size="sm" @click="deleteUser(index)">
+        <b-button variant="secondary" size="sm" @click="deleteUser(index)">
           <DeleteIcon />
         </b-button>
       </b-list-group-item>

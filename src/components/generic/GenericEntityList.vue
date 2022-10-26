@@ -47,16 +47,3 @@ const props = defineProps({
     </div>
   </div>
 </template>
-
-<style scoped>
-.fixed-height {
-  height: 40px;
-}
-.list-group-item a {
-  color: #495057;
-  float: left;
-}
-.list-group-item .btn-group {
-  float: right;
-}
-</style>

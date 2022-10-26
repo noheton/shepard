@@ -21,7 +21,9 @@
           @keyup.enter="inlineSearch()"
         ></b-form-input>
         <b-input-group-append>
-          <b-button variant="dark" @click="inlineSearch()"> Search </b-button>
+          <b-button variant="secondary" @click="inlineSearch()">
+            Search
+          </b-button>
         </b-input-group-append>
       </b-input-group>
 

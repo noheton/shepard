@@ -58,7 +58,7 @@
                 <div id="jsoneditor" ref="jsoneditor"></div>
                 <div>
                   <b-button-group class="float-right mt-2 mb-2">
-                    <b-button variant="dark" @click="reset()"> Reset </b-button>
+                    <b-button variant="info" @click="reset()"> Reset </b-button>
                     <b-button variant="primary" @click="query()">
                       Search
                     </b-button>
@@ -70,7 +70,7 @@
 
           <b-col>
             <div table>
-              <div class="pl-2 resultHeader">Result</div>
+              <div class="pl-2 result-header">Result</div>
 
               <div v-if="searchData != undefined">
                 <b-table
@@ -80,7 +80,7 @@
                   hover
                   selectable
                   select-mode="single"
-                  head-variant="dark"
+                  head-variant="info"
                   class="table table-sm table-bordered"
                   :items="searchData.resultSet"
                   @row-selected="rowSelected"
@@ -109,7 +109,6 @@ import {
   type ResultTriple,
 } from "@dlr-shepard/shepard-client";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
-import "jsoneditor/dist/jsoneditor.css";
 import Vue from "vue";
 
 interface SearchData {
@@ -263,25 +262,14 @@ export default Vue.extend({
 });
 </script>
 
-<style type="text/css">
+<style scoped>
 #jsoneditor {
-  border-color: dark;
-  max-height: 500px;
   height: 500px;
 }
 
-.jsoneditor {
-  border: thin solid #343a40;
-}
-
-.jsoneditor-menu {
-  background-color: #343a40;
-  border-bottom: 1px solid #343a40;
-}
-
-.resultHeader {
-  background-color: #343a40;
-  color: white;
+.result-header {
+  background-color: var(--info);
+  color: var(--white);
   font-size: 1.5em;
   font-weight: bold;
   border: 1px solid;

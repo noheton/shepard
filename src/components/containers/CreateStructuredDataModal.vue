@@ -39,7 +39,6 @@
 <script lang="ts">
 import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
-import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
 
 interface CreateStructuredDataModalData {
@@ -104,3 +103,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style>
+#jsoneditor {
+  height: 600px;
+}
+</style>

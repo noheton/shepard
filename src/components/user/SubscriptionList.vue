@@ -28,7 +28,7 @@
             title="Delete"
             class="float-right"
             size="sm"
-            variant="dark"
+            variant="info"
             @click="currentSubscription = subscription"
           >
             <DeleteIcon />

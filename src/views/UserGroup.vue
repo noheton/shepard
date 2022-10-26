@@ -174,7 +174,7 @@ onUpdated(() => {
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
-          variant="light"
+          variant="secondary"
         >
           <PermissionsIcon />
         </b-button>
@@ -182,7 +182,7 @@ onUpdated(() => {
           v-b-modal.delete-user-group-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>
@@ -211,7 +211,7 @@ onUpdated(() => {
               v-b-modal.delete-user-confirmation-modal
               v-b-tooltip.hover
               title="Delete"
-              variant="dark"
+              variant="info"
               @click="currentUser = user"
             >
               <DeleteIcon />

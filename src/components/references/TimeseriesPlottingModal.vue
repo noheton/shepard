@@ -23,7 +23,7 @@
       <b-button
         v-b-tooltip.hover
         title="Show Plot"
-        variant="success"
+        variant="primary"
         @click="plotData()"
       >
         Show Plot
@@ -32,7 +32,7 @@
         id="exportButton"
         v-b-tooltip.hover
         title="Save Plot to .PNG"
-        variant="success"
+        variant="secondary"
         class="ml-1"
         :disabled="!plotShown"
         @click="savePlot()"

@@ -121,7 +121,7 @@ onMounted(() => {
           v-b-modal.edit-collection-modal
           v-b-tooltip.hover
           title="Edit"
-          variant="light"
+          variant="secondary"
         >
           <EditIcon />
         </b-button>
@@ -130,7 +130,7 @@ onMounted(() => {
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
-          variant="light"
+          variant="secondary"
         >
           <PermissionsIcon />
         </b-button>
@@ -138,7 +138,7 @@ onMounted(() => {
           v-b-modal.delete-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>
@@ -214,12 +214,3 @@ onMounted(() => {
     />
   </div>
 </template>
-
-<style scoped>
-.listElement {
-  border: solid thin;
-  border-color: #e3e3e3;
-  border-radius: 5px;
-  padding: 20px;
-}
-</style>

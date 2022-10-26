@@ -21,9 +21,9 @@ const fullName = computed(() => {
 </script>
 
 <template>
-  <b-navbar toggleable="lg" type="dark" variant="dark">
-    <b-navbar-brand id="brand" tag="h1" class="mb-0" to="/">
-      <img src="@/assets/Shepard_Logo_1024x191.png" height="25" />
+  <b-navbar toggleable="lg" variant="info" type="dark">
+    <b-navbar-brand class="ml-3" to="/">
+      <img src="@/assets/Shepard_Logo_1024x191.png" height="25" alt="shepard" />
     </b-navbar-brand>
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
     <b-collapse id="nav-collapse" is-nav>
@@ -47,9 +47,3 @@ const fullName = computed(() => {
     </b-collapse>
   </b-navbar>
 </template>
-
-<style scoped>
-#brand {
-  margin-left: 20px;
-}
-</style>

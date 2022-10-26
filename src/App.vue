@@ -44,39 +44,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style>
-body {
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-h3 {
-  font-weight: bold;
-}
-
-h4 {
-  margin-top: 30px;
-  margin-bottom: 10px;
-}
-
-#app {
-  margin-bottom: 20%;
-}
-
-.view {
-  margin: auto;
-  max-width: 850px;
-}
-
-.component {
-  margin-bottom: 20px;
-  margin-top: 20px;
-}
-
-.validationField {
-  border: solid;
-  border-color: red;
-  opacity: 0.6;
-}
-</style>

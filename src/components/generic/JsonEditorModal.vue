@@ -19,7 +19,6 @@ import StructuredDataService from "@/services/structuredDataService";
 import { handleError } from "@/utils/error-handling";
 import type { ResponseError } from "@dlr-shepard/shepard-client";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
-import "jsoneditor/dist/jsoneditor.css";
 import { defineComponent } from "vue";
 
 interface JsonEditorData {
@@ -98,15 +97,5 @@ export default defineComponent({
 <style>
 #jsoneditor {
   height: 600px;
-  border-color: dark;
-}
-
-.jsoneditor {
-  border: thin solid #343a40;
-}
-
-.jsoneditor-menu {
-  background-color: #343a40;
-  border-bottom: 1px solid #343a40;
 }
 </style>

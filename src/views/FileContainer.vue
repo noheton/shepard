@@ -180,7 +180,7 @@ onMounted(() => {
       <b-alert
         :show="deletedAlert"
         dismissible
-        variant="dark"
+        variant="info"
         @dismissed="deletedAlert = false"
       >
         Successfully deleted
@@ -202,7 +202,7 @@ onMounted(() => {
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
-          variant="light"
+          variant="secondary"
         >
           <PermissionsIcon />
         </b-button>
@@ -210,7 +210,7 @@ onMounted(() => {
           v-b-modal.delete-container-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>
@@ -259,7 +259,7 @@ onMounted(() => {
               v-b-modal.file-download-confirmation-modal
               v-b-tooltip.hover
               title="Download"
-              variant="success"
+              variant="secondary"
               @click="
                 if (file.oid != undefined)
                   hanldeDownloadFile(file.oid, file.filename);
@@ -271,7 +271,7 @@ onMounted(() => {
               v-b-modal.delete-file-confirmation-modal
               v-b-tooltip.hover
               title="Delete"
-              variant="dark"
+              variant="info"
               @click="currentFile = file"
             >
               <DeleteIcon />

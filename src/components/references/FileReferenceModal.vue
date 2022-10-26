@@ -101,8 +101,7 @@
             <b-col>
               <b-form-file
                 v-model="newFile"
-                variant="primary"
-                placeholder="Upload File"
+                placeholder="Choose a file or drop it here..."
               >
               </b-form-file>
             </b-col>

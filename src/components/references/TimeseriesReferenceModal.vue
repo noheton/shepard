@@ -136,7 +136,7 @@
         <b-input-group prepend="Field" class="mb-1">
           <b-form-input v-model="field" placeholder="Field"></b-form-input>
         </b-input-group>
-        <b-button class="float-right" variant="success" @click="handleAdd()">
+        <b-button class="float-right" variant="info" @click="handleAdd()">
           Add
         </b-button>
       </b-form-group>
@@ -151,7 +151,11 @@
           required
         ></b-form-select>
 
-        <b-button class="float-right" variant="danger" @click="handleDelete()">
+        <b-button
+          class="float-right"
+          variant="secondary"
+          @click="handleDelete()"
+        >
           Remove selected
         </b-button>
       </b-form-group>

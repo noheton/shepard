@@ -149,7 +149,7 @@ onMounted(() => {
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
-          variant="light"
+          variant="secondary"
         >
           <PermissionsIcon />
         </b-button>
@@ -157,7 +157,7 @@ onMounted(() => {
           v-b-modal.delete-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>

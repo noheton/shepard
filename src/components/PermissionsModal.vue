@@ -23,7 +23,7 @@
         @change="fetch()"
       ></b-form-input>
       <b-input-group-append>
-        <b-dropdown text="Add">
+        <b-dropdown text="Add" variant="info">
           <b-dropdown-item :disabled="!validUser" @click="setOwner()">
             Owner
           </b-dropdown-item>
@@ -60,7 +60,7 @@
         class="d-flex justify-content-between align-items-center"
       >
         {{ owner.firstName }} {{ owner.lastName }}
-        <b-button variant="light" size="sm" @click="owner = undefined">
+        <b-button variant="secondary" size="sm" @click="owner = undefined">
           <DeleteIcon />
         </b-button>
       </b-list-group-item>
@@ -77,7 +77,7 @@
           >
             <div><UserIcon /> {{ user.firstName }} {{ user.lastName }}</div>
             <b-button
-              variant="light"
+              variant="secondary"
               size="sm"
               @click="reader.splice(index, 1)"
             >
@@ -92,7 +92,7 @@
           >
             <div><UserGroupIcon /> {{ group.name }}</div>
             <b-button
-              variant="light"
+              variant="secondary"
               size="sm"
               @click="readerGroup.splice(index, 1)"
             >
@@ -114,7 +114,7 @@
               {{ user.lastName }}
             </div>
             <b-button
-              variant="light"
+              variant="secondary"
               size="sm"
               @click="writer.splice(index, 1)"
             >
@@ -128,7 +128,7 @@
           >
             <div><UserGroupIcon /> {{ group.name }}</div>
             <b-button
-              variant="light"
+              variant="secondary"
               size="sm"
               @click="writerGroup.splice(index, 1)"
             >
@@ -147,7 +147,7 @@
           >
             <div><UserIcon /> {{ user.firstName }} {{ user.lastName }}</div>
             <b-button
-              variant="light"
+              variant="secondary"
               size="sm"
               @click="manager.splice(index, 1)"
             >

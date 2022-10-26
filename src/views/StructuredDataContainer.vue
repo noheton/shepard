@@ -154,7 +154,7 @@ onMounted(() => {
       <b-alert
         :show="deletedAlert"
         dismissible
-        variant="dark"
+        variant="info"
         @dismissed="deletedAlert = false"
       >
         Successfully deleted
@@ -176,7 +176,7 @@ onMounted(() => {
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
-          variant="light"
+          variant="secondary"
         >
           <PermissionsIcon />
         </b-button>
@@ -184,7 +184,7 @@ onMounted(() => {
           v-b-modal.delete-structured-data-container-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>
@@ -212,7 +212,7 @@ onMounted(() => {
               v-b-modal.json-editor-modal
               v-b-tooltip.hover
               title="Show Editor"
-              variant="light"
+              variant="secondary"
               @click="currentStructuredData = structuredData"
             >
               <EyeIcon />
@@ -221,7 +221,7 @@ onMounted(() => {
               v-b-modal.delete-structured-data-confirmation-modal
               v-b-tooltip.hover
               title="Delete"
-              variant="dark"
+              variant="info"
               @click="currentStructuredData = structuredData"
             >
               <DeleteIcon />

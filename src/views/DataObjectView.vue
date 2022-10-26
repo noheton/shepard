@@ -124,7 +124,7 @@ onMounted(() => {
           v-b-modal.edit-dataObject-modal
           v-b-tooltip.hover
           title="Edit"
-          variant="light"
+          variant="secondary"
         >
           <EditIcon />
         </b-button>
@@ -132,7 +132,7 @@ onMounted(() => {
           v-b-modal.data-object-delete-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
-          variant="dark"
+          variant="info"
         >
           <DeleteIcon />
         </b-button>

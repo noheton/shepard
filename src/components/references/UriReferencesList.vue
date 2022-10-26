@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="dark"
+      variant="info"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -38,7 +38,7 @@
             v-b-tooltip.hover
             class="float-right"
             title="Delete"
-            variant="dark"
+            variant="info"
             @click="currentUriReference = uriItem"
           >
             <DeleteIcon />

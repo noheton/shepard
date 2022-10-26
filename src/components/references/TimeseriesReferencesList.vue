@@ -11,7 +11,7 @@
     <b-alert
       :show="deletedAlert"
       dismissible
-      variant="dark"
+      variant="info"
       @dismissed="deletedAlert = false"
     >
       Successfully deleted
@@ -78,7 +78,7 @@
             <b-button
               v-b-tooltip.hover
               title="Download"
-              variant="light"
+              variant="secondary"
               :disabled="
                 downloadActive || timeseriesItem.timeseriesContainerId == -1
               "
@@ -93,7 +93,7 @@
               v-b-modal.timeseries-reference-delete-confirmation-modal
               v-b-tooltip.hover
               title="Delete"
-              variant="dark"
+              variant="info"
               @click="currentTimeseriesReference = timeseriesItem"
             >
               <DeleteIcon />

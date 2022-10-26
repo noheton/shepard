@@ -133,11 +133,11 @@ function getDataObjectBreadcrumb(
   margin-top: 30px;
   margin-bottom: 0px;
   padding: 0px;
-  background-color: #fff;
+  background-color: var(--white);
 }
 
 hr {
   margin-top: 4px;
-  border-top: 1px solid #343a40;
+  border-top: 1px solid var(--info);
 }
 </style>
