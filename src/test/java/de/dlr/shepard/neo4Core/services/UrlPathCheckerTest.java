@@ -32,6 +32,7 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
 import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.util.Constants;
 import jakarta.ws.rs.core.PathSegment;
 
@@ -67,6 +68,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	ApiKeyService apiKeyService;
 	@Mock
 	SubscriptionService subscriptionService;
+	@Mock
+	UserGroupService userGroupService;
 
 	@Mock
 	PathSegment slashSeg, dummySeg, dummyIdSeg;
@@ -77,6 +80,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 	@Mock
 	PathSegment usersSeg, userIdSeg, apiKeysSeg, apiKeyIdSeg, subscriptionsSeg, subscriptionIdSeg;
+
+	@Mock
+	PathSegment userGroupsSeg, userGroupIdSeg;
 
 	@Mock
 	PathSegment timeseriesSeg, timeseriesIdSeg, timeseriesReferencesSeg, timeseriesReferenceIdSeg;
@@ -126,6 +132,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectReferencesSeg.getPath()).thenReturn(Constants.DATAOBJECT_REFERENCES);
 
 		when(collectionReferencesSeg.getPath()).thenReturn(Constants.COLLECTION_REFERENCES);
+
+		when(userGroupsSeg.getPath()).thenReturn(Constants.USERGROUP);
 	}
 
 	@Test
@@ -395,21 +403,6 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	}
 
 	@Test
-	public void timeseries_wrongUrl() {
-		List<PathSegment> segments = new ArrayList<>();
-
-		segments.add(dummySeg);
-		segments.add(dummyIdSeg);
-		segments.add(timeseriesSeg);
-		segments.add(timeseriesIdSeg);
-
-		when(timeseriesIdSeg.getPath()).thenReturn("200");
-
-		urlPathChecker.checkPathSegments(segments);
-		verify(timeseriesContainerService, never()).getContainer(200);
-	}
-
-	@Test
 	public void timeseriesReference_exists() {
 		List<PathSegment> segments = new ArrayList<>();
 		segments.add(collectionsSeg);
@@ -626,21 +619,6 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
-	}
-
-	@Test
-	public void file_wrongUrl() {
-		List<PathSegment> segments = new ArrayList<>();
-
-		segments.add(dummySeg);
-		segments.add(dummyIdSeg);
-		segments.add(filesSeg);
-		segments.add(fileIdSeg);
-
-		when(fileIdSeg.getPath()).thenReturn("200");
-
-		urlPathChecker.checkPathSegments(segments);
-		verify(fileContainerService, never()).getContainer(200);
 	}
 
 	@Test
@@ -1016,6 +994,31 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
+	}
+
+	@Test
+	public void usergroups_notFound() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(userGroupsSeg);
+		segments.add(userGroupIdSeg);
+		when(userGroupIdSeg.getPath()).thenReturn("100");
+		when(userGroupService.getUserGroup(100L)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - UserGroup does not exist", e.getMessage());
+	}
+
+	@Test
+	public void usergroups_exists() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(userGroupsSeg);
+		segments.add(userGroupIdSeg);
+		when(userGroupIdSeg.getPath()).thenReturn("100");
+
+		UserGroup userGroup = new UserGroup(100L);
+		when(userGroupService.getUserGroup(100L)).thenReturn(userGroup);
+
+		urlPathChecker.checkPathSegments(segments);
 	}
 
 	@Test

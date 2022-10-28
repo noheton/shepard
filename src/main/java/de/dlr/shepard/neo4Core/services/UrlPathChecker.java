@@ -12,6 +12,7 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.util.Constants;
 import jakarta.ws.rs.core.PathSegment;
 
@@ -36,6 +37,8 @@ public class UrlPathChecker {
 	private UserService userService = new UserService();
 	private ApiKeyService apiKeyService = new ApiKeyService();
 	private SubscriptionService subscrptionService = new SubscriptionService();
+
+	private UserGroupService userGroupService = new UserGroupService();
 
 	/**
 	 * Checks the url for wrong ids. A wrong id could identify a non existing
@@ -94,7 +97,7 @@ public class UrlPathChecker {
 			}
 		}
 
-		if (pathElems.containsKey(Constants.TIMESERIES) && pathSegments.get(0).getPath().equals(Constants.TIMESERIES)) {
+		if (pathElems.containsKey(Constants.TIMESERIES)) {
 			long id = Long.parseLong(pathElems.get(Constants.TIMESERIES));
 			var timeseriesContainer = timeseriesContainerService.getContainer(id);
 			String error = checkContainer(timeseriesContainer);
@@ -131,7 +134,7 @@ public class UrlPathChecker {
 			}
 		}
 
-		if (pathElems.containsKey(Constants.FILES) && pathSegments.get(0).getPath().equals(Constants.FILES)) {
+		if (pathElems.containsKey(Constants.FILES)) {
 			long id = Long.parseLong(pathElems.get(Constants.FILES));
 			var fileContainer = fileContainerService.getContainer(id);
 			String error = checkContainer(fileContainer);
@@ -202,6 +205,15 @@ public class UrlPathChecker {
 			}
 		}
 
+		if (pathElems.containsKey(Constants.USERGROUP)) {
+			long id = Long.parseLong(pathElems.get(Constants.USERGROUP));
+			var usergroup = userGroupService.getUserGroup(id);
+			String error = checkUserGroup(usergroup);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
 		return "ok";
 	}
 
@@ -258,6 +270,13 @@ public class UrlPathChecker {
 			return "Subscription does not exist";
 		} else if (user.getSubscriptions().stream().noneMatch(s -> s.getId().equals(subscription.getId()))) {
 			return "There is no association between subscription and user";
+		}
+		return null;
+	}
+
+	private String checkUserGroup(UserGroup userGroup) {
+		if (userGroup == null) {
+			return "UserGroup does not exist";
 		}
 		return null;
 	}

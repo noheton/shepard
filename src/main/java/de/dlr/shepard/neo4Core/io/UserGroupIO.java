@@ -15,14 +15,10 @@ import lombok.NoArgsConstructor;
 public class UserGroupIO extends AbstractEntityIO {
 
 	@NotNull
-	private String name;
-
-	@NotNull
 	private String[] usernames;
 
 	public UserGroupIO(UserGroup userGroup) {
 		super(userGroup);
-		this.name = userGroup.getName();
 		this.usernames = userGroup.getUsers().stream().map(User::getUsername).toArray(String[]::new);
 	}
 
