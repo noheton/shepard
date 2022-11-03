@@ -20,6 +20,6 @@ public class InfluxPoint {
 	@Schema(description = "Time in nanoseconds since epoch")
 	private long timeInNanoseconds;
 
-	@Schema(description = "A string, a number or a boolean")
+	@Schema(description = "A string, a number or a boolean", anyOf = { String.class, Number.class, Boolean.class })
 	private Object value;
 }
