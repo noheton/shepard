@@ -73,7 +73,7 @@
         />
         <div v-for="(oid, jndex) in fileReference.fileOids" :key="jndex">
           <small v-if="files[oid]">
-            <a v-if="fileReference.fileContainerId != -1">
+            <span v-if="fileReference.fileContainerId != -1">
               <b-link
                 :disabled="downloadActive"
                 @click="
@@ -83,8 +83,8 @@
               >
                 <DownloadIcon />
               </b-link>
-            </a>
-            <a v-else><DownloadIcon variant="danger" /></a>
+            </span>
+            <span v-else><DownloadIcon variant="danger" /></span>
             <b> Oid:</b> <tt>{{ oid }}</tt>
             <span v-if="files[oid].createdAt">
               | <b>Created at:</b>
@@ -92,6 +92,19 @@
             </span>
             | <b>Filename:</b>
             {{ files[oid].filename }}
+            <b-button
+              v-if="files[oid].filename?.match(/\.(jpg|jpeg|png|gif)$/i)"
+              v-b-modal.image-viewer-modal
+              v-b-tooltip.hover
+              class="float-right"
+              size="sm"
+              variant="primary"
+              title="Show Image"
+              style="font-size: 0.6em"
+              @click="showImageClicked(fileReference, oid)"
+            >
+              <EyeIcon />
+            </b-button>
           </small>
         </div>
       </b-list-group-item>
@@ -108,6 +121,14 @@
       "
       @confirmation="handleDelete()"
     />
+
+    <ImageViewerModal
+      v-if="currentFileReference && currentFileOid"
+      modal-id="image-viewer-modal"
+      :modal-name="files[currentFileOid]?.filename"
+      :container-id="currentFileReference.fileContainerId"
+      :oid="currentFileOid"
+    />
   </div>
 </template>
 
@@ -115,6 +136,7 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import ImageViewerModal from "@/components/generic/ImageViewerModal.vue";
 import Loading from "@/components/generic/Loading.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
@@ -137,6 +159,7 @@ interface FileListData {
   downloadError: boolean;
   downloadErrorMessage: string;
   currentFileReference?: FileReference;
+  currentFileOid?: string;
   createdAlert: boolean;
   deletedAlert: boolean;
 }
@@ -148,6 +171,7 @@ export default defineComponent({
     FileReferenceModal,
     DeleteConfirmationModal,
     GenericName,
+    ImageViewerModal,
     Loading,
   },
   props: {
@@ -169,6 +193,7 @@ export default defineComponent({
       downloadError: false,
       downloadErrorMessage: "",
       currentFileReference: undefined,
+      currentFileOid: undefined,
       createdAlert: false,
       deletedAlert: false,
     } as FileListData;
@@ -274,6 +299,10 @@ export default defineComponent({
     },
     convertDate(date: Date | undefined | null) {
       if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
+    },
+    showImageClicked(fileReference: FileReference, oid: string) {
+      this.currentFileReference = fileReference;
+      this.currentFileOid = oid;
     },
   },
 });

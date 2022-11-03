@@ -93,7 +93,7 @@ function uploadFile(newFile: Blob) {
       });
 }
 
-function hanldeDownloadFile(oid: string, filename?: string) {
+function handleDownloadFile(oid: string, filename?: string) {
   downloadActive.value = true;
   if (currentFileContainer.value?.id)
     FileService.getFile({
@@ -262,7 +262,7 @@ onMounted(() => {
               variant="secondary"
               @click="
                 if (file.oid != undefined)
-                  hanldeDownloadFile(file.oid, file.filename);
+                  handleDownloadFile(file.oid, file.filename);
               "
             >
               <DownloadIcon />

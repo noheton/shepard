@@ -85,10 +85,7 @@
               v-b-modal.json-editor-modal
               v-b-tooltip.hover
               title="Show Viewer"
-              @click="
-                (currentStructuredDataReference = structuredDataReference),
-                  (currentStructuredDataOid = oid)
-              "
+              @click="showViewerClicked(structuredDataReference, oid)"
             >
               <EyeIcon />
             </b-link>
@@ -263,6 +260,13 @@ export default defineComponent({
     },
     convertDate(date: Date | undefined | null) {
       if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
+    },
+    showViewerClicked(
+      structuredDataReference: StructuredDataReference,
+      oid: string,
+    ) {
+      this.currentStructuredDataReference = structuredDataReference;
+      this.currentStructuredDataOid = oid;
     },
   },
 });
