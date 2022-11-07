@@ -129,7 +129,7 @@ public class FileRestImpl implements FileRest {
 	public Response createFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@FormDataParam(Constants.FILE) InputStream fileInputStream,
 			@FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData) {
-		String fileName = fileMetaData.getFileName();
+		String fileName = fileMetaData != null ? fileMetaData.getFileName() : null;
 		var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
 		return result != null ? Response.status(Status.CREATED).entity(result).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();

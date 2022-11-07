@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -180,6 +181,54 @@ public class FileContainerServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", "filename", null)).thenReturn(file);
 		var actual = service.createFile(1L, "filename", null);
+
+		assertEquals(file, actual);
+		verify(dao).createOrUpdate(updated);
+	}
+
+	@Test
+	public void createFileTest_filenameIsNull() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		var file = new ShepardFile("oid", new Date(), "name", "md5");
+
+		var date = new Date();
+		when(dateHelper.getDate()).thenReturn(date);
+		var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+		var dateStr = sdf.format(dateHelper.getDate());
+		var fileName = "shepard-file-" + dateStr;
+
+		var updated = new FileContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.addFile(file);
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
+		var actual = service.createFile(1L, null, null);
+
+		assertEquals(file, actual);
+		verify(dao).createOrUpdate(updated);
+	}
+
+	@Test
+	public void createFileTest_filenameIsBlank() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+		var file = new ShepardFile("oid", new Date(), "name", "md5");
+
+		var date = new Date();
+		when(dateHelper.getDate()).thenReturn(date);
+		var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+		var dateStr = sdf.format(dateHelper.getDate());
+		var fileName = "shepard-file-" + dateStr;
+
+		var updated = new FileContainer(1L);
+		updated.setMongoId("mongoId");
+		updated.addFile(file);
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
+		var actual = service.createFile(1L, "", null);
 
 		assertEquals(file, actual);
 		verify(dao).createOrUpdate(updated);

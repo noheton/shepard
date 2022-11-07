@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import de.dlr.shepard.mongoDB.FileService;
@@ -128,6 +129,11 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 		if (fileContainer == null || fileContainer.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;
+		}
+		if (fileName == null || fileName.isBlank()) {
+			var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+			var dateStr = sdf.format(dateHelper.getDate());
+			fileName = "shepard-file-" + dateStr;
 		}
 		var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
 		fileContainer.addFile(result);
