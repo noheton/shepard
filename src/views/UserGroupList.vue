@@ -32,7 +32,7 @@
           :to="String(userGroup.id)"
           append
         >
-          <b><GenericName :name="userGroup.name" :word-count="60" /></b>
+          <b><GenericName :name="userGroup.name || ''" :word-count="60" /></b>
           ID: {{ userGroup.id }}
         </b-list-group-item>
       </b-list-group>
