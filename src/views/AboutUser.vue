@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useClipboard } from "@vueuse/core";
 import type { User } from "oidc-client";
 import { computed } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
@@ -30,8 +31,7 @@ const claims = computed<
 });
 
 function copyBearerToken() {
-  if (oidcAccessToken.value)
-    navigator.clipboard.writeText(oidcAccessToken.value);
+  if (oidcAccessToken.value) useClipboard().copy(oidcAccessToken.value);
 }
 </script>
 

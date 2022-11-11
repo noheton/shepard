@@ -1,6 +1,9 @@
 import type { ResponseError } from "@dlr-shepard/shepard-client";
+import { useEventBus } from "@vueuse/core";
 import log from "loglevel";
-import { emitter, type ErrorType } from "./event-bus";
+import { errorKey, type ErrorType } from "./event-bus";
+
+const bus = useEventBus(errorKey);
 
 function isErrorType(error: object): error is ErrorType {
   return "status" in error && "exception" in error && "message" in error;
@@ -41,7 +44,7 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
 export function handleError(e: ResponseError, situation: string) {
   parseResponseError(e as ResponseError).then(parsedError => {
     log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
-    emitter.emit("error", {
+    bus.emit({
       situation: situation,
       error: parsedError,
     });

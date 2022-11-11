@@ -21,7 +21,8 @@
 <script lang="ts">
 import Breadcrumb from "@/components/Breadcrumb.vue";
 import Navbar from "@/components/Navbar.vue";
-import { emitter } from "@/utils/event-bus";
+import { errorKey } from "@/utils/event-bus";
+import { useEventBus } from "@vueuse/core";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -32,10 +33,11 @@ export default defineComponent({
       errorException: "",
       errorMessage: "",
       errorAlert: false,
+      bus: useEventBus(errorKey),
     };
   },
   created() {
-    emitter.on("error", e => {
+    this.bus.on(e => {
       this.errorSituation = e.situation;
       this.errorException = e.error.exception;
       this.errorMessage = e.error.message;

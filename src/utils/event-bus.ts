@@ -1,4 +1,4 @@
-import mitt from "mitt";
+import type { EventBusKey } from "@vueuse/core";
 
 export type ErrorType = {
   status: number;
@@ -6,11 +6,5 @@ export type ErrorType = {
   message: string;
 };
 
-type Events = {
-  error: {
-    error: ErrorType;
-    situation: string;
-  };
-};
-
-export const emitter = mitt<Events>();
+export const errorKey: EventBusKey<{ error: ErrorType; situation: string }> =
+  Symbol("error-key");

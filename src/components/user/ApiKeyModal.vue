@@ -15,11 +15,24 @@
         <CopyIcon />
       </b-link>
     </div>
+    <div>
+      The shepard backend can be reached via the following URL
+      <code>{{ backendUrl }}</code>
+      <b-link
+        title="Copy Backend URL"
+        class="float-right"
+        @click="copyBackendUrl()"
+      >
+        <CopyIcon />
+      </b-link>
+    </div>
   </b-modal>
 </template>
 
 <script lang="ts">
+import getEnv from "@/utils/env";
 import type { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
+import { useClipboard } from "@vueuse/core";
 import { defineComponent, type PropType } from "vue";
 
 export default defineComponent({
@@ -29,6 +42,9 @@ export default defineComponent({
       default: undefined,
     },
   },
+  data() {
+    return { backendUrl: getEnv("VITE_BACKEND") };
+  },
   watch: {
     createdApiKey() {
       if (this.createdApiKey) this.$bvModal.show("created-apikey-modal");
@@ -37,7 +53,10 @@ export default defineComponent({
   methods: {
     copyApiKey() {
       if (!this.createdApiKey || !this.createdApiKey.jwt) return;
-      navigator.clipboard.writeText(this.createdApiKey.jwt);
+      useClipboard().copy(this.createdApiKey.jwt);
+    },
+    copyBackendUrl() {
+      useClipboard().copy(this.backendUrl);
     },
   },
 });
