@@ -100,7 +100,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	}
 
 	@POST
-	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
 	@Subscribable
 	@Override
 	public Response createTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
@@ -111,14 +111,14 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	}
 
 	@GET
-	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload")
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
 	@Override
 	public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
 		return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId)).build();
 	}
 
 	@GET
-	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/payload/select")
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
 	@Override
 	public Response getTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
 			@QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
@@ -172,7 +172,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/import")
+	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
 	@Subscribable
 	@Override
 	public Response importTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,

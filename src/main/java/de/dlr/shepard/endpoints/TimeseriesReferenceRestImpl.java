@@ -84,7 +84,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	}
 
 	@GET
-	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/payload")
+	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/" + Constants.PAYLOAD)
 	@Override
 	public Response getTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

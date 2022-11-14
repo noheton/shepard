@@ -17,6 +17,7 @@ import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -107,8 +108,9 @@ public class TimeseriesTest extends BaseTestCaseIT {
 	@Test
 	@Order(5)
 	public void getTimeseriesAvailable() {
-		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(Timeseries[].class);
+		var actual = given().spec(containerRequestSpec).when()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.AVAILABLE).then().statusCode(200)
+				.extract().as(Timeseries[].class);
 
 		assertThat(actual).contains(new Timeseries("meas", "dev", "loc", "symName", null));
 	}
@@ -119,7 +121,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
 		var actual = given().spec(containerRequestSpec).when()
 				.queryParams(Map.of("measurement", "meas", "location", "loc", "device", "dev", "symbolic_name",
 						"symName", "field", "field", "start", start, "end", end))
-				.get(containerURL + "/" + container.getId() + "/payload/select").then().statusCode(200).extract()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD).then().statusCode(200).extract()
 				.as(TimeseriesPayload.class);
 
 		assertThat(actual).isEqualTo(payload);

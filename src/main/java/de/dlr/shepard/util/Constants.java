@@ -61,6 +61,9 @@ public class Constants {
 	public static final String TIMESERIES_REFERENCE = "timeseriesReference";
 	public static final String TIMESERIES_REFERENCES = "timeseriesReferences";
 	public static final String TIMESERIES_REFERENCE_ID = "timeseriesReferenceId";
+	public static final String PAYLOAD = "payload";
+	public static final String AVAILABLE = "available";
+	public static final String IMPORT = "import";
 
 	public static final String DATAOBJECT_REFERENCE = "dataObjectReference";
 	public static final String DATAOBJECT_REFERENCES = "dataObjectReferences";
