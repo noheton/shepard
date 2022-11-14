@@ -21,5 +21,7 @@ public class InfluxPoint {
 	private long timeInNanoseconds;
 
 	@Schema(description = "A string, a number or a boolean")
+	// TODO: Add anyOf = { String.class, Number.class, Boolean.class }
+	// https://github.com/OpenAPITools/openapi-generator/issues/12556
 	private Object value;
 }
