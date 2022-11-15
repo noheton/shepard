@@ -21,7 +21,11 @@
     },
     {
       "matchPackageNames": ["bootstrap"],
-      "allowedVersions": "<5"
+      "allowedVersions": "4"
+    },
+    {
+      "matchPackageNames": ["chart.js"],
+      "allowedVersions": "3"
     },
     {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
