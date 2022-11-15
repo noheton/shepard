@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import FileService from "@/services/fileService";
-import { handleError } from "@/utils/error-handling";
+import { logError } from "@/utils/error-handling";
 import type { ResponseError } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const props = defineProps({
   modalId: {
     type: String,
-    default: "JsonEditorModal",
+    default: "TextViewerModal",
   },
   modalName: {
     type: String,
-    default: "JsonEditorModal",
+    default: "Text Viewer Modal",
   },
   containerId: {
     type: Number,
@@ -23,26 +23,31 @@ const props = defineProps({
   },
 });
 
+const text = ref("");
+const error = ref(false);
 function retrievePayload() {
+  text.value = "";
+  error.value = false;
   FileService.getFile({
     fileContainerId: props.containerId,
     oid: props.oid,
   })
     .then(response => {
-      showFile(response);
+      response
+        .text()
+        .then(value => {
+          text.value = value;
+        })
+        .catch(() => {
+          text.value = "";
+          error.value = true;
+        });
     })
     .catch(e => {
-      handleError(e as ResponseError, "fetching file payload");
+      logError(e as ResponseError, "fetching file payload");
+      text.value = "";
+      error.value = true;
     });
-}
-
-const objectURL = ref<string>();
-function showFile(response: Blob) {
-  if (objectURL.value) URL.revokeObjectURL(objectURL.value);
-  objectURL.value = URL.createObjectURL(response);
-  const myImage: (Element & { src: string }) | null =
-    document.querySelector("#image");
-  if (myImage != null) myImage.src = objectURL.value;
 }
 </script>
 
@@ -57,8 +62,13 @@ function showFile(response: Blob) {
       ok-only
       @show="retrievePayload()"
     >
+      <b-alert :show="error" variant="danger">File not found</b-alert>
       <div>
-        <b-img id="image" fluid />
+        <b-form-textarea
+          v-model="text"
+          plaintext
+          max-rows="20"
+        ></b-form-textarea>
       </div>
     </b-modal>
   </div>

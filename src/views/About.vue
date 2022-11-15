@@ -2,11 +2,7 @@
 import Loading from "@/components/generic/Loading.vue";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
-import {
-  HealthzFromJSON,
-  type Healthz,
-  type ResponseError,
-} from "@dlr-shepard/shepard-client";
+import type { Healthz, ResponseError } from "@dlr-shepard/shepard-client";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import { onMounted, ref } from "vue";
 import { version as appVersion } from "../../package.json";
@@ -38,7 +34,7 @@ function fetchHealthz() {
         .read();
       if (result?.value) {
         const errorString = new TextDecoder().decode(result.value);
-        health.value = HealthzFromJSON(errorString);
+        health.value = JSON.parse(errorString);
       }
     });
 }

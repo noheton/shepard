@@ -1,3 +1,166 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
+import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
+import ImageViewerModal from "@/components/references/ImageViewerModal.vue";
+import TextViewerModal from "@/components/references/TextViewerModal.vue";
+import FileReferenceService from "@/services/fileReferenceService";
+import { downloadFile } from "@/utils/download";
+import { handleError, logError } from "@/utils/error-handling";
+import { dateFormat } from "@/utils/helpers";
+import type {
+  FileReference,
+  ResponseError,
+  ShepardFile,
+} from "@dlr-shepard/shepard-client";
+import {
+  BAlert,
+  BButton,
+  BLink,
+  BListGroup,
+  BListGroupItem,
+} from "bootstrap-vue";
+import { onMounted, ref } from "vue";
+
+const props = defineProps({
+  currentCollectionId: {
+    type: Number,
+    required: true,
+  },
+  currentDataObjectId: {
+    type: Number,
+    required: true,
+  },
+});
+
+const fileReferenceList = ref<FileReference[]>();
+const files = ref<{ [key: string]: ShepardFile }>({});
+const downloadFinished = ref(false);
+const downloadActive = ref(false);
+const downloadError = ref(false);
+const downloadErrorMessage = ref("");
+const currentFileReference = ref<FileReference>();
+const currentFileOid = ref<string>();
+const createdAlert = ref(false);
+const deletedAlert = ref(false);
+
+function retrieveReferences() {
+  FileReferenceService.getAllFileReferences({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+  })
+    .then(response => {
+      fileReferenceList.value = response;
+      fileReferenceList.value.forEach(reference => {
+        if (reference.id) getFiles(reference.id);
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching file references");
+    });
+}
+
+function getFiles(id: number) {
+  FileReferenceService.getFiles({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: id,
+  })
+    .then(response => {
+      const temp: { [key: string]: ShepardFile } = {};
+      response.forEach(payload => {
+        if (payload?.oid) {
+          temp[payload.oid] = payload;
+        }
+      });
+      files.value = { ...files.value, ...temp };
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching files");
+    });
+}
+
+function getFilePayload(
+  fileReferenceId: number,
+  oid: string,
+  filename?: string,
+) {
+  downloadActive.value = true;
+  FileReferenceService.getFilePayload({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: fileReferenceId,
+    oid: oid,
+  })
+    .then(response => {
+      downloadFile(response, filename);
+      downloadFinished.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching file payload");
+      downloadError.value = true;
+      if (e.response.status == 403) {
+        downloadErrorMessage.value =
+          "Authentication Error: No permission to access this file container";
+      } else if (e.response.status == 404) {
+        downloadErrorMessage.value =
+          "Not Found: File no longer exists in the container";
+      }
+    })
+    .finally(() => (downloadActive.value = false));
+}
+
+function create(newReference: FileReference) {
+  FileReferenceService.createFileReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReference: newReference,
+  })
+    .then(response => {
+      createdAlert.value = true;
+      fileReferenceList.value = [response].concat(
+        fileReferenceList.value || [],
+      );
+      if (response.id) retrieveReferences();
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating file reference");
+    });
+}
+
+function handleDelete() {
+  if (!currentFileReference.value?.id) return;
+  FileReferenceService.deleteFileReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: currentFileReference.value.id,
+  })
+    .then(() => {
+      deletedAlert.value = true;
+      retrieveReferences();
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting file reference");
+    });
+}
+
+function convertDate(date: Date | undefined | null) {
+  if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
+}
+
+function setCurrentFileReference(fileReference: FileReference, oid: string) {
+  currentFileReference.value = fileReference;
+  currentFileOid.value = oid;
+}
+
+onMounted(() => {
+  retrieveReferences();
+});
+</script>
+
 <template>
   <div class="list">
     <b-alert
@@ -93,7 +256,7 @@
             | <b>Filename:</b>
             {{ files[oid].filename }}
             <b-button
-              v-if="files[oid].filename?.match(/\.(jpg|jpeg|png|gif)$/i)"
+              v-if="files[oid].filename?.match(/\.(jpg|jpeg|png|gif|bmp)$/i)"
               v-b-modal.image-viewer-modal
               v-b-tooltip.hover
               class="float-right"
@@ -101,7 +264,20 @@
               variant="primary"
               title="Show Image"
               style="font-size: 0.6em"
-              @click="showImageClicked(fileReference, oid)"
+              @click="setCurrentFileReference(fileReference, oid)"
+            >
+              <EyeIcon />
+            </b-button>
+            <b-button
+              v-if="files[oid].filename?.match(/\.(txt|md|json|yaml|toml)$/i)"
+              v-b-modal.text-viewer-modal
+              v-b-tooltip.hover
+              class="float-right"
+              size="sm"
+              variant="primary"
+              title="Show Text"
+              style="font-size: 0.6em"
+              @click="setCurrentFileReference(fileReference, oid)"
             >
               <EyeIcon />
             </b-button>
@@ -129,181 +305,13 @@
       :container-id="currentFileReference.fileContainerId"
       :oid="currentFileOid"
     />
+
+    <TextViewerModal
+      v-if="currentFileReference && currentFileOid"
+      modal-id="text-viewer-modal"
+      :modal-name="files[currentFileOid]?.filename"
+      :container-id="currentFileReference.fileContainerId"
+      :oid="currentFileOid"
+    />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import ImageViewerModal from "@/components/generic/ImageViewerModal.vue";
-import Loading from "@/components/generic/Loading.vue";
-import ProcessAlert from "@/components/ProcessAlert.vue";
-import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
-import FileReferenceService from "@/services/fileReferenceService";
-import { downloadFile } from "@/utils/download";
-import { handleError, logError } from "@/utils/error-handling";
-import { dateFormat } from "@/utils/helpers";
-import type {
-  FileReference,
-  ResponseError,
-  ShepardFile,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface FileListData {
-  fileReferenceList?: FileReference[];
-  files: { [key: string]: ShepardFile };
-  downloadFinished: boolean;
-  downloadActive: boolean;
-  downloadError: boolean;
-  downloadErrorMessage: string;
-  currentFileReference?: FileReference;
-  currentFileOid?: string;
-  createdAlert: boolean;
-  deletedAlert: boolean;
-}
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    ProcessAlert,
-    FileReferenceModal,
-    DeleteConfirmationModal,
-    GenericName,
-    ImageViewerModal,
-    Loading,
-  },
-  props: {
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      fileReferenceList: undefined,
-      files: {},
-      downloadFinished: false,
-      downloadActive: false,
-      downloadError: false,
-      downloadErrorMessage: "",
-      currentFileReference: undefined,
-      currentFileOid: undefined,
-      createdAlert: false,
-      deletedAlert: false,
-    } as FileListData;
-  },
-  mounted() {
-    this.retrieveReferences();
-  },
-  methods: {
-    retrieveReferences() {
-      FileReferenceService.getAllFileReferences({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-      })
-        .then(response => {
-          this.fileReferenceList = response;
-          this.fileReferenceList.forEach(reference => {
-            if (reference.id) this.getFiles(reference.id);
-          });
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching file references");
-        });
-    },
-
-    getFiles(id: number) {
-      FileReferenceService.getFiles({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        fileReferenceId: id,
-      })
-        .then(response => {
-          const temp: { [key: string]: ShepardFile } = {};
-          response.forEach(payload => {
-            if (payload?.oid) {
-              temp[payload.oid] = payload;
-            }
-          });
-          this.files = { ...this.files, ...temp };
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching files");
-        });
-    },
-
-    getFilePayload(fileReferenceId: number, oid: string, filename?: string) {
-      this.downloadActive = true;
-      FileReferenceService.getFilePayload({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        fileReferenceId: fileReferenceId,
-        oid: oid,
-      })
-        .then(response => {
-          downloadFile(response, filename);
-          this.downloadFinished = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching file payload");
-          this.downloadError = true;
-          if (e.response.status == 403) {
-            this.downloadErrorMessage =
-              "Authentication Error: No permission to access this file container";
-          } else if (e.response.status == 404) {
-            this.downloadErrorMessage =
-              "Not Found: File no longer exists in the container";
-          }
-        })
-        .finally(() => (this.downloadActive = false));
-    },
-
-    create(newReference: FileReference) {
-      FileReferenceService.createFileReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        fileReference: newReference,
-      })
-        .then(response => {
-          this.createdAlert = true;
-          this.fileReferenceList = [response].concat(
-            this.fileReferenceList || [],
-          );
-          if (response.id) this.retrieveReferences();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating file reference");
-        });
-    },
-
-    handleDelete() {
-      if (!this.currentFileReference?.id) return;
-      FileReferenceService.deleteFileReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        fileReferenceId: this.currentFileReference.id,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveReferences();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting file reference");
-        });
-    },
-    convertDate(date: Date | undefined | null) {
-      if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
-    },
-    showImageClicked(fileReference: FileReference, oid: string) {
-      this.currentFileReference = fileReference;
-      this.currentFileOid = oid;
-    },
-  },
-});
-</script>
