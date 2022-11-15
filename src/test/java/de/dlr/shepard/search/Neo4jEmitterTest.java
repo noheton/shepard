@@ -401,8 +401,6 @@ public class Neo4jEmitterTest extends BaseTestCase {
 				}
 				""";
 
-		assertThrows(ShepardParserException.class, () -> {
-			Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName);
-		});
+		assertThrows(ShepardParserException.class, () -> Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName));
 	}
 }

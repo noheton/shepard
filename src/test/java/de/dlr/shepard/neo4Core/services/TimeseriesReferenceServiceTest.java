@@ -268,10 +268,8 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
-		assertThrows(InvalidAuthException.class, () -> {
-			service.getTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"),
-					Set.of("loc"), Set.of("name"), "bob");
-		});
+		assertThrows(InvalidAuthException.class, () -> service.getTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN,
+				10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob"));
 	}
 
 	@Test
@@ -321,10 +319,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
 
-		assertThrows(InvalidAuthException.class, () -> {
-			service.exportTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"),
-					Set.of("loc"), Set.of("name"), "bob");
-		});
+		assertThrows(InvalidAuthException.class,
+				() -> service.exportTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR,
+						Set.of("dev"), Set.of("loc"), Set.of("name"), "bob"));
 	}
 
 }

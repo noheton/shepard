@@ -370,8 +370,6 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.find(1L)).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
 
-		assertThrows(InvalidAuthException.class, () -> {
-			service.getPayload(1L, "abc", "bob");
-		});
+		assertThrows(InvalidAuthException.class, () -> service.getPayload(1L, "abc", "bob"));
 	}
 }

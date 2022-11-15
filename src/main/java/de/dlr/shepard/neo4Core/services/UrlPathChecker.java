@@ -115,8 +115,7 @@ public class UrlPathChecker {
 			}
 		}
 
-		if (pathElems.containsKey(Constants.STRUCTUREDDATAS)
-				&& pathSegments.get(0).getPath().equals(Constants.STRUCTUREDDATAS)) {
+		if (pathElems.containsKey(Constants.STRUCTUREDDATAS)) {
 			long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATAS));
 			var structuredDataContainer = structuredDataContainerService.getContainer(id);
 			String error = checkContainer(structuredDataContainer);

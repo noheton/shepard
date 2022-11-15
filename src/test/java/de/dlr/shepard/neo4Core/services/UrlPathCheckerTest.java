@@ -2,8 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -502,21 +500,6 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Container does not exist", e.getMessage());
-	}
-
-	@Test
-	public void structuredData_wrongUrl() {
-		List<PathSegment> segments = new ArrayList<>();
-
-		segments.add(dummySeg);
-		segments.add(dummyIdSeg);
-		segments.add(structuredDatasSeg);
-		segments.add(structuredDataIdSeg);
-
-		when(structuredDataIdSeg.getPath()).thenReturn("200");
-
-		urlPathChecker.checkPathSegments(segments);
-		verify(structuredDataContainerService, never()).getContainer(200);
 	}
 
 	@Test
