@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -28,7 +29,7 @@ public class UserGroupTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		userGroupURL = String.format("%s/usergroup", baseURL);
+		userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
 		user = getNewUserWithApiKey("user");
 		user1 = getNewUserWithApiKey("user1");
 		jws = user.getApiKey().getJws();

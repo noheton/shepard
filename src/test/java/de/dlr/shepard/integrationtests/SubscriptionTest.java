@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.RequestMethod;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -25,7 +26,7 @@ public class SubscriptionTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		subscriptionsURL = String.format("%s/users/%s/subscriptions", baseURL, username);
+		subscriptionsURL = String.format("%s/%s/%s/%s", baseURL, Constants.USERS, username, Constants.SUBSCRIPTIONS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(subscriptionsURL)
 				.addHeader("X-API-KEY", jws).build();
 	}

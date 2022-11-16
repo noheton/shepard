@@ -20,6 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -37,7 +38,7 @@ public class FileTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		containerURL = String.format("%s/files", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.FILES);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 		fileRequestSpec = new RequestSpecBuilder().setContentType(ContentType.MULTIPART).setBaseUri(containerURL)
@@ -91,8 +92,8 @@ public class FileTest extends BaseTestCaseIT {
 		}
 		var md5 = DatatypeConverter.printHexBinary(md.digest());
 		var actual = given().spec(fileRequestSpec).multiPart(newFile).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(ShepardFile.class);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(ShepardFile.class);
 		file = actual;
 
 		assertThat(actual.getOid()).isNotBlank();
@@ -104,8 +105,9 @@ public class FileTest extends BaseTestCaseIT {
 	@Test
 	@Order(5)
 	public void getFiles() {
-		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(ShepardFile[].class);
+		var actual = given().spec(containerRequestSpec).when()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD).then().statusCode(200).extract()
+				.as(ShepardFile[].class);
 
 		assertThat(actual).containsExactly(file);
 	}
@@ -116,8 +118,8 @@ public class FileTest extends BaseTestCaseIT {
 		var oldFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());
 		var expected = Files.readString(oldFile.toPath());
 		var actual = given().spec(containerRequestSpec).when()
-				.get(String.format("%s/%d/payload/%s", containerURL, container.getId(), file.getOid())).then()
-				.statusCode(200).extract().asString();
+				.get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+				.then().statusCode(200).extract().asString();
 
 		assertThat(actual).isEqualTo(expected);
 	}
@@ -126,15 +128,16 @@ public class FileTest extends BaseTestCaseIT {
 	@Order(7)
 	public void deleteFile() {
 		given().spec(containerRequestSpec).when()
-				.delete(String.format("%s/%d/payload/%s", containerURL, container.getId(), file.getOid())).then()
-				.statusCode(204);
+				.delete(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+				.then().statusCode(204);
 
 		given().spec(containerRequestSpec).when()
-				.get(String.format("%s/%d/payload/%s", containerURL, container.getId(), file.getOid())).then()
-				.statusCode(404);
+				.get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+				.then().statusCode(404);
 
-		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(ShepardFile[].class);
+		var actual = given().spec(containerRequestSpec).when()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD).then().statusCode(200).extract()
+				.as(ShepardFile[].class);
 		assertThat(actual).isEmpty();
 	}
 

@@ -26,6 +26,7 @@ import de.dlr.shepard.search.ResultTriple;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchParams;
 import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -498,7 +499,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		UserGroupIO userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then()
 				.statusCode(201).extract().as(UserGroupIO.class);
 
-		String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
+		String permissionsURL = baseURL + "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/"
+				+ Constants.PERMISSIONS;
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
 		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()
@@ -548,7 +550,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, collectionId);
+		var dataObjectsURL = String.format("%s/%s/%d/%s/", baseURL, Constants.COLLECTIONS, collectionId,
+				Constants.DATAOBJECTS);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		DataObjectIO dataObjectIO = new DataObjectIO();
@@ -561,7 +564,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 
 	private static DataObjectIO createDataObjectWithPredecessors(String name, long collectionId,
 			long[] predecessorsIDs) {
-		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, collectionId);
+		var dataObjectsURL = String.format("%s/%s/%d/%s/", baseURL, Constants.COLLECTIONS, collectionId,
+				Constants.DATAOBJECTS);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		DataObjectIO dataObjectIO = new DataObjectIO();
@@ -573,7 +577,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static StructuredDataContainerIO createDataContainer(String name) {
-		containerURL = String.format("%s/structureddatas", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 		StructuredDataContainerIO containerToCreate = new StructuredDataContainerIO();
@@ -584,10 +588,10 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 
 	private static StructuredData createStructuredData(StructuredData structuredDataToCreate, long containerID,
 			StructuredDataPayload payload) {
-		containerURL = String.format("%s/structureddatas", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
 		return given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, containerID)).then().statusCode(201).extract()
-				.as(StructuredData.class);
+				.post(String.format("%s/%d/%s", containerURL, containerID, Constants.PAYLOAD)).then().statusCode(201)
+				.extract().as(StructuredData.class);
 	}
 
 	private static StructuredDataReferenceIO createStructuredDataReference(String name, String[] structuredDataOIDs,
@@ -596,8 +600,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		toCreate.setName(name);
 		toCreate.setStructuredDataOids(structuredDataOIDs);
 		toCreate.setStructuredDataContainerId(container.getId());
-		String referencesURL = String.format("%s/collections/%d/dataObjects/%d/structureddataReferences", baseURL,
-				collection.getId(), dataObject.getId());
+		String referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.STRUCTUREDDATA_REFERENCES);
 		RequestSpecification referencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(referencesURL).addHeader("X-API-KEY", jws).build();
 		return given().spec(referencesRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
@@ -605,7 +609,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static void deleteDataObject(DataObjectIO dataObject) {
-		String dataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL, collection.getId());
+		String dataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS);
 		RequestSpecification dataObjectRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		given().spec(dataObjectRequestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then()
@@ -613,7 +618,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static void putDataObject(Long dataObjectToChangeID, Long collectionID, DataObjectIO changedDataObject) {
-		String putURL = String.format("%s/collections/%d/dataObjects", baseURL, collection.getId());
+		String putURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS);
 		putURL = putURL + "/" + dataObjectToChangeID;
 		RequestSpecification putSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(putURL).addHeader("X-API-KEY", jws).build();

@@ -80,7 +80,7 @@ public class ApiKeyRestImpl implements ApiKeyRest {
 			log.error("The given api key uid has an invalid format: {}", apiKeyUid);
 			throw new InvalidRequestException("The given api key uid has an invalid format");
 		}
-		return apiKeyService.deleteApiKey(uid) ? Response.status(204).build()
+		return apiKeyService.deleteApiKey(uid) ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 }

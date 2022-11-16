@@ -14,6 +14,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -36,8 +37,8 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 		dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId());
 		uriReference = createUriReference(collection.getId(), dataObject.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/references", baseURL, collection.getId(),
-				dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/references", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.BASIC_REFERENCES);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -105,8 +106,8 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 	}
 
 	private static URIReferenceIO createUriReference(long collectionId, long dataObjectId) {
-		var uriReferenceUrl = baseURL + "/collections/" + collectionId + "/dataObjects/" + dataObjectId
-				+ "/uriReferences/";
+		var uriReferenceUrl = baseURL + "/" + Constants.COLLECTIONS + "/" + collectionId + "/" + Constants.DATAOBJECTS
+				+ "/" + dataObjectId + "/" + Constants.URI_REFERENCES + "/";
 		var uriReference = new URIReferenceIO() {
 			{
 				setName("UriReference");
@@ -121,8 +122,8 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 	}
 
 	private static DataObjectReferenceIO createDataObjectReference(long collectionId, long dataObjectId) {
-		var dataObjectReferenceUrl = baseURL + "/collections/" + collectionId + "/dataObjects/" + dataObjectId
-				+ "/dataObjectReferences/";
+		var dataObjectReferenceUrl = baseURL + "/" + Constants.COLLECTIONS + "/" + collectionId + "/"
+				+ Constants.DATAOBJECTS + "/" + dataObjectId + "/" + Constants.DATAOBJECT_REFERENCES + "/";
 		var dataObjectReference = new DataObjectReferenceIO() {
 			{
 				setName("DataObjectReference");

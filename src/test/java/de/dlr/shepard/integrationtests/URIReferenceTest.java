@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -32,8 +33,8 @@ public class URIReferenceTest extends BaseTestCaseIT {
 		collection = createCollection("URIReferenceTestCollection");
 		dataObject = createDataObject("URIReferenceDataObject", collection.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/uriReferences", baseURL, collection.getId(),
-				dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.URI_REFERENCES);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 	}

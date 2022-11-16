@@ -11,6 +11,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -25,7 +26,7 @@ public class ApiKeyTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		apikeysURL = String.format("%s/users/%s/apikeys", baseURL, username);
+		apikeysURL = String.format("%s/%s/%s/%s", baseURL, Constants.USERS, username, Constants.APIKEYS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(apikeysURL)
 				.addHeader("X-API-KEY", jws).build();
 	}

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -43,9 +44,10 @@ public class DataObjectTest extends BaseTestCaseIT {
 		collection = createCollection("DataObjectTestCollection");
 		collectionForOrderByTest = createCollection("OrderByTestCollection");
 
-		dataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL, collection.getId());
-		orderByDataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL,
-				collectionForOrderByTest.getId());
+		dataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS);
+		orderByDataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS,
+				collectionForOrderByTest.getId(), Constants.DATAOBJECTS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(dataObjectsURL)
 				.addHeader("X-API-KEY", jws).build();
 		orderByRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)

@@ -58,7 +58,7 @@ public class SubscriptionRestImpl implements SubscriptionRest {
 	@Override
 	public Response deleteSubscription(@PathParam(Constants.USERNAME) String username,
 			@PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId) {
-		return service.deleteSubscription(subscriptionId) ? Response.status(204).build()
+		return service.deleteSubscription(subscriptionId) ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
 

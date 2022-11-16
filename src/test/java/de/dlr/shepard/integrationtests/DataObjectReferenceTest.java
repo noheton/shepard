@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -34,8 +35,8 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
 		dataObject = createDataObject("DataObjectReference", collection.getId());
 		referenced = createDataObject("ReferencedDataObject", collection.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/dataObjectReferences", baseURL,
-				collection.getId(), dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.DATAOBJECT_REFERENCES);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -94,8 +95,8 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
 	@Test
 	@Order(5)
 	public void getDataObjectReferencedTest() {
-		var referencedURL = String.format("%s/collections/%d/dataObjects/%d", baseURL, collection.getId(),
-				referenced.getId());
+		var referencedURL = String.format("%s/%s/%d/%s/%d", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, referenced.getId());
 		var actual = given().spec(requestSpecification).when().get(referencedURL).then().statusCode(200).extract()
 				.as(DataObjectIO.class);
 		assertThat(actual.getIncomingIds()).containsExactly(reference.getId());
@@ -105,8 +106,8 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
 	@Order(6)
 	public void getDataObjectReferencePayloadTest() {
 		var actual = given().spec(requestSpecification).when()
-				.get(String.format("%s/%d/payload", referencesURL, reference.getId())).then().statusCode(200).extract()
-				.as(DataObjectIO.class);
+				.get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD)).then()
+				.statusCode(200).extract().as(DataObjectIO.class);
 
 		assertThat(actual).usingRecursiveComparison().ignoringFields("incomingIds").isEqualTo(referenced);
 		assertThat(actual.getIncomingIds()).containsExactly(reference.getId());

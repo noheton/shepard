@@ -19,6 +19,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -43,12 +44,12 @@ public class FileReferenceTest extends BaseTestCaseIT {
 		collection = createCollection("FileReferenceTestCollection");
 		dataObject = createDataObject("FileReferenceTestDataObject", collection.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/fileReferences", baseURL, collection.getId(),
-				dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.FILE_REFERENCES);
 		referencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 
-		containerURL = String.format("%s/files", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.FILES);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 		fileRequestSpec = new RequestSpecBuilder().setContentType(ContentType.MULTIPART).setBaseUri(containerURL)
@@ -60,8 +61,8 @@ public class FileReferenceTest extends BaseTestCaseIT {
 		container = given().spec(containerRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
 				.as(FileContainerIO.class);
 		file = given().spec(fileRequestSpec).multiPart("file", "test.txt", targetStream).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(ShepardFile.class);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(ShepardFile.class);
 	}
 
 	@Test

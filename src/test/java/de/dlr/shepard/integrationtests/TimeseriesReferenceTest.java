@@ -19,6 +19,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -44,12 +45,12 @@ public class TimeseriesReferenceTest extends BaseTestCaseIT {
 		collection = createCollection("TimeseriesReferenceTestCollection");
 		dataObject = createDataObject("TimeseriesReferenceTestDataObject", collection.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/timeseriesReferences", baseURL,
-				collection.getId(), dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.TIMESERIES_REFERENCES);
 		referencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 
-		containerURL = String.format("%s/timeseries", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.TIMESERIES);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 
@@ -73,7 +74,8 @@ public class TimeseriesReferenceTest extends BaseTestCaseIT {
 		payload.setPoints(points);
 
 		given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201);
 	}
 
 	@Test
@@ -126,8 +128,8 @@ public class TimeseriesReferenceTest extends BaseTestCaseIT {
 	@Order(4)
 	public void getTimeseriesReferencePayload() {
 		var actual = given().spec(referencesRequestSpec).when()
-				.get(String.format("%s/%d/payload", referencesURL, reference.getId())).then().statusCode(200).extract()
-				.as(TimeseriesPayload[].class);
+				.get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD)).then()
+				.statusCode(200).extract().as(TimeseriesPayload[].class);
 
 		assertThat(actual).containsExactly(payload);
 	}

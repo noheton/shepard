@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.UserIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -24,7 +25,7 @@ public class UserTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		usersURL = baseURL + "/users";
+		usersURL = baseURL + "/" + Constants.USERS;
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(usersURL)
 				.addHeader("X-API-KEY", jws).build();
 	}

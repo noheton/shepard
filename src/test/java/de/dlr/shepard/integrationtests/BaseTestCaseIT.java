@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.UserIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 
@@ -36,7 +37,7 @@ public class BaseTestCaseIT {
 	}
 
 	protected static CollectionIO createCollection(String name) {
-		var collectionsURL = String.format("%s/collections/", baseURL);
+		var collectionsURL = String.format("%s/%s/", baseURL, Constants.COLLECTIONS);
 		var collectionSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(collectionsURL).addHeader("X-API-KEY", jws).build();
 		var collection = given().spec(collectionSpecification).body(Map.of("name", name)).when().post().then()
@@ -45,7 +46,7 @@ public class BaseTestCaseIT {
 	}
 
 	protected static CollectionIO createCollection(String name, UserWithApiKey userWithApiKey) {
-		var collectionsURL = String.format("%s/collections/", baseURL);
+		var collectionsURL = String.format("%s/%s/", baseURL, Constants.COLLECTIONS);
 		var collectionSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(collectionsURL).addHeader("X-API-KEY", userWithApiKey.getApiKey().getJws()).build();
 		var collection = given().spec(collectionSpecification).body(Map.of("name", name)).when().post().then()
@@ -54,7 +55,8 @@ public class BaseTestCaseIT {
 	}
 
 	protected static DataObjectIO createDataObject(String name, long collectionId) {
-		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, collectionId);
+		var dataObjectsURL = String.format("%s/%s/%d/%s/", baseURL, Constants.COLLECTIONS, collectionId,
+				Constants.DATAOBJECTS);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		DataObjectIO dataObjectIO = new DataObjectIO();

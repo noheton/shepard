@@ -13,6 +13,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -26,7 +27,7 @@ public class CollectionTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		collectionsURL = baseURL.concat("/collections");
+		collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -95,8 +96,8 @@ public class CollectionTest extends BaseTestCaseIT {
 		payload.setName(name);
 
 		DataObjectIO dataObject = given().spec(requestSpecification).body(payload).when()
-				.post(collectionsURL + "/" + collection.getId() + "/dataObjects").then().statusCode(201).extract()
-				.as(DataObjectIO.class);
+				.post(collectionsURL + "/" + collection.getId() + "/" + Constants.DATAOBJECTS).then().statusCode(201)
+				.extract().as(DataObjectIO.class);
 
 		CollectionIO actual = given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId())
 				.then().statusCode(200).extract().as(CollectionIO.class);

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -35,7 +36,7 @@ public class StructuredDataTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		containerURL = String.format("%s/structureddatas", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -87,8 +88,8 @@ public class StructuredDataTest extends BaseTestCaseIT {
 		payload = new StructuredDataPayload(structuredData, objectMapper.writeValueAsString(payloadMap));
 
 		var actual = given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(StructuredData.class);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(StructuredData.class);
 
 		assertThat(actual.getOid()).isNotBlank();
 		assertThat(actual.getCreatedAt()).isNotNull();
@@ -99,8 +100,9 @@ public class StructuredDataTest extends BaseTestCaseIT {
 	@Test
 	@Order(5)
 	public void getStructuredDatas() {
-		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(StructuredData[].class);
+		var actual = given().spec(containerRequestSpec).when()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD).then().statusCode(200).extract()
+				.as(StructuredData[].class);
 
 		assertThat(actual).containsExactly(payload.getStructuredData());
 	}
@@ -110,7 +112,7 @@ public class StructuredDataTest extends BaseTestCaseIT {
 	@SuppressWarnings("unchecked")
 	public void getStructuredDataPayload() throws JsonMappingException, JsonProcessingException {
 		var actual = given().spec(containerRequestSpec).when()
-				.get(String.format("%s/%d/payload/%s", containerURL, container.getId(),
+				.get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD,
 						payload.getStructuredData().getOid()))
 				.then().statusCode(200).extract().as(StructuredDataPayload.class);
 
@@ -125,14 +127,15 @@ public class StructuredDataTest extends BaseTestCaseIT {
 	@Test
 	@Order(7)
 	public void deleteStructuredData() {
-		given().spec(containerRequestSpec).when().delete(String.format("%s/%d/payload/%s", containerURL,
-				container.getId(), payload.getStructuredData().getOid())).then().statusCode(204);
+		given().spec(containerRequestSpec).when().delete(String.format("%s/%d/%s/%s", containerURL, container.getId(),
+				Constants.PAYLOAD, payload.getStructuredData().getOid())).then().statusCode(204);
 
-		given().spec(containerRequestSpec).when().get(String.format("%s/%d/payload/%s", containerURL, container.getId(),
-				payload.getStructuredData().getOid())).then().statusCode(404);
+		given().spec(containerRequestSpec).when().get(String.format("%s/%d/%s/%s", containerURL, container.getId(),
+				Constants.PAYLOAD, payload.getStructuredData().getOid())).then().statusCode(404);
 
-		var actual = given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId() + "/payload")
-				.then().statusCode(200).extract().as(StructuredData[].class);
+		var actual = given().spec(containerRequestSpec).when()
+				.get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD).then().statusCode(200).extract()
+				.as(StructuredData[].class);
 		assertThat(actual).isEmpty();
 	}
 

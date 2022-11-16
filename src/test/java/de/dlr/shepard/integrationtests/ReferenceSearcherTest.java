@@ -38,6 +38,7 @@ import de.dlr.shepard.search.ResultTriple;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchParams;
 import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -113,8 +114,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		toCreate1.setName("DataObjectReferenceDummy1");
 		toCreate1.setRelationship("integrationtests");
 		toCreate1.setReferencedDataObjectId(referenced.getId());
-		dataObjetReferencesURL = String.format("%s/collections/%d/dataObjects/%d/dataObjectReferences", baseURL,
-				collection.getId(), dataObjectIO1.getId());
+		dataObjetReferencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObjectIO1.getId(), Constants.DATAOBJECT_REFERENCES);
 		dataObjectReferenceRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjetReferencesURL).addHeader("X-API-KEY", jws).build();
 		referenceIO1 = given().spec(dataObjectReferenceRequestSpecification).body(toCreate1).when().post().then()
@@ -126,7 +127,7 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		toCreate1a.setReferencedDataObjectId(referenced.getId());
 		referenceIO1a = given().spec(dataObjectReferenceRequestSpecification).body(toCreate1a).when().post().then()
 				.statusCode(201).extract().as(DataObjectReferenceIO.class);
-		searchURL = String.format("%s/search", baseURL);
+		searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
 		searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws).build();
 
@@ -134,15 +135,15 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		toCreate4.setName("DataObjectReferenceDummy4");
 		toCreate4.setRelationship("integrationtests");
 		toCreate4.setReferencedDataObjectId(dataObjectIO4.getId());
-		dataObjetReferencesURL = String.format("%s/collections/%d/dataObjects/%d/dataObjectReferences", baseURL,
-				collection.getId(), dataObjectIO4.getId());
+		dataObjetReferencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObjectIO4.getId(), Constants.DATAOBJECT_REFERENCES);
 		dataObjectReferenceRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjetReferencesURL).addHeader("X-API-KEY", jws).build();
 		referenceIO4 = given().spec(dataObjectReferenceRequestSpecification).body(toCreate4).when().post().then()
 				.statusCode(201).extract().as(DataObjectReferenceIO.class);
 
-		fileReferencesURL = String.format("%s/collections/%d/dataObjects/%d/fileReferences", baseURL,
-				collection.getId(), dataObjectIO2.getId());
+		fileReferencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObjectIO2.getId(), Constants.FILE_REFERENCES);
 		fileReferenceRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(fileReferencesURL).addHeader("X-API-KEY", jws).build();
 		fileContainerURL = String.format("%s/files", baseURL);
@@ -156,8 +157,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		fileRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.MULTIPART)
 				.setBaseUri(fileContainerURL).addHeader("X-API-KEY", jws).build();
 		file = given().spec(fileRequestSpecification).multiPart("file", "test.txt", targetStream).when()
-				.post(String.format("%s/%d/payload", fileContainerURL, fileContainerIO.getId())).then().statusCode(201)
-				.extract().as(ShepardFile.class);
+				.post(String.format("%s/%d/%s", fileContainerURL, fileContainerIO.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(ShepardFile.class);
 		var fileReferenceToCreate = new FileReferenceIO();
 		fileReferenceToCreate.setName("FileReferenceDummy");
 		fileReferenceToCreate.setFileOids(new String[] { file.getOid() });
@@ -165,7 +166,7 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		fileReferenceIO = given().spec(fileReferenceRequestSpecification).body(fileReferenceToCreate).when().post()
 				.then().statusCode(201).extract().as(FileReferenceIO.class);
 
-		searchURL = String.format("%s/search", baseURL);
+		searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
 		searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -329,8 +330,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		toCreate.setName("CollectionReferenceDummy");
 		toCreate.setRelationship("integrationtests");
 		toCreate.setReferencedCollectionId(collection1.getId());
-		String referencesURL = String.format("%s/collections/%d/dataObjects/%d/collectionReferences", baseURL,
-				collection1.getId(), collection1DataObject.getId());
+		String referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection1.getId(),
+				Constants.DATAOBJECTS, collection1DataObject.getId(), Constants.COLLECTION_REFERENCES);
 		RequestSpecification collectionReferenceRequestSpecification = new RequestSpecBuilder()
 				.setContentType(ContentType.JSON).setBaseUri(referencesURL).addHeader("X-API-KEY", jws).build();
 		CollectionReferenceIO createdCollectionReference = given().spec(collectionReferenceRequestSpecification)
@@ -386,8 +387,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 	public void findViaStructuredDataTest() {
 		sDataCollection = createCollection("StructuredDataReferenceTestCollection");
 		sDataObject = createDataObject("StructuredDataReferenceTestDataObject", sDataCollection.getId());
-		sDataReferencesURL = String.format("%s/collections/%d/dataObjects/%d/structureddataReferences", baseURL,
-				sDataCollection.getId(), sDataObject.getId());
+		sDataReferencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, sDataCollection.getId(),
+				Constants.DATAOBJECTS, sDataObject.getId(), Constants.STRUCTUREDDATA_REFERENCES);
 		sDataReferencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(sDataReferencesURL).addHeader("X-API-KEY", jws).build();
 		sDataContainerURL = String.format("%s/structureddatas", baseURL);
@@ -402,8 +403,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		sDataPayload = new StructuredDataPayload(structuredData,
 				"{\"Hallo\":\"Welt\",\"number\":123,\"list\":[\"a\",\"b\"],\"object\":{\"a\":\"b\"}}");
 		StructuredData actual = given().spec(sDataContainerRequestSpec).body(sDataPayload).when()
-				.post(String.format("%s/%d/payload", sDataContainerURL, sDataContainer.getId())).then().statusCode(201)
-				.extract().as(StructuredData.class);
+				.post(String.format("%s/%d/%s", sDataContainerURL, sDataContainer.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(StructuredData.class);
 		sDataPayload.setStructuredData(actual);
 		StructuredDataReferenceIO sDataReferenceToCreate = new StructuredDataReferenceIO();
 		sDataReferenceToCreate.setName("StructuredDataReferenceDummy");
@@ -438,8 +439,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 	public void findViaTimeseriesTest() {
 		tSerCollection = createCollection("TimeseriesReferenceSearchTestCollection");
 		tSerDataObject = createDataObject("TimeseriesReferenceSearchTestDataObject", tSerCollection.getId());
-		tSerReferencesURL = String.format("%s/collections/%d/dataObjects/%d/timeseriesReferences", baseURL,
-				tSerCollection.getId(), tSerDataObject.getId());
+		tSerReferencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, tSerCollection.getId(),
+				Constants.DATAOBJECTS, tSerDataObject.getId(), Constants.TIMESERIES_REFERENCES);
 		tSerReferencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(tSerReferencesURL).addHeader("X-API-KEY", jws).build();
 		tSerContainerURL = String.format("%s/timeseries", baseURL);
@@ -461,7 +462,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 		tSerPayload.setTimeseries(new Timeseries("meas", "dev", "loc", "symName", "field"));
 		tSerPayload.setPoints(points);
 		given().spec(tSerContainerRequestSpec).body(tSerPayload).when()
-				.post(String.format("%s/%d/payload", tSerContainerURL, tSerContainer.getId())).then().statusCode(201);
+				.post(String.format("%s/%d/%s", tSerContainerURL, tSerContainer.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201);
 		var nanos = tSerPayload.getPoints().get(0).getTimeInNanoseconds();
 		var tSerReferenceToCreate = new TimeseriesReferenceIO();
 		tSerReferenceToCreate.setName("TimeseriesReferenceDummy");
@@ -494,7 +496,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static DataObjectIO createDataObject(DataObjectIO dataObjectIO, String jws) {
-		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, dataObjectIO.getCollectionId());
+		var dataObjectsURL = String.format("%s/%s/%d/%s/", baseURL, Constants.COLLECTIONS,
+				dataObjectIO.getCollectionId(), Constants.DATAOBJECTS);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		var createdDataObject = given().spec(dataObjectSpecification).body(dataObjectIO).when().post().then()

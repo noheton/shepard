@@ -20,6 +20,7 @@ import de.dlr.shepard.search.ResultTriple;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchParams;
 import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -44,10 +45,11 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
 	@BeforeAll
 	public static void setUp() {
 		collection = createCollection("DataObjectSearcherTestCollection");
-		dataObjectsURL = String.format("%s/collections/%d/dataObjects", baseURL, collection.getId());
+		dataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(dataObjectsURL)
 				.addHeader("X-API-KEY", jws).build();
-		searchURL = String.format("%s/search", baseURL);
+		searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
 		searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws).build();
 		var payload1 = new DataObjectIO();
@@ -427,7 +429,8 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
 	}
 
 	private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-		var dataObjectsURL = String.format("%s/collections/%d/dataObjects/", baseURL, collectionId);
+		var dataObjectsURL = String.format("%s/%s/%d/%s/", baseURL, Constants.COLLECTIONS, collectionId,
+				Constants.DATAOBJECTS);
 		var dataObjectSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(dataObjectsURL).addHeader("X-API-KEY", jws).build();
 		DataObjectIO dataObjectIO = new DataObjectIO();

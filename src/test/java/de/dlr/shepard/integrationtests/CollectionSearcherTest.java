@@ -18,6 +18,7 @@ import de.dlr.shepard.search.ResultTriple;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchParams;
 import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -37,7 +38,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		collectionsURL = baseURL.concat("/collections");
+		collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS);
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(collectionsURL)
 				.addHeader("X-API-KEY", jws).build();
 		var payload1 = new CollectionIO();
@@ -50,7 +51,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		payload2.setDescription("Second Collection");
 		collection2 = given().spec(requestSpecification).body(payload2).when().post().then().statusCode(201).extract()
 				.as(CollectionIO.class);
-		searchURL = String.format("%s/search", baseURL);
+		searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
 		searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws).build();
 		user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
@@ -287,7 +288,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	@Test
 	@Order(8)
 	public void collectionsSearchTestReaderGroup() {
-		String userGroupURL = String.format("%s/usergroup", baseURL);
+		String userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
 		UserGroupIO userGroup = new UserGroupIO();
 		userGroup.setName("userGroup");
 		userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
@@ -296,7 +297,8 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		UserGroupIO userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then()
 				.statusCode(201).extract().as(UserGroupIO.class);
 
-		String permissionsURL = baseURL + "/collections/" + collection2.getId() + "/permissions";
+		String permissionsURL = baseURL + "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/"
+				+ Constants.PERMISSIONS;
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
 		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()
@@ -338,7 +340,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	@Test
 	@Order(8)
 	public void inTest() {
-		String userGroupURL = String.format("%s/usergroup", baseURL);
+		String userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
 		UserGroupIO userGroup = new UserGroupIO();
 		userGroup.setName("userGroup");
 		userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
@@ -347,7 +349,8 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		UserGroupIO userGroupCreated = given().spec(userGroupSpecification).body(userGroup).when().post().then()
 				.statusCode(201).extract().as(UserGroupIO.class);
 
-		String permissionsURL = baseURL + "/collections/" + collection2.getId() + "/permissions";
+		String permissionsURL = baseURL + "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/"
+				+ Constants.PERMISSIONS;
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(permissionsURL).addHeader("X-API-KEY", jws).build();
 		PermissionsIO permissions = given().spec(permissionsSpecification).when().get(permissionsURL).then()

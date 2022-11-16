@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.neo4Core.io.HealthzIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -18,7 +19,7 @@ public class HealthzTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		healthURL = baseURL + "/healthz";
+		healthURL = baseURL + "/" + Constants.HEALTHZ;
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(healthURL)
 				.addHeader("X-API-KEY", jws).build();
 	}

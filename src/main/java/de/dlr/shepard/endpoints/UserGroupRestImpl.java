@@ -58,7 +58,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}")
 	@Override
 	public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
-		return userGroupService.deleteUserGroup(id) ? Response.status(204).build()
+		return userGroupService.deleteUserGroup(id) ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
@@ -68,7 +68,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long usergroupId) {
 		UserGroup ret = userGroupService.getUserGroup(usergroupId);
 		if (ret == null)
-			return Response.status(404).build();
+			return Response.status(Status.NOT_FOUND).build();
 		return Response.ok(new UserGroupIO(ret)).build();
 	}
 

@@ -21,6 +21,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
+import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -46,12 +47,12 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 		collection = createCollection("StructuredDataReferenceTestCollection");
 		dataObject = createDataObject("StructuredDataReferenceTestDataObject", collection.getId());
 
-		referencesURL = String.format("%s/collections/%d/dataObjects/%d/structureddataReferences", baseURL,
-				collection.getId(), dataObject.getId());
+		referencesURL = String.format("%s/%s/%d/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
+				Constants.DATAOBJECTS, dataObject.getId(), Constants.STRUCTUREDDATA_REFERENCES);
 		referencesRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(referencesURL)
 				.addHeader("X-API-KEY", jws).build();
 
-		containerURL = String.format("%s/structureddatas", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 
@@ -64,8 +65,8 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 		payload = new StructuredDataPayload(structuredData,
 				"{\"Hallo\":\"Welt\",\"number\":123,\"list\":[\"a\",\"b\"],\"object\":{\"a\":\"b\"}}");
 		var actual = given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(StructuredData.class);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(StructuredData.class);
 		payload.setStructuredData(actual);
 	}
 
@@ -116,7 +117,7 @@ public class StructuredDataReferenceTest extends BaseTestCaseIT {
 	@SuppressWarnings("unchecked")
 	public void getStructuredDataReferencePayload() throws JsonMappingException, JsonProcessingException {
 		var actual = given().spec(referencesRequestSpec).when()
-				.get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(),
+				.get(String.format("%s/%d/%s/%s", referencesURL, reference.getId(), Constants.PAYLOAD,
 						payload.getStructuredData().getOid()))
 				.then().statusCode(200).extract().as(StructuredDataPayload.class);
 		var payloadMap = objectMapper.readValue(actual.getPayload(), Map.class);

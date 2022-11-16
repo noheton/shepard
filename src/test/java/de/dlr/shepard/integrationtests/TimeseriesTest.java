@@ -36,7 +36,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
 
 	@BeforeAll
 	public static void setUp() {
-		containerURL = String.format("%s/timeseries", baseURL);
+		containerURL = String.format("%s/%s", baseURL, Constants.TIMESERIES);
 		containerRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(containerURL)
 				.addHeader("X-API-KEY", jws).build();
 	}
@@ -99,8 +99,8 @@ public class TimeseriesTest extends BaseTestCaseIT {
 		payload.setPoints(points);
 
 		var actual = given().spec(containerRequestSpec).body(payload).when()
-				.post(String.format("%s/%d/payload", containerURL, container.getId())).then().statusCode(201).extract()
-				.as(Timeseries.class);
+				.post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD)).then()
+				.statusCode(201).extract().as(Timeseries.class);
 
 		assertThat(actual).isEqualTo(payload.getTimeseries());
 	}
