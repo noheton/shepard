@@ -21,10 +21,11 @@ export const dateFormat: Intl.DateTimeFormatOptions = {
 };
 
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
-export const permissionOptions: {
+export interface PermissionOption {
   value: PermissionsPermissionTypeEnum;
   text: string;
-}[] = [
+}
+export const permissionOptions: PermissionOption[] = [
   {
     value: PermissionsPermissionTypeEnum.Private,
     text: "Private",

@@ -98,17 +98,13 @@ function handleDelete() {
 onMounted(() => {
   retrieveCollection();
   retrieveRoles();
-  retrievePermissions();
 });
 </script>
 
 <template>
   <div v-if="currentCollection" class="collection">
     <div>
-      <b-button-group
-        v-if="!roles || roles.owner || roles.writer"
-        class="float-right"
-      >
+      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button
           v-b-modal.create-data-object-modal
           v-b-tooltip.hover
@@ -126,11 +122,12 @@ onMounted(() => {
           <EditIcon />
         </b-button>
         <b-button
-          v-if="!roles || roles.owner || roles.manager"
+          v-if="roles?.owner || roles?.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
           variant="secondary"
+          @click="retrievePermissions()"
         >
           <PermissionsIcon />
         </b-button>

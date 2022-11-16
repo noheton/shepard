@@ -12,7 +12,6 @@ import DataObjectService from "@/services/dataObjectService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
   DataObject,
-  Permissions,
   ResponseError,
   Roles,
 } from "@dlr-shepard/shepard-client";
@@ -67,19 +66,6 @@ function retrieveRoles() {
     });
 }
 
-const permissions = ref<Permissions | undefined>();
-function retrievePermissions() {
-  CollectionService.getCollectionPermissions({
-    collectionId: +currentCollectionId.value,
-  })
-    .then(response => {
-      permissions.value = response;
-    })
-    .catch(e => {
-      logError(e as ResponseError, "fetching permissions");
-    });
-}
-
 function handleDelete() {
   DataObjectService.deleteDataObject({
     collectionId: +currentCollectionId.value,
@@ -101,17 +87,13 @@ function handleDelete() {
 onMounted(() => {
   retrieveDataObject();
   retrieveRoles();
-  retrievePermissions();
 });
 </script>
 
 <template>
   <div v-if="currentDataObject" ref="root" class="dataObject">
     <div>
-      <b-button-group
-        v-if="!roles || roles.owner || roles.writer"
-        class="float-right"
-      >
+      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button
           v-b-modal.create-dataObject-modal
           v-b-tooltip.hover

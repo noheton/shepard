@@ -1,3 +1,264 @@
+<script setup lang="ts">
+import UserGroupService from "@/services/userGroupService";
+import UserService from "@/services/userService";
+import { logError } from "@/utils/error-handling";
+import { permissionOptions as pOptions } from "@/utils/helpers";
+import type {
+  Permissions,
+  PermissionsPermissionTypeEnum,
+  ResponseError,
+  User,
+  UserGroup,
+} from "@dlr-shepard/shepard-client";
+import {
+  BButton,
+  BCol,
+  BDropdown,
+  BDropdownItem,
+  BFormInput,
+  BFormSelect,
+  BInputGroup,
+  BInputGroupAppend,
+  BListGroup,
+  BListGroupItem,
+  BModal,
+  BRow,
+} from "bootstrap-vue";
+import { ref, watch, type PropType } from "vue";
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "PermissionsModal",
+  },
+  modalName: {
+    type: String,
+    default: "PermissionsModal",
+  },
+  entityId: {
+    type: Number,
+    required: true,
+  },
+  oldPermissions: {
+    type: Object as PropType<Permissions>,
+    default: () => {
+      return { owner: undefined, reader: [], writer: [], manager: [] };
+    },
+  },
+});
+
+const permissionOptions = pOptions;
+
+const usernameOrGroupId = ref("");
+const validUser = ref<boolean>();
+const validUserGroup = ref<boolean>();
+const currentUser = ref<User>();
+const currentUserGroup = ref<UserGroup>();
+const owner = ref<User>();
+const reader = ref<User[]>([]);
+const readerGroup = ref<UserGroup[]>([]);
+const writer = ref<User[]>([]);
+const writerGroup = ref<UserGroup[]>([]);
+const manager = ref<User[]>([]);
+const permissionType = ref<PermissionsPermissionTypeEnum>();
+
+const emits = defineEmits(["update"]);
+watch(
+  () => props.oldPermissions,
+  async () => parseOldPermissions(),
+);
+
+function reset() {
+  usernameOrGroupId.value = "";
+  validUser.value = undefined;
+  validUserGroup.value = undefined;
+  currentUser.value = undefined;
+  currentUserGroup.value = undefined;
+  owner.value = undefined;
+  reader.value = [];
+  readerGroup.value = [];
+  writer.value = [];
+  writerGroup.value = [];
+  manager.value = [];
+  permissionType.value = undefined;
+}
+
+function resetInput() {
+  usernameOrGroupId.value = "";
+  validUser.value = undefined;
+  validUserGroup.value = undefined;
+}
+
+function handleOk() {
+  const perms: Permissions = {
+    permissionType: permissionType.value,
+    owner: owner.value?.username,
+    reader: [],
+    readerGroupIds: [],
+    writer: [],
+    writerGroupIds: [],
+    manager: [],
+  };
+  reader.value.forEach(u => {
+    if (u.username) perms.reader.push(u.username);
+  });
+  readerGroup.value.forEach(g => {
+    if (g.id) perms.readerGroupIds?.push(g.id);
+  });
+  writer.value.forEach(u => {
+    if (u.username) perms.writer.push(u.username);
+  });
+  writerGroup.value.forEach(g => {
+    if (g.id) perms.writerGroupIds?.push(g.id);
+  });
+  manager.value.forEach(u => {
+    if (u.username) perms.manager.push(u.username);
+  });
+  emits("update", perms);
+}
+
+function setOwner() {
+  if (currentUser.value) {
+    owner.value = currentUser.value;
+    resetInput();
+  }
+}
+
+function addReader() {
+  if (currentUser.value && currentUser.value.username) {
+    if (
+      !reader.value.some(user => user.username == currentUser.value?.username)
+    )
+      reader.value.push(currentUser.value);
+    resetInput();
+  } else if (currentUserGroup.value && currentUserGroup.value.name) {
+    if (
+      !readerGroup.value.some(
+        group => group.name == currentUserGroup.value?.name,
+      )
+    )
+      readerGroup.value.push(currentUserGroup.value);
+    resetInput();
+  }
+}
+
+function addWriter() {
+  addReader();
+  if (currentUser.value && currentUser.value.username) {
+    if (
+      !writer.value.some(user => user.username == currentUser.value?.username)
+    )
+      writer.value.push(currentUser.value);
+    resetInput();
+  } else if (currentUserGroup.value && currentUserGroup.value.name) {
+    if (
+      !writerGroup.value.some(
+        group => group.name == currentUserGroup.value?.name,
+      )
+    )
+      writerGroup.value.push(currentUserGroup.value);
+    resetInput();
+  }
+}
+
+function addManager() {
+  addReader();
+  addWriter();
+  if (currentUser.value && currentUser.value.username) {
+    if (
+      !manager.value.some(user => user.username == currentUser.value?.username)
+    )
+      manager.value.push(currentUser.value);
+    resetInput();
+  }
+}
+
+function fetch() {
+  if (!usernameOrGroupId.value) {
+    validUser.value = undefined;
+    currentUser.value = undefined;
+    validUserGroup.value = undefined;
+    currentUserGroup.value = undefined;
+    return;
+  }
+  if (Number(usernameOrGroupId)) {
+    fetchUserGroups();
+    validUser.value = false;
+    currentUser.value = undefined;
+  } else {
+    fetchUser();
+    validUserGroup.value = false;
+    currentUserGroup.value = undefined;
+  }
+}
+
+function fetchUser() {
+  UserService.getUser({ username: usernameOrGroupId.value })
+    .then(user => {
+      currentUser.value = user;
+      validUser.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching user");
+      currentUser.value = undefined;
+      validUser.value = false;
+    });
+}
+
+function fetchUserGroups() {
+  UserGroupService.getUserGroup({
+    usergroupId: Number(usernameOrGroupId),
+  })
+    .then(userGroup => {
+      currentUserGroup.value = userGroup;
+      validUserGroup.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching user group");
+      currentUserGroup.value = undefined;
+      validUserGroup.value = false;
+    });
+}
+
+function parseOldPermissions() {
+  const perms: Permissions = props.oldPermissions;
+  if (!perms) return;
+  if (perms.permissionType) {
+    permissionType.value = perms.permissionType;
+  }
+  if (perms.owner) {
+    UserService.getUser({ username: perms.owner }).then(user => {
+      owner.value = user;
+    });
+  }
+  perms.reader.forEach(username => {
+    UserService.getUser({ username: username }).then(user =>
+      reader.value.push(user),
+    );
+  });
+  perms.readerGroupIds?.forEach(groupId => {
+    UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
+      readerGroup.value.push(usergroup),
+    );
+  });
+  perms.writer.forEach(username => {
+    UserService.getUser({ username: username }).then(user =>
+      writer.value.push(user),
+    );
+  });
+  perms.writerGroupIds?.forEach(groupId => {
+    UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
+      writerGroup.value.push(usergroup),
+    );
+  });
+  perms.manager.forEach(username => {
+    UserService.getUser({ username: username }).then(user =>
+      manager.value.push(user),
+    );
+  });
+}
+</script>
+
 <template>
   <b-modal
     :id="modalId"
@@ -159,255 +420,6 @@
     </b-row>
   </b-modal>
 </template>
-
-<script lang="ts">
-import UserGroupService from "@/services/userGroupService";
-import UserService from "@/services/userService";
-import { logError } from "@/utils/error-handling";
-import { permissionOptions } from "@/utils/helpers";
-import type {
-  Permissions,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  User,
-  UserGroup,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent, type PropType } from "vue";
-
-interface PermissionsModalData {
-  usernameOrGroupId: string;
-  validUser?: boolean;
-  validUserGroup?: boolean;
-  currentUser?: User;
-  currentUserGroup?: UserGroup;
-  owner?: User;
-  reader: User[];
-  readerGroup: UserGroup[];
-  writer: User[];
-  writerGroup: UserGroup[];
-  manager: Array<User>;
-  permissionOptions: { value: PermissionsPermissionTypeEnum; text: string }[];
-  permissionType?: PermissionsPermissionTypeEnum;
-}
-
-function initialState(): PermissionsModalData {
-  return {
-    usernameOrGroupId: "",
-    validUser: undefined,
-    validUserGroup: undefined,
-    currentUser: undefined,
-    currentUserGroup: undefined,
-    owner: undefined,
-    reader: [],
-    readerGroup: [],
-    writer: [],
-    writerGroup: [],
-    manager: [],
-    permissionOptions: permissionOptions,
-    permissionType: undefined,
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "PermissionsModal",
-    },
-    modalName: {
-      type: String,
-      default: "PermissionsModal",
-    },
-    entityId: {
-      type: Number,
-      required: true,
-    },
-    oldPermissions: {
-      type: Object as PropType<Permissions>,
-      default: () => {
-        return { owner: undefined, reader: [], writer: [], manager: [] };
-      },
-    },
-  },
-  emits: ["update"],
-  data() {
-    return initialState();
-  },
-  methods: {
-    reset() {
-      Object.assign(this.$data, initialState());
-      this.parseOldPermissions();
-    },
-    resetInput() {
-      this.usernameOrGroupId = "";
-      this.validUser = undefined;
-      this.validUserGroup = undefined;
-    },
-    handleOk() {
-      const perms: Permissions = {
-        permissionType: this.permissionType,
-        owner: this.owner?.username,
-        reader: [],
-        readerGroupIds: [],
-        writer: [],
-        writerGroupIds: [],
-        manager: [],
-      };
-      this.reader.forEach(u => {
-        if (u.username) perms.reader.push(u.username);
-      });
-      this.readerGroup.forEach(g => {
-        if (g.id) perms.readerGroupIds?.push(g.id);
-      });
-      this.writer.forEach(u => {
-        if (u.username) perms.writer.push(u.username);
-      });
-      this.writerGroup.forEach(g => {
-        if (g.id) perms.writerGroupIds?.push(g.id);
-      });
-      this.manager.forEach(u => {
-        if (u.username) perms.manager.push(u.username);
-      });
-      this.$emit("update", perms);
-    },
-    setOwner() {
-      if (this.currentUser) {
-        this.owner = this.currentUser;
-        this.resetInput();
-      }
-    },
-    addReader() {
-      if (this.currentUser && this.currentUser.username) {
-        if (
-          !this.reader.some(user => user.username == this.currentUser?.username)
-        )
-          this.reader.push(this.currentUser);
-        this.resetInput();
-      } else if (this.currentUserGroup && this.currentUserGroup.name) {
-        if (
-          !this.readerGroup.some(
-            group => group.name == this.currentUserGroup?.name,
-          )
-        )
-          this.readerGroup.push(this.currentUserGroup);
-        this.resetInput();
-      }
-    },
-    addWriter() {
-      this.addReader();
-      if (this.currentUser && this.currentUser.username) {
-        if (
-          !this.writer.some(user => user.username == this.currentUser?.username)
-        )
-          this.writer.push(this.currentUser);
-        this.resetInput();
-      } else if (this.currentUserGroup && this.currentUserGroup.name) {
-        if (
-          !this.writerGroup.some(
-            group => group.name == this.currentUserGroup?.name,
-          )
-        )
-          this.writerGroup.push(this.currentUserGroup);
-        this.resetInput();
-      }
-    },
-    addManager() {
-      this.addReader();
-      this.addWriter();
-      if (this.currentUser && this.currentUser.username) {
-        if (
-          !this.manager.some(
-            user => user.username == this.currentUser?.username,
-          )
-        )
-          this.manager.push(this.currentUser);
-        this.resetInput();
-      }
-    },
-    fetch() {
-      if (!this.usernameOrGroupId) {
-        this.validUser = undefined;
-        this.currentUser = undefined;
-        this.validUserGroup = undefined;
-        this.currentUserGroup = undefined;
-        return;
-      }
-      if (Number(this.usernameOrGroupId)) {
-        this.fetchUserGroups();
-        this.validUser = false;
-        this.currentUser = undefined;
-      } else {
-        this.fetchUser();
-        this.validUserGroup = false;
-        this.currentUserGroup = undefined;
-      }
-    },
-    fetchUser() {
-      UserService.getUser({ username: this.usernameOrGroupId })
-        .then(currentUser => {
-          this.currentUser = currentUser;
-          this.validUser = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching user");
-          this.currentUser = undefined;
-          this.validUser = false;
-        });
-    },
-    fetchUserGroups() {
-      UserGroupService.getUserGroup({
-        usergroupId: Number(this.usernameOrGroupId),
-      })
-        .then(currentUserGroup => {
-          this.currentUserGroup = currentUserGroup;
-          this.validUserGroup = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching user group");
-          this.currentUserGroup = undefined;
-          this.validUserGroup = false;
-        });
-    },
-    parseOldPermissions() {
-      const perms: Permissions = this.oldPermissions;
-      if (!perms) return;
-      if (perms.permissionType) {
-        this.permissionType = perms.permissionType;
-      }
-      if (perms.owner) {
-        UserService.getUser({ username: perms.owner }).then(
-          owner => (this.owner = owner),
-        );
-      }
-      perms.reader.forEach(username => {
-        UserService.getUser({ username: username }).then(user =>
-          this.reader.push(user),
-        );
-      });
-      perms.readerGroupIds?.forEach(groupId => {
-        UserGroupService.getUserGroup({ usergroupId: groupId }).then(
-          usergroup => this.readerGroup.push(usergroup),
-        );
-      });
-      perms.writer.forEach(username => {
-        UserService.getUser({ username: username }).then(user =>
-          this.writer.push(user),
-        );
-      });
-      perms.writerGroupIds?.forEach(groupId => {
-        UserGroupService.getUserGroup({ usergroupId: groupId }).then(
-          usergroup => this.writerGroup.push(usergroup),
-        );
-      });
-      perms.manager.forEach(username => {
-        UserService.getUser({ username: username }).then(user =>
-          this.manager.push(user),
-        );
-      });
-    },
-  },
-});
-</script>
 
 <style scoped>
 h5 {

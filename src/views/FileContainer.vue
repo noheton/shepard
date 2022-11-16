@@ -170,7 +170,6 @@ onMounted(() => {
   retrieveFileContainer();
   retrieveFileList();
   retrieveRoles();
-  retrievePermissions();
 });
 </script>
 
@@ -185,10 +184,7 @@ onMounted(() => {
       >
         Successfully deleted
       </b-alert>
-      <b-button-group
-        v-if="!roles || roles.owner || roles.writer"
-        class="float-right"
-      >
+      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button
           v-b-modal.upload-file-to-container-modal
           v-b-tooltip.hover
@@ -198,11 +194,12 @@ onMounted(() => {
           <CreateIcon />
         </b-button>
         <b-button
-          v-if="!roles || roles.owner || roles.manager"
+          v-if="roles?.owner || roles?.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
           variant="secondary"
+          @click="retrievePermissions()"
         >
           <PermissionsIcon />
         </b-button>

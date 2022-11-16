@@ -125,17 +125,13 @@ onMounted(() => {
   retrieveTimeseriesContainer();
   retrieveTimeseriesAvailable();
   retrieveRoles();
-  retrievePermissions();
 });
 </script>
 
 <template>
   <div v-if="currentTimeseriesContainer" class="timeseries-container">
     <div class="component">
-      <b-button-group
-        v-if="!roles || roles.owner || roles.writer"
-        class="float-right"
-      >
+      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button
           v-b-modal.upload-timeseries-modal
           v-b-tooltip.hover
@@ -145,11 +141,12 @@ onMounted(() => {
           <CreateIcon />
         </b-button>
         <b-button
-          v-if="!roles || roles.owner || roles.manager"
+          v-if="roles?.owner || roles?.manager"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
           variant="secondary"
+          @click="retrievePermissions()"
         >
           <PermissionsIcon />
         </b-button>
