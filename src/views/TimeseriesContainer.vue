@@ -12,6 +12,8 @@ import type {
   Timeseries,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { BButton, BButtonGroup, BTable } from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
 import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
@@ -121,10 +123,20 @@ function retrieveRoles() {
     });
 }
 
+const title = computed(() => {
+  return currentTimeseriesContainer.value?.name || "Timeseries Container";
+});
+function updateTitle() {
+  useTitle(title, {
+    titleTemplate: "%s | shepard",
+  });
+}
+
 onMounted(() => {
   retrieveTimeseriesContainer();
   retrieveTimeseriesAvailable();
   retrieveRoles();
+  updateTitle();
 });
 </script>
 

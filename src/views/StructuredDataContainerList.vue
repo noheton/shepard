@@ -56,6 +56,7 @@ import type {
   ResponseError,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
 import { defineComponent } from "vue";
 
 interface StructuredDatasListData {
@@ -90,6 +91,7 @@ export default defineComponent({
   },
   mounted() {
     this.retrieveContainers();
+    useTitle("Structured Data Containers | shepard");
   },
   methods: {
     filterChanged(options: FilterChangedData) {

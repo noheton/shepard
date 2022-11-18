@@ -39,6 +39,7 @@ import SubscriptionList from "@/components/user/SubscriptionList.vue";
 import UserService from "@/services/userService";
 import { handleError } from "@/utils/error-handling";
 import type { ResponseError, User } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
 import { defineComponent } from "vue";
 
 interface UserData {
@@ -60,6 +61,7 @@ export default defineComponent({
   },
   mounted() {
     this.fetchUser();
+    useTitle("User | shepard");
   },
   methods: {
     fetchUser() {

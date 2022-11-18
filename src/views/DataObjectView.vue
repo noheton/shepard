@@ -15,6 +15,8 @@ import type {
   ResponseError,
   Roles,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { BButton, BButtonGroup, BCol, BRow, BTable } from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
 import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
@@ -84,9 +86,19 @@ function handleDelete() {
     });
 }
 
+const title = computed(() => {
+  return currentDataObject.value?.name || "Data Object";
+});
+function updateTitle() {
+  useTitle(title, {
+    titleTemplate: "%s | shepard",
+  });
+}
+
 onMounted(() => {
   retrieveDataObject();
   retrieveRoles();
+  updateTitle();
 });
 </script>
 

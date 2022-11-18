@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { useClipboard } from "@vueuse/core";
+import { useClipboard, useTitle } from "@vueuse/core";
+import { BButton, BLink, BListGroup, BListGroupItem } from "bootstrap-vue";
 import type { User } from "oidc-client";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 
 const { useGetters, useActions } = createVuexHelpers();
@@ -33,6 +34,10 @@ const claims = computed<
 function copyBearerToken() {
   if (oidcAccessToken.value) useClipboard().copy(oidcAccessToken.value);
 }
+
+onMounted(() => {
+  useTitle("About User | shepard");
+});
 </script>
 
 <template>

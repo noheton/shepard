@@ -71,6 +71,7 @@ import type {
   ResponseError,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
 import Vue from "vue";
 
 interface UserGroupData {
@@ -105,6 +106,7 @@ export default Vue.extend({
   },
   mounted() {
     this.retrieveUserGroups(0);
+    useTitle("User Groups | shepard");
   },
   methods: {
     filterChanged(options: FilterChangedData) {

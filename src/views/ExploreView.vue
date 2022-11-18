@@ -15,6 +15,16 @@ import {
   SearchParamsQueryTypeEnum,
   type Collection,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import {
+  BButton,
+  BButtonGroup,
+  BFormInput,
+  BInputGroup,
+  BInputGroupAppend,
+  BModal,
+  BPagination,
+} from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 
 const collections = ref<Collection[]>();
@@ -128,6 +138,7 @@ function inlineSearch() {
 
 onMounted(() => {
   retrieveCollections();
+  useTitle("Collections | shepard");
 });
 </script>
 

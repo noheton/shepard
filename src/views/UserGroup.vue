@@ -12,6 +12,7 @@ import type {
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
 import { computed, onMounted, onUpdated, ref, type Ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
@@ -144,9 +145,19 @@ function retrieveRoles() {
     });
 }
 
+const title = computed(() => {
+  return currentUserGroup.value?.name || "User Group";
+});
+function updateTitle() {
+  useTitle(title, {
+    titleTemplate: "%s | shepard",
+  });
+}
+
 onMounted(() => {
   retrieveUserGroup();
   retrieveRoles();
+  updateTitle();
 });
 onUpdated(() => {
   retrieveUser();

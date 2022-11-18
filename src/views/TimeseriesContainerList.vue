@@ -55,6 +55,7 @@ import type {
   ResponseError,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
 import { defineComponent } from "vue";
 
 interface TimeseriesListData {
@@ -89,6 +90,7 @@ export default defineComponent({
   },
   mounted() {
     this.retrieveContainers();
+    useTitle("Timeseries Containers | shepard");
   },
   methods: {
     filterChanged(options: FilterChangedData) {

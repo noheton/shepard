@@ -108,7 +108,8 @@ import {
   type ResponseBody,
   type ResultTriple,
 } from "@dlr-shepard/shepard-client";
-import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
+import { useTitle } from "@vueuse/core";
+import { default as JSONEditor, type JSONEditorOptions } from "jsoneditor";
 import Vue from "vue";
 
 interface SearchData {
@@ -170,6 +171,7 @@ export default Vue.extend({
   },
   mounted() {
     this.jsonEditor();
+    useTitle("Search | shepard");
   },
   methods: {
     jsonEditor() {

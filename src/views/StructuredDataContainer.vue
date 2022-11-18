@@ -15,6 +15,14 @@ import type {
   StructuredDataContainer,
   StructuredDataPayload,
 } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import {
+  BAlert,
+  BButton,
+  BButtonGroup,
+  BListGroup,
+  BListGroupItem,
+} from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
 import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";
@@ -140,10 +148,22 @@ function retrieveRoles() {
     });
 }
 
+const title = computed(() => {
+  return (
+    currentStructuredDataContainer.value?.name || "Structured Data Container"
+  );
+});
+function updateTitle() {
+  useTitle(title, {
+    titleTemplate: "%s | shepard",
+  });
+}
+
 onMounted(() => {
   retrieveStructuredDataContainer();
   retrieveStructuredDataList();
   retrieveRoles();
+  updateTitle();
 });
 </script>
 
