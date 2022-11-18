@@ -10,20 +10,6 @@ import type {
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
-import {
-  BButton,
-  BCol,
-  BDropdown,
-  BDropdownItem,
-  BFormInput,
-  BFormSelect,
-  BInputGroup,
-  BInputGroupAppend,
-  BListGroup,
-  BListGroupItem,
-  BModal,
-  BRow,
-} from "bootstrap-vue";
 import { ref, watch, type PropType } from "vue";
 
 const props = defineProps({

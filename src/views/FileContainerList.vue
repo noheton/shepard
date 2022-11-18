@@ -14,7 +14,6 @@ import type {
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
-import { BButton, BButtonGroup, BPagination } from "bootstrap-vue";
 import { computed, onMounted, ref, type ComputedRef } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 

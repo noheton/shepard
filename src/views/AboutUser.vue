@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useClipboard, useTitle } from "@vueuse/core";
-import { BButton, BLink, BListGroup, BListGroupItem } from "bootstrap-vue";
 import type { User } from "oidc-client";
 import { computed, onMounted } from "vue";
 import { createVuexHelpers } from "vue2-helpers";

@@ -16,13 +16,6 @@ import type {
   StructuredDataPayload,
 } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
-import {
-  BAlert,
-  BButton,
-  BButtonGroup,
-  BListGroup,
-  BListGroupItem,
-} from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
 import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";

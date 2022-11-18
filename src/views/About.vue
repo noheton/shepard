@@ -5,7 +5,6 @@ import getEnv from "@/utils/env";
 import type { Healthz, ResponseError } from "@dlr-shepard/shepard-client";
 import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import { useTitle } from "@vueuse/core";
-import { BAlert, BListGroup, BListGroupItem } from "bootstrap-vue";
 import { onMounted, ref } from "vue";
 import { version as appVersion } from "../../package.json";
 

@@ -16,7 +16,6 @@ import type {
   Roles,
 } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
-import { BButton, BButtonGroup, BCol, BRow, BTable } from "bootstrap-vue";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";
 import CurrentRoleIcon from "../components/generic/CurrentRoleIcon.vue";

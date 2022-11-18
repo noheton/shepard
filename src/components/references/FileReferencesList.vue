@@ -16,13 +16,6 @@ import type {
   ResponseError,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
-import {
-  BAlert,
-  BButton,
-  BLink,
-  BListGroup,
-  BListGroupItem,
-} from "bootstrap-vue";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({
