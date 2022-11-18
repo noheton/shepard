@@ -7,6 +7,10 @@
       "allowedVersions": "<2"
     },
     {
+      "matchPackageNames": ["neo4j"],
+      "allowedVersions": "<5"
+    },
+    {
       "matchPackagePatterns": ["tomcat(-.+)?"],
       "groupName": "tomcat"
     },
