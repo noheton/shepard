@@ -5,6 +5,10 @@
     {
       "matchPackageNames": ["influxdb"],
       "allowedVersions": "<2"
+    },
+    {
+      "matchPackageNames": ["neo4j"],
+      "allowedVersions": "<5"
     }
   ],
   "labels": ["dependencies"],
