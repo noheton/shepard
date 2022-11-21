@@ -102,7 +102,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 
 	@GET
 	@Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}/" + Constants.EXPORT)
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
 	@Override
 	public Response exportTimeseriesPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

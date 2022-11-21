@@ -98,7 +98,7 @@ public class FileRestImpl implements FileRest {
 
 	@GET
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
 	@Override
 	public Response getFile(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@PathParam(Constants.OID) String oid) {

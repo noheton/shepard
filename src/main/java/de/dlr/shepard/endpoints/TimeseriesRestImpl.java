@@ -142,7 +142,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	}
 
 	@GET
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
 	@Override
 	public Response exportTimeseries(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,

@@ -76,7 +76,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 
 	@GET
 	@Path("/{" + Constants.FILE_REFERENCE_ID + "}/payload/{" + Constants.OID + "}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
 	@Override
 	public Response getFilePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
