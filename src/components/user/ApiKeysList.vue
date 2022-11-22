@@ -102,7 +102,7 @@ export default defineComponent({
     handleCreate() {
       ApiKeyService.createApiKey({
         username: this.currentUsername,
-        apiKey: { name: this.newName } as ApiKey,
+        apiKey: { name: this.newName },
       })
         .then(response => {
           this.createdApiKey = response;

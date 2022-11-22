@@ -38,7 +38,7 @@ const userCache = {
   state: {
     users: {},
     pending: [],
-  } as UserCacheData,
+  },
   mutations: {
     addUserToCache: (state: UserCacheData, user: User) => {
       if (user.username) {

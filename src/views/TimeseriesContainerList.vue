@@ -122,7 +122,7 @@ export default defineComponent({
       perms: PermissionsPermissionTypeEnum;
     }) {
       TimeseriesService.createTimeseriesContainer({
-        timeseriesContainer: { name: options.name } as TimeseriesContainer,
+        timeseriesContainer: { name: options.name },
       })
         .then(async response => {
           if (response.id) {

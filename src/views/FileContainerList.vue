@@ -70,7 +70,7 @@ function createContainer(options: {
   perms: PermissionsPermissionTypeEnum;
 }) {
   FileService.createFileContainer({
-    fileContainer: { name: options.name } as FileContainer,
+    fileContainer: { name: options.name },
   })
     .then(async response => {
       if (response.id) {

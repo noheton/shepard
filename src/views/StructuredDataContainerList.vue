@@ -128,7 +128,7 @@ export default defineComponent({
       StructuredDataService.createStructuredDataContainer({
         structuredDataContainer: {
           name: options.name,
-        } as StructuredDataContainer,
+        },
       })
         .then(async response => {
           if (response.id) {

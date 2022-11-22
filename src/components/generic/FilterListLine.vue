@@ -107,12 +107,12 @@ export default defineComponent({
   },
   methods: {
     update() {
-      const options = {
+      const options: FilterChangedData = {
         currentPage: this.currentPage,
         currentSize: this.currentSize,
         orderBy: this.orderBy,
         descending: this.descending,
-      } as FilterChangedData;
+      };
       this.$emit("filter-changed", options);
     },
     updatePage(nextPage: number) {

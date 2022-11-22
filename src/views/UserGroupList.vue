@@ -1,3 +1,104 @@
+<script setup lang="ts">
+import FilterListLine, {
+  type FilterChangedData,
+} from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
+import UserGroupService from "@/services/userGroupService";
+import { handleError } from "@/utils/error-handling";
+import { getTotalRows } from "@/utils/helpers";
+import type {
+  GetAllUserGroupsOrderByEnum,
+  PermissionsPermissionTypeEnum,
+  ResponseError,
+  UserGroup,
+} from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
+
+const router = useRouter();
+
+const userGroupList = ref<UserGroup[]>();
+
+const perPage = ref(10);
+const currentPage = ref(1);
+const orderBy = ref("createdAt");
+const descending = ref(false);
+const totalRows = computed(() => {
+  if (userGroupList.value)
+    return getTotalRows(
+      userGroupList.value.length,
+      perPage.value,
+      currentPage.value,
+    );
+  else return 0;
+});
+
+function filterChanged(options: FilterChangedData) {
+  currentPage.value = options.currentPage;
+  perPage.value = options.currentSize;
+  descending.value = options.descending;
+  orderBy.value = options.orderBy;
+  retrieveUserGroups();
+}
+
+function retrieveUserGroups(page?: number) {
+  const nextPage = page || currentPage.value;
+  const nextOrderBy =
+    orderBy.value as keyof typeof GetAllUserGroupsOrderByEnum as GetAllUserGroupsOrderByEnum;
+  UserGroupService.getAllUserGroups({
+    size: perPage.value,
+    page: nextPage - 1,
+    orderBy: nextOrderBy,
+    orderDesc: descending.value,
+  })
+    .then(response => {
+      userGroupList.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching Usergroups");
+    });
+}
+
+function createUserGroup(options: {
+  name: string;
+  perms: PermissionsPermissionTypeEnum;
+}) {
+  UserGroupService.createUserGroup({
+    userGroup: { name: options.name, usernames: [] },
+  })
+    .then(async response => {
+      if (response.id) {
+        const perms = await UserGroupService.getUserGroupPermissions({
+          usergroupId: response.id,
+        });
+        perms.permissionType = options.perms;
+        await UserGroupService.editUserGroupPermissions({
+          usergroupId: response.id,
+          permissions: perms,
+        });
+
+        router.push({
+          name: "UserGroup",
+          params: {
+            usergroupId: String(response.id),
+          },
+        });
+      }
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating a usergroup");
+    });
+}
+
+onMounted(() => {
+  retrieveUserGroups(0);
+  useTitle("User Groups | shepard");
+});
+</script>
+
 <template>
   <div class="component">
     <b-button-group class="float-right">
@@ -54,115 +155,3 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
-import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import Loading from "@/components/generic/Loading.vue";
-import UserGroupService from "@/services/userGroupService";
-import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
-import type {
-  GetAllUserGroupsOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  UserGroup,
-} from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import Vue from "vue";
-
-interface UserGroupData {
-  userGroupList?: UserGroup[];
-  perPage: number;
-  currentPage: number;
-  orderBy: string;
-  descending: boolean;
-}
-
-export default Vue.extend({
-  components: { GenericCreateModal, GenericName, Loading, FilterListLine },
-  data() {
-    return {
-      userGroupList: undefined,
-      perPage: 10,
-      currentPage: 1,
-      orderBy: "createdAt",
-      descending: false,
-    } as UserGroupData;
-  },
-  computed: {
-    totalRows(): number {
-      if (this.userGroupList)
-        return getTotalRows(
-          this.userGroupList.length,
-          this.perPage,
-          this.currentPage,
-        );
-      else return 0;
-    },
-  },
-  mounted() {
-    this.retrieveUserGroups(0);
-    useTitle("User Groups | shepard");
-  },
-  methods: {
-    filterChanged(options: FilterChangedData) {
-      this.currentPage = options.currentPage;
-      this.perPage = options.currentSize;
-      this.descending = options.descending;
-      this.orderBy = options.orderBy;
-      this.retrieveUserGroups();
-    },
-    retrieveUserGroups(page?: number) {
-      const nextPage = page || this.currentPage;
-      const nextOrderBy = this
-        .orderBy as keyof typeof GetAllUserGroupsOrderByEnum as GetAllUserGroupsOrderByEnum;
-      UserGroupService.getAllUserGroups({
-        size: this.perPage,
-        page: nextPage - 1,
-        orderBy: nextOrderBy,
-        orderDesc: this.descending,
-      })
-        .then(response => {
-          this.userGroupList = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching Usergroups");
-        });
-    },
-    createUserGroup(options: {
-      name: string;
-      perms: PermissionsPermissionTypeEnum;
-    }) {
-      UserGroupService.createUserGroup({
-        userGroup: { name: options.name, usernames: [] } as UserGroup,
-      })
-        .then(async response => {
-          if (response.id) {
-            const perms = await UserGroupService.getUserGroupPermissions({
-              usergroupId: response.id,
-            });
-            perms.permissionType = options.perms;
-            await UserGroupService.editUserGroupPermissions({
-              usergroupId: response.id,
-              permissions: perms,
-            });
-
-            this.$router.push({
-              name: "UserGroup",
-              params: {
-                usergroupId: String(response.id),
-              },
-            });
-          }
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating a usergroup");
-        });
-    },
-  },
-});
-</script>

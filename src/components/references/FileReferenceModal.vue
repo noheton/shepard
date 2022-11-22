@@ -259,7 +259,7 @@ export default defineComponent({
       let response = undefined;
       try {
         response = await FileService.createFileContainer({
-          fileContainer: { name: newName } as FileContainer,
+          fileContainer: { name: newName },
         });
       } catch (e: any) {
         handleError(e as ResponseError, "creating file container");

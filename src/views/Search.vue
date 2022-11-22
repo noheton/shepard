@@ -1,3 +1,160 @@
+<script setup lang="ts">
+import Loading from "@/components/generic/Loading.vue";
+import SearchService from "@/services/searchService";
+import { handleError } from "@/utils/error-handling";
+import {
+  ResponseError,
+  SearchParamsQueryTypeEnum,
+  SearchScopeTraversalRulesEnum,
+  type ResponseBody,
+  type ResultTriple,
+} from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { default as JSONEditor, type JSONEditorOptions } from "jsoneditor";
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
+
+const initialJson = {
+  OR: [
+    {
+      property: "name",
+      operator: "eq",
+      value: "MyName",
+    },
+    {
+      NOT: {
+        property: "id",
+        operator: "gt",
+        value: 12,
+      },
+    },
+  ],
+};
+
+const router = useRouter();
+
+const currentCollectionId = ref<number>();
+const currentDataObjectId = ref<number>();
+const traversalRuleOptions = Object.values(SearchScopeTraversalRulesEnum);
+const selectedTraversalRules = ref<SearchScopeTraversalRulesEnum[]>([]);
+const queryTypeOptions = Object.values(SearchParamsQueryTypeEnum);
+const selectedQueryType = ref<SearchParamsQueryTypeEnum>("Collection");
+const traversalRulesDisabled = computed(() => {
+  return (
+    selectedQueryType.value == "Collection" ||
+    currentDataObjectId.value == undefined ||
+    currentDataObjectId.value.toString() == ""
+  );
+});
+
+const editor = ref<JSONEditor>();
+function jsonEditor() {
+  const options: JSONEditorOptions = {
+    mode: "tree",
+    modes: ["code", "tree"],
+    search: false,
+  };
+
+  // create the editor
+  const container = document.getElementById("jsoneditor");
+  if (container) {
+    editor.value = new JSONEditor(container, options);
+  } else {
+    editor.value = undefined;
+  }
+
+  if (editor.value) {
+    editor.value.set(initialJson);
+  }
+}
+
+function reset() {
+  if (editor.value) {
+    editor.value.set(initialJson);
+  }
+  currentCollectionId.value = undefined;
+  currentDataObjectId.value = undefined;
+  selectedTraversalRules.value = [];
+  selectedQueryType.value = "Collection";
+  searchData.value = undefined;
+  loading.value = false;
+  maxResultsReached.value = false;
+}
+
+const maxResults = 1000;
+const searchData = ref<ResponseBody>();
+const loading = ref(false);
+const maxResultsReached = ref(false);
+function query() {
+  // get actual json of the JsonEditor
+  if (!editor.value) return;
+  const searchQuery = JSON.stringify(editor.value.get());
+  searchData.value = undefined;
+  loading.value = true;
+
+  SearchService.search({
+    searchBody: {
+      scopes: [
+        {
+          collectionId: currentCollectionId.value,
+          dataObjectId: currentDataObjectId.value,
+          traversalRules: selectedTraversalRules.value,
+        },
+      ],
+      searchParams: {
+        query: searchQuery,
+        queryType: selectedQueryType.value,
+      },
+    },
+  })
+    .then(response => {
+      if (response.resultSet && response.resultSet.length > maxResults) {
+        response.resultSet = response.resultSet.slice(0, maxResults);
+        maxResultsReached.value = true;
+      } else {
+        maxResultsReached.value = false;
+      }
+      searchData.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching search data");
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+}
+
+function rowSelected(items: ResultTriple[]) {
+  if (items.length == 0) return;
+
+  const item = items[0];
+  let routeData = undefined;
+
+  if (item.dataObjectId != undefined) {
+    routeData = router.resolve({
+      name: "DataObject",
+      params: {
+        collectionId: String(item.collectionId),
+        dataObjectId: String(item.dataObjectId),
+      },
+    });
+  } else {
+    routeData = router.resolve({
+      name: "Collection",
+      params: {
+        collectionId: String(item.collectionId),
+      },
+    });
+  }
+  window.open(routeData.href, "_blank");
+}
+
+onMounted(() => {
+  jsonEditor();
+  useTitle("Search | shepard");
+});
+</script>
+
 <template>
   <div>
     <div class="component">
@@ -45,7 +202,7 @@
               <b-col cols="5">
                 <b-form-group>
                   <b-form-checkbox-group
-                    v-model="selectedTraversalRule"
+                    v-model="selectedTraversalRules"
                     :disabled="traversalRulesDisabled"
                     :options="traversalRuleOptions"
                   >
@@ -69,200 +226,34 @@
           </b-col>
 
           <b-col>
-            <div table>
-              <div class="pl-2 result-header">Result</div>
-
-              <div v-if="searchData != undefined">
-                <b-table
-                  v-if="searchData.resultSet && searchData.resultSet.length > 0"
-                  sticky-header="766px"
-                  striped
-                  hover
-                  selectable
-                  select-mode="single"
-                  head-variant="info"
-                  class="table table-sm table-bordered"
-                  :items="searchData.resultSet"
-                  @row-selected="rowSelected"
-                >
-                </b-table>
-                <div v-else class="pl-2">no results</div>
-              </div>
-              <Loading v-if="loading" />
+            <div class="pl-2 result-header">Result</div>
+            <b-alert :show="maxResultsReached" variant="warning">
+              Maximum number of results reached. <br />
+              Only {{ maxResults }} elements are displayed.
+            </b-alert>
+            <div v-if="searchData != undefined">
+              <b-table
+                v-if="searchData.resultSet && searchData.resultSet.length > 0"
+                sticky-header="766px"
+                head-variant="light"
+                striped
+                hover
+                selectable
+                select-mode="single"
+                class="table table-sm table-bordered"
+                :items="searchData.resultSet"
+                @row-selected="rowSelected"
+              >
+              </b-table>
+              <div v-else class="pl-2">no results</div>
             </div>
+            <Loading v-if="loading" />
           </b-col>
         </b-row>
       </b-container>
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import Loading from "@/components/generic/Loading.vue";
-import SearchService from "@/services/searchService";
-import { handleError } from "@/utils/error-handling";
-import {
-  ResponseError,
-  SearchParamsQueryTypeEnum,
-  SearchScopeTraversalRulesEnum,
-  type ResponseBody,
-  type ResultTriple,
-} from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import { default as JSONEditor, type JSONEditorOptions } from "jsoneditor";
-import Vue from "vue";
-
-interface SearchData {
-  editor?: JSONEditor;
-  currentCollectionId?: number;
-  currentDataObjectId?: number;
-  traversalRuleOptions: object;
-  queryTypeOptions: object;
-  selectedTraversalRule: Array<SearchScopeTraversalRulesEnum>;
-  selectedQueryType: SearchParamsQueryTypeEnum;
-  searchData?: ResponseBody;
-  loading: boolean;
-}
-
-function initialState(): SearchData {
-  return {
-    editor: undefined,
-    currentCollectionId: undefined,
-    currentDataObjectId: undefined,
-    selectedTraversalRule: [],
-    selectedQueryType: SearchParamsQueryTypeEnum.Collection,
-    traversalRuleOptions: Object.values(SearchScopeTraversalRulesEnum),
-    queryTypeOptions: Object.values(SearchParamsQueryTypeEnum),
-    searchData: undefined,
-    loading: false,
-  };
-}
-
-const initialJson = {
-  OR: [
-    {
-      property: "name",
-      value: "MyName",
-      operator: "eq",
-    },
-    {
-      NOT: {
-        property: "id",
-        value: 12,
-        operator: "gt",
-      },
-    },
-  ],
-};
-
-export default Vue.extend({
-  components: { Loading },
-  data() {
-    return initialState();
-  },
-  computed: {
-    traversalRulesDisabled(): boolean {
-      return (
-        this.selectedQueryType == "Collection" ||
-        this.currentDataObjectId == undefined ||
-        this.currentDataObjectId.toString() == ""
-      );
-    },
-  },
-  mounted() {
-    this.jsonEditor();
-    useTitle("Search | shepard");
-  },
-  methods: {
-    jsonEditor() {
-      const options = {
-        mode: "tree",
-        modes: ["code", "tree"],
-        search: false,
-      } as JSONEditorOptions;
-
-      // create the editor
-      const container = document.getElementById("jsoneditor");
-      if (container) {
-        this.editor = new JSONEditor(container, options);
-      } else {
-        this.editor = undefined;
-      }
-
-      if (this.editor) {
-        this.editor.set(initialJson);
-      }
-    },
-
-    reset() {
-      const editor = this.editor;
-      Object.assign(this.$data, initialState());
-      this.editor = editor;
-      if (this.editor) {
-        this.editor.set(initialJson);
-      }
-    },
-
-    query() {
-      // get actual json of the JsonEditor
-      if (!this.editor) return;
-      const searchQuery = JSON.stringify(this.editor.get());
-      this.searchData = undefined;
-      this.loading = true;
-
-      SearchService.search({
-        searchBody: {
-          scopes: [
-            {
-              collectionId: this.currentCollectionId,
-              dataObjectId: this.currentDataObjectId,
-              traversalRules: this.selectedTraversalRule,
-            },
-          ],
-          searchParams: {
-            query: searchQuery,
-            queryType: this.selectedQueryType,
-          },
-        },
-      })
-        .then(response => {
-          this.searchData = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching search data");
-        })
-        .finally(() => {
-          this.loading = false;
-        });
-    },
-
-    rowSelected(items: Array<ResultTriple>) {
-      if (items.length == 0) return;
-
-      const item = items[0];
-      let routeData = undefined;
-
-      if (item.dataObjectId != undefined) {
-        routeData = this.$router.resolve({
-          name: "DataObject",
-          params: {
-            collectionId: String(item.collectionId),
-            dataObjectId: String(item.dataObjectId),
-          },
-        });
-      } else {
-        routeData = this.$router.resolve({
-          name: "Collection",
-          params: {
-            collectionId: String(item.collectionId),
-          },
-        });
-      }
-      window.open(routeData.href, "_blank");
-    },
-  },
-});
-</script>
 
 <style scoped>
 #jsoneditor {

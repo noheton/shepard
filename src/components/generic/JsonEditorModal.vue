@@ -74,10 +74,10 @@ export default defineComponent({
     startJsonEditor() {
       // create the editor
       const container = document.getElementById("jsoneditor");
-      const options = {
+      const options: JSONEditorOptions = {
         mode: "view",
         modes: ["code", "view"], // allowed modes
-      } as JSONEditorOptions;
+      };
 
       if (container) {
         this.jsoneditor = new JSONEditor(container, options);
