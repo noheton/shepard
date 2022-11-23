@@ -1,14 +1,25 @@
 import { Configuration, UserApi, type User } from "@dlr-shepard/shepard-client";
 import { nanoid } from "nanoid";
 import Vue from "vue";
-import Vuex from "vuex";
+import Vuex, { type ActionContext } from "vuex";
 import {
   vuexOidcCreateStoreModule,
   type VuexOidcClientSettings,
+  type VuexOidcState,
 } from "vuex-oidc";
 import getEnv from "./env";
 
 Vue.use(Vuex);
+
+interface UserCacheState {
+  users: { [key: string]: User };
+  pending: string[];
+}
+
+interface RootState {
+  oidcStore: VuexOidcState;
+  userCache: UserCacheState;
+}
 
 // OIDC
 const loco = window.location;
@@ -28,11 +39,6 @@ const clientSettings = {
 } as VuexOidcClientSettings;
 
 // User Cache
-interface UserCacheData {
-  users: { [key: string]: User };
-  pending: string[];
-}
-
 const userCache = {
   namespaced: true,
   state: {
@@ -40,42 +46,44 @@ const userCache = {
     pending: [],
   },
   mutations: {
-    addUserToCache: (state: UserCacheData, user: User) => {
+    addUserToCache: (state: UserCacheState, user: User) => {
       if (user.username) {
         const tmp: { [key: string]: User } = {};
         tmp[user.username] = user;
         state.users = { ...state.users, ...tmp };
       }
     },
-    addUserToPending: (state: UserCacheData, username: string) => {
+    addUserToPending: (state: UserCacheState, username: string) => {
       if (!state.pending.includes(username)) state.pending.push(username);
     },
-    removeUserFromPending: (state: UserCacheData, username: string) => {
+    removeUserFromPending: (state: UserCacheState, username: string) => {
       state.pending = state.pending.filter(i => i !== username);
     },
   },
   getters: {
-    getAllUsers: (state: UserCacheData) => {
+    getAllUsers: (state: UserCacheState) => {
       return state.users;
     },
-    getUserFromCache: (state: UserCacheData) => (username: string) => {
+    getUserFromCache: (state: UserCacheState) => (username: string) => {
       return state.users[username];
     },
-    isUserInCache: (state: UserCacheData) => (username: string) => {
+    isUserInCache: (state: UserCacheState) => (username: string) => {
       return username in state.users;
     },
-    isUserPending: (state: UserCacheData) => (username: string) => {
+    isUserPending: (state: UserCacheState) => (username: string) => {
       return state.pending.includes(username);
     },
   },
   actions: {
-    /* eslint-disable  @typescript-eslint/no-explicit-any */
-    fetchUser: (context: any, username: string) => {
+    fetchUser: (
+      context: ActionContext<UserCacheState, RootState>,
+      username: string,
+    ) => {
       if (context.getters.isUserPending(username)) return;
       context.commit("addUserToPending", username);
       const conf = new Configuration({
         basePath: getEnv("VITE_BACKEND"),
-        accessToken: context.rootState.oidcStore.access_token,
+        accessToken: context.rootState.oidcStore.access_token || "",
       });
       const userApi = new UserApi(conf);
       userApi
