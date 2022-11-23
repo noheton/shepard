@@ -4,6 +4,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import FilePlottingModal from "@/components/references/FilePlottingModal.vue";
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import ImageViewerModal from "@/components/references/ImageViewerModal.vue";
 import TextViewerModal from "@/components/references/TextViewerModal.vue";
@@ -39,6 +40,8 @@ const currentFileReference = ref<FileReference>();
 const currentFileOid = ref<string>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
+const currentFileName = ref<string>();
+const csvFileData = ref<string>();
 
 function retrieveReferences() {
   FileReferenceService.getAllFileReferences({
@@ -102,6 +105,36 @@ function getFilePayload(
         downloadErrorMessage.value =
           "Not Found: File no longer exists in the container";
       }
+    })
+    .finally(() => (downloadActive.value = false));
+}
+
+function handlePlotCsvData(
+  fileReferenceId: number,
+  oid: string,
+  filename?: string,
+) {
+  currentFileName.value = filename || "File";
+  const blobReader = new FileReader();
+  downloadActive.value = true;
+  FileReferenceService.getFilePayload({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: fileReferenceId,
+    oid: oid,
+  })
+    .then(response => {
+      blobReader.readAsText(response, "utf8");
+      blobReader.addEventListener("load", () => {
+        if (typeof blobReader.result === "string") {
+          csvFileData.value = blobReader.result;
+        }
+      });
+      downloadFinished.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching file payload");
+      downloadError.value = true;
     })
     .finally(() => (downloadActive.value = false));
 }
@@ -249,6 +282,21 @@ onMounted(() => {
             | <b>Filename:</b>
             {{ files[oid].filename }}
             <b-button
+              v-if="files[oid].filename?.match(/\.csv$/i)"
+              v-b-modal.plotting_modal
+              class="float-right"
+              title="Plot Data"
+              variant="primary"
+              size="sm"
+              style="font-size: 0.6em"
+              @click="
+                if (fileReference.id)
+                  handlePlotCsvData(fileReference.id, oid, files[oid].filename);
+              "
+            >
+              <PlottingIcon />
+            </b-button>
+            <b-button
               v-if="files[oid].filename?.match(/\.(jpg|jpeg|png|gif|bmp)$/i)"
               v-b-modal.image-viewer-modal
               v-b-tooltip.hover
@@ -305,6 +353,11 @@ onMounted(() => {
       :modal-name="files[currentFileOid]?.filename"
       :container-id="currentFileReference.fileContainerId"
       :oid="currentFileOid"
+    />
+    <FilePlottingModal
+      modal-id="plotting_modal"
+      :modal-name="currentFileName"
+      :csv-data="csvFileData"
     />
   </div>
 </template>
