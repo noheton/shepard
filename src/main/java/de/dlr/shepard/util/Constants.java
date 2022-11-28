@@ -50,6 +50,13 @@ public class Constants {
 	public static final String FILE_REFERENCES = "fileReferences";
 	public static final String FILE_REFERENCE_ID = "fileReferenceId";
 
+	public static final String SEMANTIC_REPOSITORY = "semanticRepository";
+	public static final String SEMANTIC_REPOSITORIES = "semanticRepositories";
+	public static final String SEMANTIC_REPOSITORY_ID = "semanticRepositoryId";
+	public static final String SEMANTIC_ANNOTATION = "semanticAnnotation";
+	public static final String SEMANTIC_ANNOTATIONS = "semanticAnnotations";
+	public static final String SEMANTIC_ANNOTATION_ID = "semanticAnnotationId";
+
 	public static final String OID = "oid";
 
 	public static final String SEARCH = "search";
@@ -112,6 +119,9 @@ public class Constants {
 	public static final String POINTS_TO = "points_to";
 	public static final String IS_IN_CONTAINER = "is_in_container";
 	public static final String IS_IN_GROUP = "is_in_group";
+	public static final String VALUE_REPOSITORY = "value_in_repository";
+	public static final String PROPERTY_REPOSITORY = "property_in_repository";
+	public static final String HAS_ANNOTATION = "has_annotation";
 
 	// Influx
 	public static final String MEASUREMENT = "measurement";

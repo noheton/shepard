@@ -16,7 +16,9 @@ public class StructuredDataReferenceTest extends BaseTestCase {
 	public void equalsContract() {
 		EqualsVerifier.simple().forClass(StructuredDataReference.class)
 				.withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
-				.withPrefabValues(User.class, new User("bob"), new User("claus")).verify();
+				.withPrefabValues(User.class, new User("bob"), new User("claus"))
+				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+				.verify();
 	}
 
 	@Test

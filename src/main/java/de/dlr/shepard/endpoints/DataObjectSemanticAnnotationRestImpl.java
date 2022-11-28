@@ -1,0 +1,57 @@
+package de.dlr.shepard.endpoints;
+
+import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
+import de.dlr.shepard.util.Constants;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
+		+ Constants.DATAOBJECT_ID + "}/" + Constants.SEMANTIC_ANNOTATIONS)
+public class DataObjectSemanticAnnotationRestImpl extends ASemanticAnnotationRestImpl
+		implements DataObjectSemanticAnnotationRest {
+
+	@GET
+	@Override
+	public Response getAllDataObjectAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
+		return getAll(dataObjectId);
+	}
+
+	@GET
+	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+	@Override
+	public Response getDataObjectAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
+		return get(semanticAnnotationId);
+	}
+
+	@POST
+	@Subscribable
+	@Override
+	public Response createDataObjectAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, SemanticAnnotationIO semanticAnnotation) {
+		return create(dataObjectId, semanticAnnotation);
+	}
+
+	@DELETE
+	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+	@Subscribable
+	@Override
+	public Response deleteDataObjectAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
+		return delete(semanticAnnotationId);
+	}
+
+}

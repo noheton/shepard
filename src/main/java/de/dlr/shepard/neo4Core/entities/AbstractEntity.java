@@ -1,6 +1,8 @@
 package de.dlr.shepard.neo4Core.entities;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import org.neo4j.ogm.annotation.GeneratedValue;
@@ -42,6 +44,10 @@ public abstract class AbstractEntity implements HasId {
 
 	private String name;
 
+	@ToString.Exclude
+	@Relationship(type = Constants.HAS_ANNOTATION)
+	private List<SemanticAnnotation> annotations = new ArrayList<>();
+
 	/**
 	 * For testing purposes only
 	 *
@@ -51,6 +57,10 @@ public abstract class AbstractEntity implements HasId {
 		this.id = id;
 	}
 
+	public void addAnnotation(SemanticAnnotation annotation) {
+		annotations.add(annotation);
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -58,6 +68,7 @@ public abstract class AbstractEntity implements HasId {
 		result = prime * result + Objects.hash(id, deleted, createdAt, updatedAt, name);
 		result = prime * result + HasId.hashcodeHelper(createdBy);
 		result = prime * result + HasId.hashcodeHelper(updatedBy);
+		result = prime * result + HasId.hashcodeHelper(annotations);
 		return result;
 	}
 
@@ -70,7 +81,8 @@ public abstract class AbstractEntity implements HasId {
 		AbstractEntity other = (AbstractEntity) obj;
 		return Objects.equals(id, other.id) && deleted == other.deleted && Objects.equals(createdAt, other.createdAt)
 				&& Objects.equals(updatedAt, other.updatedAt) && HasId.equalsHelper(createdBy, other.createdBy)
-				&& HasId.equalsHelper(updatedBy, other.updatedBy) && Objects.equals(name, other.name);
+				&& HasId.equalsHelper(updatedBy, other.updatedBy) && Objects.equals(name, other.name)
+				&& HasId.equalsHelper(annotations, other.annotations);
 	}
 
 	@Override

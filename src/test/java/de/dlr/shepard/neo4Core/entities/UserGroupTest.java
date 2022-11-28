@@ -24,7 +24,9 @@ public class UserGroupTest extends BaseTestCase {
 		User user3 = new User("user3");
 		User user4 = new User("user4");
 		EqualsVerifier.simple().forClass(UserGroup.class).withPrefabValues(String.class, "group1", "group2")
-				.withPrefabValues(Long.class, 1L, 2L).withPrefabValues(User.class, user3, user4).verify();
+				.withPrefabValues(Long.class, 1L, 2L).withPrefabValues(User.class, user3, user4)
+				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+				.verify();
 	}
 
 }

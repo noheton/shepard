@@ -17,6 +17,7 @@ public class CollectionTest extends BaseTestCase {
 				.withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
 				.withPrefabValues(CollectionReference.class, new CollectionReference(1L), new CollectionReference(2L))
+				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
 				.verify();
 	}
 

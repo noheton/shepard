@@ -23,6 +23,8 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.FileReference;
+import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
+import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.entities.Subscription;
@@ -68,6 +70,10 @@ public class UrlPathCheckerTest extends BaseTestCase {
 	SubscriptionService subscriptionService;
 	@Mock
 	UserGroupService userGroupService;
+	@Mock
+	SemanticRepositoryService semanticRepositoryService;
+	@Mock
+	SemanticAnnotationService semanticAnnotationService;
 
 	@Mock
 	PathSegment slashSeg, dummySeg, dummyIdSeg;
@@ -99,6 +105,12 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 	@Mock
 	PathSegment dataObjectReferencesSeg, dataObjectReferencesIdSeg;
+
+	@Mock
+	PathSegment semanticRepositoriesSeg, semanticRepositoryIdSeg;
+
+	@Mock
+	PathSegment semanticAnnotationsSeg, semanticAnnotationIdSeg;
 
 	@InjectMocks
 	UrlPathChecker urlPathChecker;
@@ -132,6 +144,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionReferencesSeg.getPath()).thenReturn(Constants.COLLECTION_REFERENCES);
 
 		when(userGroupsSeg.getPath()).thenReturn(Constants.USERGROUP);
+
+		when(semanticRepositoriesSeg.getPath()).thenReturn(Constants.SEMANTIC_REPOSITORIES);
+		when(semanticAnnotationsSeg.getPath()).thenReturn(Constants.SEMANTIC_ANNOTATIONS);
 	}
 
 	@Test
@@ -1002,6 +1017,224 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(userGroupService.getUserGroup(100L)).thenReturn(userGroup);
 
 		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void semanticRepository_exist() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(semanticRepositoriesSeg);
+		segments.add(semanticRepositoryIdSeg);
+
+		when(semanticRepositoryIdSeg.getPath()).thenReturn("100");
+
+		var repository = new SemanticRepository(100);
+		when(semanticRepositoryService.getRepository(100)).thenReturn(repository);
+
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void semanticRepository_notFound() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(semanticRepositoriesSeg);
+		segments.add(semanticRepositoryIdSeg);
+
+		when(semanticRepositoryIdSeg.getPath()).thenReturn("100");
+		when(semanticRepositoryService.getRepository(100)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - SemanticRepository does not exist", e.getMessage());
+	}
+
+	@Test
+	public void semanticAnnotation_existsCollection() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		collection.setAnnotations(List.of(semanticAnnotation));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void semanticAnnotation_existsDataObject() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		dataObject.setCollection(collection);
+		dataObject.setAnnotations(List.of(semanticAnnotation));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void semanticAnnotation_existsReference() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(basicReferencesSeg);
+		segments.add(basicReferencesIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(basicReferencesIdSeg.getPath()).thenReturn("103");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		BasicReference reference = new BasicReference(103L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(dataObject);
+		reference.setAnnotations(List.of(semanticAnnotation));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(basicReferenceService.getReference(103L)).thenReturn(reference);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		urlPathChecker.checkPathSegments(segments);
+	}
+
+	@Test
+	public void semanticAnnotation_notFound() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		dataObject.setCollection(collection);
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(null);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - SemanticAnnotation does not exist", e.getMessage());
+	}
+
+	@Test
+	public void semanticAnnotation_wrongPath() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - No entity was found annotated", e.getMessage());
+	}
+
+	@Test
+	public void semanticAnnotation_wrongAssociationCollection() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		SemanticAnnotation wrong = new SemanticAnnotation(103L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		collection.setAnnotations(List.of(wrong));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - There is no association between annotation and collection", e.getMessage());
+	}
+
+	@Test
+	public void semanticAnnotation_wrongAssociationDataObject() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		SemanticAnnotation wrong = new SemanticAnnotation(103L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		dataObject.setCollection(collection);
+		dataObject.setAnnotations(List.of(wrong));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - There is no association between annotation and dataObject", e.getMessage());
+	}
+
+	@Test
+	public void semanticAnnotation_wrongAssociationReference() {
+		List<PathSegment> segments = new ArrayList<>();
+		segments.add(collectionsSeg);
+		segments.add(collectionIdSeg);
+		segments.add(dataObjectsSeg);
+		segments.add(dataObjectIdSeg);
+		segments.add(basicReferencesSeg);
+		segments.add(basicReferencesIdSeg);
+		segments.add(semanticAnnotationsSeg);
+		segments.add(semanticAnnotationIdSeg);
+		when(collectionIdSeg.getPath()).thenReturn("100");
+		when(dataObjectIdSeg.getPath()).thenReturn("102");
+		when(basicReferencesIdSeg.getPath()).thenReturn("103");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+
+		Collection collection = new Collection(100L);
+		DataObject dataObject = new DataObject(102L);
+		BasicReference reference = new BasicReference(102L);
+		SemanticAnnotation wrong = new SemanticAnnotation(103L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(dataObject);
+		reference.setAnnotations(List.of(wrong));
+		when(collectionService.getCollection(100L)).thenReturn(collection);
+		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(basicReferenceService.getReference(103L)).thenReturn(reference);
+		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+
+		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
+		assertEquals("ID ERROR - There is no association between annotation and reference", e.getMessage());
 	}
 
 	@Test

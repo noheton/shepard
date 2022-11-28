@@ -10,6 +10,8 @@ import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
+import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
@@ -40,6 +42,9 @@ public class UrlPathChecker {
 
 	private UserGroupService userGroupService = new UserGroupService();
 
+	private SemanticRepositoryService semanticRepositoryService = new SemanticRepositoryService();
+	private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
+
 	/**
 	 * Checks the url for wrong ids. A wrong id could identify a non existing
 	 * entity, a previous deleted one, or a non existing association between two
@@ -66,6 +71,7 @@ public class UrlPathChecker {
 		StringBuilder builder = new StringBuilder();
 		DataObject dataObject = null;
 		Collection collection = null;
+		BasicReference reference = null;
 		User user = null;
 
 		builder.append("ID ERROR - ");
@@ -171,7 +177,7 @@ public class UrlPathChecker {
 
 		if (pathElems.containsKey(Constants.BASIC_REFERENCES)) {
 			long id = Long.parseLong(pathElems.get(Constants.BASIC_REFERENCES));
-			var reference = basicReferenceService.getReference(id);
+			reference = basicReferenceService.getReference(id);
 			String error = checkReference(reference, dataObject);
 			if (error != null) {
 				return builder.append(error).toString();
@@ -208,6 +214,24 @@ public class UrlPathChecker {
 			long id = Long.parseLong(pathElems.get(Constants.USERGROUP));
 			var usergroup = userGroupService.getUserGroup(id);
 			String error = checkUserGroup(usergroup);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
+		if (pathElems.containsKey(Constants.SEMANTIC_REPOSITORIES)) {
+			long id = Long.parseLong(pathElems.get(Constants.SEMANTIC_REPOSITORIES));
+			var semanticRepository = semanticRepositoryService.getRepository(id);
+			String error = checkSemanticRepository(semanticRepository);
+			if (error != null) {
+				return builder.append(error).toString();
+			}
+		}
+
+		if (pathElems.containsKey(Constants.SEMANTIC_ANNOTATIONS)) {
+			long id = Long.parseLong(pathElems.get(Constants.SEMANTIC_ANNOTATIONS));
+			var annotation = semanticAnnotationService.getAnnotation(id);
+			String error = checkSemanticAnnotation(annotation, collection, dataObject, reference);
 			if (error != null) {
 				return builder.append(error).toString();
 			}
@@ -280,6 +304,39 @@ public class UrlPathChecker {
 		return null;
 	}
 
+	private String checkSemanticRepository(SemanticRepository semanticRepository) {
+		if (semanticRepository == null) {
+			return "SemanticRepository does not exist";
+		}
+		return null;
+	}
+
+	private String checkSemanticAnnotation(SemanticAnnotation annotation, Collection collection, DataObject dataObject,
+			BasicReference reference) {
+		if (annotation == null) {
+			return "SemanticAnnotation does not exist";
+		} else if (reference != null) {
+			// It is a reference annotation
+			if (reference.getAnnotations().stream().noneMatch(a -> a.getId().equals(annotation.getId()))) {
+				return "There is no association between annotation and reference";
+			}
+			return null;
+		} else if (dataObject != null) {
+			// It is a dataObject annotation
+			if (dataObject.getAnnotations().stream().noneMatch(a -> a.getId().equals(annotation.getId()))) {
+				return "There is no association between annotation and dataObject";
+			}
+			return null;
+		} else if (collection != null) {
+			// It is a collection annotation
+			if (collection.getAnnotations().stream().noneMatch(a -> a.getId().equals(annotation.getId()))) {
+				return "There is no association between annotation and collection";
+			}
+			return null;
+		}
+		return "No entity was found annotated";
+	}
+
 	private HashMap<String, String> getPathElements(List<PathSegment> pathSegments) {
 		HashMap<String, String> pathElems = new HashMap<>();
 		for (int i = 0; i + 1 < pathSegments.size(); i = i + 2) {
@@ -292,4 +349,5 @@ public class UrlPathChecker {
 
 		return pathElems;
 	}
+
 }
