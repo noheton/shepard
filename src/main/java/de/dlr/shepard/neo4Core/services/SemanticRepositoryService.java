@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.services;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -21,11 +20,8 @@ public class SemanticRepositoryService {
 	private DateHelper dateHelper = new DateHelper();
 
 	public List<SemanticRepository> getAllRepositories(PaginationHelper page) {
-		var repositories = page != null ? semanticRepositoryDAO.findAll(page) : semanticRepositoryDAO.findAll();
-		if (repositories instanceof List<SemanticRepository> list)
-			return list;
-		else
-			return new ArrayList<>(repositories);
+		var repositories = semanticRepositoryDAO.findAllSemanticRepositories(page);
+		return repositories;
 	}
 
 	public SemanticRepository getRepository(long id) {

@@ -26,7 +26,6 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	 * @param username the name of the user
 	 * @return a list of collections
 	 */
-
 	public List<Collection> findAllCollections(QueryParamHelper params, String username) {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());

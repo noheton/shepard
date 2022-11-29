@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -45,7 +44,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 	public void getAllRepositoriesTest() {
 		var expected = List.of(new SemanticRepository(1L));
 
-		when(semanticRepositoryDAO.findAll()).thenReturn(expected);
+		when(semanticRepositoryDAO.findAllSemanticRepositories(null)).thenReturn(expected);
 		var actual = service.getAllRepositories(null);
 
 		assertEquals(expected, actual);
@@ -56,18 +55,8 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 		var page = new PaginationHelper(0, 10);
 		var expected = List.of(new SemanticRepository(1L));
 
-		when(semanticRepositoryDAO.findAll(page)).thenReturn(expected);
+		when(semanticRepositoryDAO.findAllSemanticRepositories(page)).thenReturn(expected);
 		var actual = service.getAllRepositories(page);
-
-		assertEquals(expected, actual);
-	}
-
-	@Test
-	public void getAllRepositoriesTest_noList() {
-		var expected = List.of(new SemanticRepository(1L));
-
-		when(semanticRepositoryDAO.findAll()).thenReturn(Set.of(new SemanticRepository(1L)));
-		var actual = service.getAllRepositories(null);
 
 		assertEquals(expected, actual);
 	}

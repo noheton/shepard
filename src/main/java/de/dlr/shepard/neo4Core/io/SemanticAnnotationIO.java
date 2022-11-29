@@ -2,7 +2,7 @@ package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @Schema(name = "SemanticAnnotation")
 public class SemanticAnnotationIO extends AbstractEntityIO {
 
-	@NotEmpty
+	@NotBlank
 	private String propertyIRI;
 
-	@NotEmpty
+	@NotBlank
 	private String valueIRI;
 
 	@NotNull
