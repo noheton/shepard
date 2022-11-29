@@ -25,7 +25,7 @@
       Create new Reference
     </b-button>
 
-    <StructuredDataReferenceModal
+    <CreateStructuredDataReferenceModal
       modal-id="create-structured-data-ref-modal"
       modal-name="Create StructuredData Reference"
       @create="create($event)"
@@ -132,7 +132,7 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import Loading from "@/components/generic/Loading.vue";
-import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
+import CreateStructuredDataReferenceModal from "@/components/references/CreateStructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { handleError, logError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
@@ -155,7 +155,7 @@ interface StructuredDataListData {
 export default defineComponent({
   components: {
     CreatedByLine,
-    StructuredDataReferenceModal,
+    CreateStructuredDataReferenceModal,
     DeleteConfirmationModal,
     GenericName,
     JsonEditorModal,

@@ -25,7 +25,7 @@
       Create new Reference
     </b-button>
 
-    <DataObjectReferenceModal
+    <CreateDataObjectReferenceModal
       modal-id="create-data-object-ref-modal"
       modal-name="Create DataObject Reference"
       @create="create($event)"
@@ -100,7 +100,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
-import DataObjectReferenceModal from "@/components/references/DataObjectReferenceModal.vue";
+import CreateDataObjectReferenceModal from "@/components/references/CreateDataObjectReferenceModal.vue";
 import DataObjectReferenceService from "@/services/dataObjectReferenceService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
@@ -121,7 +121,7 @@ interface DataObjectReferenceListData {
 export default defineComponent({
   components: {
     CreatedByLine,
-    DataObjectReferenceModal,
+    CreateDataObjectReferenceModal,
     DeleteConfirmationModal,
     GenericName,
     Loading,

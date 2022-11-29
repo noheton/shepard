@@ -21,7 +21,7 @@
       Create new Reference
     </b-button>
 
-    <UriReferenceModal
+    <CreateUriReferenceModal
       modal-id="create-uri-ref-modal"
       modal-name="Create URI Reference"
       @create="create($event)"
@@ -71,7 +71,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
-import UriReferenceModal from "@/components/references/UriReferenceModal.vue";
+import CreateUriReferenceModal from "@/components/references/CreateUriReferenceModal.vue";
 import UriReferenceService from "@/services/uriReferenceService";
 import { handleError } from "@/utils/error-handling";
 import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
@@ -87,7 +87,7 @@ interface URIListData {
 export default defineComponent({
   components: {
     CreatedByLine,
-    UriReferenceModal,
+    CreateUriReferenceModal,
     DeleteConfirmationModal,
     GenericName,
     Loading,

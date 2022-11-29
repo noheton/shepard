@@ -25,7 +25,7 @@
       Create new Reference
     </b-button>
 
-    <CollectionReferenceModal
+    <CreateCollectionReferenceModal
       modal-id="create-collection-ref-modal"
       modal-name="Create Collection Reference"
       @create="create($event)"
@@ -100,7 +100,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
-import CollectionReferenceModal from "@/components/references/CollectionReferenceModal.vue";
+import CreateCollectionReferenceModal from "@/components/references/CreateCollectionReferenceModal.vue";
 import CollectionReferenceService from "@/services/collectionReferenceService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
@@ -121,7 +121,7 @@ interface CollectionListData {
 export default defineComponent({
   components: {
     CreatedByLine,
-    CollectionReferenceModal,
+    CreateCollectionReferenceModal,
     DeleteConfirmationModal,
     GenericName,
     Loading,

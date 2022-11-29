@@ -334,7 +334,6 @@ function savePlot() {
             v-if="
               (plottingSelectionX.length != 0, plottingSelectionY.length != 0)
             "
-            :disabled="false"
             variant="success"
             @click="visualizeCsvData()"
           >
