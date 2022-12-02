@@ -102,6 +102,9 @@ export default defineComponent({
       required: true,
     },
   },
+
+  emits: ["reference-count-changed"],
+
   data() {
     return {
       uriList: undefined,
@@ -113,6 +116,7 @@ export default defineComponent({
   mounted() {
     this.retrieveReferences();
   },
+
   methods: {
     retrieveReferences() {
       UriReferenceService.getAllUriReferences({
@@ -121,6 +125,7 @@ export default defineComponent({
       })
         .then(response => {
           this.uriList = response;
+          this.$emit("reference-count-changed", this.uriList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "fetching URI references");
@@ -136,6 +141,7 @@ export default defineComponent({
         .then(response => {
           this.createdAlert = true;
           this.uriList = [response].concat(this.uriList || []);
+          this.$emit("reference-count-changed", this.uriList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "creating URI reference");

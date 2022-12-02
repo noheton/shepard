@@ -86,6 +86,9 @@ onMounted(() => {
         <TimeseriesReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="
+            countReferences.timeseriesReferences = $event
+          "
         />
       </b-tab>
 
@@ -96,6 +99,9 @@ onMounted(() => {
         <StructuredDataReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="
+            countReferences.structurdDataReferences = $event
+          "
         />
       </b-tab>
 
@@ -106,6 +112,7 @@ onMounted(() => {
         <FileReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="countReferences.fileReferences = $event"
         />
       </b-tab>
 
@@ -114,6 +121,7 @@ onMounted(() => {
         <UriReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="countReferences.uriReferences = $event"
         />
       </b-tab>
 
@@ -124,6 +132,9 @@ onMounted(() => {
         <CollectionReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="
+            countReferences.collectionReferences = $event
+          "
         />
       </b-tab>
 
@@ -134,6 +145,9 @@ onMounted(() => {
         <DataObjectReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
+          @reference-count-changed="
+            countReferences.dataObjectReferences = $event
+          "
         />
       </b-tab>
     </b-tabs>

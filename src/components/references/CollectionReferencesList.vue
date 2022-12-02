@@ -136,6 +136,9 @@ export default defineComponent({
       required: true,
     },
   },
+
+  emits: ["reference-count-changed"],
+
   data() {
     return {
       collectionList: undefined,
@@ -159,6 +162,7 @@ export default defineComponent({
           response.forEach(reference => {
             if (reference.id) this.retrieveCollection(reference.id);
           });
+          this.$emit("reference-count-changed", this.collectionList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "fetching collection references");
@@ -190,6 +194,7 @@ export default defineComponent({
           this.createdAlert = true;
           this.collectionList = [response].concat(this.collectionList || []);
           if (response.id) this.retrieveCollection(response.id);
+          this.$emit("reference-count-changed", this.collectionList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "creating collection reference");

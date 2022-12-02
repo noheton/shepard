@@ -136,6 +136,9 @@ export default defineComponent({
       required: true,
     },
   },
+
+  emits: ["reference-count-changed"],
+
   data() {
     return {
       dataObjectList: undefined,
@@ -159,6 +162,7 @@ export default defineComponent({
           response.forEach(reference => {
             if (reference.id) this.retrieveDataObject(reference.id);
           });
+          this.$emit("reference-count-changed", this.dataObjectList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "fetching data object references");
@@ -193,6 +197,7 @@ export default defineComponent({
           this.createdAlert = true;
           this.dataObjectList = [response].concat(this.dataObjectList || []);
           if (response.id) this.retrieveDataObject(response.id);
+          this.$emit("reference-count-changed", this.dataObjectList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "creating data object reference");

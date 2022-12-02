@@ -192,6 +192,9 @@ export default defineComponent({
       required: true,
     },
   },
+
+  emits: ["reference-count-changed"],
+
   data() {
     return {
       timeseriesList: undefined,
@@ -218,6 +221,7 @@ export default defineComponent({
       })
         .then(response => {
           this.timeseriesList = response;
+          this.$emit("reference-count-changed", this.timeseriesList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "fetching timeseries references");
@@ -277,6 +281,7 @@ export default defineComponent({
         .then(response => {
           this.createdAlert = true;
           this.timeseriesList = [response].concat(this.timeseriesList || []);
+          this.$emit("reference-count-changed", this.timeseriesList.length);
         })
         .catch(e => {
           handleError(e as ResponseError, "creating timeseries reference");

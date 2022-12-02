@@ -7,7 +7,6 @@ import CreateFileReferenceModal from "@/components/references/CreateFileReferenc
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
-
 import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
 import { onMounted, ref } from "vue";
 
@@ -21,6 +20,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emit = defineEmits(["reference-count-changed"]);
 
 const fileReferenceList = ref<FileReference[]>();
 const currentFileReference = ref<FileReference>();
@@ -38,6 +39,7 @@ function create(newReference: FileReference) {
       fileReferenceList.value = [response].concat(
         fileReferenceList.value || [],
       );
+      emit("reference-count-changed", fileReferenceList.value.length);
       if (response.id) retrieveReferences();
     })
     .catch(e => {
@@ -52,6 +54,7 @@ function retrieveReferences() {
   })
     .then(response => {
       fileReferenceList.value = response;
+      emit("reference-count-changed", fileReferenceList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching file references");

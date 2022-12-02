@@ -172,6 +172,9 @@ export default defineComponent({
       required: true,
     },
   },
+
+  emits: ["reference-count-changed"],
+
   data() {
     return {
       structuredDataList: undefined,
@@ -196,6 +199,7 @@ export default defineComponent({
           this.structuredDataList.forEach(reference => {
             if (reference.id) this.retrieveStructuredDatas(reference.id);
           });
+          this.$emit("reference-count-changed", this.structuredDataList.length);
         })
         .catch(e => {
           handleError(
@@ -236,6 +240,7 @@ export default defineComponent({
           this.structuredDataList = [response].concat(
             this.structuredDataList || [],
           );
+          this.$emit("reference-count-changed", this.structuredDataList.length);
           if (response.id) this.retrieveStructuredDatas(response.id);
         })
         .catch(e => {
