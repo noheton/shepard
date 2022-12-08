@@ -8,7 +8,7 @@ import UriReferencesList from "@/components/references/UriReferencesList.vue";
 import ReferenceService from "@/services/referenceService";
 import { handleError } from "@/utils/error-handling";
 import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
-import { onMounted, ref, type PropType } from "vue";
+import { onMounted, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   currentDataObject: {
@@ -17,15 +17,26 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["count-references-changed"]);
+
 const countReferences = ref({
   timeseriesReferences: 0,
-  structurdDataReferences: 0,
+  structuredDataReferences: 0,
   fileReferences: 0,
   uriReferences: 0,
   collectionReferences: 0,
   dataObjectReferences: 0,
   lostReferences: 0,
 });
+
+watch(
+  () =>
+    Object.values(countReferences.value).reduce(
+      (sum, current) => sum + current,
+      0,
+    ),
+  sum => emit("count-references-changed", sum),
+);
 
 function retrieveReferences() {
   if (!props.currentDataObject.collectionId || !props.currentDataObject.id) {
@@ -42,7 +53,7 @@ function retrieveReferences() {
             countReferences.value.timeseriesReferences++;
             break;
           case "StructuredDataReference":
-            countReferences.value.structurdDataReferences++;
+            countReferences.value.structuredDataReferences++;
             break;
           case "FileReference":
             countReferences.value.fileReferences++;
@@ -81,7 +92,10 @@ onMounted(() => {
     >
       <b-tab>
         <template #title>
-          Timeseries ({{ countReferences?.timeseriesReferences }})
+          Timeseries
+          <b-badge variant="secondary">
+            {{ countReferences?.timeseriesReferences }}
+          </b-badge>
         </template>
         <TimeseriesReferencesList
           :current-collection-id="currentDataObject.collectionId"
@@ -94,20 +108,26 @@ onMounted(() => {
 
       <b-tab>
         <template #title>
-          Structured Data ({{ countReferences?.structurdDataReferences }})
+          Structured Data
+          <b-badge variant="secondary">
+            {{ countReferences?.structuredDataReferences }}
+          </b-badge>
         </template>
         <StructuredDataReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
           @reference-count-changed="
-            countReferences.structurdDataReferences = $event
+            countReferences.structuredDataReferences = $event
           "
         />
       </b-tab>
 
       <b-tab>
         <template #title>
-          File ({{ countReferences?.fileReferences }})
+          File
+          <b-badge variant="secondary">
+            {{ countReferences?.fileReferences }}
+          </b-badge>
         </template>
         <FileReferencesList
           :current-collection-id="currentDataObject.collectionId"
@@ -117,7 +137,12 @@ onMounted(() => {
       </b-tab>
 
       <b-tab>
-        <template #title> URI ({{ countReferences?.uriReferences }}) </template>
+        <template #title>
+          URI
+          <b-badge variant="secondary">
+            {{ countReferences?.uriReferences }}
+          </b-badge>
+        </template>
         <UriReferencesList
           :current-collection-id="currentDataObject.collectionId"
           :current-data-object-id="currentDataObject.id"
@@ -127,7 +152,10 @@ onMounted(() => {
 
       <b-tab>
         <template #title>
-          Collection ({{ countReferences?.collectionReferences }})
+          Collection
+          <b-badge variant="secondary">
+            {{ countReferences?.collectionReferences }}
+          </b-badge>
         </template>
         <CollectionReferencesList
           :current-collection-id="currentDataObject.collectionId"
@@ -140,7 +168,10 @@ onMounted(() => {
 
       <b-tab>
         <template #title>
-          Data Object ({{ countReferences?.dataObjectReferences }})
+          Data Object
+          <b-badge variant="secondary">
+            {{ countReferences?.dataObjectReferences }}
+          </b-badge>
         </template>
         <DataObjectReferencesList
           :current-collection-id="currentDataObject.collectionId"

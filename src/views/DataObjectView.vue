@@ -24,6 +24,7 @@ const route = useRoute();
 const router = useRouter();
 
 const currentDataObject = ref<DataObject>();
+const countReferences = ref(0);
 const attributeItems = ref<Array<{ key: string; value: string }>>([]);
 
 const currentCollectionId = computed<string>(() => route.params.collectionId);
@@ -47,6 +48,9 @@ function retrieveDataObject() {
           ([key, value]) =>
             attributeItems.value.push({ key: key, value: value }),
         );
+      }
+      if (response.referenceIds) {
+        countReferences.value = response.referenceIds.length;
       }
     })
     .catch(e => {
@@ -102,7 +106,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentDataObject" ref="root" class="dataObject">
+  <div v-if="currentDataObject" ref="root">
     <div>
       <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button
@@ -174,7 +178,7 @@ onMounted(() => {
       </b-col>
       <b-col @click="scrollTo('#referencesCollapse')">
         <ReferencesIcon />
-        {{ currentDataObject.referenceIds?.length }} References
+        {{ countReferences }} References
       </b-col>
     </b-row>
 
@@ -203,7 +207,10 @@ onMounted(() => {
     </GenericCollapse>
 
     <GenericCollapse id="referencesCollapse" title="References">
-      <ReferencesTable :current-data-object="currentDataObject" />
+      <ReferencesTable
+        :current-data-object="currentDataObject"
+        @count-references-changed="countReferences = $event"
+      />
     </GenericCollapse>
 
     <DataObjectModal
