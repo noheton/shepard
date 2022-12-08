@@ -24,10 +24,6 @@
       "allowedVersions": "4"
     },
     {
-      "matchPackageNames": ["chart.js"],
-      "allowedVersions": "3"
-    },
-    {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
       "groupName": "Volar monorepo packages"
     }

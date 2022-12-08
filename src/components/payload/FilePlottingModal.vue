@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { HSVtoRGB } from "@/utils/colors";
-import type { ChartData } from "chart.js";
+import {
+  Chart,
+  registerables,
+  type ChartData,
+  type ScatterDataPoint,
+} from "chart.js";
 import {
   parse,
   type CastingContext,
   type CsvError,
 } from "csv-parse/browser/esm";
 import { ref } from "vue";
-import { Scatter } from "vue-chartjs/legacy";
+import { Scatter } from "vue-chartjs";
+
+Chart.register(...registerables);
 
 const chartOptions = {
   datasets: { scatter: { showLine: true, tension: 0.1 } },
@@ -51,12 +58,15 @@ const plottingOptionListY = ref<
 >([]);
 const plottingSelectionX = ref<string>("");
 const plottingSelectionY = ref<string[]>([]);
-const chartData = ref<ChartData>({ datasets: [] });
+const chartData = ref<
+  ChartData<"scatter", (number | ScatterDataPoint | null)[], unknown>
+>({ datasets: [] });
 const recordsParsed = ref<{ [key: string]: string }[]>([]);
 const columnNames = ref<string[]>([]);
 const returnColor = ref<number[]>([]);
 const colorCounter = ref<number>(0);
 const plotShown = ref<boolean>();
+const updated = ref(0);
 
 const props = defineProps({
   modalId: {
@@ -152,7 +162,8 @@ function createParsingPreview() {
     const rowValue = recordsParsed.value[row];
     const previewContentStorage: { [key: string]: string } = {};
     for (let col = 0; col < columnNames.value.length; col++) {
-      previewContentStorage[columnNames.value[col]] = rowValue[col];
+      if (rowValue && rowValue[col])
+        previewContentStorage[columnNames.value[col]] = rowValue[col];
     }
     dataForPreview.value.push(previewContentStorage);
   }
@@ -220,9 +231,10 @@ function visualizeCsvData() {
       borderColor: colorSetting,
       backgroundColor: colorSetting,
     });
-    colorCounter.value = colorCounter.value + 1;
+    colorCounter.value++;
     plotShown.value = true;
   });
+  updated.value++;
 }
 
 function savePlot() {
@@ -356,12 +368,22 @@ function savePlot() {
         </b-col>
       </b-row>
     </b-container>
-    <Scatter
-      v-if="chartData.datasets.length > 0"
-      :chart-options="chartOptions"
-      :chart-data="chartData"
-      chart-id="scatter-chart"
-      dataset-id-key="label"
-    />
+    <div class="plot">
+      <Scatter
+        v-if="chartData.datasets.length > 0"
+        :key="updated"
+        :options="chartOptions"
+        :data="chartData"
+        chart-id="scatter-chart"
+        dataset-id-key="label"
+      />
+    </div>
   </b-modal>
 </template>
+
+<style scoped>
+.plot {
+  height: 400px;
+  position: "relative";
+}
+</style>
