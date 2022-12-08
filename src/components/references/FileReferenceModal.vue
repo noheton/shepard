@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import FilePlottingModal from "@/components/payload/FilePlottingModal.vue";
@@ -7,14 +8,14 @@ import TextViewerModal from "@/components/payload/TextViewerModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
-import { logError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import { dateFormat } from "@/utils/helpers";
 import type {
   FileReference,
   ResponseError,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
-import { ref, type PropType } from "vue";
+import { getCurrentInstance, ref, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -38,6 +39,8 @@ const props = defineProps({
     default: undefined,
   },
 });
+
+const emit = defineEmits(["reference-deleted"]);
 
 const files = ref<{ [key: string]: ShepardFile | undefined }>({});
 const downloadFinished = ref(false);
@@ -135,6 +138,23 @@ function handlePlotCsvData(fileReferenceId?: number, oid?: string) {
       logError(e as ResponseError, "fetching file payload");
     });
 }
+
+const vm = getCurrentInstance();
+function handleDelete() {
+  if (!props.fileReference.id) return;
+  FileReferenceService.deleteFileReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: props.fileReference.id,
+  })
+    .then(() => {
+      emit("reference-deleted");
+      vm?.proxy.$bvModal.hide(props.modalId);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting file reference");
+    });
+}
 </script>
 
 <template>
@@ -148,25 +168,35 @@ function handlePlotCsvData(fileReferenceId?: number, oid?: string) {
       @success-message-dismissed="downloadFinished = false"
       @error-message-dismissed="downloadError = false"
     />
-
-    ID:
-    {{ fileReference?.id }} |
-    <span v-if="fileReference?.fileContainerId != -1">
-      <b-link
-        :to="{
-          name: 'Files',
-          params: { fileId: fileReference?.fileContainerId },
-        }"
+    <div class="mb-4">
+      <b-button
+        v-b-modal.file-reference-delete-confirmation-modal
+        v-b-tooltip.hover
+        class="float-right"
+        title="Delete"
+        variant="info"
       >
-        Container: {{ fileReference?.fileContainerId }}
-      </b-link>
-    </span>
-    <span v-else class="text-danger">Container: Deleted</span>
-    <CreatedByLine
-      :created-by="fileReference?.createdBy"
-      :created-at="fileReference?.createdAt"
-    />
-    <br />
+        <DeleteIcon />
+      </b-button>
+
+      ID:
+      {{ fileReference?.id }} |
+      <span v-if="fileReference?.fileContainerId != -1">
+        <b-link
+          :to="{
+            name: 'Files',
+            params: { fileId: fileReference?.fileContainerId },
+          }"
+        >
+          Container: {{ fileReference?.fileContainerId }}
+        </b-link>
+      </span>
+      <span v-else class="text-danger">Container: Deleted</span>
+      <CreatedByLine
+        :created-by="fileReference?.createdBy"
+        :created-at="fileReference?.createdAt"
+      />
+    </div>
     <b-list-group class="list">
       <b-list-group-item
         v-for="(oid, index) in fileReference?.fileOids"
@@ -278,6 +308,17 @@ function handlePlotCsvData(fileReferenceId?: number, oid?: string) {
       modal-id="plotting-modal"
       :modal-name="files[currentFileOid]?.filename"
       :csv-data="csvFileData"
+    />
+    <DeleteConfirmationModal
+      v-if="props.fileReference"
+      modal-id="file-reference-delete-confirmation-modal"
+      modal-name="Confirm to delete File Reference"
+      :modal-text="
+        'Do you really want do delete the File Reference with name ' +
+        props.fileReference.name +
+        '?'
+      "
+      @confirmation="handleDelete()"
     />
   </b-modal>
 </template>

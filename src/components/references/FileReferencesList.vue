@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
@@ -61,20 +60,9 @@ function retrieveReferences() {
     });
 }
 
-function handleDelete() {
-  if (!currentFileReference.value?.id) return;
-  FileReferenceService.deleteFileReference({
-    collectionId: props.currentCollectionId,
-    dataObjectId: props.currentDataObjectId,
-    fileReferenceId: currentFileReference.value.id,
-  })
-    .then(() => {
-      deletedAlert.value = true;
-      retrieveReferences();
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "deleting file reference");
-    });
+function handleReferenceDelete() {
+  deletedAlert.value = true;
+  retrieveReferences();
 }
 
 onMounted(() => {
@@ -115,6 +103,9 @@ onMounted(() => {
       <b-list-group-item
         v-for="(fileReference, index) in fileReferenceList"
         :key="index"
+        v-b-modal.view-ref-modal
+        button
+        @click="currentFileReference = fileReference"
       >
         <div>
           <b>
@@ -138,28 +129,6 @@ onMounted(() => {
               {{ fileReference.fileOids.length }}
             </b-badge>
           </span>
-
-          <b-button-group class="float-right">
-            <b-button
-              v-b-modal.view-ref-modal
-              v-b-tooltip.hover
-              title="View Reference"
-              variant="primary"
-              @click="currentFileReference = fileReference"
-            >
-              <EyeIcon />
-            </b-button>
-
-            <b-button
-              v-b-modal.file-reference-delete-confirmation-modal
-              v-b-tooltip.hover
-              title="Delete"
-              variant="info"
-              @click="currentFileReference = fileReference"
-            >
-              <DeleteIcon />
-            </b-button>
-          </b-button-group>
         </div>
         <CreatedByLine
           :created-by="fileReference.createdBy"
@@ -174,19 +143,8 @@ onMounted(() => {
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :file-reference="currentFileReference"
+      @reference-deleted="handleReferenceDelete()"
       @create="create($event)"
-    />
-
-    <DeleteConfirmationModal
-      v-if="currentFileReference"
-      modal-id="file-reference-delete-confirmation-modal"
-      modal-name="Confirm to delete File Reference"
-      :modal-text="
-        'Do you really want do delete the File Reference with name ' +
-        currentFileReference.name +
-        '?'
-      "
-      @confirmation="handleDelete()"
     />
   </div>
 </template>
