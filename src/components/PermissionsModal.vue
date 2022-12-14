@@ -48,7 +48,7 @@ const writerGroup = ref<UserGroup[]>([]);
 const manager = ref<User[]>([]);
 const permissionType = ref<PermissionsPermissionTypeEnum>();
 
-const emits = defineEmits(["update"]);
+const emit = defineEmits(["update"]);
 watch(
   () => props.oldPermissions,
   async () => parseOldPermissions(),
@@ -100,7 +100,7 @@ function handleOk() {
   manager.value.forEach(u => {
     if (u.username) perms.manager.push(u.username);
   });
-  emits("update", perms);
+  emit("update", perms);
 }
 
 function setOwner() {

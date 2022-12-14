@@ -27,6 +27,20 @@ const currentFileReference = ref<FileReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
 
+function retrieveReferences() {
+  FileReferenceService.getAllFileReferences({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+  })
+    .then(response => {
+      fileReferenceList.value = response;
+      emit("reference-count-changed", fileReferenceList.value.length);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching file references");
+    });
+}
+
 function create(newReference: FileReference) {
   FileReferenceService.createFileReference({
     collectionId: props.currentCollectionId,
@@ -43,20 +57,6 @@ function create(newReference: FileReference) {
     })
     .catch(e => {
       handleError(e as ResponseError, "creating file reference");
-    });
-}
-
-function retrieveReferences() {
-  FileReferenceService.getAllFileReferences({
-    collectionId: props.currentCollectionId,
-    dataObjectId: props.currentDataObjectId,
-  })
-    .then(response => {
-      fileReferenceList.value = response;
-      emit("reference-count-changed", fileReferenceList.value.length);
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching file references");
     });
 }
 

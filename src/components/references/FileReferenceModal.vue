@@ -158,7 +158,14 @@ function handleDelete() {
 </script>
 
 <template>
-  <b-modal :id="modalId" :title="modalName" size="lg" lazy @show="reset()">
+  <b-modal
+    :id="modalId"
+    :title="modalName"
+    size="lg"
+    lazy
+    ok-only
+    @show="reset()"
+  >
     <ProcessAlert
       process-name="Download"
       :process-active="downloadActive"
@@ -179,8 +186,7 @@ function handleDelete() {
         <DeleteIcon />
       </b-button>
 
-      ID:
-      {{ fileReference?.id }} |
+      ID: {{ fileReference?.id }} |
       <span v-if="fileReference?.fileContainerId != -1">
         <b-link
           :to="{
@@ -228,7 +234,7 @@ function handleDelete() {
             </b-button>
             <b-button
               v-else-if="
-                files[oid]?.filename?.match(/\.(txt|md|json|yaml|toml)$/i)
+                files[oid]?.filename?.match(/\.(txt|md|json|yaml|toml|csv)$/i)
               "
               v-b-modal.text-viewer-modal
               v-b-tooltip.hover
