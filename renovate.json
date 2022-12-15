@@ -20,8 +20,12 @@
       "allowedVersions": "<4"
     },
     {
+      "matchPackageNames": ["portal-vue"],
+      "allowedVersions": "<3"
+    },
+    {
       "matchPackageNames": ["bootstrap"],
-      "allowedVersions": "4"
+      "allowedVersions": "<5"
     },
     {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
