@@ -8,10 +8,13 @@ variables:
   DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
 
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .m2/repository/
-    - target/
+  - key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository/
+  - key: ${CI_COMMIT_SHORT_SHA}
+    paths:
+      - target/
+
 
 include:
   - template: Security/License-Scanning.gitlab-ci.yml
