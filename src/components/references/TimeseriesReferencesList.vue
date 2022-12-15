@@ -1,3 +1,150 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
+import TimeseriesPlottingModal from "@/components/payload/TimeseriesPlottingModal.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
+import CreateTimeseriesReferenceModal from "@/components/references/CreateTimeseriesReferenceModal.vue";
+import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
+import { downloadFile } from "@/utils/download";
+import { handleError, logError } from "@/utils/error-handling";
+import { dateFormat } from "@/utils/helpers";
+import type {
+  ResponseError,
+  TimeseriesPayload,
+  TimeseriesReference,
+} from "@dlr-shepard/shepard-client";
+import { onMounted, ref } from "vue";
+
+const props = defineProps({
+  currentCollectionId: {
+    type: Number,
+    required: true,
+  },
+  currentDataObjectId: {
+    type: Number,
+    required: true,
+  },
+});
+
+const emit = defineEmits(["reference-count-changed"]);
+
+const timeseriesList = ref<TimeseriesReference[]>();
+const currentTimeseriesReference = ref<TimeseriesReference>();
+const currentTimeseriesPayload = ref<TimeseriesPayload[]>();
+
+const downloadFinished = ref(false);
+const downloadActive = ref(false);
+const downloadError = ref(false);
+const downloadErrorMessage = ref<string>("");
+const plottingError = ref(false);
+const plottingErrorMessage = ref<string>("");
+const createdAlert = ref(false);
+const deletedAlert = ref(false);
+
+function retrieveReferences() {
+  TimeseriesReferenceService.getAllTimeseriesReferences({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+  })
+    .then(response => {
+      timeseriesList.value = response;
+      emit("reference-count-changed", timeseriesList.value.length);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching timeseries references");
+    });
+}
+
+function downloadCsv(referenceId: number, referenceName: string) {
+  downloadActive.value = true;
+  TimeseriesReferenceService.exportTimeseriesPayload({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    timeseriesReferenceId: referenceId,
+  })
+    .then(response => {
+      downloadFile(response, referenceName + ".csv");
+      downloadFinished.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching timeseries payload");
+      downloadError.value = true;
+      if (e.response.status == 403) {
+        downloadErrorMessage.value =
+          "Authentication Error: No permission to access this timeseries container";
+      }
+    })
+    .finally(() => (downloadActive.value = false));
+}
+
+function handlePlotData(timeseriesItem: TimeseriesReference) {
+  if (timeseriesItem.id) fetchTimeseriesPayload(timeseriesItem.id);
+  currentTimeseriesReference.value = timeseriesItem;
+}
+
+function fetchTimeseriesPayload(referenceId: number) {
+  TimeseriesReferenceService.getTimeseriesPayload({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    timeseriesReferenceId: referenceId,
+  })
+    .then(response => {
+      currentTimeseriesPayload.value = response;
+    })
+    .catch(e => {
+      currentTimeseriesPayload.value = [];
+      logError(e as ResponseError, "fetching timeseries payload");
+      plottingError.value = true;
+      if (e.response.status == 403) {
+        plottingErrorMessage.value =
+          "Authentication Error: No permission to access this timeseries container";
+      }
+    });
+}
+
+function handleCreate(timeseriesReference: TimeseriesReference) {
+  TimeseriesReferenceService.createTimeseriesReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    timeseriesReference: timeseriesReference,
+  })
+    .then(response => {
+      createdAlert.value = true;
+      timeseriesList.value = [response].concat(timeseriesList.value || []);
+      emit("reference-count-changed", timeseriesList.value.length);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating timeseries reference");
+    });
+}
+
+function handleDelete() {
+  if (!currentTimeseriesReference.value?.id) return;
+  TimeseriesReferenceService.deleteTimeseriesReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    timeseriesReferenceId: currentTimeseriesReference.value.id,
+  })
+    .then(() => {
+      deletedAlert.value = true;
+      retrieveReferences();
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting timeseries reference");
+    });
+}
+
+function convertDate(date: number) {
+  return new Date(date).toLocaleString("en-GB", dateFormat);
+}
+
+onMounted(() => {
+  retrieveReferences();
+});
+</script>
+
 <template>
   <div class="list">
     <b-alert
@@ -129,7 +276,9 @@
     />
 
     <TimeseriesPlottingModal
-      v-if="currentTimeseriesReference && !plottingError"
+      v-if="
+        currentTimeseriesReference && currentTimeseriesPayload && !plottingError
+      "
       modal-id="plotting_modal"
       :modal-name="currentTimeseriesReference.name || undefined"
       :timeseries-payload-list="currentTimeseriesPayload"
@@ -137,176 +286,3 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import Loading from "@/components/generic/Loading.vue";
-import TimeseriesPlottingModal from "@/components/payload/TimeseriesPlottingModal.vue";
-import ProcessAlert from "@/components/ProcessAlert.vue";
-import CreateTimeseriesReferenceModal from "@/components/references/CreateTimeseriesReferenceModal.vue";
-import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
-import { downloadFile } from "@/utils/download";
-import { handleError, logError } from "@/utils/error-handling";
-import { dateFormat } from "@/utils/helpers";
-import type {
-  ResponseError,
-  TimeseriesPayload,
-  TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface TimeseriesListData {
-  timeseriesList?: TimeseriesReference[];
-  downloadFinished: boolean;
-  downloadActive: boolean;
-  downloadError: boolean;
-  downloadErrorMessage: string;
-  plottingError: boolean;
-  plottingErrorMessage: string;
-
-  currentTimeseriesReference?: TimeseriesReference;
-  createdAlert: boolean;
-  deletedAlert: boolean;
-  currentTimeseriesPayload: TimeseriesPayload[];
-}
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    ProcessAlert,
-    CreateTimeseriesReferenceModal,
-    TimeseriesPlottingModal,
-    DeleteConfirmationModal,
-    GenericName,
-    Loading,
-  },
-  props: {
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
-    },
-  },
-
-  emits: ["reference-count-changed"],
-
-  data() {
-    return {
-      timeseriesList: undefined,
-      downloadFinished: false,
-      downloadActive: false,
-      downloadError: false,
-      downloadErrorMessage: "",
-      plottingError: false,
-      plottingErrorMessage: "",
-      currentTimeseriesReference: undefined,
-      createdAlert: false,
-      deletedAlert: false,
-      currentTimeseriesPayload: [],
-    } as TimeseriesListData;
-  },
-  mounted() {
-    this.retrieveReferences();
-  },
-  methods: {
-    retrieveReferences() {
-      TimeseriesReferenceService.getAllTimeseriesReferences({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-      })
-        .then(response => {
-          this.timeseriesList = response;
-          this.$emit("reference-count-changed", this.timeseriesList.length);
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching timeseries references");
-        });
-    },
-    downloadCsv(referenceId: number, referenceName: string) {
-      this.downloadActive = true;
-      TimeseriesReferenceService.exportTimeseriesPayload({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        timeseriesReferenceId: referenceId,
-      })
-        .then(response => {
-          downloadFile(response, referenceName + ".csv");
-          this.downloadFinished = true;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching timeseries payload");
-          this.downloadError = true;
-          if (e.response.status == 403) {
-            this.downloadErrorMessage =
-              "Authentication Error: No permission to access this timeseries container";
-          }
-        })
-        .finally(() => (this.downloadActive = false));
-    },
-    handlePlotData(timeseriesItem: TimeseriesReference) {
-      if (timeseriesItem.id) this.fetchTimeseriesPayload(timeseriesItem.id);
-      this.currentTimeseriesReference = timeseriesItem;
-    },
-    fetchTimeseriesPayload(referenceId: number) {
-      TimeseriesReferenceService.getTimeseriesPayload({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        timeseriesReferenceId: referenceId,
-      })
-        .then(response => {
-          this.currentTimeseriesPayload = response;
-        })
-        .catch(e => {
-          this.currentTimeseriesPayload = [];
-          logError(e as ResponseError, "fetching timeseries payload");
-          this.plottingError = true;
-          if (e.response.status == 403) {
-            this.plottingErrorMessage =
-              "Authentication Error: No permission to access this timeseries container";
-          }
-        });
-    },
-
-    handleCreate(timeseriesReference: TimeseriesReference) {
-      TimeseriesReferenceService.createTimeseriesReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        timeseriesReference: timeseriesReference,
-      })
-        .then(response => {
-          this.createdAlert = true;
-          this.timeseriesList = [response].concat(this.timeseriesList || []);
-          this.$emit("reference-count-changed", this.timeseriesList.length);
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating timeseries reference");
-        });
-    },
-
-    handleDelete() {
-      if (!this.currentTimeseriesReference?.id) return;
-      TimeseriesReferenceService.deleteTimeseriesReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        timeseriesReferenceId: this.currentTimeseriesReference.id,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveReferences();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting timeseries reference");
-        });
-    },
-
-    convertDate(date: number) {
-      return new Date(date).toLocaleString("en-GB", dateFormat);
-    },
-  },
-});
-</script>
