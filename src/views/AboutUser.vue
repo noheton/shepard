@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useClipboard, useTitle } from "@vueuse/core";
-import type { User } from "oidc-client";
+import type { User } from "oidc-client-ts";
 import { computed, onMounted } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 
