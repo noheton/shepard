@@ -9,7 +9,7 @@ import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
-import { dateFormat } from "@/utils/helpers";
+import { convertDate } from "@/utils/helpers";
 import type {
   FileReference,
   ResponseError,
@@ -61,16 +61,12 @@ function reset() {
   getFiles();
 }
 
-function convertDate(date: Date | undefined | null) {
-  if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
-}
-
 function getFiles() {
-  if (!props.fileReference?.id) return;
+  if (!props.fileReference.id) return;
   FileReferenceService.getFiles({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
-    fileReferenceId: props.fileReference?.id,
+    fileReferenceId: props.fileReference.id,
   })
     .then(response => {
       const temp: { [key: string]: ShepardFile } = {};

@@ -20,7 +20,12 @@ export const dateFormat: Intl.DateTimeFormatOptions = {
   second: "2-digit",
 };
 
+export function convertDate(date: Date | undefined | null) {
+  if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
+}
+
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+
 export interface PermissionOption {
   value: PermissionsPermissionTypeEnum;
   text: string;

@@ -5,8 +5,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { handleError, logError } from "@/utils/error-handling";
-import { dateFormat } from "@/utils/helpers";
-
+import { convertDate } from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredDataPayload,
@@ -49,10 +48,6 @@ function reset() {
   getStructuredDataPayload();
 }
 
-function convertDate(date: Date | undefined | null) {
-  if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
-}
-
 function showViewerClicked(
   structuredDataReference: StructuredDataReference,
   oid: string,
@@ -62,17 +57,17 @@ function showViewerClicked(
 }
 
 function getStructuredDataPayload() {
-  if (!props.structuredDataReference?.id) return;
+  if (!props.structuredDataReference.id) return;
   StructuredDataReferenceService.getStructuredDataPayload({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
-    structureddataReferenceId: props.structuredDataReference?.id,
+    structureddataReferenceId: props.structuredDataReference.id,
   })
     .then(response => {
       const temp: { [key: string]: StructuredDataPayload } = {};
       response.forEach(payload => {
         if (payload?.structuredData?.oid) {
-          temp[payload.structuredData?.oid] = payload;
+          temp[payload.structuredData.oid] = payload;
         }
       });
       structuredDatas.value = { ...structuredDatas.value, ...temp };
