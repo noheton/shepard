@@ -1,3 +1,101 @@
+<script setup lang="ts">
+import FilterListLine from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
+import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import TimeseriesService from "@/services/timeseriesService";
+import { handleError } from "@/utils/error-handling";
+import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
+import type {
+  GetAllTimeseriesContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
+  ResponseError,
+  StructuredDataContainer,
+} from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
+
+const router = useRouter();
+
+const containers = ref<StructuredDataContainer[]>();
+const perPage = ref(10);
+const currentPage = ref(1);
+const orderBy = ref("createdAt");
+const descending = ref(false);
+
+const totalRows = computed(() => {
+  if (containers.value)
+    return getTotalRows(
+      containers.value.length,
+      perPage.value,
+      currentPage.value,
+    );
+  else return 0;
+});
+
+function filterChanged(options: FilterChangedData) {
+  currentPage.value = options.currentPage;
+  perPage.value = options.currentSize;
+  descending.value = options.descending;
+  orderBy.value = options.orderBy;
+  retrieveContainers();
+}
+
+function retrieveContainers(page?: number) {
+  const nextPage = page || currentPage.value;
+  const nextOrderBy =
+    orderBy.value as keyof typeof GetAllTimeseriesContainersOrderByEnum as GetAllTimeseriesContainersOrderByEnum;
+  TimeseriesService.getAllTimeseriesContainers({
+    size: perPage.value,
+    page: nextPage - 1,
+    orderBy: nextOrderBy,
+    orderDesc: descending.value,
+  })
+    .then(response => {
+      containers.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching timeseries containers");
+    });
+}
+
+function createContainer(options: {
+  name: string;
+  perms: PermissionsPermissionTypeEnum;
+}) {
+  TimeseriesService.createTimeseriesContainer({
+    timeseriesContainer: { name: options.name },
+  })
+    .then(async response => {
+      if (response.id) {
+        const perms = await TimeseriesService.getTimeseriesPermissions({
+          timeseriesContainerId: response.id,
+        });
+        perms.permissionType = options.perms;
+        await TimeseriesService.editTimeseriesPermissions({
+          timeseriesContainerId: response.id,
+          permissions: perms,
+        });
+
+        router.push({
+          name: "Timeseries",
+          params: {
+            timeseriesId: String(response.id),
+          },
+        });
+      }
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating timeseries container");
+    });
+}
+
+onMounted(() => {
+  retrieveContainers();
+  useTitle("Timeseries Containers | shepard");
+});
+</script>
+
 <template>
   <div class="timeseries-container-list">
     <div class="component">
@@ -39,114 +137,3 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
-import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
-import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import TimeseriesService from "@/services/timeseriesService";
-import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
-import type {
-  GetAllTimeseriesContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  TimeseriesContainer,
-} from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import { defineComponent } from "vue";
-
-interface TimeseriesListData {
-  containers: TimeseriesContainer[];
-  perPage: number;
-  currentPage: number;
-  orderBy: string;
-  descending: boolean;
-}
-
-export default defineComponent({
-  components: { GenericEntityList, FilterListLine, GenericCreateModal },
-  data() {
-    return {
-      containers: [],
-      perPage: 10,
-      currentPage: 1,
-      orderBy: "createdAt",
-      descending: false,
-    } as TimeseriesListData;
-  },
-  computed: {
-    totalRows(): number {
-      if (this.containers)
-        return getTotalRows(
-          this.containers.length,
-          this.perPage,
-          this.currentPage,
-        );
-      else return 0;
-    },
-  },
-  mounted() {
-    this.retrieveContainers();
-    useTitle("Timeseries Containers | shepard");
-  },
-  methods: {
-    filterChanged(options: FilterChangedData) {
-      this.currentPage = options.currentPage;
-      this.perPage = options.currentSize;
-      this.descending = options.descending;
-      this.orderBy = options.orderBy;
-      this.retrieveContainers();
-    },
-    retrieveContainers(page?: number) {
-      const nextPage = page || this.currentPage;
-      const nextOrderBy = this
-        .orderBy as keyof typeof GetAllTimeseriesContainersOrderByEnum as GetAllTimeseriesContainersOrderByEnum;
-      TimeseriesService.getAllTimeseriesContainers({
-        size: this.perPage,
-        page: nextPage - 1,
-        orderBy: nextOrderBy,
-        orderDesc: this.descending,
-      })
-        .then(response => {
-          this.containers = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching timeseries containers");
-        });
-    },
-    createContainer(options: {
-      name: string;
-      perms: PermissionsPermissionTypeEnum;
-    }) {
-      TimeseriesService.createTimeseriesContainer({
-        timeseriesContainer: { name: options.name },
-      })
-        .then(async response => {
-          if (response.id) {
-            const perms = await TimeseriesService.getTimeseriesPermissions({
-              timeseriesContainerId: response.id,
-            });
-            perms.permissionType = options.perms;
-            await TimeseriesService.editTimeseriesPermissions({
-              timeseriesContainerId: response.id,
-              permissions: perms,
-            });
-
-            this.$router.push({
-              name: "Timeseries",
-              params: {
-                timeseriesId: String(response.id),
-              },
-            });
-          }
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating timeseries container");
-        });
-    },
-  },
-});
-</script>

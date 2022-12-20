@@ -44,3 +44,10 @@ export const permissionOptions: PermissionOption[] = [
     text: "Public",
   },
 ];
+
+export interface FilterChangedData {
+  currentPage: number;
+  currentSize: number;
+  orderBy: string;
+  descending: boolean;
+}

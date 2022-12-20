@@ -1,3 +1,86 @@
+<script setup lang="ts">
+import type { FilterChangedData } from "@/utils/helpers";
+import { ref, watch } from "vue";
+
+const emit = defineEmits(["filter-changed"]);
+
+const props = defineProps({
+  maxObjects: {
+    type: Number,
+    required: true,
+  },
+  defaultPage: {
+    type: Number,
+    default: 1,
+  },
+  defaultSize: {
+    type: Number,
+    default: 10,
+  },
+  defaultOrderBy: {
+    type: String,
+    default: "createdAt",
+  },
+  defaultDescending: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const currentPage = ref(props.defaultPage);
+const currentSize = ref(props.defaultSize);
+const sizeOptions = [
+  { value: 10, text: "10" },
+  { value: 25, text: "25" },
+  { value: 50, text: "50" },
+  { value: 100, text: "100" },
+];
+const orderBy = ref(props.defaultOrderBy);
+const orderByOptions = [
+  { value: "createdAt", text: "Created At" },
+  { value: "updatedAt", text: "Updated At" },
+  { value: "name", text: "Name" },
+];
+const descending = ref(props.defaultDescending);
+const descendingOptions = [
+  { value: false, text: "Ascending" },
+  { value: true, text: "Descending" },
+];
+
+watch(
+  () => props.defaultPage,
+  defaultPage => {
+    currentPage.value = defaultPage;
+  },
+);
+
+function update() {
+  const options: FilterChangedData = {
+    currentPage: currentPage.value,
+    currentSize: currentSize.value,
+    orderBy: orderBy.value,
+    descending: descending.value,
+  };
+  emit("filter-changed", options);
+}
+function updatePage(nextPage: number) {
+  currentPage.value = nextPage;
+  update();
+}
+function updateSize(nextSize: number) {
+  currentSize.value = nextSize;
+  update();
+}
+function updateOrderBy(nextOrderBy: string) {
+  orderBy.value = nextOrderBy;
+  update();
+}
+function updateDescending(nextDescending: boolean) {
+  descending.value = nextDescending;
+  update();
+}
+</script>
+
 <template>
   <div>
     <b-row>
@@ -31,106 +114,3 @@
     </b-row>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-export interface FilterChangedData {
-  currentPage: number;
-  currentSize: number;
-  orderBy: string;
-  descending: boolean;
-}
-
-interface FilterListLineData {
-  currentPage: number;
-  currentSize: number;
-  orderBy: string;
-  descending: boolean;
-  sizeOptions: Array<{ value: number; text: string }>;
-  orderByOptions: Array<{ value: string; text: string }>;
-  descendingOptions: Array<{ value: boolean; text: string }>;
-}
-
-export default defineComponent({
-  props: {
-    maxObjects: {
-      type: Number,
-      required: true,
-    },
-    defaultPage: {
-      type: Number,
-      default: 1,
-    },
-    defaultSize: {
-      type: Number,
-      default: 10,
-    },
-    defaultOrderBy: {
-      type: String,
-      default: "createdAt",
-    },
-    defaultDescending: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ["filter-changed"],
-  data() {
-    return {
-      currentPage: this.defaultPage,
-      currentSize: this.defaultSize,
-      sizeOptions: [
-        { value: 10, text: "10" },
-        { value: 25, text: "25" },
-        { value: 50, text: "50" },
-        { value: 100, text: "100" },
-      ],
-      orderBy: this.defaultOrderBy,
-      orderByOptions: [
-        { value: "createdAt", text: "Created At" },
-        { value: "updatedAt", text: "Updated At" },
-        { value: "name", text: "Name" },
-      ],
-      descending: this.defaultDescending,
-      descendingOptions: [
-        { value: false, text: "Ascending" },
-        { value: true, text: "Descending" },
-      ],
-    } as FilterListLineData;
-  },
-  watch: {
-    defaultPage() {
-      if (this.currentPage != this.defaultPage)
-        this.currentPage = this.defaultPage;
-    },
-  },
-  methods: {
-    update() {
-      const options: FilterChangedData = {
-        currentPage: this.currentPage,
-        currentSize: this.currentSize,
-        orderBy: this.orderBy,
-        descending: this.descending,
-      };
-      this.$emit("filter-changed", options);
-    },
-    updatePage(nextPage: number) {
-      this.currentPage = nextPage;
-      this.update();
-    },
-    updateSize(nextSize: number) {
-      this.currentSize = nextSize;
-      this.update();
-    },
-    updateOrderBy(nextOrderBy: string) {
-      this.orderBy = nextOrderBy;
-      this.update();
-    },
-    updateDescending(nextDescending: boolean) {
-      this.descending = nextDescending;
-      this.update();
-    },
-  },
-});
-</script>

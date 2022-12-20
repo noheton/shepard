@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
+import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
+import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
 import {
   GetAllCollectionsOrderByEnum,
   ResponseError,

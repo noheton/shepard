@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import Breadcrumb from "@/components/Breadcrumb.vue";
+import Navbar from "@/components/Navbar.vue";
+import { errorKey } from "@/utils/event-bus";
+import { useEventBus } from "@vueuse/core";
+import { ref } from "vue";
+
+const errorSituation = ref("");
+const errorException = ref("");
+const errorMessage = ref("");
+const errorAlert = ref(false);
+const bus = useEventBus(errorKey);
+
+bus.on(e => {
+  errorSituation.value = e.situation;
+  errorException.value = e.error.exception;
+  errorMessage.value = e.error.message;
+  errorAlert.value = true;
+});
+</script>
+
 <template>
   <div id="app">
     <Navbar />
@@ -17,32 +38,3 @@
     <router-view :key="$route.fullPath" class="view" />
   </div>
 </template>
-
-<script lang="ts">
-import Breadcrumb from "@/components/Breadcrumb.vue";
-import Navbar from "@/components/Navbar.vue";
-import { errorKey } from "@/utils/event-bus";
-import { useEventBus } from "@vueuse/core";
-import { defineComponent } from "vue";
-
-export default defineComponent({
-  components: { Breadcrumb, Navbar },
-  data() {
-    return {
-      errorSituation: "",
-      errorException: "",
-      errorMessage: "",
-      errorAlert: false,
-      bus: useEventBus(errorKey),
-    };
-  },
-  created() {
-    this.bus.on(e => {
-      this.errorSituation = e.situation;
-      this.errorException = e.error.exception;
-      this.errorMessage = e.error.message;
-      this.errorAlert = true;
-    });
-  },
-});
-</script>

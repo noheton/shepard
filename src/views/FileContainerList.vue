@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
+import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
+import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
 import type {
   FileContainer,
   GetAllFileContainersOrderByEnum,

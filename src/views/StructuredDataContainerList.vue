@@ -1,3 +1,100 @@
+<script setup lang="ts">
+import FilterListLine from "@/components/generic/FilterListLine.vue";
+import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
+import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import StructuredDataService from "@/services/structuredDataService";
+import { handleError } from "@/utils/error-handling";
+import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
+import type {
+  GetAllStructuredDataContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
+  ResponseError,
+  StructuredDataContainer,
+} from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
+
+const router = useRouter();
+
+const containers = ref<StructuredDataContainer[]>();
+const perPage = ref(10);
+const currentPage = ref(1);
+const orderBy = ref("createdAt");
+const descending = ref(false);
+
+const totalRows = computed(() => {
+  if (containers.value)
+    return getTotalRows(
+      containers.value.length,
+      perPage.value,
+      currentPage.value,
+    );
+  else return 0;
+});
+
+function filterChanged(options: FilterChangedData) {
+  currentPage.value = options.currentPage;
+  perPage.value = options.currentSize;
+  descending.value = options.descending;
+  orderBy.value = options.orderBy;
+  retrieveContainers();
+}
+function retrieveContainers(page?: number) {
+  const nextPage = page || currentPage.value;
+  const nextOrderBy =
+    orderBy.value as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
+  StructuredDataService.getAllStructuredDataContainers({
+    size: perPage.value,
+    page: nextPage - 1,
+    orderBy: nextOrderBy,
+    orderDesc: descending.value,
+  })
+    .then(response => {
+      containers.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching structured data containers");
+    });
+}
+function createContainer(options: {
+  name: string;
+  perms: PermissionsPermissionTypeEnum;
+}) {
+  StructuredDataService.createStructuredDataContainer({
+    structuredDataContainer: {
+      name: options.name,
+    },
+  })
+    .then(async response => {
+      if (response.id) {
+        const perms = await StructuredDataService.getStructuredDataPermissions({
+          structureddataContainerId: response.id,
+        });
+        perms.permissionType = options.perms;
+        await StructuredDataService.editStructuredDataPermissions({
+          structureddataContainerId: response.id,
+          permissions: perms,
+        });
+        router.push({
+          name: "StructuredData",
+          params: {
+            structuredDataId: String(response.id),
+          },
+        });
+      }
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating structured data container");
+    });
+}
+
+onMounted(() => {
+  retrieveContainers();
+  useTitle("Structured Data Containers | shepard");
+});
+</script>
+
 <template>
   <div class="structured-data-container-list">
     <div class="component">
@@ -40,119 +137,3 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
-import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
-import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import StructuredDataService from "@/services/structuredDataService";
-import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
-import type {
-  GetAllStructuredDataContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  StructuredDataContainer,
-} from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import { defineComponent } from "vue";
-
-interface StructuredDatasListData {
-  containers?: StructuredDataContainer[];
-  perPage: number;
-  currentPage: number;
-  orderBy: string;
-  descending: boolean;
-}
-
-export default defineComponent({
-  components: { GenericEntityList, FilterListLine, GenericCreateModal },
-  data() {
-    return {
-      containers: undefined,
-      perPage: 10,
-      currentPage: 1,
-      orderBy: "createdAt",
-      descending: false,
-    } as StructuredDatasListData;
-  },
-  computed: {
-    totalRows(): number {
-      if (this.containers)
-        return getTotalRows(
-          this.containers.length,
-          this.perPage,
-          this.currentPage,
-        );
-      else return 0;
-    },
-  },
-  mounted() {
-    this.retrieveContainers();
-    useTitle("Structured Data Containers | shepard");
-  },
-  methods: {
-    filterChanged(options: FilterChangedData) {
-      this.currentPage = options.currentPage;
-      this.perPage = options.currentSize;
-      this.descending = options.descending;
-      this.orderBy = options.orderBy;
-      this.retrieveContainers();
-    },
-    retrieveContainers(page?: number) {
-      const nextPage = page || this.currentPage;
-      const nextOrderBy = this
-        .orderBy as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
-      StructuredDataService.getAllStructuredDataContainers({
-        size: this.perPage,
-        page: nextPage - 1,
-        orderBy: nextOrderBy,
-        orderDesc: this.descending,
-      })
-        .then(response => {
-          this.containers = response;
-        })
-        .catch(e => {
-          handleError(
-            e as ResponseError,
-            "fetching structured data containers",
-          );
-        });
-    },
-    createContainer(options: {
-      name: string;
-      perms: PermissionsPermissionTypeEnum;
-    }) {
-      StructuredDataService.createStructuredDataContainer({
-        structuredDataContainer: {
-          name: options.name,
-        },
-      })
-        .then(async response => {
-          if (response.id) {
-            const perms =
-              await StructuredDataService.getStructuredDataPermissions({
-                structureddataContainerId: response.id,
-              });
-            perms.permissionType = options.perms;
-            await StructuredDataService.editStructuredDataPermissions({
-              structureddataContainerId: response.id,
-              permissions: perms,
-            });
-            this.$router.push({
-              name: "StructuredData",
-              params: {
-                structuredDataId: String(response.id),
-              },
-            });
-          }
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating structured data container");
-        });
-    },
-  },
-});
-</script>

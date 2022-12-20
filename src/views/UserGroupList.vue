@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import FilterListLine, {
-  type FilterChangedData,
-} from "@/components/generic/FilterListLine.vue";
+import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
 import UserGroupService from "@/services/userGroupService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows } from "@/utils/helpers";
+import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
 import type {
   GetAllUserGroupsOrderByEnum,
   PermissionsPermissionTypeEnum,
