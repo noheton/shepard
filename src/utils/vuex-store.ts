@@ -33,8 +33,7 @@ const clientSettings = {
   scope: "openid email profile",
   automaticSilentRenew: true,
   automaticSilentSignin: false,
-  checkSessionInterval: 3000,
-  accessTokenExpiringNotificationTime: 10,
+  accessTokenExpiringNotificationTimeInSeconds: 10,
   extraQueryParams: { nonce: nanoid() },
 } as VuexOidcClientSettings;
 
