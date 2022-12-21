@@ -5,7 +5,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import de.dlr.shepard.exceptions.ApiError;
@@ -13,6 +16,7 @@ import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.JWTSecurityContext;
+import de.dlr.shepard.security.RolesList;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PKIHelper;
 import de.dlr.shepard.util.PropertiesHelper;
@@ -20,6 +24,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.jackson.io.JacksonDeserializer;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
@@ -40,6 +45,7 @@ public class JWTFilter implements ContainerRequestFilter {
 
 	private final PublicKey oidcPublicKey;
 	private final PublicKey jwtPublicKey;
+	private final String role;
 	private GracePeriodUtil lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
 
 	public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -52,11 +58,12 @@ public class JWTFilter implements ContainerRequestFilter {
 		var pkiHelper = new PKIHelper();
 		pkiHelper.init();
 		jwtPublicKey = pkiHelper.getPublicKey();
+
+		role = pHelper.getProperty("oidc.role");
 	}
 
 	@Override
 	public void filter(ContainerRequestContext requestContext) {
-
 		// Allow CORS preflight requests
 		if (HttpMethod.OPTIONS.equals(requestContext.getMethod())) {
 			// Allow all requests with request method OPTIONS
@@ -104,10 +111,13 @@ public class JWTFilter implements ContainerRequestFilter {
 	private Jws<Claims> parseAccessTokenFromHeader(String header) {
 		// Extract the token from the HTTP Authorization header
 		String token = header.replace("Bearer ", "");
+		var parser = Jwts.parserBuilder().setSigningKey(oidcPublicKey)
+				.deserializeJsonWith(new JacksonDeserializer<>(Map.of("realm_access", RolesList.class))).build();
+
 		Jws<Claims> jws;
 
 		try {
-			jws = Jwts.parserBuilder().setSigningKey(oidcPublicKey).build().parseClaimsJws(token);
+			jws = parser.parseClaimsJws(token);
 			log.debug("Valid token: {}", jws.getBody().getId());
 		} catch (JwtException ex) {
 			log.warn("Invalid token: {}", ex.getMessage());
@@ -122,10 +132,21 @@ public class JWTFilter implements ContainerRequestFilter {
 		String subject = body.getSubject();
 		String audience = body.getAudience();
 		String issuedFor = body.get("azp", String.class);
+		Optional<RolesList> realmAccess = Optional.ofNullable(body.get("realm_access", RolesList.class));
 
 		if (subject == null || subject.isEmpty()) {
 			log.warn("Token is missing a subject");
 			return null;
+		}
+
+		// Read realm roles
+		if (!role.isBlank()) {
+			var realmRoles = realmAccess.map(RolesList::getRoles).orElse(new String[0]);
+			var hasRole = Arrays.stream(realmRoles).anyMatch(r -> r.equals(role));
+			if (!hasRole) {
+				log.warn("User is missing required role: {}", role);
+				return null;
+			}
 		}
 
 		// We only want the last part of the subject, since this is usually a human
@@ -196,4 +217,5 @@ public class JWTFilter implements ContainerRequestFilter {
 	protected ApiKeyService getApiKeyService() {
 		return new ApiKeyService();
 	}
+
 }

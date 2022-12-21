@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
+import de.dlr.shepard.security.Userinfo;
 import de.dlr.shepard.security.UserinfoService;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
@@ -46,12 +47,14 @@ public class UserFilter implements ContainerRequestFilter {
 		var header = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
 		if (header != null && header.startsWith("Bearer ") && !lastSeen.elementIsKnown(jwtPrincipal.getUsername())) {
 			User user;
+			Userinfo userinfo;
 			try {
-				user = getUserinfoService().fetchUserinfo(header);
+				userinfo = getUserinfoService().fetchUserinfo(header);
 			} catch (ShepardProcessingException e) {
 				abort(requestContext, "User info could not be retrieved");
 				return;
 			}
+			user = parseUserFromUserinfo(userinfo);
 			if (!jwtPrincipal.getUsername().equals(user.getUsername())) {
 				log.warn("The usernames from the access token and the userinfo response do not match");
 				abort(requestContext, "The usernames from the access token and the userinfo response do not match");
@@ -70,6 +73,16 @@ public class UserFilter implements ContainerRequestFilter {
 	private void abort(ContainerRequestContext requestContext, String reason) {
 		requestContext.abortWith(Response.status(Status.UNAUTHORIZED)
 				.entity(new ApiError(Status.UNAUTHORIZED.getStatusCode(), "AuthenticationException", reason)).build());
+	}
+
+	private User parseUserFromUserinfo(Userinfo userinfo) {
+		// We only want the last part of the subject, since this is usually a human
+		// readable user name
+		var splitted = userinfo.getSub().split(":");
+		String username = splitted[splitted.length - 1];
+
+		User user = new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
+		return user;
 	}
 
 	protected UserService getUserService() {

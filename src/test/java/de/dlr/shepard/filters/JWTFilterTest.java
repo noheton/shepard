@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,6 +36,7 @@ import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.JWTSecurityContext;
+import de.dlr.shepard.security.RolesList;
 import io.jsonwebtoken.Jwts;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
@@ -43,7 +45,8 @@ import jakarta.ws.rs.core.UriInfo;
 
 public class JWTFilterTest extends BaseTestCase {
 
-	private PrivateKey privateKey;
+	private static PrivateKey privateKey;
+	private static PublicKey publicKey;
 
 	@Mock
 	private ContainerRequestContext context;
@@ -66,18 +69,8 @@ public class JWTFilterTest extends BaseTestCase {
 	@Captor
 	private ArgumentCaptor<SecurityContext> scCaptor;
 
-	@BeforeEach
-	public void setUpUriInfo() throws URISyntaxException {
-		URI uri = new URI("http://localhost:8080/shepard/api/projects");
-		URI baseUri = new URI("http://localhost:8080/shepard/api");
-		when(uriInfo.getAbsolutePath()).thenReturn(uri);
-		when(uriInfo.getBaseUri()).thenReturn(baseUri);
-		when(context.getUriInfo()).thenReturn(uriInfo);
-		when(context.getMethod()).thenReturn("GET");
-	}
-
-	@BeforeEach
-	public void setUpKeys() throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalAccessException {
+	@BeforeAll
+	public static void createKeys() throws NoSuchAlgorithmException, InvalidKeySpecException {
 		var privateString = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCIDEXJ9+8zSiKBreHYTteke0m+7W9Oh2uf1jjboU6/zRglwzA+Rojm1djmGcuOA7CxU1IG/3ACEsvhtR8/5NWF2Dh2KMPYf/cVqaF5Bo+Z26KbK3NCOUcgh8W5mJ0fXZnJSs5Z8PGIeJEVDcN3x2VLsxsixa3+oEiDXpllrNMlOJpLI/+offTnH2JGOu0ZGa8TZUw51zkSG6MUwmdBZaDA6e/YL1T0ohyGQ8LP5MAviQonv0FSLhvT6PEvkJuDK3RsyjbtnHTNCNTt/TKcUiWWpnqd7DdDwdhuvgAiRxrikyN8patMeStAEvZwRccsge3zoLXuCgq15OioOOmGTAibAgMBAAECggEABBqirFIPZDOzUMgnDPhr5ulVMy5EclEBfSPgOTfngT+1n8YAmZBVJumCjoZuro0L8n159v4TqexZPCjTlYDYtB3urhnStqA9muiwF0+MW27Vu+qWooPJ0oBmBZBGBSE0t27LRMlQ7/X7InB02hMoyhzQD7943TqGlXfwFrIc+H1uXN8MrB4boRX71/yEPT8hv8nWB0FLcgfwtl1l+81otJFveMO/RLStHUH3Auomb/Hh4u96H6S6lUZ8TJ6+8jh2LXmg/RpsqHIWhDbZaNQJE1YdySe3bijov3s/PISaE8pRec6l6KaYkUuFUa6RoGP1RnopsFuN+EeLRMXTRtxgEQKBgQDDB1YRjE7YAYUqeuohhMgx9Ms39zsJGrs6KHE4uWtJFR/Jo3Kq093ykGA+IO+DK/IhBXGzy53SIQ9J7WEONpMmaahY6/Bkhn2nRI9biNaPCovHeO+nIpwtIdTUQLg/d+om+jC2My0YLGk71A5TRkIBPBE9NirbITxibo6jwWWOwwKBgQCylI1fx6f1gdEAP0qM7/LVLrZU3Qx+Q9rPcGG2FI1gWYu69o3JBGpSXqKcAc9hxtFVBaOGpaj9sB8+fPfMXWAvM7c808eL0zOmDC6RlQs0N4XmpV/vUeurgkLQfgB4sfUXbVWHQNsAkvB64BVbbmWFEcHzaBMytb2whvU9hcExSQKBgQCDuSjAoWt/KUev8WTBTtWIKDY5jpopBA0AsuAF1/ZGXiYiImsIRiDZ+/mE/OnIRp46/1pUfWoSypFw9Qtgdivc/e/eXzz2KIAlwYCx6jJAWnceOuhiklW5heghk7Td6TgVK1ZLOTVz5ksNRaSHSiS6gL+EAFnhtwj50oI0yCK30QKBgF7k028HADhUYEQaXbogs1AW/2p+/+mEkxxR4opHx4xgaQDTjSo5P2o/wXbW+2VAqfHdCjU9iFwuH5wr+d1N7ROIDqGzA8FIXJSquoA/y/FWY7/ZNu5MAMhlcq2plwSLw+pL/fveOcHHUyRoONEaC7Y3ZnG6ZyE2M/M+88hab/uJAoGARSSJgG3rRz8hcfQEfopo3rzdeAMY0ws+fXlHp6u51PP+238rB0Y+/b/NeHzwwuqeIxqVTcbd5E8Va7KESPuuzfIQtKbGuVwFpZzWHmROt312AoxeSwRDpOQibpfBAF59D40+SCl6N64whiVoEgJvOQGYB6BIcunIhSpLSD2YId4=";
 		var publicString = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiAxFyffvM0oiga3h2E7XpHtJvu1vTodrn9Y426FOv80YJcMwPkaI5tXY5hnLjgOwsVNSBv9wAhLL4bUfP+TVhdg4dijD2H/3FamheQaPmduimytzQjlHIIfFuZidH12ZyUrOWfDxiHiRFQ3Dd8dlS7MbIsWt/qBIg16ZZazTJTiaSyP/qH305x9iRjrtGRmvE2VMOdc5EhujFMJnQWWgwOnv2C9U9KIchkPCz+TAL4kKJ79BUi4b0+jxL5Cbgyt0bMo27Zx0zQjU7f0ynFIllqZ6new3Q8HYbr4AIkca4pMjfKWrTHkrQBL2cEXHLIHt86C17goKteToqDjphkwImwIDAQAB";
 		var keyFactory = KeyFactory.getInstance("RSA");
@@ -88,9 +81,24 @@ public class JWTFilterTest extends BaseTestCase {
 
 		byte[] publicDecoded = Base64.getDecoder().decode(publicString);
 		X509EncodedKeySpec pubilcSpec = new X509EncodedKeySpec(publicDecoded);
-		PublicKey publicKey = keyFactory.generatePublic(pubilcSpec);
+		publicKey = keyFactory.generatePublic(pubilcSpec);
+	}
+
+	@BeforeEach
+	public void setUpKeys() throws IllegalAccessException {
 		FieldUtils.writeField(filter, "oidcPublicKey", publicKey, true);
 		FieldUtils.writeField(filter, "jwtPublicKey", publicKey, true);
+		FieldUtils.writeField(filter, "role", "test_role", true);
+	}
+
+	@BeforeEach
+	public void setUpUriInfo() throws URISyntaxException {
+		URI uri = new URI("http://localhost:8080/shepard/api/projects");
+		URI baseUri = new URI("http://localhost:8080/shepard/api");
+		when(uriInfo.getAbsolutePath()).thenReturn(uri);
+		when(uriInfo.getBaseUri()).thenReturn(baseUri);
+		when(context.getUriInfo()).thenReturn(uriInfo);
+		when(context.getMethod()).thenReturn("GET");
 	}
 
 	@BeforeEach
@@ -130,7 +138,8 @@ public class JWTFilterTest extends BaseTestCase {
 		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
 				.setIssuedAt(new Date()).setId(UUID.randomUUID().toString()).claim("azp", "testcase")
 				.claim("name", "MyName").claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
-				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "test_role" })).signWith(privateKey).compact();
 
 		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
 		filter.filter(context);
@@ -147,7 +156,8 @@ public class JWTFilterTest extends BaseTestCase {
 		String jws = Jwts.builder().setAudience("account").setExpiration(future).setNotBefore(now)
 				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
 				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
-				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "test_role" })).signWith(privateKey).compact();
 
 		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
 		filter.filter(context);
@@ -164,13 +174,69 @@ public class JWTFilterTest extends BaseTestCase {
 		String jws = Jwts.builder().setAudience("account").setExpiration(future).setNotBefore(now)
 				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
 				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
-				.claim("family_name", "MyLastName").claim("email", "MyEMail").claim("sub", "").signWith(privateKey)
-				.compact();
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "test_role" })).claim("sub", "")
+				.signWith(privateKey).compact();
 
 		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
 		filter.filter(context);
 		verify(context).abortWith(responseCaptor.capture());
 		assertEquals(401, responseCaptor.getValue().getStatus());
+	}
+
+	@Test
+	public void testFilterMissingRole() throws InvalidKeySpecException, NoSuchAlgorithmException {
+		Date now = new Date();
+		Date future = DateUtils.addMinutes(now, 5);
+		UUID keyId = UUID.randomUUID();
+
+		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
+				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
+				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
+				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
+
+		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+		filter.filter(context);
+		verify(context).abortWith(responseCaptor.capture());
+		assertEquals(401, responseCaptor.getValue().getStatus());
+	}
+
+	@Test
+	public void testFilterWrongRole() throws InvalidKeySpecException, NoSuchAlgorithmException {
+		Date now = new Date();
+		Date future = DateUtils.addMinutes(now, 5);
+		UUID keyId = UUID.randomUUID();
+
+		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
+				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
+				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "wrong_role" })).signWith(privateKey).compact();
+
+		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+		filter.filter(context);
+		verify(context).abortWith(responseCaptor.capture());
+		assertEquals(401, responseCaptor.getValue().getStatus());
+	}
+
+	@Test
+	public void testFilterNoRoleConfigured()
+			throws InvalidKeySpecException, NoSuchAlgorithmException, IllegalAccessException {
+		Date now = new Date();
+		Date future = DateUtils.addMinutes(now, 5);
+		UUID keyId = UUID.randomUUID();
+
+		FieldUtils.writeField(filter, "role", "", true);
+
+		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
+				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
+				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "another_role" })).signWith(privateKey).compact();
+
+		when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+		filter.filter(context);
+		verify(context, never()).abortWith(any());
 	}
 
 	@Test
@@ -182,7 +248,8 @@ public class JWTFilterTest extends BaseTestCase {
 		String jws = Jwts.builder().setSubject("Bob").setAudience("account").setExpiration(future).setNotBefore(now)
 				.setIssuedAt(new Date()).setId(keyId.toString()).claim("azp", "testcase").claim("name", "MyName")
 				.claim("preferred_username", "MyUserName").claim("given_name", "MyFirstName")
-				.claim("family_name", "MyLastName").claim("email", "MyEMail").signWith(privateKey).compact();
+				.claim("family_name", "MyLastName").claim("email", "MyEMail")
+				.claim("realm_access", new RolesList(new String[] { "test_role" })).signWith(privateKey).compact();
 
 		JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", keyId.toString(), new String[0]);
 		JWTSecurityContext securityContext = new JWTSecurityContext(context.getSecurityContext(), principal);
@@ -350,4 +417,5 @@ public class JWTFilterTest extends BaseTestCase {
 		verify(apiKeyService, never()).getApiKey(uid);
 		assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
 	}
+
 }

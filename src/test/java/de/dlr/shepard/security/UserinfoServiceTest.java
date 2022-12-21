@@ -21,7 +21,7 @@ import org.mockito.stubbing.Answer;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
-import de.dlr.shepard.neo4Core.entities.User;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.Invocation.Builder;
@@ -69,7 +69,6 @@ public class UserinfoServiceTest extends BaseTestCase {
 
 	@Test
 	public void testFetchUser_Successful() throws IllegalAccessException {
-		var user = new User("name_fi", "first", "name", "first.name@example.com");
 		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
 				"name_fi");
 
@@ -77,28 +76,13 @@ public class UserinfoServiceTest extends BaseTestCase {
 		when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
 
 		var actual = service.fetchUserinfo("Bearer myToken");
-		assertEquals(user, actual);
-		assertEquals("https://userinfo.endpoint/userinfo", urlCaptor.getValue());
-		assertEquals("Bearer myToken", headerCaptor.getValue());
-	}
-
-	@Test
-	public void testFetchUser_DifferentSubject() throws IllegalAccessException {
-		var user = new User("name_fi", "first", "name", "first.name@example.com");
-		var userinfo = new Userinfo("name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
-
-		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-		when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
-
-		var actual = service.fetchUserinfo("Bearer myToken");
-		assertEquals(user, actual);
+		assertEquals(userinfo, actual);
 		assertEquals("https://userinfo.endpoint/userinfo", urlCaptor.getValue());
 		assertEquals("Bearer myToken", headerCaptor.getValue());
 	}
 
 	@Test
 	public void testFetchUser_InvokeInit() throws IllegalAccessException {
-		var user = new User("name_fi", "first", "name", "first.name@example.com");
 		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
 				"name_fi");
 
@@ -112,7 +96,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 		when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
 
 		var actual = service.fetchUserinfo("Bearer myToken");
-		assertEquals(user, actual);
+		assertEquals(userinfo, actual);
 		verify(service).init();
 	}
 
@@ -137,7 +121,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 
 	@Test
 	public void testInit_ProcessingException() {
-		when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new jakarta.ws.rs.ProcessingException("Message"));
+		when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new ProcessingException("Message"));
 
 		assertThrows(ShepardProcessingException.class, service::init);
 	}
@@ -153,7 +137,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 	@Test
 	public void testFetchUser_ProcessingException() throws IllegalAccessException {
 		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-		when(invocation.invoke(Userinfo.class)).thenThrow(new jakarta.ws.rs.ProcessingException("Message"));
+		when(invocation.invoke(Userinfo.class)).thenThrow(new ProcessingException("Message"));
 
 		assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
 	}

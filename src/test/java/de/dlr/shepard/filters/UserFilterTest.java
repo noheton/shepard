@@ -22,6 +22,7 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
+import de.dlr.shepard.security.Userinfo;
 import de.dlr.shepard.security.UserinfoService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -61,11 +62,29 @@ public class UserFilterTest extends BaseTestCase {
 	@Test
 	public void testFilter_Successful() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
+		Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
 		User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
 		when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
 		when(securityContext.getUserPrincipal()).thenReturn(p);
-		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(u);
+		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
+		when(userService.updateUser(u)).thenReturn(u);
+
+		filter.filter(requestContext);
+		verify(userService).updateUser(u);
+		verify(lastSeen).elementSeen("bob");
+		verify(requestContext, never()).abortWith(any());
+	}
+
+	@Test
+	public void testFilter_SuccessfulUsernameConversion() throws IOException, ShepardProcessingException {
+		Principal p = new JWTPrincipal("bob", "MyKeyId");
+		Userinfo ui = new Userinfo("f:123:bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
+		User u = new User("bob", "John", "Doe", "john.doe@example.com");
+
+		when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
+		when(securityContext.getUserPrincipal()).thenReturn(p);
+		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
 		when(userService.updateUser(u)).thenReturn(u);
 
 		filter.filter(requestContext);
@@ -158,11 +177,11 @@ public class UserFilterTest extends BaseTestCase {
 	@Test
 	public void testFilter_InconsistentUsernames() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
-		User u = new User("claus", "John", "Doe", "john.doe@example.com");
+		Userinfo ui = new Userinfo("claus", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
 
 		when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
 		when(securityContext.getUserPrincipal()).thenReturn(p);
-		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(u);
+		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
 
 		filter.filter(requestContext);
 		verify(userService, never()).updateUser(any());
@@ -173,11 +192,12 @@ public class UserFilterTest extends BaseTestCase {
 	@Test
 	public void testFilter_UpdatedFailed() throws IOException, ShepardProcessingException {
 		Principal p = new JWTPrincipal("bob", "MyKeyId");
+		Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
 		User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
 		when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
 		when(securityContext.getUserPrincipal()).thenReturn(p);
-		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(u);
+		when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
 		when(userService.updateUser(u)).thenReturn(null);
 
 		filter.filter(requestContext);

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import de.dlr.shepard.exceptions.ShepardProcessingException;
-import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.PropertiesHelper;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -41,25 +41,6 @@ class OpenIdConfiguration {
 	private String[] idTokenSigningAlgValuesSupported;
 }
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
-class Userinfo {
-	private String sub;
-	private String name;
-	private String email;
-
-	@JsonProperty("given_name")
-	private String givenName;
-
-	@JsonProperty("family_name")
-	private String familyName;
-
-	@JsonProperty("preferred_username")
-	private String preferredUsername;
-}
-
 @Slf4j
 public class UserinfoService {
 
@@ -84,7 +65,7 @@ public class UserinfoService {
 		userinfoEndpoint = openIdConfiguration.getUserinfoEndpoint();
 	}
 
-	public User fetchUserinfo(String accessToken) {
+	public Userinfo fetchUserinfo(String accessToken) {
 		if (userinfoEndpoint == null) {
 			init();
 		}
@@ -93,8 +74,7 @@ public class UserinfoService {
 		if (userinfo == null) {
 			throw new ShepardProcessingException("Could not fetch userinfo");
 		}
-		User user = parseUserFromUserinfo(userinfo);
-		return user;
+		return userinfo;
 	}
 
 	private OpenIdConfiguration getOpenIdConfiguration(String uri) {
@@ -103,7 +83,7 @@ public class UserinfoService {
 		OpenIdConfiguration response;
 		try {
 			response = request.invoke(OpenIdConfiguration.class);
-		} catch (jakarta.ws.rs.ProcessingException e) {
+		} catch (ProcessingException e) {
 			log.error("Request was unsuccessful: {}", e.getMessage());
 			return null;
 		}
@@ -117,21 +97,11 @@ public class UserinfoService {
 		Userinfo response;
 		try {
 			response = request.invoke(Userinfo.class);
-		} catch (jakarta.ws.rs.ProcessingException e) {
+		} catch (ProcessingException e) {
 			log.error("Request was unsuccessful: {}", e.getMessage());
 			return null;
 		}
 		return response;
 	}
 
-	private User parseUserFromUserinfo(Userinfo userinfo) {
-		String subject = userinfo.getSub();
-		// We only want the last part of the subject, since this is usually a human
-		// readable user name
-		var splitted = subject.split(":");
-		String username = splitted[splitted.length - 1];
-
-		User user = new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
-		return user;
-	}
 }
