@@ -66,12 +66,13 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 
 4. Check configuration in `docker-compose.yml` and especially check available memory
 5. Copy the file `env.example` to `.env` and set passwords and configuration in this file
-   - All variables must be set!
+   - All variables except `OIDC_ROLE` must be set!
    - URLs have to end with a trailing slash
    - `BACKEND_URL` contains the URL of the backend (e.g. `https://backend.shepard.example.com/`)
    - The database passwords can be changed arbitrarily at the beginning
    - `OIDC_PUBLIC` is the public key of the oidc identity provider (e.g. keycloak)
    - `OIDC_AUTHORITY` is the URL of the oidc identity provider (e.g. `https://keycloak.example.com/auth/realms/master/`)
+   - `OIDC_ROLE` allows to restrict access to users with a specific role (see [Restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles))
    - `CLIENT_ID` is the client ID of the frontend as known to the oidc identity provider.
    - The public key and the URL of the OpenID Connect provider must be written into the corresponding variables
 
@@ -79,6 +80,30 @@ ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
 # copy configuration file
 cp env.example .env
 ```
+
+## Restrict access to users with specific roles
+
+Some OpenID Connect identity providers such as [Keycloak](https://www.keycloak.org/) are able to add role information as part of access tokens.
+The access token then contains an additional claim `realm_access` like the following:
+
+```json
+{
+  ...,
+  "realm_access": {
+    "roles": [
+      "default-roles-master",
+      "offline_access",
+      "uma_authorization",
+      "custom_role"
+    ]
+  },
+  ...
+}
+```
+
+The shepard backend can be configured to allow only users with a specific role.
+To do so, the optional `OIDC_ROLE` variable in `.env` can be set to the given role.
+From the next restart, users without this role will no longer be able to access shepard.
 
 ## Start
 

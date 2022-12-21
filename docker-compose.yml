@@ -6,6 +6,7 @@ services:
       CATALINA_OPTS: "-Xms2048m -Xmx2048m"
       oidc.public: ${OIDC_PUBLIC}
       oidc.authority: ${OIDC_AUTHORITY}
+      oidc.role: ${OIDC_ROLE}
       influx.host: influxdb:8086
       influx.username: admin
       influx.password: ${INFLUX_PW}
