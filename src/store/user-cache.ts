@@ -1,44 +1,14 @@
+import getEnv from "@/utils/env";
 import { Configuration, UserApi, type User } from "@dlr-shepard/shepard-client";
-import { nanoid } from "nanoid";
-import Vue from "vue";
-import Vuex, { type ActionContext } from "vuex";
-import {
-  vuexOidcCreateStoreModule,
-  type VuexOidcClientSettings,
-  type VuexOidcState,
-} from "vuex-oidc";
-import getEnv from "./env";
+import type { ActionContext } from "vuex";
+import type { RootState } from ".";
 
-Vue.use(Vuex);
-
-interface UserCacheState {
+export interface UserCacheState {
   users: { [key: string]: User };
   pending: string[];
 }
 
-interface RootState {
-  oidcStore: VuexOidcState;
-  userCache: UserCacheState;
-}
-
-// OIDC
-const loco = window.location;
-const appRootUrl = `${loco.protocol}//${loco.host}${import.meta.env.BASE_URL}`;
-
-const clientSettings = {
-  authority: getEnv("VITE_OIDC_AUTHORITY"),
-  clientId: getEnv("VITE_CLIENT_ID"),
-  redirectUri: appRootUrl + "oidc-callback",
-  responseType: "code",
-  scope: "openid email profile",
-  automaticSilentRenew: true,
-  automaticSilentSignin: false,
-  accessTokenExpiringNotificationTimeInSeconds: 10,
-  extraQueryParams: { nonce: nanoid() },
-} as VuexOidcClientSettings;
-
-// User Cache
-const userCache = {
+export default {
   namespaced: true,
   state: {
     users: {},
@@ -96,13 +66,3 @@ const userCache = {
     },
   },
 };
-
-export default new Vuex.Store({
-  modules: {
-    oidcStore: vuexOidcCreateStoreModule(clientSettings, {
-      namespaced: true,
-      routeBase: import.meta.env.BASE_URL,
-    }),
-    userCache: userCache,
-  },
-});

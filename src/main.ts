@@ -4,8 +4,8 @@ log.setDefaultLevel("info");
 import Vue from "vue";
 import App from "./App.vue";
 import "./plugins/bootstrap-vue";
-import router from "./utils/router";
-import store from "./utils/vuex-store";
+import router from "./router";
+import store from "./store";
 
 new Vue({
   router,

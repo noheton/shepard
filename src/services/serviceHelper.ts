@@ -1,5 +1,5 @@
+import store from "@/store";
 import getEnv from "@/utils/env";
-import store from "@/utils/vuex-store";
 import { Configuration } from "@dlr-shepard/shepard-client";
 
 export function getConfiguration(): Configuration {
