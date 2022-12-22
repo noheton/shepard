@@ -1,5 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.util.List;
+
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.User;
 import lombok.extern.slf4j.Slf4j;
@@ -56,5 +58,9 @@ public class UserService {
 	 */
 	public User getUser(String username) {
 		return userDAO.find(username);
+	}
+
+	public List<User> searchUsers(String username, String firstName, String lastName, String email) {
+		return userDAO.searchUsers(username, firstName, lastName, email);
 	}
 }

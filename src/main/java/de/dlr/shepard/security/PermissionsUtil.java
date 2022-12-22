@@ -35,8 +35,12 @@ public class PermissionsUtil {
 			// No id in path
 			return true;
 		} else if (!StringUtils.isNumeric(idSegment)) {
+			// usersearch
+			if (pathSegments.get(0).getPath().equals(Constants.SEARCH)
+					&& pathSegments.get(1).getPath().equals(Constants.USERS) && pathSegments.size() == 2)
+				return true;
 			// non-numeric id
-			if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
+			else if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
 				if (pathSegments.size() <= 2 && AccessType.Read.equals(accessType))
 					// it is allowed to read all users
 					return true;

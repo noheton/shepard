@@ -43,4 +43,5 @@ public class UserRestImpl implements UserRest {
 		User user = userService.getUser(username);
 		return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
 	}
+
 }

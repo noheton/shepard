@@ -15,6 +15,9 @@ public class Constants {
 	public static final String USERNAME = "username";
 	public static final String USERGROUP = "usergroup";
 	public static final String USERGROUP_ID = "usergroupId";
+	public static final String FIRSTNAME = "firstName";
+	public static final String LASTNAME = "lastName";
+	public static final String EMAIL = "email";
 
 	public static final String APIKEY = "apikey";
 	public static final String APIKEYS = "apikeys";

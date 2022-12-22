@@ -34,6 +34,9 @@ public class PermissionsUtilTest extends BaseTestCase {
 	@Mock
 	private PathSegment pathSeg;
 
+	@Mock
+	private PathSegment thirdSegment;
+
 	private List<PathSegment> pathSegments;
 
 	@Mock
@@ -90,6 +93,34 @@ public class PermissionsUtilTest extends BaseTestCase {
 		when(idSeg.getPath()).thenReturn("abc");
 
 		var actual = util.isAllowed(List.of(rootSeg, idSeg), AccessType.Write, "principal");
+		assertFalse(actual);
+	}
+
+	@Test
+	public void isAllowedTest_SearchUsers() {
+		when(rootSeg.getPath()).thenReturn("search");
+		when(idSeg.getPath()).thenReturn("users");
+
+		var actual = util.isAllowed(List.of(rootSeg, idSeg), AccessType.Read, "principal");
+		assertTrue(actual);
+	}
+
+	@Test
+	public void isNotAllowedTest_SearchUser() {
+		when(rootSeg.getPath()).thenReturn("search");
+		when(idSeg.getPath()).thenReturn("user");
+
+		var actual = util.isAllowed(List.of(rootSeg, idSeg), AccessType.Read, "principal");
+		assertFalse(actual);
+	}
+
+	@Test
+	public void isNotAllowedTest_SearchUsers3() {
+		when(rootSeg.getPath()).thenReturn("search");
+		when(idSeg.getPath()).thenReturn("users");
+		when(thirdSegment.getPath()).thenReturn("bla");
+
+		var actual = util.isAllowed(List.of(rootSeg, idSeg, thirdSegment), AccessType.Read, "principal");
 		assertFalse(actual);
 	}
 

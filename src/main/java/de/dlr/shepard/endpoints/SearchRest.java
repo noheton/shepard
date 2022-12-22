@@ -1,9 +1,11 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -20,5 +22,11 @@ public interface SearchRest {
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response search(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body);
+
+	@Tag(name = Constants.SEARCH)
+	@Operation(description = "Search users")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserIO.class))))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response searchUsers(String username, String firstName, String lastName, String email);
 
 }
