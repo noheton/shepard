@@ -4,12 +4,17 @@ import FilterListLine from "@/components/generic/FilterListLine.vue";
 import Loading from "@/components/generic/Loading.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
-import type { FilterChangedData } from "@/utils/helpers";
 import {
+  getTotalRows,
+  type FilterChangedData,
+  type FilterOptions,
+} from "@/utils/helpers";
+import type {
+  DataObject,
   GetAllDataObjectsOrderByEnum,
   ResponseError,
-  type DataObject,
 } from "@dlr-shepard/shepard-client";
+import { useStorage } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 
 const props = defineProps({
@@ -37,42 +42,44 @@ const props = defineProps({
 
 const dataObjects = ref<DataObject[]>();
 const currentPage = ref(1);
-const descendingSelected = ref(false);
-const orderBySelected = ref<string>(GetAllDataObjectsOrderByEnum.CreatedAt);
-const sizeSelected = ref(25);
-
+const filterOptions = useStorage<FilterOptions>("do-filter-options", {
+  perPage: 25,
+  orderBy: "createdAt",
+  descending: false,
+});
 const totalRows = computed(() => {
   if (props.maxObjects) {
     return props.maxObjects;
-  } else if (
-    dataObjects.value &&
-    dataObjects.value.length < sizeSelected.value
-  ) {
-    return currentPage.value * sizeSelected.value;
+  } else if (dataObjects.value) {
+    return getTotalRows(
+      dataObjects.value.length,
+      filterOptions.value.perPage,
+      currentPage.value,
+    );
+  } else {
+    return 0;
   }
-  return (currentPage.value + 1) * sizeSelected.value;
 });
-
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
-  sizeSelected.value = options.currentSize;
-  descendingSelected.value = options.descending;
-  orderBySelected.value = options.orderBy;
+  filterOptions.value.perPage = options.perPage;
+  filterOptions.value.descending = options.descending;
+  filterOptions.value.orderBy = options.orderBy;
   retrieveDataObjects();
 }
 
 function retrieveDataObjects(page?: number) {
   const nextPage = page || currentPage.value;
-  const nextOrderBy =
-    orderBySelected.value as keyof typeof GetAllDataObjectsOrderByEnum as GetAllDataObjectsOrderByEnum;
+  const nextOrderBy = filterOptions.value
+    .orderBy as keyof typeof GetAllDataObjectsOrderByEnum as GetAllDataObjectsOrderByEnum;
   DataObjectService?.getAllDataObjects({
     collectionId: props.currentCollectionId,
     parentId: props.parentId,
     predecessorId: props.predecessorId,
     successorId: props.successorId,
-    size: sizeSelected.value,
+    size: filterOptions.value.perPage,
     orderBy: nextOrderBy,
-    orderDesc: descendingSelected.value,
+    orderDesc: filterOptions.value.descending,
     page: nextPage - 1,
   })
     .then(response => {
@@ -92,9 +99,8 @@ onMounted(() => {
   <div>
     <FilterListLine
       :max-objects="totalRows"
-      :default-size="sizeSelected"
-      :default-descending="descendingSelected"
-      :default-order-by="orderBySelected"
+      :current-page="currentPage"
+      :filter-options="filterOptions"
       @filter-changed="filterChanged($event)"
     />
     <div v-if="dataObjects == undefined"><Loading /></div>

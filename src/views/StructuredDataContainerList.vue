@@ -4,51 +4,57 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
+import {
+  getTotalRows,
+  type FilterChangedData,
+  type FilterOptions,
+} from "@/utils/helpers";
 import type {
   GetAllStructuredDataContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
   ResponseError,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
+import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 
 const containers = ref<StructuredDataContainer[]>();
-const perPage = ref(10);
-const currentPage = ref(1);
-const orderBy = ref("createdAt");
-const descending = ref(false);
 
+const filterOptions = useStorage<FilterOptions>("sd-filter-options", {
+  perPage: 10,
+  orderBy: "createdAt",
+  descending: false,
+});
+const currentPage = ref(1);
 const totalRows = computed(() => {
   if (containers.value)
     return getTotalRows(
       containers.value.length,
-      perPage.value,
+      filterOptions.value.perPage,
       currentPage.value,
     );
   else return 0;
 });
-
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
-  perPage.value = options.currentSize;
-  descending.value = options.descending;
-  orderBy.value = options.orderBy;
+  filterOptions.value.perPage = options.perPage;
+  filterOptions.value.descending = options.descending;
+  filterOptions.value.orderBy = options.orderBy;
   retrieveContainers();
 }
+
 function retrieveContainers(page?: number) {
   const nextPage = page || currentPage.value;
-  const nextOrderBy =
-    orderBy.value as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
+  const nextOrderBy = filterOptions.value
+    .orderBy as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
   StructuredDataService.getAllStructuredDataContainers({
-    size: perPage.value,
+    size: filterOptions.value.perPage,
     page: nextPage - 1,
     orderBy: nextOrderBy,
-    orderDesc: descending.value,
+    orderDesc: filterOptions.value.descending,
   })
     .then(response => {
       containers.value = response;
@@ -114,10 +120,8 @@ onMounted(() => {
 
       <FilterListLine
         :max-objects="totalRows"
-        :default-page="currentPage"
-        :default-size="perPage"
-        :default-descending="descending"
-        :default-order-by="orderBy"
+        :current-page="currentPage"
+        :filter-options="filterOptions"
         @filter-changed="filterChanged($event)"
       />
       <GenericEntityList :entities="containers" />
@@ -129,7 +133,7 @@ onMounted(() => {
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
-        :per-page="perPage"
+        :per-page="filterOptions.perPage"
         align="center"
         size="sm"
         @change="retrieveContainers($event)"

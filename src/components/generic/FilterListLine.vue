@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { FilterChangedData } from "@/utils/helpers";
-import { ref, watch } from "vue";
+import type { FilterChangedData, FilterOptions } from "@/utils/helpers";
+import { ref, watch, type PropType } from "vue";
 
 const emit = defineEmits(["filter-changed"]);
 
@@ -9,55 +9,53 @@ const props = defineProps({
     type: Number,
     required: true,
   },
-  defaultPage: {
+  currentPage: {
     type: Number,
     default: 1,
   },
-  defaultSize: {
-    type: Number,
-    default: 10,
-  },
-  defaultOrderBy: {
-    type: String,
-    default: "createdAt",
-  },
-  defaultDescending: {
-    type: Boolean,
-    default: false,
+  filterOptions: {
+    type: Object as PropType<FilterOptions>,
+    default() {
+      return {
+        perPage: 10,
+        orderBy: "createdAt",
+        descending: false,
+      };
+    },
   },
 });
 
-const currentPage = ref(props.defaultPage);
-const currentSize = ref(props.defaultSize);
+const currentPage = ref(props.currentPage);
+const perPage = ref(props.filterOptions.perPage);
 const sizeOptions = [
   { value: 10, text: "10" },
   { value: 25, text: "25" },
   { value: 50, text: "50" },
   { value: 100, text: "100" },
 ];
-const orderBy = ref(props.defaultOrderBy);
+const orderBy = ref(props.filterOptions.orderBy);
 const orderByOptions = [
   { value: "createdAt", text: "Created At" },
   { value: "updatedAt", text: "Updated At" },
   { value: "name", text: "Name" },
 ];
-const descending = ref(props.defaultDescending);
+const descending = ref(props.filterOptions.descending);
 const descendingOptions = [
   { value: false, text: "Ascending" },
   { value: true, text: "Descending" },
 ];
 
 watch(
-  () => props.defaultPage,
-  defaultPage => {
-    currentPage.value = defaultPage;
+  () => props.currentPage,
+  page => {
+    currentPage.value = page;
   },
 );
 
 function update() {
   const options: FilterChangedData = {
     currentPage: currentPage.value,
-    currentSize: currentSize.value,
+    perPage: perPage.value,
     orderBy: orderBy.value,
     descending: descending.value,
   };
@@ -68,7 +66,7 @@ function updatePage(nextPage: number) {
   update();
 }
 function updateSize(nextSize: number) {
-  currentSize.value = nextSize;
+  perPage.value = nextSize;
   update();
 }
 function updateOrderBy(nextOrderBy: string) {
@@ -89,7 +87,7 @@ function updateDescending(nextDescending: boolean) {
           v-model="currentPage"
           class="float-left w-auto"
           :total-rows="maxObjects"
-          :per-page="currentSize"
+          :per-page="perPage"
           @change="updatePage($event)"
         ></b-pagination>
         <b-form-select
@@ -105,7 +103,7 @@ function updateDescending(nextDescending: boolean) {
           @change="updateOrderBy($event)"
         ></b-form-select>
         <b-form-select
-          v-model="currentSize"
+          v-model="perPage"
           class="ml-3 float-right w-auto"
           :options="sizeOptions"
           @change="updateSize($event)"

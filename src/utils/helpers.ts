@@ -25,7 +25,6 @@ export function convertDate(date: Date | undefined | null) {
 }
 
 import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
-
 export interface PermissionOption {
   value: PermissionsPermissionTypeEnum;
   text: string;
@@ -45,9 +44,14 @@ export const permissionOptions: PermissionOption[] = [
   },
 ];
 
+export interface FilterOptions {
+  perPage: number;
+  orderBy: string;
+  descending: boolean;
+}
 export interface FilterChangedData {
   currentPage: number;
-  currentSize: number;
+  perPage: number;
   orderBy: string;
   descending: boolean;
 }

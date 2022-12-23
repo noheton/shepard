@@ -6,26 +6,30 @@ import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
+import {
+  getTotalRows,
+  type FilterChangedData,
+  type FilterOptions,
+} from "@/utils/helpers";
 import {
   GetAllCollectionsOrderByEnum,
   ResponseError,
   SearchParamsQueryTypeEnum,
   type Collection,
 } from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
+import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 
 const collections = ref<Collection[]>();
 function retrieveCollections(page?: number) {
   const nextPage = page || currentPage.value;
-  const nextOrderBy =
-    orderBy.value as keyof typeof GetAllCollectionsOrderByEnum as GetAllCollectionsOrderByEnum;
+  const nextOrderBy = filterOptions.value
+    .orderBy as keyof typeof GetAllCollectionsOrderByEnum as GetAllCollectionsOrderByEnum;
   CollectionService.getAllCollections({
-    size: perPage.value,
+    size: filterOptions.value.perPage,
     page: nextPage - 1,
     orderBy: nextOrderBy,
-    orderDesc: descending.value,
+    orderDesc: filterOptions.value.descending,
   })
     .then(response => {
       collections.value = response;
@@ -35,28 +39,30 @@ function retrieveCollections(page?: number) {
     });
 }
 
-const perPage = ref(10);
+const filterOptions = useStorage<FilterOptions>("explore-filter-options", {
+  perPage: 10,
+  orderBy: "createdAt",
+  descending: false,
+});
 const currentPage = ref(1);
-const orderBy = ref("createdAt");
-const descending = ref(false);
-const userInput = ref("");
 const totalRows = computed(() => {
   if (collections.value)
     return getTotalRows(
       collections.value.length,
-      perPage.value,
+      filterOptions.value.perPage,
       currentPage.value,
     );
   else return 0;
 });
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
-  perPage.value = options.currentSize;
-  descending.value = options.descending;
-  orderBy.value = options.orderBy;
+  filterOptions.value.perPage = options.perPage;
+  filterOptions.value.descending = options.descending;
+  filterOptions.value.orderBy = options.orderBy;
   retrieveCollections();
 }
 
+const userInput = ref("");
 const collectionsResultSet = ref<Collection[]>([]);
 const collectionsFound = ref<number>();
 function handlePrepare() {
@@ -179,10 +185,8 @@ onMounted(() => {
 
       <FilterListLine
         :max-objects="totalRows"
-        :default-page="currentPage"
-        :default-size="perPage"
-        :default-descending="descending"
-        :default-order-by="orderBy"
+        :current-page="currentPage"
+        :filter-options="filterOptions"
         @filter-changed="filterChanged($event)"
       />
       <GenericEntityList :entities="collections" />
@@ -190,7 +194,7 @@ onMounted(() => {
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
-        :per-page="perPage"
+        :per-page="filterOptions.perPage"
         align="center"
         size="sm"
         @change="retrieveCollections($event)"

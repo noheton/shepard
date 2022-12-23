@@ -4,56 +4,56 @@ import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
-import { getTotalRows, type FilterChangedData } from "@/utils/helpers";
+import {
+  getTotalRows,
+  type FilterChangedData,
+  type FilterOptions,
+} from "@/utils/helpers";
 import type {
   FileContainer,
   GetAllFileContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import { computed, onMounted, ref, type ComputedRef } from "vue";
+import { useStorage, useTitle } from "@vueuse/core";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 const containers = ref<FileContainer[] | undefined>();
-const perPage = ref(10);
-const currentPage = ref(1);
-const orderBy = ref("createdAt");
-const descending = ref(false);
 
-onMounted(() => {
-  retrieveContainers();
-  useTitle("File Containers | shepard");
+const filterOptions = useStorage<FilterOptions>("files-filter-options", {
+  perPage: 10,
+  orderBy: "createdAt",
+  descending: false,
 });
-
-const totalRows: ComputedRef<number> = computed(() => {
+const currentPage = ref(1);
+const totalRows = computed(() => {
   if (containers.value)
     return getTotalRows(
       containers.value.length,
-      perPage.value,
+      filterOptions.value.perPage,
       currentPage.value,
     );
   else return 0;
 });
-
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
-  perPage.value = options.currentSize;
-  descending.value = options.descending;
-  orderBy.value = options.orderBy;
+  filterOptions.value.perPage = options.perPage;
+  filterOptions.value.descending = options.descending;
+  filterOptions.value.orderBy = options.orderBy;
   retrieveContainers();
 }
 
 function retrieveContainers(page?: number) {
   const nextPage = page || currentPage.value;
-  const nextOrderBy =
-    orderBy.value as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
+  const nextOrderBy = filterOptions.value
+    .orderBy as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
   FileService.getAllFileContainers({
-    size: perPage.value,
+    size: filterOptions.value.perPage,
     page: nextPage - 1,
     orderBy: nextOrderBy,
-    orderDesc: descending.value,
+    orderDesc: filterOptions.value.descending,
   })
     .then(response => {
       containers.value = response;
@@ -92,6 +92,11 @@ function createContainer(options: {
       handleError(e as ResponseError, "creating file container");
     });
 }
+
+onMounted(() => {
+  retrieveContainers();
+  useTitle("File Containers | shepard");
+});
 </script>
 
 <template>
@@ -112,10 +117,8 @@ function createContainer(options: {
 
       <FilterListLine
         :max-objects="totalRows"
-        :default-page="currentPage"
-        :default-size="perPage"
-        :default-descending="descending"
-        :default-order-by="orderBy"
+        :current-page="currentPage"
+        :filter-options="filterOptions"
         @filter-changed="filterChanged($event)"
       />
       <GenericEntityList :entities="containers" />
@@ -127,7 +130,7 @@ function createContainer(options: {
       <b-pagination
         v-model="currentPage"
         :total-rows="totalRows"
-        :per-page="perPage"
+        :per-page="filterOptions.perPage"
         align="center"
         size="sm"
         @change="retrieveContainers($event)"
