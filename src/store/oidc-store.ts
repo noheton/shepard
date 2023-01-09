@@ -8,7 +8,8 @@ import {
 const loco = window.location;
 const appRootUrl = `${loco.protocol}//${loco.host}${import.meta.env.BASE_URL}`;
 
-const clientSettings = {
+// TODO: Issue https://github.com/perarnborg/vuex-oidc/issues/204
+const clientSettings: unknown = {
   authority: getEnv("VITE_OIDC_AUTHORITY"),
   clientId: getEnv("VITE_CLIENT_ID"),
   redirectUri: appRootUrl + "oidc-callback",
@@ -18,9 +19,12 @@ const clientSettings = {
   automaticSilentSignin: false,
   accessTokenExpiringNotificationTimeInSeconds: 10,
   extraQueryParams: { nonce: nanoid() },
-} as VuexOidcClientSettings;
+};
 
-export default vuexOidcCreateStoreModule(clientSettings, {
-  namespaced: true,
-  routeBase: import.meta.env.BASE_URL,
-});
+export default vuexOidcCreateStoreModule(
+  clientSettings as VuexOidcClientSettings,
+  {
+    namespaced: true,
+    routeBase: import.meta.env.BASE_URL,
+  },
+);
