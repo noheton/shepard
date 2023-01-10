@@ -1,39 +1,27 @@
 <script setup lang="ts">
-import { HSVtoRGB } from "@/utils/colors";
+import VisualizationModal from "@/components/payload/VisualizationModal.vue";
+import type { PlottingData } from "@/utils/plotting";
 import type {
   Timeseries,
   TimeseriesPayload,
 } from "@dlr-shepard/shepard-client";
-import {
-  Chart,
-  registerables,
-  type ChartData,
-  type ScatterDataPoint,
-} from "chart.js";
+import { Chart, registerables } from "chart.js";
 import { computed, ref, type PropType } from "vue";
-import { Scatter } from "vue-chartjs";
 
 Chart.register(...registerables);
 
-const chartOptions = {
-  datasets: { scatter: { showLine: true, tension: 0.1 } },
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: "Time in s",
-      },
-    },
-    y: {
-      title: {
-        display: true,
-        text: "Value",
-      },
-    },
-  },
-};
+const checkedTSList = ref<TimeseriesPayload[]>([]);
+const plotShown = ref(false);
+const updated = ref(0);
+const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
+const timeseriesOptions = computed(() => {
+  return props.timeseriesPayloadList.map(tsPayload => {
+    return {
+      value: tsPayload,
+      text: getTimeseriesName(tsPayload.timeseries),
+    };
+  });
+});
 
 const props = defineProps({
   modalId: {
@@ -42,7 +30,7 @@ const props = defineProps({
   },
   modalName: {
     type: String,
-    default: "PlottingModal",
+    default: "TimeseriesPlotting",
   },
   timeseriesPayloadList: {
     type: Array as PropType<TimeseriesPayload[]>,
@@ -54,26 +42,13 @@ const props = defineProps({
   },
 });
 
-const chartData = ref<
-  ChartData<"scatter", (number | ScatterDataPoint | null)[], unknown>
->({
-  datasets: [],
-});
-const checkedTSList = ref<TimeseriesPayload[]>([]);
-const plotShown = ref(false);
-const colorCounter = ref(0);
-const updated = ref(0);
+function reset() {
+  checkedTSList.value = [];
+  plotShown.value = false;
+  chartData.value = { datasets: [], xLabel: "Time in s" };
+}
 
-const timeseriesOptions = computed(() => {
-  return props.timeseriesPayloadList.map(tsPayload => {
-    return {
-      value: tsPayload,
-      text: getTimeseriesName(tsPayload.timeseries),
-    };
-  });
-});
-
-function plotData() {
+function createPlottableData() {
   chartData.value.datasets = [];
   checkedTSList.value.forEach(payload => {
     const data = payload.points
@@ -90,73 +65,25 @@ function plotData() {
           y: Number(point.value),
         };
       });
-    const colorSetting = colorCalculator(colorCounter.value);
     chartData.value.datasets.push({
+      dataPoints: data,
       label: getTimeseriesName(payload.timeseries),
-      fill: false,
-      borderColor: colorSetting,
-      backgroundColor: colorSetting,
-      data: data,
     });
-    colorCounter.value++;
   });
-  colorCounter.value = 0;
-  plotShown.value = true;
   updated.value++;
 }
 
 function getTimeseriesName(ts: Timeseries) {
   return Object.values(ts).join(" - ");
 }
-
-function colorCalculator(counter: number) {
-  const baseColorArray = [
-    [202, 1, 0.733],
-    [1, 0.659, 0.702],
-  ];
-  let colorIndex = 0;
-  const returnColor = baseColorArray[colorIndex];
-  if (counter < 3) {
-    returnColor[1] = returnColor[1] - counter * 0.4;
-  } else {
-    colorIndex = 1;
-    returnColor[1] = returnColor[1] - (counter - 3) * 0.3;
-    if (counter == 5) {
-      colorCounter.value = -1;
-    }
-  }
-  return HSVtoRGB(returnColor);
-}
-
-function reset() {
-  chartData.value = {
-    datasets: [],
-  };
-  checkedTSList.value = [];
-  colorCounter.value = 0;
-  plotShown.value = false;
-}
-
-function savePlot() {
-  // saveData() inspired by https://github.com/apertureless/vue-chartjs/issues/89#issuecomment-292718708
-  const plottingImage = document.getElementById(
-    "scatter-chart",
-  ) as HTMLCanvasElement | null;
-  if (plottingImage != null) {
-    const link = document.createElement("a");
-    link.download = props.modalName.replace(/[<>:"/\\|?* ]/g, "_");
-    link.href = plottingImage.toDataURL("image/png");
-    link.click();
-  }
-}
 </script>
 
 <template>
   <b-modal
-    :id="modalId"
+    :id="props.modalId"
     ref="modal"
     size="xl"
-    :title="modalName"
+    :title="props.modalName"
     lazy
     ok-only
     ok-title="Close"
@@ -173,40 +100,19 @@ function savePlot() {
       ></b-form-select>
     </b-list-group>
     <b-button
-      v-b-tooltip.hover
-      title="Show Plot"
-      variant="primary"
-      @click="plotData()"
+      v-if="checkedTSList.length > 0"
+      v-b-modal.visualization
+      variant="success"
+      @click="createPlottableData()"
     >
       Show Plot
     </b-button>
-    <b-button
-      id="exportButton"
-      v-b-tooltip.hover
-      title="Save Plot to .PNG"
-      variant="secondary"
-      class="ml-1"
-      :disabled="!plotShown"
-      @click="savePlot()"
-    >
-      Save Plot
-    </b-button>
-    <div class="plot">
-      <Scatter
-        v-if="chartData.datasets.length > 0"
-        :key="updated"
-        :options="chartOptions"
-        :data="chartData"
-        chart-id="scatter-chart"
-        dataset-id-key="label"
-      />
-    </div>
+    <b-button v-else :disabled="true" variant="success"> Show Plot </b-button>
+    <VisualizationModal
+      v-if="chartData.datasets.length > 0"
+      modal-id="visualization"
+      :modal-name="'Visualization of ' + props.modalName"
+      :input-data="chartData"
+    />
   </b-modal>
 </template>
-
-<style scoped>
-.plot {
-  height: 400px;
-  position: "relative";
-}
-</style>

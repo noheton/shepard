@@ -1,43 +1,15 @@
 <script setup lang="ts">
-import { HSVtoRGB } from "@/utils/colors";
-import {
-  Chart,
-  registerables,
-  type ChartData,
-  type ScatterDataPoint,
-} from "chart.js";
+import VisualizationModal from "@/components/payload/VisualizationModal.vue";
+import type { PlottingData } from "@/utils/plotting";
+import { Chart, registerables } from "chart.js";
 import {
   parse,
   type CastingContext,
   type CsvError,
 } from "csv-parse/browser/esm";
 import { ref } from "vue";
-import { Scatter } from "vue-chartjs";
 
 Chart.register(...registerables);
-
-const chartOptions = {
-  datasets: { scatter: { showLine: true, tension: 0.1 } },
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: {
-    duration: 0,
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: "",
-      },
-    },
-    y: {
-      title: {
-        display: true,
-        text: "",
-      },
-    },
-  },
-};
 
 const startLine = ref("");
 const delimiter = ref("");
@@ -61,17 +33,14 @@ const plottingOptionListY = ref<
 >([]);
 const plottingSelectionX = ref<string>("");
 const plottingSelectionY = ref<string[]>([]);
-const chartData = ref<
-  ChartData<"scatter", (number | ScatterDataPoint | null)[], unknown>
->({ datasets: [] });
 const recordsParsed = ref<string[][]>([]);
+const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
 const columnNames = ref<string[]>([]);
-const returnColor = ref<number[]>([]);
-const colorCounter = ref<number>(0);
 const plotShown = ref<boolean>(false);
 const updated = ref(0);
 const parsingWentWrong = ref<boolean>(false);
 const errorType = ref<string>("");
+const numberOfRows = 4;
 
 const props = defineProps({
   modalId: {
@@ -95,7 +64,6 @@ function reset() {
   delimiter.value = ";";
   skipRowsAfterHeader.value = "0";
   dataForPreview.value = [];
-  colorCounter.value = 0;
   plotShown.value = false;
   plottingOptionListX.value = [
     { value: "", text: "Please parse your data first", disabled: true },
@@ -105,7 +73,7 @@ function reset() {
   ];
   plottingSelectionX.value = "";
   plottingSelectionY.value = [];
-  chartData.value = { datasets: [] };
+  chartData.value = { datasets: [], xLabel: "x Value" };
   parsingWentWrong.value = false;
   errorType.value = "";
 }
@@ -127,7 +95,6 @@ function parser() {
     },
     (err?: CsvError, records?: string[][]) => {
       if (err || !records) {
-        console.log("Error");
         parsingWentWrong.value = true;
         errorType.value = err
           ? err.name + ": " + err.message
@@ -171,7 +138,7 @@ function updatePlottingList(records: string[][]) {
 function createParsingPreview() {
   dataForPreview.value = [];
   // iterate over the head of the data in order to display them
-  for (let row = 0; row < 6; row++) {
+  for (let row = 0; row < numberOfRows; row++) {
     const rowValue = recordsParsed.value[row];
     const previewContentStorage: { [key: string]: string } = {};
     for (let col = 0; col < columnNames.value.length; col++) {
@@ -202,28 +169,7 @@ function updatePlottingOptions(
   });
 }
 
-function colorCalculator(counter: number) {
-  const baseColorArray = [
-    [202, 1, 0.733],
-    [1, 0.659, 0.702],
-  ];
-  let colorIndex = 0;
-  if (counter < 3) {
-    returnColor.value = baseColorArray[colorIndex];
-    returnColor.value[1] = returnColor.value[1] - counter * 0.4;
-  } else {
-    colorIndex = 1;
-    returnColor.value = baseColorArray[colorIndex];
-    returnColor.value[1] = returnColor.value[1] - (counter - 3) * 0.3;
-    if (counter == 5) {
-      colorCounter.value = -1;
-    }
-  }
-  return HSVtoRGB(returnColor.value);
-}
-
-function visualizeCsvData() {
-  colorCounter.value = 0;
+function createPlottableData() {
   chartData.value.datasets = [];
   const choiceX = plottingSelectionX.value;
   const choicesY = plottingSelectionY.value;
@@ -236,31 +182,13 @@ function visualizeCsvData() {
         y: parseFloat(row[dataPositionYValue]),
       };
     });
-    const colorSetting = colorCalculator(colorCounter.value);
     chartData.value.datasets.push({
-      data: data,
+      dataPoints: data,
       label: choiceY,
-      fill: false,
-      borderColor: colorSetting,
-      backgroundColor: colorSetting,
     });
-    colorCounter.value++;
   });
   plotShown.value = true;
   updated.value++;
-}
-
-function savePlot() {
-  // saveData() inspired by https://github.com/apertureless/vue-chartjs/issues/89#issuecomment-292718708
-  const plottingImage = document.getElementById(
-    "scatter-chart",
-  ) as HTMLCanvasElement | null;
-  if (plottingImage != null) {
-    const link = document.createElement("a");
-    link.download = props.modalName.replace(/[<>:"/\\|?* ]/g, "_");
-    link.href = plottingImage.toDataURL("image/png");
-    link.click();
-  }
 }
 </script>
 
@@ -289,9 +217,7 @@ function savePlot() {
       <p class="mb-0">Please check if:</p>
       <p class="mb-0">&#x2022; File contains data and is not empty</p>
       <p class="mb-0">&#x2022; You provided the right parser element</p>
-      <p class="mb-0">
-        &#x2022; File format is correct and the file is realy a csv file
-      </p>
+      <p class="mb-0">&#x2022; File format is correct</p>
     </b-alert>
     <b-form-group>
       <b-container>
@@ -376,44 +302,23 @@ function savePlot() {
             v-if="
               (plottingSelectionX.length != 0, plottingSelectionY.length != 0)
             "
+            v-b-modal.visualization
             variant="success"
-            @click="visualizeCsvData()"
+            @click="createPlottableData()"
           >
             Show Plot
           </b-button>
           <b-button v-else :disabled="true" variant="success">
             Show Plot
           </b-button>
-          <b-button
-            id="exportButton"
-            v-b-tooltip.hover
-            title="Save Plot to .PNG"
-            variant="secondary"
-            class="ml-1"
-            :disabled="!plotShown"
-            @click="savePlot()"
-          >
-            Save Plot
-          </b-button>
         </b-col>
       </b-row>
     </b-container>
-    <div class="plot">
-      <Scatter
-        v-if="chartData.datasets.length > 0"
-        :key="updated"
-        :options="chartOptions"
-        :data="chartData"
-        chart-id="scatter-chart"
-        dataset-id-key="label"
-      />
-    </div>
+    <VisualizationModal
+      v-if="chartData.datasets.length > 0"
+      modal-id="visualization"
+      :modal-name="'Visualization of ' + props.modalName"
+      :input-data="chartData"
+    />
   </b-modal>
 </template>
-
-<style scoped>
-.plot {
-  height: 400px;
-  position: "relative";
-}
-</style>
