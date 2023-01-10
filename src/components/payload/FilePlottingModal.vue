@@ -20,6 +20,9 @@ const chartOptions = {
   datasets: { scatter: { showLine: true, tension: 0.1 } },
   responsive: true,
   maintainAspectRatio: false,
+  animation: {
+    duration: 0,
+  },
   scales: {
     x: {
       title: {
@@ -40,7 +43,7 @@ const startLine = ref("");
 const delimiter = ref("");
 const header = ref<boolean>();
 const decimalComma = ref<boolean>();
-const skipRowsAfterHeader = ref("0");
+const skipRowsAfterHeader = ref("");
 const dataForPreview = ref();
 const plottingOptionListX = ref<
   {
@@ -61,12 +64,14 @@ const plottingSelectionY = ref<string[]>([]);
 const chartData = ref<
   ChartData<"scatter", (number | ScatterDataPoint | null)[], unknown>
 >({ datasets: [] });
-const recordsParsed = ref<{ [key: string]: string }[]>([]);
+const recordsParsed = ref<string[][]>([]);
 const columnNames = ref<string[]>([]);
 const returnColor = ref<number[]>([]);
 const colorCounter = ref<number>(0);
-const plotShown = ref<boolean>();
+const plotShown = ref<boolean>(false);
 const updated = ref(0);
+const parsingWentWrong = ref<boolean>(false);
+const errorType = ref<string>("");
 
 const props = defineProps({
   modalId: {
@@ -101,6 +106,8 @@ function reset() {
   plottingSelectionX.value = "";
   plottingSelectionY.value = [];
   chartData.value = { datasets: [] };
+  parsingWentWrong.value = false;
+  errorType.value = "";
 }
 
 function parser() {
@@ -118,7 +125,17 @@ function parser() {
       delimiter: delimiterForParsing,
       cast: applyDecimalComma,
     },
-    updatePlottingList,
+    (err?: CsvError, records?: string[][]) => {
+      if (err || !records) {
+        console.log("Error");
+        parsingWentWrong.value = true;
+        errorType.value = err
+          ? err.name + ": " + err.message
+          : "Undefined Error";
+      } else {
+        updatePlottingList(records);
+      }
+    },
   );
 }
 
@@ -129,29 +146,25 @@ function applyDecimalComma(value: string, context: CastingContext) {
   return value;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function updatePlottingList(err?: CsvError, records?: any) {
-  // if a header is existing
+function updatePlottingList(records: string[][]) {
+  const skipRowsAfterHeaderValue = +skipRowsAfterHeader.value;
+  const startLineValue = +startLine.value;
+
   if (header.value === true) {
-    columnNames.value = records[parseInt(startLine.value)];
-    plottingOptionListX.value = updatePlottingOptions(columnNames.value);
-    plottingOptionListY.value = updatePlottingOptions(columnNames.value);
-    // here are the header and lines after header important (GUI input values)
-    recordsParsed.value = records.slice(
-      startLine.value + skipRowsAfterHeader.value + 1,
-      records.length,
-    );
+    // if a header is existing
+    columnNames.value = records[startLineValue];
+  } else {
+    // if no head is existing create some names
+    columnNames.value = createColumnNames(records[startLineValue].length);
   }
-  // if no head is existing create some names
-  else {
-    columnNames.value = createColumnNames(records[startLine.value].length);
-    plottingOptionListX.value = updatePlottingOptions(columnNames.value);
-    plottingOptionListY.value = updatePlottingOptions(columnNames.value);
-    recordsParsed.value = records.slice(
-      skipRowsAfterHeader.value,
-      records.length,
-    );
-  }
+
+  // here are the header and lines after header important (GUI input values)
+  recordsParsed.value = records.slice(
+    startLineValue + skipRowsAfterHeaderValue + 1,
+    records.length,
+  );
+  plottingOptionListX.value = updatePlottingOptions(columnNames.value);
+  plottingOptionListY.value = updatePlottingOptions(columnNames.value);
   createParsingPreview();
 }
 
@@ -232,8 +245,8 @@ function visualizeCsvData() {
       backgroundColor: colorSetting,
     });
     colorCounter.value++;
-    plotShown.value = true;
   });
+  plotShown.value = true;
   updated.value++;
 }
 
@@ -263,6 +276,23 @@ function savePlot() {
     no-close-on-backdrop
     @show="reset()"
   >
+    <b-alert
+      :show="parsingWentWrong"
+      variant="danger"
+      dismissible
+      @dismissed="parsingWentWrong = false"
+    >
+      <p>
+        <b>{{ errorType }}</b>
+      </p>
+      <hr />
+      <p class="mb-0">Please check if:</p>
+      <p class="mb-0">&#x2022; File contains data and is not empty</p>
+      <p class="mb-0">&#x2022; You provided the right parser element</p>
+      <p class="mb-0">
+        &#x2022; File format is correct and the file is realy a csv file
+      </p>
+    </b-alert>
     <b-form-group>
       <b-container>
         <b-row class="mb-4">
