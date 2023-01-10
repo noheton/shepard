@@ -11,4 +11,11 @@ public interface ISemanticRepositoryConnector {
 	 * @return a map
 	 */
 	Map<String, String> getTerm(String termIri);
+
+	/**
+	 * Checks whether the sparql endpoint responds as expected
+	 *
+	 * @return boolean
+	 */
+	boolean healthCheck();
 }

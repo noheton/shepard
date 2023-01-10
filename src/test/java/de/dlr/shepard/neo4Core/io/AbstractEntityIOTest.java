@@ -1,10 +1,18 @@
 package de.dlr.shepard.neo4Core.io;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Date;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.neo4Core.entities.AbstractEntity;
+import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.User;
 
 public class AbstractEntityIOTest extends BaseTestCase {
 
@@ -14,6 +22,49 @@ public class AbstractEntityIOTest extends BaseTestCase {
 			this.setId(id);
 		}
 
+		public EntityIO(AbstractEntity entity) {
+			super(entity);
+		}
+
+	}
+
+	@Test
+	public void testConversion() {
+		var date = new Date();
+		var user = new User("bob");
+		var update = new Date();
+		var updateUser = new User("claus");
+
+		var obj = new Collection(1L);
+		obj.setCreatedAt(date);
+		obj.setCreatedBy(user);
+		obj.setUpdatedAt(update);
+		obj.setUpdatedBy(updateUser);
+
+		var converted = new EntityIO(obj);
+		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
+		assertEquals("bob", converted.getCreatedBy());
+		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
+		assertEquals("claus", converted.getUpdatedBy());
+	}
+
+	@Test
+	public void testConversion_userNull() {
+		var obj = new Collection(1L);
+
+		var converted = new EntityIO(obj);
+		assertEquals(obj.getId(), converted.getId());
+		assertNull(converted.getCreatedBy());
+		assertNull(converted.getUpdatedBy());
+	}
+
+	@Test
+	public void extractIdsTest() {
+		var input = List.of(new Collection(2L), new Collection(5L));
+		var actual = AbstractEntityIO.extractIds(input);
+
+		assertArrayEquals(new long[] { 2, 5 }, actual);
 	}
 
 	@Test

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -22,6 +23,8 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
+import de.dlr.shepard.semantics.ISemanticRepositoryConnector;
+import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PaginationHelper;
@@ -37,8 +40,20 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 	@Mock
 	private DateHelper dateHelper;
 
+	@Mock
+	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+
+	@Mock
+	private ISemanticRepositoryConnector semanticRepositoryConnector;
+
 	@InjectMocks
 	private SemanticRepositoryService service;
+
+	@BeforeEach
+	public void setUpRepositories() {
+		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SPARQL, "http://test.org"))
+				.thenReturn(semanticRepositoryConnector);
+	}
 
 	@Test
 	public void getAllRepositoriesTest() {
@@ -125,6 +140,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
+		when(semanticRepositoryConnector.healthCheck()).thenReturn(true);
 		when(semanticRepositoryDAO.createOrUpdate(toCreate)).thenReturn(expected);
 
 		var actual = service.createRepository(input, "bob");
@@ -145,6 +161,25 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
+
+		assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
+	}
+
+	@Test
+	public void createRepositoryTest_healthCheckFailed() {
+		var user = new User("bob");
+		var date = new Date();
+		var input = new SemanticRepositoryIO() {
+			{
+				setEndpoint("http://test.org");
+				setName("Name");
+				setType(SemanticRepositoryType.SPARQL);
+			}
+		};
+
+		when(userDAO.find("bob")).thenReturn(user);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(semanticRepositoryConnector.healthCheck()).thenReturn(false);
 
 		assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
 	}

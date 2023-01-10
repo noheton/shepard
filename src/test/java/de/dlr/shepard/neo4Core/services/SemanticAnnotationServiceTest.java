@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -54,8 +54,45 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	@Mock
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
 
+	@Mock
+	private ISemanticRepositoryConnector propConnector;
+
+	@Mock
+	private ISemanticRepositoryConnector valConnector;
+
 	@InjectMocks
 	private SemanticAnnotationService service;
+
+	private static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
+
+	private SemanticRepository propRepo = new SemanticRepository() {
+		{
+			setId(2L);
+			setType(SemanticRepositoryType.SKOSMOS);
+			setEndpoint("propEndpoint");
+		}
+	};
+	private SemanticRepository valRepo = new SemanticRepository() {
+		{
+			setId(3L);
+			setType(SemanticRepositoryType.JSKOS);
+			setEndpoint("valEndpoint");
+		}
+	};
+
+	@BeforeEach
+	public void setUpRepositories() {
+		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
+		when(semanticRepositoryDAO.find(3L)).thenReturn(valRepo);
+
+		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SKOSMOS, "propEndpoint"))
+				.thenReturn(propConnector);
+		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.JSKOS, "valEndpoint"))
+				.thenReturn(valConnector);
+
+		when(propConnector.getTerm("propIri")).thenReturn(Map.of(RDFS_LABEL, "propObject"));
+		when(valConnector.getTerm("valIri")).thenReturn(Map.of(RDFS_LABEL, "valObject"));
+	}
 
 	@Test
 	public void getAllAnnotationsTest() {
@@ -93,23 +130,8 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	public void createAnnotationTest() {
 		var user = new User("bob");
 		var date = new Date();
-		var propRepo = new SemanticRepository() {
-			{
-				setId(2L);
-				setType(SemanticRepositoryType.SKOSMOS);
-				setEndpoint("endpoint1");
-			}
-		};
-		var valRepo = new SemanticRepository() {
-			{
-				setId(3L);
-				setType(SemanticRepositoryType.JSKOS);
-				setEndpoint("endpoint2");
-			}
-		};
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -118,7 +140,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var toCreate = new SemanticAnnotation() {
 			{
-				setName("test");
+				setName("propObject-valObject");
 				setPropertyIRI("propIri");
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
@@ -130,7 +152,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var expected = new SemanticAnnotation() {
 			{
 				setId(1L);
-				setName("test");
+				setName("propObject-valObject");
 				setPropertyIRI("propIri");
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
@@ -142,21 +164,11 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var entity = new Collection(5L);
 		var entityUpdated = new Collection(5L);
 		entityUpdated.setAnnotations(List.of(expected));
-		var propConnector = mock(ISemanticRepositoryConnector.class);
-		var valConnector = mock(ISemanticRepositoryConnector.class);
 
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
-		when(semanticRepositoryDAO.find(3L)).thenReturn(valRepo);
 		when(semanticAnnotationDAO.createOrUpdate(toCreate)).thenReturn(expected);
-		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SKOSMOS, "endpoint1"))
-				.thenReturn(propConnector);
-		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.JSKOS, "endpoint2"))
-				.thenReturn(valConnector);
-		when(propConnector.getTerm("propIri")).thenReturn(Map.of("propProperty", "propObject"));
-		when(valConnector.getTerm("valIri")).thenReturn(Map.of("valProperty", "valObject"));
 
 		var actual = service.createAnnotation(5L, annotation, "bob");
 		assertEquals(expected, actual);
@@ -170,7 +182,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -191,7 +202,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -215,7 +225,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -240,13 +249,12 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			{
 				setId(2L);
 				setType(SemanticRepositoryType.SKOSMOS);
-				setEndpoint("endpoint1");
+				setEndpoint("propEndpoint");
 				setDeleted(true);
 			}
 		};
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -267,16 +275,8 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	public void createAnnotationTest_InvalidPropTermNull() {
 		var user = new User("bob");
 		var date = new Date();
-		var propRepo = new SemanticRepository() {
-			{
-				setId(2L);
-				setType(SemanticRepositoryType.SKOSMOS);
-				setEndpoint("endpoint1");
-			}
-		};
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -284,14 +284,10 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			}
 		};
 		var entity = new Collection(5L);
-		var propConnector = mock(ISemanticRepositoryConnector.class);
 
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
-		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SKOSMOS, "endpoint1"))
-				.thenReturn(propConnector);
 		when(propConnector.getTerm("propIri")).thenReturn(null);
 
 		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
@@ -301,16 +297,8 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	public void createAnnotationTest_InvalidPropTermEmpty() {
 		var user = new User("bob");
 		var date = new Date();
-		var propRepo = new SemanticRepository() {
-			{
-				setId(2L);
-				setType(SemanticRepositoryType.SKOSMOS);
-				setEndpoint("endpoint1");
-			}
-		};
 		var annotation = new SemanticAnnotationIO() {
 			{
-				setName("test");
 				setPropertyIRI("propIri");
 				setPropertyRepositoryId(2L);
 				setValueIRI("valIri");
@@ -318,14 +306,10 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			}
 		};
 		var entity = new Collection(5L);
-		var propConnector = mock(ISemanticRepositoryConnector.class);
 
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
-		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SKOSMOS, "endpoint1"))
-				.thenReturn(propConnector);
 		when(propConnector.getTerm("propIri")).thenReturn(Collections.emptyMap());
 
 		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));

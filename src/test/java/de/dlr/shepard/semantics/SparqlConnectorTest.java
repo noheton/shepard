@@ -1,6 +1,8 @@
 package de.dlr.shepard.semantics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,7 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
@@ -32,6 +35,8 @@ public class SparqlConnectorTest extends BaseTestCase {
 	private WebTarget webTarget;
 	@Mock
 	private Builder builder;
+	@Mock
+	private Invocation invocation;
 	@Mock
 	private Response response;
 
@@ -123,6 +128,27 @@ public class SparqlConnectorTest extends BaseTestCase {
 			   }
 			}
 			""";
+
+	private final String askQuery = URLEncoder.encode("ASK { ?x ?y ?z }", StandardCharsets.UTF_8).replace("+", "%20");
+	private final String askResult = """
+			{
+			  "head": { "link": [] },
+			  "boolean": true
+			}
+			""";
+	private final String resultBooleanBlank = """
+			{
+			  "head": { "link": [] },
+			  "boolean": ""
+			}
+			""";
+	private final String resultBooleanFalse = """
+			{
+			  "head": { "link": [] },
+			  "boolean": false
+			}
+			""";
+
 	private final String resultInvalid = """
 			{
 			  "invalid": "JSON"
@@ -134,7 +160,8 @@ public class SparqlConnectorTest extends BaseTestCase {
 		when(client.target("endpoint")).thenReturn(webTarget);
 		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
 		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.get()).thenReturn(response);
+		when(builder.buildGet()).thenReturn(invocation);
+		when(invocation.invoke()).thenReturn(response);
 		when(response.readEntity(String.class)).thenReturn(result);
 
 		var actual = connector.getTerm("http://example.com");
@@ -148,7 +175,8 @@ public class SparqlConnectorTest extends BaseTestCase {
 		when(client.target("endpoint")).thenReturn(webTarget);
 		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
 		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		doThrow(ProcessingException.class).when(builder).get();
+		when(builder.buildGet()).thenReturn(invocation);
+		doThrow(ProcessingException.class).when(invocation).invoke();
 
 		var actual = connector.getTerm("http://example.com");
 
@@ -162,12 +190,44 @@ public class SparqlConnectorTest extends BaseTestCase {
 		when(client.target("endpoint")).thenReturn(webTarget);
 		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
 		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.get()).thenReturn(response);
+		when(builder.buildGet()).thenReturn(invocation);
+		when(invocation.invoke()).thenReturn(response);
 		when(response.readEntity(String.class)).thenReturn(requestResult);
 
 		var actual = connector.getTerm("http://example.com");
 
 		assertEquals(Collections.emptyMap(), actual);
+		verify(client).close();
+	}
+
+	@Test
+	public void healthCheckTest() {
+		when(client.target("endpoint")).thenReturn(webTarget);
+		when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
+		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+		when(builder.buildGet()).thenReturn(invocation);
+		when(invocation.invoke()).thenReturn(response);
+		when(response.readEntity(String.class)).thenReturn(askResult);
+
+		var actual = connector.healthCheck();
+
+		assertTrue(actual);
+		verify(client).close();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { resultInvalid, resultBooleanBlank, resultBooleanFalse })
+	public void healthCheckTest_False(String requestResult) {
+		when(client.target("endpoint")).thenReturn(webTarget);
+		when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
+		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+		when(builder.buildGet()).thenReturn(invocation);
+		when(invocation.invoke()).thenReturn(response);
+		when(response.readEntity(String.class)).thenReturn(requestResult);
+
+		var actual = connector.healthCheck();
+
+		assertFalse(actual);
 		verify(client).close();
 	}
 }

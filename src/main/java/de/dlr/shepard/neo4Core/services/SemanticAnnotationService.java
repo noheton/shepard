@@ -24,6 +24,8 @@ public class SemanticAnnotationService {
 	private DateHelper dateHelper = new DateHelper();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
+	private static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
+
 	public List<SemanticAnnotation> getAllAnnotations(long entityId) {
 		return semanticAnnotationDAO.findAllSemanticAnnotations(entityId);
 	}
@@ -43,15 +45,15 @@ public class SemanticAnnotationService {
 		if (entity == null || entity.isDeleted())
 			throw new InvalidBodyException("invalid entity");
 
-		var propertyRepository = getValidRepository("property", annotationIO.getPropertyRepositoryId(),
-				annotationIO.getPropertyIRI());
-		var valueRepository = getValidRepository("value", annotationIO.getValueRepositoryId(),
-				annotationIO.getValueIRI());
+		var propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
+		var valueRepository = getRepository(annotationIO.getValueRepositoryId());
+		var name = String.join("-", validateTerm(propertyRepository, annotationIO.getPropertyIRI()),
+				validateTerm(valueRepository, annotationIO.getValueIRI()));
 
 		var toCreate = new SemanticAnnotation();
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setCreatedBy(user);
-		toCreate.setName(annotationIO.getName());
+		toCreate.setName(name);
 		toCreate.setPropertyIRI(annotationIO.getPropertyIRI());
 		toCreate.setValueIRI(annotationIO.getValueIRI());
 		toCreate.setPropertyRepository(propertyRepository);
@@ -78,18 +80,21 @@ public class SemanticAnnotationService {
 		return true;
 	}
 
-	private SemanticRepository getValidRepository(String name, long id, String iri) {
+	private SemanticRepository getRepository(long id) {
 		var repository = semanticRepositoryDAO.find(id);
 		if (repository == null || repository.isDeleted())
-			throw new InvalidBodyException("invalid " + name + " repository");
+			throw new InvalidBodyException("invalid repository");
 
+		return repository;
+	}
+
+	private String validateTerm(SemanticRepository repository, String iri) {
 		var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(),
 				repository.getEndpoint());
 		var term = src.getTerm(iri);
 		if (term == null || term.isEmpty())
-			throw new InvalidBodyException(name + " term could not be found");
-
-		return repository;
+			throw new InvalidBodyException("term could not be found");
+		return term.getOrDefault(RDFS_LABEL, "");
 	}
 
 }

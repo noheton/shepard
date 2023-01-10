@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
+import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PaginationHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ public class SemanticRepositoryService {
 	private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
+	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
 	public List<SemanticRepository> getAllRepositories(PaginationHelper page) {
 		var repositories = semanticRepositoryDAO.findAllSemanticRepositories(page);
@@ -37,12 +39,7 @@ public class SemanticRepositoryService {
 		var user = userDAO.find(username);
 		var toCreate = new SemanticRepository();
 
-		try {
-			new URL(repositoryIO.getEndpoint());
-		} catch (MalformedURLException e) {
-			log.error("Malformed URL");
-			throw new InvalidBodyException("Invalid endpoint");
-		}
+		validateRepository(repositoryIO);
 
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setCreatedBy(user);
@@ -65,6 +62,24 @@ public class SemanticRepositoryService {
 		repositoy.setUpdatedBy(user);
 		semanticRepositoryDAO.createOrUpdate(repositoy);
 		return true;
+	}
+
+	private void validateRepository(SemanticRepositoryIO repository) {
+		try {
+			new URL(repository.getEndpoint());
+		} catch (MalformedURLException e) {
+			log.error("Malformed URL: {}", repository.getEndpoint());
+			throw new InvalidBodyException("Invalid endpoint");
+		}
+
+		var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(),
+				repository.getEndpoint());
+		var alive = src.healthCheck();
+		if (!alive) {
+			log.error("Endpoint not alive: {}", repository.getEndpoint());
+			throw new InvalidBodyException("Invalid endpoint");
+		}
+
 	}
 
 }

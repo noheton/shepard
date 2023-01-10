@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "SemanticRepository")
-public class SemanticRepositoryIO extends AbstractEntityIO {
+public class SemanticRepositoryIO extends AbstractEntityWithNameIO {
 
 	@NotNull
 	private SemanticRepositoryType type;

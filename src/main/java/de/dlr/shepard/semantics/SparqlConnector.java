@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,17 +14,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SparqlConnector implements ISemanticRepositoryConnector {
 
-	private final String template = """
+	private final String selectTemplate = """
 			SELECT DISTINCT * WHERE {
 			    ?s ?p ?o .
 			    FILTER ( ?s = <%s> )
 			}""";
+
+	private final String askTemplate = "ASK { ?x ?y ?z }";
+
+	// TODO: Use DESCRIBE instead of SELECT
+	// private final String describeTemplate = "DESCRIBE <%s>";
 
 	private final String endpoint;
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -31,6 +38,17 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 
 	public SparqlConnector(String endpoint) {
 		this.endpoint = endpoint;
+	}
+
+	@Override
+	public boolean healthCheck() {
+		var query = formatQuery(askTemplate);
+		var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON)
+				.buildGet();
+		String requestResult = request(invocation);
+		client.close();
+
+		return parseJson(requestResult).map(t -> t.get("boolean")).map(JsonNode::asBoolean).orElse(false);
 	}
 
 	@Override
@@ -45,46 +63,62 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 	}
 
 	private String requestTerm(String termIri) {
-		// https://stackoverflow.com/a/1634293
-		var query = URLEncoder.encode(String.format(template, termIri), StandardCharsets.UTF_8).replace("+", "%20");
-		String responseEntity;
-
-		try {
-			var response = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON).get();
-			responseEntity = response.readEntity(String.class);
-		} catch (ProcessingException e) {
-			log.error("Could not execute request");
-			return null;
-		} finally {
-			client.close();
-		}
+		var query = formatQuery(String.format(selectTemplate, termIri));
+		var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON)
+				.buildGet();
+		String responseEntity = request(invocation);
+		client.close();
 		return responseEntity;
 	}
 
 	private Map<String, String> parseResult(String requestResult) {
-		JsonNode tree;
-		try {
-			tree = mapper.readTree(requestResult);
-		} catch (JsonProcessingException e) {
-			log.error("Could not parse request result");
+		var bindings = parseJson(requestResult).map(t -> t.get("results")).map(r -> r.get("bindings"));
+
+		if (bindings.isEmpty())
 			return Collections.emptyMap();
-		}
 
 		var result = new HashMap<String, String>();
-		try {
-			var results = tree.get("results");
-			var bindings = results.get("bindings");
-			for (var binding : bindings) {
-				var property = binding.get("p").get("value").asText();
-				var object = binding.get("o").get("value").asText();
-				if (!property.isBlank() && !object.isBlank())
-					result.put(property, object);
-			}
-		} catch (NullPointerException e) {
-			log.error("Invalid request result");
-			Collections.emptyMap();
+		for (var binding : bindings.get()) {
+			var oBinding = Optional.of(binding);
+			var property = oBinding.map(b -> b.get("p")).map(p -> p.get("value")).map(JsonNode::asText).orElse("");
+			var object = oBinding.map(b -> b.get("o")).map(p -> p.get("value")).map(JsonNode::asText).orElse("");
+			if (!property.isBlank() && !object.isBlank())
+				result.put(property, object);
 		}
 		return result;
+	}
+
+	private Optional<JsonNode> parseJson(String string) {
+		JsonNode tree;
+		try {
+			tree = mapper.readTree(string);
+		} catch (JsonProcessingException e) {
+			return Optional.empty();
+		}
+		return Optional.of(tree);
+	}
+
+	private String formatQuery(String query) {
+		// https://stackoverflow.com/a/1634293
+		return URLEncoder.encode(query, StandardCharsets.UTF_8).replace("+", "%20");
+	}
+
+	/**
+	 * You have to close the client yourself afterwards
+	 *
+	 * @param invocation
+	 * @return Response as String or null
+	 */
+	private String request(Invocation invocation) {
+		String responseEntity;
+		try {
+			var response = invocation.invoke();
+			responseEntity = response.readEntity(String.class);
+		} catch (ProcessingException e) {
+			log.error("Could not execute request");
+			return null;
+		}
+		return responseEntity;
 	}
 
 }

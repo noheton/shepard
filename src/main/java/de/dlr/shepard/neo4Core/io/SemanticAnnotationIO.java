@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,6 +14,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(name = "SemanticAnnotation")
 public class SemanticAnnotationIO extends AbstractEntityIO {
+
+	@Schema(accessMode = AccessMode.READ_ONLY)
+	private String name;
 
 	@NotBlank
 	private String propertyIRI;
@@ -32,6 +36,7 @@ public class SemanticAnnotationIO extends AbstractEntityIO {
 		this.valueIRI = ref.getValueIRI();
 		this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
 		this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
+		this.name = ref.getName();
 	}
 
 }

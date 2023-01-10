@@ -9,13 +9,11 @@ import de.dlr.shepard.neo4Core.entities.AbstractEntity;
 import de.dlr.shepard.util.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@Schema(name = "AbstractEntity")
 public abstract class AbstractEntityIO implements HasId {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
@@ -35,24 +33,16 @@ public abstract class AbstractEntityIO implements HasId {
 	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
 	private String updatedBy;
 
-	@NotBlank
-	@Schema(nullable = true)
-	private String name;
-
 	protected AbstractEntityIO(AbstractEntity entity) {
 		this.id = entity.getId();
 		this.createdAt = entity.getCreatedAt();
 		this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
 		this.updatedAt = entity.getUpdatedAt();
 		this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
-		this.name = entity.getName();
 	}
 
-	protected long[] extractIds(List<? extends AbstractEntity> entities) {
-		long[] result = new long[entities.size()];
-		for (int i = 0; i < entities.size(); i++) {
-			result[i] = entities.get(i).getId();
-		}
+	protected static long[] extractIds(List<? extends AbstractEntity> entities) {
+		var result = entities.stream().map(e -> e.getId()).mapToLong(Long::longValue).toArray();
 		return result;
 	}
 
