@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HSVtoRGB } from "@/utils/colors";
+import { colorCalculator } from "@/utils/colors";
 import type { PlottingData } from "@/utils/plotting";
 import { BModal } from "bootstrap-vue";
 import {
@@ -62,27 +62,6 @@ function reset() {
   updated.value = 0;
 }
 
-function colorCalculator(counter: number) {
-  let returnColor = [];
-  const baseColorArray = [
-    [202, 1, 0.733],
-    [1, 0.659, 0.702],
-  ];
-  let colorIndex = 0;
-  if (counter < 3) {
-    returnColor = baseColorArray[colorIndex];
-    returnColor[1] = returnColor[1] - counter * 0.4;
-  } else {
-    colorIndex = 1;
-    returnColor = baseColorArray[colorIndex];
-    returnColor[1] = returnColor[1] - (counter - 3) * 0.3;
-    if (counter == 5) {
-      colorCounter.value = -1;
-    }
-  }
-  return HSVtoRGB(returnColor);
-}
-
 function savePlot() {
   // savePlot() inspired by https://github.com/apertureless/vue-chartjs/issues/89#issuecomment-292718708
   const plottingImage = document.getElementById(
@@ -99,7 +78,8 @@ function savePlot() {
 function prepareDataForVisualization() {
   chartData.value.datasets = [];
   props.inputData.datasets.forEach(dataSet => {
-    const colorSetting = colorCalculator(colorCounter.value);
+    const colorSetting = colorCalculator(colorCounter.value % 6);
+    colorCounter.value++;
     chartData.value.datasets.push({
       data: dataSet.dataPoints,
       label: dataSet.label,
@@ -107,7 +87,6 @@ function prepareDataForVisualization() {
       borderColor: colorSetting,
       backgroundColor: colorSetting,
     });
-    colorCounter.value++;
   });
   updated.value++;
 }

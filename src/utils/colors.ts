@@ -61,3 +61,19 @@ export function HSVtoRGB(returnColor: number[]) {
     ", 1.0)"
   ).toString();
 }
+
+export function colorCalculator(counter: number) {
+  let returnColor = [];
+  const baseColorArray = [
+    [202, 1, 0.733],
+    [1, 0.659, 0.702],
+  ];
+  if (counter < 3) {
+    returnColor = baseColorArray[0];
+    returnColor[1] = returnColor[1] - counter * 0.4;
+  } else {
+    returnColor = baseColorArray[1];
+    returnColor[1] = returnColor[1] - (counter - 3) * 0.3;
+  }
+  return HSVtoRGB(returnColor);
+}
