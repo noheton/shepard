@@ -47,7 +47,7 @@ public class SemanticAnnotationService {
 
 		var propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
 		var valueRepository = getRepository(annotationIO.getValueRepositoryId());
-		var name = String.join("-", validateTerm(propertyRepository, annotationIO.getPropertyIRI()),
+		var name = String.join("::", validateTerm(propertyRepository, annotationIO.getPropertyIRI()),
 				validateTerm(valueRepository, annotationIO.getValueIRI()));
 
 		var toCreate = new SemanticAnnotation();

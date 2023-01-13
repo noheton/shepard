@@ -140,7 +140,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var toCreate = new SemanticAnnotation() {
 			{
-				setName("propObject-valObject");
+				setName("propObject::valObject");
 				setPropertyIRI("propIri");
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
@@ -152,7 +152,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var expected = new SemanticAnnotation() {
 			{
 				setId(1L);
-				setName("propObject-valObject");
+				setName("propObject::valObject");
 				setPropertyIRI("propIri");
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
