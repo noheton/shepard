@@ -51,7 +51,7 @@ public class UserServiceTest extends BaseTestCase {
 		when(dao.find("bob")).thenReturn(old);
 
 		var actual = service.updateUser(user);
-		verify(dao, never()).createOrUpdate(any());
+		verify(dao, never()).createOrUpdate(any(User.class));
 		assertEquals(old, actual);
 	}
 

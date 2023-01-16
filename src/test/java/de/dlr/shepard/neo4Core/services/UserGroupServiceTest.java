@@ -77,7 +77,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		when(userDAO.find("user")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userGroupDAO.createOrUpdate(toCreate)).thenReturn(created);
-		when(permissionsDAO.createOrUpdate(any())).thenReturn(null);
+		when(permissionsDAO.createOrUpdate(any(Permissions.class))).thenReturn(null);
 
 		UserGroup actual = service.createUserGroup(input, "creator");
 		assertEquals(created, actual);

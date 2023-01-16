@@ -300,7 +300,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 		var actual = service.getAllPayloads(1L, "bob");
 		assertEquals(List.of(payloadA, payloadB), actual);
-		verify(structuredDataService, never()).getPayload(eq("mongoId"), any());
+		verify(structuredDataService, never()).getPayload(eq("mongoId"), any(String.class));
 	}
 
 	@Test

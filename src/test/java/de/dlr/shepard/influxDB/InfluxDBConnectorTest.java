@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -226,7 +225,7 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 		QueryResult queryResult = new QueryResult();
 		queryResult.setError("Some Error");
 
-		doReturn(queryResult).when(influxDB).query(any(Query.class));
+		when(influxDB.query(any(Query.class))).thenReturn(queryResult);
 
 		TimeseriesPayload actualTimeseries = connector.getTimeseriesPayload(start, end, database, expectedTimeseries,
 				SingleValuedUnaryFunction.MEAN, groupBy, FillOption.LINEAR);

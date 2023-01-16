@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.cypher.Filter;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SubscriptionDAO;
@@ -69,8 +70,8 @@ public class SubscriptionServiceTest extends BaseTestCase {
 		var sub = new Subscription(1L);
 
 		// unfortunately two equally created filters are not equal,
-		// so we have to use any() here
-		when(dao.findMatching(any())).thenReturn(List.of(sub));
+		// so we have to use any here
+		when(dao.findMatching(any(Filter.class))).thenReturn(List.of(sub));
 		var actual = service.getMatchingSubscriptions(RequestMethod.GET);
 
 		assertEquals(List.of(sub), actual);

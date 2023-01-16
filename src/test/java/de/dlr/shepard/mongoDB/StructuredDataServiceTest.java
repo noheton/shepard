@@ -146,7 +146,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 		expectedData.setName("name");
 		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
 		assertNull(actual);
-		verify(collection, never()).insertOne(any());
+		verify(collection, never()).insertOne(any(Document.class));
 	}
 
 	@Test
@@ -159,7 +159,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 		expectedData.setName("name");
 		assertThrows(InvalidBodyException.class,
 				() -> service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
-		verify(collection, never()).insertOne(any());
+		verify(collection, never()).insertOne(any(Document.class));
 	}
 
 	@Test

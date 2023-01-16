@@ -79,7 +79,7 @@ public class UserDAOTest extends BaseTestCase {
 		paramsMap.put("lastName", "lastName");
 		when(session.query(eq(User.class), queryCaptor.capture(), eq(paramsMap))).thenReturn(List.of(user));
 		var actual = dao.searchUsers("user", "firstName", "lastName", null);
-		verify(session).query(eq(User.class), any(), eq(paramsMap));
+		verify(session).query(eq(User.class), any(String.class), eq(paramsMap));
 		assertTrue(queryCaptor.getValue().startsWith("MATCH (u:User) WHERE "));
 		assertTrue(queryCaptor.getValue().contains(" u.firstName =~ $firstName "));
 		assertTrue(queryCaptor.getValue().contains(" u.lastName =~ $lastName "));
