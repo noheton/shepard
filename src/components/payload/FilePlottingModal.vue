@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import VisualizationModal from "@/components/payload/VisualizationModal.vue";
+import FileService from "@/services/fileService";
+import { logError } from "@/utils/error-handling";
 import type { PlottingData } from "@/utils/plotting";
+import type { ResponseError } from "@dlr-shepard/shepard-client";
 import { Chart, registerables } from "chart.js";
 import {
   parse,
@@ -10,6 +13,27 @@ import {
 import { ref } from "vue";
 
 Chart.register(...registerables);
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "PlottingModalCsv",
+  },
+  modalName: {
+    type: String,
+    default: "PlottingModalCsv",
+  },
+  containerId: {
+    type: Number,
+    required: true,
+  },
+  oid: {
+    type: String,
+    required: true,
+  },
+});
+
+const numberOfRows = 4;
 
 const startLine = ref("");
 const delimiter = ref("");
@@ -40,31 +64,16 @@ const plotShown = ref<boolean>(false);
 const updated = ref(0);
 const parsingWentWrong = ref<boolean>(false);
 const errorType = ref<string>("");
-const numberOfRows = 4;
-
-const props = defineProps({
-  modalId: {
-    type: String,
-    default: "PlottingModalCsv",
-  },
-  modalName: {
-    type: String,
-    default: "PlottingModalCsv",
-  },
-  csvData: {
-    type: String,
-    default: undefined,
-  },
-});
+const fileNotFound = ref<boolean>(false);
+const csvFileData = ref<string>();
 
 function reset() {
-  header.value = true;
-  decimalComma.value = true;
   startLine.value = "0";
   delimiter.value = ";";
+  header.value = true;
+  decimalComma.value = true;
   skipRowsAfterHeader.value = "0";
   dataForPreview.value = [];
-  plotShown.value = false;
   plottingOptionListX.value = [
     { value: "", text: "Please parse your data first", disabled: true },
   ];
@@ -74,8 +83,12 @@ function reset() {
   plottingSelectionX.value = "";
   plottingSelectionY.value = [];
   chartData.value = { datasets: [], xLabel: "x Value" };
+  columnNames.value = [];
+  plotShown.value = false;
   parsingWentWrong.value = false;
   errorType.value = "";
+  fileNotFound.value = false;
+  csvFileData.value = undefined;
 }
 
 function parser() {
@@ -84,11 +97,11 @@ function parser() {
   if (delimiterForParsing === "\\t") {
     delimiterForParsing = "\t";
   }
-  if (!props.csvData) {
+  if (!csvFileData.value) {
     return;
   }
   parse(
-    props.csvData,
+    csvFileData.value,
     {
       delimiter: delimiterForParsing,
       cast: applyDecimalComma,
@@ -96,10 +109,18 @@ function parser() {
     (err?: CsvError, records?: string[][]) => {
       if (err || !records) {
         parsingWentWrong.value = true;
+        dataForPreview.value = [];
+        plottingOptionListX.value = [
+          { value: "", text: "Please parse your data first", disabled: true },
+        ];
+        plottingOptionListY.value = [
+          { value: "", text: "Please parse your data first", disabled: true },
+        ];
         errorType.value = err
           ? err.name + ": " + err.message
           : "Undefined Error";
       } else {
+        parsingWentWrong.value = false;
         updatePlottingList(records);
       }
     },
@@ -190,6 +211,26 @@ function createPlottableData() {
   plotShown.value = true;
   updated.value++;
 }
+
+function fetchCsvFile() {
+  const blobReader = new FileReader();
+  FileService.getFile({
+    fileContainerId: props.containerId,
+    oid: props.oid,
+  })
+    .then(response => {
+      blobReader.readAsText(response, "utf8");
+      blobReader.addEventListener("load", () => {
+        if (typeof blobReader.result === "string") {
+          csvFileData.value = blobReader.result;
+        }
+      });
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching file payload");
+      fileNotFound.value = true;
+    });
+}
 </script>
 
 <template>
@@ -202,17 +243,18 @@ function createPlottableData() {
     ok-only
     ok-title="Close"
     no-close-on-backdrop
-    @show="reset()"
+    @show="
+      reset();
+      fetchCsvFile();
+    "
   >
+    <b-alert :show="fileNotFound" variant="danger"> File not found </b-alert>
     <b-alert
       :show="parsingWentWrong"
       variant="danger"
-      dismissible
       @dismissed="parsingWentWrong = false"
     >
-      <p>
-        <b>{{ errorType }}</b>
-      </p>
+      {{ errorType }}
       <hr />
       <p class="mb-0">Please check if:</p>
       <p class="mb-0">&#x2022; File contains data and is not empty</p>
@@ -243,7 +285,7 @@ function createPlottableData() {
           </b-col>
           <b-col>
             <b-form-checkbox
-              id="checkCommaConvenation"
+              id="checkCommaConvention"
               v-model="decimalComma"
               unchecked-value="false"
             >

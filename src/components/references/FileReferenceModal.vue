@@ -113,28 +113,6 @@ function getFilePayload(
     .finally(() => (downloadActive.value = false));
 }
 
-function handlePlotCsvData(fileReferenceId?: number, oid?: string) {
-  if (!fileReferenceId || !oid) return;
-  const blobReader = new FileReader();
-  FileReferenceService.getFilePayload({
-    collectionId: props.currentCollectionId,
-    dataObjectId: props.currentDataObjectId,
-    fileReferenceId: fileReferenceId,
-    oid: oid,
-  })
-    .then(response => {
-      blobReader.readAsText(response, "utf8");
-      blobReader.addEventListener("load", () => {
-        if (typeof blobReader.result === "string") {
-          csvFileData.value = blobReader.result;
-        }
-      });
-    })
-    .catch(e => {
-      logError(e as ResponseError, "fetching file payload");
-    });
-}
-
 const vm = getCurrentInstance();
 function handleDelete() {
   if (!props.fileReference.id) return;
@@ -250,10 +228,7 @@ function handleDelete() {
               :disabled="!files[oid]?.filename?.match(/\.csv$/i)"
               variant="secondary"
               title="Plot Data"
-              @click="
-                currentFileOid = oid;
-                handlePlotCsvData(fileReference?.id, oid);
-              "
+              @click="currentFileOid = oid"
             >
               <PlottingIcon />
             </b-button>
@@ -295,21 +270,22 @@ function handleDelete() {
       v-if="fileReference && currentFileOid"
       modal-id="image-viewer-modal"
       :modal-name="files[currentFileOid]?.filename"
-      :container-id="fileReference?.fileContainerId"
+      :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <TextViewerModal
       v-if="fileReference && currentFileOid"
       modal-id="text-viewer-modal"
       :modal-name="files[currentFileOid]?.filename"
-      :container-id="fileReference?.fileContainerId"
+      :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <FilePlottingModal
       v-if="fileReference && currentFileOid"
       modal-id="plotting-modal"
       :modal-name="files[currentFileOid]?.filename"
-      :csv-data="csvFileData"
+      :container-id="fileReference.fileContainerId"
+      :oid="currentFileOid"
     />
     <DeleteConfirmationModal
       v-if="props.fileReference"
