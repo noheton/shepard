@@ -10,7 +10,7 @@ import type {
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
-import { ref, watch, type PropType } from "vue";
+import { reactive, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -34,19 +34,31 @@ const props = defineProps({
 });
 
 const permissionOptions = pOptions;
+const getInitialFormData = () => ({
+  usernameOrGroupId: "",
+  owner: undefined,
+  reader: [],
+  readerGroup: [],
+  writer: [],
+  writerGroup: [],
+  manager: [],
+  permissionType: undefined,
+});
 
-const usernameOrGroupId = ref("");
+const formData = reactive<{
+  usernameOrGroupId: string;
+  owner?: User;
+  reader: User[];
+  readerGroup: UserGroup[];
+  writer: User[];
+  writerGroup: UserGroup[];
+  manager: User[];
+  permissionType?: PermissionsPermissionTypeEnum;
+}>(getInitialFormData());
 const validUser = ref<boolean>();
 const validUserGroup = ref<boolean>();
 const currentUser = ref<User>();
 const currentUserGroup = ref<UserGroup>();
-const owner = ref<User>();
-const reader = ref<User[]>([]);
-const readerGroup = ref<UserGroup[]>([]);
-const writer = ref<User[]>([]);
-const writerGroup = ref<UserGroup[]>([]);
-const manager = ref<User[]>([]);
-const permissionType = ref<PermissionsPermissionTypeEnum>();
 
 const emit = defineEmits(["update"]);
 watch(
@@ -55,49 +67,42 @@ watch(
 );
 
 function reset() {
-  usernameOrGroupId.value = "";
+  Object.assign(formData, getInitialFormData());
   validUser.value = undefined;
   validUserGroup.value = undefined;
   currentUser.value = undefined;
   currentUserGroup.value = undefined;
-  owner.value = undefined;
-  reader.value = [];
-  readerGroup.value = [];
-  writer.value = [];
-  writerGroup.value = [];
-  manager.value = [];
-  permissionType.value = undefined;
 }
 
 function resetInput() {
-  usernameOrGroupId.value = "";
+  formData.usernameOrGroupId = "";
   validUser.value = undefined;
   validUserGroup.value = undefined;
 }
 
 function handleOk() {
   const perms: Permissions = {
-    permissionType: permissionType.value,
-    owner: owner.value?.username,
+    permissionType: formData.permissionType,
+    owner: formData.owner?.username,
     reader: [],
     readerGroupIds: [],
     writer: [],
     writerGroupIds: [],
     manager: [],
   };
-  reader.value.forEach(u => {
+  formData.reader.forEach(u => {
     if (u.username) perms.reader.push(u.username);
   });
-  readerGroup.value.forEach(g => {
+  formData.readerGroup.forEach(g => {
     if (g.id) perms.readerGroupIds?.push(g.id);
   });
-  writer.value.forEach(u => {
+  formData.writer.forEach(u => {
     if (u.username) perms.writer.push(u.username);
   });
-  writerGroup.value.forEach(g => {
+  formData.writerGroup.forEach(g => {
     if (g.id) perms.writerGroupIds?.push(g.id);
   });
-  manager.value.forEach(u => {
+  formData.manager.forEach(u => {
     if (u.username) perms.manager.push(u.username);
   });
   emit("update", perms);
@@ -105,7 +110,7 @@ function handleOk() {
 
 function setOwner() {
   if (currentUser.value) {
-    owner.value = currentUser.value;
+    formData.owner = currentUser.value;
     resetInput();
   }
 }
@@ -113,17 +118,19 @@ function setOwner() {
 function addReader() {
   if (currentUser.value && currentUser.value.username) {
     if (
-      !reader.value.some(user => user.username == currentUser.value?.username)
+      !formData.reader.some(
+        user => user.username == currentUser.value?.username,
+      )
     )
-      reader.value.push(currentUser.value);
+      formData.reader.push(currentUser.value);
     resetInput();
   } else if (currentUserGroup.value && currentUserGroup.value.name) {
     if (
-      !readerGroup.value.some(
+      !formData.readerGroup.some(
         group => group.name == currentUserGroup.value?.name,
       )
     )
-      readerGroup.value.push(currentUserGroup.value);
+      formData.readerGroup.push(currentUserGroup.value);
     resetInput();
   }
 }
@@ -132,17 +139,19 @@ function addWriter() {
   addReader();
   if (currentUser.value && currentUser.value.username) {
     if (
-      !writer.value.some(user => user.username == currentUser.value?.username)
+      !formData.writer.some(
+        user => user.username == currentUser.value?.username,
+      )
     )
-      writer.value.push(currentUser.value);
+      formData.writer.push(currentUser.value);
     resetInput();
   } else if (currentUserGroup.value && currentUserGroup.value.name) {
     if (
-      !writerGroup.value.some(
+      !formData.writerGroup.some(
         group => group.name == currentUserGroup.value?.name,
       )
     )
-      writerGroup.value.push(currentUserGroup.value);
+      formData.writerGroup.push(currentUserGroup.value);
     resetInput();
   }
 }
@@ -152,22 +161,24 @@ function addManager() {
   addWriter();
   if (currentUser.value && currentUser.value.username) {
     if (
-      !manager.value.some(user => user.username == currentUser.value?.username)
+      !formData.manager.some(
+        user => user.username == currentUser.value?.username,
+      )
     )
-      manager.value.push(currentUser.value);
+      formData.manager.push(currentUser.value);
     resetInput();
   }
 }
 
 function fetch() {
-  if (!usernameOrGroupId.value) {
+  if (!formData.usernameOrGroupId) {
     validUser.value = undefined;
     currentUser.value = undefined;
     validUserGroup.value = undefined;
     currentUserGroup.value = undefined;
     return;
   }
-  if (Number(usernameOrGroupId)) {
+  if (Number(formData.usernameOrGroupId)) {
     fetchUserGroups();
     validUser.value = false;
     currentUser.value = undefined;
@@ -179,7 +190,7 @@ function fetch() {
 }
 
 function fetchUser() {
-  UserService.getUser({ username: usernameOrGroupId.value })
+  UserService.getUser({ username: formData.usernameOrGroupId })
     .then(user => {
       currentUser.value = user;
       validUser.value = true;
@@ -193,7 +204,7 @@ function fetchUser() {
 
 function fetchUserGroups() {
   UserGroupService.getUserGroup({
-    usergroupId: Number(usernameOrGroupId),
+    usergroupId: Number(formData.usernameOrGroupId),
   })
     .then(userGroup => {
       currentUserGroup.value = userGroup;
@@ -210,36 +221,36 @@ function parseOldPermissions() {
   const perms: Permissions = props.oldPermissions;
   if (!perms) return;
   if (perms.permissionType) {
-    permissionType.value = perms.permissionType;
+    formData.permissionType = perms.permissionType;
   }
   if (perms.owner) {
     UserService.getUser({ username: perms.owner }).then(user => {
-      owner.value = user;
+      formData.owner = user;
     });
   }
   perms.reader.forEach(username => {
     UserService.getUser({ username: username }).then(user =>
-      reader.value.push(user),
+      formData.reader.push(user),
     );
   });
   perms.readerGroupIds?.forEach(groupId => {
     UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
-      readerGroup.value.push(usergroup),
+      formData.readerGroup.push(usergroup),
     );
   });
   perms.writer.forEach(username => {
     UserService.getUser({ username: username }).then(user =>
-      writer.value.push(user),
+      formData.writer.push(user),
     );
   });
   perms.writerGroupIds?.forEach(groupId => {
     UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
-      writerGroup.value.push(usergroup),
+      formData.writerGroup.push(usergroup),
     );
   });
   perms.manager.forEach(username => {
     UserService.getUser({ username: username }).then(user =>
-      manager.value.push(user),
+      formData.manager.push(user),
     );
   });
 }
@@ -257,7 +268,7 @@ function parseOldPermissions() {
   >
     <h5>Permission Type</h5>
     <b-form-select
-      v-model="permissionType"
+      v-model="formData.permissionType"
       class="mb-3"
       :options="permissionOptions"
     ></b-form-select>
@@ -265,7 +276,7 @@ function parseOldPermissions() {
     <h5>Individual Permissions</h5>
     <b-input-group prepend="Username or GroupID">
       <b-form-input
-        v-model="usernameOrGroupId"
+        v-model="formData.usernameOrGroupId"
         :state="validUser || validUserGroup"
         @change="fetch()"
       ></b-form-input>
@@ -303,11 +314,15 @@ function parseOldPermissions() {
     <div class="mt-3">Owner</div>
     <b-list-group>
       <b-list-group-item
-        v-if="owner"
+        v-if="formData.owner"
         class="d-flex justify-content-between align-items-center"
       >
-        {{ owner.firstName }} {{ owner.lastName }}
-        <b-button variant="secondary" size="sm" @click="owner = undefined">
+        {{ formData.owner.firstName }} {{ formData.owner.lastName }}
+        <b-button
+          variant="secondary"
+          size="sm"
+          @click="formData.owner = undefined"
+        >
           <DeleteIcon />
         </b-button>
       </b-list-group-item>
@@ -318,7 +333,7 @@ function parseOldPermissions() {
         <div>Reader</div>
         <b-list-group>
           <b-list-group-item
-            v-for="(user, index) in reader"
+            v-for="(user, index) in formData.reader"
             :key="user.username"
             class="d-flex justify-content-between align-items-center"
           >
@@ -326,14 +341,14 @@ function parseOldPermissions() {
             <b-button
               variant="secondary"
               size="sm"
-              @click="reader.splice(index, 1)"
+              @click="formData.reader.splice(index, 1)"
             >
               <DeleteIcon />
             </b-button>
           </b-list-group-item>
 
           <b-list-group-item
-            v-for="(group, index) in readerGroup"
+            v-for="(group, index) in formData.readerGroup"
             :key="group.name"
             class="d-flex justify-content-between align-items-center"
           >
@@ -341,7 +356,7 @@ function parseOldPermissions() {
             <b-button
               variant="secondary"
               size="sm"
-              @click="readerGroup.splice(index, 1)"
+              @click="formData.readerGroup.splice(index, 1)"
             >
               <DeleteIcon />
             </b-button>
@@ -352,7 +367,7 @@ function parseOldPermissions() {
         <div>Writer</div>
         <b-list-group>
           <b-list-group-item
-            v-for="(user, index) in writer"
+            v-for="(user, index) in formData.writer"
             :key="user.username"
             class="d-flex justify-content-between align-items-center"
           >
@@ -363,13 +378,13 @@ function parseOldPermissions() {
             <b-button
               variant="secondary"
               size="sm"
-              @click="writer.splice(index, 1)"
+              @click="formData.writer.splice(index, 1)"
             >
               <DeleteIcon />
             </b-button>
           </b-list-group-item>
           <b-list-group-item
-            v-for="(group, index) in writerGroup"
+            v-for="(group, index) in formData.writerGroup"
             :key="group.name"
             class="d-flex justify-content-between align-items-center"
           >
@@ -377,7 +392,7 @@ function parseOldPermissions() {
             <b-button
               variant="secondary"
               size="sm"
-              @click="writerGroup.splice(index, 1)"
+              @click="formData.writerGroup.splice(index, 1)"
             >
               <DeleteIcon />
             </b-button>
@@ -388,7 +403,7 @@ function parseOldPermissions() {
         <div>Manager</div>
         <b-list-group>
           <b-list-group-item
-            v-for="(user, index) in manager"
+            v-for="(user, index) in formData.manager"
             :key="user.username"
             class="d-flex justify-content-between align-items-center"
           >
@@ -396,7 +411,7 @@ function parseOldPermissions() {
             <b-button
               variant="secondary"
               size="sm"
-              @click="manager.splice(index, 1)"
+              @click="formData.manager.splice(index, 1)"
             >
               <DeleteIcon />
             </b-button>

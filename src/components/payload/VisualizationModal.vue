@@ -118,7 +118,6 @@ function prepareDataForVisualization() {
       />
     </div>
     <b-button
-      id="exportButton"
       v-b-tooltip.hover
       title="Save Plot to .PNG"
       variant="secondary"

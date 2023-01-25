@@ -100,14 +100,14 @@ function getTimeseriesName(ts: Timeseries) {
       ></b-form-select>
     </b-list-group>
     <b-button
-      v-if="checkedTSList.length > 0"
       v-b-modal.visualization
+      :disabled="checkedTSList.length == 0"
       variant="success"
+      class="float-right"
       @click="createPlottableData()"
     >
       Show Plot
     </b-button>
-    <b-button v-else :disabled="true" variant="success"> Show Plot </b-button>
     <VisualizationModal
       v-if="chartData.datasets.length > 0"
       modal-id="visualization"

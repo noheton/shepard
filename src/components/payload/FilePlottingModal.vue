@@ -10,9 +10,15 @@ import {
   type CastingContext,
   type CsvError,
 } from "csv-parse/browser/esm";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 
 Chart.register(...registerables);
+
+interface selectOption {
+  value: string;
+  text: string;
+  disabled?: boolean;
+}
 
 const props = defineProps({
   modalId: {
@@ -34,31 +40,28 @@ const props = defineProps({
 });
 
 const numberOfRows = 4;
+const getInitialFormData = () => ({
+  startLine: "0",
+  delimiter: ";",
+  header: true,
+  decimalComma: true,
+  skipRowsAfterHeader: "0",
+});
+const getInitialSelectOption = () => ({
+  value: "",
+  text: "Please parse your data first",
+  disabled: true,
+});
+const getInitialPlottingData = () => ({ datasets: [], xLabel: "x Value" });
 
-const startLine = ref("");
-const delimiter = ref("");
-const header = ref<boolean>();
-const decimalComma = ref<boolean>();
-const skipRowsAfterHeader = ref("");
+const formData = reactive(getInitialFormData());
+const plottingOptionListX = ref<selectOption[]>([]);
+const plottingOptionListY = ref<selectOption[]>([]);
 const dataForPreview = ref();
-const plottingOptionListX = ref<
-  {
-    value: string;
-    text: string;
-    disabled?: boolean;
-  }[]
->([]);
-const plottingOptionListY = ref<
-  {
-    value: string;
-    text: string;
-    disabled?: boolean;
-  }[]
->([]);
 const plottingSelectionX = ref<string>("");
 const plottingSelectionY = ref<string[]>([]);
 const recordsParsed = ref<string[][]>([]);
-const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
+const chartData = ref<PlottingData>(getInitialPlottingData());
 const columnNames = ref<string[]>([]);
 const plotShown = ref<boolean>(false);
 const updated = ref(0);
@@ -68,21 +71,13 @@ const fileNotFound = ref<boolean>(false);
 const csvFileData = ref<string>();
 
 function reset() {
-  startLine.value = "0";
-  delimiter.value = ";";
-  header.value = true;
-  decimalComma.value = true;
-  skipRowsAfterHeader.value = "0";
+  Object.assign(formData, getInitialFormData());
   dataForPreview.value = [];
-  plottingOptionListX.value = [
-    { value: "", text: "Please parse your data first", disabled: true },
-  ];
-  plottingOptionListY.value = [
-    { value: "", text: "Please parse your data first", disabled: true },
-  ];
+  plottingOptionListX.value = [getInitialSelectOption()];
+  plottingOptionListY.value = [getInitialSelectOption()];
   plottingSelectionX.value = "";
   plottingSelectionY.value = [];
-  chartData.value = { datasets: [], xLabel: "x Value" };
+  chartData.value = getInitialPlottingData();
   columnNames.value = [];
   plotShown.value = false;
   parsingWentWrong.value = false;
@@ -93,7 +88,7 @@ function reset() {
 
 function parser() {
   recordsParsed.value = [];
-  let delimiterForParsing = delimiter.value;
+  let delimiterForParsing = formData.delimiter;
   if (delimiterForParsing === "\\t") {
     delimiterForParsing = "\t";
   }
@@ -128,17 +123,17 @@ function parser() {
 }
 
 function applyDecimalComma(value: string, context: CastingContext) {
-  if (decimalComma.value === true && !context.header) {
+  if (formData.decimalComma === true && !context.header) {
     return value.replace(",", ".");
   }
   return value;
 }
 
 function updatePlottingList(records: string[][]) {
-  const skipRowsAfterHeaderValue = +skipRowsAfterHeader.value;
-  const startLineValue = +startLine.value;
+  const skipRowsAfterHeaderValue = +formData.skipRowsAfterHeader;
+  const startLineValue = +formData.startLine;
 
-  if (header.value === true) {
+  if (formData.header === true) {
     // if a header is existing
     columnNames.value = records[startLineValue];
   } else {
@@ -261,76 +256,79 @@ function fetchCsvFile() {
       <p class="mb-0">&#x2022; You provided the right parser element</p>
       <p class="mb-0">&#x2022; File format is correct</p>
     </b-alert>
-    <b-form-group>
-      <b-container>
-        <b-row class="mb-4">
+    <b-container>
+      <b-form-group>
+        <b-row class="mb-3">
           <b-col>
             <div>Start from Line:</div>
-            <b-form-input v-model="startLine" type="number"></b-form-input>
+            <b-form-input
+              v-model="formData.startLine"
+              type="number"
+            ></b-form-input>
           </b-col>
           <b-col>
             <div>Delimiter</div>
-            <b-form-input v-model="delimiter" type="text"></b-form-input>
+            <b-form-input
+              v-model="formData.delimiter"
+              type="text"
+            ></b-form-input>
           </b-col>
         </b-row>
-        <b-row class="mb-4">
+        <b-row class="mb-3">
           <b-col>
-            <b-form-checkbox
-              id="checkHeader"
-              v-model="header"
-              unchecked-value="false"
-            >
+            <b-form-checkbox v-model="formData.header" unchecked-value="false">
               Header
             </b-form-checkbox>
           </b-col>
           <b-col>
             <b-form-checkbox
-              id="checkCommaConvention"
-              v-model="decimalComma"
+              v-model="formData.decimalComma"
               unchecked-value="false"
             >
               Decimal comma
             </b-form-checkbox>
           </b-col>
         </b-row>
-        <b-row class="mb-4">
+        <b-row class="mb-1">
           <b-col>
             <div>Skip rows after header:</div>
             <b-form-input
-              v-model="skipRowsAfterHeader"
+              v-model="formData.skipRowsAfterHeader"
               type="number"
             ></b-form-input>
           </b-col>
         </b-row>
-        <b-button variant="success" class="mb-2" @click="parser()">
+        <b-button
+          :disabled="fileNotFound"
+          variant="success"
+          class="float-right"
+          @click="parser()"
+        >
           Parse Data
         </b-button>
-        <b-table
-          class="text-nowrap"
-          responsive
-          striped
-          hover
-          :items="dataForPreview"
-        >
-        </b-table>
-      </b-container>
-    </b-form-group>
-    <b-container>
+      </b-form-group>
+      <b-table
+        class="text-nowrap"
+        responsive
+        striped
+        hover
+        small
+        :items="dataForPreview"
+      >
+      </b-table>
       <b-row class="mb-1">
         <b-col>
           <div>Select one x-value:</div>
           <b-form-select
             v-model="plottingSelectionX"
-            class="mb-1"
             :options="plottingOptionListX"
             :select-size="6"
           ></b-form-select>
         </b-col>
         <b-col>
-          <div>Select y-value(s)</div>
+          <div>Select y-value(s):</div>
           <b-form-select
             v-model="plottingSelectionY"
-            class="mb-1"
             :options="plottingOptionListY"
             multiple
             :select-size="6"
@@ -338,23 +336,17 @@ function fetchCsvFile() {
           </b-form-select>
         </b-col>
       </b-row>
-      <b-row>
-        <b-col>
-          <b-button
-            v-if="
-              (plottingSelectionX.length != 0, plottingSelectionY.length != 0)
-            "
-            v-b-modal.visualization
-            variant="success"
-            @click="createPlottableData()"
-          >
-            Show Plot
-          </b-button>
-          <b-button v-else :disabled="true" variant="success">
-            Show Plot
-          </b-button>
-        </b-col>
-      </b-row>
+      <b-button
+        v-b-modal.visualization
+        :disabled="
+          plottingSelectionX.length == 0 || plottingSelectionY.length == 0
+        "
+        variant="success"
+        class="float-right"
+        @click="createPlottableData()"
+      >
+        Show Plot
+      </b-button>
     </b-container>
     <VisualizationModal
       v-if="chartData.datasets.length > 0"

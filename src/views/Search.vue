@@ -32,13 +32,14 @@ const initialJson = {
 };
 
 const router = useRouter();
+const traversalRuleOptions = Object.values(SearchScopeTraversalRulesEnum);
+const queryTypeOptions = Object.values(SearchParamsQueryTypeEnum);
 
 const currentCollectionId = ref<number>();
 const currentDataObjectId = ref<number>();
-const traversalRuleOptions = Object.values(SearchScopeTraversalRulesEnum);
 const selectedTraversalRules = ref<SearchScopeTraversalRulesEnum[]>([]);
-const queryTypeOptions = Object.values(SearchParamsQueryTypeEnum);
 const selectedQueryType = ref<SearchParamsQueryTypeEnum>("Collection");
+
 const traversalRulesDisabled = computed(() => {
   return (
     selectedQueryType.value == "Collection" ||
