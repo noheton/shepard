@@ -88,13 +88,13 @@ The following logical objects are supported:
 - `and` (has a list of `clauses`)
 - `or` (has a list of `clauses`)
 - `xor` (has a list of `clauses`)
-- `gt` (*greater than*, has `value`)
-- `lt` (*lower than*, has `value`)
-- `ge` (*greater or equal*, has `value`)
-- `le` (*lower or equal*, has `value`)
-- `eq` (*equals*, has `value`)
-- `contains` (*contains*, has `value`)
-- `in` (*in*, has a list of `values`)
+- `gt` (_greater than_, has `value`)
+- `lt` (_lower than_, has `value`)
+- `ge` (_greater or equal_, has `value`)
+- `le` (_lower or equal_, has `value`)
+- `eq` (_equals_, has `value`)
+- `contains` (_contains_, has `value`)
+- `in` (_in_, has a list of `values`)
 
 ```json
 {
@@ -172,7 +172,7 @@ The following logical objects are supported:
 ```cypher
 MATCH (n)-[:createdBy]-(c:User) WHERE ID(n) in [1,2,3]
   AND c.username = "haas_tb"
-  AND n.name = "MyName" 
+  AND n.name = "MyName"
   AND n.description CONTAINS "Hallo Welt"
   AND n.`attributes.a` = "b"
   AND (
@@ -200,4 +200,30 @@ RETURN n
     "queryType": "organizational"
   }
 }
+```
+
+## User
+
+1. Receiving search query via GET request `/search/users`
+2. Possible query parameters are `username`, `firstName`, `lastName`, and `email`
+3. Build query to enable regular expressions
+
+```cypher
+MATCH (u:User) WHERE u.firstName =~ "John" AND u.lastName =~ "Doe" RETURN u
+```
+
+5. Query neo4j (2)
+6. Return results
+
+```json
+[
+  {
+    "username": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "subscriptionIds": [0],
+    "apiKeyIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"]
+  }
+]
 ```
