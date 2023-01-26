@@ -1,0 +1,75 @@
+# Ontologies
+
+[[_TOC_]]
+
+## Registries
+
+BARTOC knows about terminology registries, including itself.
+Registries also provide access to full terminologies either via an API (terminology service) or by other means (terminology repository).
+
+<https://bartoc.org/registries>
+
+Typical "interfaces":
+
+- sparql
+- jskos
+- ontoportal
+- webservice
+- ols
+- skosmos
+
+(others could in include eclass or IEEE iris)
+
+## Semantic Repository
+
+- GET, POST `.../semanticRepository/`
+- GET, PUT, DELETE `.../semanticRepository/{containerId}`
+
+```json
+{
+  "id": 123,
+  "name": "Ontobee",
+  "sparql-endpoint": "http://www.ontobee.org/sparql"
+}
+```
+
+## Semantic Annotation
+
+- GET, POST `.../collections/{collectionId}/annotations/`
+- GET, PUT, DELETE `.../collections/{collectionId}/annotations/{annotationId}`
+- GET, POST `.../collections/{collectionId}/dataObjects/{dataObjectId}/annotations/`
+- GET, PUT, DELETE `.../collections/{collectionId}/dataObjects/{dataObjectId}/annotations/{annotationId}`
+- GET, POST `.../collections/{collectionId}/dataObjects/{dataObjectId}/references/{referenceId}/annotations/`
+- GET, PUT, DELETE `.../collections/{collectionId}/dataObjects/{dataObjectId}/references/{referenceId}/annotations/{annotationId}`
+
+```json
+{
+  "id": 456,
+  "propertyRepositoryId": 123,
+  "property": "http://purl.obolibrary.org/obo/UO_0000012",
+  "valueRepositoryId": 123,
+  "value": "http://purl.obolibrary.org/obo/RO_0002536"
+}
+```
+
+## Ideas
+
+- Look into Federated Queries regarding SPARQL <https://www.w3.org/TR/2013/REC-sparql11-federated-query-20130321/>
+
+### Ontologies of interest
+
+- Semantic Sensor Network Ontology <https://www.w3.org/TR/vocab-ssn/#intro>
+- Units of Measure <http://www.ontology-of-units-of-measure.org/>
+
+### References / Examples of semantic annotation in other systems
+
+- <https://eml.ecoinformatics.org/semantic-annotation-primer.html>
+
+```xml
+    <annotation>
+        <propertyURI label="is about">http://purl.obolibrary.org/obo/IAO_0000136</propertyURI>
+        <valueURI label="grassland biome">http://purl.obolibrary.org/obo/ENVO_01000177</valueURI>
+    </annotation>
+```
+
+- CATIA Nomagic2022 <https://docs.nomagic.com/display/MCM2022x/Working+with+annotations>
