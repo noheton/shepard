@@ -56,6 +56,16 @@ const routes = [
     component: () => import("../views/TimeseriesContainer.vue"),
   },
   {
+    path: "/semanticrepositories",
+    name: "SemanticRepositoriesList",
+    component: () => import("../views/SemanticRepositoryList.vue"),
+  },
+  {
+    path: "/semanticrepositories/:semanticRepositoryId",
+    name: "SemanticRepository",
+    component: () => import("../views/SemanticRepository.vue"),
+  },
+  {
     path: "/search",
     name: "Search",
     component: () => import("../views/Search.vue"),

@@ -5,6 +5,7 @@ import Loading from "@/components/generic/Loading.vue";
 import type {
   Collection,
   FileContainer,
+  SemanticRepository,
   StructuredDataContainer,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
@@ -18,6 +19,7 @@ const props = defineProps({
         | FileContainer
         | StructuredDataContainer
         | TimeseriesContainer
+        | SemanticRepository
       >
     >,
     default: undefined,

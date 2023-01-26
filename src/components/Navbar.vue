@@ -33,6 +33,9 @@ const fullName = computed(() => {
           <b-dropdown-item to="/files">Files</b-dropdown-item>
           <b-dropdown-item to="/structureddata">StructuredData</b-dropdown-item>
           <b-dropdown-item to="/timeseries">Timeseries</b-dropdown-item>
+          <b-dropdown-item to="/semanticrepositories">
+            Semantic Repositories
+          </b-dropdown-item>
         </b-nav-item-dropdown>
         <b-nav-item to="/usergroups">User Groups</b-nav-item>
         <b-nav-item to="/search">Search</b-nav-item>

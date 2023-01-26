@@ -13,7 +13,7 @@ import type {
   GetAllTimeseriesContainersOrderByEnum,
   PermissionsPermissionTypeEnum,
   ResponseError,
-  StructuredDataContainer,
+  TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
@@ -21,7 +21,7 @@ import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 
-const containers = ref<StructuredDataContainer[]>();
+const containers = ref<TimeseriesContainer[]>();
 const filterOptions = useStorage<FilterOptions>("timeseries-filter-options", {
   perPage: 10,
   orderBy: "createdAt",

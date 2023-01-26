@@ -24,7 +24,11 @@ export function convertDate(date: Date | undefined | null) {
   if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
 }
 
-import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+import {
+  PermissionsPermissionTypeEnum,
+  SemanticRepositoryTypeEnum,
+} from "@dlr-shepard/shepard-client";
+
 export interface PermissionOption {
   value: PermissionsPermissionTypeEnum;
   text: string;
@@ -44,6 +48,27 @@ export const permissionOptions: PermissionOption[] = [
   },
 ];
 
+export interface SemanticRepositoryOption {
+  value: SemanticRepositoryTypeEnum;
+  text: string;
+  disabled?: boolean;
+}
+export const semanticRepositoryOptions: SemanticRepositoryOption[] = [
+  {
+    value: SemanticRepositoryTypeEnum.Sparql,
+    text: "SPARQL",
+  },
+  {
+    value: SemanticRepositoryTypeEnum.Jskos,
+    text: "JSKOS",
+    disabled: true,
+  },
+  {
+    value: SemanticRepositoryTypeEnum.Skosmos,
+    text: "SKOSMOS",
+    disabled: true,
+  },
+];
 export interface FilterOptions {
   perPage: number;
   orderBy: string;
