@@ -24,11 +24,24 @@ export function convertDate(date: Date | undefined | null) {
   if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
 }
 
-import {
-  PermissionsPermissionTypeEnum,
-  SemanticRepositoryTypeEnum,
-} from "@dlr-shepard/shepard-client";
+export function getQueryParam(key: string) {
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  return urlSearchParams.get(key);
+}
+export function setQueryParam(key: string, value: string) {
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  urlSearchParams.set(key, value);
+  const resolved = window.location.href.split("?")[0];
+  history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
+}
+export function removeQueryParam(key: string) {
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  urlSearchParams.delete(key);
+  const resolved = window.location.href.split("?")[0];
+  history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
+}
 
+import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
 export interface PermissionOption {
   value: PermissionsPermissionTypeEnum;
   text: string;
@@ -48,6 +61,7 @@ export const permissionOptions: PermissionOption[] = [
   },
 ];
 
+import { SemanticRepositoryTypeEnum } from "@dlr-shepard/shepard-client";
 export interface SemanticRepositoryOption {
   value: SemanticRepositoryTypeEnum;
   text: string;

@@ -15,7 +15,7 @@ import type {
   ResponseError,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, ref, type PropType } from "vue";
+import { getCurrentInstance, reactive, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -40,26 +40,32 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["reference-deleted"]);
+const vm = getCurrentInstance();
 
+const emit = defineEmits(["reference-deleted", "hidden"]);
+
+const getInitialDownloadState = () => ({
+  active: false,
+  finished: false,
+  error: false,
+  errorMessage: "",
+});
+
+const downloadState = reactive(getInitialDownloadState());
 const files = ref<{ [key: string]: ShepardFile | undefined }>({});
-const downloadFinished = ref(false);
-const downloadActive = ref(false);
-const downloadError = ref(false);
-const downloadErrorMessage = ref("");
 const currentFileOid = ref<string>();
 const csvFileData = ref<string>();
 
 function reset() {
-  files.value = {};
-  downloadFinished.value = false;
-  downloadActive.value = false;
-  downloadError.value = false;
-  downloadErrorMessage.value = "";
+  Object.assign(downloadState, getInitialDownloadState());
   currentFileOid.value = undefined;
   csvFileData.value = undefined;
-  getFiles();
 }
+
+watch(
+  () => props.fileReference,
+  () => getFiles(),
+);
 
 function getFiles() {
   if (!props.fileReference.id) return;
@@ -88,7 +94,7 @@ function getFilePayload(
   filename?: string,
 ) {
   if (!fileReferenceId || !oid) return;
-  downloadActive.value = true;
+  downloadState.active = true;
   FileReferenceService.getFilePayload({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -97,23 +103,22 @@ function getFilePayload(
   })
     .then(response => {
       downloadFile(response, filename);
-      downloadFinished.value = true;
+      downloadState.finished = true;
     })
     .catch(e => {
       logError(e as ResponseError, "fetching file payload");
-      downloadError.value = true;
+      downloadState.error = true;
       if (e.response.status == 403) {
-        downloadErrorMessage.value =
+        downloadState.errorMessage =
           "Authentication Error: No permission to access this file container";
       } else if (e.response.status == 404) {
-        downloadErrorMessage.value =
+        downloadState.errorMessage =
           "Not Found: File no longer exists in the container";
       }
     })
-    .finally(() => (downloadActive.value = false));
+    .finally(() => (downloadState.active = false));
 }
 
-const vm = getCurrentInstance();
 function handleDelete() {
   if (!props.fileReference.id) return;
   FileReferenceService.deleteFileReference({
@@ -139,15 +144,16 @@ function handleDelete() {
     lazy
     ok-only
     @show="reset()"
+    @hidden="emit('hidden')"
   >
     <ProcessAlert
       process-name="Download"
-      :process-active="downloadActive"
-      :process-finished="downloadFinished"
-      :process-error="downloadError"
-      :process-error-message="downloadErrorMessage"
-      @success-message-dismissed="downloadFinished = false"
-      @error-message-dismissed="downloadError = false"
+      :process-active="downloadState.active"
+      :process-finished="downloadState.finished"
+      :process-error="downloadState.error"
+      :process-error-message="downloadState.errorMessage"
+      @success-message-dismissed="downloadState.finished = false"
+      @error-message-dismissed="downloadState.error = false"
     />
     <div class="mb-4">
       <b-button
@@ -237,7 +243,7 @@ function handleDelete() {
               v-b-tooltip.hover
               variant="secondary"
               title="Download File"
-              :disabled="downloadActive"
+              :disabled="downloadState.active"
               @click="
                 getFilePayload(fileReference?.id, oid, files[oid]?.filename)
               "

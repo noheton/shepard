@@ -7,13 +7,12 @@ import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
-
 import type {
   ResponseError,
   TimeseriesPayload,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, ref, type PropType } from "vue";
+import { getCurrentInstance, reactive, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -38,28 +37,33 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["reference-deleted"]);
+const vm = getCurrentInstance();
 
-const currentStructuredDataOid = ref<string>();
-const currentTimeseriesReference = ref<TimeseriesReference>();
-const timeseriesDatas = ref<{ [key: string]: TimeseriesPayload }>({});
+const emit = defineEmits(["reference-deleted", "hidden"]);
+
+const getInitialState = () => ({
+  active: false,
+  finished: false,
+  error: false,
+  errorMessage: "",
+  plottingError: false,
+  plottingErrorMessage: "",
+});
+
 const currentTimeseriesPayload = ref<TimeseriesPayload[]>();
-
-const downloadFinished = ref(false);
-const downloadActive = ref(false);
-const downloadError = ref(false);
-const downloadErrorMessage = ref<string>("");
-const plottingError = ref(false);
-const plottingErrorMessage = ref<string>("");
+const internalState = reactive(getInitialState());
 
 function reset() {
-  timeseriesDatas.value = {};
-  currentStructuredDataOid.value = undefined;
-  fetchTimeseriesPayload();
+  Object.assign(internalState, getInitialState());
 }
 
+watch(
+  () => props.timeseriesReference,
+  () => fetchTimeseriesPayload(),
+);
+
 function fetchTimeseriesPayload() {
-  if (!props.timeseriesReference.id) return;
+  if (!props.timeseriesReference?.id) return;
   TimeseriesReferenceService.getTimeseriesPayload({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -71,16 +75,16 @@ function fetchTimeseriesPayload() {
     .catch(e => {
       currentTimeseriesPayload.value = [];
       logError(e as ResponseError, "fetching timeseries payload");
-      plottingError.value = true;
+      internalState.plottingError = true;
       if (e.response.status == 403) {
-        plottingErrorMessage.value =
+        internalState.plottingErrorMessage =
           "Authentication Error: No permission to access this timeseries container";
       }
     });
 }
 
 function downloadCsv(referenceId: number, referenceName: string) {
-  downloadActive.value = true;
+  internalState.active = true;
   TimeseriesReferenceService.exportTimeseriesPayload({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -88,27 +92,21 @@ function downloadCsv(referenceId: number, referenceName: string) {
   })
     .then(response => {
       downloadFile(response, referenceName + ".csv");
-      downloadFinished.value = true;
+      internalState.finished = true;
     })
     .catch(e => {
       logError(e as ResponseError, "fetching timeseries payload");
-      downloadError.value = true;
+      internalState.error = true;
       if (e.response.status == 403) {
-        downloadErrorMessage.value =
+        internalState.errorMessage =
           "Authentication Error: No permission to access this timeseries container";
       }
     })
-    .finally(() => (downloadActive.value = false));
+    .finally(() => (internalState.active = false));
 }
 
-function handlePlotData(timeseriesItem: TimeseriesReference) {
-  if (timeseriesItem.id) fetchTimeseriesPayload();
-  currentTimeseriesReference.value = timeseriesItem;
-}
-
-const vm = getCurrentInstance();
 function handleDelete() {
-  if (!props.timeseriesReference.id) return;
+  if (!props.timeseriesReference?.id) return;
   TimeseriesReferenceService.deleteTimeseriesReference({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -132,33 +130,33 @@ function handleDelete() {
     lazy
     ok-only
     @show="reset()"
+    @hidden="emit('hidden')"
   >
     <ProcessAlert
       process-name="Plotting"
-      :process-error="plottingError"
-      :process-error-message="plottingErrorMessage"
-      @error-message-dismissed="plottingError = false"
+      :process-error="internalState.plottingError"
+      :process-error-message="internalState.plottingErrorMessage"
+      @error-message-dismissed="internalState.plottingError = false"
     />
 
     <ProcessAlert
       process-name="Download"
-      :process-active="downloadActive"
-      :process-started="downloadFinished"
-      :process-error="downloadError"
-      :process-error-message="downloadErrorMessage"
-      @success-message-dismissed="downloadFinished = false"
-      @error-message-dismissed="downloadError = false"
+      :process-active="internalState.active"
+      :process-started="internalState.finished"
+      :process-error="internalState.error"
+      :process-error-message="internalState.errorMessage"
+      @success-message-dismissed="internalState.finished = false"
+      @error-message-dismissed="internalState.error = false"
     />
 
-    <div v-if="timeseriesReference" class="mb-4">
+    <div v-if="props.timeseriesReference" class="mb-4">
       <b-button-group class="float-right">
         <b-button
           v-b-modal.plotting_modal
           v-b-tooltip.hover
           title="Plotting"
           variant="primary"
-          :disabled="timeseriesReference.timeseriesContainerId == -1"
-          @click="handlePlotData(timeseriesReference)"
+          :disabled="props.timeseriesReference.timeseriesContainerId == -1"
         >
           <PlottingIcon />
         </b-button>
@@ -168,13 +166,14 @@ function handleDelete() {
           title="Download"
           variant="secondary"
           :disabled="
-            downloadActive || timeseriesReference.timeseriesContainerId == -1
+            internalState.active ||
+            props.timeseriesReference.timeseriesContainerId == -1
           "
           @click="
-            if (timeseriesReference.id)
+            if (props.timeseriesReference.id)
               downloadCsv(
-                timeseriesReference.id,
-                timeseriesReference.name || '',
+                props.timeseriesReference.id,
+                props.timeseriesReference.name || '',
               );
           "
         >
@@ -185,37 +184,36 @@ function handleDelete() {
           v-b-tooltip.hover
           title="Delete"
           variant="info"
-          @click="currentTimeseriesReference = timeseriesReference"
         >
           <DeleteIcon />
         </b-button>
       </b-button-group>
 
-      ID: {{ timeseriesReference?.id }} |
-      <span v-if="timeseriesReference?.timeseriesContainerId != -1">
+      ID: {{ props.timeseriesReference?.id }} |
+      <span v-if="props.timeseriesReference?.timeseriesContainerId != -1">
         <b-link
           :to="{
             name: 'Files',
             params: {
-              fileId: timeseriesReference?.timeseriesContainerId,
+              fileId: props.timeseriesReference?.timeseriesContainerId,
             },
           }"
         >
-          Container: {{ timeseriesReference?.timeseriesContainerId }}
+          Container: {{ props.timeseriesReference?.timeseriesContainerId }}
         </b-link>
       </span>
       <span v-else class="text-danger">Container: Deleted</span>
 
       <CreatedByLine
-        :created-by="timeseriesReference?.createdBy"
-        :created-at="timeseriesReference?.createdAt"
+        :created-by="props.timeseriesReference?.createdBy"
+        :created-at="props.timeseriesReference?.createdAt"
       />
       <small>
         <b>start:</b>
-        {{ convertDate(new Date(timeseriesReference.start / 1e6)) }}
+        {{ convertDate(new Date(props.timeseriesReference.start / 1e6)) }}
         |
         <b>end:</b>
-        {{ convertDate(new Date(timeseriesReference.start / 1e6)) }}
+        {{ convertDate(new Date(props.timeseriesReference.start / 1e6)) }}
       </small>
 
       <b-table
@@ -223,19 +221,17 @@ function handleDelete() {
         striped
         hover
         small
-        :items="timeseriesReference.timeseries"
+        :items="props.timeseriesReference.timeseries"
       >
       </b-table>
     </div>
 
     <TimeseriesPlottingModal
-      v-if="
-        currentTimeseriesReference && currentTimeseriesPayload && !plottingError
-      "
+      v-if="props.timeseriesReference && currentTimeseriesPayload"
       modal-id="plotting_modal"
-      :modal-name="currentTimeseriesReference.name || undefined"
+      :modal-name="props.timeseriesReference.name || undefined"
       :timeseries-payload-list="currentTimeseriesPayload"
-      :timeseries-start-time="currentTimeseriesReference.start"
+      :timeseries-start-time="props.timeseriesReference.start"
     />
 
     <DeleteConfirmationModal

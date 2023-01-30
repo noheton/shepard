@@ -6,12 +6,17 @@ import CreateTimeseriesReferenceModal from "@/components/references/CreateTimese
 import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { handleError } from "@/utils/error-handling";
-import { convertDate } from "@/utils/helpers";
+import {
+  convertDate,
+  getQueryParam,
+  removeQueryParam,
+  setQueryParam,
+} from "@/utils/helpers";
 import type {
   ResponseError,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import { onMounted, ref } from "vue";
+import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -24,6 +29,8 @@ const props = defineProps({
   },
 });
 
+const vm = getCurrentInstance();
+
 const emit = defineEmits(["reference-count-changed"]);
 
 const timeseriesList = ref<TimeseriesReference[]>();
@@ -31,6 +38,10 @@ const currentTimeseriesReference = ref<TimeseriesReference>();
 
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
+
+watch(currentTimeseriesReference, to => {
+  setQueryParam("referenceId", String(to?.id));
+});
 
 function retrieveReferences() {
   TimeseriesReferenceService.getAllTimeseriesReferences({
@@ -43,6 +54,13 @@ function retrieveReferences() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching timeseries references");
+    })
+    .finally(() => {
+      currentTimeseriesReference.value = timeseriesList.value?.find(e => {
+        return e.id === Number(getQueryParam("referenceId"));
+      });
+      if (currentTimeseriesReference.value)
+        vm?.proxy.$bvModal.show("view-timeseries-modal");
     });
 }
 
@@ -146,7 +164,7 @@ onMounted(() => {
       :current-data-object-id="currentDataObjectId"
       :timeseries-reference="currentTimeseriesReference"
       @reference-deleted="handleReferenceDelete()"
-      @create="create($event)"
+      @hidden="removeQueryParam('referenceId')"
     />
   </div>
 </template>

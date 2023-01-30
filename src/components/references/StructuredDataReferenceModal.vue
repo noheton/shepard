@@ -11,7 +11,7 @@ import type {
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, ref, type PropType } from "vue";
+import { getCurrentInstance, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -36,25 +36,21 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["reference-deleted"]);
+const vm = getCurrentInstance();
+
+const emit = defineEmits(["reference-deleted", "hidden"]);
 
 const currentStructuredDataOid = ref<string>();
-const currentStructuredDataReference = ref<StructuredDataReference>();
 const structuredDatas = ref<{ [key: string]: StructuredDataPayload }>({});
 
 function reset() {
-  structuredDatas.value = {};
   currentStructuredDataOid.value = undefined;
-  getStructuredDataPayload();
 }
 
-function showViewerClicked(
-  structuredDataReference: StructuredDataReference,
-  oid: string,
-) {
-  currentStructuredDataReference.value = structuredDataReference;
-  currentStructuredDataOid.value = oid;
-}
+watch(
+  () => props.structuredDataReference,
+  () => getStructuredDataPayload(),
+);
 
 function getStructuredDataPayload() {
   if (!props.structuredDataReference.id) return;
@@ -77,7 +73,6 @@ function getStructuredDataPayload() {
     });
 }
 
-const vm = getCurrentInstance();
 function handleDelete() {
   if (!props.structuredDataReference.id) return;
   StructuredDataReferenceService.deleteStructuredDataReference({
@@ -103,6 +98,7 @@ function handleDelete() {
     lazy
     ok-only
     @show="reset()"
+    @hidden="emit('hidden')"
   >
     <div class="mb-4">
       <b-button
@@ -183,7 +179,7 @@ function handleDelete() {
             class="float-right"
             variant="primary"
             title="Show Viewer"
-            @click="showViewerClicked(structuredDataReference, oid)"
+            @click="currentStructuredDataOid = oid"
           >
             <EyeIcon />
           </b-button>
@@ -196,10 +192,10 @@ function handleDelete() {
     </b-list-group>
 
     <JsonEditorModal
-      v-if="currentStructuredDataReference && currentStructuredDataOid"
+      v-if="structuredDataReference && currentStructuredDataOid"
       modal-id="json-editor-modal"
       modal-name="Structured Data Reference"
-      :container-id="currentStructuredDataReference.structuredDataContainerId"
+      :container-id="structuredDataReference.structuredDataContainerId"
       :oid="currentStructuredDataOid"
     />
     <DeleteConfirmationModal

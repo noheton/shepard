@@ -6,8 +6,13 @@ import CreateFileReferenceModal from "@/components/references/CreateFileReferenc
 import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
+import {
+  getQueryParam,
+  removeQueryParam,
+  setQueryParam,
+} from "@/utils/helpers";
 import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
-import { onMounted, ref } from "vue";
+import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -20,12 +25,18 @@ const props = defineProps({
   },
 });
 
+const vm = getCurrentInstance();
+
 const emit = defineEmits(["reference-count-changed"]);
 
 const fileReferenceList = ref<FileReference[]>();
 const currentFileReference = ref<FileReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
+
+watch(currentFileReference, to => {
+  setQueryParam("referenceId", String(to?.id));
+});
 
 function retrieveReferences() {
   FileReferenceService.getAllFileReferences({
@@ -38,6 +49,13 @@ function retrieveReferences() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching file references");
+    })
+    .finally(() => {
+      currentFileReference.value = fileReferenceList.value?.find(e => {
+        return e.id === Number(getQueryParam("referenceId"));
+      });
+      if (currentFileReference.value)
+        vm?.proxy.$bvModal.show("view-file-modal");
     });
 }
 
@@ -103,7 +121,7 @@ onMounted(() => {
       <b-list-group-item
         v-for="(fileReference, index) in fileReferenceList"
         :key="index"
-        v-b-modal.view-ref-modal
+        v-b-modal.view-file-modal
         button
         @click="currentFileReference = fileReference"
       >
@@ -138,13 +156,13 @@ onMounted(() => {
     </b-list-group>
 
     <FileReferenceModal
-      modal-id="view-ref-modal"
+      modal-id="view-file-modal"
       :modal-name="currentFileReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :file-reference="currentFileReference"
       @reference-deleted="handleReferenceDelete()"
-      @create="create($event)"
+      @hidden="removeQueryParam('referenceId')"
     />
   </div>
 </template>

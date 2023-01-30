@@ -7,6 +7,7 @@ import TimeseriesReferencesList from "@/components/references/TimeseriesReferenc
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
 import ReferenceService from "@/services/referenceService";
 import { handleError } from "@/utils/error-handling";
+import { getQueryParam, setQueryParam } from "@/utils/helpers";
 import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { onMounted, ref, watch, type PropType } from "vue";
 
@@ -37,6 +38,11 @@ watch(
     ),
   sum => emit("count-references-changed", sum),
 );
+
+const activeId = ref(0);
+watch(activeId, to => {
+  setQueryParam("tabId", String(to));
+});
 
 function retrieveReferences() {
   if (!props.currentDataObject.collectionId || !props.currentDataObject.id) {
@@ -75,6 +81,9 @@ function retrieveReferences() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching all references");
+    })
+    .finally(() => {
+      activeId.value = Number(getQueryParam("tabId"));
     });
 }
 
@@ -87,6 +96,7 @@ onMounted(() => {
   <b-card no-body>
     <b-tabs
       v-if="currentDataObject.collectionId && currentDataObject.id"
+      v-model="activeId"
       card
       lazy
     >

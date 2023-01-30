@@ -6,11 +6,16 @@ import CreateStructuredDataReferenceModal from "@/components/references/CreateSt
 import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { handleError } from "@/utils/error-handling";
+import {
+  getQueryParam,
+  removeQueryParam,
+  setQueryParam,
+} from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import { onMounted, ref } from "vue";
+import { getCurrentInstance, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -23,12 +28,18 @@ const props = defineProps({
   },
 });
 
+const vm = getCurrentInstance();
+
 const emit = defineEmits(["reference-count-changed"]);
 
 const structuredDataList = ref<StructuredDataReference[]>();
 const currentStructuredDataReference = ref<StructuredDataReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
+
+watch(currentStructuredDataReference, to => {
+  setQueryParam("referenceId", String(to?.id));
+});
 
 function retrieveReferences() {
   StructuredDataReferenceService.getAllStructuredDataReferences({
@@ -41,6 +52,15 @@ function retrieveReferences() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching structured data references");
+    })
+    .finally(() => {
+      currentStructuredDataReference.value = structuredDataList.value?.find(
+        e => {
+          return e.id === Number(getQueryParam("referenceId"));
+        },
+      );
+      if (currentStructuredDataReference.value)
+        vm?.proxy.$bvModal.show("view-structured-data-modal");
     });
 }
 
@@ -146,7 +166,7 @@ onMounted(() => {
       :current-data-object-id="currentDataObjectId"
       :structured-data-reference="currentStructuredDataReference"
       @reference-deleted="handleReferenceDelete()"
-      @create="create($event)"
+      @hidden="removeQueryParam('referenceId')"
     />
   </div>
 </template>
