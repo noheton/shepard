@@ -74,7 +74,7 @@ cp env.example .env
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| BACKEND_URL | contains the URL of the backend as it is accessible by the clients | `https://backend.shepard.example.com/` |
+| BACKEND_URL | contains the URL of the backend to be accessed by the clients | `https://backend.shepard.example.com/` |
 | NEO4J_PW | initial neo4j password |  |
 | MONGO_PW | initial mongodb password |  |
 | INFLUX_PW | initial influxdb password |  |
