@@ -117,7 +117,7 @@ You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
 
 ## Update
 
-Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/deployment/-/merge_requests?scope=all&state=merged&label_name[]=Breaking%20Change) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
+Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/deployment/-/merge_requests?label_name%5B%5D=Breaking+Change&scope=all&sort=merged_at_desc&state=merged) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
 
 Database upgrades may also require manual intervention. What exactly needs to be adjusted can be found in the respective changelogs. The shepard backend can handle a relatively wide range of database versions. Therefore, it is possible to sit out database upgrades for some time and still update shepard. This repository will always use a recent version of the respective databases that have been successfully tested to work with shepard.
 
