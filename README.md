@@ -74,7 +74,7 @@ cp env.example .env
 
 | Variable | Description | Example |
 | --- | --- | --- |
-| BACKEND_URL | contains the URL of the backend | `https://backend.shepard.example.com/` |
+| BACKEND_URL | contains the URL of the backend as it is accessible by the clients | `https://backend.shepard.example.com/` |
 | NEO4J_PW | initial neo4j password |  |
 | MONGO_PW | initial mongodb password |  |
 | INFLUX_PW | initial influxdb password |  |
@@ -139,7 +139,7 @@ Sometimes the installation does not work as expected or the system does not boot
 
 ### Review your configuration
 
-Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `env.example` must be set. Also look at the provided URLs, as most URLs must end with a trailing slash.
+Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `env.example` must be set. Also look at the provided URLs, as all URLs must end with a trailing slash.
 
 ### Read the logs
 
