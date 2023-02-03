@@ -20,6 +20,7 @@ import BootstrapVue, {
   BIconPersonLinesFill,
   BIconPersonPlus,
   BIconPlus,
+  BIconTags,
   BIconTrash,
   BIconUnlockFill,
   BIconXCircle,
@@ -40,6 +41,7 @@ Vue.component("ExtendIcon", BIconChevronDown);
 
 Vue.component("DeleteIcon", BIconTrash);
 Vue.component("EditIcon", BIconPencil);
+Vue.component("SemanticIcon", BIconTags);
 Vue.component("CreateIcon", BIconPlus);
 Vue.component("RemoveIcon", BIconDash);
 Vue.component("OpenIcon", BIconFolder2Open);

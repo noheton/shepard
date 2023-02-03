@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { colorCalculator } from "@/utils/colors";
 import type { PlottingData } from "@/utils/plotting";
-import { BModal } from "bootstrap-vue";
 import {
   Chart,
   registerables,

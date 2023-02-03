@@ -2,18 +2,25 @@
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
 import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
+import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotationModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
+import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import CollectionService from "@/services/collectionService";
+import {
+  default as semanticAnnotationService,
+  default as SemanticAnnotationService,
+} from "@/services/semanticAnnotationService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
   Collection,
   Permissions,
   ResponseError,
   Roles,
+  SemanticAnnotation,
 } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
@@ -105,10 +112,44 @@ function updateTitle() {
   });
 }
 
+const collectionAnnotationList = ref<SemanticAnnotation[]>([]);
+function getAllCollectionAnnotations() {
+  SemanticAnnotationService.getAllCollectionAnnotations({
+    collectionId: +currentCollectionId.value,
+  })
+    .then(annotationList => {
+      collectionAnnotationList.value = annotationList;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "get all semantic collection annotations",
+      );
+    });
+}
+function createCollectionAnnotation(semanticAnnotation: SemanticAnnotation) {
+  semanticAnnotationService
+    .createCollectionAnnotation({
+      collectionId: currentCollectionId.value,
+      semanticAnnotation: semanticAnnotation,
+    })
+    .then(newAnnotation => {
+      const temp = [...collectionAnnotationList.value, newAnnotation];
+      collectionAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "creating semantic collection annotation",
+      );
+    });
+}
+
 onMounted(() => {
   retrieveCollection();
   retrieveRoles();
   updateTitle();
+  getAllCollectionAnnotations();
 });
 </script>
 
@@ -131,6 +172,14 @@ onMounted(() => {
           variant="secondary"
         >
           <EditIcon />
+        </b-button>
+        <b-button
+          v-b-modal.edit-semantic-modal
+          v-b-tooltip.hover
+          title="Edit Semantic Annotation"
+          variant="secondary"
+        >
+          <SemanticIcon />
         </b-button>
         <b-button
           v-if="roles?.owner || roles?.manager"
@@ -172,6 +221,8 @@ onMounted(() => {
       />
     </div>
 
+    <SemanticBadge :annotation-list="collectionAnnotationList" />
+
     <GenericDescription
       v-if="currentCollection.description"
       :text="currentCollection.description"
@@ -202,6 +253,12 @@ onMounted(() => {
       :current-collection-id="currentCollectionId"
       modal-id="create-data-object-modal"
       modal-name="Create Data Object"
+    />
+    <SemanticAnnotationModal
+      v-if="currentCollection.id"
+      modal-id="edit-semantic-modal"
+      modal-name="Add Semantic"
+      @create="createCollectionAnnotation($event)"
     />
     <DeleteConfirmationModal
       modal-id="delete-confirmation-modal"
