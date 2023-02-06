@@ -36,12 +36,21 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 				result.add(container);
 			}
 		}
-
 		return result;
 	}
 
 	private boolean matchName(TimeseriesContainer container, String name) {
 		return name == null || container.getName().equalsIgnoreCase(name);
+	}
+
+	public List<TimeseriesContainer> getTimeseriesContainerByQuery(String query) {
+		var result = new ArrayList<TimeseriesContainer>();
+		Map<String, Object> paramsMap = new HashMap<>();
+		// TODO: sanity check for query
+		for (var container : findByQuery(query, paramsMap)) {
+			result.add(container);
+		}
+		return result;
 	}
 
 	@Override

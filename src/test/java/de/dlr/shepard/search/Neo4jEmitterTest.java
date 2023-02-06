@@ -403,4 +403,32 @@ public class Neo4jEmitterTest extends BaseTestCase {
 
 		assertThrows(ShepardParserException.class, () -> Neo4jEmitter.emitCollectionQuery(searchBodyQuery, userName));
 	}
+
+	@Test
+	public void emitStructuredDataContainerQueryTest() {
+		String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
+		String userName = "MarxKarl";
+		String neo4jQuery = Neo4jEmitter.emitStructuredDataContainerQuery(JSONQuery, userName);
+		String expected = "MATCH (sdc:StructuredDataContainer) WHERE (sdc.`name` = \"MyName\") AND (sdc.deleted = FALSE) AND (NOT exists((sdc)-[:has_permissions]->(:Permissions)) OR exists((sdc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"MarxKarl\" })) OR exists((sdc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((sdc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((sdc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"MarxKarl\"}))) WITH sdc MATCH path=(sdc)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN sdc, nodes(path), relationships(path)";
+		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
+	public void emitTimeseriesContainerQueryTest() {
+		String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
+		String userName = "MarxKarl";
+		String neo4jQuery = Neo4jEmitter.emitTimeseriesContainerQuery(JSONQuery, userName);
+		String expected = "MATCH (tsc:TimeseriesContainer) WHERE (tsc.`name` = \"MyName\") AND (tsc.deleted = FALSE) AND (NOT exists((tsc)-[:has_permissions]->(:Permissions)) OR exists((tsc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"MarxKarl\" })) OR exists((tsc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((tsc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((tsc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"MarxKarl\"}))) WITH tsc MATCH path=(tsc)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN tsc, nodes(path), relationships(path)";
+		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
+	public void emitFileContainerQueryTest() {
+		String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
+		String userName = "GatesWilliam";
+		String neo4jQuery = Neo4jEmitter.emitFileContainerQuery(JSONQuery, userName);
+		String expected = "MATCH (fc:FileContainer) WHERE (fc.`name` = \"MyName\") AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"}))) WITH fc MATCH path=(fc)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN fc, nodes(path), relationships(path)";
+		assertEquals(expected, neo4jQuery);
+	}
+
 }

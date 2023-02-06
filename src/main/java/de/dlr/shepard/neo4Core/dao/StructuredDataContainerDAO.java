@@ -48,4 +48,14 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 		return StructuredDataContainer.class;
 	}
 
+	public List<StructuredDataContainer> getStructuredDataContainerByQuery(String query) {
+		var result = new ArrayList<StructuredDataContainer>();
+		Map<String, Object> paramsMap = new HashMap<>();
+		// TODO: sanity check for query
+		for (var container : findByQuery(query, paramsMap)) {
+			result.add(container);
+		}
+		return result;
+	}
+
 }

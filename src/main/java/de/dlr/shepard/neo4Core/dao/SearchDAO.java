@@ -21,6 +21,7 @@ public class SearchDAO {
 
 	public List<Long[]> getIdsFromQuery(String query, String[] variables) {
 		List<Long[]> ret = new ArrayList<>();
+		// TODO: sanity check for query
 		Result idTuples = session.query(query, Collections.emptyMap());
 		Iterator<Map<String, Object>> iterator = idTuples.iterator();
 		Map<String, Object> map;

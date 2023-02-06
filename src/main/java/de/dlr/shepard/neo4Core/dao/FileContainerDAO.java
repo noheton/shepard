@@ -35,7 +35,16 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 				result.add(container);
 			}
 		}
+		return result;
+	}
 
+	public List<FileContainer> getFileContainerByQuery(String query) {
+		var result = new ArrayList<FileContainer>();
+		Map<String, Object> paramsMap = new HashMap<>();
+		// TODO: sanity check for query
+		for (var container : findByQuery(query, paramsMap)) {
+			result.add(container);
+		}
 		return result;
 	}
 

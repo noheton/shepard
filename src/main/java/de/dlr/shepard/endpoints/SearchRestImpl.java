@@ -6,6 +6,9 @@ import java.util.List;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.neo4Core.services.UserService;
+import de.dlr.shepard.search.ContainerSearchBody;
+import de.dlr.shepard.search.ContainerSearchResult;
+import de.dlr.shepard.search.ContainerSearcher;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.Searcher;
@@ -33,6 +36,7 @@ public class SearchRestImpl implements SearchRest {
 	private SecurityContext securityContext;
 	private Searcher searcher = new Searcher();
 	private UserService userService = new UserService();
+	private ContainerSearcher containerSearcher = new ContainerSearcher();
 
 	@POST
 	@Override
@@ -56,6 +60,17 @@ public class SearchRestImpl implements SearchRest {
 		for (User user : users)
 			result.add(new UserIO(user));
 		return Response.ok(result).build();
+	}
+
+	@POST
+	@Path("/" + Constants.CONTAINERS)
+	@Override
+	public Response searchContainers(ContainerSearchBody containerSearchBody) {
+		log.info("Search for containers of type {} with query: {}",
+				containerSearchBody.getSearchParams().getQueryType(), containerSearchBody.getSearchParams().getQuery());
+		ContainerSearchResult ret = containerSearcher.search(containerSearchBody,
+				securityContext.getUserPrincipal().getName());
+		return Response.ok(ret).build();
 	}
 
 }

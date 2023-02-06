@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -235,5 +236,14 @@ public class FileContainerDAOTest extends BaseTestCase {
 		var actual = dao.findAllFileContainers(params, "bob");
 		verify(session).query(FileContainer.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
+	}
+
+	@Test
+	public void getFileContainerByQuery() {
+		String query = "query";
+		Map<String, Object> paramsMap = new HashMap<>();
+		FileContainer res = new FileContainer(42L);
+		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(res));
+		assertThat(dao.getFileContainerByQuery(query)).containsExactly(res);
 	}
 }

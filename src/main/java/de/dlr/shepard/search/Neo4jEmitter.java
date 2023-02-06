@@ -13,6 +13,10 @@ import de.dlr.shepard.util.TraversalRules;
 
 public class Neo4jEmitter {
 
+	private static final String FILECONTAINER_IN_QUERY = "fc";
+	private static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
+	private static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
+
 	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
 			Constants.JSON_NOT, Constants.JSON_XOR);
 
@@ -202,6 +206,24 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
+	private static String emitFileContainerMatchPart() {
+		String ret = "";
+		ret = ret + "MATCH (" + FILECONTAINER_IN_QUERY + ":FileContainer)";
+		return ret;
+	}
+
+	private static String emitTimeseriesContainerMatchPart() {
+		String ret = "";
+		ret = ret + "MATCH (" + TIMESERIESCONTAINER_IN_QUERY + ":TimeseriesContainer)";
+		return ret;
+	}
+
+	private static String emitStructuredDataContainerMatchPart() {
+		String ret = "";
+		ret = ret + "MATCH (" + STRUCTUREDDATACONTAINER_IN_QUERY + ":StructuredDataContainer)";
+		return ret;
+	}
+
 	private static String emitCollectionIdReturnPart() {
 		String ret = " RETURN id(" + Constants.COLLECTION_IN_QUERY + ")";
 		return ret;
@@ -256,6 +278,51 @@ public class Neo4jEmitter {
 		ret = ret + emitReadableByPart(userName);
 		ret = ret + emitCollectionIdReturnPart();
 		return ret;
+	}
+
+	public static String emitFileContainerQuery(String JSONQuery, String userName) {
+		String ret = "";
+		ret = ret + emitFileContainerMatchPart();
+		ret = ret + " WHERE ";
+		ret = ret + emitNeo4j(JSONQuery, FILECONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + emitNotDeletedPart(FILECONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + CypherQueryHelper.getReadableByQuery(FILECONTAINER_IN_QUERY, userName);
+		ret = ret + emitContainerReturnPart(FILECONTAINER_IN_QUERY);
+		return ret;
+	}
+
+	public static String emitTimeseriesContainerQuery(String JSONQuery, String userName) {
+		String ret = "";
+		ret = ret + emitTimeseriesContainerMatchPart();
+		ret = ret + " WHERE ";
+		ret = ret + emitNeo4j(JSONQuery, TIMESERIESCONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + emitNotDeletedPart(TIMESERIESCONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + CypherQueryHelper.getReadableByQuery(TIMESERIESCONTAINER_IN_QUERY, userName);
+		ret = ret + emitContainerReturnPart(TIMESERIESCONTAINER_IN_QUERY);
+		return ret;
+	}
+
+	public static String emitStructuredDataContainerQuery(String JSONQuery, String userName) {
+		String ret = "";
+		ret = ret + emitStructuredDataContainerMatchPart();
+		ret = ret + " WHERE ";
+		ret = ret + emitNeo4j(JSONQuery, STRUCTUREDDATACONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + emitNotDeletedPart(STRUCTUREDDATACONTAINER_IN_QUERY);
+		ret = ret + " AND ";
+		ret = ret + CypherQueryHelper.getReadableByQuery(STRUCTUREDDATACONTAINER_IN_QUERY, userName);
+		ret = ret + emitContainerReturnPart(STRUCTUREDDATACONTAINER_IN_QUERY);
+		return ret;
+	}
+
+	private static String emitContainerReturnPart(String containerVariable) {
+		return " WITH " + containerVariable + " MATCH path=(" + containerVariable
+				+ ")-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN " + containerVariable
+				+ ", nodes(path), relationships(path)";
 	}
 
 	public static String emitCollectionDataObjectQuery(Long collectionId, String searchBodyQuery, String username) {

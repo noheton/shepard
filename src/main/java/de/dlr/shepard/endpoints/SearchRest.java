@@ -1,6 +1,8 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.UserIO;
+import de.dlr.shepard.search.ContainerSearchBody;
+import de.dlr.shepard.search.ContainerSearchResult;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.util.Constants;
@@ -28,5 +30,12 @@ public interface SearchRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response searchUsers(String username, String firstName, String lastName, String email);
+
+	@Tag(name = Constants.SEARCH)
+	@Operation(description = "Search containers")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ContainerSearchResult.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response searchContainers(
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))) @Valid ContainerSearchBody containerSearchBody);
 
 }
