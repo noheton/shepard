@@ -8,7 +8,6 @@ TOKEN_FILE = "token.txt"
 
 
 if __name__ == "__main__":
-
     TOKEN = ""
     with open(TOKEN_FILE, "r", encoding="UTF-8") as token_file:
         TOKEN = token_file.read()
