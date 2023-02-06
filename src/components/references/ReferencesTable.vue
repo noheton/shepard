@@ -39,7 +39,7 @@ watch(
   sum => emit("count-references-changed", sum),
 );
 
-const activeId = ref(0);
+const activeId = ref();
 watch(activeId, to => {
   setQueryParam("tabId", String(to));
 });
