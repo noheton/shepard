@@ -12,19 +12,19 @@ const props = defineProps({
 const attributesList = ref<
   { property: string; value: string; propertyIRI: string; valueIRI: string }[]
 >([]);
-const splitElement = "-";
 function formatAnnotations() {
-  attributesList.value = props.annotationList
-    .filter(a => a.name?.includes(splitElement))
-    .map(a => {
-      const split = a.name?.split(splitElement, 2) || ["", ""];
-      return {
-        property: split[0],
-        value: split[1],
-        propertyIRI: a.propertyIRI,
-        valueIRI: a.valueIRI,
-      };
-    });
+  attributesList.value = props.annotationList.map(a => {
+    let split: string[];
+    if (a.name?.includes("::")) split = a.name.split("::", 2);
+    else if (a.name?.includes("-")) split = a.name.split("-", 2);
+    else split = a.name ? [a.name, ""] : ["", ""];
+    return {
+      property: split[0],
+      value: split[1],
+      propertyIRI: a.propertyIRI,
+      valueIRI: a.valueIRI,
+    };
+  });
 }
 
 watch(() => {
