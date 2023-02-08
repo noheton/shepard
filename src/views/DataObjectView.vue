@@ -2,18 +2,22 @@
 import DataObjectElement from "@/components/dataobjects/DataObjectElement.vue";
 import DataObjectModal from "@/components/dataobjects/DataObjectModal.vue";
 import RelatedObjectsTable from "@/components/dataobjects/RelatedObjectsTable.vue";
+import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotationModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
+import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
 import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
   DataObject,
   ResponseError,
   Roles,
+  SemanticAnnotation,
 } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
@@ -98,10 +102,46 @@ function updateTitle() {
   });
 }
 
+const dataObjectAnnotationList = ref<SemanticAnnotation[]>([]);
+function getAllDataObjectAnnotations() {
+  SemanticAnnotationService.getAllDataObjectAnnotations({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: +currentDataObjectId.value,
+  })
+    .then(annotationList => {
+      dataObjectAnnotationList.value = annotationList;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "get all semantic data object annotations",
+      );
+    });
+}
+
+function createDataObjectAnnotation(semanticAnnotation: SemanticAnnotation) {
+  SemanticAnnotationService.createDataObjectAnnotation({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: +currentDataObjectId.value,
+    semanticAnnotation: semanticAnnotation,
+  })
+    .then(newAnnotation => {
+      const temp = [...dataObjectAnnotationList.value, newAnnotation];
+      dataObjectAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "creating semantic data object annotation",
+      );
+    });
+}
+
 onMounted(() => {
   retrieveDataObject();
   retrieveRoles();
   updateTitle();
+  getAllDataObjectAnnotations();
 });
 </script>
 
@@ -125,6 +165,15 @@ onMounted(() => {
         >
           <EditIcon />
         </b-button>
+        <b-button
+          v-b-modal.edit-semantic-modal
+          v-b-tooltip.hover
+          title="Edit Semantic Annotation"
+          variant="secondary"
+        >
+          <SemanticIcon />
+        </b-button>
+
         <b-button
           v-b-modal.data-object-delete-confirmation-modal
           v-b-tooltip.hover
@@ -182,6 +231,8 @@ onMounted(() => {
       </b-col>
     </b-row>
 
+    <SemanticBadge :annotation-list="dataObjectAnnotationList" />
+
     <GenericDescription
       v-if="currentDataObject.description"
       :text="currentDataObject.description"
@@ -226,6 +277,13 @@ onMounted(() => {
       modal-id="create-dataObject-modal"
       modal-name="Create Data Object"
     />
+    <SemanticAnnotationModal
+      v-if="currentDataObject.id"
+      modal-id="edit-semantic-modal"
+      modal-name="Add Semantic"
+      @create="createDataObjectAnnotation($event)"
+    />
+
     <DeleteConfirmationModal
       modal-id="data-object-delete-confirmation-modal"
       modal-name="Confirm to delete data object"
@@ -241,7 +299,7 @@ onMounted(() => {
 
 <style scoped>
 .section {
-  margin-top: 30px;
-  margin-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }
 </style>

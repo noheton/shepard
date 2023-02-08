@@ -127,6 +127,7 @@ function getAllCollectionAnnotations() {
       );
     });
 }
+
 function createCollectionAnnotation(semanticAnnotation: SemanticAnnotation) {
   semanticAnnotationService
     .createCollectionAnnotation({
