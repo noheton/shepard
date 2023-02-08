@@ -1,18 +1,22 @@
 <script setup lang="ts">
+import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotationModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
+import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import FilePlottingModal from "@/components/payload/FilePlottingModal.vue";
 import ImageViewerModal from "@/components/payload/ImageViewerModal.vue";
 import TextViewerModal from "@/components/payload/TextViewerModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import FileReferenceService from "@/services/fileReferenceService";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
 import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
 import type {
   FileReference,
   ResponseError,
+  SemanticAnnotation,
   ShepardFile,
 } from "@dlr-shepard/shepard-client";
 import { getCurrentInstance, reactive, ref, watch, type PropType } from "vue";
@@ -64,7 +68,10 @@ function reset() {
 
 watch(
   () => props.fileReference,
-  () => getFiles(),
+  () => {
+    getFiles();
+    getAllFileReferenceAnnotations();
+  },
 );
 
 function getFiles() {
@@ -134,6 +141,66 @@ function handleDelete() {
       handleError(e as ResponseError, "deleting file reference");
     });
 }
+
+const fileReferenceAnnotationList = ref<SemanticAnnotation[]>([]);
+function getAllFileReferenceAnnotations() {
+  if (!props.fileReference?.id) return;
+  SemanticAnnotationService.getAllReferenceAnnotations({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.fileReference.id,
+  })
+    .then(annotationList => {
+      fileReferenceAnnotationList.value = annotationList;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "get all semantic file reference annotations",
+      );
+    });
+}
+function createFileReferenceAnnotation(semanticAnnotation: SemanticAnnotation) {
+  if (!props.fileReference?.id) return;
+  SemanticAnnotationService.createReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.fileReference.id,
+    semanticAnnotation: semanticAnnotation,
+  })
+    .then(newAnnotation => {
+      const temp = [...fileReferenceAnnotationList.value, newAnnotation];
+      fileReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "creating semantic file reference annotation",
+      );
+    });
+}
+
+function deleteFileReferenceAnnotation(semanticAnnotationId: number) {
+  if (!props.fileReference?.id) return;
+  SemanticAnnotationService.deleteReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.fileReference.id,
+    semanticAnnotationId: semanticAnnotationId,
+  })
+    .then(() => {
+      const temp = fileReferenceAnnotationList.value.filter(a => {
+        return a.id != semanticAnnotationId;
+      });
+      fileReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "deleting semantic structured data reference annotation",
+      );
+    });
+}
 </script>
 
 <template>
@@ -143,6 +210,8 @@ function handleDelete() {
     size="lg"
     lazy
     ok-only
+    ok-variant="secondary"
+    ok-title="Close"
     @show="reset()"
     @hidden="emit('hidden')"
   >
@@ -156,15 +225,25 @@ function handleDelete() {
       @error-message-dismissed="downloadState.error = false"
     />
     <div class="mb-4">
-      <b-button
-        v-b-modal.file-reference-delete-confirmation-modal
-        v-b-tooltip.hover
-        class="float-right"
-        title="Delete"
-        variant="info"
-      >
-        <DeleteIcon />
-      </b-button>
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.edit-file-reference-semantic-modal
+          v-b-tooltip.hover
+          title="Edit Semantic Annotation"
+          variant="secondary"
+        >
+          <SemanticIcon />
+        </b-button>
+        <b-button
+          v-b-modal.file-reference-delete-confirmation-modal
+          v-b-tooltip.hover
+          class="float-right"
+          title="Delete"
+          variant="info"
+        >
+          <DeleteIcon />
+        </b-button>
+      </b-button-group>
 
       ID: {{ fileReference?.id }} |
       <span v-if="fileReference?.fileContainerId != -1">
@@ -183,6 +262,9 @@ function handleDelete() {
         :created-at="fileReference?.createdAt"
       />
     </div>
+
+    <SemanticBadge :annotation-list="fileReferenceAnnotationList" />
+
     <b-list-group class="list">
       <b-list-group-item
         v-for="(oid, index) in fileReference?.fileOids"
@@ -292,6 +374,14 @@ function handleDelete() {
       :modal-name="files[currentFileOid]?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
+    />
+    <SemanticAnnotationModal
+      v-if="props.fileReference"
+      modal-id="edit-file-reference-semantic-modal"
+      modal-name="Add Semantic"
+      :annotation-list="fileReferenceAnnotationList"
+      @create="createFileReferenceAnnotation($event)"
+      @delete="deleteFileReferenceAnnotation($event)"
     />
     <DeleteConfirmationModal
       v-if="props.fileReference"

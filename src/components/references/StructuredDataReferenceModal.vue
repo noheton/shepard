@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotationModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
+import SemanticBadge from "@/components/generic/SemanticBadge.vue";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { handleError, logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
 import type {
   ResponseError,
+  SemanticAnnotation,
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
@@ -49,7 +53,10 @@ function reset() {
 
 watch(
   () => props.structuredDataReference,
-  () => getStructuredDataPayload(),
+  () => {
+    getStructuredDataPayload();
+    getAllStructureDataReferenceAnnotations();
+  },
 );
 
 function getStructuredDataPayload() {
@@ -88,6 +95,71 @@ function handleDelete() {
       handleError(e as ResponseError, "deleting structured data reference");
     });
 }
+
+const structuredDataReferenceAnnotationList = ref<SemanticAnnotation[]>([]);
+function getAllStructureDataReferenceAnnotations() {
+  if (!props.structuredDataReference?.id) return;
+  SemanticAnnotationService.getAllReferenceAnnotations({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.structuredDataReference.id,
+  })
+    .then(annotationList => {
+      structuredDataReferenceAnnotationList.value = annotationList;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "get all semantic structured data reference annotations",
+      );
+    });
+}
+function createStructuredDataReferenceAnnotation(
+  semanticAnnotation: SemanticAnnotation,
+) {
+  if (!props.structuredDataReference?.id) return;
+  SemanticAnnotationService.createReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.structuredDataReference.id,
+    semanticAnnotation: semanticAnnotation,
+  })
+    .then(newAnnotation => {
+      const temp = [
+        ...structuredDataReferenceAnnotationList.value,
+        newAnnotation,
+      ];
+      structuredDataReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "creating semantic structured data reference annotation",
+      );
+    });
+}
+
+function deleteStructuredDataReferenceAnnotation(semanticAnnotationId: number) {
+  if (!props.structuredDataReference?.id) return;
+  SemanticAnnotationService.deleteReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.structuredDataReference.id,
+    semanticAnnotationId: semanticAnnotationId,
+  })
+    .then(() => {
+      const temp = structuredDataReferenceAnnotationList.value.filter(a => {
+        return a.id != semanticAnnotationId;
+      });
+      structuredDataReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "deleting semantic structured data reference annotation",
+      );
+    });
+}
 </script>
 
 <template>
@@ -97,19 +169,31 @@ function handleDelete() {
     size="lg"
     lazy
     ok-only
+    ok-variant="secondary"
+    ok-title="Close"
     @show="reset()"
     @hidden="emit('hidden')"
   >
     <div class="mb-4">
-      <b-button
-        v-b-modal.structured-data-reference-delete-confirmation-modal
-        v-b-tooltip.hover
-        class="float-right"
-        title="Delete"
-        variant="info"
-      >
-        <DeleteIcon />
-      </b-button>
+      <b-button-group class="float-right">
+        <b-button
+          v-b-modal.edit-structured-data-reference-semantic-modal
+          v-b-tooltip.hover
+          title="Edit Semantic Annotation"
+          variant="secondary"
+        >
+          <SemanticIcon />
+        </b-button>
+        <b-button
+          v-b-modal.structured-data-reference-delete-confirmation-modal
+          v-b-tooltip.hover
+          class="float-right"
+          title="Delete"
+          variant="info"
+        >
+          <DeleteIcon />
+        </b-button>
+      </b-button-group>
 
       ID: {{ structuredDataReference?.id }} |
       <span v-if="structuredDataReference?.structuredDataContainerId != -1">
@@ -130,6 +214,9 @@ function handleDelete() {
         :created-at="structuredDataReference?.createdAt"
       />
     </div>
+
+    <SemanticBadge :annotation-list="structuredDataReferenceAnnotationList" />
+
     <b-list-group class="list">
       <b-list-group-item
         v-for="(oid, index) in structuredDataReference?.structuredDataOids"
@@ -198,6 +285,16 @@ function handleDelete() {
       :container-id="structuredDataReference.structuredDataContainerId"
       :oid="currentStructuredDataOid"
     />
+
+    <SemanticAnnotationModal
+      v-if="props.structuredDataReference"
+      modal-id="edit-structured-data-reference-semantic-modal"
+      modal-name="Add Semantic"
+      :annotation-list="structuredDataReferenceAnnotationList"
+      @create="createStructuredDataReferenceAnnotation($event)"
+      @delete="deleteStructuredDataReferenceAnnotation($event)"
+    />
+
     <DeleteConfirmationModal
       v-if="props.structuredDataReference"
       modal-id="structured-data-reference-delete-confirmation-modal"

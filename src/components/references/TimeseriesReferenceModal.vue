@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotationModal.vue";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import TimeseriesPlottingModal from "@/components/payload/TimeseriesPlottingModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
 import type {
   ResponseError,
+  SemanticAnnotation,
   TimeseriesPayload,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
@@ -59,7 +63,10 @@ function reset() {
 
 watch(
   () => props.timeseriesReference,
-  () => fetchTimeseriesPayload(),
+  () => {
+    fetchTimeseriesPayload();
+    getAllTimeseriesReferenceAnnotations();
+  },
 );
 
 function fetchTimeseriesPayload() {
@@ -120,6 +127,68 @@ function handleDelete() {
       handleError(e as ResponseError, "deleting timeseries reference");
     });
 }
+
+const timeseriesReferenceAnnotationList = ref<SemanticAnnotation[]>([]);
+function getAllTimeseriesReferenceAnnotations() {
+  if (!props.timeseriesReference?.id) return;
+  SemanticAnnotationService.getAllReferenceAnnotations({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.timeseriesReference.id,
+  })
+    .then(annotationList => {
+      timeseriesReferenceAnnotationList.value = annotationList;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "get all semantic timeseries reference annotations",
+      );
+    });
+}
+function createTimeseriesReferenceAnnotation(
+  semanticAnnotation: SemanticAnnotation,
+) {
+  if (!props.timeseriesReference?.id) return;
+  SemanticAnnotationService.createReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.timeseriesReference.id,
+    semanticAnnotation: semanticAnnotation,
+  })
+    .then(newAnnotation => {
+      const temp = [...timeseriesReferenceAnnotationList.value, newAnnotation];
+      timeseriesReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "creating semantic timeseries reference annotation",
+      );
+    });
+}
+
+function deleteTimeseriesReferenceAnnotation(semanticAnnotationId: number) {
+  if (!props.timeseriesReference?.id) return;
+  SemanticAnnotationService.deleteReferenceAnnotation({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    referenceId: +props.timeseriesReference.id,
+    semanticAnnotationId: semanticAnnotationId,
+  })
+    .then(() => {
+      const temp = timeseriesReferenceAnnotationList.value.filter(a => {
+        return a.id != semanticAnnotationId;
+      });
+      timeseriesReferenceAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "deleting semantic timeseries reference annotation",
+      );
+    });
+}
 </script>
 
 <template>
@@ -129,6 +198,8 @@ function handleDelete() {
     size="lg"
     lazy
     ok-only
+    ok-variant="secondary"
+    ok-title="Close"
     @show="reset()"
     @hidden="emit('hidden')"
   >
@@ -180,6 +251,14 @@ function handleDelete() {
           <DownloadIcon />
         </b-button>
         <b-button
+          v-b-modal.edit-timeseries-reference-semantic-modal
+          v-b-tooltip.hover
+          title="Edit Semantic Annotation"
+          variant="secondary"
+        >
+          <SemanticIcon />
+        </b-button>
+        <b-button
           v-b-modal.timeseries-reference-delete-confirmation-modal
           v-b-tooltip.hover
           title="Delete"
@@ -216,8 +295,9 @@ function handleDelete() {
         {{ convertDate(new Date(props.timeseriesReference.start / 1e6)) }}
       </small>
 
+      <SemanticBadge :annotation-list="timeseriesReferenceAnnotationList" />
+
       <b-table
-        class="mt-4"
         striped
         hover
         small
@@ -232,6 +312,15 @@ function handleDelete() {
       :modal-name="props.timeseriesReference.name || undefined"
       :timeseries-payload-list="currentTimeseriesPayload"
       :timeseries-start-time="props.timeseriesReference.start"
+    />
+
+    <SemanticAnnotationModal
+      v-if="props.timeseriesReference"
+      modal-id="edit-timeseries-reference-semantic-modal"
+      modal-name="Add Semantic"
+      :annotation-list="timeseriesReferenceAnnotationList"
+      @create="createTimeseriesReferenceAnnotation($event)"
+      @delete="deleteTimeseriesReferenceAnnotation($event)"
     />
 
     <DeleteConfirmationModal

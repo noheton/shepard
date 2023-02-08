@@ -33,7 +33,7 @@ watch(() => {
 </script>
 
 <template>
-  <div>
+  <div class="mt-3 mb-3">
     <div v-for="(attribute, i) in attributesList" :key="i">
       <small>
         <b-badge class="p-0 mb-3 mr-1 float-left">
