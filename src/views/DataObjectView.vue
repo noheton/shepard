@@ -136,6 +136,25 @@ function createDataObjectAnnotation(semanticAnnotation: SemanticAnnotation) {
       );
     });
 }
+function deleteDataObjectAnnotation(semanticAnnotationId: number) {
+  SemanticAnnotationService.deleteDataObjectAnnotation({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: +currentDataObjectId.value,
+    semanticAnnotationId: semanticAnnotationId,
+  })
+    .then(() => {
+      const temp = dataObjectAnnotationList.value.filter(a => {
+        return a.id != semanticAnnotationId;
+      });
+      dataObjectAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "deleting semantic data object annotation",
+      );
+    });
+}
 
 onMounted(() => {
   retrieveDataObject();
@@ -280,8 +299,9 @@ onMounted(() => {
     <SemanticAnnotationModal
       v-if="currentDataObject.id"
       modal-id="edit-semantic-modal"
-      modal-name="Add Semantic"
+      :annotation-list="dataObjectAnnotationList"
       @create="createDataObjectAnnotation($event)"
+      @delete="deleteDataObjectAnnotation($event)"
     />
 
     <DeleteConfirmationModal

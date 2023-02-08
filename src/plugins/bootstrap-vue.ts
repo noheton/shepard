@@ -24,6 +24,7 @@ import BootstrapVue, {
   BIconTrash,
   BIconUnlockFill,
   BIconXCircle,
+  BIconXLg,
 } from "bootstrap-vue";
 import Vue from "vue";
 import "../assets/custom.scss";
@@ -49,6 +50,7 @@ Vue.component("PermissionsIcon", BIconPersonLinesFill);
 Vue.component("DownloadIcon", BIconDownload);
 Vue.component("CopyIcon", BIconFiles);
 Vue.component("EyeIcon", BIconEye);
+Vue.component("XIcon", BIconXLg);
 
 Vue.component("UserIcon", BIconPerson);
 Vue.component("UserGroupIcon", BIconPersonPlus);

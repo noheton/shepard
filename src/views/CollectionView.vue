@@ -145,6 +145,24 @@ function createCollectionAnnotation(semanticAnnotation: SemanticAnnotation) {
       );
     });
 }
+function deleteCollectionAnnotation(semanticAnnotationId: number) {
+  SemanticAnnotationService.deleteCollectionAnnotation({
+    collectionId: +currentCollectionId.value,
+    semanticAnnotationId: semanticAnnotationId,
+  })
+    .then(() => {
+      const temp = collectionAnnotationList.value.filter(a => {
+        return a.id != semanticAnnotationId;
+      });
+      collectionAnnotationList.value = temp;
+    })
+    .catch(e => {
+      handleError(
+        e as ResponseError,
+        "deleting semantic collection annotation",
+      );
+    });
+}
 
 onMounted(() => {
   retrieveCollection();
@@ -258,8 +276,9 @@ onMounted(() => {
     <SemanticAnnotationModal
       v-if="currentCollection.id"
       modal-id="edit-semantic-modal"
-      modal-name="Add Semantic"
+      :annotation-list="collectionAnnotationList"
       @create="createCollectionAnnotation($event)"
+      @delete="deleteCollectionAnnotation($event)"
     />
     <DeleteConfirmationModal
       modal-id="delete-confirmation-modal"
