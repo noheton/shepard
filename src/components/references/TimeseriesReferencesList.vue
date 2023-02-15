@@ -2,21 +2,17 @@
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
+import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
+import BasicReferenceModal_Timeseries from "@/components/references/BasicReferenceModal_Timeseries.vue";
 import CreateTimeseriesReferenceModal from "@/components/references/CreateTimeseriesReferenceModal.vue";
-import TimeseriesReferenceModal from "@/components/references/TimeseriesReferenceModal.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { handleError } from "@/utils/error-handling";
-import {
-  convertDate,
-  getQueryParam,
-  removeQueryParam,
-  setQueryParam,
-} from "@/utils/helpers";
+import { convertDate, getQueryParam } from "@/utils/helpers";
 import type {
   ResponseError,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref, watch } from "vue";
+import { getCurrentInstance, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -39,10 +35,6 @@ const currentTimeseriesReference = ref<TimeseriesReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
 
-watch(currentTimeseriesReference, to => {
-  setQueryParam("referenceId", String(to?.id));
-});
-
 function retrieveReferences() {
   TimeseriesReferenceService.getAllTimeseriesReferences({
     collectionId: props.currentCollectionId,
@@ -64,7 +56,7 @@ function retrieveReferences() {
     });
 }
 
-function create(timeseriesReference: TimeseriesReference) {
+function createReference(timeseriesReference: TimeseriesReference) {
   TimeseriesReferenceService.createTimeseriesReference({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -72,7 +64,8 @@ function create(timeseriesReference: TimeseriesReference) {
   })
     .then(response => {
       createdAlert.value = true;
-      timeseriesList.value = [response].concat(timeseriesList.value || []);
+      const temp = timeseriesList.value || [];
+      timeseriesList.value = [...temp, response];
       emit("reference-count-changed", timeseriesList.value.length);
     })
     .catch(e => {
@@ -80,9 +73,24 @@ function create(timeseriesReference: TimeseriesReference) {
     });
 }
 
-function handleReferenceDelete() {
-  deletedAlert.value = true;
-  retrieveReferences();
+function deleteReference() {
+  if (!currentTimeseriesReference.value?.id) return;
+  TimeseriesReferenceService.deleteTimeseriesReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    timeseriesReferenceId: currentTimeseriesReference.value.id,
+  })
+    .then(() => {
+      const temp = timeseriesList.value || [];
+      timeseriesList.value = temp.filter(e => {
+        return e.id != currentTimeseriesReference.value?.id;
+      });
+      emit("reference-count-changed", timeseriesList.value.length);
+      deletedAlert.value = true;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting timeseries reference");
+    });
 }
 
 onMounted(() => {
@@ -116,7 +124,7 @@ onMounted(() => {
     <CreateTimeseriesReferenceModal
       modal-id="create-time-ref-modal"
       modal-name="Create Time Reference"
-      @create="create($event)"
+      @create="createReference($event)"
     />
 
     <div v-if="timeseriesList == undefined"><Loading /></div>
@@ -157,14 +165,20 @@ onMounted(() => {
       </b-list-group-item>
     </b-list-group>
 
-    <TimeseriesReferenceModal
+    <BasicReferenceModal
       modal-id="view-timeseries-modal"
       :modal-name="currentTimeseriesReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
-      :timeseries-reference="currentTimeseriesReference"
-      @reference-deleted="handleReferenceDelete()"
-      @hidden="removeQueryParam('referenceId')"
-    />
+      :reference="currentTimeseriesReference"
+      @delete-reference="deleteReference()"
+    >
+      <BasicReferenceModal_Timeseries
+        v-if="currentTimeseriesReference"
+        :current-collection-id="currentCollectionId"
+        :current-data-object-id="currentDataObjectId"
+        :timeseries-reference="currentTimeseriesReference"
+      />
+    </BasicReferenceModal>
   </div>
 </template>

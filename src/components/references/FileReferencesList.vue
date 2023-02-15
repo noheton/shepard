@@ -2,17 +2,14 @@
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
+import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
+import BasicReferenceModal_File from "@/components/references/BasicReferenceModal_File.vue";
 import CreateFileReferenceModal from "@/components/references/CreateFileReferenceModal.vue";
-import FileReferenceModal from "@/components/references/FileReferenceModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
-import {
-  getQueryParam,
-  removeQueryParam,
-  setQueryParam,
-} from "@/utils/helpers";
+import { getQueryParam } from "@/utils/helpers";
 import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref, watch } from "vue";
+import { getCurrentInstance, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -33,10 +30,6 @@ const fileReferenceList = ref<FileReference[]>();
 const currentFileReference = ref<FileReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
-
-watch(currentFileReference, to => {
-  setQueryParam("referenceId", String(to?.id));
-});
 
 function retrieveReferences() {
   FileReferenceService.getAllFileReferences({
@@ -59,7 +52,7 @@ function retrieveReferences() {
     });
 }
 
-function create(newReference: FileReference) {
+function createReference(newReference: FileReference) {
   FileReferenceService.createFileReference({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -67,20 +60,33 @@ function create(newReference: FileReference) {
   })
     .then(response => {
       createdAlert.value = true;
-      fileReferenceList.value = [response].concat(
-        fileReferenceList.value || [],
-      );
+      const temp = fileReferenceList.value || [];
+      fileReferenceList.value = [...temp, response];
       emit("reference-count-changed", fileReferenceList.value.length);
-      if (response.id) retrieveReferences();
     })
     .catch(e => {
       handleError(e as ResponseError, "creating file reference");
     });
 }
 
-function handleReferenceDelete() {
-  deletedAlert.value = true;
-  retrieveReferences();
+function deleteReference() {
+  if (!currentFileReference.value?.id) return;
+  FileReferenceService.deleteFileReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    fileReferenceId: currentFileReference.value.id,
+  })
+    .then(() => {
+      const temp = fileReferenceList.value || [];
+      fileReferenceList.value = temp.filter(e => {
+        return e.id != currentFileReference.value?.id;
+      });
+      emit("reference-count-changed", fileReferenceList.value.length);
+      deletedAlert.value = true;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting file reference");
+    });
 }
 
 onMounted(() => {
@@ -113,7 +119,7 @@ onMounted(() => {
     <CreateFileReferenceModal
       modal-id="create-file-ref-modal"
       modal-name="Create File Reference"
-      @create="create($event)"
+      @create="createReference($event)"
     />
 
     <div v-if="fileReferenceList == undefined"><Loading /></div>
@@ -155,14 +161,20 @@ onMounted(() => {
       </b-list-group-item>
     </b-list-group>
 
-    <FileReferenceModal
+    <BasicReferenceModal
       modal-id="view-file-modal"
       :modal-name="currentFileReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
-      :file-reference="currentFileReference"
-      @reference-deleted="handleReferenceDelete()"
-      @hidden="removeQueryParam('referenceId')"
-    />
+      :reference="currentFileReference"
+      @delete-reference="deleteReference()"
+    >
+      <BasicReferenceModal_File
+        v-if="currentFileReference"
+        :current-collection-id="currentCollectionId"
+        :current-data-object-id="currentDataObjectId"
+        :file-reference="currentFileReference"
+      />
+    </BasicReferenceModal>
   </div>
 </template>

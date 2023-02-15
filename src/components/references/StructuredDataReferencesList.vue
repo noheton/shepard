@@ -2,20 +2,17 @@
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
+import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
+import BasicReferenceModal_StructuredData from "@/components/references/BasicReferenceModal_StructuredData.vue";
 import CreateStructuredDataReferenceModal from "@/components/references/CreateStructuredDataReferenceModal.vue";
-import StructuredDataReferenceModal from "@/components/references/StructuredDataReferenceModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { handleError } from "@/utils/error-handling";
-import {
-  getQueryParam,
-  removeQueryParam,
-  setQueryParam,
-} from "@/utils/helpers";
+import { getQueryParam } from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref, watch } from "vue";
+import { getCurrentInstance, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -36,10 +33,6 @@ const structuredDataList = ref<StructuredDataReference[]>();
 const currentStructuredDataReference = ref<StructuredDataReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
-
-watch(currentStructuredDataReference, to => {
-  setQueryParam("referenceId", String(to?.id));
-});
 
 function retrieveReferences() {
   StructuredDataReferenceService.getAllStructuredDataReferences({
@@ -64,7 +57,7 @@ function retrieveReferences() {
     });
 }
 
-function create(newReference: StructuredDataReference) {
+function createReference(newReference: StructuredDataReference) {
   StructuredDataReferenceService.createStructuredDataReference({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
@@ -72,9 +65,8 @@ function create(newReference: StructuredDataReference) {
   })
     .then(response => {
       createdAlert.value = true;
-      structuredDataList.value = [response].concat(
-        structuredDataList.value || [],
-      );
+      const temp = structuredDataList.value || [];
+      structuredDataList.value = [...temp, response];
       emit("reference-count-changed", structuredDataList.value.length);
     })
     .catch(e => {
@@ -82,9 +74,24 @@ function create(newReference: StructuredDataReference) {
     });
 }
 
-function handleReferenceDelete() {
-  deletedAlert.value = true;
-  retrieveReferences();
+function deleteReference() {
+  if (!currentStructuredDataReference.value?.id) return;
+  StructuredDataReferenceService.deleteStructuredDataReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    structureddataReferenceId: currentStructuredDataReference.value.id,
+  })
+    .then(() => {
+      const temp = structuredDataList.value || [];
+      structuredDataList.value = temp.filter(e => {
+        return e.id != currentStructuredDataReference.value?.id;
+      });
+      emit("reference-count-changed", structuredDataList.value.length);
+      deletedAlert.value = true;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting structured data reference");
+    });
 }
 
 onMounted(() => {
@@ -122,7 +129,7 @@ onMounted(() => {
     <CreateStructuredDataReferenceModal
       modal-id="create-structured-data-ref-modal"
       modal-name="Create StructuredData Reference"
-      @create="create($event)"
+      @create="createReference($event)"
     />
 
     <div v-if="structuredDataList == undefined"><Loading /></div>
@@ -159,14 +166,20 @@ onMounted(() => {
       </b-list-group-item>
     </b-list-group>
 
-    <StructuredDataReferenceModal
+    <BasicReferenceModal
       modal-id="view-structured-data-modal"
       :modal-name="currentStructuredDataReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
-      :structured-data-reference="currentStructuredDataReference"
-      @reference-deleted="handleReferenceDelete()"
-      @hidden="removeQueryParam('referenceId')"
-    />
+      :reference="currentStructuredDataReference"
+      @delete-reference="deleteReference()"
+    >
+      <BasicReferenceModal_StructuredData
+        v-if="currentStructuredDataReference"
+        :current-collection-id="currentCollectionId"
+        :current-data-object-id="currentDataObjectId"
+        :structured-data-reference="currentStructuredDataReference"
+      />
+    </BasicReferenceModal>
   </div>
 </template>

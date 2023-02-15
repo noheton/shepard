@@ -40,6 +40,8 @@ watch(
 );
 
 const activeId = ref();
+const tabId = getQueryParam("tabId");
+if (tabId) activeId.value = Number(tabId);
 watch(activeId, to => {
   setQueryParam("tabId", String(to));
 });
@@ -81,9 +83,6 @@ function retrieveReferences() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching all references");
-    })
-    .finally(() => {
-      activeId.value = Number(getQueryParam("tabId"));
     });
 }
 
