@@ -11,7 +11,7 @@ import type {
   ResponseError,
   SemanticAnnotation,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, ref, watch, type PropType } from "vue";
+import { getCurrentInstance, onMounted, ref, type PropType } from "vue";
 
 const props = defineProps({
   modalId: {
@@ -32,7 +32,7 @@ const props = defineProps({
   },
   reference: {
     type: Object as PropType<BasicReference>,
-    default: undefined,
+    required: true,
   },
 });
 
@@ -40,14 +40,7 @@ const vm = getCurrentInstance();
 
 const emit = defineEmits(["delete-reference"]);
 
-watch(
-  () => props.reference,
-  () => {
-    getAllReferenceAnnotations();
-  },
-);
-
-const referenceAnnotationList = ref<SemanticAnnotation[]>([]);
+const referenceAnnotationList = ref<SemanticAnnotation[]>();
 function getAllReferenceAnnotations() {
   if (!props.reference?.id) return;
   SemanticAnnotationService.getAllReferenceAnnotations({
@@ -72,7 +65,7 @@ function createReferenceAnnotation(semanticAnnotation: SemanticAnnotation) {
     semanticAnnotation: semanticAnnotation,
   })
     .then(newAnnotation => {
-      const temp = [...referenceAnnotationList.value, newAnnotation];
+      const temp = [...(referenceAnnotationList.value || []), newAnnotation];
       referenceAnnotationList.value = temp;
     })
     .catch(e => {
@@ -89,6 +82,7 @@ function deleteReferenceAnnotation(semanticAnnotationId: number) {
     semanticAnnotationId: semanticAnnotationId,
   })
     .then(() => {
+      if (!referenceAnnotationList.value) return;
       const temp = referenceAnnotationList.value.filter(a => {
         return a.id != semanticAnnotationId;
       });
@@ -103,6 +97,10 @@ function handleDelete() {
   emit("delete-reference");
   vm?.proxy.$bvModal.hide(props.modalId);
 }
+
+onMounted(() => {
+  getAllReferenceAnnotations();
+});
 </script>
 
 <template>
@@ -145,7 +143,10 @@ function handleDelete() {
       />
     </div>
 
-    <SemanticBadge :annotation-list="referenceAnnotationList" />
+    <SemanticBadge
+      v-if="referenceAnnotationList"
+      :annotation-list="referenceAnnotationList"
+    />
     <slot></slot>
 
     <SemanticAnnotationModal

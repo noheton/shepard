@@ -1,3 +1,98 @@
+<script setup lang="ts">
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import Loading from "@/components/generic/Loading.vue";
+import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
+import BasicReferenceModal_URI from "@/components/references/BasicReferenceModal_URI.vue";
+import CreateUriReferenceModal from "@/components/references/CreateUriReferenceModal.vue";
+import UriReferenceService from "@/services/uriReferenceService";
+import { handleError } from "@/utils/error-handling";
+import { getQueryParam } from "@/utils/helpers";
+import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
+import { getCurrentInstance, onMounted, ref } from "vue";
+
+const props = defineProps({
+  currentCollectionId: {
+    type: Number,
+    required: true,
+  },
+  currentDataObjectId: {
+    type: Number,
+    required: true,
+  },
+});
+
+const vm = getCurrentInstance();
+
+const emit = defineEmits(["reference-count-changed"]);
+
+const uriList = ref<URIReference[]>();
+const currentUriReference = ref<URIReference>();
+const createdAlert = ref(false);
+const deletedAlert = ref(false);
+
+function retrieveReferences() {
+  UriReferenceService.getAllUriReferences({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+  })
+    .then(response => {
+      uriList.value = response;
+      emit("reference-count-changed", uriList.value.length);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching URI references");
+    })
+    .finally(() => {
+      currentUriReference.value = uriList.value?.find(e => {
+        return e.id === Number(getQueryParam("referenceId"));
+      });
+      if (currentUriReference.value) vm?.proxy.$bvModal.show("view-uri-modal");
+    });
+}
+
+function createReference(newReference: URIReference) {
+  UriReferenceService.createUriReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    uRIReference: newReference,
+  })
+    .then(response => {
+      createdAlert.value = true;
+      const temp = uriList.value || [];
+      uriList.value = [...temp, response];
+      emit("reference-count-changed", uriList.value.length);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating URI reference");
+    });
+}
+
+function deleteReference() {
+  if (!currentUriReference.value?.id) return;
+  UriReferenceService.deleteUriReference({
+    collectionId: props.currentCollectionId,
+    dataObjectId: props.currentDataObjectId,
+    uriReferenceId: currentUriReference.value.id,
+  })
+    .then(() => {
+      const temp = uriList.value || [];
+      uriList.value = temp.filter(e => {
+        return e.id != currentUriReference.value?.id;
+      });
+      emit("reference-count-changed", uriList.value.length);
+      deletedAlert.value = true;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting URI reference");
+    });
+}
+
+onMounted(() => {
+  retrieveReferences();
+});
+</script>
+
 <template>
   <div>
     <b-alert
@@ -24,145 +119,40 @@
     <CreateUriReferenceModal
       modal-id="create-uri-ref-modal"
       modal-name="Create URI Reference"
-      @create="create($event)"
+      @create="createReference($event)"
     />
 
     <div v-if="uriList == undefined"><Loading /></div>
     <b-list-group v-else>
-      <b-list-group-item v-for="(uriItem, index) in uriList" :key="index">
+      <b-list-group-item
+        v-for="(uriItem, index) in uriList"
+        :key="index"
+        v-b-modal.view-uri-modal
+        button
+        @click="currentUriReference = uriItem"
+      >
         <div>
           <b><GenericName :name="uriItem.name || ''" /></b> | ID:
           {{ uriItem.id }}
-          <b-button
-            v-b-modal.uri-reference-delete-confirmation-modal
-            v-b-tooltip.hover
-            class="float-right"
-            title="Delete"
-            variant="info"
-            @click="currentUriReference = uriItem"
-          >
-            <DeleteIcon />
-          </b-button>
         </div>
         <CreatedByLine
           :created-by="uriItem.createdBy"
           :created-at="uriItem.createdAt"
         />
-        <b-link :href="uriItem.uri">{{ uriItem.uri }}</b-link>
+        <b-link :href="uriItem.uri" target="_blank">{{ uriItem.uri }}</b-link>
       </b-list-group-item>
     </b-list-group>
 
-    <DeleteConfirmationModal
+    <BasicReferenceModal
       v-if="currentUriReference"
-      modal-id="uri-reference-delete-confirmation-modal"
-      modal-name="Confirm to delete URI Reference"
-      :modal-text="
-        'Do you really want do delete the URI Reference with name ' +
-        currentUriReference.name +
-        '?'
-      "
-      @confirmation="handleDelete()"
-    />
+      modal-id="view-uri-modal"
+      :modal-name="currentUriReference?.name || undefined"
+      :current-collection-id="currentCollectionId"
+      :current-data-object-id="currentDataObjectId"
+      :reference="currentUriReference"
+      @delete-reference="deleteReference()"
+    >
+      <BasicReferenceModal_URI :uri-reference="currentUriReference" />
+    </BasicReferenceModal>
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import Loading from "@/components/generic/Loading.vue";
-import CreateUriReferenceModal from "@/components/references/CreateUriReferenceModal.vue";
-import UriReferenceService from "@/services/uriReferenceService";
-import { handleError } from "@/utils/error-handling";
-import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface URIListData {
-  uriList?: URIReference[];
-  currentUriReference?: URIReference;
-  createdAlert: boolean;
-  deletedAlert: boolean;
-}
-
-export default defineComponent({
-  components: {
-    CreatedByLine,
-    CreateUriReferenceModal,
-    DeleteConfirmationModal,
-    GenericName,
-    Loading,
-  },
-  props: {
-    currentCollectionId: {
-      type: Number,
-      required: true,
-    },
-    currentDataObjectId: {
-      type: Number,
-      required: true,
-    },
-  },
-
-  emits: ["reference-count-changed"],
-
-  data() {
-    return {
-      uriList: undefined,
-      currentUriReference: undefined,
-      createdAlert: false,
-      deletedAlert: false,
-    } as URIListData;
-  },
-  mounted() {
-    this.retrieveReferences();
-  },
-
-  methods: {
-    retrieveReferences() {
-      UriReferenceService.getAllUriReferences({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-      })
-        .then(response => {
-          this.uriList = response;
-          this.$emit("reference-count-changed", this.uriList.length);
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching URI references");
-        });
-    },
-
-    create(newReference: URIReference) {
-      UriReferenceService.createUriReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        uRIReference: newReference,
-      })
-        .then(response => {
-          this.createdAlert = true;
-          this.uriList = [response].concat(this.uriList || []);
-          this.$emit("reference-count-changed", this.uriList.length);
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating URI reference");
-        });
-    },
-
-    handleDelete() {
-      if (!this.currentUriReference?.id) return;
-      UriReferenceService.deleteUriReference({
-        collectionId: this.currentCollectionId,
-        dataObjectId: this.currentDataObjectId,
-        uriReferenceId: this.currentUriReference.id,
-      })
-        .then(() => {
-          this.deletedAlert = true;
-          this.retrieveReferences();
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting URI reference");
-        });
-    },
-  },
-});
-</script>

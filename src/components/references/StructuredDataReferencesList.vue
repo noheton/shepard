@@ -167,6 +167,7 @@ onMounted(() => {
     </b-list-group>
 
     <BasicReferenceModal
+      v-if="currentStructuredDataReference"
       modal-id="view-structured-data-modal"
       :modal-name="currentStructuredDataReference?.name || undefined"
       :current-collection-id="currentCollectionId"
@@ -175,7 +176,6 @@ onMounted(() => {
       @delete-reference="deleteReference()"
     >
       <BasicReferenceModal_StructuredData
-        v-if="currentStructuredDataReference"
         :current-collection-id="currentCollectionId"
         :current-data-object-id="currentDataObjectId"
         :structured-data-reference="currentStructuredDataReference"

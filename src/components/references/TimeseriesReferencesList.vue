@@ -166,6 +166,7 @@ onMounted(() => {
     </b-list-group>
 
     <BasicReferenceModal
+      v-if="currentTimeseriesReference"
       modal-id="view-timeseries-modal"
       :modal-name="currentTimeseriesReference?.name || undefined"
       :current-collection-id="currentCollectionId"
@@ -174,7 +175,6 @@ onMounted(() => {
       @delete-reference="deleteReference()"
     >
       <BasicReferenceModal_Timeseries
-        v-if="currentTimeseriesReference"
         :current-collection-id="currentCollectionId"
         :current-data-object-id="currentDataObjectId"
         :timeseries-reference="currentTimeseriesReference"

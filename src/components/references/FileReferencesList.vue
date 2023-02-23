@@ -162,6 +162,7 @@ onMounted(() => {
     </b-list-group>
 
     <BasicReferenceModal
+      v-if="currentFileReference"
       modal-id="view-file-modal"
       :modal-name="currentFileReference?.name || undefined"
       :current-collection-id="currentCollectionId"
@@ -170,7 +171,6 @@ onMounted(() => {
       @delete-reference="deleteReference()"
     >
       <BasicReferenceModal_File
-        v-if="currentFileReference"
         :current-collection-id="currentCollectionId"
         :current-data-object-id="currentDataObjectId"
         :file-reference="currentFileReference"

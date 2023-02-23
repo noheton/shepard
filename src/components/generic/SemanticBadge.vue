@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SemanticAnnotation } from "@dlr-shepard/shepard-client";
-import { ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 
 const props = defineProps({
   annotationList: {
@@ -27,9 +27,9 @@ function formatAnnotations() {
   });
 }
 
-watch(() => {
-  return props.annotationList;
-}, formatAnnotations);
+onMounted(() => {
+  formatAnnotations();
+});
 </script>
 
 <template>
