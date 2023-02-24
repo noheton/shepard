@@ -102,7 +102,7 @@ function updateTitle() {
   });
 }
 
-const dataObjectAnnotationList = ref<SemanticAnnotation[]>([]);
+const dataObjectAnnotationList = ref<SemanticAnnotation[]>();
 function getAllDataObjectAnnotations() {
   SemanticAnnotationService.getAllDataObjectAnnotations({
     collectionId: +currentCollectionId.value,
@@ -126,7 +126,7 @@ function createDataObjectAnnotation(semanticAnnotation: SemanticAnnotation) {
     semanticAnnotation: semanticAnnotation,
   })
     .then(newAnnotation => {
-      const temp = [...dataObjectAnnotationList.value, newAnnotation];
+      const temp = [...(dataObjectAnnotationList.value || []), newAnnotation];
       dataObjectAnnotationList.value = temp;
     })
     .catch(e => {
@@ -143,6 +143,7 @@ function deleteDataObjectAnnotation(semanticAnnotationId: number) {
     semanticAnnotationId: semanticAnnotationId,
   })
     .then(() => {
+      if (!dataObjectAnnotationList.value) return;
       const temp = dataObjectAnnotationList.value.filter(a => {
         return a.id != semanticAnnotationId;
       });
@@ -250,7 +251,10 @@ onMounted(() => {
       </b-col>
     </b-row>
 
-    <SemanticBadge :annotation-list="dataObjectAnnotationList" />
+    <SemanticBadge
+      v-if="dataObjectAnnotationList"
+      :annotation-list="dataObjectAnnotationList"
+    />
 
     <GenericDescription
       v-if="currentDataObject.description"

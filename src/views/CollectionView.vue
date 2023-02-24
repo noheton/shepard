@@ -112,7 +112,7 @@ function updateTitle() {
   });
 }
 
-const collectionAnnotationList = ref<SemanticAnnotation[]>([]);
+const collectionAnnotationList = ref<SemanticAnnotation[]>();
 function getAllCollectionAnnotations() {
   SemanticAnnotationService.getAllCollectionAnnotations({
     collectionId: +currentCollectionId.value,
@@ -135,7 +135,7 @@ function createCollectionAnnotation(semanticAnnotation: SemanticAnnotation) {
       semanticAnnotation: semanticAnnotation,
     })
     .then(newAnnotation => {
-      const temp = [...collectionAnnotationList.value, newAnnotation];
+      const temp = [...(collectionAnnotationList.value || []), newAnnotation];
       collectionAnnotationList.value = temp;
     })
     .catch(e => {
@@ -151,6 +151,7 @@ function deleteCollectionAnnotation(semanticAnnotationId: number) {
     semanticAnnotationId: semanticAnnotationId,
   })
     .then(() => {
+      if (!collectionAnnotationList.value) return;
       const temp = collectionAnnotationList.value.filter(a => {
         return a.id != semanticAnnotationId;
       });
@@ -240,7 +241,10 @@ onMounted(() => {
       />
     </div>
 
-    <SemanticBadge :annotation-list="collectionAnnotationList" />
+    <SemanticBadge
+      v-if="collectionAnnotationList"
+      :annotation-list="collectionAnnotationList"
+    />
 
     <GenericDescription
       v-if="currentCollection.description"
