@@ -1,3 +1,67 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
+import SubscriptionService from "@/services/subscriptionService";
+import { handleError } from "@/utils/error-handling";
+import type { ResponseError, Subscription } from "@dlr-shepard/shepard-client";
+import { onMounted, ref } from "vue";
+
+const props = defineProps({
+  currentUsername: {
+    type: String,
+    required: true,
+  },
+});
+
+const subscriptions = ref<Subscription[]>([]);
+const currentSubscription = ref<Subscription>();
+
+function retrieveSubscriptions() {
+  if (!props.currentUsername) return;
+  SubscriptionService.getAllSubscriptions({
+    username: props.currentUsername,
+  })
+    .then(response => {
+      subscriptions.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching subscriptions");
+    });
+}
+
+function handleCreate(subscription: Subscription) {
+  SubscriptionService.createSubscription({
+    username: props.currentUsername,
+    subscription: subscription,
+  })
+    .then(response => {
+      subscriptions.value.push(response);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating subscription");
+    });
+}
+
+function handleDelete() {
+  if (!currentSubscription.value?.id) return;
+  SubscriptionService.deleteSubscription({
+    username: props.currentUsername,
+    subscriptionId: currentSubscription.value.id,
+  })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting subscription");
+    })
+    .finally(() => {
+      currentSubscription.value = undefined;
+      retrieveSubscriptions();
+    });
+}
+onMounted(() => {
+  retrieveSubscriptions();
+});
+</script>
+
 <template>
   <div>
     <b-container>
@@ -50,83 +114,3 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
-import SubscriptionService from "@/services/subscriptionService";
-import { handleError } from "@/utils/error-handling";
-import {
-  ResponseError,
-  SubscriptionRequestMethodEnum,
-  type Subscription,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface SubscriptionListData {
-  subscriptions: Subscription[];
-  currentSubscription?: Subscription;
-  requestMethods: string[];
-}
-
-export default defineComponent({
-  components: { DeleteConfirmationModal, SubscriptionModal, GenericName },
-  props: {
-    currentUsername: {
-      type: String,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      subscriptions: new Array<Subscription>(),
-      currentSubscription: undefined,
-      requestMethods: Object.values(SubscriptionRequestMethodEnum),
-    } as SubscriptionListData;
-  },
-  mounted() {
-    this.retrieveSubscriptions();
-  },
-  methods: {
-    retrieveSubscriptions() {
-      if (!this.currentUsername) return;
-      SubscriptionService.getAllSubscriptions({
-        username: this.currentUsername,
-      })
-        .then(response => {
-          this.subscriptions = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching subscriptions");
-        });
-    },
-    handleCreate(subscription: Subscription) {
-      SubscriptionService.createSubscription({
-        username: this.currentUsername,
-        subscription: subscription,
-      })
-        .then(response => {
-          this.subscriptions.push(response);
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating subscription");
-        });
-    },
-    handleDelete() {
-      if (!this.currentSubscription?.id) return;
-      SubscriptionService.deleteSubscription({
-        username: this.currentUsername,
-        subscriptionId: this.currentSubscription.id,
-      })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting subscription");
-        })
-        .finally(() => {
-          this.currentSubscription = undefined;
-          this.retrieveSubscriptions();
-        });
-    },
-  },
-});
-</script>

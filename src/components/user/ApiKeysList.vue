@@ -1,3 +1,71 @@
+<script setup lang="ts">
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
+import ApiKeyService from "@/services/apiKeyService";
+import { handleError } from "@/utils/error-handling";
+import type { ApiKey, ResponseError } from "@dlr-shepard/shepard-client";
+import { onMounted, ref } from "vue";
+
+const props = defineProps({
+  currentUsername: {
+    type: String,
+    required: true,
+  },
+});
+
+const apiKeys = ref<ApiKey[]>([]);
+const newName = ref("");
+const createdApiKey = ref<ApiKey>();
+const currentApiKey = ref<ApiKey>();
+
+function retrieveApiKeys() {
+  if (!props.currentUsername) return;
+  ApiKeyService.getAllApiKeys({ username: props.currentUsername })
+    .then(response => {
+      apiKeys.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching api keys");
+    });
+}
+
+function handleCreate() {
+  ApiKeyService.createApiKey({
+    username: props.currentUsername,
+    apiKey: { name: newName.value },
+  })
+    .then(response => {
+      createdApiKey.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "creating api key");
+    })
+    .finally(() => {
+      retrieveApiKeys();
+      newName.value = "";
+    });
+}
+
+function handleDelete() {
+  if (!currentApiKey.value?.uid) return;
+  ApiKeyService.deleteApiKey({
+    username: props.currentUsername,
+    apikeyUid: currentApiKey.value.uid,
+  })
+    .catch(e => {
+      handleError(e as ResponseError, "deleting api key");
+    })
+    .finally(() => {
+      currentApiKey.value = undefined;
+      retrieveApiKeys();
+    });
+}
+onMounted(() => {
+  retrieveApiKeys();
+});
+</script>
+
 <template>
   <div>
     <b-input-group class="mb-2">
@@ -30,7 +98,10 @@
         </b-list-group-item>
       </b-list-group>
     </div>
-    <ApiKeyModal :created-api-key="createdApiKey" @ok="handleCreated()" />
+    <ApiKeyModal
+      :created-api-key="createdApiKey"
+      @ok="createdApiKey = undefined"
+    />
     <DeleteConfirmationModal
       v-if="currentApiKey"
       modal-id="delete-confirmation-modal"
@@ -44,100 +115,3 @@
     />
   </div>
 </template>
-
-<script lang="ts">
-import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
-import ApiKeyService from "@/services/apiKeyService";
-import { handleError } from "@/utils/error-handling";
-import type {
-  ApiKey,
-  ApiKeyWithJWT,
-  ResponseError,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface ApiKeyListData {
-  apiKeys: ApiKey[];
-  newName: string;
-  createdApiKey?: ApiKeyWithJWT;
-  currentApiKey?: ApiKey;
-}
-
-export default defineComponent({
-  components: {
-    DeleteConfirmationModal,
-    ApiKeyModal,
-    GenericName,
-  },
-  props: {
-    currentUsername: {
-      type: String,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      apiKeys: new Array<ApiKey>(),
-      newName: "",
-      createdApiKey: undefined,
-      currentApiKey: undefined,
-    } as ApiKeyListData;
-  },
-  mounted() {
-    this.retrieveApiKeys();
-  },
-  methods: {
-    retrieveApiKeys() {
-      if (!this.currentUsername) return;
-      ApiKeyService.getAllApiKeys({ username: this.currentUsername })
-        .then(response => {
-          this.apiKeys = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching api keys");
-        });
-    },
-    handleCreate() {
-      ApiKeyService.createApiKey({
-        username: this.currentUsername,
-        apiKey: { name: this.newName },
-      })
-        .then(response => {
-          this.createdApiKey = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "creating api key");
-        })
-        .finally(() => {
-          this.retrieveApiKeys();
-          this.newName = "";
-        });
-    },
-    handleCreated() {
-      this.createdApiKey = undefined;
-    },
-    handleDelete() {
-      if (!this.currentApiKey?.uid) return;
-      ApiKeyService.deleteApiKey({
-        username: this.currentUsername,
-        apikeyUid: this.currentApiKey.uid,
-      })
-        .catch(e => {
-          handleError(e as ResponseError, "deleting api key");
-        })
-        .finally(() => {
-          this.currentApiKey = undefined;
-          this.retrieveApiKeys();
-        });
-    },
-  },
-});
-</script>
-
-<style scoped>
-.fixed-height {
-  height: 40px;
-}
-</style>

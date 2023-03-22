@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import GenericCollapse from "@/components/generic/GenericCollapse.vue";
+import ApiKeyList from "@/components/user/ApiKeysList.vue";
+import SubscriptionList from "@/components/user/SubscriptionList.vue";
+import UserService from "@/services/userService";
+import { handleError } from "@/utils/error-handling";
+import type { ResponseError, User } from "@dlr-shepard/shepard-client";
+import { useTitle } from "@vueuse/core";
+import { onMounted, ref } from "vue";
+
+const user = ref<User>();
+
+function fetchUser() {
+  UserService.getCurrentUser()
+    .then(response => {
+      user.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching user");
+    });
+}
+
+onMounted(() => {
+  fetchUser();
+  useTitle("User | shepard");
+});
+</script>
+
 <template>
   <div class="user">
     <div class="component">
@@ -31,57 +59,3 @@
     </GenericCollapse>
   </div>
 </template>
-
-<script lang="ts">
-import GenericCollapse from "@/components/generic/GenericCollapse.vue";
-import ApiKeyList from "@/components/user/ApiKeysList.vue";
-import SubscriptionList from "@/components/user/SubscriptionList.vue";
-import UserService from "@/services/userService";
-import { handleError } from "@/utils/error-handling";
-import type { ResponseError, User } from "@dlr-shepard/shepard-client";
-import { useTitle } from "@vueuse/core";
-import { defineComponent } from "vue";
-
-interface UserData {
-  userId?: number;
-  user?: User;
-}
-
-export default defineComponent({
-  components: {
-    ApiKeyList,
-    SubscriptionList,
-    GenericCollapse,
-  },
-  data() {
-    return {
-      userId: undefined,
-      user: undefined,
-    } as UserData;
-  },
-  mounted() {
-    this.fetchUser();
-    useTitle("User | shepard");
-  },
-  methods: {
-    fetchUser() {
-      UserService.getCurrentUser()
-        .then(response => {
-          this.user = response;
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching user");
-        });
-    },
-    userTableItems() {
-      if (!this.user) {
-        return [];
-      }
-      return [
-        { "First Name": this.user.firstName },
-        { "Last Name": this.user.lastName },
-      ];
-    },
-  },
-});
-</script>
