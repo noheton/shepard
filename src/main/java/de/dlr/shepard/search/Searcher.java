@@ -9,6 +9,7 @@ public class Searcher {
 
 	public ResponseBody search(SearchBody searchBody, String userName) {
 		ResponseBody ret = null;
+		QueryValidator.checkQuery(searchBody.getSearchParams().getQuery());
 		QueryType queryType = searchBody.getSearchParams().getQueryType();
 		switch (queryType) {
 		case StructuredData:

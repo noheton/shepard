@@ -22,7 +22,7 @@ public class ContainerSearcher {
 		ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
 		ContainerSearchResult containerSearchResult = new ContainerSearchResult();
 		ContainerQueryType containerQueryType = containerSearchParams.getQueryType();
-
+		QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
 		if (containerQueryType == null || containerQueryType.equals(ContainerQueryType.FILE)) {
 			containerSearchResult.setFileContainers(findFileContainers(containerSearchParams, userName));
 		}
