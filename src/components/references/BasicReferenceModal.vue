@@ -18,10 +18,6 @@ const props = defineProps({
     type: String,
     default: "basic-reference-modal",
   },
-  modalName: {
-    type: String,
-    default: "Basic Reference",
-  },
   currentCollectionId: {
     type: Number,
     required: true,
@@ -106,7 +102,7 @@ onMounted(() => {
 <template>
   <b-modal
     :id="modalId"
-    :title="modalName"
+    :title="reference.type"
     size="lg"
     lazy
     ok-only
@@ -136,7 +132,8 @@ onMounted(() => {
         </b-button>
       </b-button-group>
 
-      ID: {{ reference?.id }}
+      <b>{{ reference?.name }}</b>
+      | ID: {{ reference?.id }}
       <CreatedByLine
         :created-by="reference?.createdBy"
         :created-at="reference?.createdAt"

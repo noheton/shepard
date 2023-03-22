@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import Loading from "@/components/generic/Loading.vue";
+import BasicReferenceService from "@/services/basicReferenceService";
 import SearchService from "@/services/searchService";
-import { handleError } from "@/utils/error-handling";
+import { handleError, logError } from "@/utils/error-handling";
 import {
   ResponseError,
   SearchParamsQueryTypeEnum,
   SearchScopeTraversalRulesEnum,
+  type BasicReference,
   type ResponseBody,
   type ResultTriple,
 } from "@dlr-shepard/shepard-client";
@@ -125,13 +127,29 @@ function query() {
     });
 }
 
-function rowSelected(items: ResultTriple[]) {
+async function rowSelected(items: ResultTriple[]) {
   if (items.length == 0) return;
 
   const item = items[0];
   let routeData = undefined;
 
-  if (item.dataObjectId != undefined) {
+  if (item.referenceId != undefined) {
+    const referenceType = await getReferenceType(item);
+    if (!referenceType) return;
+    routeData = router.resolve({
+      name: "DataObject",
+      params: {
+        collectionId: String(item.collectionId),
+        dataObjectId: String(item.dataObjectId),
+      },
+    });
+    routeData.href =
+      routeData.href +
+      "?tabId=" +
+      tabMapping[referenceType] +
+      "&referenceId=" +
+      item.referenceId;
+  } else if (item.dataObjectId != undefined) {
     routeData = router.resolve({
       name: "DataObject",
       params: {
@@ -148,6 +166,35 @@ function rowSelected(items: ResultTriple[]) {
     });
   }
   window.open(routeData.href, "_blank");
+}
+
+const tabMapping: { [key: string]: number } = {
+  TimeseriesReference: 0,
+  StructuredDataReference: 1,
+  FileReference: 2,
+  URIReference: 3,
+  CollectionReference: 4,
+  DataObjectReference: 5,
+};
+
+async function getReferenceType(
+  item: ResultTriple,
+): Promise<string | undefined> {
+  if (!item.collectionId || !item.dataObjectId || !item.referenceId) return;
+  let reference: BasicReference;
+  try {
+    reference = await BasicReferenceService.getBasicReference({
+      collectionId: item.collectionId,
+      dataObjectId: item.dataObjectId,
+      referenceId: item.referenceId,
+    });
+  } catch (error) {
+    logError(error as ResponseError, "fetching basic reference");
+    return;
+  }
+
+  if (!reference.type) return;
+  return reference.type;
 }
 
 onMounted(() => {
@@ -243,7 +290,7 @@ onMounted(() => {
                 select-mode="single"
                 class="table table-sm table-bordered"
                 :items="searchData.resultSet"
-                @row-selected="rowSelected"
+                @row-selected="rowSelected($event)"
               >
               </b-table>
               <div v-else class="pl-2">no results</div>

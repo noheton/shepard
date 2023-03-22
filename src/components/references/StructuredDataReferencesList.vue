@@ -12,7 +12,7 @@ import type {
   ResponseError,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -52,8 +52,10 @@ function retrieveReferences() {
           return e.id === Number(getQueryParam("referenceId"));
         },
       );
-      if (currentStructuredDataReference.value)
-        vm?.proxy.$bvModal.show("view-structured-data-modal");
+      nextTick(() => {
+        if (currentStructuredDataReference.value)
+          vm?.proxy.$bvModal.show("view-structured-data-modal");
+      });
     });
 }
 
@@ -169,7 +171,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentStructuredDataReference"
       modal-id="view-structured-data-modal"
-      :modal-name="currentStructuredDataReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentStructuredDataReference"

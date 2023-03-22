@@ -12,7 +12,7 @@ import type {
   ResponseError,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -51,8 +51,11 @@ function retrieveReferences() {
       currentTimeseriesReference.value = timeseriesList.value?.find(e => {
         return e.id === Number(getQueryParam("referenceId"));
       });
-      if (currentTimeseriesReference.value)
-        vm?.proxy.$bvModal.show("view-timeseries-modal");
+      nextTick(() => {
+        if (currentTimeseriesReference.value) {
+          vm?.proxy.$bvModal.show("view-timeseries-modal");
+        }
+      });
     });
 }
 
@@ -168,7 +171,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentTimeseriesReference"
       modal-id="view-timeseries-modal"
-      :modal-name="currentTimeseriesReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentTimeseriesReference"

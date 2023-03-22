@@ -13,7 +13,7 @@ import type {
   CollectionReference,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -55,8 +55,10 @@ function retrieveReferences() {
       currentCollectionReference.value = collectionList.value?.find(e => {
         return e.id === Number(getQueryParam("referenceId"));
       });
-      if (currentCollectionReference.value)
-        vm?.proxy.$bvModal.show("view-collection-modal");
+      nextTick(() => {
+        if (currentCollectionReference.value)
+          vm?.proxy.$bvModal.show("view-collection-modal");
+      });
     });
 }
 
@@ -197,7 +199,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentCollectionReference?.id"
       modal-id="view-collection-modal"
-      :modal-name="currentCollectionReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentCollectionReference"

@@ -13,7 +13,7 @@ import type {
   DataObjectReference,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -55,8 +55,10 @@ function retrieveReferences() {
       currentDataObjectReference.value = dataObjectList.value?.find(e => {
         return e.id === Number(getQueryParam("referenceId"));
       });
-      if (currentDataObjectReference.value)
-        vm?.proxy.$bvModal.show("view-data-object-modal");
+      nextTick(() => {
+        if (currentDataObjectReference.value)
+          vm?.proxy.$bvModal.show("view-data-object-modal");
+      });
     });
 }
 
@@ -193,7 +195,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentDataObjectReference?.id"
       modal-id="view-data-object-modal"
-      :modal-name="currentDataObjectReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentDataObjectReference"

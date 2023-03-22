@@ -9,7 +9,7 @@ import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
 import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -47,8 +47,10 @@ function retrieveReferences() {
       currentFileReference.value = fileReferenceList.value?.find(e => {
         return e.id === Number(getQueryParam("referenceId"));
       });
-      if (currentFileReference.value)
-        vm?.proxy.$bvModal.show("view-file-modal");
+      nextTick(() => {
+        if (currentFileReference.value)
+          vm?.proxy.$bvModal.show("view-file-modal");
+      });
     });
 }
 
@@ -164,7 +166,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentFileReference"
       modal-id="view-file-modal"
-      :modal-name="currentFileReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentFileReference"

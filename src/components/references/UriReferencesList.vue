@@ -9,7 +9,7 @@ import UriReferenceService from "@/services/uriReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
 import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({
   currentCollectionId: {
@@ -47,7 +47,10 @@ function retrieveReferences() {
       currentUriReference.value = uriList.value?.find(e => {
         return e.id === Number(getQueryParam("referenceId"));
       });
-      if (currentUriReference.value) vm?.proxy.$bvModal.show("view-uri-modal");
+      nextTick(() => {
+        if (currentUriReference.value)
+          vm?.proxy.$bvModal.show("view-uri-modal");
+      });
     });
 }
 
@@ -146,7 +149,6 @@ onMounted(() => {
     <BasicReferenceModal
       v-if="currentUriReference"
       modal-id="view-uri-modal"
-      :modal-name="currentUriReference?.name || undefined"
       :current-collection-id="currentCollectionId"
       :current-data-object-id="currentDataObjectId"
       :reference="currentUriReference"
