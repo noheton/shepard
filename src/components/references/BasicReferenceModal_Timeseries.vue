@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import TimeseriesPlottingModal from "@/components/payload/TimeseriesPlottingModal.vue";
+import VisualizationModal from "@/components/payload/VisualizationModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { downloadFile } from "@/utils/download";
 import { logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
+import type { PlottingData } from "@/utils/plotting";
 import type {
   ResponseError,
+  Timeseries,
   TimeseriesPayload,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
+import { Chart, registerables } from "chart.js";
 import { onMounted, reactive, ref, type PropType } from "vue";
 
 const props = defineProps({
@@ -36,7 +39,8 @@ const getInitialState = () => ({
   plottingErrorMessage: "",
 });
 
-const currentTimeseriesPayload = ref<TimeseriesPayload[]>();
+const currentTimeseriesPayloadList = ref<TimeseriesPayload[]>();
+const noTimeseriesSelected = ref(true);
 const internalState = reactive(getInitialState());
 
 function fetchTimeseriesPayload() {
@@ -47,10 +51,10 @@ function fetchTimeseriesPayload() {
     timeseriesReferenceId: props.timeseriesReference.id,
   })
     .then(response => {
-      currentTimeseriesPayload.value = response;
+      currentTimeseriesPayloadList.value = response;
     })
     .catch(e => {
-      currentTimeseriesPayload.value = [];
+      currentTimeseriesPayloadList.value = [];
       logError(e as ResponseError, "fetching timeseries payload");
       internalState.plottingError = true;
       if (e.response.status == 403) {
@@ -82,6 +86,60 @@ function downloadCsv(referenceId: number, referenceName: string) {
     .finally(() => (internalState.active = false));
 }
 
+Chart.register(...registerables);
+
+const plotShown = ref(false);
+const updated = ref(0);
+const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
+
+const fields = [
+  { key: "selected", label: "" },
+  { key: "measurement", label: "Measurement" },
+  { key: "location", label: "Location" },
+  { key: "device", label: "Device" },
+  { key: "symbolicName", label: "Symbolic Name" },
+  { key: "field", label: "Field" },
+];
+
+function reset() {
+  plotShown.value = false;
+  chartData.value = { datasets: [], xLabel: "Time in s" };
+}
+
+function createPlottableData(selectedTimeseriesPayloads: TimeseriesPayload[]) {
+  chartData.value.datasets = [];
+  selectedTimeseriesPayloads.forEach(payload => {
+    const data = payload.points
+      .filter(point => {
+        return (
+          point.timestamp != undefined &&
+          point.value != undefined &&
+          typeof point.value == "number"
+        );
+      })
+      .map(point => {
+        return {
+          x: (Number(point.timestamp) - props.timeseriesReference.start) / 1e9,
+          y: Number(point.value),
+        };
+      });
+    chartData.value.datasets.push({
+      dataPoints: data,
+      label: getTimeseriesName(payload.timeseries),
+    });
+  });
+  updated.value++;
+}
+
+function getTimeseriesName(ts: Timeseries) {
+  return Object.values(ts).join(" - ");
+}
+
+function handleSelectedRows(items: TimeseriesPayload[]) {
+  createPlottableData(items);
+  noTimeseriesSelected.value = items.length == 0;
+}
+
 onMounted(() => {
   fetchTimeseriesPayload();
   Object.assign(internalState, getInitialState());
@@ -110,11 +168,11 @@ onMounted(() => {
     <div v-if="props.timeseriesReference" class="mb-4">
       <b-button-group class="float-right">
         <b-button
-          v-b-modal.plotting_modal
+          v-b-modal.visualization
           v-b-tooltip.hover
           title="Plotting"
           variant="primary"
-          :disabled="props.timeseriesReference.timeseriesContainerId == -1"
+          :disabled="noTimeseriesSelected"
         >
           <PlottingIcon />
         </b-button>
@@ -163,20 +221,52 @@ onMounted(() => {
       </div>
 
       <b-table
-        striped
         hover
         small
-        :items="props.timeseriesReference.timeseries"
+        :items="currentTimeseriesPayloadList"
+        :fields="fields"
+        select-mode="multi"
+        selectable
+        @show="reset()"
+        @row-selected="handleSelectedRows($event)"
       >
+        <template #cell(selected)="{ rowSelected }">
+          <template v-if="rowSelected">
+            <CheckboxChecked />
+            <span class="sr-only">Selected</span>
+          </template>
+          <template v-else>
+            <CheckboxEmpty />
+            <span class="sr-only">Not selected</span>
+          </template>
+        </template>
+        <template #cell(measurement)="data">
+          {{ data.item.timeseries.measurement }}
+        </template>
+
+        <template #cell(location)="data">
+          {{ data.item.timeseries.location }}
+        </template>
+
+        <template #cell(device)="data">
+          {{ data.item.timeseries.device }}
+        </template>
+
+        <template #cell(symbolicName)="data">
+          {{ data.item.timeseries.symbolicName }}
+        </template>
+
+        <template #cell(field)="data">
+          {{ data.item.timeseries.field }}
+        </template>
       </b-table>
     </div>
 
-    <TimeseriesPlottingModal
-      v-if="props.timeseriesReference && currentTimeseriesPayload"
-      modal-id="plotting_modal"
-      :modal-name="props.timeseriesReference.name || undefined"
-      :timeseries-payload-list="currentTimeseriesPayload"
-      :timeseries-start-time="props.timeseriesReference.start"
+    <VisualizationModal
+      v-if="chartData.datasets.length > 0"
+      modal-id="visualization"
+      :modal-name="'Visualization of ' + props.timeseriesReference.name"
+      :input-data="chartData"
     />
   </div>
 </template>
