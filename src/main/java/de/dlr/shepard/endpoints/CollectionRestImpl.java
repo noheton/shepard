@@ -52,8 +52,8 @@ public class CollectionRestImpl implements CollectionRest {
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
 		var collections = collectionService.getAllCollections(params, securityContext.getUserPrincipal().getName());
-		var result = new ArrayList<CollectionIO>(collections.size());
 
+		var result = new ArrayList<CollectionIO>(collections.size());
 		for (var collection : collections) {
 			result.add(new CollectionIO(collection));
 		}

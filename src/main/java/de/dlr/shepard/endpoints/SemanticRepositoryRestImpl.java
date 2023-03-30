@@ -4,8 +4,10 @@ import java.util.ArrayList;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
+import de.dlr.shepard.neo4Core.orderBy.SemanticRepositoryAttributes;
 import de.dlr.shepard.neo4Core.services.SemanticRepositoryService;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -13,6 +15,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -30,8 +33,19 @@ public class SemanticRepositoryRestImpl implements SemanticRepositoryRest {
 
 	@GET
 	@Override
-	public Response getAllSemanticRepositories() {
-		var repositories = semanticRepositoryService.getAllRepositories(null);
+	public Response getAllSemanticRepositories(@QueryParam(Constants.QP_NAME) String name,
+			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
+			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) SemanticRepositoryAttributes orderBy,
+			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
+		var params = new QueryParamHelper();
+		if (name != null)
+			params = params.withName(name);
+		if (page != null && size != null)
+			params = params.withPageAndSize(page, size);
+		if (orderBy != null)
+			params = params.withOrderByAttribute(orderBy, orderDesc);
+		var repositories = semanticRepositoryService.getAllRepositories(params);
+
 		var result = new ArrayList<SemanticRepositoryIO>(repositories.size());
 		for (var repository : repositories) {
 			result.add(new SemanticRepositoryIO(repository));

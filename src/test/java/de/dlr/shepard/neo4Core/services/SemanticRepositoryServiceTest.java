@@ -27,7 +27,7 @@ import de.dlr.shepard.semantics.ISemanticRepositoryConnector;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.DateHelper;
-import de.dlr.shepard.util.PaginationHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class SemanticRepositoryServiceTest extends BaseTestCase {
 
@@ -67,12 +67,11 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 	@Test
 	public void getAllRepositoriesTest_pagination() {
-		var page = new PaginationHelper(0, 10);
+		QueryParamHelper params = new QueryParamHelper();
+		params = params.withName("name");
 		var expected = List.of(new SemanticRepository(1L));
-
-		when(semanticRepositoryDAO.findAllSemanticRepositories(page)).thenReturn(expected);
-		var actual = service.getAllRepositories(page);
-
+		when(semanticRepositoryDAO.findAllSemanticRepositories(params)).thenReturn(expected);
+		var actual = service.getAllRepositories(params);
 		assertEquals(expected, actual);
 	}
 

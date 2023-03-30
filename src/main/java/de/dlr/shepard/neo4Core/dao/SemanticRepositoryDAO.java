@@ -7,25 +7,37 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.util.CypherQueryHelper;
-import de.dlr.shepard.util.PaginationHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class SemanticRepositoryDAO extends GenericDAO<SemanticRepository> {
 
-	public List<SemanticRepository> findAllSemanticRepositories(PaginationHelper page) {
+	public List<SemanticRepository> findAllSemanticRepositories(QueryParamHelper params) {
 		Map<String, Object> paramsMap = new HashMap<>();
-		var query = String.format("MATCH %s WITH r", CypherQueryHelper.getObjectPart("r", "SemanticRepository", false));
-		if (page != null) {
+		if (params.hasName())
+			paramsMap.put("name", params.getName());
+		var query = String.format("MATCH %s WITH r",
+				CypherQueryHelper.getObjectPart("r", "SemanticRepository", params.hasName()));
+		if (params.hasOrderByAttribute()) {
+			query += " " + CypherQueryHelper.getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
 			query += " " + CypherQueryHelper.getPaginationPart();
-			paramsMap.put("offset", page.getOffset());
-			paramsMap.put("size", page.getSize());
 		}
 		query += " " + CypherQueryHelper.getReturnPart("r");
 		var result = new ArrayList<SemanticRepository>();
-		for (var repository : findByQuery(query, paramsMap)) {
-			result.add(repository);
+		for (var rep : findByQuery(query, paramsMap)) {
+			if (matchName(rep, params.getName())) {
+				result.add(rep);
+			}
 		}
 
 		return result;
+	}
+
+	private boolean matchName(SemanticRepository rep, String name) {
+		return name == null || rep.getName().equalsIgnoreCase(name);
 	}
 
 	@Override

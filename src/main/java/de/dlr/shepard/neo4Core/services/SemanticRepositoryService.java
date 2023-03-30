@@ -11,7 +11,7 @@ import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.util.DateHelper;
-import de.dlr.shepard.util.PaginationHelper;
+import de.dlr.shepard.util.QueryParamHelper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,8 +21,8 @@ public class SemanticRepositoryService {
 	private DateHelper dateHelper = new DateHelper();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
-	public List<SemanticRepository> getAllRepositories(PaginationHelper page) {
-		var repositories = semanticRepositoryDAO.findAllSemanticRepositories(page);
+	public List<SemanticRepository> getAllRepositories(QueryParamHelper params) {
+		var repositories = semanticRepositoryDAO.findAllSemanticRepositories(params);
 		return repositories;
 	}
 

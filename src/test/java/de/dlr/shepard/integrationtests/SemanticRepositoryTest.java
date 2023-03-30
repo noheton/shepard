@@ -67,7 +67,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(2)
-	public void getSemanticRepositorys() {
+	public void getSemanticRepositories() {
 		var actual = given().spec(repositoryRequestSpec).when().get().then().statusCode(200).extract()
 				.as(SemanticRepositoryIO[].class);
 
@@ -128,9 +128,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 	public void deleteSemanticAnnotation() {
 		given().spec(collectionRequestSpec).when().delete(collectionURL + "/" + annotation.getId()).then()
 				.statusCode(204);
-
 		given().spec(collectionRequestSpec).get(collectionURL + "/" + annotation.getId()).then().statusCode(404);
-
 		var actual = given().spec(collectionRequestSpec).get().then().statusCode(200).extract()
 				.as(SemanticAnnotationIO[].class);
 		assertThat(actual).isEmpty();
@@ -141,7 +139,6 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 	public void deleteSemanticRepository() {
 		given().spec(repositoryRequestSpec).when().delete(repositoryURL + "/" + repository.getId()).then()
 				.statusCode(204);
-
 		given().spec(repositoryRequestSpec).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
 	}
 

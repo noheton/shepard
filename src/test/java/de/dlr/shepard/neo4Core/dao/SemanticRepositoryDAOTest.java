@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,8 @@ import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
-import de.dlr.shepard.util.PaginationHelper;
+import de.dlr.shepard.neo4Core.orderBy.SemanticRepositoryAttributes;
+import de.dlr.shepard.util.QueryParamHelper;
 
 public class SemanticRepositoryDAOTest extends BaseTestCase {
 	@Mock
@@ -32,16 +34,21 @@ public class SemanticRepositoryDAOTest extends BaseTestCase {
 
 	@Test
 	public void findAllSemanticRepositoriesTest_Pagination() {
-		var page = new PaginationHelper(2, 10);
+		QueryParamHelper params = new QueryParamHelper();
+		params = params.withName("name");
+		params = params.withPageAndSize(2, 10);
+		params = params.withOrderByAttribute(SemanticRepositoryAttributes.name, true);
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
+		}
 		var repo = new SemanticRepository(1L);
-		Map<String, Object> paramsMap = Map.of("offset", 20, "size", 10);
-
-		var query = """
-				MATCH (r:SemanticRepository { deleted: FALSE }) WITH r SKIP $offset LIMIT $size \
-				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)""";
+		repo.setName("Name");
+		var query = "MATCH (r:SemanticRepository { name : $name, deleted: FALSE }) WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)";
 		when(session.query(SemanticRepository.class, query, paramsMap)).thenReturn(List.of(repo));
-
-		var actual = dao.findAllSemanticRepositories(page);
+		var actual = dao.findAllSemanticRepositories(params);
 		verify(session).query(SemanticRepository.class, query, paramsMap);
 		assertEquals(List.of(repo), actual);
 	}
@@ -50,13 +57,12 @@ public class SemanticRepositoryDAOTest extends BaseTestCase {
 	public void findAllSemanticRepositoriesTest_NoPagination() {
 		var repo = new SemanticRepository(1L);
 		Map<String, Object> paramsMap = Collections.emptyMap();
-
 		var query = """
 				MATCH (r:SemanticRepository { deleted: FALSE }) WITH r \
 				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)""";
 		when(session.query(SemanticRepository.class, query, paramsMap)).thenReturn(List.of(repo));
-
-		var actual = dao.findAllSemanticRepositories(null);
+		QueryParamHelper params = new QueryParamHelper();
+		var actual = dao.findAllSemanticRepositories(params);
 		verify(session).query(SemanticRepository.class, query, paramsMap);
 		assertEquals(List.of(repo), actual);
 	}

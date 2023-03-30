@@ -1,6 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
+import de.dlr.shepard.neo4Core.orderBy.SemanticRepositoryAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -18,7 +19,8 @@ public interface SemanticRepositoryRest {
 	@Operation(description = "Get all semantic repositories")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SemanticRepositoryIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllSemanticRepositories();
+	Response getAllSemanticRepositories(String name, Integer page, Integer size,
+			SemanticRepositoryAttributes orderAttribute, Boolean orderDesc);
 
 	@Tag(name = Constants.SEMANTIC_REPOSITORY)
 	@Operation(description = "Get semantic repository")
