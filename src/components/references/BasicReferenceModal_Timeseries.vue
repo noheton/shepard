@@ -2,6 +2,7 @@
 import VisualizationModal from "@/components/payload/VisualizationModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
+import TimeseriesService from "@/services/timeseriesService";
 import { downloadFile } from "@/utils/download";
 import { logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
@@ -39,22 +40,61 @@ const getInitialState = () => ({
   plottingErrorMessage: "",
 });
 
-const currentTimeseriesPayloadList = ref<TimeseriesPayload[]>();
-const noTimeseriesSelected = ref(true);
 const internalState = reactive(getInitialState());
+const fetchedTimeseriesPayloadList = ref<TimeseriesPayload[]>([]);
+async function handleSelectedRows(selectedTimeseriesList: Timeseries[]) {
+  if (
+    selectedTimeseriesList.length > fetchedTimeseriesPayloadList.value.length
+  ) {
+    // fetch und push
+    const fetchedTimeseries = fetchedTimeseriesPayloadList.value.map(
+      element => element.timeseries,
+    );
+    const elementToAdd = selectedTimeseriesList.find(
+      elementToAdd =>
+        fetchedTimeseries.find(
+          elementToCompare =>
+            JSON.stringify(elementToAdd) == JSON.stringify(elementToCompare),
+        ) == undefined,
+    );
+    if (elementToAdd) addTimeseriesPayload(elementToAdd);
+  } else {
+    // delete
+    const indexOfElementToDelete = fetchedTimeseriesPayloadList.value.findIndex(
+      elementToDelete =>
+        selectedTimeseriesList.find(
+          elementToCompare =>
+            JSON.stringify(elementToDelete.timeseries) ==
+            JSON.stringify(elementToCompare),
+        ) == undefined,
+    );
+    fetchedTimeseriesPayloadList.value.splice(indexOfElementToDelete, 1);
+  }
+}
 
-function fetchTimeseriesPayload() {
-  if (!props.timeseriesReference?.id) return;
-  TimeseriesReferenceService.getTimeseriesPayload({
-    collectionId: props.currentCollectionId,
-    dataObjectId: props.currentDataObjectId,
-    timeseriesReferenceId: props.timeseriesReference.id,
+function addTimeseriesPayload(selectedTimeseries: Timeseries) {
+  if (
+    !selectedTimeseries.measurement ||
+    !selectedTimeseries.device ||
+    !selectedTimeseries.location ||
+    !selectedTimeseries.symbolicName ||
+    !selectedTimeseries.field
+  )
+    return;
+  TimeseriesService.getTimeseries({
+    timeseriesContainerId: props.timeseriesReference.timeseriesContainerId,
+    measurement: selectedTimeseries.measurement,
+    device: selectedTimeseries.device,
+    location: selectedTimeseries.location,
+    symbolicName: selectedTimeseries.symbolicName,
+    field: selectedTimeseries.field,
+    start: props.timeseriesReference.start,
+    end: props.timeseriesReference.end,
   })
     .then(response => {
-      currentTimeseriesPayloadList.value = response;
+      fetchedTimeseriesPayloadList.value.push(response);
     })
     .catch(e => {
-      currentTimeseriesPayloadList.value = [];
       logError(e as ResponseError, "fetching timeseries payload");
       internalState.plottingError = true;
       if (e.response.status == 403) {
@@ -106,6 +146,12 @@ function reset() {
   chartData.value = { datasets: [], xLabel: "Time in s" };
 }
 
+function handlePlot() {
+  if (fetchedTimeseriesPayloadList.value) {
+    createPlottableData(fetchedTimeseriesPayloadList.value);
+  }
+}
+
 function createPlottableData(selectedTimeseriesPayloads: TimeseriesPayload[]) {
   chartData.value.datasets = [];
   selectedTimeseriesPayloads.forEach(payload => {
@@ -135,13 +181,7 @@ function getTimeseriesName(ts: Timeseries) {
   return Object.values(ts).join(" - ");
 }
 
-function handleSelectedRows(items: TimeseriesPayload[]) {
-  createPlottableData(items);
-  noTimeseriesSelected.value = items.length == 0;
-}
-
 onMounted(() => {
-  fetchTimeseriesPayload();
   Object.assign(internalState, getInitialState());
 });
 </script>
@@ -172,7 +212,8 @@ onMounted(() => {
           v-b-tooltip.hover
           title="Plotting"
           variant="primary"
-          :disabled="noTimeseriesSelected"
+          :disabled="fetchedTimeseriesPayloadList.length == 0"
+          @click="handlePlot()"
         >
           <PlottingIcon />
         </b-button>
@@ -223,7 +264,7 @@ onMounted(() => {
       <b-table
         hover
         small
-        :items="currentTimeseriesPayloadList"
+        :items="props.timeseriesReference.timeseries"
         :fields="fields"
         select-mode="multi"
         selectable
@@ -241,23 +282,23 @@ onMounted(() => {
           </template>
         </template>
         <template #cell(measurement)="data">
-          {{ data.item.timeseries.measurement }}
+          {{ data.item.measurement }}
         </template>
 
         <template #cell(location)="data">
-          {{ data.item.timeseries.location }}
+          {{ data.item.location }}
         </template>
 
         <template #cell(device)="data">
-          {{ data.item.timeseries.device }}
+          {{ data.item.device }}
         </template>
 
         <template #cell(symbolicName)="data">
-          {{ data.item.timeseries.symbolicName }}
+          {{ data.item.symbolicName }}
         </template>
 
         <template #cell(field)="data">
-          {{ data.item.timeseries.field }}
+          {{ data.item.field }}
         </template>
       </b-table>
     </div>
