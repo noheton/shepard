@@ -1,7 +1,7 @@
 .build_typescript: &build_typescript
   stage: build_clients
   image:
-    name: openapitools/openapi-generator-cli:v6.4.0
+    name: openapitools/openapi-generator-cli:v6.5.0
     entrypoint: [""]
   needs: [build]
   dependencies: [build]
