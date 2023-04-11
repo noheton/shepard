@@ -16,6 +16,8 @@ import type {
 import { Chart, registerables } from "chart.js";
 import { onMounted, reactive, ref, type PropType } from "vue";
 
+Chart.register(...registerables);
+
 const props = defineProps({
   currentCollectionId: {
     type: Number,
@@ -41,38 +43,43 @@ const getInitialState = () => ({
 });
 
 const internalState = reactive(getInitialState());
-const fetchedTimeseriesPayloadList = ref<TimeseriesPayload[]>([]);
+
+const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
+
+const fields = [
+  { key: "selected", label: "" },
+  { key: "measurement", label: "Measurement" },
+  { key: "location", label: "Location" },
+  { key: "device", label: "Device" },
+  { key: "symbolicName", label: "Symbolic Name" },
+  { key: "field", label: "Field" },
+];
+
 async function handleSelectedRows(selectedTimeseriesList: Timeseries[]) {
-  if (
-    selectedTimeseriesList.length > fetchedTimeseriesPayloadList.value.length
-  ) {
+  if (selectedTimeseriesList.length > chartData.value.datasets.length) {
     // fetch und push
-    const fetchedTimeseries = fetchedTimeseriesPayloadList.value.map(
-      element => element.timeseries,
-    );
-    const elementToAdd = selectedTimeseriesList.find(
-      elementToAdd =>
-        fetchedTimeseries.find(
-          elementToCompare =>
-            JSON.stringify(elementToAdd) == JSON.stringify(elementToCompare),
+    const fetchedNames = chartData.value.datasets.map(element => element.label);
+    const timeseriesToAdd = selectedTimeseriesList.find(
+      selectedTimeseries =>
+        fetchedNames.find(
+          name => getTimeseriesName(selectedTimeseries) == name,
         ) == undefined,
     );
-    if (elementToAdd) addTimeseriesPayload(elementToAdd);
+    if (timeseriesToAdd) fetchTimeseriesPayload(timeseriesToAdd);
   } else {
     // delete
-    const indexOfElementToDelete = fetchedTimeseriesPayloadList.value.findIndex(
-      elementToDelete =>
+    const indexOfDatasetToDelete = chartData.value.datasets.findIndex(
+      dataset =>
         selectedTimeseriesList.find(
-          elementToCompare =>
-            JSON.stringify(elementToDelete.timeseries) ==
-            JSON.stringify(elementToCompare),
+          selectedTimeseries =>
+            getTimeseriesName(selectedTimeseries) == dataset.label,
         ) == undefined,
     );
-    fetchedTimeseriesPayloadList.value.splice(indexOfElementToDelete, 1);
+    chartData.value.datasets.splice(indexOfDatasetToDelete, 1);
   }
 }
 
-function addTimeseriesPayload(selectedTimeseries: Timeseries) {
+function fetchTimeseriesPayload(selectedTimeseries: Timeseries) {
   if (
     !selectedTimeseries.measurement ||
     !selectedTimeseries.device ||
@@ -92,7 +99,7 @@ function addTimeseriesPayload(selectedTimeseries: Timeseries) {
     end: props.timeseriesReference.end,
   })
     .then(response => {
-      fetchedTimeseriesPayloadList.value.push(response);
+      addToChartData(response);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching timeseries payload");
@@ -102,6 +109,27 @@ function addTimeseriesPayload(selectedTimeseries: Timeseries) {
           "Authentication Error: No permission to access this timeseries container";
       }
     });
+}
+
+function addToChartData(payload: TimeseriesPayload) {
+  const data = payload.points
+    .filter(point => {
+      return (
+        point.timestamp != undefined &&
+        point.value != undefined &&
+        typeof point.value == "number"
+      );
+    })
+    .map(point => {
+      return {
+        x: (Number(point.timestamp) - props.timeseriesReference.start) / 1e9,
+        y: Number(point.value),
+      };
+    });
+  chartData.value.datasets.push({
+    dataPoints: data,
+    label: getTimeseriesName(payload.timeseries),
+  });
 }
 
 function downloadCsv(referenceId: number, referenceName: string) {
@@ -126,62 +154,12 @@ function downloadCsv(referenceId: number, referenceName: string) {
     .finally(() => (internalState.active = false));
 }
 
-Chart.register(...registerables);
-
-const plotShown = ref(false);
-const updated = ref(0);
-const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
-
-const fields = [
-  { key: "selected", label: "" },
-  { key: "measurement", label: "Measurement" },
-  { key: "location", label: "Location" },
-  { key: "device", label: "Device" },
-  { key: "symbolicName", label: "Symbolic Name" },
-  { key: "field", label: "Field" },
-];
-
-function reset() {
-  plotShown.value = false;
-  chartData.value = { datasets: [], xLabel: "Time in s" };
-}
-
-function handlePlot() {
-  if (fetchedTimeseriesPayloadList.value) {
-    createPlottableData(fetchedTimeseriesPayloadList.value);
-  }
-}
-
-function createPlottableData(selectedTimeseriesPayloads: TimeseriesPayload[]) {
-  chartData.value.datasets = [];
-  selectedTimeseriesPayloads.forEach(payload => {
-    const data = payload.points
-      .filter(point => {
-        return (
-          point.timestamp != undefined &&
-          point.value != undefined &&
-          typeof point.value == "number"
-        );
-      })
-      .map(point => {
-        return {
-          x: (Number(point.timestamp) - props.timeseriesReference.start) / 1e9,
-          y: Number(point.value),
-        };
-      });
-    chartData.value.datasets.push({
-      dataPoints: data,
-      label: getTimeseriesName(payload.timeseries),
-    });
-  });
-  updated.value++;
-}
-
 function getTimeseriesName(ts: Timeseries) {
   return Object.values(ts).join(" - ");
 }
 
 onMounted(() => {
+  chartData.value = { datasets: [], xLabel: "Time in s" };
   Object.assign(internalState, getInitialState());
 });
 </script>
@@ -212,8 +190,7 @@ onMounted(() => {
           v-b-tooltip.hover
           title="Plotting"
           variant="primary"
-          :disabled="fetchedTimeseriesPayloadList.length == 0"
-          @click="handlePlot()"
+          :disabled="chartData.datasets.length == 0"
         >
           <PlottingIcon />
         </b-button>
@@ -268,7 +245,6 @@ onMounted(() => {
         :fields="fields"
         select-mode="multi"
         selectable
-        @show="reset()"
         @row-selected="handleSelectedRows($event)"
       >
         <template #cell(selected)="{ rowSelected }">
