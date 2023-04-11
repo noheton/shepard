@@ -69,6 +69,7 @@ function handlePrepare() {
   collectionsResultSet.value = [];
   collectionsFound.value = undefined;
 }
+
 function retrieveCollectionById(collectionId: number) {
   CollectionService.getCollection({
     collectionId: collectionId,
@@ -80,6 +81,7 @@ function retrieveCollectionById(collectionId: number) {
       handleError(e as ResponseError, "fetching collection");
     });
 }
+
 function inlineSearch() {
   const searchQuery = {
     OR: [

@@ -3,25 +3,29 @@ import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import FileService from "@/services/fileService";
+import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import {
   getTotalRows,
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  FileContainer,
-  GetAllFileContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
+import {
+  ContainerSearchParamsQueryTypeEnum,
+  type FileContainer,
+  type GetAllFileContainersOrderByEnum,
+  type PermissionsPermissionTypeEnum,
+  type ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref } from "vue";
+import { refDebounced, useStorage, useTitle } from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 const containers = ref<FileContainer[] | undefined>();
-
+const userInput = ref("");
+const userInputDebounced = refDebounced(userInput, 1000);
+const fileContainerResultSet = ref<FileContainer[]>([]);
 const filterOptions = useStorage<FilterOptions>("files-filter-options", {
   perPage: 10,
   orderBy: "createdAt",
@@ -37,6 +41,7 @@ const totalRows = computed(() => {
     );
   else return 0;
 });
+
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
   filterOptions.value.perPage = options.perPage;
@@ -93,6 +98,72 @@ function createContainer(options: {
     });
 }
 
+watch(userInputDebounced, () => {
+  if (
+    userInputDebounced.value.length != 0 &&
+    (userInputDebounced.value.length >= 3 ||
+      !isNaN(Number(userInputDebounced.value)))
+  ) {
+    inlineSearch();
+  } else {
+    fileContainerResultSet.value = [];
+  }
+});
+
+function inlineSearch() {
+  const searchQuery = {
+    OR: [
+      {
+        property: "name",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "createdBy",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "id",
+        value: Number(userInput.value),
+        operator: "eq",
+      },
+    ],
+  };
+  SearchService.searchContainers({
+    containerSearchBody: {
+      searchParams: {
+        query: JSON.stringify(searchQuery),
+        queryType: ContainerSearchParamsQueryTypeEnum.File,
+      },
+    },
+  })
+    .then(response => {
+      fileContainerResultSet.value = [];
+      response.fileContainers?.forEach(result => {
+        if (result.id) {
+          retrieveFileContainerById(result.id);
+        }
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching search data");
+    });
+}
+
+function retrieveFileContainerById(fileContainerId: number) {
+  FileService.getFileContainer({
+    fileContainerId: fileContainerId,
+  })
+    .then(response => {
+      const temp = [...fileContainerResultSet.value, response];
+      fileContainerResultSet.value = temp;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching file container");
+    });
+}
+
 onMounted(() => {
   retrieveContainers();
   useTitle("File Containers | shepard");
@@ -114,6 +185,23 @@ onMounted(() => {
       </b-button-group>
       <h4>File Containers</h4>
       <br />
+
+      <b-form-input
+        id="userFormInput"
+        v-model="userInput"
+        class="mb-3"
+        placeholder="Name, Username, ID or Description"
+      ></b-form-input>
+
+      <b-popover
+        custom-class="wide-popover"
+        target="userFormInput"
+        triggers="focus"
+        placement="bottom"
+      >
+        <template #title>Result Set</template>
+        <GenericEntityList :entities="fileContainerResultSet" />
+      </b-popover>
 
       <FilterListLine
         :max-objects="totalRows"
