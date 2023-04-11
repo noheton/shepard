@@ -3,7 +3,7 @@ services:
   backend:
     image: registry.gitlab.com/dlr-shepard/backend:latest
     environment:
-      CATALINA_OPTS: "-Xms2048m -Xmx2048m"
+      CATALINA_OPTS: "-Xms2G -Xmx2G"
       oidc.public: ${OIDC_PUBLIC}
       oidc.authority: ${OIDC_AUTHORITY}
       oidc.role: ${OIDC_ROLE}
@@ -16,8 +16,6 @@ services:
       mongo.host: mongodb:27017
       mongo.username: mongo
       mongo.password: ${MONGO_PW}
-    ports:
-      - "127.0.0.1:8080:8080"
     volumes:
       - /opt/shepard/backend/tomcat:/usr/local/tomcat/logs
       - /opt/shepard/backend/config:/root/.shepard
@@ -35,8 +33,6 @@ services:
       VUE_APP_BACKEND: ${BACKEND_URL}shepard/api
       VUE_APP_OIDC_AUTHORITY: ${OIDC_AUTHORITY}
       VUE_APP_CLIENT_ID: ${CLIENT_ID}
-    ports:
-      - "127.0.0.1:8081:80"
     restart: unless-stopped
     depends_on:
       - backend
@@ -47,8 +43,6 @@ services:
     image: swaggerapi/swagger-ui:latest
     environment:
       - URL=${BACKEND_URL}shepard/doc/openapi.json
-    ports:
-      - "127.0.0.1:8082:8080"
     restart: unless-stopped
     depends_on:
       - backend
@@ -59,11 +53,10 @@ services:
     image: neo4j:4.4
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PW}
-      NEO4J_dbms_memory_heap_initial__size: 2048M
-      NEO4J_dbms_memory_heap_max__size: 2048M
-      NEO4J_dbms_memory_pagecache_size: 3072M
+      NEO4J_dbms_memory_heap_initial__size: 2G
+      NEO4J_dbms_memory_heap_max__size: 2G
+      NEO4J_dbms_memory_pagecache_size: 3G
     ports:
-      - "127.0.0.1:7474:7474"
       - "7687:7687"
     volumes:
       - /opt/shepard/neo4j/logs:/logs
@@ -97,8 +90,6 @@ services:
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PW}
-    ports:
-      - "127.0.0.1:8084:8081"
     restart: unless-stopped
     depends_on:
       - mongodb
@@ -114,7 +105,7 @@ services:
       INFLUXDB_ADMIN_PASSWORD: ${INFLUX_PW}
       INFLUXDB_LOGGING_LEVEL: warn
       INFLUXDB_HTTP_LOG_ENABLED: "false"
-      INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2048M
+      INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
     volumes:
       - /opt/shepard/influxdb:/var/lib/influxdb
     restart: unless-stopped
@@ -128,8 +119,6 @@ services:
       INFLUXDB_URL: http://influxdb:8086
       INFLUXDB_USERNAME: admin
       INFLUXDB_PASSWORD: ${INFLUX_PW}
-    ports:
-      - "127.0.0.1:8888:8888"
     volumes:
       - /opt/shepard/chronograf:/var/lib/chronograf
     restart: unless-stopped
@@ -137,6 +126,25 @@ services:
       - influxdb
     networks:
       - influxdata
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - $PWD/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - $PWD/proxy/ssl:/etc/caddy/ssl:ro
+      - $PWD/proxy/shepard:/var/www/shepard:ro
+      - /opt/shepard/caddy/data:/data
+      - /opt/shepard/caddy/config:/config
+    restart: unless-stopped
+    networks:
+      - shepard
+      - mongo
+      - influxdata
+      - frontend
 
 networks:
   shepard:

@@ -4,16 +4,15 @@ This repository contains everything you need to set up a shepard instance with D
 
 ## Prerequisites
 
-> A minimal configuration without SSL and DNS is possible. In this case, you do not need to install and configure nginx. Instead, you should change the `ports` inside `docker-compose.yml` so that the containers are externally accessible. This way you cannot use subdomains, instead you can directly address the respective containers via ip and port. Also, all communication between clients and your instance is not encrypted, which is a security risk in itself.
+> A minimal configuration without publicly trusted SSL certificates and DNS is possible. In this case, you do not need to install and configure a reverse proxy. Instead, you should change the `ports` inside `docker-compose.yml` so that the containers are externally accessible. This way you cannot use subdomains, instead you can directly address the respective containers via ip and port. Also, all communication between clients and your instance is not encrypted, which is a security risk in itself.
 
 - [Docker](https://docs.docker.com/engine/) and [Docker Compose](https://docs.docker.com/compose/) are installed.
 - There is an OpenID Connect identity provider that uses [JSON web tokens](https://jwt.io/) as access tokens. [Keycloak](https://www.keycloak.org/) is recommended, but not required.
-- A reverse proxy (e.g. [nginx](https://www.nginx.com/)) is installed.
 - You have SSL certificates and DNS entries (both with and without wildcard respectively) for your host.
 
 ## System requirements
 
-> Depending on how you plan to use shepard, the system requirements can vary greatly. While most services are relatively lightweight, the databases and shepard backend can be quite demanding. As a starting point, 8 GB of memory per service may be sufficient. Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads. The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
+> Depending on how you plan to use shepard, the system requirements can vary greatly. While most services are relatively lightweight, the databases and shepard backend can be quite demanding. As a starting point, 8 GB of memory may be sufficient. Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads. The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
 
 - [neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
 - [InfluxDB system requirements](https://docs.influxdata.com/influxdb/v1.8/guides/hardware_sizing/#influxdb-oss-guidelines)
@@ -21,56 +20,77 @@ This repository contains everything you need to set up a shepard instance with D
 
 ## Installation
 
-> These installation instructions result in a complete environment with Subdomains and SSL. The databases are configured to be directly accessible over the network for debugging purposes. A customized installation with a different configuration is easily possible and should be considered.
+> These installation instructions result in a complete and opinionated environment with subdomains and SSL. The databases are configured to be directly accessible over the network for debugging purposes. A customized installation with a different configuration is easily possible and should be considered.
 
-1. Clone repository
+### 1. Clone repository
 
 ```bash
 git clone https://gitlab.com/dlr-shepard/deployment.git
 cd deployment
 ```
 
-2. Prepare nginx
-   - Apply for SSL certificates and store them in the system
-   - Create Diffie-Hellman parameters
+### 2. Prepare the reverse proxy
+
+- Apply for SSL certificates and store them in the system under `proxy/ssl/shepard.crt` and `proxy/ssl/shepard.key`
+- Ideally, the wildcard subdomain (`*`) is included directly in the main certificate as a Subject Alternative Name (SAN) to only have to care about one certificate
+- Make sure that the DNS records resolve both the main name (e.g. `example.com`) and the wildcard subdomain (e.g. `test.example.com`)
+
+### 3. Set up the reverse proxy
+
+- Configure the [Caddyfile](proxy/Caddyfile) as needed:
 
 ```bash
-openssl dhparam -out /etc/nginx/dhparam.pem 2048
+# IMPORTANT: replace my.awesome.host.name with your real hostname
+sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" proxy/Caddyfile
 ```
 
-3. Set up nginx
-   - Edit and enable the [sample files with self-signed certificates](https://gitlab.com/dlr-shepard/deployment/-/blob/master/etc/nginx/sites-available/) as needed
-   - [Mozilla SSL Configuration Generator](https://ssl-config.mozilla.org/#server=nginx&config=intermediate)
-   - **Do not forget to change these files according to your certificates**
-   - Edit `index.html` and put this file into the appropriate directory
-   - Restart nginx afterwards by typing `systemctl restart nginx.service`
+- Replace the hostname placeholder in [index.html](proxy/shepard/index.html):
 
 ```bash
-# nginx config, replace my.awesome.host.name with your real hostname
-cp etc/nginx/sites-available/* /etc/nginx/sites-available
-sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" /etc/nginx/sites-available/*
-
-# index.html, replace my.awesome.host.name with your real hostname
-mkdir /var/www/shepard
-cp var/www/shepard/index.html /var/www/shepard/index.html
-sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" /var/www/shepard/index.html
-
-# enable all available sites
-ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
+# IMPORTANT: replace my.awesome.host.name with your real hostname
+sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" proxy/shepard/index.html
 ```
 
-4. Check configuration in `docker-compose.yml` and especially check available memory
-5. Copy the file `env.example` to `.env`
+### 4. Check configuration in `docker-compose.yml` and especially check available memory
+
+- Backend:
+
+```yaml
+CATALINA_OPTS: "-Xms2G -Xmx2G
+```
+
+- Neo4j:
+
+```yaml
+NEO4J_dbms_memory_heap_initial__size: 2G
+NEO4J_dbms_memory_heap_max__size: 2G
+NEO4J_dbms_memory_pagecache_size: 3G
+```
+
+- MongoDB:
+
+```yaml
+command: --wiredTigerCacheSizeGB 2.0
+```
+
+- InfluxBD:
+
+```yaml
+INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
+```
+
+### 5. Copy the file `env.example` to `.env`
 
 ```bash
 # copy configuration file
 cp env.example .env
 ```
 
-6. Set passwords and configuration in `.env` the file
-   - All variables except `OIDC_ROLE` must be set!
-   - URLs have to end with a trailing slash
-   - The database passwords can be changed arbitrarily at the beginning
+### 6. Set passwords and configuration in `.env` the file
+
+- All variables except `OIDC_ROLE` must be set!
+- URLs have to end with a trailing slash
+- The database passwords can be changed arbitrarily at the beginning
 
 | Variable | Description | Example |
 | --- | --- | --- |

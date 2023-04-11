@@ -16,3 +16,6 @@
 .env
 private.pem
 public.pem
+
+# SSL certificates
+proxy/ssl/*
