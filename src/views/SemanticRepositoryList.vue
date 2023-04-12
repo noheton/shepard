@@ -14,7 +14,7 @@ import { onMounted, ref } from "vue";
 const repositories = ref<SemanticRepository[]>();
 
 function retrieveRepositories() {
-  SemanticRepositoryService.getAllSemanticRepositories({})
+  SemanticRepositoryService.getAllSemanticRepositories()
     .then(response => {
       repositories.value = response;
     })

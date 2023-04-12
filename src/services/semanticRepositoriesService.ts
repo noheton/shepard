@@ -15,9 +15,9 @@ export default class SemanticRepositoryService {
     const api = new SemanticRepositoryApi(getConfiguration());
     return api.deleteSemanticRepository(params);
   }
-  static getAllSemanticRepositories(params: RequestInit) {
+  static getAllSemanticRepositories() {
     const api = new SemanticRepositoryApi(getConfiguration());
-    return api.getAllSemanticRepositories(params);
+    return api.getAllSemanticRepositories();
   }
   static getSemanticRepository(params: GetSemanticRepositoryRequest) {
     const api = new SemanticRepositoryApi(getConfiguration());
