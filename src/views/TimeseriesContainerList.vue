@@ -2,6 +2,7 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import SearchService from "@/services/searchService";
 import TimeseriesService from "@/services/timeseriesService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -9,19 +10,21 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  GetAllTimeseriesContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  TimeseriesContainer,
+import {
+  ContainerSearchParamsQueryTypeEnum,
+  type GetAllTimeseriesContainersOrderByEnum,
+  type PermissionsPermissionTypeEnum,
+  type ResponseError,
+  type TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
-import { useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref } from "vue";
+import { refDebounced, useStorage, useTitle } from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
 
 const containers = ref<TimeseriesContainer[]>();
+
 const filterOptions = useStorage<FilterOptions>("timeseries-filter-options", {
   perPage: 10,
   orderBy: "createdAt",
@@ -94,6 +97,78 @@ function createContainer(options: {
     });
 }
 
+const userInput = ref("");
+const userInputDebounced = refDebounced(userInput, 700);
+const timeseriesContainerResultSet = ref<TimeseriesContainer[]>([]);
+const totalResults = ref(0);
+
+watch(userInputDebounced, () => {
+  if (
+    userInputDebounced.value.length != 0 &&
+    (userInputDebounced.value.length >= 3 ||
+      !isNaN(Number(userInputDebounced.value)))
+  ) {
+    inlineSearch();
+  } else {
+    timeseriesContainerResultSet.value = [];
+  }
+});
+
+function inlineSearch() {
+  const searchQuery = {
+    OR: [
+      {
+        property: "name",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "createdBy",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "id",
+        value: Number(userInput.value),
+        operator: "eq",
+      },
+    ],
+  };
+  SearchService.searchContainers({
+    containerSearchBody: {
+      searchParams: {
+        query: JSON.stringify(searchQuery),
+        queryType: ContainerSearchParamsQueryTypeEnum.Timeseries,
+      },
+    },
+  })
+    .then(response => {
+      timeseriesContainerResultSet.value = [];
+      totalResults.value = response.timeseriesContainers?.length || 0;
+      response.timeseriesContainers?.slice(0, 10).forEach(result => {
+        if (result.id) {
+          retrieveTimeseriesContainerById(result.id);
+        }
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching search data");
+    });
+}
+
+function retrieveTimeseriesContainerById(timeseriesContainerId: number) {
+  TimeseriesService.getTimeseriesContainer({
+    timeseriesContainerId: timeseriesContainerId,
+  })
+    .then(response => {
+      const temp = [...timeseriesContainerResultSet.value, response];
+      timeseriesContainerResultSet.value = temp;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching timeseries container");
+    });
+}
+
 onMounted(() => {
   retrieveContainers();
   useTitle("Timeseries Containers | shepard");
@@ -115,6 +190,23 @@ onMounted(() => {
       </b-button-group>
       <h4>Timeseries Containers</h4>
       <br />
+
+      <b-form-input
+        id="userFormInput"
+        v-model="userInput"
+        class="mb-3"
+        placeholder="Name, Username, ID or Description"
+      ></b-form-input>
+
+      <b-popover
+        custom-class="wide-popover"
+        target="userFormInput"
+        triggers="focus"
+        placement="bottom"
+      >
+        <template #title>Result Set ({{ totalResults }} total)</template>
+        <GenericEntityList :entities="timeseriesContainerResultSet" />
+      </b-popover>
 
       <FilterListLine
         :max-objects="totalRows"

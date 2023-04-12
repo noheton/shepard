@@ -22,10 +22,9 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
+
 const containers = ref<FileContainer[] | undefined>();
-const userInput = ref("");
-const userInputDebounced = refDebounced(userInput, 1000);
-const fileContainerResultSet = ref<FileContainer[]>([]);
+
 const filterOptions = useStorage<FilterOptions>("files-filter-options", {
   perPage: 10,
   orderBy: "createdAt",
@@ -98,6 +97,11 @@ function createContainer(options: {
     });
 }
 
+const userInput = ref("");
+const userInputDebounced = refDebounced(userInput, 700);
+const fileContainerResultSet = ref<FileContainer[]>([]);
+const totalResults = ref(0);
+
 watch(userInputDebounced, () => {
   if (
     userInputDebounced.value.length != 0 &&
@@ -140,7 +144,8 @@ function inlineSearch() {
   })
     .then(response => {
       fileContainerResultSet.value = [];
-      response.fileContainers?.forEach(result => {
+      totalResults.value = response.fileContainers?.length || 0;
+      response.fileContainers?.slice(0, 10).forEach(result => {
         if (result.id) {
           retrieveFileContainerById(result.id);
         }
@@ -199,7 +204,7 @@ onMounted(() => {
         triggers="focus"
         placement="bottom"
       >
-        <template #title>Result Set</template>
+        <template #title>Result Set ({{ totalResults }} total)</template>
         <GenericEntityList :entities="fileContainerResultSet" />
       </b-popover>
 

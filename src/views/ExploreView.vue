@@ -2,7 +2,6 @@
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import Loading from "@/components/generic/Loading.vue";
 import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
@@ -17,10 +16,11 @@ import {
   SearchParamsQueryTypeEnum,
   type Collection,
 } from "@dlr-shepard/shepard-client";
-import { useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref } from "vue";
+import { refDebounced, useStorage, useTitle } from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
 
 const collections = ref<Collection[]>();
+
 function retrieveCollections(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
@@ -63,24 +63,21 @@ function filterChanged(options: FilterChangedData) {
 }
 
 const userInput = ref("");
+const userInputDebounced = refDebounced(userInput, 700);
 const collectionsResultSet = ref<Collection[]>([]);
-const collectionsFound = ref<number>();
-function handlePrepare() {
-  collectionsResultSet.value = [];
-  collectionsFound.value = undefined;
-}
+const totalResults = ref(0);
 
-function retrieveCollectionById(collectionId: number) {
-  CollectionService.getCollection({
-    collectionId: collectionId,
-  })
-    .then(response => {
-      collectionsResultSet.value.push(response);
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching collection");
-    });
-}
+watch(userInputDebounced, () => {
+  if (
+    userInputDebounced.value.length != 0 &&
+    (userInputDebounced.value.length >= 3 ||
+      !isNaN(Number(userInputDebounced.value)))
+  ) {
+    inlineSearch();
+  } else {
+    collectionsResultSet.value = [];
+  }
+});
 
 function inlineSearch() {
   const searchQuery = {
@@ -121,8 +118,9 @@ function inlineSearch() {
     },
   })
     .then(response => {
-      collectionsFound.value = response.resultSet?.length || 0;
-      response.resultSet?.forEach(result => {
+      collectionsResultSet.value = [];
+      totalResults.value = response.resultSet?.length || 0;
+      response.resultSet?.slice(0, 10).forEach(result => {
         if (result.collectionId) {
           retrieveCollectionById(result.collectionId);
         }
@@ -130,6 +128,19 @@ function inlineSearch() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching search data");
+    });
+}
+
+function retrieveCollectionById(collectionId: number) {
+  CollectionService.getCollection({
+    collectionId: collectionId,
+  })
+    .then(response => {
+      const temp = [...collectionsResultSet.value, response];
+      collectionsResultSet.value = temp;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching collection");
     });
 }
 
@@ -155,35 +166,22 @@ onMounted(() => {
 
       <h4 class="mb-4">Explore Collections</h4>
 
-      <b-input-group class="mb-3">
-        <b-form-input
-          v-model="userInput"
-          placeholder="Name, Username, ID or Description"
-        ></b-form-input>
-        <b-input-group-append>
-          <b-button
-            v-b-modal.searchDataModal
-            variant="secondary"
-            @click="inlineSearch()"
-          >
-            Search
-          </b-button>
-        </b-input-group-append>
-      </b-input-group>
+      <b-form-input
+        id="userFormInput"
+        v-model="userInput"
+        class="mb-3"
+        placeholder="Name, Username, ID or Description"
+      ></b-form-input>
 
-      <b-modal
-        id="searchDataModal"
-        title="Result Set"
-        size="lg"
-        ok-only
-        @show="handlePrepare()"
+      <b-popover
+        custom-class="wide-popover"
+        target="userFormInput"
+        triggers="focus"
+        placement="bottom"
       >
-        <GenericEntityList
-          v-if="collectionsFound == collectionsResultSet.length"
-          :entities="collectionsResultSet"
-        />
-        <Loading v-else />
-      </b-modal>
+        <template #title>Result Set ({{ totalResults }} total)</template>
+        <GenericEntityList :entities="collectionsResultSet" />
+      </b-popover>
 
       <FilterListLine
         :max-objects="totalRows"

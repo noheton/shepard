@@ -2,6 +2,7 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import SearchService from "@/services/searchService";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -9,14 +10,15 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  GetAllStructuredDataContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
-  ResponseError,
-  StructuredDataContainer,
+import {
+  ContainerSearchParamsQueryTypeEnum,
+  type GetAllStructuredDataContainersOrderByEnum,
+  type PermissionsPermissionTypeEnum,
+  type ResponseError,
+  type StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
-import { useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref } from "vue";
+import { refDebounced, useStorage, useTitle } from "@vueuse/core";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
@@ -95,6 +97,80 @@ function createContainer(options: {
     });
 }
 
+const userInput = ref("");
+const userInputDebounced = refDebounced(userInput, 700);
+const structuredDataContainerResultSet = ref<StructuredDataContainer[]>([]);
+const totalResults = ref(0);
+
+watch(userInputDebounced, () => {
+  if (
+    userInputDebounced.value.length != 0 &&
+    (userInputDebounced.value.length >= 3 ||
+      !isNaN(Number(userInputDebounced.value)))
+  ) {
+    inlineSearch();
+  } else {
+    structuredDataContainerResultSet.value = [];
+  }
+});
+
+function inlineSearch() {
+  const searchQuery = {
+    OR: [
+      {
+        property: "name",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "createdBy",
+        value: userInput.value,
+        operator: "contains",
+      },
+      {
+        property: "id",
+        value: Number(userInput.value),
+        operator: "eq",
+      },
+    ],
+  };
+  SearchService.searchContainers({
+    containerSearchBody: {
+      searchParams: {
+        query: JSON.stringify(searchQuery),
+        queryType: ContainerSearchParamsQueryTypeEnum.Structureddata,
+      },
+    },
+  })
+    .then(response => {
+      structuredDataContainerResultSet.value = [];
+      totalResults.value = response.structuredDataContainers?.length || 0;
+      response.structuredDataContainers?.slice(0, 10).forEach(result => {
+        if (result.id) {
+          retrieveStructuredDataContainerById(result.id);
+        }
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching search data");
+    });
+}
+
+function retrieveStructuredDataContainerById(
+  structuredDataContainerId: number,
+) {
+  StructuredDataService.getStructuredDataContainer({
+    structureddataContainerId: structuredDataContainerId,
+  })
+    .then(response => {
+      const temp = [...structuredDataContainerResultSet.value, response];
+      structuredDataContainerResultSet.value = temp;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching structured data container");
+    });
+}
+
 onMounted(() => {
   retrieveContainers();
   useTitle("Structured Data Containers | shepard");
@@ -117,6 +193,23 @@ onMounted(() => {
 
       <h4>Structured Data Containers</h4>
       <br />
+
+      <b-form-input
+        id="userFormInput"
+        v-model="userInput"
+        class="mb-3"
+        placeholder="Name, Username, ID or Description"
+      ></b-form-input>
+
+      <b-popover
+        custom-class="wide-popover"
+        target="userFormInput"
+        triggers="focus"
+        placement="bottom"
+      >
+        <template #title>Result Set ({{ totalResults }} total)</template>
+        <GenericEntityList :entities="structuredDataContainerResultSet" />
+      </b-popover>
 
       <FilterListLine
         :max-objects="totalRows"
