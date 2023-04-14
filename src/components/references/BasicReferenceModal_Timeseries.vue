@@ -14,7 +14,7 @@ import type {
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
 import { Chart, registerables } from "chart.js";
-import { onMounted, reactive, ref, type PropType } from "vue";
+import Vue, { computed, onMounted, reactive, ref, type PropType } from "vue";
 
 Chart.register(...registerables);
 
@@ -47,37 +47,13 @@ const internalState = reactive(getInitialState());
 const chartData = ref<PlottingData>({ datasets: [], xLabel: "" });
 
 const fields = [
-  { key: "selected", label: "" },
-  { key: "measurement", label: "Measurement" },
-  { key: "location", label: "Location" },
-  { key: "device", label: "Device" },
-  { key: "symbolicName", label: "Symbolic Name" },
-  { key: "field", label: "Field" },
+  { key: "isSelected", sortable: true },
+  { key: "measurement", label: "Measurement", sortable: true },
+  { key: "location", label: "Location", sortable: true },
+  { key: "device", label: "Device", sortable: true },
+  { key: "symbolicName", label: "Symbolic Name", sortable: true },
+  { key: "field", label: "Field", sortable: true },
 ];
-
-async function handleSelectedRows(selectedTimeseriesList: Timeseries[]) {
-  if (selectedTimeseriesList.length > chartData.value.datasets.length) {
-    // fetch und push
-    const fetchedNames = chartData.value.datasets.map(element => element.label);
-    const timeseriesToAdd = selectedTimeseriesList.find(
-      selectedTimeseries =>
-        fetchedNames.find(
-          name => getTimeseriesName(selectedTimeseries) == name,
-        ) == undefined,
-    );
-    if (timeseriesToAdd) fetchTimeseriesPayload(timeseriesToAdd);
-  } else {
-    // delete
-    const indexOfDatasetToDelete = chartData.value.datasets.findIndex(
-      dataset =>
-        selectedTimeseriesList.find(
-          selectedTimeseries =>
-            getTimeseriesName(selectedTimeseries) == dataset.label,
-        ) == undefined,
-    );
-    chartData.value.datasets.splice(indexOfDatasetToDelete, 1);
-  }
-}
 
 function fetchTimeseriesPayload(selectedTimeseries: Timeseries) {
   if (
@@ -158,9 +134,49 @@ function getTimeseriesName(ts: Timeseries) {
   return Object.values(ts).join(" - ");
 }
 
+interface TimeseriesSelectable extends Timeseries {
+  isSelected: boolean;
+}
+
+const filter = ref<string>("");
+const filteredItemsList = ref<TimeseriesSelectable[]>([]);
+const perPage = 12;
+const currentPage = ref(1);
+
+const totalRows = computed(() => {
+  return filter.value
+    ? filteredItemsList.value.length
+    : props.timeseriesReference.timeseries.length;
+});
+
+function onRowClicked(selectedTimeseries: TimeseriesSelectable) {
+  // to remember which timeseries is selected we need an additional boolean.
+  // this functionality is not supported by bootstrap tables
+  Vue.set(selectedTimeseries, "isSelected", !selectedTimeseries.isSelected);
+  console.log(getTimeseriesName(selectedTimeseries));
+  if (selectedTimeseries.isSelected) {
+    fetchTimeseriesPayload(selectedTimeseries);
+  } else {
+    // delete from chartData
+    console.log("delete");
+    const indexOfDatasetToDelete = chartData.value.datasets.findIndex(
+      dataset => getTimeseriesName(selectedTimeseries) == dataset.label,
+    );
+    chartData.value.datasets.splice(indexOfDatasetToDelete, 1);
+  }
+}
+
+function onTableFiltered(filteredItems: TimeseriesSelectable[]) {
+  filteredItemsList.value = filteredItems;
+}
+
 onMounted(() => {
   chartData.value = { datasets: [], xLabel: "Time in s" };
   Object.assign(internalState, getInitialState());
+  // clear remembered timeseries see "onRowClicked"
+  props.timeseriesReference.timeseries.forEach(e => {
+    Vue.set(e, "isSelected", false);
+  });
 });
 </script>
 
@@ -238,46 +254,60 @@ onMounted(() => {
         </small>
       </div>
 
+      <b-row class="mt-2">
+        <b-col>
+          <b-input v-model="filter" placeholder="Filter.."></b-input>
+        </b-col>
+      </b-row>
       <b-table
-        hover
-        small
-        :items="props.timeseriesReference.timeseries"
-        :fields="fields"
+        class="mt-1"
         select-mode="multi"
         selectable
-        @row-selected="handleSelectedRows($event)"
+        hover
+        small
+        :fields="fields"
+        :items="props.timeseriesReference.timeseries"
+        :per-page="perPage"
+        :current-page="currentPage"
+        :filter="filter"
+        @filtered="onTableFiltered($event)"
+        @row-clicked="onRowClicked"
       >
-        <template #cell(selected)="{ rowSelected }">
-          <template v-if="rowSelected">
-            <CheckboxChecked />
-            <span class="sr-only">Selected</span>
-          </template>
-          <template v-else>
-            <CheckboxEmpty />
-            <span class="sr-only">Not selected</span>
-          </template>
-        </template>
-        <template #cell(measurement)="data">
-          {{ data.item.measurement }}
+        <!-- it has to be the bootstrap internal "value" variable -->
+        <template #cell(isSelected)="{ value }">
+          <CheckboxChecked v-if="value" />
+          <span class="sr-only">Selected</span>
+          <CheckboxEmpty v-if="!value" />
+          <span class="sr-only">Not selected</span>
         </template>
 
-        <template #cell(location)="data">
-          {{ data.item.location }}
+        <template #cell(measurement)="{ item }">
+          {{ item.measurement }}
         </template>
 
-        <template #cell(device)="data">
-          {{ data.item.device }}
+        <template #cell(location)="{ item }">
+          {{ item.location }}
         </template>
 
-        <template #cell(symbolicName)="data">
-          {{ data.item.symbolicName }}
+        <template #cell(device)="{ item }">
+          {{ item.device }}
         </template>
 
-        <template #cell(field)="data">
-          {{ data.item.field }}
+        <template #cell(symbolicName)="{ item }">
+          {{ item.symbolicName }}
+        </template>
+
+        <template #cell(field)="{ item }">
+          {{ item.field }}
         </template>
       </b-table>
     </div>
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="perPage"
+      align="right"
+    ></b-pagination>
 
     <VisualizationModal
       v-if="chartData.datasets.length > 0"
