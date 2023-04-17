@@ -35,6 +35,7 @@ function handlePrepare() {
 }
 
 function handleOK() {
+  newObject.value.endpoint = newObject.value.endpoint.trim();
   emit("create", newObject.value);
 }
 </script>

@@ -2,6 +2,7 @@ import {
   SemanticRepositoryApi,
   type CreateSemanticRepositoryRequest,
   type DeleteSemanticRepositoryRequest,
+  type GetAllSemanticRepositoriesRequest,
   type GetSemanticRepositoryRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
@@ -15,9 +16,9 @@ export default class SemanticRepositoryService {
     const api = new SemanticRepositoryApi(getConfiguration());
     return api.deleteSemanticRepository(params);
   }
-  static getAllSemanticRepositories() {
+  static getAllSemanticRepositories(params: GetAllSemanticRepositoriesRequest) {
     const api = new SemanticRepositoryApi(getConfiguration());
-    return api.getAllSemanticRepositories();
+    return api.getAllSemanticRepositories(params);
   }
   static getSemanticRepository(params: GetSemanticRepositoryRequest) {
     const api = new SemanticRepositoryApi(getConfiguration());
