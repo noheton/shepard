@@ -28,6 +28,14 @@
       "allowedVersions": "<5"
     },
     {
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["@vue/tsconfig"],
+      "allowedVersions": "<0.2"
+    },
+    {
       "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
       "groupName": "Volar monorepo packages"
     }
