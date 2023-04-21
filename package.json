@@ -37,7 +37,7 @@
     "@types/jsoneditor": "9.9.0",
     "@types/node": "18.15.12",
     "@vitejs/plugin-vue2": "2.2.0",
-    "@volar/vue-typescript": "1.2.0",
+    "@volar/vue-typescript": "1.4.0",
     "@vue/eslint-config-prettier": "7.1.0",
     "@vue/eslint-config-typescript": "11.0.2",
     "@vue/tsconfig": "0.1.3",
