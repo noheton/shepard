@@ -61,8 +61,8 @@ function createReferenceAnnotation(semanticAnnotation: SemanticAnnotation) {
     semanticAnnotation: semanticAnnotation,
   })
     .then(newAnnotation => {
-      const temp = [...(referenceAnnotationList.value || []), newAnnotation];
-      referenceAnnotationList.value = temp;
+      const temp = referenceAnnotationList.value || [];
+      referenceAnnotationList.value = [...temp, newAnnotation];
     })
     .catch(e => {
       handleError(e as ResponseError, "creating semantic reference annotation");

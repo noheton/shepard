@@ -161,8 +161,10 @@ function retrieveTimeseriesContainerById(timeseriesContainerId: number) {
     timeseriesContainerId: timeseriesContainerId,
   })
     .then(response => {
-      const temp = [...timeseriesContainerResultSet.value, response];
-      timeseriesContainerResultSet.value = temp;
+      timeseriesContainerResultSet.value = [
+        ...timeseriesContainerResultSet.value,
+        response,
+      ];
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching timeseries container");

@@ -135,8 +135,8 @@ function createCollectionAnnotation(semanticAnnotation: SemanticAnnotation) {
       semanticAnnotation: semanticAnnotation,
     })
     .then(newAnnotation => {
-      const temp = [...(collectionAnnotationList.value || []), newAnnotation];
-      collectionAnnotationList.value = temp;
+      const temp = collectionAnnotationList.value || [];
+      collectionAnnotationList.value = [...temp, newAnnotation];
     })
     .catch(e => {
       handleError(

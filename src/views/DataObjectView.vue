@@ -126,8 +126,8 @@ function createDataObjectAnnotation(semanticAnnotation: SemanticAnnotation) {
     semanticAnnotation: semanticAnnotation,
   })
     .then(newAnnotation => {
-      const temp = [...(dataObjectAnnotationList.value || []), newAnnotation];
-      dataObjectAnnotationList.value = temp;
+      const temp = dataObjectAnnotationList.value || [];
+      dataObjectAnnotationList.value = [...temp, newAnnotation];
     })
     .catch(e => {
       handleError(

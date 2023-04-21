@@ -161,8 +161,10 @@ function retrieveFileContainerById(fileContainerId: number) {
     fileContainerId: fileContainerId,
   })
     .then(response => {
-      const temp = [...fileContainerResultSet.value, response];
-      fileContainerResultSet.value = temp;
+      fileContainerResultSet.value = [
+        ...fileContainerResultSet.value,
+        response,
+      ];
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching file container");

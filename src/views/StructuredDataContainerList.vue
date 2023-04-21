@@ -163,8 +163,10 @@ function retrieveStructuredDataContainerById(
     structureddataContainerId: structuredDataContainerId,
   })
     .then(response => {
-      const temp = [...structuredDataContainerResultSet.value, response];
-      structuredDataContainerResultSet.value = temp;
+      structuredDataContainerResultSet.value = [
+        ...structuredDataContainerResultSet.value,
+        response,
+      ];
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching structured data container");

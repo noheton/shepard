@@ -136,8 +136,7 @@ function retrieveCollectionById(collectionId: number) {
     collectionId: collectionId,
   })
     .then(response => {
-      const temp = [...collectionsResultSet.value, response];
-      collectionsResultSet.value = temp;
+      collectionsResultSet.value = [...collectionsResultSet.value, response];
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching collection");
