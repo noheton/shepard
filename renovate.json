@@ -36,8 +36,8 @@
       "allowedVersions": "<0.2"
     },
     {
-      "matchSourceUrls": ["https://github.com/johnsoncodehk/volar"],
-      "groupName": "Volar monorepo packages"
+      "matchSourceUrls": ["https://github.com/vuejs/language-tools"],
+      "groupName": "language-tools monorepo"
     }
   ],
   "labels": ["dependencies"],
