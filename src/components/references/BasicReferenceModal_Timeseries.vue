@@ -153,12 +153,10 @@ function onRowClicked(selectedTimeseries: TimeseriesSelectable) {
   // to remember which timeseries is selected we need an additional boolean.
   // this functionality is not supported by bootstrap tables
   Vue.set(selectedTimeseries, "isSelected", !selectedTimeseries.isSelected);
-  console.log(getTimeseriesName(selectedTimeseries));
   if (selectedTimeseries.isSelected) {
     fetchTimeseriesPayload(selectedTimeseries);
   } else {
     // delete from chartData
-    console.log("delete");
     const indexOfDatasetToDelete = chartData.value.datasets.findIndex(
       dataset => getTimeseriesName(selectedTimeseries) == dataset.label,
     );
@@ -168,6 +166,11 @@ function onRowClicked(selectedTimeseries: TimeseriesSelectable) {
 
 function onTableFiltered(filteredItems: TimeseriesSelectable[]) {
   filteredItemsList.value = filteredItems;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function slotScopeIsSelected(slotScope: any) {
+  return "value" in slotScope ? slotScope.value : false;
 }
 
 onMounted(() => {
@@ -273,32 +276,9 @@ onMounted(() => {
         @filtered="onTableFiltered($event)"
         @row-clicked="onRowClicked"
       >
-        <!-- it has to be the bootstrap internal "value" variable -->
-        <template #cell(isSelected)="{ value }">
-          <CheckboxChecked v-if="value" />
-          <span class="sr-only">Selected</span>
-          <CheckboxEmpty v-if="!value" />
-          <span class="sr-only">Not selected</span>
-        </template>
-
-        <template #cell(measurement)="{ item }">
-          {{ item.measurement }}
-        </template>
-
-        <template #cell(location)="{ item }">
-          {{ item.location }}
-        </template>
-
-        <template #cell(device)="{ item }">
-          {{ item.device }}
-        </template>
-
-        <template #cell(symbolicName)="{ item }">
-          {{ item.symbolicName }}
-        </template>
-
-        <template #cell(field)="{ item }">
-          {{ item.field }}
+        <template #cell(isSelected)="data">
+          <CheckboxChecked v-if="slotScopeIsSelected(data)" />
+          <CheckboxEmpty v-else />
         </template>
       </b-table>
     </div>
