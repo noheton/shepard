@@ -170,6 +170,8 @@ function onTableFiltered(filteredItems: TimeseriesSelectable[]) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function slotScopeIsSelected(slotScope: any) {
+  // It has to be the bootstrap internal "value" variable as that is the cell value (bool)
+  // We need this function to workaround typescript/javascript issues with bootstrap
   return "value" in slotScope ? slotScope.value : false;
 }
 

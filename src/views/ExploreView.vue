@@ -2,22 +2,21 @@
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import { useSearchCollections } from "@/components/search/SearchCollections";
 import CollectionService from "@/services/collectionService";
-import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import {
   getTotalRows,
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import {
+import type {
+  Collection,
   GetAllCollectionsOrderByEnum,
   ResponseError,
-  SearchParamsQueryTypeEnum,
-  type Collection,
 } from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 const collections = ref<Collection[]>();
 
@@ -64,84 +63,8 @@ function filterChanged(options: FilterChangedData) {
 
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
-const collectionsResultSet = ref<Collection[]>([]);
-const totalResults = ref(0);
 
-watch(userInputDebounced, () => {
-  if (
-    userInputDebounced.value.length != 0 &&
-    (userInputDebounced.value.length >= 3 ||
-      !isNaN(Number(userInputDebounced.value)))
-  ) {
-    inlineSearch();
-  } else {
-    collectionsResultSet.value = [];
-  }
-});
-
-function inlineSearch() {
-  const searchQuery = {
-    OR: [
-      {
-        property: "name",
-        value: userInput.value,
-        operator: "contains",
-      },
-      {
-        property: "createdBy",
-        value: userInput.value,
-        operator: "contains",
-      },
-      {
-        property: "description",
-        value: userInput.value,
-        operator: "contains",
-      },
-      {
-        property: "id",
-        value: Number(userInput.value),
-        operator: "eq",
-      },
-    ],
-  };
-  SearchService.search({
-    searchBody: {
-      scopes: [
-        {
-          traversalRules: [],
-        },
-      ],
-      searchParams: {
-        query: JSON.stringify(searchQuery),
-        queryType: SearchParamsQueryTypeEnum.Collection,
-      },
-    },
-  })
-    .then(response => {
-      collectionsResultSet.value = [];
-      totalResults.value = response.resultSet?.length || 0;
-      response.resultSet?.slice(0, 10).forEach(result => {
-        if (result.collectionId) {
-          retrieveCollectionById(result.collectionId);
-        }
-      });
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching search data");
-    });
-}
-
-function retrieveCollectionById(collectionId: number) {
-  CollectionService.getCollection({
-    collectionId: collectionId,
-  })
-    .then(response => {
-      collectionsResultSet.value = [...collectionsResultSet.value, response];
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching collection");
-    });
-}
+const { resultSet, totalResults } = useSearchCollections(userInputDebounced);
 
 onMounted(() => {
   retrieveCollections();
@@ -179,7 +102,7 @@ onMounted(() => {
         placement="bottom"
       >
         <template #title>Result Set ({{ totalResults }} total)</template>
-        <GenericEntityList :entities="collectionsResultSet" />
+        <GenericEntityList :entities="resultSet" />
       </b-popover>
 
       <FilterListLine

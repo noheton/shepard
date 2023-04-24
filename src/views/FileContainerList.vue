@@ -2,23 +2,22 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import { useSearchFileContainers } from "@/components/search/SearchFileContainers";
 import FileService from "@/services/fileService";
-import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import {
   getTotalRows,
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import {
-  ContainerSearchParamsQueryTypeEnum,
-  type FileContainer,
-  type GetAllFileContainersOrderByEnum,
-  type PermissionsPermissionTypeEnum,
-  type ResponseError,
+import type {
+  FileContainer,
+  GetAllFileContainersOrderByEnum,
+  PermissionsPermissionTypeEnum,
+  ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 
 const router = useRouter();
@@ -99,77 +98,8 @@ function createContainer(options: {
 
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
-const fileContainerResultSet = ref<FileContainer[]>([]);
-const totalResults = ref(0);
 
-watch(userInputDebounced, () => {
-  if (
-    userInputDebounced.value.length != 0 &&
-    (userInputDebounced.value.length >= 3 ||
-      !isNaN(Number(userInputDebounced.value)))
-  ) {
-    inlineSearch();
-  } else {
-    fileContainerResultSet.value = [];
-  }
-});
-
-function inlineSearch() {
-  const searchQuery = {
-    OR: [
-      {
-        property: "name",
-        value: userInput.value,
-        operator: "contains",
-      },
-      {
-        property: "createdBy",
-        value: userInput.value,
-        operator: "contains",
-      },
-      {
-        property: "id",
-        value: Number(userInput.value),
-        operator: "eq",
-      },
-    ],
-  };
-  SearchService.searchContainers({
-    containerSearchBody: {
-      searchParams: {
-        query: JSON.stringify(searchQuery),
-        queryType: ContainerSearchParamsQueryTypeEnum.File,
-      },
-    },
-  })
-    .then(response => {
-      fileContainerResultSet.value = [];
-      totalResults.value = response.fileContainers?.length || 0;
-      response.fileContainers?.slice(0, 10).forEach(result => {
-        if (result.id) {
-          retrieveFileContainerById(result.id);
-        }
-      });
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching search data");
-    });
-}
-
-function retrieveFileContainerById(fileContainerId: number) {
-  FileService.getFileContainer({
-    fileContainerId: fileContainerId,
-  })
-    .then(response => {
-      fileContainerResultSet.value = [
-        ...fileContainerResultSet.value,
-        response,
-      ];
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching file container");
-    });
-}
+const { resultSet, totalResults } = useSearchFileContainers(userInputDebounced);
 
 onMounted(() => {
   retrieveContainers();
@@ -207,7 +137,7 @@ onMounted(() => {
         placement="bottom"
       >
         <template #title>Result Set ({{ totalResults }} total)</template>
-        <GenericEntityList :entities="fileContainerResultSet" />
+        <GenericEntityList :entities="resultSet" />
       </b-popover>
 
       <FilterListLine
