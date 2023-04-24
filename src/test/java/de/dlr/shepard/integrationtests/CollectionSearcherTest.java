@@ -11,6 +11,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
+import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.search.QueryType;
 import de.dlr.shepard.search.ResponseBody;
@@ -18,6 +20,7 @@ import de.dlr.shepard.search.ResultTriple;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.SearchParams;
 import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;
@@ -35,6 +38,14 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 	private static UserWithApiKey user1;
 	private static String jws1;
 	private static RequestSpecification searchRequestSpec1;
+
+	private static String repositoryURL;
+	private static RequestSpecification repositoryRequestSpec;
+	private static SemanticRepositoryIO repository;
+	private static SemanticAnnotationIO annotation;
+	private static CollectionIO annotatedCollection;
+	private static String annotatedCollectionURL;
+	private static RequestSpecification annotatedCollectionRequestSpec;
 
 	@BeforeAll
 	public static void setUp() {
@@ -58,6 +69,29 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		jws1 = user1.getApiKey().getJws();
 		searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(searchURL)
 				.addHeader("X-API-KEY", jws1).build();
+
+		// for search involving SemanticAnnotations
+		repositoryURL = baseURL + "/" + Constants.SEMANTIC_REPOSITORIES;
+		repositoryRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(repositoryURL)
+				.addHeader("X-API-KEY", jws).build();
+		annotatedCollection = createCollection("SemanticsCollection");
+		annotatedCollectionURL = String.format("%s/%s/%d/semanticAnnotations", baseURL, Constants.COLLECTIONS,
+				annotatedCollection.getId());
+		annotatedCollectionRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON)
+				.setBaseUri(annotatedCollectionURL).addHeader("X-API-KEY", jws).build();
+		var repositoryToCreate = new SemanticRepositoryIO();
+		repositoryToCreate.setName("SemanticRepository");
+		repositoryToCreate.setType(SemanticRepositoryType.SPARQL);
+		repositoryToCreate.setEndpoint("http://sparql.hegroup.org/sparql/");
+		repository = given().spec(repositoryRequestSpec).body(repositoryToCreate).when().post().then().statusCode(201)
+				.extract().as(SemanticRepositoryIO.class);
+		var annotationToCreate = new SemanticAnnotationIO();
+		annotationToCreate.setPropertyIRI("http://purl.obolibrary.org/obo/FOODON_00002420");
+		annotationToCreate.setPropertyRepositoryId(repository.getId());
+		annotationToCreate.setValueIRI("http://purl.obolibrary.org/obo/FOODON_00001013");
+		annotationToCreate.setValueRepositoryId(repository.getId());
+		annotation = given().spec(annotatedCollectionRequestSpec).body(annotationToCreate).when().post().then()
+				.statusCode(201).extract().as(SemanticAnnotationIO.class);
 	}
 
 	@Test
@@ -379,6 +413,44 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple2 = new ResultTriple(collection2.getId(), null, null);
 		assertThat(result.getResultSet()).contains(triple1);
 		assertThat(result.getResultSet()).contains(triple2);
+	}
+
+	@Test
+	@Order(9)
+	public void searchCollectionsViaPropertyIRI() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setTraversalRules(new TraversalRules[] {});
+		searchBody.setScopes(new SearchScope[] { searchScope });
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.Collection);
+		String query = "{\"property\": \"propertyIRI\",\"value\": \"" + annotation.getPropertyIRI()
+				+ "\",\"operator\": \"eq\"}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		ResultTriple triple = new ResultTriple(annotatedCollection.getId(), null, null);
+		assertThat(result.getResultSet()).contains(triple);
+	}
+
+	@Test
+	@Order(10)
+	public void searchCollectionsViaValueIRI() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setTraversalRules(new TraversalRules[] {});
+		searchBody.setScopes(new SearchScope[] { searchScope });
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.Collection);
+		String query = "{\"property\": \"valueIRI\",\"value\": \"" + annotation.getValueIRI().substring(2, 10)
+				+ "\",\"operator\": \"contains\"}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		ResultTriple triple = new ResultTriple(annotatedCollection.getId(), null, null);
+		assertThat(result.getResultSet()).contains(triple);
 	}
 
 }

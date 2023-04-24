@@ -110,6 +110,20 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
+	public void emitCollectionBasicReferenceQueryValueIRITest() {
+		String searchBodyQuery = """
+				{
+				  "property": "valueIRI",
+				  "value": "MyName",
+				  "operator": "eq"
+				}
+				""";
+		String neo4jQuery = Neo4jEmitter.emitCollectionBasicReferenceQuery(searchBodyQuery, 4L, userName);
+		String expected = "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (EXISTS {MATCH (br) - [] -> (sem:SemanticAnnotation) WHERE (sem.valueIRI = \"MyName\" AND sem.deleted = FALSE)}) AND (id(col) = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"}))) RETURN id(do), id(br)";
+		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
 	public void emitBasicReferenceQueryTest() {
 		String searchBodyQuery = """
 				{

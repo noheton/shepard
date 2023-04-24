@@ -74,8 +74,12 @@ public class Neo4jEmitter {
 
 	private static String emitPrimitiveClause(JsonNode node, String variable) {
 		String property = node.get(Constants.OP_PROPERTY).textValue();
+		// search for creating user
 		if (property.equals("createdBy") || property.equals("updatedBy"))
 			return emitByPart(node, variable);
+		// for SemanticAnnotationIRIs
+		if (property.equals("valueIRI") || property.equals("propertyIRI"))
+			return emitIRIPart(node, variable);
 		// for CollectionReferences
 		if (property.equals("referencedCollectionId"))
 			return emitReferencedCollectionIdPart(node, variable);
@@ -132,6 +136,17 @@ public class Neo4jEmitter {
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
 		ret = ret + node.get(Constants.OP_VALUE) + " ";
 		ret = ret + "})";
+		return ret;
+	}
+
+	private static String emitIRIPart(JsonNode node, String variable) {
+		String ret = "(";
+		String iriType = node.get(Constants.OP_PROPERTY).textValue();
+		ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem." + iriType + " ";
+		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
+		ret = ret + node.get(Constants.OP_VALUE) + " AND ";
+		ret = ret + "sem.deleted = FALSE";
+		ret = ret + ")})";
 		return ret;
 	}
 

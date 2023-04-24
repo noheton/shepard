@@ -35,7 +35,6 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 		repositoryURL = baseURL + "/" + Constants.SEMANTIC_REPOSITORIES;
 		repositoryRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(repositoryURL)
 				.addHeader("X-API-KEY", jws).build();
-
 		collection = createCollection("SemanticsCollection");
 		collectionURL = String.format("%s/%s/%d/semanticAnnotations", baseURL, Constants.COLLECTIONS,
 				collection.getId());
