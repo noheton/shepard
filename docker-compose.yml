@@ -5,7 +5,7 @@ services:
     image: registry.gitlab.com/dlr-shepard/frontend:dev
     environment:
       - VUE_APP_BACKEND=http://localhost:8080/shepard/api
-      - VUE_APP_OIDC_AUTHORITY=https://keycloak.bt-au-k8s.intra.dlr.de/realms/master/
+      - VUE_APP_OIDC_AUTHORITY=https://bt-au-keycloak.intra.dlr.de/realms/master/
       - VUE_APP_CLIENT_ID=frontend-dev
     ports:
       - 8081:80

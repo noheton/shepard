@@ -5,32 +5,26 @@
 	<version>${revision}</version>
 	<packaging>war</packaging>
 	<name>shepard backend</name>
-
 	<url>https://dlr-shepard.gitlab.io/backend/</url>
 	<description>
 		This is the backend part of the shepard system.
 		The shepard backend manages all available databases and allows to create and query data via a rest api.
 	</description>
-
 	<organization>
 		<name>DLR e.V.</name>
 		<url>https://www.dlr.de</url>
 	</organization>
-
 	<scm>
 		<url>https://gitlab.com/dlr-shepard/backend</url>
 	</scm>
-
 	<issueManagement>
 		<system>GitLab</system>
 		<url>https://gitlab.com/dlr-shepard/backend/-/issues</url>
 	</issueManagement>
-
 	<ciManagement>
 		<system>GitLab CI/CD</system>
 		<url>https://gitlab.com/dlr-shepard/backend/-/pipelines</url>
 	</ciManagement>
-
 	<properties>
 		<finalName>shepard</finalName>
 		<revision>1.0.0-SNAPSHOT</revision>
@@ -57,7 +51,6 @@
 		<swagger.version>2.2.9</swagger.version>
 		<tomcat.version>10.1.8</tomcat.version>
 	</properties>
-
 	<profiles>
 		<profile>
 			<id>dev</id>
@@ -85,7 +78,6 @@
 			</properties>
 		</profile>
 	</profiles>
-
 	<build>
 		<finalName>${finalName}</finalName>
 		<filters>
@@ -98,7 +90,6 @@
 			</resource>
 		</resources>
 		<plugins>
-
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-resources-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -108,7 +99,6 @@
 					<propertiesEncoding>ISO-8859-1</propertiesEncoding>
 				</configuration>
 			</plugin>
-
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -120,21 +110,18 @@
 					<target>17</target>
 				</configuration>
 			</plugin>
-
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-war-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
 				<version>3.3.2</version>
 			</plugin>
-
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-site-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
 				<version>3.12.1</version>
 			</plugin>
-
 			<!-- ####### Tests ####### -->
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-surefire-plugin -->
 			<plugin>
@@ -148,7 +135,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-
 			<!-- https://mvnrepository.com/artifact/org.jacoco/jacoco-maven-plugin -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
@@ -176,7 +162,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-failsafe-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -198,7 +183,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- Embedded Servers and Deployment for Integration Tests -->
 			<!-- https://mvnrepository.com/artifact/org.codehaus.cargo/cargo-maven3-plugin -->
 			<plugin>
@@ -243,7 +227,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- ####### OpenAPI ####### -->
 			<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-maven-plugin -->
 			<plugin>
@@ -265,7 +248,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- ####### Reports ####### -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -299,7 +281,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<!-- ####### Reports ####### -->
 	<reporting>
 		<plugins>
@@ -368,9 +349,7 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
 	<dependencies>
-
 		<!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
 		<dependency>
 			<groupId>jakarta.servlet</groupId>
@@ -378,7 +357,6 @@
 			<version>6.0.0</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-servlet-api -->
 		<dependency>
 			<groupId>org.apache.tomcat</groupId>
@@ -386,7 +364,6 @@
 			<version>${tomcat.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<!-- ####### JERSEY ####### -->
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet -->
 		<dependency>
@@ -394,56 +371,48 @@
 			<artifactId>jersey-container-servlet</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.inject/jersey-hk2 -->
 		<dependency>
 			<groupId>org.glassfish.jersey.inject</groupId>
 			<artifactId>jersey-hk2</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart -->
 		<dependency>
 			<groupId>org.glassfish.jersey.media</groupId>
 			<artifactId>jersey-media-multipart</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
 		<dependency>
 			<groupId>org.glassfish.jersey.media</groupId>
 			<artifactId>jersey-media-json-jackson</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-jaxb -->
 		<dependency>
 			<groupId>org.glassfish.jersey.media</groupId>
 			<artifactId>jersey-media-jaxb</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
 			<version>2.3.1</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-client</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.glassfish.jersey.ext/jersey-bean-validation -->
 		<dependency>
 			<groupId>org.glassfish.jersey.ext</groupId>
 			<artifactId>jersey-bean-validation</artifactId>
 			<version>${jersey.version}</version>
 		</dependency>
-
 		<!-- ####### CSV ####### -->
 		<!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
 		<dependency>
@@ -451,7 +420,6 @@
 			<artifactId>opencsv</artifactId>
 			<version>${opencsv.version}</version>
 		</dependency>
-
 		<!-- ####### LOGGING ####### -->
 		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
 		<dependency>
@@ -459,14 +427,12 @@
 			<artifactId>logback-classic</artifactId>
 			<version>${logback.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.codehaus.janino/janino -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
 			<version>${janino.version}</version>
 		</dependency>
-
 		<!-- ####### TESTS ####### -->
 		<!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
 		<dependency>
@@ -475,7 +441,6 @@
 			<version>${restassured.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
 		<dependency>
 			<groupId>org.assertj</groupId>
@@ -483,7 +448,6 @@
 			<version>${assertj.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -491,7 +455,6 @@
 			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
 			<groupId>org.mockito</groupId>
@@ -499,7 +462,6 @@
 			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/nl.jqno.equalsverifier/equalsverifier -->
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
@@ -507,7 +469,6 @@
 			<version>${equalsverifier.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- ####### SECURITY ####### -->
 		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
 		<dependency>
@@ -515,7 +476,6 @@
 			<artifactId>jjwt-api</artifactId>
 			<version>${jjwt.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -523,7 +483,6 @@
 			<version>${jjwt.version}</version>
 			<scope>runtime</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -531,7 +490,6 @@
 			<version>${jjwt.version}</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<!-- ####### DATABASES ####### -->
 		<!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-core -->
 		<dependency>
@@ -540,7 +498,6 @@
 			<version>${neo4j.version}</version>
 			<scope>compile</scope>
 		</dependency>
-
 		<!-- Only add if you're using the Bolt driver -->
 		<!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-bolt-driver -->
 		<dependency>
@@ -549,21 +506,18 @@
 			<version>${neo4j.version}</version>
 			<scope>runtime</scope>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
 		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongodb-driver-sync</artifactId>
 			<version>${mongodb.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
 		<dependency>
 			<groupId>org.influxdb</groupId>
 			<artifactId>influxdb-java</artifactId>
 			<version>${influxdb.version}</version>
 		</dependency>
-
 		<!-- ####### SWAGGER ####### -->
 		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
 		<dependency>
@@ -571,14 +525,12 @@
 			<artifactId>swagger-jaxrs2-jakarta</artifactId>
 			<version>${swagger.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer-v2 -->
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
 			<artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
 			<version>${swagger.version}</version>
 		</dependency>
-
 		<!-- ####### Misc ####### -->
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
 		<dependency>
@@ -586,7 +538,6 @@
 			<artifactId>commons-io</artifactId>
 			<version>${commons.version}</version>
 		</dependency>
-
 		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -594,6 +545,5 @@
 			<version>${lombok.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 	</dependencies>
 </project>
