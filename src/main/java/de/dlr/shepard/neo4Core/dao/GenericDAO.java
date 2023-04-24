@@ -119,6 +119,11 @@ public abstract class GenericDAO<T> {
 		return result.queryStatistics().containsUpdates();
 	}
 
+	protected Result getQuery(String query, Map<String, Object> paramsMap) {
+		log.debug("Run query: {}", query);
+		return session.query(query, paramsMap);
+	}
+
 	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
 			String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";

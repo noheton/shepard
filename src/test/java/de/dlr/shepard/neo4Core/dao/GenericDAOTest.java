@@ -150,6 +150,18 @@ public class GenericDAOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getQueryTest() {
+		var query = "MATCH (n {a: 1}) RETURN n";
+		Map<String, Object> params = Map.of("a", "b", "c", "d");
+		Result result = mock(Result.class);
+
+		when(session.query(query, params)).thenReturn(result);
+
+		var actual = dao.getQuery(query, params);
+		assertEquals(result, actual);
+	}
+
+	@Test
 	public void getSearchForReachableReferencesQueryChildrenTest() {
 		TraversalRules children = TraversalRules.children;
 		long StartId = 1L;
