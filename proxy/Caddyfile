@@ -11,7 +11,7 @@
 	auto_https disable_certs
 }
 
-https://HOSTNAME_PLACEHOLDER {
+https://hostname_placeholder_do_not_change {
 	# Set this path to your site's directory.
 	root * /var/www/shepard/
 
@@ -21,37 +21,37 @@ https://HOSTNAME_PLACEHOLDER {
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://backend.HOSTNAME_PLACEHOLDER {
+https://backend.hostname_placeholder_do_not_change {
 	reverse_proxy backend:8080
 
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://frontend.HOSTNAME_PLACEHOLDER {
+https://frontend.hostname_placeholder_do_not_change {
 	reverse_proxy frontend:80
 
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://swagger.HOSTNAME_PLACEHOLDER {
+https://swagger.hostname_placeholder_do_not_change {
 	reverse_proxy swagger:8080
 
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-http://neo4j.HOSTNAME_PLACEHOLDER {
+http://neo4j.hostname_placeholder_do_not_change {
 	reverse_proxy neo4j:7474
 
 	#tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://mongodb.HOSTNAME_PLACEHOLDER {
+https://mongodb.hostname_placeholder_do_not_change {
 	reverse_proxy mongoexpress:8081
 
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://influxdb.HOSTNAME_PLACEHOLDER {
+https://influxdb.hostname_placeholder_do_not_change {
 	reverse_proxy chronograf:8888
 
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key

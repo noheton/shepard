@@ -2,6 +2,8 @@
 
 This repository contains everything you need to set up a shepard instance with Docker and Docker Compose. For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
+[[_TOC_]]
+
 ## Prerequisites
 
 > A minimal configuration without publicly trusted SSL certificates and DNS is possible. In this case, you do not need to install and configure a reverse proxy. Instead, you should change the `ports` inside `docker-compose.yml` so that the containers are externally accessible. This way you cannot use subdomains, instead you can directly address the respective containers via ip and port. Also, all communication between clients and your instance is not encrypted, which is a security risk in itself.
@@ -31,7 +33,7 @@ cd deployment
 
 ### 2. Prepare the reverse proxy
 
-- Apply for SSL certificates and store them in the system under `proxy/ssl/shepard.crt` and `proxy/ssl/shepard.key`
+- Apply for SSL certificates and store them in the system under `proxy/ssl/shepard.crt` (this needs to be a fullchain certificate) and `proxy/ssl/shepard.key`
 - Ideally, the wildcard subdomain (`*`) is included directly in the main certificate as a Subject Alternative Name (SAN) to only have to care about one certificate
 - Make sure that the DNS records resolve both the main name (e.g. `example.com`) and the wildcard subdomain (e.g. `test.example.com`)
 
@@ -40,15 +42,15 @@ cd deployment
 - Configure the [Caddyfile](proxy/Caddyfile) as needed:
 
 ```bash
-# IMPORTANT: replace my.awesome.host.name with your real hostname
-sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" proxy/Caddyfile
+# IMPORTANT: replace HOSTNAME with your real hostname
+sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/Caddyfile
 ```
 
 - Replace the hostname placeholder in [index.html](proxy/shepard/index.html):
 
 ```bash
-# IMPORTANT: replace my.awesome.host.name with your real hostname
-sed -i "s@HOSTNAME_PLACEHOLDER@my.awesome.host.name@" proxy/shepard/index.html
+# IMPORTANT: replace HOSTNAME with your real hostname
+sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/shepard/index.html
 ```
 
 ### 4. Check configuration in `docker-compose.yml` and especially check available memory
@@ -99,13 +101,13 @@ cp env.example .env
 | MONGO_PW | initial mongodb password |  |
 | INFLUX_PW | initial influxdb password |  |
 | OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/` |
-| OIDC_PUBLIC | is the public key of the oidc identity provider (e.g. keycloak) | `MII...` |
-| OIDC_ROLE | allows to restrict access to users with a specific role | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| OIDC_PUBLIC | is the public key of the signature of the oidc identity provider (e.g. keycloak) | `MII...` |
+| OIDC_ROLE | allows to restrict access to users with a specific realm role | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
 | CLIENT_ID | is the client ID of the frontend as known to the oidc identity provider | `shepard-frontend-dev` |
 
 ## Restrict access to users with specific roles
 
-Some OpenID Connect identity providers such as [Keycloak](https://www.keycloak.org/) are able to add role information as part of access tokens. The access token then contains an additional claim `realm_access` like the following:
+Some OpenID Connect identity providers such as [Keycloak](https://www.keycloak.org/) are able to add realm role information as part of access tokens. The access token then contains an additional claim `realm_access` like the following:
 
 ```json
 {
@@ -163,4 +165,12 @@ Verify that the configuration meets the given requirements. The file must have t
 
 ### Read the logs
 
-Most containers log to `STDOUT`. Therefore, you can observe the logs via `docker-compose logs <containername>`. The shepard backend also uses this method, but additionally writes to log files. These log files contain detailed log messages from the system and may contain important information about an issue. You can find the log files at `/opt/shepard/backend/tomcat/` unless you have changed the default location. The file `shepard.log` contains all logs since the last startup or rollover.
+Most containers log to `STDOUT`. Therefore, you can observe the logs via `docker-compose logs <containername>`.
+
+The shepard backend also uses this method, but additionally writes to log files. These log files contain detailed log messages from the system and may contain important information about an issue. You can find the log files at `/opt/shepard/backend/tomcat/` unless you have changed the default location. The file `shepard.log` contains all logs since the last startup or rollover.
+
+Some issues can be found in the frontend log. Open the web dev console (F12 in most browsers) and see whether there are errors in the log.
+
+## Common issues
+
+> TODO
