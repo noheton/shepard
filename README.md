@@ -16,7 +16,7 @@ This repository contains everything you need to set up a shepard instance with D
 
 > Depending on how you plan to use shepard, the system requirements can vary greatly. While most services are relatively lightweight, the databases and shepard backend can be quite demanding. As a starting point, 8 GB of memory may be sufficient. Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads. The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
 
-- [neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
+- [Neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
 - [InfluxDB system requirements](https://docs.influxdata.com/influxdb/v1.8/guides/hardware_sizing/#influxdb-oss-guidelines)
 - [MongoDB system requirements](https://www.mongodb.com/blog/post/performance-best-practices-hardware-and-os-configuration)
 
@@ -75,7 +75,7 @@ NEO4J_dbms_memory_pagecache_size: 3G
 command: --wiredTigerCacheSizeGB 2.0
 ```
 
-- InfluxBD:
+- InfluxDB:
 
 ```yaml
 INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
@@ -97,9 +97,9 @@ cp env.example .env
 | Variable | Description | Example |
 | --- | --- | --- |
 | BACKEND_URL | contains the URL of the backend to be accessed by the clients | `https://backend.shepard.example.com/` |
-| NEO4J_PW | initial neo4j password |  |
-| MONGO_PW | initial mongodb password |  |
-| INFLUX_PW | initial influxdb password |  |
+| NEO4J_PW | initial Neo4j password |  |
+| MONGO_PW | initial MongoDB password |  |
+| INFLUX_PW | initial InfluxDB password |  |
 | OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/` |
 | OIDC_PUBLIC | is the public key of the signature of the oidc identity provider (e.g. keycloak) | `MII...` |
 | OIDC_ROLE | allows to restrict access to users with a specific realm role | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
