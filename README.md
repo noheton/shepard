@@ -173,4 +173,34 @@ Some issues can be found in the frontend log. Open the web dev console (F12 in m
 
 ## Common issues
 
-> TODO
+### Frontend stays blank or is not loading
+
+You may have incorrectly entered one of the `sed ...` commands from [step 3](#3-set-up-the-reverse-proxy). Make sure that both the `Caddyfile` as well as the `index.html` file contain correct hostnames and subdomains.
+
+### Frontend gets stuck on loading and the web dev console shows errors
+
+You may have mistyped the backend URL in `.env`. Make sure that the backend URL is accessible by copying and pasting it into your browser.
+
+### Frontend remains empty except for the navigation bar and the web dev console shows CORS errors
+
+The frontend may have problems accessing the identity provider. Make sure that the `OIDC_AUTHORITY` variable is correct. For keycloak, the url looks like this: `https://my-keycloak.example.com/realms/master/`.
+
+### Error while fetching collections: AuthenticationException: User info could not be retrieved
+
+The backend may have issues accessing the identity provider. Ensure that the backend can access the identity provider using the URL in `OIDC_AUTHORITY`.
+
+### Error while fetching collections: AuthenticationException: Invalid Authentication
+
+The following error is reported in the backend log:
+
+> Invalid token: JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.
+
+You may have entered the `OIDC_PUBLIC` key incorrectly or used a wrong one. For Keycloak you can find the correct key under `Realm Settings > Keys > RS256 > Public Key`.
+
+### Error while fetching collections: AuthenticationException: Invalid Authentication
+
+The following error is reported in the backend log:
+
+> User is missing required role: bt_shepard_users_test_msc
+
+You may have entered the OIDC_ROLES variable incorrectly or made a mistake when configuring the identity provider. Ensure that the identity provider embeds the role information in the access tokens. For Keycloak, you must configure the realm roles to accomplish this.
