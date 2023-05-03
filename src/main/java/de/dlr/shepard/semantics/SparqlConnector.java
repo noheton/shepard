@@ -21,16 +21,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SparqlConnector implements ISemanticRepositoryConnector {
 
-	private final String selectTemplate = """
-			SELECT DISTINCT * WHERE {
-			    ?s ?p ?o .
+	private static final String SELECT_TEMPLATE = """
+			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+			SELECT DISTINCT ?o WHERE {
+			    ?s rdfs:label ?o .
 			    FILTER ( ?s = <%s> )
 			}""";
 
-	private final String askTemplate = "ASK { ?x ?y ?z }";
-
-	// TODO: Use DESCRIBE instead of SELECT
-	// private final String describeTemplate = "DESCRIBE <%s>";
+	private static final String ASK_TEMPLATE = "ASK { ?x ?y ?z }";
 
 	private final String endpoint;
 	private final ObjectMapper mapper = new ObjectMapper();
@@ -42,7 +41,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 
 	@Override
 	public boolean healthCheck() {
-		var query = formatQuery(askTemplate);
+		var query = formatQuery(ASK_TEMPLATE);
 		var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON)
 				.buildGet();
 		String requestResult = request(invocation);
@@ -63,7 +62,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 	}
 
 	private String requestTerm(String termIri) {
-		var query = formatQuery(String.format(selectTemplate, termIri));
+		var query = formatQuery(String.format(SELECT_TEMPLATE, termIri));
 		var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON)
 				.buildGet();
 		String responseEntity = request(invocation);
@@ -80,10 +79,10 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 		var result = new HashMap<String, String>();
 		for (var binding : bindings.get()) {
 			var oBinding = Optional.of(binding);
-			var property = oBinding.map(b -> b.get("p")).map(p -> p.get("value")).map(JsonNode::asText).orElse("");
 			var object = oBinding.map(b -> b.get("o")).map(p -> p.get("value")).map(JsonNode::asText).orElse("");
-			if (!property.isBlank() && !object.isBlank())
-				result.put(property, object);
+			var language = oBinding.map(b -> b.get("o")).map(p -> p.get("xml:lang")).map(JsonNode::asText).orElse("");
+			if (!object.isBlank())
+				result.put(language, object);
 		}
 		return result;
 	}

@@ -48,7 +48,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 		var toCreate = new SemanticRepositoryIO();
 		toCreate.setName("SemanticRepository");
 		toCreate.setType(SemanticRepositoryType.SPARQL);
-		toCreate.setEndpoint("http://sparql.hegroup.org/sparql/");
+		toCreate.setEndpoint("https://dbpedia.org/sparql/");
 
 		var actual = given().spec(repositoryRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
 				.as(SemanticRepositoryIO.class);
@@ -58,7 +58,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 		assertThat(actual.getCreatedAt()).isNotNull();
 		assertThat(actual.getCreatedBy()).isEqualTo(username);
 		assertThat(actual.getType()).isEqualTo(SemanticRepositoryType.SPARQL);
-		assertThat(actual.getEndpoint()).isEqualTo("http://sparql.hegroup.org/sparql/");
+		assertThat(actual.getEndpoint()).isEqualTo("https://dbpedia.org/sparql/");
 		assertThat(actual.getName()).isEqualTo("SemanticRepository");
 		assertThat(actual.getUpdatedAt()).isNull();
 		assertThat(actual.getUpdatedBy()).isNull();
@@ -86,9 +86,9 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 	@Order(4)
 	public void createSemanticAnnotation() {
 		var toCreate = new SemanticAnnotationIO();
-		toCreate.setPropertyIRI("http://purl.obolibrary.org/obo/FOODON_00002420");
+		toCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
 		toCreate.setPropertyRepositoryId(repository.getId());
-		toCreate.setValueIRI("http://purl.obolibrary.org/obo/FOODON_00001013");
+		toCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
 		toCreate.setValueRepositoryId(repository.getId());
 
 		var actual = given().spec(collectionRequestSpec).body(toCreate).when().post().then().statusCode(201).extract()
@@ -97,10 +97,10 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 
 		assertThat(actual.getId()).isNotNull();
 		assertThat(actual.getCreatedAt()).isNotNull();
-		assertThat(actual.getName()).isEqualTo("has ingredient::cheese food product");
-		assertThat(actual.getPropertyIRI()).isEqualTo("http://purl.obolibrary.org/obo/FOODON_00002420");
+		assertThat(actual.getName()).isEqualTo("ingredient::Almond milk");
+		assertThat(actual.getPropertyIRI()).isEqualTo("http://dbpedia.org/ontology/ingredient");
 		assertThat(actual.getPropertyRepositoryId()).isEqualTo(repository.getId());
-		assertThat(actual.getValueIRI()).isEqualTo("http://purl.obolibrary.org/obo/FOODON_00001013");
+		assertThat(actual.getValueIRI()).isEqualTo("http://dbpedia.org/resource/Almond_milk");
 		assertThat(actual.getValueRepositoryId()).isEqualTo(repository.getId());
 	}
 

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,8 +64,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	@InjectMocks
 	private SemanticAnnotationService service;
 
-	private static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
-
 	private SemanticRepository propRepo = new SemanticRepository() {
 		{
 			setId(2L);
@@ -90,8 +89,8 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.JSKOS, "valEndpoint"))
 				.thenReturn(valConnector);
 
-		when(propConnector.getTerm("propIri")).thenReturn(Map.of(RDFS_LABEL, "propObject"));
-		when(valConnector.getTerm("valIri")).thenReturn(Map.of(RDFS_LABEL, "valObject"));
+		when(propConnector.getTerm("propIri")).thenReturn(Map.of("", "propObject"));
+		when(valConnector.getTerm("valIri")).thenReturn(Map.of("", "valObject"));
 	}
 
 	@Test
@@ -313,6 +312,55 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		when(propConnector.getTerm("propIri")).thenReturn(Collections.emptyMap());
 
 		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+	}
+
+	@Test
+	public void createAnnotationTest_FirstLabel() {
+		var user = new User("bob");
+		var date = new Date();
+		var annotation = new SemanticAnnotationIO() {
+			{
+				setPropertyIRI("propIri");
+				setPropertyRepositoryId(2L);
+				setValueIRI("valIri");
+				setValueRepositoryId(3L);
+			}
+		};
+		var entity = new Collection(5L);
+
+		when(dateHelper.getDate()).thenReturn(date);
+		when(userDAO.find("bob")).thenReturn(user);
+		when(abstractEntityDAO.find(5L)).thenReturn(entity);
+		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft"));
+		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
+
+		var actual = service.createAnnotation(5L, annotation, "bob");
+		assertEquals("Eigenschaft::valObject", actual.getName());
+
+	}
+
+	@Test
+	public void createAnnotationTest_EnglishLabel() {
+		var user = new User("bob");
+		var date = new Date();
+		var annotation = new SemanticAnnotationIO() {
+			{
+				setPropertyIRI("propIri");
+				setPropertyRepositoryId(2L);
+				setValueIRI("valIri");
+				setValueRepositoryId(3L);
+			}
+		};
+		var entity = new Collection(5L);
+
+		when(dateHelper.getDate()).thenReturn(date);
+		when(userDAO.find("bob")).thenReturn(user);
+		when(abstractEntityDAO.find(5L)).thenReturn(entity);
+		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft", "en", "Property"));
+		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
+
+		var actual = service.createAnnotation(5L, annotation, "bob");
+		assertEquals("Property::valObject", actual.getName());
 	}
 
 	@Test

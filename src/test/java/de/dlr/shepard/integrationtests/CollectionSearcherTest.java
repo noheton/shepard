@@ -82,13 +82,13 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 		var repositoryToCreate = new SemanticRepositoryIO();
 		repositoryToCreate.setName("SemanticRepository");
 		repositoryToCreate.setType(SemanticRepositoryType.SPARQL);
-		repositoryToCreate.setEndpoint("http://sparql.hegroup.org/sparql/");
+		repositoryToCreate.setEndpoint("https://dbpedia.org/sparql/");
 		repository = given().spec(repositoryRequestSpec).body(repositoryToCreate).when().post().then().statusCode(201)
 				.extract().as(SemanticRepositoryIO.class);
 		var annotationToCreate = new SemanticAnnotationIO();
-		annotationToCreate.setPropertyIRI("http://purl.obolibrary.org/obo/FOODON_00002420");
+		annotationToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
 		annotationToCreate.setPropertyRepositoryId(repository.getId());
-		annotationToCreate.setValueIRI("http://purl.obolibrary.org/obo/FOODON_00001013");
+		annotationToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
 		annotationToCreate.setValueRepositoryId(repository.getId());
 		annotation = given().spec(annotatedCollectionRequestSpec).body(annotationToCreate).when().post().then()
 				.statusCode(201).extract().as(SemanticAnnotationIO.class);

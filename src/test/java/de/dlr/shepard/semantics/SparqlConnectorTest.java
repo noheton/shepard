@@ -44,8 +44,10 @@ public class SparqlConnectorTest extends BaseTestCase {
 	private SparqlConnector connector = new SparqlConnector("endpoint");
 
 	private final String query = URLEncoder.encode("""
-			SELECT DISTINCT * WHERE {
-			    ?s ?p ?o .
+			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+			SELECT DISTINCT ?o WHERE {
+			    ?s rdfs:label ?o .
 			    FILTER ( ?s = <http://example.com> )
 			}""", StandardCharsets.UTF_8).replace("+", "%20");
 	private final String result = """
@@ -53,53 +55,23 @@ public class SparqlConnectorTest extends BaseTestCase {
 			   "results":{
 			      "bindings":[
 			         {
-			            "s":{
-			               "type":"uri",
-			               "value":"http://example.com/"
-			            },
-			            "p":{
-			               "type":"test",
-			               "value":"type"
-			            },
 			            "o":{
-			               "type":"bla",
-			               "value":"class"
+			               "type":"label",
+			               "value":"kelvin"
 			            }
 			         },
 			         {
-			            "s":{
-			               "type":"uri",
-			               "value":"http://example.com/"
-			            },
-			            "p":{
-			               "type":"test",
-			               "value":"unit"
-			            },
 			            "o":{
-			               "type":"bla",
-			               "value":"kelvin"
+			               "type":"label",
+			               "xml:lang":"en",
+			               "value":"kelvin@en"
 			            }
-			         }
-			      ]
-			   }
-			}
-			""";
-	private final String resultPBlank = """
-			{
-			   "results":{
-			      "bindings":[
+			         },
 			         {
-			            "s":{
-			               "type":"uri",
-			               "value":"http://example.com/"
-			            },
-			            "p":{
-			               "type":"test",
-			               "value":""
-			            },
 			            "o":{
-			               "type":"bla",
-			               "value":"kelvin"
+			               "type":"label",
+			               "xml:lang":"de",
+			               "value":"kelvin@de"
 			            }
 			         }
 			      ]
@@ -111,14 +83,6 @@ public class SparqlConnectorTest extends BaseTestCase {
 			   "results":{
 			      "bindings":[
 			         {
-			            "s":{
-			               "type":"uri",
-			               "value":"http://example.com/"
-			            },
-			            "p":{
-			               "type":"test",
-			               "value":"unit"
-			            },
 			            "o":{
 			               "type":"bla",
 			               "value":""
@@ -166,7 +130,7 @@ public class SparqlConnectorTest extends BaseTestCase {
 
 		var actual = connector.getTerm("http://example.com");
 
-		assertEquals(Map.of("type", "class", "unit", "kelvin"), actual);
+		assertEquals(Map.of("", "kelvin","de", "kelvin@de", "en","kelvin@en"), actual);
 		verify(client).close();
 	}
 
@@ -185,7 +149,7 @@ public class SparqlConnectorTest extends BaseTestCase {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "", "  ", "No JSON", resultInvalid, resultPBlank, resultOBlank })
+	@ValueSource(strings = { "", "  ", "No JSON", resultInvalid, resultOBlank })
 	public void getTermTest_RequestFailsBlank(String requestResult) {
 		when(client.target("endpoint")).thenReturn(webTarget);
 		when(webTarget.queryParam("query", query)).thenReturn(webTarget);

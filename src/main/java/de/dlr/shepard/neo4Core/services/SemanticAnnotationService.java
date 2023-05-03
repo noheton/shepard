@@ -24,8 +24,6 @@ public class SemanticAnnotationService {
 	private DateHelper dateHelper = new DateHelper();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
-	private static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
-
 	public List<SemanticAnnotation> getAllAnnotations(long entityId) {
 		return semanticAnnotationDAO.findAllSemanticAnnotations(entityId);
 	}
@@ -94,7 +92,14 @@ public class SemanticAnnotationService {
 		var term = src.getTerm(iri);
 		if (term == null || term.isEmpty())
 			throw new InvalidBodyException("term could not be found");
-		return term.getOrDefault(RDFS_LABEL, "");
+		// Prefer the default label
+		if (term.containsKey(""))
+			return term.get("");
+		// Then prefer the English label
+		if (term.containsKey("en"))
+			return term.get("en");
+		// Fall back to the first label in the list
+		return term.values().iterator().next();
 	}
 
 }
