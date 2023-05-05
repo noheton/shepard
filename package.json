@@ -17,7 +17,7 @@
     "bootstrap": "4.6.2",
     "bootstrap-vue": "2.23.1",
     "chart.js": "4.3.0",
-    "csv-parse": "5.3.9",
+    "csv-parse": "5.3.10",
     "jsoneditor": "9.10.0",
     "loglevel": "1.8.1",
     "nanoid": "4.0.2",
