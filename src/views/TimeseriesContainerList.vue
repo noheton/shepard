@@ -136,6 +136,7 @@ onMounted(() => {
         target="userFormInput"
         triggers="focus"
         placement="bottom"
+        boundary="scrollParent"
       >
         <template #title>Result Set ({{ totalResults }} total)</template>
         <GenericEntityList :entities="resultSet" />

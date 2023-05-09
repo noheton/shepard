@@ -62,6 +62,7 @@ export const permissionOptions: PermissionOption[] = [
 ];
 
 import { SemanticRepositoryTypeEnum } from "@dlr-shepard/shepard-client";
+
 export interface SemanticRepositoryOption {
   value: SemanticRepositoryTypeEnum;
   text: string;
