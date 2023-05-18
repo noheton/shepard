@@ -62,7 +62,7 @@ build:
       - dist/
 
 .upload_docker: &upload_docker
-  image: docker:23.0
+  image: docker:24.0
   stage: upload
   needs: [build]
   dependencies: [build]
