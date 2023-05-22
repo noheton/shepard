@@ -51,7 +51,8 @@ function retrieveStructuredDataList() {
     structureddataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(response => {
-      structuredDataList.value = response;
+      // it was possible to create structured data that is null
+      structuredDataList.value = response.filter(e => e);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching structured data payload");

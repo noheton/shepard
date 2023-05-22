@@ -72,7 +72,7 @@ export default defineComponent({
   },
   methods: {
     handlePrepare() {
-      initialState();
+      Object.assign(this, initialState());
     },
 
     handleOk() {
