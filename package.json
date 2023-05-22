@@ -35,7 +35,7 @@
     "@rushstack/eslint-patch": "1.2.0",
     "@types/chart.js": "2.9.37",
     "@types/jsoneditor": "9.9.0",
-    "@types/node": "18.16.12",
+    "@types/node": "18.16.14",
     "@vitejs/plugin-vue2": "2.2.0",
     "@volar/vue-typescript": "1.6.5",
     "@vue/eslint-config-prettier": "7.1.0",
