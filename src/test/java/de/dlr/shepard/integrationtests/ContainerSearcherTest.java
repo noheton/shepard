@@ -2,6 +2,7 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -103,8 +104,8 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 				.statusCode(200).extract().as(ContainerSearchResult.class);
 		assertThat(result.getFileContainers()).contains(fileContainer1);
 		assertThat(result.getFileContainers()).doesNotContain(fileContainer2);
-		assertEquals(result.getStructuredDataContainers(), null);
-		assertEquals(result.getTimeseriesContainers(), null);
+		assertNull(result.getStructuredDataContainers());
+		assertNull(result.getTimeseriesContainers());
 	}
 
 	@Test
@@ -123,7 +124,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 		assertThat(result.getFileContainers()).doesNotContain(fileContainer2);
 		assertThat(result.getStructuredDataContainers()).contains(dataContainer1);
 		assertThat(result.getStructuredDataContainers()).doesNotContain(dataContainer2);
-		assertEquals(result.getTimeseriesContainers().length, 0);
+		assertEquals(0, result.getTimeseriesContainers().length);
 	}
 
 	@Test

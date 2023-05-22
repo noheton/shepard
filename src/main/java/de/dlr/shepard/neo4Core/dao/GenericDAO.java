@@ -104,11 +104,11 @@ public abstract class GenericDAO<T> {
 	 */
 	protected Iterable<T> findByQuery(String query, Map<String, Object> paramsMap) {
 		log.debug("Run query: {}", query);
-		String params = "";
+		StringBuilder str = new StringBuilder();
 		for (var entry : paramsMap.entrySet()) {
-			params += "(" + entry.getKey() + ", " + entry.getValue() + "), ";
+			str.append("(" + entry.getKey() + ", " + entry.getValue() + "), ");
 		}
-		log.debug("queryParams: {}", params);
+		log.debug("queryParams: {}", str.toString());
 		Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
 		return iter;
 	}

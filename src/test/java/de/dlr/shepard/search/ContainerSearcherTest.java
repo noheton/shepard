@@ -1,6 +1,7 @@
 package de.dlr.shepard.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -52,8 +53,8 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(fileContainerDAO.getFileContainerByQuery(neo4jFileQuery)).thenReturn(fileResList);
 		assertThat(containerSearcher.search(searchBody, username).getFileContainers())
 				.containsExactly(new FileContainerIO(fileRes));
-		assertEquals(containerSearcher.search(searchBody, username).getTimeseriesContainers(), null);
-		assertEquals(containerSearcher.search(searchBody, username).getStructuredDataContainers(), null);
+		assertNull(containerSearcher.search(searchBody, username).getTimeseriesContainers());
+		assertNull(containerSearcher.search(searchBody, username).getStructuredDataContainers());
 	}
 
 	@Test
@@ -75,13 +76,13 @@ public class ContainerSearcherTest extends BaseTestCase {
 		timeResList.add(timeRes1);
 		timeResList.add(timeRes2);
 		when(timeseriesContainerDAO.getTimeseriesContainerByQuery(neo4jTimeseriesQuery)).thenReturn(timeResList);
-		assertEquals(containerSearcher.search(searchBody, username).getTimeseriesContainers().length, 2);
+		assertEquals(2, containerSearcher.search(searchBody, username).getTimeseriesContainers().length);
 		assertThat(containerSearcher.search(searchBody, username).getTimeseriesContainers())
 				.contains(new TimeseriesContainerIO(timeRes1));
 		assertThat(containerSearcher.search(searchBody, username).getTimeseriesContainers())
 				.contains(new TimeseriesContainerIO(timeRes2));
-		assertEquals(containerSearcher.search(searchBody, username).getFileContainers(), null);
-		assertEquals(containerSearcher.search(searchBody, username).getStructuredDataContainers(), null);
+		assertNull(containerSearcher.search(searchBody, username).getFileContainers());
+		assertNull(containerSearcher.search(searchBody, username).getStructuredDataContainers());
 	}
 
 	@Test
@@ -104,13 +105,13 @@ public class ContainerSearcherTest extends BaseTestCase {
 		sdResList.add(sdRes2);
 		when(structuredDataContainerDAO.getStructuredDataContainerByQuery(neo4jStructuredDataQuery))
 				.thenReturn(sdResList);
-		assertEquals(containerSearcher.search(searchBody, username).getStructuredDataContainers().length, 2);
+		assertEquals(2, containerSearcher.search(searchBody, username).getStructuredDataContainers().length);
 		assertThat(containerSearcher.search(searchBody, username).getStructuredDataContainers())
 				.contains(new StructuredDataContainerIO(sdRes1));
 		assertThat(containerSearcher.search(searchBody, username).getStructuredDataContainers())
 				.contains(new StructuredDataContainerIO(sdRes2));
-		assertEquals(containerSearcher.search(searchBody, username).getFileContainers(), null);
-		assertEquals(containerSearcher.search(searchBody, username).getTimeseriesContainers(), null);
+		assertNull(containerSearcher.search(searchBody, username).getFileContainers());
+		assertNull(containerSearcher.search(searchBody, username).getTimeseriesContainers());
 	}
 
 	@Test

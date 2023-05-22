@@ -59,8 +59,7 @@ public class UserSearcherTest extends BaseTestCaseIT {
 	public void getUser12Test() {
 		UserIO[] response = given().spec(requestSpecification).queryParam("username", ".*ser.*").when().get().then()
 				.statusCode(200).extract().as(UserIO[].class);
-		assertThat(response).contains(userIO1);
-		assertThat(response).contains(userIO2);
+		assertThat(response).contains(userIO1).contains(userIO2);
 	}
 
 }

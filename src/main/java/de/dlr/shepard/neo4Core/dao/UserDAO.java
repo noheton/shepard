@@ -26,7 +26,7 @@ public class UserDAO extends GenericDAO<User> {
 	public List<User> searchUsers(String username, String firstName, String lastName, String email) {
 		String query = "";
 		query = query + "MATCH (u:User) WHERE ";
-		Map<String, Object> paramsMap = new HashMap<String, Object>();
+		Map<String, Object> paramsMap = new HashMap<>();
 		if (username != null)
 			paramsMap.put("username", username);
 		if (firstName != null)
@@ -35,13 +35,13 @@ public class UserDAO extends GenericDAO<User> {
 			paramsMap.put("lastName", lastName);
 		if (email != null)
 			paramsMap.put("email", email);
-		ArrayList<String> whereClauses = new ArrayList<String>(paramsMap.size());
+		List<String> whereClauses = new ArrayList<>(paramsMap.size());
 		for (String key : paramsMap.keySet())
 			whereClauses.add("u." + key + " =~ $" + key + "");
 		query = query + String.join(" AND ", whereClauses) + " ";
 		query = query + "RETURN u";
 		var result = findByQuery(query, paramsMap);
-		ArrayList<User> ret = new ArrayList<User>();
+		List<User> ret = new ArrayList<>();
 		for (User user : result)
 			ret.add(user);
 		return ret;

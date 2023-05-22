@@ -56,7 +56,7 @@ public class SearchRestImpl implements SearchRest {
 		if (username == null && firstName == null && lastName == null && email == null)
 			throw new BadRequestException("At least one of the arguments should not be null");
 		List<User> users = userService.searchUsers(username, firstName, lastName, email);
-		ArrayList<UserIO> result = new ArrayList<UserIO>(users.size());
+		List<UserIO> result = new ArrayList<>(users.size());
 		for (User user : users)
 			result.add(new UserIO(user));
 		return Response.ok(result).build();

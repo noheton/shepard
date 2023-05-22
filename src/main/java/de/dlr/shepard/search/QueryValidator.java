@@ -4,6 +4,9 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 
 public class QueryValidator {
 
+	private QueryValidator() {
+	}
+
 	private static final String[] keywords = { "match", "detach", "delete", "create", "where", "drop", "call",
 			"constraint", "index", "merge", "return", "set", "show", "terminate", "union", "unwind" };
 
