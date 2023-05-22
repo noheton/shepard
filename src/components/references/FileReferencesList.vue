@@ -38,7 +38,6 @@ function retrieveReferences() {
   })
     .then(response => {
       fileReferenceList.value = response;
-      emit("reference-count-changed", fileReferenceList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching file references");

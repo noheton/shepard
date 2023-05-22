@@ -38,7 +38,6 @@ function retrieveReferences() {
   })
     .then(response => {
       uriList.value = response;
-      emit("reference-count-changed", uriList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching URI references");

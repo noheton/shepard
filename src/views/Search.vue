@@ -73,7 +73,7 @@ const unifiedSearchParam = ref<{
   dataObjectId: undefined,
   traversalRules: [],
 });
-const UnifiedSearchData = useUnifiedSearch(unifiedSearchParam);
+const unifiedSearchData = useUnifiedSearch(unifiedSearchParam);
 
 const queryTypeContainerSearch = [
   { value: "FILE", text: "File Container" },
@@ -363,29 +363,25 @@ onMounted(() => {
 
           <b-col>
             <div class="pl-2 result-header">Result</div>
-            <div
+            <Loading
               v-if="
-                UnifiedSearchData.results.value?.resultSet &&
-                UnifiedSearchData.results.value?.resultSet.length > 0
+                unifiedSearchData.loading.value ||
+                containerSearchData.loading.value
               "
-            >
+            />
+            <div v-if="unifiedSearchData.results.value?.resultSet">
               <b-table
                 sticky-header="766px"
                 head-variant="light"
                 striped
                 hover
                 class="table table-sm table-bordered"
-                :items="UnifiedSearchData.results.value?.resultSet"
+                :items="unifiedSearchData.results.value?.resultSet"
                 @row-clicked="rowSelectedUnifiedSearch($event)"
               >
               </b-table>
             </div>
-            <div
-              v-else-if="
-                containerSearchData.results.value &&
-                containerSearchData.results.value.length > 0
-              "
-            >
+            <div v-else-if="containerSearchData.results.value">
               <b-table
                 sticky-header="766px"
                 head-variant="light"
@@ -399,13 +395,6 @@ onMounted(() => {
               </b-table>
             </div>
             <div v-else class="pl-2">no results</div>
-
-            <Loading
-              v-if="
-                UnifiedSearchData.loading.value ||
-                containerSearchData.loading.value
-              "
-            />
           </b-col>
         </b-row>
       </b-container>

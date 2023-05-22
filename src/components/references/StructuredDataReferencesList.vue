@@ -41,7 +41,6 @@ function retrieveReferences() {
   })
     .then(response => {
       structuredDataList.value = response;
-      emit("reference-count-changed", structuredDataList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching structured data references");

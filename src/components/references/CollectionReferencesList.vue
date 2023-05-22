@@ -46,7 +46,6 @@ function retrieveReferences() {
       response.forEach(reference => {
         if (reference.id) retrieveCollection(reference.id);
       });
-      emit("reference-count-changed", collectionList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching collection references");

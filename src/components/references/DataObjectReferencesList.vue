@@ -46,7 +46,6 @@ function retrieveReferences() {
       response.forEach(reference => {
         if (reference.id) retrieveDataObject(reference.id);
       });
-      emit("reference-count-changed", dataObjectList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching data object references");
@@ -103,8 +102,12 @@ function deleteReference() {
     dataObjectReferenceId: currentDataObjectReference.value.id,
   })
     .then(() => {
+      const temp = dataObjectList.value || [];
+      dataObjectList.value = temp.filter(e => {
+        return e.id != currentDataObjectReference.value?.id;
+      });
+      emit("reference-count-changed", dataObjectList.value.length);
       deletedAlert.value = true;
-      retrieveReferences();
     })
     .catch(e => {
       handleError(e as ResponseError, "deleting data object reference");

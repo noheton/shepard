@@ -119,7 +119,7 @@ onMounted(() => {
         <template #title>
           Structured Data
           <b-badge variant="secondary">
-            {{ countReferences?.structuredDataReferences }}
+            {{ countReferences.structuredDataReferences }}
           </b-badge>
         </template>
         <StructuredDataReferencesList

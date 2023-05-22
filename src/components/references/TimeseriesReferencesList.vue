@@ -42,7 +42,6 @@ function retrieveReferences() {
   })
     .then(response => {
       timeseriesList.value = response;
-      emit("reference-count-changed", timeseriesList.value.length);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching timeseries references");
