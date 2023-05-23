@@ -188,6 +188,14 @@ public final class InfluxUtil {
 		return true;
 	}
 
+	/**
+	 * Is the timeseries object valid so that it can be stored in influxdb? This
+	 * function returns errors if the time series attributes contain illegal
+	 * characters.
+	 *
+	 * @param timeseries The timeseries object to be sanitized
+	 * @return errors or empty string
+	 */
 	public static String sanitize(Timeseries timeseries) {
 		List<String> errors = new ArrayList<>();
 

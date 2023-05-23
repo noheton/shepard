@@ -24,7 +24,7 @@ public class TimeseriesService {
 	 */
 	public String createTimeseries(String database, TimeseriesPayload payload) {
 		String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());
-		if (sanityCheck.length() != 0)
+		if (!sanityCheck.isBlank())
 			throw new InvalidBodyException(sanityCheck);
 		if (!influxConnector.databaseExist(database)) {
 			return String.format("The database %s does not exist", database);

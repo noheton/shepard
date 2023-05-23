@@ -9,6 +9,7 @@ import java.util.Set;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
+import de.dlr.shepard.influxDB.InfluxUtil;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
@@ -60,6 +61,13 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 			throw new InvalidBodyException(String.format("The timeseries container with id %d could not be found.",
 					timeseriesReference.getTimeseriesContainerId()));
 		}
+
+		// sanitize timeseries
+		var errors = Arrays.stream(timeseriesReference.getTimeseries()).map(InfluxUtil::sanitize)
+				.filter(e -> !e.isBlank()).toList();
+		if (!errors.isEmpty())
+			throw new InvalidBodyException(
+					"The timeseries list contains illegal characters: " + String.join(", ", errors));
 
 		var toCreate = new TimeseriesReference();
 		toCreate.setCreatedAt(dateHelper.getDate());

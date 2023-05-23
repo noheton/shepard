@@ -159,6 +159,28 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void createTimeseriesReferenceTest_invalidTimeseries() {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new TimeseriesContainer(300L);
+		var input = new TimeseriesReferenceIO() {
+			{
+				setName("MyName");
+				setStart(123L);
+				setEnd(321L);
+				setTimeseries(new Timeseries[] { new Timeseries("me.as", "dev", "loc", "symName", "field") });
+				setTimeseriesContainerId(300L);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(timeseriesContainerDAO.find(300L)).thenReturn(container);
+
+		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+	}
+
+	@Test
 	public void createTimeseriesReferenceTest_ContainerIsNull() {
 		var user = new User("Bob");
 		var dataObject = new DataObject(200L);
