@@ -31,8 +31,10 @@ public class StructuredDataService {
 	}
 
 	public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return null;
 		}
@@ -57,8 +59,10 @@ public class StructuredDataService {
 	}
 
 	public boolean deleteStructuredDataContainer(String mongoid) {
-		MongoCollection<Document> toDelete = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (toDelete == null) {
+		MongoCollection<Document> toDelete;
+		try {
+			toDelete = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not delete container with mongoid: {}", mongoid);
 			return false;
 		}
@@ -67,8 +71,10 @@ public class StructuredDataService {
 	}
 
 	public StructuredDataPayload getPayload(String mongoid, String oid) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return null;
 		}
@@ -86,15 +92,17 @@ public class StructuredDataService {
 	}
 
 	public boolean deletePayload(String mongoid, String oid) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return false;
 		}
-		var result = collection.deleteOne(eq(ID_ATTR, new ObjectId(oid)));
-		if (!result.wasAcknowledged()) {
-			log.error("Could not delete document with oid: {}", oid);
-			return false;
+		var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(oid)));
+		if (doc == null) {
+			log.warn("Could not find and delete document with oid: {}", oid);
+			return true;
 		}
 		return true;
 	}

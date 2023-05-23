@@ -39,8 +39,10 @@ public class FileService {
 	}
 
 	public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", mongoid);
 			return null;
 		}
@@ -63,8 +65,10 @@ public class FileService {
 	}
 
 	public NamedInputStream getPayload(String containerId, String fileoid) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(containerId);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(containerId);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", containerId);
 			return null;
 		}
@@ -84,8 +88,10 @@ public class FileService {
 	}
 
 	public ShepardFile getFile(String containerId, String fileoid) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(containerId);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(containerId);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", containerId);
 			return null;
 		}
@@ -98,8 +104,10 @@ public class FileService {
 	}
 
 	public boolean deleteFileContainer(String mongoid) {
-		MongoCollection<Document> toDelete = mongoDBConnector.getDatabase().getCollection(mongoid);
-		if (toDelete == null) {
+		MongoCollection<Document> toDelete;
+		try {
+			toDelete = mongoDBConnector.getDatabase().getCollection(mongoid);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not delete container with mongoid: {}", mongoid);
 			return false;
 		}
@@ -112,15 +120,17 @@ public class FileService {
 	}
 
 	public boolean deleteFile(String mongoId, String fileoid) {
-		MongoCollection<Document> collection = mongoDBConnector.getDatabase().getCollection(mongoId);
-		if (collection == null) {
+		MongoCollection<Document> collection;
+		try {
+			collection = mongoDBConnector.getDatabase().getCollection(mongoId);
+		} catch (IllegalArgumentException e) {
 			log.error("Could not find container with mongoid: {}", mongoId);
 			return false;
 		}
 		var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(fileoid)));
 		if (doc == null) {
-			log.error("Could not find and delete file with oid: {}", fileoid);
-			return false;
+			log.warn("Could not find and delete file with oid: {}", fileoid);
+			return true;
 		}
 		var gridBucket = mongoDBConnector.createBucket();
 		gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));

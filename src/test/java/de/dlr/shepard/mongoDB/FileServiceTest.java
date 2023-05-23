@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -107,7 +108,8 @@ public class FileServiceTest extends BaseTestCase {
 		String nonExistingContainerId = "FileContainer123";
 		String fileoid = "60b73212cfa45d2d5baa795d";
 
-		when(database.getCollection(nonExistingContainerId)).thenReturn(null);
+		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+
 		var result = fileService.getFile(nonExistingContainerId, fileoid);
 		assertNull(result);
 	}
@@ -163,7 +165,8 @@ public class FileServiceTest extends BaseTestCase {
 		InputStream inputStream = mock(InputStream.class);
 		String nonExistingMongoid = "mongoid";
 
-		when(database.getCollection(nonExistingMongoid)).thenReturn(null);
+		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoid);
+
 		var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
 		assertNull(result);
 	}
@@ -190,7 +193,8 @@ public class FileServiceTest extends BaseTestCase {
 	public void deleteNonExistingFileContainerTest() {
 		String nonExistingMongoOid = "60b73212cfa45d2d5baa795d";
 
-		when(database.getCollection(nonExistingMongoOid)).thenReturn(null);
+		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoOid);
+
 		var result = fileService.deleteFileContainer(nonExistingMongoOid);
 		assertFalse(result);
 	}
@@ -229,7 +233,8 @@ public class FileServiceTest extends BaseTestCase {
 		String nonExistingContainerId = "4";
 		String fileoid = "60b73212cfa45d2d5baa795d";
 
-		when(database.getCollection(nonExistingContainerId)).thenReturn(null);
+		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+
 		var result = fileService.getPayload(nonExistingContainerId, fileoid);
 		assertNull(result);
 	}
@@ -270,7 +275,7 @@ public class FileServiceTest extends BaseTestCase {
 		String mongoOid = "60b73212cfa45d2d5baa795b";
 		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-		when(database.getCollection(mongoOid)).thenReturn(null);
+		doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
 
 		var result = fileService.deleteFile(mongoOid, oid.toString());
 		assertFalse(result);
@@ -285,7 +290,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
 		var result = fileService.deleteFile(mongoOid, oid.toString());
-		assertFalse(result);
+		assertTrue(result);
 	}
 
 	/**
