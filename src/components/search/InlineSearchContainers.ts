@@ -5,16 +5,16 @@ import type {
   ContainerSearchResult,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { ref, watch, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 
 export function useInlineSearch(
   text: Ref<string>,
   queryType: ContainerSearchParamsQueryTypeEnum,
 ) {
-  const result = ref<ContainerSearchResult>();
+  const searchResults = ref<ContainerSearchResult>();
 
-  function fetchResults() {
-    const searchQuery = {
+  const searchQuery = computed(() => {
+    return JSON.stringify({
       OR: [
         {
           property: "name",
@@ -37,17 +37,20 @@ export function useInlineSearch(
           operator: "eq",
         },
       ],
-    };
+    });
+  });
+
+  function fetchResults() {
     SearchService.searchContainers({
       containerSearchBody: {
         searchParams: {
-          query: JSON.stringify(searchQuery),
+          query: searchQuery.value,
           queryType: queryType,
         },
       },
     })
       .then(response => {
-        result.value = response;
+        searchResults.value = response;
       })
       .catch(e => {
         handleError(e as ResponseError, "fetching search data");
@@ -61,9 +64,9 @@ export function useInlineSearch(
     ) {
       fetchResults();
     } else {
-      result.value = undefined;
+      searchResults.value = undefined;
     }
   });
 
-  return result;
+  return { searchResults, searchQuery };
 }

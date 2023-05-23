@@ -99,8 +99,15 @@ function createContainer(options: {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults } =
+const { resultSet, totalResults, searchQuery } =
   useSearchStructuredDataContainers(userInputDebounced);
+
+const searchRoute = computed(() => {
+  const route = router.resolve("Search").route;
+  route.query.queryType = "STRUCTUREDDATA";
+  route.query.searchQuery = searchQuery.value;
+  return route;
+});
 
 onMounted(() => {
   retrieveContainers();
@@ -138,7 +145,12 @@ onMounted(() => {
         triggers="focus"
         placement="bottom"
       >
-        <template #title>Result Set ({{ totalResults }} total)</template>
+        <template #title>
+          Result Set ({{ totalResults }} total)
+          <b-link class="float-right font-weight-normal" :to="searchRoute">
+            Advanced Search
+          </b-link>
+        </template>
         <GenericEntityList :entities="resultSet" />
       </b-popover>
 

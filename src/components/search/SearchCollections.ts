@@ -6,14 +6,13 @@ import {
   type Collection,
   type ResponseError,
 } from "@dlr-shepard/shepard-client";
-import { ref, watch, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchCollections(text: Ref<string>) {
   const resultSet = ref<Collection[]>([]);
   const totalResults = ref(0);
-
-  function inlineSearch() {
-    const searchQuery = {
+  const searchQuery = computed(() => {
+    return JSON.stringify({
       OR: [
         {
           property: "name",
@@ -36,7 +35,10 @@ export function useSearchCollections(text: Ref<string>) {
           operator: "eq",
         },
       ],
-    };
+    });
+  });
+
+  function inlineSearch() {
     SearchService.search({
       searchBody: {
         scopes: [
@@ -45,7 +47,7 @@ export function useSearchCollections(text: Ref<string>) {
           },
         ],
         searchParams: {
-          query: JSON.stringify(searchQuery),
+          query: searchQuery.value,
           queryType: SearchParamsQueryTypeEnum.Collection,
         },
       },
@@ -87,5 +89,5 @@ export function useSearchCollections(text: Ref<string>) {
     }
   });
 
-  return { resultSet, totalResults };
+  return { resultSet, totalResults, searchQuery };
 }

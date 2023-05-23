@@ -9,7 +9,7 @@ import { ref, watch, type Ref } from "vue";
 import { useInlineSearch } from "./InlineSearchContainers";
 
 export function useSearchTimeseriesContainers(text: Ref<string>) {
-  const searchResults = useInlineSearch(
+  const { searchResults, searchQuery } = useInlineSearch(
     text,
     ContainerSearchParamsQueryTypeEnum.Timeseries,
   );
@@ -44,5 +44,5 @@ export function useSearchTimeseriesContainers(text: Ref<string>) {
 
   watch(searchResults, handleResponse);
 
-  return { resultSet, totalResults };
+  return { resultSet, totalResults, searchQuery };
 }

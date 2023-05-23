@@ -16,6 +16,20 @@ export function useContainerSearch(
   const results = ref<{ id: number; name: string; link: string }[]>([]);
   const loading = ref<boolean>(false);
 
+  function addResult(name: string, containerId: number, containerName: string) {
+    const routeData = router.resolve({
+      name: name,
+      params: {
+        fileId: String(containerId),
+      },
+    });
+    results?.value.push({
+      id: containerId,
+      name: containerName,
+      link: routeData.href,
+    });
+  }
+
   function search() {
     if (!containerSearchParam.value.searchQuery) return;
     loading.value = true;
@@ -33,56 +47,23 @@ export function useContainerSearch(
         if (response.fileContainers) {
           response.fileContainers.forEach(container => {
             if (container.id && container.name) {
-              let routeData = undefined;
-              (routeData = router.resolve({
-                name: "Files",
-                params: {
-                  fileId: String(container.id),
-                },
-              })),
-                results?.value.push({
-                  id: container.id,
-                  name: container.name,
-                  link: routeData.href,
-                });
+              addResult("Files", container.id, container.name);
             }
           });
         }
 
         if (response.structuredDataContainers) {
-          let routeData = undefined;
           response.structuredDataContainers.forEach(container => {
             if (container.id && container.name) {
-              (routeData = router.resolve({
-                name: "StructuredData",
-                params: {
-                  fileId: String(container.id),
-                },
-              })),
-                results?.value.push({
-                  id: container.id,
-                  name: container.name,
-                  link: routeData.href,
-                });
+              addResult("StructuredData", container.id, container.name);
             }
           });
         }
 
         if (response.timeseriesContainers) {
-          let routeData = undefined;
           response.timeseriesContainers.forEach(container => {
             if (container.id && container.name) {
-              (routeData = router.resolve({
-                name: "Timeseries",
-                params: {
-                  fileId: String(container.id),
-                },
-              })),
-                results?.value.push({
-                  id: container.id,
-                  name: container.name,
-                  link: routeData.href,
-                });
+              addResult("Timeseries", container.id, container.name);
             }
           });
         }

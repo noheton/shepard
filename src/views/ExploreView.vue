@@ -17,6 +17,9 @@ import type {
 } from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue2-helpers/vue-router";
+
+const router = useRouter();
 
 const collections = ref<Collection[]>();
 
@@ -64,7 +67,15 @@ function filterChanged(options: FilterChangedData) {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults } = useSearchCollections(userInputDebounced);
+const { resultSet, totalResults, searchQuery } =
+  useSearchCollections(userInputDebounced);
+
+const searchRoute = computed(() => {
+  const route = router.resolve("Search").route;
+  route.query.queryType = "Collection";
+  route.query.searchQuery = searchQuery.value;
+  return route;
+});
 
 onMounted(() => {
   retrieveCollections();
@@ -101,7 +112,12 @@ onMounted(() => {
         triggers="focus"
         placement="bottom"
       >
-        <template #title>Result Set ({{ totalResults }} total)</template>
+        <template #title>
+          Result Set ({{ totalResults }} total)
+          <b-link class="float-right font-weight-normal" :to="searchRoute">
+            Advanced Search
+          </b-link>
+        </template>
         <GenericEntityList :entities="resultSet" />
       </b-popover>
 
