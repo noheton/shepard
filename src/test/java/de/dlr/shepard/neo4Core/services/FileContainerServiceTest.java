@@ -255,6 +255,18 @@ public class FileContainerServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void createFileTest_mongoError() {
+		var container = new FileContainer(1L);
+		container.setMongoId("mongoId");
+
+		when(dao.find(1L)).thenReturn(container);
+		when(fileService.createFile("mongoId", "filename", null)).thenReturn(null);
+		var actual = service.createFile(1L, "filename", null);
+
+		assertNull(actual);
+	}
+
+	@Test
 	public void getFileTest() {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");

@@ -136,6 +136,10 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 			fileName = "shepard-file-" + dateStr;
 		}
 		var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+		if (result == null) {
+			log.error("Failed to create shepard file");
+			return null;
+		}
 		fileContainer.addFile(result);
 		fileContainerDAO.createOrUpdate(fileContainer);
 		return result;

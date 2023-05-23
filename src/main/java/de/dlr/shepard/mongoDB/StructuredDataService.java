@@ -45,6 +45,12 @@ public class StructuredDataService {
 			log.error("Could not parse json: {}", payload.getPayload());
 			throw new InvalidBodyException("The specified payload is not json parsable");
 		}
+
+		// Remove fields beginning with an underscore (protected)
+		var forbidden = toInsert.keySet().stream().filter(k -> k.startsWith("_")).toList();
+		forbidden.forEach(toInsert::remove);
+
+		// Add meta data
 		var newName = payload.getStructuredData() != null ? payload.getStructuredData().getName() : null;
 		var structuredData = new StructuredData(newName, dateHelper.getDate());
 		toInsert.append(META_OBJECT, structuredData);

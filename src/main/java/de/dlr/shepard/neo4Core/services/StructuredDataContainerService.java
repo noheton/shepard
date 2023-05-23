@@ -115,6 +115,10 @@ public class StructuredDataContainerService
 			return null;
 		}
 		var result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
+		if (result == null) {
+			log.error("Failed to create structured data");
+			return null;
+		}
 		structuredDataContainer.addStructuredData(result);
 		structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
 		return result;

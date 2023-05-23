@@ -99,6 +99,34 @@ public class StructuredDataServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void createStructuredDataTest_forbiddenKeys() {
+		String payload = "{\"_a\":\"b\", \"c\":\"d\"}";
+		String payloadCleaned = "{\"c\":\"d\"}";
+		Date date = new Date();
+		ObjectId oid = new ObjectId();
+		StructuredData data = new StructuredData("name", date);
+		Document toInsert = Document.parse(payloadCleaned);
+		toInsert.append("_meta", data);
+
+		when(dateHelper.getDate()).thenReturn(date);
+		when(database.getCollection("collection")).thenReturn(collection);
+		doAnswer(new Answer<Void>() {
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				Object[] args = invocation.getArguments();
+				((Document) args[0]).append("_id", oid);
+				return null; // void method, so return null
+			}
+
+		}).when(collection).insertOne(toInsert);
+
+		var expectedData = new StructuredData();
+		expectedData.setName("name");
+		var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
+		assertEquals(new StructuredData(oid.toHexString(), date, "name"), actual);
+	}
+
+	@Test
 	public void createStructuredDataTest_noStructuredData() {
 		String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 		Date date = new Date();
