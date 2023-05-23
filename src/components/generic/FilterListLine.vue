@@ -25,7 +25,7 @@ const props = defineProps({
   },
 });
 
-const currentPage = ref(props.currentPage);
+const curPage = ref(props.currentPage);
 const perPage = ref(props.filterOptions.perPage);
 const sizeOptions = [
   { value: 10, text: "10" },
@@ -48,13 +48,13 @@ const descendingOptions = [
 watch(
   () => props.currentPage,
   page => {
-    currentPage.value = page;
+    curPage.value = page;
   },
 );
 
 function update() {
   const options: FilterChangedData = {
-    currentPage: currentPage.value,
+    currentPage: curPage.value,
     perPage: perPage.value,
     orderBy: orderBy.value,
     descending: descending.value,
@@ -62,7 +62,7 @@ function update() {
   emit("filter-changed", options);
 }
 function updatePage(nextPage: number) {
-  currentPage.value = nextPage;
+  curPage.value = nextPage;
   update();
 }
 function updateSize(nextSize: number) {
@@ -84,7 +84,7 @@ function updateDescending(nextDescending: boolean) {
     <b-row>
       <b-col>
         <b-pagination
-          v-model="currentPage"
+          v-model="curPage"
           class="float-left w-auto"
           :total-rows="maxObjects"
           :per-page="perPage"
