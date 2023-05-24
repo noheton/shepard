@@ -86,6 +86,7 @@ export function useSearchCollections(text: Ref<string>) {
       inlineSearch();
     } else {
       resultSet.value = [];
+      totalResults.value = 0;
     }
   });
 
