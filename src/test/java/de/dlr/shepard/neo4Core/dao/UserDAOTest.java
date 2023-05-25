@@ -73,7 +73,7 @@ public class UserDAOTest extends BaseTestCase {
 		User user = new User("user");
 		user.setFirstName("firstName");
 		user.setLastName("lastName");
-		Map<String, Object> paramsMap = new HashMap<String, Object>();
+		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("username", "user");
 		paramsMap.put("firstName", "firstName");
 		paramsMap.put("lastName", "lastName");

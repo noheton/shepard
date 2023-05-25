@@ -106,7 +106,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 	}
 
 	@Test
-	public void isNotAllowedTest_SearchUser() {
+	public void isNotAllowedTest_SearchUsersWrongPath() {
 		when(rootSeg.getPath()).thenReturn("search");
 		when(idSeg.getPath()).thenReturn("user");
 
@@ -115,7 +115,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 	}
 
 	@Test
-	public void isNotAllowedTest_SearchUsers3() {
+	public void isNotAllowedTest_SearchUsersThreeSegments() {
 		when(rootSeg.getPath()).thenReturn("search");
 		when(idSeg.getPath()).thenReturn("users");
 		when(thirdSegment.getPath()).thenReturn("bla");

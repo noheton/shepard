@@ -48,7 +48,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		String neo4jFileQuery = Neo4jEmitter.emitFileContainerQuery(JSONquery, username);
 		FileContainer fileRes = new FileContainer();
 		fileRes.setId(5L);
-		List<FileContainer> fileResList = new ArrayList<FileContainer>();
+		List<FileContainer> fileResList = new ArrayList<>();
 		fileResList.add(fileRes);
 		when(fileContainerDAO.getFileContainerByQuery(neo4jFileQuery)).thenReturn(fileResList);
 		assertThat(containerSearcher.search(searchBody, username).getFileContainers())
@@ -72,7 +72,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		timeRes1.setId(5L);
 		TimeseriesContainer timeRes2 = new TimeseriesContainer();
 		timeRes1.setId(8L);
-		List<TimeseriesContainer> timeResList = new ArrayList<TimeseriesContainer>();
+		List<TimeseriesContainer> timeResList = new ArrayList<>();
 		timeResList.add(timeRes1);
 		timeResList.add(timeRes2);
 		when(timeseriesContainerDAO.getTimeseriesContainerByQuery(neo4jTimeseriesQuery)).thenReturn(timeResList);
@@ -100,7 +100,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		sdRes1.setId(5L);
 		StructuredDataContainer sdRes2 = new StructuredDataContainer();
 		sdRes1.setId(8L);
-		List<StructuredDataContainer> sdResList = new ArrayList<StructuredDataContainer>();
+		List<StructuredDataContainer> sdResList = new ArrayList<>();
 		sdResList.add(sdRes1);
 		sdResList.add(sdRes2);
 		when(structuredDataContainerDAO.getStructuredDataContainerByQuery(neo4jStructuredDataQuery))
@@ -129,15 +129,15 @@ public class ContainerSearcherTest extends BaseTestCase {
 		String neo4jFileQuery = Neo4jEmitter.emitFileContainerQuery(JSONquery, username);
 		StructuredDataContainer sdRes = new StructuredDataContainer();
 		sdRes.setId(5L);
-		List<StructuredDataContainer> sdResList = new ArrayList<StructuredDataContainer>();
+		List<StructuredDataContainer> sdResList = new ArrayList<>();
 		sdResList.add(sdRes);
 		TimeseriesContainer timeRes = new TimeseriesContainer();
 		timeRes.setId(2L);
-		List<TimeseriesContainer> timeResList = new ArrayList<TimeseriesContainer>();
+		List<TimeseriesContainer> timeResList = new ArrayList<>();
 		timeResList.add(timeRes);
 		FileContainer fileRes = new FileContainer();
 		fileRes.setId(23L);
-		List<FileContainer> fileResList = new ArrayList<FileContainer>();
+		List<FileContainer> fileResList = new ArrayList<>();
 		fileResList.add(fileRes);
 		when(structuredDataContainerDAO.getStructuredDataContainerByQuery(neo4jStructuredDataQuery))
 				.thenReturn(sdResList);

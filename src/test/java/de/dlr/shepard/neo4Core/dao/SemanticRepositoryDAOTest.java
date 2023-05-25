@@ -5,7 +5,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,22 +33,19 @@ public class SemanticRepositoryDAOTest extends BaseTestCase {
 
 	@Test
 	public void findAllSemanticRepositoriesTest_Pagination() {
-		QueryParamHelper params = new QueryParamHelper();
-		params = params.withName("name");
-		params = params.withPageAndSize(2, 10);
-		params = params.withOrderByAttribute(SemanticRepositoryAttributes.name, true);
-		Map<String, Object> paramsMap = new HashMap<>();
-		paramsMap.put("name", params.getName());
-		if (params.hasPagination()) {
-			paramsMap.put("offset", params.getPagination().getOffset());
-			paramsMap.put("size", params.getPagination().getSize());
-		}
+		QueryParamHelper params = new QueryParamHelper().withName("name").withPageAndSize(2, 10)
+				.withOrderByAttribute(SemanticRepositoryAttributes.name, true);
+		Map<String, Object> paramsMap = Map.of("name", "name", "offset", 20, "size", 10);
 		var repo = new SemanticRepository(1L);
 		repo.setName("Name");
-		var query = "MATCH (r:SemanticRepository { name : $name, deleted: FALSE }) WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)";
-		when(session.query(SemanticRepository.class, query, paramsMap)).thenReturn(List.of(repo));
+		var wrongRepo = new SemanticRepository(1L);
+		wrongRepo.setName("Wrong");
+		var query = """
+				MATCH (r:SemanticRepository { name : $name, deleted: FALSE }) WITH r \
+				ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
+				MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)""";
+		when(session.query(SemanticRepository.class, query, paramsMap)).thenReturn(List.of(repo, wrongRepo));
 		var actual = dao.findAllSemanticRepositories(params);
-		verify(session).query(SemanticRepository.class, query, paramsMap);
 		assertEquals(List.of(repo), actual);
 	}
 

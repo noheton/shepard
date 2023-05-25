@@ -15,13 +15,25 @@ public class ShepardExceptionMapperTest extends BaseTestCase {
 
 	@Test
 	public void toResponseTest_different() {
-		var ex = new ShepardException("test", Status.INTERNAL_SERVER_ERROR) {
+		var ex = new ShepardException("test", Status.NOT_FOUND) {
 			private static final long serialVersionUID = 1L;
 		};
 		var response = mapper.toResponse(ex);
-		var error = new ApiError(500, "", "test");
+		var expected = new ApiError(404, "", "test");
+
+		assertEquals(404, response.getStatus());
+		assertEquals(expected, response.getEntity());
+	}
+
+	@Test
+	public void toResponseTest_noWebException() {
+		var ex = new Exception("test") {
+			private static final long serialVersionUID = 1L;
+		};
+		var response = mapper.toResponse(ex);
+		var expected = new ApiError(500, "", "test");
 
 		assertEquals(500, response.getStatus());
-		assertEquals(error, response.getEntity());
+		assertEquals(expected, response.getEntity());
 	}
 }

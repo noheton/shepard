@@ -2,7 +2,6 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -46,12 +45,8 @@ public class UserSearcherTest extends BaseTestCaseIT {
 	public void getTestIt() {
 		UserIO[] response = given().spec(requestSpecification).queryParam("email", "inte.*").when().get().then()
 				.statusCode(200).extract().as(UserIO[].class);
-		boolean containsTestIt = false;
-		for (int i = 0; i < response.length; i++) {
-			if (response[i].getUsername().equals("test_it"))
-				containsTestIt = true;
-		}
-		assertTrue(containsTestIt);
+
+		assertThat(response).anyMatch(user -> "test_it".equals(user.getUsername()));
 	}
 
 	@Test

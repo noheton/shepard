@@ -42,7 +42,7 @@ public abstract class AbstractEntityIO implements HasId {
 	}
 
 	protected static long[] extractIds(List<? extends AbstractEntity> entities) {
-		var result = entities.stream().map(e -> e.getId()).mapToLong(Long::longValue).toArray();
+		var result = entities.stream().map(AbstractEntity::getId).mapToLong(Long::longValue).toArray();
 		return result;
 	}
 

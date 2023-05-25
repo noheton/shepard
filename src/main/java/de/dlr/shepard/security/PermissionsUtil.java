@@ -37,8 +37,8 @@ public class PermissionsUtil {
 		} else if (!StringUtils.isNumeric(idSegment)) {
 			// usersearch and containersearch
 			if (pathSegments.get(0).getPath().equals(Constants.SEARCH)
-					&& ((pathSegments.get(1).getPath().equals(Constants.USERS)
-							|| pathSegments.get(1).getPath().equals(Constants.CONTAINERS)) && pathSegments.size() == 2))
+					&& List.of(Constants.USERS, Constants.CONTAINERS).contains(pathSegments.get(1).getPath())
+					&& pathSegments.size() == 2)
 				return true;
 			// non-numeric id
 			else if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
