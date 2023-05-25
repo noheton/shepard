@@ -10,6 +10,7 @@ import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
+import de.dlr.shepard.neo4Core.dao.ShepardFileDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
@@ -24,6 +25,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 	private FileReferenceDAO fileReferenceDAO = new FileReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private FileContainerDAO containerDAO = new FileContainerDAO();
+	private ShepardFileDAO fileDAO = new ShepardFileDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private FileService fileService = new FileService();
@@ -59,13 +61,13 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 		toCreate.setName(fileReference.getName());
 		toCreate.setFileContainer(container);
 
-		// Get filename per file
-		for (var file : fileReference.getFileOids()) {
-			var newFile = fileService.getFile(container.getMongoId(), file);
-			if (newFile != null) {
-				toCreate.addFile(newFile);
+		// Get existing file
+		for (var oid : fileReference.getFileOids()) {
+			var file = fileDAO.find(container.getId(), oid);
+			if (file != null) {
+				toCreate.addFile(file);
 			} else {
-				log.warn("Could not find file with oid: {}", file);
+				log.warn("Could not find file with oid: {}", oid);
 			}
 		}
 

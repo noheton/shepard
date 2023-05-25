@@ -1,16 +1,26 @@
 package de.dlr.shepard.influxDB;
 
+import org.neo4j.ogm.annotation.GeneratedValue;
+import org.neo4j.ogm.annotation.Id;
+import org.neo4j.ogm.annotation.NodeEntity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import de.dlr.shepard.util.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@NodeEntity
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Timeseries implements HasId {
+
+	@Id
+	@GeneratedValue
+	@JsonIgnore
+	private Long id;
 
 	@NotBlank
 	private String measurement;
@@ -30,6 +40,14 @@ public class Timeseries implements HasId {
 	@NotBlank
 	@Schema(nullable = true)
 	private String field;
+
+	public Timeseries(String measurement, String device, String location, String symbolicName, String field) {
+		this.measurement = measurement;
+		this.device = device;
+		this.location = location;
+		this.symbolicName = symbolicName;
+		this.field = field;
+	}
 
 	@Override
 	public String getUniqueId() {

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<migration xmlns="https://michael-simons.github.io/neo4j-migrations">
+	<catalog>
+		<indexes>
+			<index name="idx_BasicReference_deleted">
+				<label>BasicReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_Collection_deleted">
+				<label>Collection</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_CollectionReference_deleted">
+				<label>CollectionReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_DataObject_deleted">
+				<label>DataObject</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_DataObjectReference_deleted">
+				<label>DataObjectReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_FileContainer_deleted">
+				<label>FileContainer</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_FileReference_deleted">
+				<label>FileReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_ShepardFile_oid">
+				<label>ShepardFile</label>
+				<properties>
+					<property>oid</property>
+				</properties>
+			</index>
+			<index name="idx_SemanticAnnotation_deleted">
+				<label>SemanticAnnotation</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_SemanticRepository_deleted">
+				<label>SemanticRepository</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_StructuredDataContainer_deleted">
+				<label>StructuredDataContainer</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_StructuredDataReference_deleted">
+				<label>StructuredDataReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_StructuredData_oid">
+				<label>StructuredData</label>
+				<properties>
+					<property>oid</property>
+				</properties>
+			</index>
+			<index name="idx_TimeseriesContainer_deleted">
+				<label>TimeseriesContainer</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_TimeseriesReference_deleted">
+				<label>TimeseriesReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_Timeseries_attr">
+				<label>Timeseries</label>
+				<properties>
+					<property>measurement</property>
+					<property>device</property>
+					<property>location</property>
+					<property>symbolicName</property>
+					<property>field</property>
+				</properties>
+			</index>
+			<index name="idx_URIReference_deleted">
+				<label>URIReference</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_UserGroup_deleted">
+				<label>UserGroup</label>
+				<properties>
+					<property>deleted</property>
+				</properties>
+			</index>
+			<index name="idx_Subscription_requestMethod">
+				<label>Subscription</label>
+				<properties>
+					<property>requestMethod</property>
+				</properties>
+			</index>
+		</indexes>
+		<constraints>
+			<constraint name="unique_uid_ApiKey" type="unique">
+				<label>ApiKey</label>
+				<properties>
+					<property>uid</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_BasicReference" type="unique">
+				<label>BasicReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_Collection" type="unique">
+				<label>Collection</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_CollectionReference" type="unique">
+				<label>CollectionReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_DataObject" type="unique">
+				<label>DataObject</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_DataObjectReference" type="unique">
+				<label>DataObjectReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_FileContainer" type="unique">
+				<label>FileContainer</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_FileReference" type="unique">
+				<label>FileReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_ShepardFile" type="unique">
+				<label>ShepardFile</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_Permissions" type="unique">
+				<label>Permissions</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_SemanticAnnotation" type="unique">
+				<label>SemanticAnnotation</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_SemanticRepository" type="unique">
+				<label>SemanticRepository</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_StructuredDataContainer" type="unique">
+				<label>StructuredDataContainer</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_StructuredDataReference" type="unique">
+				<label>StructuredDataReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_StructuredData" type="unique">
+				<label>StructuredData</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_Subscription" type="unique">
+				<label>Subscription</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_TimeseriesContainer" type="unique">
+				<label>TimeseriesContainer</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_TimeseriesReference" type="unique">
+				<label>TimeseriesReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_Timeseries" type="unique">
+				<label>Timeseries</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_URIReference" type="unique">
+				<label>URIReference</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_username_User" type="unique">
+				<label>User</label>
+				<properties>
+					<property>username</property>
+				</properties>
+			</constraint>
+			<constraint name="unique_id_UserGroup" type="unique">
+				<label>UserGroup</label>
+				<properties>
+					<property>id</property>
+				</properties>
+			</constraint>
+		</constraints>
+	</catalog>
+	<apply />
+</migration>

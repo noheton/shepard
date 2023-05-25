@@ -5,12 +5,9 @@ import java.util.List;
 import java.util.Objects;
 
 import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import de.dlr.shepard.mongoDB.StructuredData;
-import de.dlr.shepard.neo4Core.converter.StructuredDataConverter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
 import lombok.Data;
@@ -22,8 +19,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class StructuredDataReference extends BasicReference {
 
-	@Property("structuredDatasJson")
-	@Convert(StructuredDataConverter.class)
+	@Relationship(type = Constants.HAS_PAYLOAD)
 	private List<StructuredData> structuredDatas = new ArrayList<>();
 
 	@ToString.Exclude

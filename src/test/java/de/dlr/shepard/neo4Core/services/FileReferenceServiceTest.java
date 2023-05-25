@@ -24,6 +24,7 @@ import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
+import de.dlr.shepard.neo4Core.dao.ShepardFileDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
@@ -47,6 +48,9 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private FileContainerDAO fileContainerDAO;
+
+	@Mock
+	private ShepardFileDAO fileDAO;
 
 	@Mock
 	private UserDAO userDAO;
@@ -144,7 +148,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(fileContainerDAO.find(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(fileService.getFile("mongoId", "oid")).thenReturn(fileComplete);
+		when(fileDAO.find(300L, "oid")).thenReturn(fileComplete);
 
 		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
@@ -191,7 +195,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(fileContainerDAO.find(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(fileService.getFile("mongoId", "oid")).thenReturn(null);
+		when(fileDAO.find(300L, "oid")).thenReturn(null);
 
 		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);

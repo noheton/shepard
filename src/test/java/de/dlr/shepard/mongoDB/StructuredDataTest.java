@@ -30,15 +30,6 @@ public class StructuredDataTest extends BaseTestCase {
 	}
 
 	@Test
-	public void oidConstructorTest() {
-		var expected = new StructuredData();
-		expected.setOid("oid");
-		var actual = new StructuredData("oid");
-
-		assertEquals(expected, actual);
-	}
-
-	@Test
 	public void docConstructorTest() {
 		var date = new Date();
 		var expected = new StructuredData();

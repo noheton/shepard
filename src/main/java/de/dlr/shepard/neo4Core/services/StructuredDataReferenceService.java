@@ -10,6 +10,7 @@ import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
+import de.dlr.shepard.neo4Core.dao.StructuredDataDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
@@ -26,6 +27,7 @@ public class StructuredDataReferenceService
 	private StructuredDataReferenceDAO structuredDataReferenceDAO = new StructuredDataReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private StructuredDataContainerDAO containerDAO = new StructuredDataContainerDAO();
+	private StructuredDataDAO structuredDataDAO = new StructuredDataDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private StructuredDataService structuredDataService = new StructuredDataService();
@@ -46,13 +48,13 @@ public class StructuredDataReferenceService
 		toCreate.setName(structuredDataReference.getName());
 		toCreate.setStructuredDataContainer(container);
 
-		// Get structured data
-		for (var structuredData : structuredDataReference.getStructuredDataOids()) {
-			var structuredDataPayload = structuredDataService.getPayload(container.getMongoId(), structuredData);
-			if (structuredDataPayload != null) {
-				toCreate.addStructuredData(structuredDataPayload.getStructuredData());
+		// Get existing structured data
+		for (var oid : structuredDataReference.getStructuredDataOids()) {
+			var structuredData = structuredDataDAO.find(container.getId(), oid);
+			if (structuredData != null) {
+				toCreate.addStructuredData(structuredData);
 			} else {
-				log.warn("Could not find structured data with oid: {}", structuredData);
+				log.warn("Could not find structured data with oid: {}", oid);
 			}
 		}
 

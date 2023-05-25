@@ -32,7 +32,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
 		var container = new StructuredDataContainer(3L);
-		var structuredData = new StructuredData("oid");
+		var structuredData = new StructuredData("oid", new Date(), "name");
 
 		var obj = new StructuredDataReference(1L);
 		obj.setCreatedAt(date);
@@ -62,7 +62,7 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		var date = new Date();
 		var user = new User("bob");
 		var dataObject = new DataObject(2L);
-		var structuredData = new StructuredData("oid");
+		var structuredData = new StructuredData("oid", new Date(), "name");
 
 		var obj = new StructuredDataReference(1L);
 		obj.setCreatedAt(date);

@@ -169,26 +169,29 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void createStructuredDataTest() {
+		var date = new Date();
+		var structuredData = new StructuredData("oid", date, "name");
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
-		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
+		var payload = new StructuredDataPayload(structuredData, "payload");
 
 		var updated = new StructuredDataContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.addStructuredData(payload.getStructuredData());
+		updated.addStructuredData(structuredData);
 
 		when(dao.find(1L)).thenReturn(container);
-		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(new StructuredData("oid"));
+		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
 
 		var actual = service.createStructuredData(1L, payload);
 
-		assertEquals(new StructuredData("oid"), actual);
+		assertEquals(new StructuredData("oid", date, "name"), actual);
 		verify(dao).createOrUpdate(updated);
 	}
 
 	@Test
 	public void createStructuredDataTest_containerIsNull() {
-		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
+		var structuredData = new StructuredData("oid", new Date(), "name");
+		var payload = new StructuredDataPayload(structuredData, "payload");
 
 		when(dao.find(1L)).thenReturn(null);
 
@@ -199,9 +202,10 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void createStructuredDataTest_containerIsDeleted() {
+		var structuredData = new StructuredData("oid", new Date(), "name");
 		var container = new StructuredDataContainer(1L);
 		container.setDeleted(true);
-		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
+		var payload = new StructuredDataPayload(structuredData, "payload");
 
 		when(dao.find(1L)).thenReturn(container);
 
@@ -212,9 +216,10 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void createStructuredDataTest_mongoError() {
+		var structuredData = new StructuredData("oid", new Date(), "name");
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
-		var payload = new StructuredDataPayload(new StructuredData("oid"), "payload");
+		var payload = new StructuredDataPayload(structuredData, "payload");
 
 		when(dao.find(1L)).thenReturn(container);
 		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(null);
@@ -227,8 +232,9 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	@Test
 	public void getStructuredDataTest() {
 		var container = new StructuredDataContainer(1L);
+		var structuredData = new StructuredData("oid", new Date(), "name");
 		container.setMongoId("mongoId");
-		var result = new StructuredDataPayload(new StructuredData("oid"), "payload");
+		var result = new StructuredDataPayload(structuredData, "payload");
 
 		when(dao.find(1L)).thenReturn(container);
 		when(structuredDataService.getPayload("mongoId", "oid")).thenReturn(result);
@@ -259,13 +265,15 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteStructuredDataTest() {
+		var date = new Date();
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
-		container.setStructuredDatas(List.of(new StructuredData("abc"), new StructuredData("123")));
+		container.setStructuredDatas(
+				List.of(new StructuredData("abc", new Date(), "name"), new StructuredData("123", date, "name")));
 
 		var updated = new StructuredDataContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setStructuredDatas(List.of(new StructuredData("123")));
+		updated.setStructuredDatas(List.of(new StructuredData("123", date, "name")));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(true);
@@ -277,13 +285,15 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteStructuredDataTest_deletedFalse() {
+		var date = new Date();
 		var container = new StructuredDataContainer(1L);
 		container.setMongoId("mongoId");
-		container.setStructuredDatas(List.of(new StructuredData("abc"), new StructuredData("123")));
+		container.setStructuredDatas(
+				List.of(new StructuredData("abc", new Date(), "name"), new StructuredData("123", date, "name")));
 
 		var updated = new StructuredDataContainer(1L);
 		updated.setMongoId("mongoId");
-		updated.setStructuredDatas(List.of(new StructuredData("123")));
+		updated.setStructuredDatas(List.of(new StructuredData("123", date, "name")));
 
 		when(dao.find(1L)).thenReturn(container);
 		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(false);

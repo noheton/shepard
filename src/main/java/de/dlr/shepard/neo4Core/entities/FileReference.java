@@ -5,12 +5,9 @@ import java.util.List;
 import java.util.Objects;
 
 import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import de.dlr.shepard.mongoDB.ShepardFile;
-import de.dlr.shepard.neo4Core.converter.FileConverter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
 import lombok.Data;
@@ -22,8 +19,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class FileReference extends BasicReference {
 
-	@Property("filesJson")
-	@Convert(FileConverter.class)
+	@Relationship(type = Constants.HAS_PAYLOAD)
 	private List<ShepardFile> files = new ArrayList<>();
 
 	@ToString.Exclude

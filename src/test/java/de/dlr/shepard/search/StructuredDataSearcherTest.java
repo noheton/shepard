@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.bson.Document;
@@ -67,7 +68,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
+		List<StructuredData> structuredDatas = List
+				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -125,7 +127,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
+		List<StructuredData> structuredDatas = List
+				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -183,7 +186,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
+		List<StructuredData> structuredDatas = List
+				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";
@@ -236,7 +240,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 				setName("reference1");
 			}
 		};
-		List<StructuredData> structuredDatas = List.of(new StructuredData("61371f2889b108615688e22e"));
+		List<StructuredData> structuredDatas = List
+				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		structuredDataReference1.setStructuredDatas(structuredDatas);
 		StructuredDataContainer structuredDataContainer1 = new StructuredDataContainer();
 		String mongoID = "61371f2889b108615688e22e";

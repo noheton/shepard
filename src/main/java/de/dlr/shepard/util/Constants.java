@@ -127,6 +127,10 @@ public class Constants {
 	public static final String VALUE_REPOSITORY = "value_in_repository";
 	public static final String PROPERTY_REPOSITORY = "property_in_repository";
 	public static final String HAS_ANNOTATION = "has_annotation";
+	public static final String FILE_IN_CONTAINER = "file_in_container";
+	public static final String TIMESERIES_IN_CONTAINER = "timeseries_in_container";
+	public static final String STRUCTUREDDATA_IN_CONTAINER = "structureddata_in_container";
+	public static final String HAS_PAYLOAD = "has_payload";
 
 	// Influx
 	public static final String MEASUREMENT = "measurement";
@@ -159,4 +163,5 @@ public class Constants {
 	public static final String JSON_LE = "le";
 	public static final String JSON_IN = "in";
 	public static final String JSON_NE = "ne";
+
 }

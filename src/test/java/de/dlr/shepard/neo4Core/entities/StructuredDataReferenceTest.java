@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ public class StructuredDataReferenceTest extends BaseTestCase {
 	@Test
 	public void addStructuredDataTest() {
 		var ref = new StructuredDataReference(1L);
-		var sd = new StructuredData("oid");
+		var sd = new StructuredData("newOid", new Date(), "name");
 		ref.addStructuredData(sd);
 
 		assertEquals(List.of(sd), ref.getStructuredDatas());

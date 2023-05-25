@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
+import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.mongoDB.ShepardFile;
-import de.dlr.shepard.neo4Core.converter.FileConverter;
+import de.dlr.shepard.util.Constants;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -21,8 +20,7 @@ public class FileContainer extends AbstractContainer {
 
 	private String mongoId;
 
-	@Property("filesJson")
-	@Convert(FileConverter.class)
+	@Relationship(type = Constants.FILE_IN_CONTAINER)
 	private List<ShepardFile> files = new ArrayList<>();
 
 	/**

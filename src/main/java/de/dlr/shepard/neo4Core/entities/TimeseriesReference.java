@@ -5,12 +5,9 @@ import java.util.List;
 import java.util.Objects;
 
 import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.neo4Core.converter.TimeseriesConverter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
 import lombok.Data;
@@ -26,8 +23,7 @@ public class TimeseriesReference extends BasicReference {
 
 	private long end;
 
-	@Property("timeseriesJson")
-	@Convert(TimeseriesConverter.class)
+	@Relationship(type = Constants.HAS_PAYLOAD)
 	private List<Timeseries> timeseries = new ArrayList<>();
 
 	@ToString.Exclude

@@ -15,6 +15,7 @@ import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
+import de.dlr.shepard.neo4Core.dao.TimeseriesDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
@@ -30,6 +31,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 	private TimeseriesService timeseriesService = new TimeseriesService();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
+	private TimeseriesDAO timeseriesDAO = new TimeseriesDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
@@ -76,8 +78,17 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		toCreate.setName(timeseriesReference.getName());
 		toCreate.setStart(timeseriesReference.getStart());
 		toCreate.setEnd(timeseriesReference.getEnd());
-		toCreate.setTimeseries(Arrays.asList(timeseriesReference.getTimeseries()));
 		toCreate.setTimeseriesContainer(container);
+
+		for (var ts : timeseriesReference.getTimeseries()) {
+			var found = timeseriesDAO.find(ts.getMeasurement(), ts.getDevice(), ts.getLocation(), ts.getSymbolicName(),
+					ts.getField());
+			if (found != null) {
+				toCreate.addTimeseries(found);
+			} else {
+				toCreate.addTimeseries(ts);
+			}
+		}
 
 		var created = timeseriesReferenceDAO.createOrUpdate(toCreate);
 		return created;

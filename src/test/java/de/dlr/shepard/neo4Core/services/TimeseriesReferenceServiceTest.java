@@ -28,6 +28,7 @@ import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.influxDB.TimeseriesService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
+import de.dlr.shepard.neo4Core.dao.TimeseriesDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -52,6 +53,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private TimeseriesContainerDAO timeseriesContainerDAO;
+
+	@Mock
+	private TimeseriesDAO timeseriesDAO;
 
 	@Mock
 	private UserDAO userDAO;
@@ -113,12 +117,13 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		var dataObject = new DataObject(200L);
 		var container = new TimeseriesContainer(300L);
 		var date = new Date(30L);
+		var timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
+				setTimeseries(new Timeseries[] { timeseries });
 				setTimeseriesContainerId(300L);
 			}
 		};
@@ -130,7 +135,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+				setTimeseries(List.of(timeseries));
 				setTimeseriesContainer(container);
 			}
 		};
@@ -143,7 +148,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
-				setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+				setTimeseries(List.of(timeseries));
 				setTimeseriesContainer(container);
 			}
 		};
@@ -151,6 +156,60 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(userDAO.find("Bob")).thenReturn(user);
 		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
 		when(timeseriesContainerDAO.find(300L)).thenReturn(container);
+		when(timeseriesDAO.find("meas", "dev", "loc", "symName", "field")).thenReturn(timeseries);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dateHelper.getDate()).thenReturn(date);
+
+		var actual = service.createReference(200L, input, "Bob");
+		assertEquals(created, actual);
+	}
+
+	@Test
+	public void createTimeseriesReferenceTest_timeseriesNotFound() {
+		var user = new User("Bob");
+		var dataObject = new DataObject(200L);
+		var container = new TimeseriesContainer(300L);
+		var date = new Date(30L);
+		var timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+		var input = new TimeseriesReferenceIO() {
+			{
+				setName("MyName");
+				setStart(123L);
+				setEnd(321L);
+				setTimeseries(new Timeseries[] { timeseries });
+				setTimeseriesContainerId(300L);
+			}
+		};
+		var toCreate = new TimeseriesReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setStart(123L);
+				setEnd(321L);
+				setTimeseries(List.of(timeseries));
+				setTimeseriesContainer(container);
+			}
+		};
+		var created = new TimeseriesReference() {
+			{
+				setId(1L);
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setStart(123L);
+				setEnd(321L);
+				setTimeseries(List.of(timeseries));
+				setTimeseriesContainer(container);
+			}
+		};
+
+		when(userDAO.find("Bob")).thenReturn(user);
+		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(timeseriesContainerDAO.find(300L)).thenReturn(container);
+		when(timeseriesDAO.find("meas", "dev", "loc", "symName", "field")).thenReturn(null);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 

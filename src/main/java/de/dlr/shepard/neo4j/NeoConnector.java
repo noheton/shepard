@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4j;
 
 import java.util.Collections;
 
-import org.neo4j.ogm.config.AutoIndexMode;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.exception.ConnectionException;
 import org.neo4j.ogm.model.Result;
@@ -48,28 +47,25 @@ public class NeoConnector implements IConnector {
 	 */
 	@Override
 	public boolean connect() {
-		PropertiesHelper helper = new PropertiesHelper();
-		String username = helper.getProperty("neo4j.username");
-		String password = helper.getProperty("neo4j.password");
-		String host = helper.getProperty("neo4j.host");
-		String connectionString = String.format("bolt://%s:%s@%s", username, password, host);
-		// TODO: How to autoIndex without deprecation warnings?
-		// https://github.com/neo4j/neo4j-ogm/issues/913
-		String autoIndexMode = AutoIndexMode.ASSERT.getName();
-		Configuration configuration = new Configuration.Builder().uri(connectionString).autoIndex(autoIndexMode)
+		var pHelper = new PropertiesHelper();
+		String username = pHelper.getProperty("neo4j.username");
+		String password = pHelper.getProperty("neo4j.password");
+		String host = pHelper.getProperty("neo4j.host");
+		Configuration configuration = new Configuration.Builder().uri("neo4j://" + host).credentials(username, password)
 				.verifyConnection(true).useNativeTypes().build();
 		while (true) {
 			try {
-				sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities");
+				sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities",
+						"de.dlr.shepard.influxDB", "de.dlr.shepard.mongoDB");
 				return true;
 			} catch (ConnectionException ex) {
 				log.warn("Cannot connect to neo4j database. Retrying...");
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					log.error("Cannot sleep while waiting for neo4j Connection");
-					Thread.currentThread().interrupt();
-				}
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				log.error("Cannot sleep while waiting for neo4j Connection");
+				Thread.currentThread().interrupt();
 			}
 		}
 	}

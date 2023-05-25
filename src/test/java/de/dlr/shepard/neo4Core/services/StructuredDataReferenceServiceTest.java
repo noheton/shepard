@@ -26,6 +26,7 @@ import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
+import de.dlr.shepard.neo4Core.dao.StructuredDataDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -50,6 +51,9 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private StructuredDataContainerDAO structuredDataContainerDAO;
+
+	@Mock
+	private StructuredDataDAO structuredDataDAO;
 
 	@Mock
 	private UserDAO userDAO;
@@ -147,8 +151,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(structuredDataService.getPayload("MongoId", "oid"))
-				.thenReturn(new StructuredDataPayload(structuredData, "value"));
+		when(structuredDataDAO.find(300L, "oid")).thenReturn(structuredData);
 
 		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
@@ -195,7 +198,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(structuredDataService.getPayload("MongoId", "oid")).thenReturn(null);
+		when(structuredDataDAO.find(300L, "oid")).thenReturn(null);
 
 		var actual = service.createReference(200L, input, "Bob");
 		assertEquals(created, actual);
@@ -266,8 +269,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc");
-		var structuredDataB = new StructuredData("def");
+		var structuredDataA = new StructuredData("abc", new Date(), "name");
+		var structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
 
 		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
@@ -288,8 +291,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc");
-		var structuredDataB = new StructuredData("def");
+		var structuredDataA = new StructuredData("abc", new Date(), "name");
+		var structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
 
 		var payloadA = new StructuredDataPayload(structuredDataA, null);
@@ -309,8 +312,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc");
-		var structuredDataB = new StructuredData("def");
+		var structuredDataA = new StructuredData("abc", new Date(), "name");
+		var structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
 
 		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
@@ -345,7 +348,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc");
+		var structuredDataA = new StructuredData("abc", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA));
 
 		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
@@ -364,7 +367,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var ref = new StructuredDataReference(1L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc");
+		var structuredDataA = new StructuredData("abc", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA));
 
 		when(dao.find(1L)).thenReturn(ref);

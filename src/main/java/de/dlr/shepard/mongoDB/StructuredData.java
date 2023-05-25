@@ -3,6 +3,7 @@ package de.dlr.shepard.mongoDB;
 import java.util.Date;
 
 import org.bson.Document;
+import org.neo4j.ogm.annotation.NodeEntity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -10,6 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+@NodeEntity
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -18,10 +20,6 @@ public class StructuredData extends AbstractMongoObject {
 
 	@Schema(nullable = true)
 	private String name;
-
-	public StructuredData(String oid) {
-		super(oid);
-	}
 
 	public StructuredData(String name, Date createdAt) {
 		setCreatedAt(createdAt);
