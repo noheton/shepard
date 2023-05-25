@@ -25,8 +25,8 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.security.PermissionType;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class CollectionServiceTest extends BaseTestCase {

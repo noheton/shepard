@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.security.PermissionType;
+import de.dlr.shepard.util.PermissionType;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class PermissionsTest extends BaseTestCase {

@@ -27,8 +27,8 @@ import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
-import de.dlr.shepard.security.PermissionType;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 
 public class FileContainerServiceTest extends BaseTestCase {
 

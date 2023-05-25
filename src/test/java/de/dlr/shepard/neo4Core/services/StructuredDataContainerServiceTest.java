@@ -26,8 +26,8 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
-import de.dlr.shepard.security.PermissionType;
 import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 
 public class StructuredDataContainerServiceTest extends BaseTestCase {
 
