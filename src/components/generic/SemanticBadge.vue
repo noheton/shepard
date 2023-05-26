@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SemanticAnnotation } from "@dlr-shepard/shepard-client";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   annotationList: {
@@ -8,6 +8,11 @@ const props = defineProps({
     required: true,
   },
 });
+
+watch(
+  () => props.annotationList,
+  () => formatAnnotations(),
+);
 
 const attributesList = ref<
   { property: string; value: string; propertyIRI: string; valueIRI: string }[]
