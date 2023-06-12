@@ -144,8 +144,7 @@ public class Neo4jEmitter {
 		String iriType = node.get(Constants.OP_PROPERTY).textValue();
 		ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem." + iriType + " ";
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
-		ret = ret + node.get(Constants.OP_VALUE) + " AND ";
-		ret = ret + "sem.deleted = FALSE";
+		ret = ret + node.get(Constants.OP_VALUE);
 		ret = ret + ")})";
 		return ret;
 	}

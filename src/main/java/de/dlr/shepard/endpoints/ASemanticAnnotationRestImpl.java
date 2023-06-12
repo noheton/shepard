@@ -33,14 +33,12 @@ public abstract class ASemanticAnnotationRestImpl {
 	}
 
 	protected Response create(long entityId, SemanticAnnotationIO semanticAnnotation) {
-		var result = semanticAnnotationService.createAnnotation(entityId, semanticAnnotation,
-				securityContext.getUserPrincipal().getName());
+		var result = semanticAnnotationService.createAnnotation(entityId, semanticAnnotation);
 		return Response.ok(new SemanticAnnotationIO(result)).status(Status.CREATED).build();
 	}
 
 	protected Response delete(long semanticAnnotationId) {
-		var result = semanticAnnotationService.deleteAnnotation(semanticAnnotationId,
-				securityContext.getUserPrincipal().getName());
+		var result = semanticAnnotationService.deleteAnnotation(semanticAnnotationId);
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}

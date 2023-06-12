@@ -34,7 +34,7 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
 		annotation.setName("Test");
 
 		var query = """
-				MATCH (a:SemanticAnnotation { deleted: FALSE })<-[ha:has_annotation]-(e) \
+				MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) \
 				WHERE ID(e)=1 WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
 				RETURN a, nodes(path), relationships(path)""";
 		when(session.query(SemanticAnnotation.class, query, Collections.emptyMap())).thenReturn(List.of(annotation));

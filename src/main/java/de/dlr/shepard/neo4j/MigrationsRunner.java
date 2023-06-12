@@ -25,8 +25,9 @@ public class MigrationsRunner {
 		var path = this.getClass().getClassLoader().getResource("neo4j/migrations");
 
 		driver = GraphDatabase.driver("neo4j://" + host, AuthTokens.basic(username, password));
-		var config = MigrationsConfig.builder().withPackagesToScan("de.dlr.shepard.neo4j.migrations")
-				.withLocationsToScan("file://" + path.toString()).build();
+		var config = MigrationsConfig.builder().withTransactionMode(MigrationsConfig.TransactionMode.PER_STATEMENT)
+				.withPackagesToScan("de.dlr.shepard.neo4j.migrations").withLocationsToScan("file://" + path.toString())
+				.build();
 
 		migrations = new Migrations(config, driver);
 	}

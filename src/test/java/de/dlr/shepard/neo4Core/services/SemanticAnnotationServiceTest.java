@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -24,16 +23,13 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.AbstractEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
-import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
-import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.semantics.ISemanticRepositoryConnector;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
-import de.dlr.shepard.util.DateHelper;
 
 public class SemanticAnnotationServiceTest extends BaseTestCase {
 
@@ -45,12 +41,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 
 	@Mock
 	private AbstractEntityDAO abstractEntityDAO;
-
-	@Mock
-	private UserDAO userDAO;
-
-	@Mock
-	private DateHelper dateHelper;
 
 	@Mock
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
@@ -117,18 +107,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void getAnnotationTest_Deleted() {
-		var expected = new SemanticAnnotation(1L);
-		expected.setDeleted(true);
-		when(semanticAnnotationDAO.find(1L)).thenReturn(expected);
-		var actual = service.getAnnotation(1L);
-		assertNull(actual);
-	}
-
-	@Test
 	public void createAnnotationTest() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -144,8 +123,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
 				setValueRepository(valRepo);
-				setCreatedAt(date);
-				setCreatedBy(user);
 			}
 		};
 		var expected = new SemanticAnnotation() {
@@ -156,20 +133,16 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 				setPropertyRepository(propRepo);
 				setValueIRI("valIri");
 				setValueRepository(valRepo);
-				setCreatedAt(date);
-				setCreatedBy(user);
 			}
 		};
 		var entity = new Collection(5L);
 		var entityUpdated = new Collection(5L);
 		entityUpdated.setAnnotations(List.of(expected));
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(semanticAnnotationDAO.createOrUpdate(toCreate)).thenReturn(expected);
 
-		var actual = service.createAnnotation(5L, annotation, "bob");
+		var actual = service.createAnnotation(5L, annotation);
 		assertEquals(expected, actual);
 		verify(semanticAnnotationDAO).createOrUpdate(toCreate);
 		verify(abstractEntityDAO).update(entityUpdated);
@@ -177,8 +150,6 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 
 	@Test
 	public void createAnnotationTest_EntityNull() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -188,17 +159,13 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			}
 		};
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_EntityDeleted() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -210,18 +177,13 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var entity = new Collection(5L);
 		entity.setDeleted(true);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_PropRepoNull() {
-		var user = new User("bob");
-		var date = new Date();
-
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -232,18 +194,14 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(semanticRepositoryDAO.find(2L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_PropRepoDeleted() {
-		var user = new User("bob");
-		var date = new Date();
 		var propRepo = new SemanticRepository() {
 			{
 				setId(2L);
@@ -262,18 +220,14 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_InvalidPropTermNull() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -284,18 +238,14 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(propConnector.getTerm("propIri")).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_InvalidPropTermEmpty() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -306,18 +256,14 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(propConnector.getTerm("propIri")).thenReturn(Collections.emptyMap());
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation, "bob"));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
 	}
 
 	@Test
 	public void createAnnotationTest_FirstLabel() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -328,21 +274,17 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft"));
 		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
 
-		var actual = service.createAnnotation(5L, annotation, "bob");
+		var actual = service.createAnnotation(5L, annotation);
 		assertEquals("Eigenschaft::valObject", actual.getName());
 
 	}
 
 	@Test
 	public void createAnnotationTest_EnglishLabel() {
-		var user = new User("bob");
-		var date = new Date();
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -353,45 +295,27 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		};
 		var entity = new Collection(5L);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
 		when(abstractEntityDAO.find(5L)).thenReturn(entity);
 		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft", "en", "Property"));
 		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
 
-		var actual = service.createAnnotation(5L, annotation, "bob");
+		var actual = service.createAnnotation(5L, annotation);
 		assertEquals("Property::valObject", actual.getName());
 	}
 
 	@Test
 	public void deleteAnnotationTest() {
-		var user = new User("bob");
-		var date = new Date();
-		var annotation = new SemanticAnnotation(1L);
-		var expected = new SemanticAnnotation(1L);
-		expected.setDeleted(true);
-		expected.setUpdatedAt(date);
-		expected.setUpdatedBy(user);
+		when(semanticAnnotationDAO.delete(1L)).thenReturn(true);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
-		when(semanticAnnotationDAO.find(1L)).thenReturn(annotation);
-
-		var actual = service.deleteAnnotation(1L, "bob");
+		var actual = service.deleteAnnotation(1L);
 		assertTrue(actual);
-		verify(semanticAnnotationDAO).createOrUpdate(expected);
 	}
 
 	@Test
 	public void deleteAnnotationTest_isNull() {
-		var user = new User("bob");
-		var date = new Date();
+		when(semanticAnnotationDAO.delete(1L)).thenReturn(false);
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(userDAO.find("bob")).thenReturn(user);
-		when(semanticAnnotationDAO.find(1L)).thenReturn(null);
-
-		var actual = service.deleteAnnotation(1L, "bob");
+		var actual = service.deleteAnnotation(1L);
 		assertFalse(actual);
 	}
 

@@ -2,6 +2,8 @@ package de.dlr.shepard.neo4Core.entities;
 
 import java.util.Objects;
 
+import org.neo4j.ogm.annotation.GeneratedValue;
+import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
@@ -14,7 +16,13 @@ import lombok.ToString;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class SemanticAnnotation extends AbstractEntity {
+public class SemanticAnnotation implements HasId {
+
+	@Id
+	@GeneratedValue
+	private Long id;
+
+	private String name;
 
 	private String propertyIRI;
 
@@ -34,14 +42,13 @@ public class SemanticAnnotation extends AbstractEntity {
 	 * @param id identifies the entity
 	 */
 	public SemanticAnnotation(long id) {
-		super(id);
+		this.id = id;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + Objects.hash(propertyIRI, valueIRI);
+		var result = Objects.hash(id, name, propertyIRI, valueIRI);
 		result = prime * result + HasId.hashcodeHelper(propertyRepository);
 		result = prime * result + HasId.hashcodeHelper(valueRepository);
 		return result;
@@ -51,13 +58,19 @@ public class SemanticAnnotation extends AbstractEntity {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (!super.equals(obj))
+		if (obj == null)
 			return false;
 		if (!(obj instanceof SemanticAnnotation))
 			return false;
 		SemanticAnnotation other = (SemanticAnnotation) obj;
-		return Objects.equals(propertyIRI, other.propertyIRI) && Objects.equals(valueIRI, other.valueIRI)
+		return Objects.equals(id, other.id) && Objects.equals(name, other.name)
+				&& Objects.equals(propertyIRI, other.propertyIRI) && Objects.equals(valueIRI, other.valueIRI)
 				&& HasId.equalsHelper(propertyRepository, other.propertyRepository)
 				&& HasId.equalsHelper(valueRepository, other.valueRepository);
+	}
+
+	@Override
+	public String getUniqueId() {
+		return id.toString();
 	}
 }
