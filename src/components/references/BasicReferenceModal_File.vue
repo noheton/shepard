@@ -4,6 +4,7 @@ import FilePlottingModal from "@/components/payload/FilePlottingModal.vue";
 import ImageViewerModal from "@/components/payload/ImageViewerModal.vue";
 import TextViewerModal from "@/components/payload/TextViewerModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import JsonFileModal from "@/components/references/JsonFileModal.vue";
 import FileReferenceService from "@/services/fileReferenceService";
 import { downloadFile } from "@/utils/download";
 import { logError } from "@/utils/error-handling";
@@ -154,7 +155,7 @@ onMounted(() => {
             </b-button>
             <b-button
               v-else-if="
-                files[oid]?.filename?.match(/\.(txt|md|json|yaml|toml|csv)$/i)
+                files[oid]?.filename?.match(/\.(txt|md|yaml|toml|csv)$/i)
               "
               v-b-modal.text-viewer-modal
               v-b-tooltip.hover
@@ -164,6 +165,17 @@ onMounted(() => {
             >
               <EyeIcon />
             </b-button>
+            <b-button
+              v-else-if="files[oid]?.filename?.match(/\.(json)$/i)"
+              v-b-modal.json-file-modal
+              v-b-tooltip.hover
+              variant="primary"
+              title="Show Text"
+              @click="currentFileOid = oid"
+            >
+              <EyeIcon />
+            </b-button>
+
             <b-button v-else variant="primary" :disabled="true">
               <EyeIcon />
             </b-button>
@@ -222,6 +234,13 @@ onMounted(() => {
     <TextViewerModal
       v-if="fileReference && currentFileOid"
       modal-id="text-viewer-modal"
+      :modal-name="files[currentFileOid]?.filename"
+      :container-id="fileReference.fileContainerId"
+      :oid="currentFileOid"
+    />
+    <JsonFileModal
+      v-if="fileReference && currentFileOid"
+      modal-id="json-file-modal"
       :modal-name="files[currentFileOid]?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"

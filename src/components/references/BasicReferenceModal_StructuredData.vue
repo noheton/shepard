@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GenericName from "@/components/generic/GenericName.vue";
-import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
+import JsonStructruedDataModal from "@/components/references/JsonStructruedDataModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
@@ -116,7 +116,7 @@ onMounted(() => {
           <!-- Nothing deleted -->
           <b-button
             v-else
-            v-b-modal.json-editor-modal
+            v-b-modal.json-structured-data-modal
             v-b-tooltip.hover
             class="float-right"
             variant="primary"
@@ -132,9 +132,9 @@ onMounted(() => {
         </div>
       </b-list-group-item>
     </b-list-group>
-    <JsonEditorModal
+    <JsonStructruedDataModal
       v-if="structuredDataReference && currentStructuredDataOid"
-      modal-id="json-editor-modal"
+      modal-id="json-structured-data-modal"
       modal-name="Structured Data Reference"
       :container-id="structuredDataReference.structuredDataContainerId"
       :oid="currentStructuredDataOid"

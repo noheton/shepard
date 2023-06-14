@@ -3,8 +3,8 @@ import CreateStructuredDataModal from "@/components/containers/CreateStructuredD
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
-import JsonEditorModal from "@/components/generic/JsonEditorModal.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
+import JsonStructruedDataModal from "@/components/references/JsonStructruedDataModal.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
@@ -220,7 +220,7 @@ onMounted(() => {
         >
           <b-button-group class="float-right">
             <b-button
-              v-b-modal.json-editor-modal
+              v-b-modal.json-structured-data-modal
               v-b-tooltip.hover
               title="Show Editor"
               variant="secondary"
@@ -275,9 +275,9 @@ onMounted(() => {
       "
       @confirmation="handleDeleteStructuredData()"
     />
-    <JsonEditorModal
+    <JsonStructruedDataModal
       v-if="currentStructuredData && currentStructuredData.oid"
-      modal-id="json-editor-modal"
+      modal-id="json-structured-data-modal"
       modal-name="Structured Data"
       :container-id="+currentStructuredDataContainerId"
       :oid="currentStructuredData.oid"
