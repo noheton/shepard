@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -11,6 +14,7 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 
 public class CollectionSearcherTest extends BaseTestCase {
@@ -21,7 +25,7 @@ public class CollectionSearcherTest extends BaseTestCase {
 	@InjectMocks
 	private CollectionSearcher collectionSearcher;
 
-	private static final String[] colvariables = { "col" };
+	private static final String[] colvariables = { Constants.COLLECTION_IN_QUERY };
 
 	@Test
 	public void test() {
@@ -55,14 +59,16 @@ public class CollectionSearcherTest extends BaseTestCase {
 		Long[] collectionIds = { collectionId };
 		ArrayList<Long[]> collectionIdList = new ArrayList<>();
 		collectionIdList.add(collectionIds);
-		String searchQuery = Neo4jEmitter.emitCollectionQuery(searchBody.getSearchParams().getQuery(), userName);
-		when(searchDAO.getIdsFromQuery(searchQuery, colvariables)).thenReturn(collectionIdList);
-		ResultTriple resultTriple = new ResultTriple();
-		resultTriple.setCollectionId(collectionId);
+		String selectionQuery = Neo4jEmitter.emitCollectionSelectionQuery(searchBody.getSearchParams().getQuery(),
+				userName);
+		Map<String, Long> idDictionary = new HashMap<String, Long>();
+		idDictionary.put(Constants.COLLECTION_IN_QUERY, collectionId);
+		List<Map<String, Long>> idDictionaries = new ArrayList<Map<String, Long>>();
+		idDictionaries.add(idDictionary);
+		when(searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, colvariables)).thenReturn(idDictionaries);
+		ResultTriple resultTriple = new ResultTriple(collectionId);
 		ResultTriple[] resultTriples = { resultTriple };
-		ResponseBody responseBody = new ResponseBody();
-		responseBody.setResultSet(resultTriples);
-		responseBody.setSearchParams(searchBody.getSearchParams());
+		ResponseBody responseBody = new ResponseBody(resultTriples, searchBody.getSearchParams());
 		assertEquals(collectionSearcher.search(searchBody, userName), responseBody);
 	}
 

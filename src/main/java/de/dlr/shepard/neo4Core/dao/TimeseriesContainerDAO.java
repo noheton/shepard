@@ -43,16 +43,6 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 		return name == null || container.getName().equalsIgnoreCase(name);
 	}
 
-	public List<TimeseriesContainer> getTimeseriesContainerByQuery(String query) {
-		var result = new ArrayList<TimeseriesContainer>();
-		Map<String, Object> paramsMap = new HashMap<>();
-		// TODO: sanity check for query
-		for (var container : findByQuery(query, paramsMap)) {
-			result.add(container);
-		}
-		return result;
-	}
-
 	@Override
 	public Class<TimeseriesContainer> getEntityType() {
 		return TimeseriesContainer.class;

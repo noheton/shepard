@@ -1,6 +1,5 @@
 package de.dlr.shepard.neo4Core.dao;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -238,12 +237,4 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
 		assertEquals(List.of(col1), actual);
 	}
 
-	@Test
-	public void getTimeseriesContainerByQuery() {
-		String query = "query";
-		Map<String, Object> paramsMap = new HashMap<>();
-		TimeseriesContainer res = new TimeseriesContainer(42L);
-		when(session.query(TimeseriesContainer.class, query, paramsMap)).thenReturn(List.of(res));
-		assertThat(dao.getTimeseriesContainerByQuery(query)).containsExactly(res);
-	}
 }

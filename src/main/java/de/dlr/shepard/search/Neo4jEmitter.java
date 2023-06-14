@@ -13,10 +13,6 @@ import de.dlr.shepard.util.TraversalRules;
 
 public class Neo4jEmitter {
 
-	private static final String FILECONTAINER_IN_QUERY = "fc";
-	private static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
-	private static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
-
 	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
 			Constants.JSON_NOT, Constants.JSON_XOR);
 
@@ -92,7 +88,7 @@ public class Neo4jEmitter {
 		// for StructuredDataReferences
 		if (property.equals("structuredDataContainerId"))
 			return emitStructuredDataContainerIdPart(node, variable);
-		// for TimeseriesaReferences
+		// for TimeseriesReferences
 		if (property.equals("timeseriesContainerId"))
 			return emitTimeseriesContainerIdPart(node, variable);
 		String ret = "(";
@@ -222,24 +218,19 @@ public class Neo4jEmitter {
 
 	private static String emitFileContainerMatchPart() {
 		String ret = "";
-		ret = ret + "MATCH (" + FILECONTAINER_IN_QUERY + ":FileContainer)";
+		ret = ret + "MATCH (" + Constants.FILECONTAINER_IN_QUERY + ":FileContainer)";
 		return ret;
 	}
 
 	private static String emitTimeseriesContainerMatchPart() {
 		String ret = "";
-		ret = ret + "MATCH (" + TIMESERIESCONTAINER_IN_QUERY + ":TimeseriesContainer)";
+		ret = ret + "MATCH (" + Constants.TIMESERIESCONTAINER_IN_QUERY + ":TimeseriesContainer)";
 		return ret;
 	}
 
 	private static String emitStructuredDataContainerMatchPart() {
 		String ret = "";
-		ret = ret + "MATCH (" + STRUCTUREDDATACONTAINER_IN_QUERY + ":StructuredDataContainer)";
-		return ret;
-	}
-
-	private static String emitCollectionIdReturnPart() {
-		String ret = " RETURN id(" + Constants.COLLECTION_IN_QUERY + ")";
+		ret = ret + "MATCH (" + Constants.STRUCTUREDDATACONTAINER_IN_QUERY + ":StructuredDataContainer)";
 		return ret;
 	}
 
@@ -271,17 +262,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	private static String emitDataObjectIdReturnPart() {
-		String ret = " RETURN id(" + Constants.DATAOBJECT_IN_QUERY + ")";
-		return ret;
-	}
-
-	private static String emitReadableByPart(String username) {
-		String variable = Constants.COLLECTION_IN_QUERY;
-		return CypherQueryHelper.getReadableByQuery(variable, username);
-	}
-
-	public static String emitCollectionQuery(String searchBodyQuery, String userName) {
+	public static String emitCollectionSelectionQuery(String searchBodyQuery, String userName) {
 		String ret = "";
 		ret = ret + emitCollectionMatchPart();
 		ret = ret + " WHERE ";
@@ -290,56 +271,47 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.COLLECTION_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(userName);
-		ret = ret + emitCollectionIdReturnPart();
 		return ret;
 	}
 
-	public static String emitFileContainerQuery(String JSONQuery, String userName) {
+	public static String emitFileContainerSelectionQuery(String JSONQuery, String userName) {
 		String ret = "";
 		ret = ret + emitFileContainerMatchPart();
 		ret = ret + " WHERE ";
-		ret = ret + emitNeo4j(JSONQuery, FILECONTAINER_IN_QUERY);
+		ret = ret + emitNeo4j(JSONQuery, Constants.FILECONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + emitNotDeletedPart(FILECONTAINER_IN_QUERY);
+		ret = ret + emitNotDeletedPart(Constants.FILECONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + CypherQueryHelper.getReadableByQuery(FILECONTAINER_IN_QUERY, userName);
-		ret = ret + emitContainerReturnPart(FILECONTAINER_IN_QUERY);
+		ret = ret + CypherQueryHelper.getReadableByQuery(Constants.FILECONTAINER_IN_QUERY, userName);
 		return ret;
 	}
 
-	public static String emitTimeseriesContainerQuery(String JSONQuery, String userName) {
+	public static String emitTimeseriesContainerSelectionQuery(String JSONQuery, String userName) {
 		String ret = "";
 		ret = ret + emitTimeseriesContainerMatchPart();
 		ret = ret + " WHERE ";
-		ret = ret + emitNeo4j(JSONQuery, TIMESERIESCONTAINER_IN_QUERY);
+		ret = ret + emitNeo4j(JSONQuery, Constants.TIMESERIESCONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + emitNotDeletedPart(TIMESERIESCONTAINER_IN_QUERY);
+		ret = ret + emitNotDeletedPart(Constants.TIMESERIESCONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + CypherQueryHelper.getReadableByQuery(TIMESERIESCONTAINER_IN_QUERY, userName);
-		ret = ret + emitContainerReturnPart(TIMESERIESCONTAINER_IN_QUERY);
+		ret = ret + CypherQueryHelper.getReadableByQuery(Constants.TIMESERIESCONTAINER_IN_QUERY, userName);
 		return ret;
 	}
 
-	public static String emitStructuredDataContainerQuery(String JSONQuery, String userName) {
+	public static String emitStructuredDataContainerSelectionQuery(String JSONQuery, String userName) {
 		String ret = "";
 		ret = ret + emitStructuredDataContainerMatchPart();
 		ret = ret + " WHERE ";
-		ret = ret + emitNeo4j(JSONQuery, STRUCTUREDDATACONTAINER_IN_QUERY);
+		ret = ret + emitNeo4j(JSONQuery, Constants.STRUCTUREDDATACONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + emitNotDeletedPart(STRUCTUREDDATACONTAINER_IN_QUERY);
+		ret = ret + emitNotDeletedPart(Constants.STRUCTUREDDATACONTAINER_IN_QUERY);
 		ret = ret + " AND ";
-		ret = ret + CypherQueryHelper.getReadableByQuery(STRUCTUREDDATACONTAINER_IN_QUERY, userName);
-		ret = ret + emitContainerReturnPart(STRUCTUREDDATACONTAINER_IN_QUERY);
+		ret = ret + CypherQueryHelper.getReadableByQuery(Constants.STRUCTUREDDATACONTAINER_IN_QUERY, userName);
 		return ret;
 	}
 
-	private static String emitContainerReturnPart(String containerVariable) {
-		return " WITH " + containerVariable + " MATCH path=(" + containerVariable
-				+ ")-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN " + containerVariable
-				+ ", nodes(path), relationships(path)";
-	}
-
-	public static String emitCollectionDataObjectQuery(Long collectionId, String searchBodyQuery, String username) {
+	public static String emitCollectionDataObjectSelectionQuery(Long collectionId, String searchBodyQuery,
+			String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
 		ret = ret + " WHERE ";
@@ -350,12 +322,11 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.DATAOBJECT_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectIdReturnPart();
 		return ret;
 	}
 
-	public static String emitCollectionDataObjectDataObjectQuery(SearchScope scope, TraversalRules traversalRule,
-			String searchBodyQuery, String username) {
+	public static String emitCollectionDataObjectDataObjectSelectionQuery(SearchScope scope,
+			TraversalRules traversalRule, String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectDataObjectMatchPart(traversalRule);
 		ret = ret + " WHERE ";
@@ -366,11 +337,10 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.DATAOBJECT_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectIdReturnPart();
 		return ret;
 	}
 
-	public static String emitCollectionDataObjectDataObjectQuery(SearchScope scope, String searchBodyQuery,
+	public static String emitCollectionDataObjectDataObjectSelectionQuery(SearchScope scope, String searchBodyQuery,
 			String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
@@ -382,11 +352,10 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.DATAOBJECT_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectIdReturnPart();
 		return ret;
 	}
 
-	public static String emitDataObjectQuery(String searchBodyQuery, String username) {
+	public static String emitDataObjectSelectionQuery(String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectMatchPart();
 		ret = ret + " WHERE ";
@@ -395,7 +364,6 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.DATAOBJECT_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitCollectionDataObjectIdReturnPart();
 		return ret;
 	}
 
@@ -406,7 +374,7 @@ public class Neo4jEmitter {
 		return ret;
 	}
 
-	public static String emitBasicReferenceQuery(String searchBodyQuery, String username) {
+	public static String emitBasicReferenceSelectionQuery(String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
 		ret = ret + " WHERE ";
@@ -415,11 +383,11 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.REFERENCE_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitCollectionDataObjectReferenceIdReturnPart();
 		return ret;
 	}
 
-	public static String emitCollectionBasicReferenceQuery(String searchBodyQuery, Long collectionId, String username) {
+	public static String emitCollectionBasicReferenceSelectionQuery(String searchBodyQuery, Long collectionId,
+			String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
 		ret = ret + " WHERE ";
@@ -430,12 +398,11 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.REFERENCE_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectReferenceIdReturnPart();
 		return ret;
 	}
 
-	public static String emitCollectionDataObjectBasicReferenceQuery(SearchScope scope, TraversalRules traversalRule,
-			String searchBodyQuery, String username) {
+	public static String emitCollectionDataObjectBasicReferenceSelectionQuery(SearchScope scope,
+			TraversalRules traversalRule, String searchBodyQuery, String username) {
 		String ret = "";
 		ret = ret + emitCollectionDataObjectBasicReferenceMatchPart(traversalRule);
 		ret = ret + " WHERE ";
@@ -446,11 +413,10 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.REFERENCE_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectReferenceIdReturnPart();
 		return ret;
 	}
 
-	public static String emitCollectionDataObjectReferenceQuery(SearchScope scope, String searchBodyQuery,
+	public static String emitCollectionDataObjectReferenceSelectionQuery(SearchScope scope, String searchBodyQuery,
 			String username) {
 		String ret = "";
 		ret = ret + emitReferenceMatchPart();
@@ -462,23 +428,6 @@ public class Neo4jEmitter {
 		ret = ret + emitNotDeletedPart(Constants.REFERENCE_IN_QUERY);
 		ret = ret + " AND ";
 		ret = ret + emitReadableByPart(username);
-		ret = ret + emitDataObjectReferenceIdReturnPart();
-		return ret;
-	}
-
-	private static String emitDataObjectReferenceIdReturnPart() {
-		String ret = " RETURN id(" + Constants.DATAOBJECT_IN_QUERY + "), id(" + Constants.REFERENCE_IN_QUERY + ")";
-		return ret;
-	}
-
-	private static String emitCollectionDataObjectIdReturnPart() {
-		String ret = " RETURN id(" + Constants.COLLECTION_IN_QUERY + "), id(" + Constants.DATAOBJECT_IN_QUERY + ")";
-		return ret;
-	}
-
-	private static String emitCollectionDataObjectReferenceIdReturnPart() {
-		String ret = " RETURN id(" + Constants.COLLECTION_IN_QUERY + "), id(" + Constants.DATAOBJECT_IN_QUERY + "), id("
-				+ Constants.REFERENCE_IN_QUERY + ")";
 		return ret;
 	}
 
@@ -496,6 +445,7 @@ public class Neo4jEmitter {
 		case predecessors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
 				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+		default -> "";
 		};
 		return ret;
 	}
@@ -516,8 +466,14 @@ public class Neo4jEmitter {
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
 				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
 				+ ":BasicReference) ";
+		default -> "";
 		};
 		return ret;
+	}
+
+	private static String emitReadableByPart(String username) {
+		String variable = Constants.COLLECTION_IN_QUERY;
+		return CypherQueryHelper.getReadableByQuery(variable, username);
 	}
 
 }

@@ -2,6 +2,7 @@ package de.dlr.shepard.search;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
@@ -19,28 +20,28 @@ public class DataObjectSearcher implements ISearcher {
 		Set<ResultTriple> resultTriples = new HashSet<>();
 		SearchScope[] scopes = searchBody.getScopes();
 		String searchBodyQuery = searchBody.getSearchParams().getQuery();
-		String searchQuery;
+		String selectionQuery;
 		for (SearchScope scope : scopes) {
 			// no CollectionId and no DataObjectId given
 			if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-				searchQuery = Neo4jEmitter.emitDataObjectQuery(searchBodyQuery, userName);
-				List<Long[]> idTuples = searchDAO.getIdsFromQuery(searchQuery, coldovariables);
-				for (Long[] tuple : idTuples) {
-					ResultTriple resultTriple = new ResultTriple();
-					resultTriple.setCollectionId(tuple[0]);
-					resultTriple.setDataObjectId(tuple[1]);
+				selectionQuery = Neo4jEmitter.emitDataObjectSelectionQuery(searchBodyQuery, userName);
+				List<Map<String, Long>> idDictionaries = searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery,
+						coldovariables);
+				for (Map<String, Long> idDictionary : idDictionaries) {
+					ResultTriple resultTriple = new ResultTriple(idDictionary.get(Constants.COLLECTION_IN_QUERY),
+							idDictionary.get(Constants.DATAOBJECT_IN_QUERY));
 					resultTriples.add(resultTriple);
 				}
 			}
 			// CollectionId given but no DataObjectId
 			else if (scope.getCollectionId() != null && scope.getDataObjectId() == null) {
-				searchQuery = Neo4jEmitter.emitCollectionDataObjectQuery(scope.getCollectionId(), searchBodyQuery,
-						userName);
-				List<Long[]> dataObjectIds = searchDAO.getIdsFromQuery(searchQuery, dovariables);
-				for (Long[] dataObjectId : dataObjectIds) {
-					ResultTriple resultTriple = new ResultTriple();
-					resultTriple.setCollectionId(scope.getCollectionId());
-					resultTriple.setDataObjectId(dataObjectId[0]);
+				selectionQuery = Neo4jEmitter.emitCollectionDataObjectSelectionQuery(scope.getCollectionId(),
+						searchBodyQuery, userName);
+				List<Map<String, Long>> idDictionaries = searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery,
+						dovariables);
+				for (Map<String, Long> idDictionary : idDictionaries) {
+					ResultTriple resultTriple = new ResultTriple(scope.getCollectionId(),
+							idDictionary.get(Constants.DATAOBJECT_IN_QUERY));
 					resultTriples.add(resultTriple);
 				}
 			}
@@ -49,37 +50,34 @@ public class DataObjectSearcher implements ISearcher {
 				// search according to TraversalRules
 				if (scope.getTraversalRules().length != 0) {
 					for (TraversalRules traversalRules : scope.getTraversalRules()) {
-						searchQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectQuery(scope, traversalRules,
-								searchBodyQuery, userName);
-						List<Long[]> dataObjectIds = searchDAO.getIdsFromQuery(searchQuery, dovariables);
-						for (Long[] dataObjectId : dataObjectIds) {
-							ResultTriple resultTriple = new ResultTriple();
-							resultTriple.setCollectionId(scope.getCollectionId());
-							resultTriple.setDataObjectId(dataObjectId[0]);
+						selectionQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectSelectionQuery(scope,
+								traversalRules, searchBodyQuery, userName);
+						List<Map<String, Long>> idDictionaries = searchDAO
+								.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, dovariables);
+						for (Map<String, Long> idDictionary : idDictionaries) {
+							ResultTriple resultTriple = new ResultTriple(scope.getCollectionId(),
+									idDictionary.get(Constants.DATAOBJECT_IN_QUERY));
 							resultTriples.add(resultTriple);
 						}
 					}
 				}
 				// no TraversalRules given
 				else {
-					searchQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectQuery(scope, searchBodyQuery,
-							userName);
-					List<Long[]> dataObjectIds = searchDAO.getIdsFromQuery(searchQuery, dovariables);
-					for (Long[] dataObjectId : dataObjectIds) {
-						ResultTriple resultTriple = new ResultTriple();
-						resultTriple.setCollectionId(scope.getCollectionId());
-						resultTriple.setDataObjectId(dataObjectId[0]);
+					selectionQuery = Neo4jEmitter.emitCollectionDataObjectDataObjectSelectionQuery(scope,
+							searchBodyQuery, userName);
+					List<Map<String, Long>> idDictionaries = searchDAO
+							.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, dovariables);
+					for (Map<String, Long> idDictionary : idDictionaries) {
+						ResultTriple resultTriple = new ResultTriple(scope.getCollectionId(),
+								idDictionary.get(Constants.DATAOBJECT_IN_QUERY));
 						resultTriples.add(resultTriple);
 					}
 				}
 			}
 		}
-		ResponseBody ret = new ResponseBody();
 		ResultTriple[] resultTripleArray = new ResultTriple[resultTriples.size()];
 		resultTriples.toArray(resultTripleArray);
-		ret.setResultSet(resultTripleArray);
-		ret.setSearchParams(searchBody.getSearchParams());
+		ResponseBody ret = new ResponseBody(resultTripleArray, searchBody.getSearchParams());
 		return ret;
 	}
-
 }

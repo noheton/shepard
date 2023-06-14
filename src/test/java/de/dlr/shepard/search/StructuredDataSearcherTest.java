@@ -97,14 +97,9 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		searchBody.setSearchParams(searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = new ResultTriple[1];
-		ResultTriple resultTriple = new ResultTriple();
-		resultTriple.setCollectionId(searchBody.getScopes()[0].getCollectionId());
-		resultTriple.setReferenceId(1L);
-		resultTriple.setDataObjectId(3L);
+		ResultTriple resultTriple = new ResultTriple(searchBody.getScopes()[0].getCollectionId(), 3L, 1L);
 		resultTriples[0] = resultTriple;
-		ResponseBody responseBody = new ResponseBody();
-		responseBody.setResultSet(resultTriples);
-		responseBody.setSearchParams(searchBody.getSearchParams());
+		ResponseBody responseBody = new ResponseBody(resultTriples, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
 				.thenReturn(emptyStructuredDataReferenceResponse);
@@ -156,14 +151,9 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		searchBody.setSearchParams(searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = new ResultTriple[1];
-		ResultTriple resultTriple = new ResultTriple();
-		resultTriple.setCollectionId(searchBody.getScopes()[0].getCollectionId());
-		resultTriple.setReferenceId(1L);
-		resultTriple.setDataObjectId(3L);
+		ResultTriple resultTriple = new ResultTriple(searchBody.getScopes()[0].getCollectionId(), 3L, 1L);
 		resultTriples[0] = resultTriple;
-		ResponseBody responseBody = new ResponseBody();
-		responseBody.setResultSet(resultTriples);
-		responseBody.setSearchParams(searchBody.getSearchParams());
+		ResponseBody responseBody = new ResponseBody(resultTriples, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
 				"user1")).thenReturn(emptyStructuredDataReferenceResponse);
@@ -215,9 +205,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		searchBody.setSearchParams(searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = {};
-		ResponseBody responseBody = new ResponseBody();
-		responseBody.setResultSet(resultTriples);
-		responseBody.setSearchParams(searchBody.getSearchParams());
+		ResponseBody responseBody = new ResponseBody(resultTriples, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
 				"user1")).thenReturn(emptyStructuredDataReferenceResponse);
@@ -275,14 +263,9 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		searchBody.setSearchParams(searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = new ResultTriple[1];
-		ResultTriple resultTriple = new ResultTriple();
-		resultTriple.setCollectionId(searchBody.getScopes()[0].getCollectionId());
-		resultTriple.setReferenceId(1L);
-		resultTriple.setDataObjectId(3L);
+		ResultTriple resultTriple = new ResultTriple(searchBody.getScopes()[0].getCollectionId(), 3L, 1L);
 		resultTriples[0] = resultTriple;
-		ResponseBody responseBody = new ResponseBody();
-		responseBody.setResultSet(resultTriples);
-		responseBody.setSearchParams(searchBody.getSearchParams());
+		ResponseBody responseBody = new ResponseBody(resultTriples, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
 				"user1")).thenReturn(emptyStructuredDataReferenceResponse);

@@ -1,6 +1,5 @@
 package de.dlr.shepard.neo4Core.dao;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -238,12 +237,4 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
 		assertEquals(List.of(col1), actual);
 	}
 
-	@Test
-	public void getStructuredDataContainerByQuery() {
-		String query = "query";
-		Map<String, Object> paramsMap = new HashMap<>();
-		StructuredDataContainer res = new StructuredDataContainer(42L);
-		when(session.query(StructuredDataContainer.class, query, paramsMap)).thenReturn(List.of(res));
-		assertThat(dao.getStructuredDataContainerByQuery(query)).containsExactly(res);
-	}
 }

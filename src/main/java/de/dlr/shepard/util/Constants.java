@@ -112,6 +112,10 @@ public class Constants {
 	public static final String QP_ORDER_BY_ATTRIBUTE = "orderBy";
 	public static final String QP_ORDER_DESC = "orderDesc";
 
+	public static final String FILECONTAINER_IN_QUERY = "fc";
+	public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
+	public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
+
 	// Relationships
 	public static final String HAS_DATAOBJECT = "has_dataobject";
 	public static final String HAS_REFERENCE = "has_reference";

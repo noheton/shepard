@@ -221,14 +221,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(2, result.getResultSet().length);
-		ResultTriple triple = new ResultTriple();
-		triple.setCollectionId(collection.getId());
-		triple.setDataObjectId(secondChild.getId());
-		triple.setReferenceId(reference.getId());
-		ResultTriple triple1 = new ResultTriple();
-		triple1.setCollectionId(collection.getId());
-		triple1.setDataObjectId(firstChild.getId());
-		triple1.setReferenceId(reference1.getId());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		ResultTriple triple1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(result.getResultSet()).contains(triple);
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
@@ -277,10 +271,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(1, result.getResultSet().length);
-		ResultTriple triple1 = new ResultTriple();
-		triple1.setCollectionId(collection.getId());
-		triple1.setDataObjectId(firstChild.getId());
-		triple1.setReferenceId(reference1.getId());
+		ResultTriple triple1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
 	}
@@ -326,10 +317,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(1, result.getResultSet().length);
-		ResultTriple triple = new ResultTriple();
-		triple.setCollectionId(collection.getId());
-		triple.setDataObjectId(secondChild.getId());
-		triple.setReferenceId(reference.getId());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).contains(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
 	}
@@ -404,14 +392,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		HashSet<ResultTriple> resultTriples = new HashSet<>();
 		resultTriples.add(result.getResultSet()[0]);
 		resultTriples.add(result.getResultSet()[1]);
-		ResultTriple expectedResult0 = new ResultTriple();
-		expectedResult0.setCollectionId(collection.getId());
-		expectedResult0.setDataObjectId(secondChild.getId());
-		expectedResult0.setReferenceId(reference.getId());
-		ResultTriple expectedResult1 = new ResultTriple();
-		expectedResult1.setCollectionId(collection.getId());
-		expectedResult1.setDataObjectId(firstChild.getId());
-		expectedResult1.setReferenceId(reference1.getId());
+		ResultTriple expectedResult0 = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		ResultTriple expectedResult1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(resultTriples).containsExactlyInAnyOrder(expectedResult0, expectedResult1);
 	}
 

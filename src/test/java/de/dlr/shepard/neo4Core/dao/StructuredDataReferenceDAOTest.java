@@ -78,4 +78,5 @@ public class StructuredDataReferenceDAOTest extends BaseTestCase {
 		var actual = dao.findReachableReferences(children, collectionId, startId, userName);
 		assertEquals(List.of(reference), actual);
 	}
+
 }
