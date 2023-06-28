@@ -112,7 +112,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
 				.get(containerURL + "/" + container.getId() + "/" + Constants.AVAILABLE).then().statusCode(200)
 				.extract().as(Timeseries[].class);
 
-		assertThat(actual).contains(new Timeseries("meas", "dev", "loc", "symName", null));
+		assertThat(actual).contains(new Timeseries("meas", "dev", "loc", "symName", "field"));
 	}
 
 	@Test

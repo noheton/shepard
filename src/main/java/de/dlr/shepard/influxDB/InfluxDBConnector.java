@@ -2,7 +2,9 @@ package de.dlr.shepard.influxDB;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -188,29 +190,52 @@ public class InfluxDBConnector implements IConnector {
 			return Collections.emptyList();
 		}
 		var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
+		var fields = getFields(database);
 		var result = new ArrayList<Timeseries>(values.size());
 		for (var value : values) {
-			var strRep = ((String) value.get(0)).split(",");
-			var timeseries = new Timeseries();
-			timeseries.setMeasurement(strRep[0]);
-			for (int i = 1; i < strRep.length; i++) {
-				var tag = strRep[i].split("=");
-				switch (tag[0]) {
-				case Constants.LOCATION:
-					timeseries.setLocation(tag[1]);
-					break;
-				case Constants.DEVICE:
-					timeseries.setDevice(tag[1]);
-					break;
-				case Constants.SYMBOLICNAME:
-					timeseries.setSymbolicName(tag[1]);
-					break;
-				default:
-					// Ignore additional tags
-					break;
-				}
+			var series = ((String) value.get(0)).split(",");
+			// The first entry is the measurement
+			var meas = series[0];
+			var tags = extractTags(series);
+			var dev = tags.getOrDefault(Constants.DEVICE, "");
+			var loc = tags.getOrDefault(Constants.LOCATION, "");
+			var symName = tags.getOrDefault(Constants.SYMBOLICNAME, "");
+			for (var field : fields.getOrDefault(meas, Collections.emptyList())) {
+				result.add(new Timeseries(meas, dev, loc, symName, field));
 			}
-			result.add(timeseries);
+		}
+		return result;
+	}
+
+	private Map<String, String> extractTags(String[] series) {
+		var result = new HashMap<String, String>();
+		for (var tagString : series) {
+			var tags = tagString.split("=", 2);
+
+			// Skip entries with less than 2 tuples (most likely the measurement)
+			if (tags.length < 2)
+				continue;
+
+			result.put(tags[0], tags[1]);
+		}
+		return result;
+	}
+
+	private Map<String, List<String>> getFields(String database) {
+		Query query = new Query(String.format("SHOW FIELD KEYS ON \"%s\"", database));
+		QueryResult queryResult = influxDB.query(query);
+		if (!InfluxUtil.isQueryResultValid(queryResult)) {
+			log.warn("There was an error while querying the Influxdb for available fields");
+			return Collections.emptyMap();
+		}
+		var series = queryResult.getResults().get(0).getSeries();
+		var result = new HashMap<String, List<String>>();
+		for (var s : series) {
+			var fields = new ArrayList<String>();
+			for (var value : s.getValues()) {
+				fields.add((String) value.get(0));
+			}
+			result.put(s.getName(), fields);
 		}
 		return result;
 	}

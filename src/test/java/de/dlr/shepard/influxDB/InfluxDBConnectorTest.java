@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.InfluxDB;
@@ -247,20 +248,45 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 
 	@Test
 	public void testGetTimeseriesAvailable() {
-		String queryString = "SHOW SERIES ON \"database\"";
-		var expected = List.of(new Timeseries("meas", "dev", "loc", "sym", null),
-				new Timeseries("different", "test", "bla", "badum", null));
-		when(influxDB.query(new Query(queryString)))
-				.thenReturn(getShowSeries(List.of(new Timeseries("meas", "dev", "loc", "sym", "field"),
-						new Timeseries("different", "test", "bla", "badum", "value"))));
+		String seriesQueryString = "SHOW SERIES ON \"database\"";
+		String fieldQueryString = "SHOW FIELD KEYS ON \"database\"";
+		var series = List.of(new String[] { "meas", "dev", "loc", "sym" },
+				new String[] { "different", "first", "bla", "badum" },
+				new String[] { "different", "second", "bla", "badum" });
+		when(influxDB.query(new Query(seriesQueryString))).thenReturn(getShowSeries(series));
+		var fields = Map.of("meas", List.of("field"), "different", List.of("field", "value"));
+		when(influxDB.query(new Query(fieldQueryString))).thenReturn(getShowFields(fields));
 
+		var expected = List.of(new Timeseries("meas", "dev", "loc", "sym", "field"),
+				new Timeseries("different", "first", "bla", "badum", "field"),
+				new Timeseries("different", "first", "bla", "badum", "value"),
+				new Timeseries("different", "second", "bla", "badum", "field"),
+				new Timeseries("different", "second", "bla", "badum", "value"));
 		var actual = connector.getTimeseriesAvailable("database");
 
 		assertEquals(expected, actual);
 	}
 
 	@Test
-	public void testGetTimeseriesAvailableWithError() {
+	public void testGetTimeseriesAvailable_showFieldError() {
+		String seriesQueryString = "SHOW SERIES ON \"database\"";
+		String fieldQueryString = "SHOW FIELD KEYS ON \"database\"";
+		var series = List.of(new String[] { "meas", "dev", "loc", "sym" },
+				new String[] { "different", "first", "bla", "badum" },
+				new String[] { "different", "second", "bla", "badum" });
+		when(influxDB.query(new Query(seriesQueryString))).thenReturn(getShowSeries(series));
+
+		QueryResult queryResult = new QueryResult();
+		queryResult.setError("Some Error");
+		when(influxDB.query(new Query(fieldQueryString))).thenReturn(queryResult);
+
+		var actual = connector.getTimeseriesAvailable("database");
+
+		assertEquals(0, actual.size());
+	}
+
+	@Test
+	public void testGetTimeseriesAvailable_showSeriesError() {
 		String queryString = "SHOW SERIES ON \"database\"";
 		QueryResult queryResult = new QueryResult();
 		queryResult.setError("Some Error");
@@ -311,7 +337,6 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 	}
 
 	private QueryResult getShowDatabases(String databaseName) {
-
 		QueryResult queryResult = new QueryResult() {
 			List<Result> results;
 
@@ -335,8 +360,7 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 		return queryResult;
 	}
 
-	private QueryResult getShowSeries(List<Timeseries> timeseries) {
-
+	private QueryResult getShowSeries(List<String[]> timeseries) {
 		QueryResult queryResult = new QueryResult() {
 			List<Result> results;
 
@@ -346,15 +370,40 @@ public class InfluxDBConnectorTest extends BaseTestCase {
 				Result result = new Result();
 				ArrayList<Series> seriesList = new ArrayList<>();
 				Series series = new Series();
-				List<List<Object>> valueList = new ArrayList<>();
-				for (var ts : timeseries) {
-					List<Object> value = new ArrayList<>();
-					value.add(String.format("%s,device=%s,location=%s,symbolic_name=%s,bla=blub", ts.getMeasurement(),
-							ts.getDevice(), ts.getLocation(), ts.getSymbolicName()));
-					valueList.add(value);
-				}
+				List<List<Object>> valueList = timeseries.stream().map(ts -> {
+					List<Object> value = List.of(String.format("%s,device=%s,location=%s,symbolic_name=%s,bla=blub",
+							ts[0], ts[1], ts[2], ts[3]));
+					return value;
+				}).toList();
 				series.setValues(valueList);
 				seriesList.add(series);
+				result.setSeries(seriesList);
+				results.add(result);
+				return results;
+			}
+		};
+		return queryResult;
+	}
+
+	private QueryResult getShowFields(Map<String, List<String>> fields) {
+		QueryResult queryResult = new QueryResult() {
+			List<Result> results;
+
+			@Override
+			public List<Result> getResults() {
+				results = new ArrayList<>();
+				Result result = new Result();
+				ArrayList<Series> seriesList = new ArrayList<>();
+				for (var entry : fields.entrySet()) {
+					Series series = new Series();
+					series.setName(entry.getKey());
+					List<List<Object>> valueList = entry.getValue().stream().map(f -> {
+						List<Object> value = List.of(f);
+						return value;
+					}).toList();
+					series.setValues(valueList);
+					seriesList.add(series);
+				}
 				result.setSeries(seriesList);
 				results.add(result);
 				return results;
