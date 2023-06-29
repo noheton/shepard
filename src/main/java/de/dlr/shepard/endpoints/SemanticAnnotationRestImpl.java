@@ -4,19 +4,12 @@ import java.util.ArrayList;
 
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.neo4Core.services.SemanticAnnotationService;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 
-// TODO: Reuse rest classes as soon as this bug gets fixed
-// https://github.com/swagger-api/swagger-core/issues/4283
-public abstract class ASemanticAnnotationRestImpl {
+public abstract class SemanticAnnotationRestImpl {
 
 	private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
-
-	@Context
-	private SecurityContext securityContext;
 
 	protected Response getAll(long entityId) {
 		var annotations = semanticAnnotationService.getAllAnnotations(entityId);
