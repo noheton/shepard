@@ -9,6 +9,7 @@
     "oidc",
     "Oids",
     "openapi",
+    "registerables",
     "structureddata",
     "Timeseries",
     "usergroup",

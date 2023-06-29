@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import GenericName from "@/components/generic/GenericName.vue";
-import FilePlottingModal from "@/components/payload/FilePlottingModal.vue";
+import CsvPlottingModal from "@/components/payload/CsvPlottingModal.vue";
+import CsvTableModal from "@/components/payload/CsvTableModal.vue";
 import ImageViewerModal from "@/components/payload/ImageViewerModal.vue";
 import TextViewerModal from "@/components/payload/TextViewerModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
@@ -154,10 +155,18 @@ onMounted(() => {
               <EyeIcon />
             </b-button>
             <b-button
-              v-else-if="
-                files[oid]?.filename?.match(/\.(txt|md|yaml|toml|csv)$/i)
-              "
+              v-else-if="files[oid]?.filename?.match(/\.(txt|md|yaml|toml)$/i)"
               v-b-modal.text-viewer-modal
+              v-b-tooltip.hover
+              variant="primary"
+              title="Show Text"
+              @click="currentFileOid = oid"
+            >
+              <EyeIcon />
+            </b-button>
+            <b-button
+              v-else-if="files[oid]?.filename?.match(/\.(csv)$/i)"
+              v-b-modal.csv-table-modal
               v-b-tooltip.hover
               variant="primary"
               title="Show Text"
@@ -245,9 +254,16 @@ onMounted(() => {
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
-    <FilePlottingModal
+    <CsvPlottingModal
       v-if="fileReference && currentFileOid"
       modal-id="plotting-modal"
+      :modal-name="files[currentFileOid]?.filename"
+      :container-id="fileReference.fileContainerId"
+      :oid="currentFileOid"
+    />
+    <CsvTableModal
+      v-if="fileReference && currentFileOid"
+      modal-id="csv-table-modal"
       :modal-name="files[currentFileOid]?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
