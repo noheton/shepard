@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.io.AbstractEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -86,7 +86,7 @@ public class SubscriptionFilterTest extends BaseTestCase {
 		sub.setSubscribedURL("http://my.url/test/200/sub");
 		sub.setCreatedBy(user);
 		List<Subscription> subs = List.of(sub);
-		var entityIO = new AbstractEntityIO() {
+		var entityIO = new BasicEntityIO() {
 			{
 				setId(200L);
 			}
@@ -156,7 +156,7 @@ public class SubscriptionFilterTest extends BaseTestCase {
 		sub.setSubscribedURL("http://my.url/test/200/sub");
 		sub.setCreatedBy(user);
 		List<Subscription> subs = List.of(sub);
-		var entityIO = new AbstractEntityIO() {
+		var entityIO = new BasicEntityIO() {
 			{
 				setId(200L);
 			}

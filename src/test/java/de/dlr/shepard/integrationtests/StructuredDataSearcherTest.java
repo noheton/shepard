@@ -148,11 +148,10 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(1, result.getResultSet().length);
-		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
-		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
-		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
-		assertEquals(query, result.getSearchParams().getQuery());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
+		assertThat(result.getResults()[0].getId()).isEqualTo(reference.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
@@ -173,10 +172,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(1, result.getResultSet().length);
-		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
-		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
-		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
 	}
 
@@ -246,10 +243,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(1, result.getResultSet().length);
-		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
-		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
-		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
 	}
 
 	@Test
@@ -340,10 +335,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(1, result.getResultSet().length);
-		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
-		assertEquals(secondChild.getId(), result.getResultSet()[0].getDataObjectId());
-		assertEquals(reference.getId(), result.getResultSet()[0].getReferenceId());
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
 	}
 
 	@Test
@@ -364,10 +357,8 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		searchBody.setSearchParams(searchParams);
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
-		assertEquals(1, result.getResultSet().length);
-		assertEquals(collection.getId(), result.getResultSet()[0].getCollectionId());
-		assertEquals(firstSuccessor.getId(), result.getResultSet()[0].getDataObjectId());
-		assertEquals(referenceSuccessor.getId(), result.getResultSet()[0].getReferenceId());
+		ResultTriple triple = new ResultTriple(collection.getId(), firstSuccessor.getId(), referenceSuccessor.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
 	}
 
 	@Test

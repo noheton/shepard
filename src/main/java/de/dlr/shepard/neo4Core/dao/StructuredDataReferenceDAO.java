@@ -27,11 +27,6 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 		return result;
 	}
 
-	@Override
-	public Class<StructuredDataReference> getEntityType() {
-		return StructuredDataReference.class;
-	}
-
 	public List<StructuredDataReference> findReachableReferences(TraversalRules traversalRule, long collectionId,
 			long startId, String userName) {
 		String query = getSearchForReachableReferencesQuery(traversalRule, collectionId, startId, userName);
@@ -45,5 +40,10 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
+	}
+
+	@Override
+	public Class<StructuredDataReference> getEntityType() {
+		return StructuredDataReference.class;
 	}
 }

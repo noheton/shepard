@@ -1,6 +1,9 @@
 package de.dlr.shepard.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -8,7 +11,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.util.TraversalRules;
+import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.neo4Core.entities.BasicReference;
+import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 
 public class SearcherTest extends BaseTestCase {
 
@@ -28,108 +36,69 @@ public class SearcherTest extends BaseTestCase {
 	private Searcher searcher;
 
 	@Test
-	public void structuredDataSearchTest() {
+	public void invalidQueryTest() {
 		String userName = "user1";
-		Long collectionId = 1L;
-		Long dataObjectId = 2L;
-		TraversalRules[] traversalRules = { TraversalRules.children, TraversalRules.parents };
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(collectionId);
-		scope.setDataObjectId(dataObjectId);
-		scope.setTraversalRules(traversalRules);
-		SearchScope scopes[] = { scope };
-		String query = "abc";
-		QueryType queryType = QueryType.StructuredData;
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQuery(query);
-		searchParams.setQueryType(queryType);
-		SearchBody searchBody = new SearchBody();
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		long referenceId = 3;
-		ResultTriple resultTriple = new ResultTriple(collectionId, dataObjectId, referenceId);
-		ResultTriple[] resultSet = { resultTriple };
-		ResponseBody myResponseBody = new ResponseBody(resultSet, searchParams);
-		when(structuredDataSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
-		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(myResponseBody, response);
+		SearchScope[] scopes = { new SearchScope() };
+		var params = new SearchParams("match invalid", QueryType.Collection);
+		var searchBody = new SearchBody(scopes, params);
+		assertThrows(InvalidBodyException.class, () -> searcher.search(searchBody, userName));
+		verify(collectionSearcher, never()).search(searchBody, userName);
 	}
 
 	@Test
 	public void collectionSearchTest() {
 		String userName = "user1";
-		SearchScope scope = new SearchScope();
-		SearchScope scopes[] = { scope };
-		String query = "abc";
-		QueryType queryType = QueryType.Collection;
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQuery(query);
-		searchParams.setQueryType(queryType);
-		SearchBody searchBody = new SearchBody();
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		ResultTriple resultTriple = new ResultTriple(1L);
-		resultTriple.setCollectionId(1L);
-		ResultTriple[] resultSet = { resultTriple };
-		ResponseBody myResponseBody = new ResponseBody(resultSet, searchParams);
-		when(collectionSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
-		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(myResponseBody, response);
+		SearchScope[] scopes = { new SearchScope() };
+		var params = new SearchParams("{}", QueryType.Collection);
+		var searchBody = new SearchBody(scopes, params);
+		ResultTriple[] resultTriples = { new ResultTriple(1L) };
+		BasicEntityIO[] results = { new BasicEntityIO(new Collection(1L)) };
+		var expected = new ResponseBody(resultTriples, results, params);
+		when(collectionSearcher.search(searchBody, userName)).thenReturn(expected);
+		ResponseBody actual = searcher.search(searchBody, userName);
+		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void dataObjectSearchTest() {
 		String userName = "user1";
-		Long collectionId = 1L;
-		Long dataObjectId = 2L;
-		TraversalRules[] traversalRules = { TraversalRules.children, TraversalRules.parents };
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(collectionId);
-		scope.setDataObjectId(dataObjectId);
-		scope.setTraversalRules(traversalRules);
-		SearchScope scopes[] = { scope };
-		String query = "abc";
-		QueryType queryType = QueryType.DataObject;
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQuery(query);
-		searchParams.setQueryType(queryType);
-		SearchBody searchBody = new SearchBody();
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		ResultTriple resultTriple = new ResultTriple(collectionId, dataObjectId, dataObjectId);
-		ResultTriple[] resultSet = { resultTriple };
-		ResponseBody myResponseBody = new ResponseBody(resultSet, searchParams);
-		when(dataObjectSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
-		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(myResponseBody, response);
+		SearchScope[] scopes = { new SearchScope() };
+		var params = new SearchParams("{}", QueryType.DataObject);
+		var searchBody = new SearchBody(scopes, params);
+		ResultTriple[] resultTriples = { new ResultTriple(1L) };
+		BasicEntityIO[] results = { new BasicEntityIO(new DataObject(1L)) };
+		var expected = new ResponseBody(resultTriples, results, params);
+		when(dataObjectSearcher.search(searchBody, userName)).thenReturn(expected);
+		ResponseBody actual = searcher.search(searchBody, userName);
+		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void referenceSearchTest() {
 		String userName = "user1";
-		Long collectionId = 1L;
-		Long dataObjectId = 2L;
-		TraversalRules[] traversalRules = { TraversalRules.children, TraversalRules.parents };
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(collectionId);
-		scope.setDataObjectId(dataObjectId);
-		scope.setTraversalRules(traversalRules);
-		SearchScope scopes[] = { scope };
-		String query = "abc";
-		QueryType queryType = QueryType.Reference;
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQuery(query);
-		searchParams.setQueryType(queryType);
-		SearchBody searchBody = new SearchBody();
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		long referenceId = 3;
-		ResultTriple resultTriple = new ResultTriple(collectionId, dataObjectId, referenceId);
-		ResultTriple[] resultSet = { resultTriple };
-		ResponseBody myResponseBody = new ResponseBody(resultSet, searchParams);
-		when(referenceSearcher.search(searchBody, userName)).thenReturn(myResponseBody);
-		ResponseBody response = searcher.search(searchBody, userName);
-		assertEquals(myResponseBody, response);
+		SearchScope[] scopes = { new SearchScope() };
+		var params = new SearchParams("{}", QueryType.Reference);
+		var searchBody = new SearchBody(scopes, params);
+		ResultTriple[] resultTriples = { new ResultTriple(1L) };
+		BasicEntityIO[] results = { new BasicEntityIO(new BasicReference(1L)) };
+		var expected = new ResponseBody(resultTriples, results, params);
+		when(referenceSearcher.search(searchBody, userName)).thenReturn(expected);
+		ResponseBody actual = searcher.search(searchBody, userName);
+		assertEquals(expected, actual);
+	}
+
+	@Test
+	public void structuredDataSearchTest() {
+		String userName = "user1";
+		SearchScope[] scopes = { new SearchScope() };
+		var params = new SearchParams("{}", QueryType.StructuredData);
+		var searchBody = new SearchBody(scopes, params);
+		ResultTriple[] resultTriples = { new ResultTriple(1L) };
+		BasicEntityIO[] results = { new BasicEntityIO(new StructuredDataReference(1L)) };
+		var expected = new ResponseBody(resultTriples, results, params);
+		when(structuredDataSearcher.search(searchBody, userName)).thenReturn(expected);
+		ResponseBody actual = searcher.search(searchBody, userName);
+		assertEquals(expected, actual);
 	}
 
 }

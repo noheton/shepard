@@ -26,7 +26,7 @@ public class Permissions implements HasId {
 	private Long id;
 
 	@Relationship(type = Constants.HAS_PERMISSIONS, direction = Relationship.INCOMING)
-	private AbstractEntity entity;
+	private BasicEntity entity;
 
 	@Relationship(type = Constants.OWNED_BY, direction = Relationship.OUTGOING)
 	private User owner;
@@ -62,7 +62,7 @@ public class Permissions implements HasId {
 		this.id = id;
 	}
 
-	public Permissions(AbstractEntity entity, User owner, PermissionType permissionType) {
+	public Permissions(BasicEntity entity, User owner, PermissionType permissionType) {
 		this.entity = entity;
 		this.owner = owner;
 		this.permissionType = permissionType;

@@ -2,21 +2,18 @@ package de.dlr.shepard.neo4Core.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
@@ -249,21 +246,6 @@ public class BasicReferenceDAOTest extends BaseTestCase {
 		var actual = dao.findByDataObject(1L, params);
 		verify(session).query(BasicReference.class, query, paramsMap);
 		assertEquals(List.of(ref), actual);
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	public void getDataObjectIdTest() {
-		var query = "MATCH (d:DataObject)-[has_reference]->(r) WHERE id(r) = 5 RETURN id(d)";
-
-		var iterator = mock(Iterator.class);
-		when(iterator.next()).thenReturn(Map.of("id(d)", 123L));
-		var result = mock(Result.class);
-		when(result.iterator()).thenReturn(iterator);
-		when(session.query(query, Collections.emptyMap())).thenReturn(result);
-
-		var actual = dao.getDataObjectId(5L);
-		assertEquals(123L, actual);
 	}
 
 	@Test

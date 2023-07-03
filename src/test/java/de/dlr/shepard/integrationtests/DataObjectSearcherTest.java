@@ -103,6 +103,8 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple1 = new ResultTriple(collection.getId(), dataObjectIO1.getId(), null);
 		assertThat(result.getResultSet()).contains(triple1);
+		assertThat(result.getResults()[0].getId()).isEqualTo(dataObjectIO1.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test

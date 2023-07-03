@@ -16,7 +16,7 @@ public class PermissionsTest extends BaseTestCase {
 	public void equalsContract() {
 		EqualsVerifier.simple().forClass(Permissions.class)
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
-				.withPrefabValues(AbstractEntity.class, new Collection(5L), new Collection(6L))
+				.withPrefabValues(BasicEntity.class, new Collection(5L), new Collection(6L))
 				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
 				.verify();
 	}

@@ -3,17 +3,22 @@ package de.dlr.shepard.search;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
+import de.dlr.shepard.neo4Core.entities.BasicReference;
+import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -25,10 +30,6 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	@InjectMocks
 	private ReferenceSearcher referenceSearcher;
 
-	private static final String[] coldobrvariables = { "col", "do", "br" };
-	private static final String[] dobrvariables = { "do", "br" };
-
-	private static final Long collectionId1L = 1L;
 	private static String query = String.format("""
 			{
 			  "OR": [
@@ -42,131 +43,63 @@ public class ReferenceSearcherTest extends BaseTestCase {
 			      "value": 123,
 			      "operator": "le"
 			    }
-			]}""", collectionId1L);
+			]}""", 1L);
 	private static String userName = "user";
 
-	@Test
-	public void collectionIdNullDataObjectIdNullTest() {
-		SearchBody searchBody = new SearchBody();
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(null);
-		scope.setDataObjectId(null);
-		TraversalRules[] traversalRules = {};
-		scope.setTraversalRules(traversalRules);
+	@ParameterizedTest
+	@MethodSource
+	public void test(SearchScope scope, String selectionQuery) {
+		var collection = new Collection(1L);
+		var dataObject = new DataObject(2L);
+		var reference = new BasicReference(3L);
+		dataObject.setCollection(collection);
+		reference.setDataObject(dataObject);
 		SearchScope[] scopes = { scope };
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQueryType(QueryType.DataObject);
-		searchParams.setQuery(query);
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		Long[] idTuple = { 1L, 2L, 3L };
-		ArrayList<Long[]> idTuples = new ArrayList<>();
-		idTuples.add(idTuple);
-		String selectionQuery = Neo4jEmitter.emitBasicReferenceSelectionQuery(query, userName);
-		Map<String, Long> idDictionary = new HashMap<String, Long>();
-		idDictionary.put(Constants.COLLECTION_IN_QUERY, 1L);
-		idDictionary.put(Constants.DATAOBJECT_IN_QUERY, 2L);
-		idDictionary.put(Constants.REFERENCE_IN_QUERY, 3L);
-		List<Map<String, Long>> idDictionaries = new ArrayList<Map<String, Long>>();
-		idDictionaries.add(idDictionary);
-		when(searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, coldobrvariables))
-				.thenReturn(idDictionaries);
+		SearchParams searchParams = new SearchParams(query, QueryType.Reference);
+		SearchBody searchBody = new SearchBody(scopes, searchParams);
+		when(searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY)).thenReturn(List.of(reference));
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		ResponseBody responseBody = new ResponseBody(resultTriples, searchParams);
-		assertEquals(referenceSearcher.search(searchBody, userName), responseBody);
+		BasicEntityIO[] results = { new BasicEntityIO(reference) };
+		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
+		var actual = referenceSearcher.search(searchBody, userName);
+		assertEquals(responseBody, actual);
 	}
 
-	@Test
-	public void dataObjectIdNullTest() {
-		SearchBody searchBody = new SearchBody();
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(null);
-		TraversalRules[] traversalRules = {};
-		scope.setTraversalRules(traversalRules);
-		SearchScope[] scopes = { scope };
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQueryType(QueryType.DataObject);
-		searchParams.setQuery(query);
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		Long[] idTuple = { 2L, 3L };
-		ArrayList<Long[]> idTuples = new ArrayList<>();
-		idTuples.add(idTuple);
-		String selectionQuery = Neo4jEmitter.emitCollectionBasicReferenceSelectionQuery(query, scope.getCollectionId(),
-				userName);
-		Map<String, Long> idDictionary = new HashMap<String, Long>();
-		idDictionary.put(Constants.DATAOBJECT_IN_QUERY, 2L);
-		idDictionary.put(Constants.REFERENCE_IN_QUERY, 3L);
-		List<Map<String, Long>> idDictionaries = new ArrayList<Map<String, Long>>();
-		idDictionaries.add(idDictionary);
-		when(searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, dobrvariables)).thenReturn(idDictionaries);
-		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
-		ResultTriple[] resultTriples = { resultTriple };
-		ResponseBody responseBody = new ResponseBody(resultTriples, searchParams);
-		assertEquals(referenceSearcher.search(searchBody, userName), responseBody);
-	}
-
-	@Test
-	public void nonEmptyTraversalRules() {
-		SearchBody searchBody = new SearchBody();
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
+	private static Stream<? extends Arguments> test() {
 		TraversalRules[] traversalRules = { TraversalRules.children };
-		scope.setTraversalRules(traversalRules);
-		SearchScope[] scopes = { scope };
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQueryType(QueryType.DataObject);
-		searchParams.setQuery(query);
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		Long[] idTuple = { 2L, 3L };
-		ArrayList<Long[]> idTuples = new ArrayList<>();
-		idTuples.add(idTuple);
-		String selectionQuery = Neo4jEmitter.emitCollectionDataObjectBasicReferenceSelectionQuery(scope,
-				scope.getTraversalRules()[0], query, userName);
-		Map<String, Long> idDictionary = new HashMap<String, Long>();
-		idDictionary.put(Constants.DATAOBJECT_IN_QUERY, 2L);
-		idDictionary.put(Constants.REFERENCE_IN_QUERY, 3L);
-		List<Map<String, Long>> idDictionaries = new ArrayList<Map<String, Long>>();
-		idDictionaries.add(idDictionary);
-		when(searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, dobrvariables)).thenReturn(idDictionaries);
-		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
-		ResultTriple[] resultTriples = { resultTriple };
-		ResponseBody responseBody = new ResponseBody(resultTriples, searchParams);
-		assertEquals(referenceSearcher.search(searchBody, userName), responseBody);
+
+		var scope1 = new SearchScope(null, null, new TraversalRules[0]);
+		var scope2 = new SearchScope(1L, null, new TraversalRules[0]);
+		var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
+		var scope4 = new SearchScope(1L, 2L, traversalRules);
+
+		var query1 = Neo4jEmitter.emitBasicReferenceSelectionQuery(query, userName);
+		var query2 = Neo4jEmitter.emitCollectionBasicReferenceSelectionQuery(query, 1L, userName);
+		var query3 = Neo4jEmitter.emitCollectionDataObjectReferenceSelectionQuery(scope3, query, userName);
+		var query4 = Neo4jEmitter.emitCollectionDataObjectBasicReferenceSelectionQuery(scope4, traversalRules[0], query,
+				userName);
+
+		// @formatter:off
+		return Stream.of(
+					Arguments.of(scope1, query1),
+					Arguments.of(scope2, query2),
+					Arguments.of(scope3, query3),
+					Arguments.of(scope4, query4)
+				);
+		// @formatter:on
 	}
 
 	@Test
-	public void emptyTraversalRules() {
-		SearchBody searchBody = new SearchBody();
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
-		TraversalRules[] traversalRules = {};
-		scope.setTraversalRules(traversalRules);
-		SearchScope[] scopes = { scope };
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQueryType(QueryType.DataObject);
-		searchParams.setQuery(query);
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
-		Long[] idTuple = { 2L, 3L };
-		ArrayList<Long[]> idTuples = new ArrayList<>();
-		idTuples.add(idTuple);
-		String selectionQuery = Neo4jEmitter.emitCollectionDataObjectReferenceSelectionQuery(scope, query, userName);
-		Map<String, Long> idDictionary = new HashMap<String, Long>();
-		idDictionary.put(Constants.DATAOBJECT_IN_QUERY, 2L);
-		idDictionary.put(Constants.REFERENCE_IN_QUERY, 3L);
-		List<Map<String, Long>> idDictionaries = new ArrayList<Map<String, Long>>();
-		idDictionaries.add(idDictionary);
-		when(searchDAO.buildQueryAndGetIdDictionaryFromQuery(selectionQuery, dobrvariables)).thenReturn(idDictionaries);
-		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
-		ResultTriple[] resultTriples = { resultTriple };
-		ResponseBody responseBody = new ResponseBody(resultTriples, searchParams);
-		assertEquals(referenceSearcher.search(searchBody, userName), responseBody);
+	public void test_invalid() {
+		SearchScope[] scopes = { new SearchScope(null, 2L, new TraversalRules[0]) };
+		SearchParams searchParams = new SearchParams(query, QueryType.Reference);
+		SearchBody searchBody = new SearchBody(scopes, searchParams);
+		ResultTriple[] resultTriples = new ResultTriple[0];
+		BasicEntityIO[] results = new BasicEntityIO[0];
+		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
+		var actual = referenceSearcher.search(searchBody, userName);
+		assertEquals(responseBody, actual);
 	}
 
 }

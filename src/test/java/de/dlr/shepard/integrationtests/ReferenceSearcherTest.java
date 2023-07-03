@@ -195,6 +195,8 @@ public class ReferenceSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple1 = new ResultTriple(collection.getId(), dataObjectIO1.getId(), referenceIO1.getId());
 		assertThat(result.getResultSet()).contains(triple1);
+		assertThat(result.getResults()[0].getId()).isEqualTo(referenceIO1.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test

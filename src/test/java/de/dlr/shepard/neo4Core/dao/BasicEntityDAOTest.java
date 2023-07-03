@@ -19,13 +19,13 @@ import org.neo4j.ogm.session.Session;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 
-public class AbstractEntityDAOTest extends BaseTestCase {
+public class BasicEntityDAOTest extends BaseTestCase {
 
 	@Mock
 	private Session session;
 
 	@InjectMocks
-	private AbstractEntityDAO dao = new AbstractEntityDAO();
+	private BasicEntityDAO dao = new BasicEntityDAO();
 
 	@Test
 	public void findTest() {

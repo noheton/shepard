@@ -1,16 +1,15 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.StreamSupport;
 
-import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
+import de.dlr.shepard.neo4Core.entities.BasicReference;
+import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
@@ -25,31 +24,31 @@ public class SearchDAO {
 		session = NeoConnector.getInstance().getNeo4jSession();
 	}
 
-	public List<Map<String, Long>> buildQueryAndGetIdDictionaryFromQuery(String selectionQuery, String[] variables) {
-		List<Map<String, Long>> ret = new ArrayList<>();
-		// TODO: sanity check for query
-		String returnQuery = " RETURN ";
-		var varList = Arrays.stream(variables).map(v -> "id(" + v + ")").toList();
-		returnQuery = returnQuery + String.join(", ", varList);
-		String query = selectionQuery + returnQuery;
-		Result idTuples = session.query(query, Collections.emptyMap());
-		Iterator<Map<String, Object>> iterator = idTuples.iterator();
-		Map<String, Object> map;
-		while (iterator.hasNext()) {
-			Map<String, Long> idMap = new HashMap<>();
-			map = iterator.next();
-			for (int i = 0; i < variables.length; i++) {
-				idMap.put(variables[i], (Long) map.get("id(" + variables[i] + ")"));
-			}
-			ret.add(idMap);
-		}
+	public List<Collection> findCollections(String selectionQuery, String collectionVariable) {
+		String query = selectionQuery + emitCollectionReturnPart(collectionVariable);
+		Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
+		var ret = StreamSupport.stream(collections.spliterator(), false).toList();
+		return ret;
+	}
+
+	public List<DataObject> findDataObjects(String selectionQuery, String dataObjectVariable) {
+		String query = selectionQuery + emitDataObjectReturnPart(dataObjectVariable);
+		Iterable<DataObject> collections = session.query(DataObject.class, query, Collections.emptyMap());
+		var ret = StreamSupport.stream(collections.spliterator(), false).toList();
+		return ret;
+	}
+
+	public List<BasicReference> findReferences(String selectionQuery, String referenceVariable) {
+		String query = selectionQuery + emitReferencesReturnPart(referenceVariable);
+		Iterable<BasicReference> collections = session.query(BasicReference.class, query, Collections.emptyMap());
+		var ret = StreamSupport.stream(collections.spliterator(), false).toList();
 		return ret;
 	}
 
 	public List<FileContainer> findFileContainers(String selectionQuery, String containerVariable) {
 		String query = selectionQuery + emitContainerReturnPart(containerVariable);
 		Iterable<FileContainer> fileContainers = session.query(FileContainer.class, query, Collections.emptyMap());
-		ArrayList<FileContainer> ret = new ArrayList<FileContainer>();
+		List<FileContainer> ret = new ArrayList<>();
 		fileContainers.forEach(ret::add);
 		return ret;
 	}
@@ -58,7 +57,7 @@ public class SearchDAO {
 		String query = selectionQuery + emitContainerReturnPart(containerVariable);
 		Iterable<StructuredDataContainer> structuredDataContainers = session.query(StructuredDataContainer.class, query,
 				Collections.emptyMap());
-		ArrayList<StructuredDataContainer> ret = new ArrayList<StructuredDataContainer>();
+		List<StructuredDataContainer> ret = new ArrayList<>();
 		structuredDataContainers.forEach(ret::add);
 		return ret;
 	}
@@ -67,13 +66,30 @@ public class SearchDAO {
 		String query = selectionQuery + emitContainerReturnPart(containerVariable);
 		Iterable<TimeseriesContainer> timeseriesContainers = session.query(TimeseriesContainer.class, query,
 				Collections.emptyMap());
-		ArrayList<TimeseriesContainer> ret = new ArrayList<TimeseriesContainer>();
+		List<TimeseriesContainer> ret = new ArrayList<>();
 		timeseriesContainers.forEach(ret::add);
 		return ret;
 	}
 
 	private String emitContainerReturnPart(String containerVariable) {
 		return " WITH " + containerVariable + " " + CypherQueryHelper.getReturnPart(containerVariable, true);
+	}
+
+	private String emitCollectionReturnPart(String collectionVariable) {
+		return String.format(" WITH %s MATCH path=(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
+				collectionVariable, collectionVariable, collectionVariable);
+	}
+
+	private String emitDataObjectReturnPart(String dataObjectVariable) {
+		return String.format(
+				" WITH %s MATCH path=(c:Collection)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
+				dataObjectVariable, dataObjectVariable, dataObjectVariable);
+	}
+
+	private String emitReferencesReturnPart(String referenceVariable) {
+		return String.format(
+				" WITH %s MATCH path=(c:Collection)-[]->(d:DataObject)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
+				referenceVariable, referenceVariable, referenceVariable);
 	}
 
 }

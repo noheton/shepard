@@ -10,19 +10,19 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.neo4Core.entities.AbstractEntity;
+import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
 
-public class AbstractEntityIOTest extends BaseTestCase {
+public class BasicEntityIOTest extends BaseTestCase {
 
-	private static class EntityIO extends AbstractEntityIO {
+	private static class EntityIO extends BasicEntityIO {
 
 		public EntityIO(long id) {
 			this.setId(id);
 		}
 
-		public EntityIO(AbstractEntity entity) {
+		public EntityIO(BasicEntity entity) {
 			super(entity);
 		}
 
@@ -40,6 +40,7 @@ public class AbstractEntityIOTest extends BaseTestCase {
 		obj.setCreatedBy(user);
 		obj.setUpdatedAt(update);
 		obj.setUpdatedBy(updateUser);
+		obj.setName("test");
 
 		var converted = new EntityIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -47,6 +48,7 @@ public class AbstractEntityIOTest extends BaseTestCase {
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
+		assertEquals("test", converted.getName());
 	}
 
 	@Test
@@ -62,7 +64,7 @@ public class AbstractEntityIOTest extends BaseTestCase {
 	@Test
 	public void extractIdsTest() {
 		var input = List.of(new Collection(2L), new Collection(5L));
-		var actual = AbstractEntityIO.extractIds(input);
+		var actual = BasicEntityIO.extractIds(input);
 
 		assertArrayEquals(new long[] { 2, 5 }, actual);
 	}

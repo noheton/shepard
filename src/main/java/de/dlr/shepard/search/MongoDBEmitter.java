@@ -2,7 +2,9 @@ package de.dlr.shepard.search;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -13,6 +15,8 @@ public class MongoDBEmitter {
 
 	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
 			Constants.JSON_NOT);
+	private static final List<String> opAttributes = List.of(Constants.OP_PROPERTY, Constants.OP_VALUE,
+			Constants.OP_OPERATOR);
 
 	private MongoDBEmitter() {
 	}
@@ -22,18 +26,27 @@ public class MongoDBEmitter {
 		JsonNode jsonNode = null;
 		try {
 			jsonNode = objectMapper.readValue(query, JsonNode.class);
-		} catch (Exception e) {
+		} catch (JsonProcessingException e) {
 			throw new ShepardParserException("error while reading JSON\n" + e.getMessage());
 		}
 		return emitMongoDB(jsonNode);
 	}
 
 	private static String emitMongoDB(JsonNode rootNode) {
-		String op = rootNode.fieldNames().next();
-		if (Constants.OP_PROPERTY.equals(op) || Constants.OP_VALUE.equals(op) || Constants.OP_OPERATOR.equals(op)) {
-			return emitPrimitiveClause(rootNode);
+		String operator = "";
+		try {
+			operator = rootNode.fieldNames().next();
+		} catch (NoSuchElementException e) {
+			throw new ShepardParserException("error in parsing" + e.getMessage());
 		}
-		return emitComplexClause(rootNode, op);
+
+		if (opAttributes.contains(operator)) {
+			return emitPrimitiveClause(rootNode);
+		} else if (booleanOperators.contains(operator)) {
+			return emitComplexClause(rootNode, operator);
+		} else {
+			throw new ShepardParserException("unknown operator: " + operator);
+		}
 	}
 
 	private static String emitOperatorString(JsonNode node) {
@@ -51,20 +64,22 @@ public class MongoDBEmitter {
 	}
 
 	private static String emitComplexClause(JsonNode node, String operator) {
-		if (!booleanOperators.contains(operator))
-			throw new ShepardParserException("unknown boolean operator: " + operator);
-		if (operator.equals(Constants.JSON_NOT))
+		if (operator.equals(Constants.JSON_NOT)) {
 			return emitNegatedClause(node.get(Constants.JSON_NOT));
-		else
+		} else {
 			return emitMultaryClause(node, operator);
+		}
 	}
 
 	private static String emitNegatedClause(JsonNode node) {
-		String op = node.fieldNames().next();
-		if (op.equals(Constants.OP_PROPERTY) || op.equals(Constants.OP_VALUE) || op.equals(Constants.OP_OPERATOR)) {
+		String operator = node.fieldNames().next();
+		if (opAttributes.contains(operator)) {
 			return emitNegatedPrimitiveClause(node);
+		} else if (booleanOperators.contains(operator)) {
+			return emitNegatedComplexClause(node, operator);
+		} else {
+			throw new ShepardParserException("unknown operator: " + operator);
 		}
-		return emitNegatedComplexClause(node, op);
 	}
 
 	private static String emitNegatedComplexClause(JsonNode node, String operator) {

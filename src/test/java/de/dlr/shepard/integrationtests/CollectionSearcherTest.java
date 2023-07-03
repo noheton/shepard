@@ -123,6 +123,8 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple1 = new ResultTriple(collection1.getId(), null, null);
 		assertThat(result.getResultSet()).containsExactly(triple1);
+		assertThat(result.getResults()[0].getId()).isEqualTo(collection1.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test

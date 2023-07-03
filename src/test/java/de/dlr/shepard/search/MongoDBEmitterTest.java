@@ -1,14 +1,17 @@
 package de.dlr.shepard.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.ShepardParserException;
 
 public class MongoDBEmitterTest extends BaseTestCase {
 
@@ -175,11 +178,62 @@ public class MongoDBEmitterTest extends BaseTestCase {
 	@ParameterizedTest
 	@MethodSource
 	public void queryTest(String input, String expected) {
-		SearchScope scope = new SearchScope();
-		scope.setCollectionId(1L);
-		scope.setDataObjectId(2L);
 		String mongoDBQuery = MongoDBEmitter.emitMongoDB(input);
 		assertEquals(expected, mongoDBQuery);
+	}
+
+	@Test
+	public void queryTest_invalidJson() {
+		String input = "}";
+		assertThrows(ShepardParserException.class, () -> MongoDBEmitter.emitMongoDB(input));
+	}
+
+	@Test
+	public void queryTest_emptyJson() {
+		String input = "{}";
+		assertThrows(ShepardParserException.class, () -> MongoDBEmitter.emitMongoDB(input));
+	}
+
+	@Test
+	public void queryTest_invalidOperator() {
+		String input = """
+				{
+					"property": "name",
+					"value": "1",
+					"operator": "invalid"
+				}
+				""";
+		assertThrows(ShepardParserException.class, () -> MongoDBEmitter.emitMongoDB(input));
+	}
+
+	@Test
+	public void queryTest_invalidBooleanOperator() {
+		String input = """
+				{
+				    "invalid": {
+					    "property": "name",
+					    "value": "1",
+					    "operator": "eq"
+				    }
+				}
+				""";
+		assertThrows(ShepardParserException.class, () -> MongoDBEmitter.emitMongoDB(input));
+	}
+
+	@Test
+	public void queryTest_invalidNegatedBooleanOperator() {
+		String input = """
+				{
+				    "NOT": {
+				        "invalid": {
+					        "property": "name",
+					        "value": "1",
+					        "operator": "eq"
+					    }
+				    }
+				}
+				""";
+		assertThrows(ShepardParserException.class, () -> MongoDBEmitter.emitMongoDB(input));
 	}
 
 }

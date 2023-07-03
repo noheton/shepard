@@ -16,7 +16,7 @@ import lombok.ToString;
 @Data
 @ToString(callSuper = true)
 @NoArgsConstructor
-public class UserGroup extends AbstractEntity {
+public class UserGroup extends BasicEntity {
 
 	@Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
 	private List<User> users = new ArrayList<>();

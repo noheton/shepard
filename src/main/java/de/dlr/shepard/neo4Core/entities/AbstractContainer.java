@@ -10,7 +10,7 @@ import lombok.ToString;
 
 @Data
 @NoArgsConstructor
-public abstract class AbstractContainer extends AbstractEntity {
+public abstract class AbstractContainer extends BasicEntity {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_PERMISSIONS)

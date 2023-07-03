@@ -127,30 +127,32 @@ public abstract class GenericDAO<T> {
 	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
 			String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
-		ret = ret + switch (traversalRule) {
+		ret += getTraversalRulesPath(traversalRule);
+		ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
+		// ret += "-[ic:is_in_container]->(con)";
+		ret += " WITH nodes(path) as ns, r as ret";
+		ret += " WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+		ret += " AND NONE(node IN ns WHERE (node.deleted = TRUE))";
+		ret += " AND " + CypherQueryHelper.getReadableByQuery("col", userName);
+		ret += " " + CypherQueryHelper.getReturnPart("ret", false);
+		return ret;
+	}
+
+	private String getTraversalRulesPath(TraversalRules traversalRule) {
+		if (traversalRule == null)
+			return "(d:DataObject)";
+
+		return switch (traversalRule) {
 		case children -> "(d:DataObject)-[:has_child*0..]->(e:DataObject)";
 		case parents -> "(d:DataObject)<-[:has_child*0..]-(e:DataObject)";
 		case successors -> "(d:DataObject)-[:has_successor*0..]->(e:DataObject)";
 		case predecessors -> "(d:DataObject)<-[:has_successor*0..]-(e:DataObject)";
+		default -> "(d:DataObject)";
 		};
-		ret = ret + "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
-		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + CypherQueryHelper.getReadableByQuery("col", userName);
-		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
-		ret = ret + CypherQueryHelper.getReturnPart("ret", false);
-		return ret;
 	}
 
 	protected String getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
-		String ret;
-		ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->";
-		ret = ret + "(r:" + getEntityType().getSimpleName() + ")";
-		ret = ret + " WITH nodes(path) as ns, r as ret WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
-		ret = ret + " AND " + CypherQueryHelper.getReadableByQuery("col", userName);
-		ret = ret + " AND NONE(node IN ns WHERE (node.deleted = TRUE)) ";
-		String returnPart = CypherQueryHelper.getReturnPart("ret", false);
-		ret = ret + returnPart;
-		return ret;
+		return getSearchForReachableReferencesQuery(null, collectionId, startId, userName);
 	}
 
 	public abstract Class<T> getEntityType();

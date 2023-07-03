@@ -20,7 +20,7 @@ import org.mockito.Mock;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.AbstractEntityDAO;
+import de.dlr.shepard.neo4Core.dao.BasicEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
@@ -40,7 +40,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	private SemanticRepositoryDAO semanticRepositoryDAO;
 
 	@Mock
-	private AbstractEntityDAO abstractEntityDAO;
+	private BasicEntityDAO abstractEntityDAO;
 
 	@Mock
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;

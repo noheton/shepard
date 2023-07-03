@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
-import org.neo4j.ogm.model.Result;
-
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -59,14 +57,6 @@ public class BasicReferenceDAO extends GenericDAO<BasicReference> {
 
 	private boolean matchName(BasicReference ref, String name) {
 		return name == null || ref.getName().equalsIgnoreCase(name);
-	}
-
-	public long getDataObjectId(long referenceId) {
-		String query = "MATCH (d:DataObject)-[has_reference]->(r) WHERE id(r) = " + referenceId + " RETURN id(d)";
-		Result idResult = session.query(query, Collections.emptyMap());
-		Map<String, Object> map = idResult.iterator().next();
-		Object o = map.get("id(d)");
-		return (Long) o;
 	}
 
 	public List<BasicReference> getBasicReferencesByQuery(String query) {

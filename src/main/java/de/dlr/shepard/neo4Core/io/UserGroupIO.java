@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "UserGroup")
-public class UserGroupIO extends AbstractEntityWithNameIO {
+public class UserGroupIO extends BasicEntityIO {
 
 	@NotNull
 	private String[] usernames;

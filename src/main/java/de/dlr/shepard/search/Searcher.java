@@ -8,25 +8,14 @@ public class Searcher {
 	private ISearcher referenceSearcher = new ReferenceSearcher();
 
 	public ResponseBody search(SearchBody searchBody, String userName) {
-		ResponseBody ret = null;
 		QueryValidator.checkQuery(searchBody.getSearchParams().getQuery());
-		QueryType queryType = searchBody.getSearchParams().getQueryType();
-		switch (queryType) {
-		case StructuredData:
-			ret = structuredDataSearcher.search(searchBody, userName);
-			break;
-		case Collection:
-			ret = collectionSearcher.search(searchBody, userName);
-			break;
-		case DataObject:
-			ret = dataObjectSearcher.search(searchBody, userName);
-			break;
-		case Reference:
-			ret = referenceSearcher.search(searchBody, userName);
-			break;
-		default:
-			break;
-		}
+		ResponseBody ret = switch (searchBody.getSearchParams().getQueryType()) {
+		case StructuredData -> structuredDataSearcher.search(searchBody, userName);
+		case Collection -> collectionSearcher.search(searchBody, userName);
+		case DataObject -> dataObjectSearcher.search(searchBody, userName);
+		case Reference -> referenceSearcher.search(searchBody, userName);
+		default -> null;
+		};
 		return ret;
 	}
 

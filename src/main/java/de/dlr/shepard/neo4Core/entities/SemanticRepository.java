@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class SemanticRepository extends AbstractEntity {
+public class SemanticRepository extends BasicEntity {
 
 	private SemanticRepositoryType type;
 

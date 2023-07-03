@@ -19,7 +19,7 @@ import lombok.ToString;
 
 @Data
 @NoArgsConstructor
-public abstract class AbstractEntity implements HasId {
+public class BasicEntity implements HasId {
 
 	@Id
 	@GeneratedValue
@@ -53,7 +53,7 @@ public abstract class AbstractEntity implements HasId {
 	 *
 	 * @param id identifies the entity
 	 */
-	protected AbstractEntity(long id) {
+	protected BasicEntity(long id) {
 		this.id = id;
 	}
 
@@ -76,9 +76,9 @@ public abstract class AbstractEntity implements HasId {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		if (!(obj instanceof AbstractEntity))
+		if (!(obj instanceof BasicEntity))
 			return false;
-		AbstractEntity other = (AbstractEntity) obj;
+		BasicEntity other = (BasicEntity) obj;
 		return Objects.equals(id, other.id) && deleted == other.deleted && Objects.equals(createdAt, other.createdAt)
 				&& Objects.equals(updatedAt, other.updatedAt) && HasId.equalsHelper(createdBy, other.createdBy)
 				&& HasId.equalsHelper(updatedBy, other.updatedBy) && Objects.equals(name, other.name)

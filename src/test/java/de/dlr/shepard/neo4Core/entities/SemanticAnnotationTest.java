@@ -10,7 +10,7 @@ public class SemanticAnnotationTest extends BaseTestCase {
 	@Test
 	public void equalsContract() {
 		EqualsVerifier.simple().forClass(SemanticAnnotation.class)
-				.withPrefabValues(AbstractEntity.class, new DataObject(1L), new DataObject(2L))
+				.withPrefabValues(BasicEntity.class, new DataObject(1L), new DataObject(2L))
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
 				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
 				.verify();

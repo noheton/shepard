@@ -13,7 +13,7 @@ import lombok.ToString;
 @Data
 @ToString(callSuper = true)
 @NoArgsConstructor
-public class BasicReference extends AbstractEntity {
+public class BasicReference extends BasicEntity {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_REFERENCE, direction = Relationship.INCOMING)

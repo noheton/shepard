@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "AbstractContainer")
-public abstract class AbstractContainerIO extends AbstractEntityWithNameIO {
+public abstract class AbstractContainerIO extends BasicEntityIO {
 
 	protected AbstractContainerIO(AbstractContainer container) {
 		super(container);

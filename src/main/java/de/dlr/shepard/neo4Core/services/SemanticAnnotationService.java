@@ -3,7 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.AbstractEntityDAO;
+import de.dlr.shepard.neo4Core.dao.BasicEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
@@ -17,7 +17,7 @@ public class SemanticAnnotationService {
 
 	private SemanticAnnotationDAO semanticAnnotationDAO = new SemanticAnnotationDAO();
 	private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
-	private AbstractEntityDAO abstractEntityDAO = new AbstractEntityDAO();
+	private BasicEntityDAO abstractEntityDAO = new BasicEntityDAO();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
 	public List<SemanticAnnotation> getAllAnnotations(long entityId) {

@@ -13,7 +13,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public abstract class AbstractDataObject extends AbstractEntity {
+public abstract class AbstractDataObject extends BasicEntity {
 
 	private String description;
 

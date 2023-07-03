@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "BasicReference")
-public class BasicReferenceIO extends AbstractEntityWithNameIO {
+public class BasicReferenceIO extends BasicEntityIO {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private long dataObjectId;

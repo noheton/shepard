@@ -2,7 +2,9 @@ package de.dlr.shepard.search;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -15,6 +17,8 @@ public class Neo4jEmitter {
 
 	private static final List<String> booleanOperators = List.of(Constants.JSON_AND, Constants.JSON_OR,
 			Constants.JSON_NOT, Constants.JSON_XOR);
+	private static final List<String> opAttributes = List.of(Constants.OP_PROPERTY, Constants.OP_VALUE,
+			Constants.OP_OPERATOR);
 
 	private Neo4jEmitter() {
 	}
@@ -24,7 +28,7 @@ public class Neo4jEmitter {
 		JsonNode jsonNode = null;
 		try {
 			jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
-		} catch (Exception e) {
+		} catch (JsonProcessingException e) {
 			throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
 		}
 		return emitNeo4j(jsonNode, variable);
@@ -34,10 +38,11 @@ public class Neo4jEmitter {
 		String op = "";
 		try {
 			op = rootNode.fieldNames().next();
-		} catch (Exception e) {
+		} catch (NoSuchElementException e) {
 			throw new ShepardParserException("error in parsing" + e.getMessage());
 		}
-		if (op.equals(Constants.OP_PROPERTY) || op.equals(Constants.OP_VALUE) || op.equals(Constants.OP_OPERATOR)) {
+
+		if (opAttributes.contains(op)) {
 			return emitPrimitiveClause(rootNode, variable);
 		}
 		return emitComplexClause(rootNode, op, variable);
@@ -116,18 +121,11 @@ public class Neo4jEmitter {
 
 	private static String emitByPart(JsonNode node, String variable) {
 		String ret = "(";
-		String by = "";
-		switch (node.get(Constants.OP_PROPERTY).textValue()) {
-		case "createdBy":
-			by = "created_by";
-			break;
-		case "updatedBy":
-			by = "updated_by";
-			break;
-		default:
-			// Ignore other properties
-			break;
-		}
+		String by = switch (node.get(Constants.OP_PROPERTY).textValue()) {
+		case "createdBy" -> "created_by";
+		case "updatedBy" -> "updated_by";
+		default -> "";
+		};
 		ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE u.username ";
 		ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
 		ret = ret + node.get(Constants.OP_VALUE) + " ";
@@ -236,7 +234,7 @@ public class Neo4jEmitter {
 
 	private static String emitCollectionDataObjectMatchPart() {
 		String ret = "MATCH (" + Constants.COLLECTION_IN_QUERY + ":Collection)-[:has_dataobject]->("
-				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)";
 		return ret;
 	}
 
@@ -435,16 +433,16 @@ public class Neo4jEmitter {
 		String ret = switch (traversalRule) {
 		case children -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" + Constants.DATAOBJECT_IN_QUERY
-				+ ":DataObject) ";
+				+ ":DataObject)";
 		case parents -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" + Constants.DATAOBJECT_IN_QUERY
-				+ ":DataObject) ";
+				+ ":DataObject)";
 		case successors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
-				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)";
 		case predecessors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
-				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject) ";
+				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)";
 		default -> "";
 		};
 		return ret;
@@ -454,18 +452,18 @@ public class Neo4jEmitter {
 		String ret = switch (traversalRule) {
 		case children -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" + Constants.DATAOBJECT_IN_QUERY
-				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference) ";
+				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference)";
 		case parents -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" + Constants.DATAOBJECT_IN_QUERY
-				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference) ";
+				+ ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY + ":BasicReference)";
 		case successors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->("
 				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-				+ ":BasicReference) ";
+				+ ":BasicReference)";
 		case predecessors -> "MATCH (" + Constants.COLLECTION_IN_QUERY
 				+ ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-("
 				+ Constants.DATAOBJECT_IN_QUERY + ":DataObject)-[:has_reference]->(" + Constants.REFERENCE_IN_QUERY
-				+ ":BasicReference) ";
+				+ ":BasicReference)";
 		default -> "";
 		};
 		return ret;
