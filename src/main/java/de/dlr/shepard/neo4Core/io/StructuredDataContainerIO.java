@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "StructuredDataContainer")
-public class StructuredDataContainerIO extends AbstractContainerIO {
+public class StructuredDataContainerIO extends BasicContainerIO {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private String oid;

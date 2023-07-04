@@ -1,8 +1,6 @@
 package de.dlr.shepard.search;
 
-import de.dlr.shepard.neo4Core.io.FileContainerIO;
-import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,8 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ContainerSearchResult {
 
-	private FileContainerIO[] fileContainers;
-	private StructuredDataContainerIO[] structuredDataContainers;
-	private TimeseriesContainerIO[] timeseriesContainers;
+	private BasicEntityIO[] result;
+	private ContainerSearchParams searchParams;
 
 }

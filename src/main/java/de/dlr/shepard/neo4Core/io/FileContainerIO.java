@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "FileContainer")
-public class FileContainerIO extends AbstractContainerIO {
+public class FileContainerIO extends BasicContainerIO {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private String oid;

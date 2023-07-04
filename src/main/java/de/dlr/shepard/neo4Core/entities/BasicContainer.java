@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Data
+@ToString(callSuper = true)
 @NoArgsConstructor
-public abstract class AbstractContainer extends BasicEntity {
+public class BasicContainer extends BasicEntity {
 
 	@ToString.Exclude
 	@Relationship(type = Constants.HAS_PERMISSIONS)
@@ -21,7 +22,7 @@ public abstract class AbstractContainer extends BasicEntity {
 	 *
 	 * @param id identifies the entity
 	 */
-	protected AbstractContainer(long id) {
+	public BasicContainer(long id) {
 		super(id);
 	}
 
@@ -39,9 +40,9 @@ public abstract class AbstractContainer extends BasicEntity {
 			return true;
 		if (!super.equals(obj))
 			return false;
-		if (!(obj instanceof AbstractContainer))
+		if (!(obj instanceof BasicContainer))
 			return false;
-		AbstractContainer other = (AbstractContainer) obj;
+		BasicContainer other = (BasicContainer) obj;
 		return HasId.equalsHelper(permissions, other.permissions);
 	}
 

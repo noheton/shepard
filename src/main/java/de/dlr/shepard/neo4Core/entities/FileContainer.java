@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class FileContainer extends AbstractContainer {
+public class FileContainer extends BasicContainer {
 
 	private String mongoId;
 

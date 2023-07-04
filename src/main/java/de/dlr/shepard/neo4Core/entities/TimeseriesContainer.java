@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class TimeseriesContainer extends AbstractContainer {
+public class TimeseriesContainer extends BasicContainer {
 
 	private String database;
 

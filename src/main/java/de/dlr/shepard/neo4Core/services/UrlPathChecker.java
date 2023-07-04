@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import de.dlr.shepard.exceptions.InvalidPathException;
-import de.dlr.shepard.neo4Core.entities.AbstractContainer;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
+import de.dlr.shepard.neo4Core.entities.BasicContainer;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -265,7 +265,7 @@ public class UrlPathChecker {
 		return null;
 	}
 
-	private String checkContainer(AbstractContainer container) {
+	private String checkContainer(BasicContainer container) {
 		if (container == null) {
 			return "Container does not exist";
 		}

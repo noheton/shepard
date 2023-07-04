@@ -3,6 +3,8 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -91,53 +93,47 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 	@Test
 	@Order(1)
 	public void test1SearchFileContainers() {
-		ContainerSearchBody searchBody = new ContainerSearchBody();
-		ContainerSearchParams params = new ContainerSearchParams();
 		String query = "{\"property\": \"name\", \"value\": \"container1\", \"operator\": \"eq\"}";
-		params.setQuery(query);
-		ContainerQueryType type = ContainerQueryType.FILE;
-		params.setQueryType(type);
-		searchBody.setSearchParams(params);
+		ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.FILE);
+		ContainerSearchBody searchBody = new ContainerSearchBody(params);
 		ContainerSearchResult result = given().spec(searchRequestSpec).body(searchBody).when().post().then()
 				.statusCode(200).extract().as(ContainerSearchResult.class);
-		assertThat(result.getFileContainers()).contains(fileContainer1);
-		assertThat(result.getFileContainers()).doesNotContain(fileContainer2);
+		var notExpected = List.of(fileContainer2.getId(), dataContainer1.getId(), dataContainer2.getId(),
+				timeseriesContainer1.getId(), timeseriesContainer2.getId());
+		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(fileContainer1.getId()));
+		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getSearchParams()).isEqualTo(params);
 	}
 
 	@Test
 	@Order(2)
-	public void testSearchAllContainersByEquality() {
-		ContainerSearchBody searchBody = new ContainerSearchBody();
-		ContainerSearchParams params = new ContainerSearchParams();
-		String query = "{\"property\": \"name\", \"value\": \"container1\", \"operator\": \"eq\"}";
-		params.setQuery(query);
-		ContainerQueryType type = null;
-		params.setQueryType(type);
-		searchBody.setSearchParams(params);
+	public void testSearchStructuredDataContainersByContains() {
+		String query = "{\"property\": \"name\", \"value\": \"ontainer1\", \"operator\": \"contains\"}";
+		ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.STRUCTUREDDATA);
+		ContainerSearchBody searchBody = new ContainerSearchBody(params);
 		ContainerSearchResult result = given().spec(searchRequestSpec).body(searchBody).when().post().then()
 				.statusCode(200).extract().as(ContainerSearchResult.class);
-		assertThat(result.getFileContainers()).contains(fileContainer1);
-		assertThat(result.getFileContainers()).doesNotContain(fileContainer2);
+		var notExpected = List.of(fileContainer1.getId(), fileContainer2.getId(), dataContainer2.getId(),
+				timeseriesContainer1.getId(), timeseriesContainer2.getId());
+		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(dataContainer1.getId()));
+		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getSearchParams()).isEqualTo(params);
 	}
 
 	@Test
-	@Order(3)
-	public void testSearchAllContainersByContains() {
-		ContainerSearchBody searchBody = new ContainerSearchBody();
-		ContainerSearchParams params = new ContainerSearchParams();
+	@Order(2)
+	public void testSearchTimeseriesContainersByContains() {
 		String query = "{\"property\": \"name\", \"value\": \"ontainer1\", \"operator\": \"contains\"}";
-		params.setQuery(query);
-		ContainerQueryType type = null;
-		params.setQueryType(type);
-		searchBody.setSearchParams(params);
+		ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.TIMESERIES);
+		ContainerSearchBody searchBody = new ContainerSearchBody(params);
 		ContainerSearchResult result = given().spec(searchRequestSpec).body(searchBody).when().post().then()
 				.statusCode(200).extract().as(ContainerSearchResult.class);
-		assertThat(result.getFileContainers()).contains(fileContainer1);
-		assertThat(result.getFileContainers()).doesNotContain(fileContainer2);
-		assertThat(result.getStructuredDataContainers()).contains(dataContainer1);
-		assertThat(result.getStructuredDataContainers()).doesNotContain(dataContainer2);
-		assertThat(result.getTimeseriesContainers()).contains(timeseriesContainer1);
-		assertThat(result.getTimeseriesContainers()).doesNotContain(timeseriesContainer2);
+		var notExpected = List.of(fileContainer1.getId(), fileContainer2.getId(), dataContainer1.getId(),
+				dataContainer2.getId(), timeseriesContainer2.getId());
+		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(timeseriesContainer1.getId()));
+		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getSearchParams()).isEqualTo(params);
+
 	}
 
 }

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "TimeseriesContainer")
-public class TimeseriesContainerIO extends AbstractContainerIO {
+public class TimeseriesContainerIO extends BasicContainerIO {
 
 	@Schema(accessMode = AccessMode.READ_ONLY)
 	private String database;
