@@ -12,6 +12,9 @@ import de.dlr.shepard.search.ContainerSearcher;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
 import de.dlr.shepard.search.Searcher;
+import de.dlr.shepard.search.UserSearchBody;
+import de.dlr.shepard.search.UserSearchResult;
+import de.dlr.shepard.search.UserSearcher;
 import de.dlr.shepard.util.Constants;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -36,6 +39,7 @@ public class SearchRestImpl implements SearchRest {
 	private SecurityContext securityContext;
 	private Searcher searcher = new Searcher();
 	private UserService userService = new UserService();
+	private UserSearcher userSearcher = new UserSearcher();
 	private ContainerSearcher containerSearcher = new ContainerSearcher();
 
 	@POST
@@ -70,6 +74,15 @@ public class SearchRestImpl implements SearchRest {
 				containerSearchBody.getSearchParams().getQueryType(), containerSearchBody.getSearchParams().getQuery());
 		ContainerSearchResult ret = containerSearcher.search(containerSearchBody,
 				securityContext.getUserPrincipal().getName());
+		return Response.ok(ret).build();
+	}
+
+	@POST
+	@Path("/" + Constants.USERS)
+	@Override
+	public Response searchUsersNew(UserSearchBody userSearchBody) {
+		log.info("Search for users with query: {}", userSearchBody.getSearchParams().getQuery());
+		UserSearchResult ret = userSearcher.search(userSearchBody);
 		return Response.ok(ret).build();
 	}
 

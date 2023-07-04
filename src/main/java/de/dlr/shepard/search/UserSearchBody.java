@@ -1,6 +1,7 @@
 package de.dlr.shepard.search;
 
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +9,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContainerSearchResult {
+public class UserSearchBody {
 
-	private BasicEntityIO[] results;
-	private ContainerSearchParams searchParams;
+	@Valid
+	@NotNull
+	private UserSearchParams searchParams;
 
 }

@@ -13,6 +13,7 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.CypherQueryHelper;
 
@@ -71,6 +72,14 @@ public class SearchDAO {
 		return ret;
 	}
 
+	public List<User> findUsers(String selectionQuery, String userVariable) {
+		String query = selectionQuery + emitUserReturnPart(userVariable);
+		Iterable<User> users = session.query(User.class, query, Collections.emptyMap());
+		List<User> ret = new ArrayList<>();
+		users.forEach(ret::add);
+		return ret;
+	}
+
 	private String emitContainerReturnPart(String containerVariable) {
 		return " WITH " + containerVariable + " " + CypherQueryHelper.getReturnPart(containerVariable, true);
 	}
@@ -90,6 +99,12 @@ public class SearchDAO {
 		return String.format(
 				" WITH %s MATCH path=(c:Collection)-[]->(d:DataObject)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
 				referenceVariable, referenceVariable, referenceVariable);
+	}
+
+	private String emitUserReturnPart(String userVariable) {
+		return String.format(
+				" WITH %s MATCH path=(%s:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)",
+				userVariable, userVariable, userVariable);
 	}
 
 }

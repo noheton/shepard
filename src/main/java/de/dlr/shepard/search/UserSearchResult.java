@@ -1,6 +1,6 @@
 package de.dlr.shepard.search;
 
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.UserIO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContainerSearchResult {
+public class UserSearchResult {
 
-	private BasicEntityIO[] results;
-	private ContainerSearchParams searchParams;
+	private UserIO[] results;
+	private UserSearchParams searchParams;
 
 }

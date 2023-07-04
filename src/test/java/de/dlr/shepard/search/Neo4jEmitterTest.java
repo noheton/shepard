@@ -387,6 +387,14 @@ public class Neo4jEmitterTest extends BaseTestCase {
 	}
 
 	@Test
+	public void emitUserSelectionQueryTest() {
+		String JSONQuery = "{\"property\": \"username\", \"value\": \"user\", \"operator\": \"eq\"}";
+		String neo4jQuery = Neo4jEmitter.emitUserSelectionQuery(JSONQuery);
+		String expected = "MATCH (user:User) WHERE (user.`username` = \"user\")";
+		assertEquals(expected, neo4jQuery);
+	}
+
+	@Test
 	public void invalidJsonTest() {
 		String JSONQuery = "}";
 		assertThrows(ShepardParserException.class,

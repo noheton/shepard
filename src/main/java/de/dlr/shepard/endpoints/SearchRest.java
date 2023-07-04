@@ -5,6 +5,8 @@ import de.dlr.shepard.search.ContainerSearchBody;
 import de.dlr.shepard.search.ContainerSearchResult;
 import de.dlr.shepard.search.ResponseBody;
 import de.dlr.shepard.search.SearchBody;
+import de.dlr.shepard.search.UserSearchBody;
+import de.dlr.shepard.search.UserSearchResult;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -26,6 +28,7 @@ public interface SearchRest {
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body);
 
 	@Tag(name = Constants.SEARCH)
+	@Deprecated
 	@Operation(description = "Search users")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserIO.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
@@ -38,4 +41,10 @@ public interface SearchRest {
 	Response searchContainers(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))) @Valid ContainerSearchBody containerSearchBody);
 
+	@Tag(name = Constants.SEARCH)
+	@Operation(description = "Search users")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserSearchResult.class))))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response searchUsersNew(
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserSearchBody.class))) @Valid UserSearchBody userSearchBody);
 }

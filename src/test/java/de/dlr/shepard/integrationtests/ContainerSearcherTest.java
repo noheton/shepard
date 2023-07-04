@@ -100,8 +100,8 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 				.statusCode(200).extract().as(ContainerSearchResult.class);
 		var notExpected = List.of(fileContainer2.getId(), dataContainer1.getId(), dataContainer2.getId(),
 				timeseriesContainer1.getId(), timeseriesContainer2.getId());
-		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(fileContainer1.getId()));
-		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getResults()).anyMatch(res -> res.getId().equals(fileContainer1.getId()));
+		assertThat(result.getResults()).noneMatch(res -> notExpected.contains(res.getId()));
 		assertThat(result.getSearchParams()).isEqualTo(params);
 	}
 
@@ -115,8 +115,8 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 				.statusCode(200).extract().as(ContainerSearchResult.class);
 		var notExpected = List.of(fileContainer1.getId(), fileContainer2.getId(), dataContainer2.getId(),
 				timeseriesContainer1.getId(), timeseriesContainer2.getId());
-		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(dataContainer1.getId()));
-		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getResults()).anyMatch(res -> res.getId().equals(dataContainer1.getId()));
+		assertThat(result.getResults()).noneMatch(res -> notExpected.contains(res.getId()));
 		assertThat(result.getSearchParams()).isEqualTo(params);
 	}
 
@@ -130,8 +130,8 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 				.statusCode(200).extract().as(ContainerSearchResult.class);
 		var notExpected = List.of(fileContainer1.getId(), fileContainer2.getId(), dataContainer1.getId(),
 				dataContainer2.getId(), timeseriesContainer2.getId());
-		assertThat(result.getResult()).anyMatch(res -> res.getId().equals(timeseriesContainer1.getId()));
-		assertThat(result.getResult()).noneMatch(res -> notExpected.contains(res.getId()));
+		assertThat(result.getResults()).anyMatch(res -> res.getId().equals(timeseriesContainer1.getId()));
+		assertThat(result.getResults()).noneMatch(res -> notExpected.contains(res.getId()));
 		assertThat(result.getSearchParams()).isEqualTo(params);
 
 	}

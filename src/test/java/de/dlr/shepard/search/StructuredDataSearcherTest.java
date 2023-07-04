@@ -218,8 +218,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		SearchParams searchParams = new SearchParams(query, queryType);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		// create ResponseBody
-		ResultTriple[] resultTriples = new ResultTriple[0];
-		BasicEntityIO[] results = new BasicEntityIO[0];
+		ResultTriple[] resultTriples = {};
+		BasicEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
@@ -259,8 +259,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		SearchParams searchParams = new SearchParams(query, queryType);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		// create ResponseBody
-		ResultTriple[] resultTriples = new ResultTriple[0];
-		BasicEntityIO[] results = new BasicEntityIO[0];
+		ResultTriple[] resultTriples = {};
+		BasicEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
 		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))

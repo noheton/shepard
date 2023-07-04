@@ -18,7 +18,7 @@ public class ContainerSearcher {
 		ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
 		ContainerQueryType containerQueryType = containerSearchParams.getQueryType();
 		QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
-		ArrayList<BasicEntityIO> resultList = new ArrayList<BasicEntityIO>();
+		List<BasicEntityIO> resultList = new ArrayList<>();
 		if (containerQueryType == null || containerQueryType.equals(ContainerQueryType.FILE)) {
 			resultList.addAll(findFileContainerList(containerSearchParams, userName));
 		}

@@ -474,4 +474,18 @@ public class Neo4jEmitter {
 		return CypherQueryHelper.getReadableByQuery(variable, username);
 	}
 
+	public static String emitUserSelectionQuery(String query) {
+		String ret = "";
+		ret = ret + emitUserMatchPart();
+		ret = ret + " WHERE ";
+		ret = ret + emitNeo4j(query, Constants.USER_IN_QUERY);
+		return ret;
+	}
+
+	private static String emitUserMatchPart() {
+		String ret = "";
+		ret = ret + "MATCH (" + Constants.USER_IN_QUERY + ":User)";
+		return ret;
+	}
+
 }

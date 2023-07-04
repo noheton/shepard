@@ -48,7 +48,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findFileContainers(neo4jFileSelectionQuery, Constants.FILECONTAINER_IN_QUERY))
 				.thenReturn(fileResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResult()).containsExactly(new BasicEntityIO(fileRes));
+		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(fileRes));
 		assertThat(actual.getSearchParams()).isEqualTo(params);
 	}
 
@@ -65,7 +65,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findTimeseriesContainers(neo4jTimeseriesQuery, Constants.TIMESERIESCONTAINER_IN_QUERY))
 				.thenReturn(timeResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResult()).containsExactly(new BasicEntityIO(timeRes1), new BasicEntityIO(timeRes2));
+		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(timeRes1), new BasicEntityIO(timeRes2));
 	}
 
 	@Test
@@ -82,6 +82,6 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findStructuredDataContainers(neo4jStructuredDataSelectionQuery,
 				Constants.STRUCTUREDDATACONTAINER_IN_QUERY)).thenReturn(sdResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResult()).containsExactly(new BasicEntityIO(sdRes1), new BasicEntityIO(sdRes2));
+		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(sdRes1), new BasicEntityIO(sdRes2));
 	}
 }

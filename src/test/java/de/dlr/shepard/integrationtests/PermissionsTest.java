@@ -64,8 +64,8 @@ public class PermissionsTest extends BaseTestCaseIT {
 				.addHeader("X-API-KEY", jws2).build();
 		requestSpecification3 = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(permissionsURL)
 				.addHeader("X-API-KEY", jws3).build();
-		collection1 = createCollection("PermissionsTestCollection1", user1);
-		collection2 = createCollection("PermissionsTestCollection2", user2);
+		collection1 = createCollection("PermissionsTestCollection1", user1.getApiKey());
+		collection2 = createCollection("PermissionsTestCollection2", user2.getApiKey());
 		userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
 	}
 

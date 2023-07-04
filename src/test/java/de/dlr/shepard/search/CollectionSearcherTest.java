@@ -14,7 +14,6 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.util.Constants;
-import de.dlr.shepard.util.TraversalRules;
 
 public class CollectionSearcherTest extends BaseTestCase {
 
@@ -28,10 +27,7 @@ public class CollectionSearcherTest extends BaseTestCase {
 	public void test() {
 		String userName = "user1";
 		var collection = new Collection(1L);
-		TraversalRules[] traversalRules = {};
-		SearchScope scope = new SearchScope();
-		scope.setTraversalRules(traversalRules);
-		SearchScope scopes[] = { scope };
+		SearchScope scopes[] = { new SearchScope() };
 		String query = String.format("""
 				{
 				  "OR": [
@@ -47,12 +43,8 @@ public class CollectionSearcherTest extends BaseTestCase {
 				    }
 				]}""", 1L);
 		QueryType queryType = QueryType.Collection;
-		SearchParams searchParams = new SearchParams();
-		searchParams.setQuery(query);
-		searchParams.setQueryType(queryType);
-		SearchBody searchBody = new SearchBody();
-		searchBody.setScopes(scopes);
-		searchBody.setSearchParams(searchParams);
+		SearchParams searchParams = new SearchParams(query, queryType);
+		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		String selectionQuery = Neo4jEmitter.emitCollectionSelectionQuery(searchBody.getSearchParams().getQuery(),
 				userName);
 		when(searchDAO.findCollections(selectionQuery, Constants.COLLECTION_IN_QUERY)).thenReturn(List.of(collection));

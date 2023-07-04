@@ -12,7 +12,6 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.PKIHelper;
 import de.dlr.shepard.util.PropertiesHelper;
 import io.jsonwebtoken.Jwts;
-import lombok.Getter;
 
 public class PrepareDatabase {
 
@@ -20,23 +19,33 @@ public class PrepareDatabase {
 
 	private Session session;
 
-	@Getter
-	private UserWithApiKey userWithApiKey;
+	private User user;
+	private ApiKey apiKey;
 
 	public PrepareDatabase() {
 		session = openSession();
-		var user = generateUser("test_it");
-		var apiKey = generateApiKey(user);
-		sessionFactory.close();
-		this.userWithApiKey = new UserWithApiKey(user, apiKey);
 	}
 
-	public PrepareDatabase(String username) {
-		session = openSession();
-		var user = generateUser(username);
-		var apiKey = generateApiKey(user);
+	public PrepareDatabase withUser() {
+		user = generateUser("test_it");
+		return this;
+	}
+
+	public PrepareDatabase withUser(String username) {
+		user = generateUser(username);
+		return this;
+	}
+
+	public PrepareDatabase withApiKey() {
+		if (user == null)
+			user = generateUser("test_it");
+		apiKey = generateApiKey(user);
+		return this;
+	}
+
+	public UserWithApiKey build() {
 		sessionFactory.close();
-		this.userWithApiKey = new UserWithApiKey(user, apiKey);
+		return new UserWithApiKey(user, apiKey);
 	}
 
 	private Session openSession() {
@@ -90,6 +99,7 @@ public class PrepareDatabase {
 		// Update Api Key
 		apiKey.setJws(generateJws(apiKey, "integraton tests"));
 		session.save(apiKey);
+		this.user = apiKey.getBelongsTo();
 
 		return apiKey;
 	}

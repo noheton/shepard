@@ -92,8 +92,8 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		SearchScope[] scopes = { new SearchScope(null, 2L, new TraversalRules[0]) };
 		SearchParams searchParams = new SearchParams(query, QueryType.DataObject);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
-		ResultTriple[] resultTriples = new ResultTriple[0];
-		BasicEntityIO[] results = new BasicEntityIO[0];
+		ResultTriple[] resultTriples = {};
+		BasicEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
 		var actual = dataObjectSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);

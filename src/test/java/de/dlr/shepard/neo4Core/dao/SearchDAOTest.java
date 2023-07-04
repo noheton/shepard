@@ -18,6 +18,7 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
+import de.dlr.shepard.neo4Core.entities.User;
 
 public class SearchDAOTest extends BaseTestCase {
 
@@ -83,6 +84,16 @@ public class SearchDAOTest extends BaseTestCase {
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(timeseriesContainers);
 		var actual = dao.findTimeseriesContainers(selectionQuery, "ts");
 		assertEquals(timeseriesContainers, actual);
+	}
+
+	@Test
+	public void findUsersTest() {
+		var users = List.of(new User("user"));
+		String selectionQuery = "MATCH bla";
+		String query = "MATCH bla WITH user MATCH path=(user:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN user, nodes(path), relationships(path)";
+		when(session.query(User.class, query, Collections.emptyMap())).thenReturn(users);
+		var actual = dao.findUsers(selectionQuery, "user");
+		assertEquals(users, actual);
 	}
 
 }
