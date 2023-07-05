@@ -1,7 +1,7 @@
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import type {
-  BasicEntity,
+  BasicContainer,
   ContainerSearchParamsQueryTypeEnum,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
@@ -11,7 +11,7 @@ export function useInlineSearch(
   text: Ref<string>,
   queryType: ContainerSearchParamsQueryTypeEnum,
 ) {
-  const resultSet = ref<BasicEntity[]>([]);
+  const resultSet = ref<BasicContainer[]>([]);
   const totalResults = ref(0);
 
   const searchQuery = computed(() => {
