@@ -1,9 +1,146 @@
+<script setup lang="ts">
+import TimeseriesService from "@/services/timeseriesService";
+import { handleError, logError } from "@/utils/error-handling";
+import type {
+  ResponseError,
+  Timeseries,
+  TimeseriesContainer,
+  TimeseriesReference,
+} from "@dlr-shepard/shepard-client";
+import { reactive, ref } from "vue";
+
+const props = defineProps({
+  modalId: {
+    type: String,
+    default: "TimeseriesReferenceModal",
+  },
+  modalName: {
+    type: String,
+    default: "TimeseriesReferenceModal",
+  },
+});
+
+const emit = defineEmits(["create"]);
+
+interface Option {
+  value: Timeseries;
+  text: string;
+}
+
+const getInitialFormData = () => ({
+  name: "",
+  startTime: "",
+  endTime: "",
+  startDate: "",
+  endDate: "",
+  currentContainerId: "",
+});
+
+const formData = reactive<{
+  name: string;
+  startTime: string;
+  endTime: string;
+  startDate: string;
+  endDate: string;
+  currentContainerId: string;
+}>(getInitialFormData());
+const timeseriesAvailable = ref<Option[]>([]);
+const selectedTimeseries = ref<Timeseries[]>([]);
+const currentContainer = ref<TimeseriesContainer>();
+const validContainer = ref<boolean>();
+
+function convertTimeseriesToOption(ts: Timeseries): Option {
+  const attrs = [
+    ts.measurement,
+    ts.device,
+    ts.location,
+    ts.symbolicName,
+    ts.field,
+  ];
+  return {
+    value: { ...ts },
+    text: attrs.join(" - "),
+  };
+}
+
+function reset() {
+  Object.assign(formData, getInitialFormData());
+  timeseriesAvailable.value = [];
+  selectedTimeseries.value = [];
+  currentContainer.value = undefined;
+  validContainer.value = undefined;
+}
+
+function handleOk() {
+  const startTs = Date.parse(formData.startDate + " " + formData.startTime);
+  const endTs = Date.parse(formData.endDate + " " + formData.endTime);
+  const newTimeseriesReference: TimeseriesReference = {
+    timeseriesContainerId: +formData.currentContainerId,
+    name: formData.name,
+    timeseries: [],
+    start: startTs * 1e6,
+    end: endTs * 1e6,
+  };
+  selectedTimeseries.value.forEach(option => {
+    if (option) newTimeseriesReference.timeseries.push(option);
+  });
+  emit("create", newTimeseriesReference);
+}
+
+function resetSelection() {
+  timeseriesAvailable.value = [];
+  selectedTimeseries.value = [];
+}
+
+function fetchContainer() {
+  if (currentContainer.value?.id == +formData.currentContainerId) return;
+  resetSelection();
+  TimeseriesService.getTimeseriesContainer({
+    timeseriesContainerId: +formData.currentContainerId,
+  })
+    .then(container => {
+      fetchTimeseriesAvailable();
+      currentContainer.value = container;
+      validContainer.value = true;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching timeseries container");
+      currentContainer.value = undefined;
+      validContainer.value = false;
+    });
+}
+
+function fetchTimeseriesAvailable() {
+  TimeseriesService.getTimeseriesAvailable({
+    timeseriesContainerId: +formData.currentContainerId,
+  })
+    .then(result => {
+      timeseriesAvailable.value = result.map(ts =>
+        convertTimeseriesToOption(ts),
+      );
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching all timeseries");
+    });
+}
+
+function validateDate(input: string) {
+  const parsed = Date.parse(input);
+  return isNaN(parsed) ? "" : new Date(parsed).toISOString().split("T")[0];
+}
+
+function validateTime(input: string) {
+  const parsed = Date.parse("1970-01-01 " + input);
+  return isNaN(parsed) ? "" : new Date(parsed).toLocaleTimeString();
+}
+</script>
+
 <template>
   <b-modal
-    :id="modalId"
+    :id="props.modalId"
     ref="modal"
     size="lg"
-    :title="modalName"
+    :title="props.modalName"
     lazy
     @show="reset()"
     @ok="handleOk()"
@@ -12,7 +149,7 @@
       <b-form-group label-cols="3" label="Name" label-for="input-name">
         <b-form-input
           id="input-name"
-          v-model="newTimeseriesReference.name"
+          v-model="formData.name"
           placeholder="Name"
           required
         ></b-form-input>
@@ -21,7 +158,7 @@
       <b-form-group label-cols="3" label="Container ID" label-for="input-id">
         <b-form-input
           id="input-id"
-          v-model="currentContainerId"
+          v-model="formData.currentContainerId"
           placeholder="Timeseries container id"
           type="number"
           required
@@ -40,16 +177,16 @@
             <b-input-group class="mb-1">
               <b-form-input
                 id="start-date"
-                v-model="startDate"
+                v-model="formData.startDate"
                 type="text"
                 placeholder="YYYY-MM-DD"
                 autocomplete="off"
                 required
-                @blur="startDate = validateDate(startDate)"
+                @blur="formData.startDate = validateDate(formData.startDate)"
               ></b-form-input>
               <b-input-group-append>
                 <b-form-datepicker
-                  v-model="startDate"
+                  v-model="formData.startDate"
                   button-only
                   right
                   locale="en-US"
@@ -60,14 +197,14 @@
             <b-input-group class="mb-1">
               <b-form-input
                 id="start-time"
-                v-model="startTime"
+                v-model="formData.startTime"
                 type="text"
                 placeholder="HH:mm:ss"
-                @blur="startTime = validateTime(startTime)"
+                @blur="formData.startTime = validateTime(formData.startTime)"
               ></b-form-input>
               <b-input-group-append>
                 <b-form-timepicker
-                  v-model="startTime"
+                  v-model="formData.startTime"
                   button-only
                   right
                   show-seconds
@@ -85,16 +222,16 @@
             <b-input-group class="mb-1">
               <b-form-input
                 id="end-date"
-                v-model="endDate"
+                v-model="formData.endDate"
                 type="text"
                 placeholder="YYYY-MM-DD"
                 autocomplete="off"
                 required
-                @blur="endDate = validateDate(endDate)"
+                @blur="formData.endDate = validateDate(formData.endDate)"
               ></b-form-input>
               <b-input-group-append>
                 <b-form-datepicker
-                  v-model="endDate"
+                  v-model="formData.endDate"
                   button-only
                   right
                   locale="en-US"
@@ -105,14 +242,14 @@
             <b-input-group class="mb-1">
               <b-form-input
                 id="end-time"
-                v-model="endTime"
+                v-model="formData.endTime"
                 type="text"
                 placeholder="HH:mm:ss"
-                @blur="endTime = validateTime(endTime)"
+                @blur="formData.endTime = validateTime(formData.endTime)"
               ></b-form-input>
               <b-input-group-append>
                 <b-form-timepicker
-                  v-model="endTime"
+                  v-model="formData.endTime"
                   button-only
                   right
                   show-seconds
@@ -128,214 +265,14 @@
 
       <b-form-group label="Choose timeseries">
         <b-form-select
-          v-model="currentTimeseries"
-          class="mb-1"
-          :options="timeseriesAvailable"
-          required
-        ></b-form-select>
-        <b-input-group prepend="Field" class="mb-1">
-          <b-form-input v-model="field" placeholder="Field"></b-form-input>
-        </b-input-group>
-        <b-button class="float-right" variant="info" @click="handleAdd()">
-          Add
-        </b-button>
-      </b-form-group>
-
-      <b-form-group label="Added timeseries">
-        <b-form-select
           v-model="selectedTimeseries"
           class="mb-1"
-          :options="timeseries"
+          :options="timeseriesAvailable"
           :select-size="5"
           multiple
           required
         ></b-form-select>
-
-        <b-button
-          class="float-right"
-          variant="secondary"
-          @click="handleDelete()"
-        >
-          Remove selected
-        </b-button>
       </b-form-group>
     </b-container>
   </b-modal>
 </template>
-
-<script lang="ts">
-import TimeseriesService from "@/services/timeseriesService";
-import { handleError, logError } from "@/utils/error-handling";
-import type {
-  ResponseError,
-  Timeseries,
-  TimeseriesContainer,
-  TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface Option {
-  value: Timeseries | null;
-  text: string;
-}
-
-interface TimeseriesReferenceModalData {
-  newTimeseriesReference: TimeseriesReference;
-  timeseriesAvailable: Array<Option>;
-  currentTimeseries: Timeseries | null;
-  timeseries: Array<Option>;
-  selectedTimeseries: Array<Option>;
-  field: string;
-  startTime: string;
-  endTime: string;
-  startDate: string;
-  endDate: string;
-  currentContainerId: string;
-  currentContainer?: TimeseriesContainer;
-  validContainer?: boolean;
-}
-
-function initialState(): TimeseriesReferenceModalData {
-  return {
-    newTimeseriesReference: {
-      name: "",
-      timeseries: [],
-      timeseriesContainerId: 0,
-      start: 0,
-      end: 0,
-    },
-    timeseriesAvailable: [{ value: null, text: "Please select an option" }],
-    currentTimeseries: null,
-    timeseries: [],
-    selectedTimeseries: [],
-    field: "value",
-    startTime: "",
-    endTime: "",
-    startDate: "",
-    endDate: "",
-    currentContainerId: "",
-    currentContainer: undefined,
-    validContainer: undefined,
-  };
-}
-
-function convertTimeseriesToOption(ts: Timeseries, field = true): Option {
-  const attrs = [ts.measurement, ts.device, ts.location, ts.symbolicName];
-  if (field) {
-    attrs.push(ts.field);
-  }
-  return {
-    value: { ...ts },
-    text: attrs.join(" - "),
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "TimeseriesReferenceModal",
-    },
-    modalName: {
-      type: String,
-      default: "TimeseriesReferenceModal",
-    },
-  },
-  emits: ["create"],
-  data() {
-    return initialState();
-  },
-
-  methods: {
-    reset() {
-      Object.assign(this.$data, initialState());
-    },
-    resetSelection() {
-      this.timeseriesAvailable = [
-        { value: null, text: "Please select an option" },
-      ];
-      this.currentTimeseries = null;
-      this.timeseries = [];
-      this.selectedTimeseries = [];
-    },
-    handleAdd() {
-      if (!this.currentTimeseries || !this.field) {
-        return;
-      }
-      this.currentTimeseries.field = this.field;
-      const option = convertTimeseriesToOption(this.currentTimeseries);
-
-      if (
-        !this.timeseries.some(timeseries => timeseries.text === option.text)
-      ) {
-        this.timeseries.push(option);
-      }
-    },
-    handleDelete() {
-      this.selectedTimeseries.forEach(selected => {
-        const index = this.timeseries.findIndex(
-          option => JSON.stringify(option.value) == JSON.stringify(selected),
-        );
-        if (index > -1) {
-          this.timeseries.splice(index, 1);
-        }
-      });
-    },
-    handleClear() {
-      this.currentTimeseries = null;
-      this.field = "";
-    },
-    handleOk() {
-      this.timeseries.forEach(option => {
-        if (option.value)
-          this.newTimeseriesReference.timeseries.push(option.value);
-      });
-      const startTimestamp = Date.parse(this.startDate + " " + this.startTime);
-      const endTimestamp = Date.parse(this.endDate + " " + this.endTime);
-      this.newTimeseriesReference.start = startTimestamp * 1e6;
-      this.newTimeseriesReference.end = endTimestamp * 1e6;
-      this.$emit("create", this.newTimeseriesReference);
-    },
-    fetchContainer() {
-      if (this.currentContainer?.id == +this.currentContainerId) return;
-      this.resetSelection();
-      TimeseriesService.getTimeseriesContainer({
-        timeseriesContainerId: +this.currentContainerId,
-      })
-        .then(container => {
-          this.fetchTimeseriesAvailable();
-          this.currentContainer = container;
-          this.validContainer = true;
-          if (container.id)
-            this.newTimeseriesReference.timeseriesContainerId = container.id;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching timeseries container");
-          this.currentContainer = undefined;
-          this.validContainer = false;
-        });
-    },
-    fetchTimeseriesAvailable() {
-      TimeseriesService.getTimeseriesAvailable({
-        timeseriesContainerId: +this.currentContainerId,
-      })
-        .then(result => {
-          this.timeseriesAvailable = result.map(ts =>
-            convertTimeseriesToOption(ts, false),
-          );
-        })
-        .catch(e => {
-          handleError(e as ResponseError, "fetching all timeseries");
-        });
-    },
-    validateDate(input: string) {
-      const parsed = Date.parse(input);
-      return isNaN(parsed) ? "" : new Date(parsed).toISOString().split("T")[0];
-    },
-    validateTime(input: string) {
-      const parsed = Date.parse("1970-01-01 " + input);
-      return isNaN(parsed) ? "" : new Date(parsed).toLocaleTimeString();
-    },
-  },
-});
-</script>

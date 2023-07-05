@@ -27,6 +27,7 @@ const timeseriesFields = ref<Array<string>>([
   "device",
   "location",
   "symbolicName",
+  "field",
 ]);
 const permissions = ref<Permissions>();
 
