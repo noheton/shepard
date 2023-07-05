@@ -2,7 +2,7 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { useSearchStructuredDataContainers } from "@/components/search/SearchStructuredDataContainers";
+import { useInlineSearch } from "@/components/search/SearchContainers";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -99,8 +99,10 @@ function createContainer(options: {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults, searchQuery } =
-  useSearchStructuredDataContainers(userInputDebounced);
+const { resultSet, totalResults, searchQuery } = useInlineSearch(
+  userInputDebounced,
+  "STRUCTUREDDATA",
+);
 
 const searchRoute = computed(() => {
   const route = router.resolve("Search").route;

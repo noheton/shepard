@@ -1,8 +1,8 @@
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import type {
+  BasicEntity,
   ContainerSearchParamsQueryTypeEnum,
-  ContainerSearchResult,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { computed, ref, watch, type Ref } from "vue";
@@ -11,7 +11,8 @@ export function useInlineSearch(
   text: Ref<string>,
   queryType: ContainerSearchParamsQueryTypeEnum,
 ) {
-  const searchResults = ref<ContainerSearchResult>();
+  const resultSet = ref<BasicEntity[]>([]);
+  const totalResults = ref(0);
 
   const searchQuery = computed(() => {
     return JSON.stringify({
@@ -50,7 +51,13 @@ export function useInlineSearch(
       },
     })
       .then(response => {
-        searchResults.value = response;
+        resultSet.value = [];
+        if (response.results) {
+          totalResults.value = response.results.length;
+          resultSet.value = response.results.slice(0, 10);
+        } else {
+          totalResults.value = 0;
+        }
       })
       .catch(e => {
         handleError(e as ResponseError, "fetching search data");
@@ -64,9 +71,9 @@ export function useInlineSearch(
     ) {
       fetchResults();
     } else {
-      searchResults.value = undefined;
+      resultSet.value = [];
     }
   });
 
-  return { searchResults, searchQuery };
+  return { resultSet, totalResults, searchQuery };
 }

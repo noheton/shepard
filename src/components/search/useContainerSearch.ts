@@ -7,6 +7,12 @@ import type {
 } from "@dlr-shepard/shepard-client";
 import { ref, watch, type Ref } from "vue";
 
+const routerMap: { [key: string]: string } = {
+  FILE: "Files",
+  STRUCTUREDDATA: "StructuredData",
+  TIMESERIES: "Timeseries",
+};
+
 export function useContainerSearch(
   containerSearchParam: Ref<{
     searchQuery: string | undefined;
@@ -44,29 +50,19 @@ export function useContainerSearch(
       },
     })
       .then(response => {
-        if (response.fileContainers) {
-          response.fileContainers.forEach(container => {
-            if (container.id && container.name) {
-              addResult("Files", container.id, container.name);
-            }
-          });
-        }
-
-        if (response.structuredDataContainers) {
-          response.structuredDataContainers.forEach(container => {
-            if (container.id && container.name) {
-              addResult("StructuredData", container.id, container.name);
-            }
-          });
-        }
-
-        if (response.timeseriesContainers) {
-          response.timeseriesContainers.forEach(container => {
-            if (container.id && container.name) {
-              addResult("Timeseries", container.id, container.name);
-            }
-          });
-        }
+        response.results?.forEach(container => {
+          if (
+            container.id &&
+            container.name &&
+            containerSearchParam.value.selectedQueryType
+          ) {
+            addResult(
+              routerMap[containerSearchParam.value.selectedQueryType],
+              container.id,
+              container.name,
+            );
+          }
+        });
       })
       .catch(e => {
         handleError(e as ResponseError, "fetching search data");

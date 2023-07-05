@@ -1,15 +1,14 @@
-import CollectionService from "@/services/collectionService";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import {
   SearchParamsQueryTypeEnum,
-  type Collection,
+  type BasicEntity,
   type ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchCollections(text: Ref<string>) {
-  const resultSet = ref<Collection[]>([]);
+  const resultSet = ref<BasicEntity[]>([]);
   const totalResults = ref(0);
   const searchQuery = computed(() => {
     return JSON.stringify({
@@ -54,27 +53,15 @@ export function useSearchCollections(text: Ref<string>) {
     })
       .then(response => {
         resultSet.value = [];
-        totalResults.value = response.resultSet?.length || 0;
-        response.resultSet?.slice(0, 10).forEach(result => {
-          if (result.collectionId) {
-            retrieveCollectionById(result.collectionId);
-          }
-        });
+        if (response.results) {
+          totalResults.value = response.resultSet?.length || 0;
+          resultSet.value = response.results.slice(0, 10);
+        } else {
+          totalResults.value = 0;
+        }
       })
       .catch(e => {
         handleError(e as ResponseError, "fetching search data");
-      });
-  }
-
-  function retrieveCollectionById(collectionId: number) {
-    CollectionService.getCollection({
-      collectionId: collectionId,
-    })
-      .then(response => {
-        resultSet.value = [...resultSet.value, response];
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "fetching collection");
       });
   }
 

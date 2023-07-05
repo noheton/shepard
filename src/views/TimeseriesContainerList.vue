@@ -2,7 +2,7 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { useSearchTimeseriesContainers } from "@/components/search/SearchTimeseriesContainers";
+import { useInlineSearch } from "@/components/search/SearchContainers";
 import TimeseriesService from "@/services/timeseriesService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -99,8 +99,10 @@ function createContainer(options: {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults, searchQuery } =
-  useSearchTimeseriesContainers(userInputDebounced);
+const { resultSet, totalResults, searchQuery } = useInlineSearch(
+  userInputDebounced,
+  "TIMESERIES",
+);
 
 const searchRoute = computed(() => {
   const route = router.resolve("Search").route;
