@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +18,7 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.search.MongoDBEmitter;
 import de.dlr.shepard.util.TraversalRules;
 
 public class StructuredDataSearcher implements ISearcher {

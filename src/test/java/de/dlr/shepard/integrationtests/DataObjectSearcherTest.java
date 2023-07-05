@@ -14,12 +14,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.search.QueryType;
-import de.dlr.shepard.search.ResponseBody;
-import de.dlr.shepard.search.ResultTriple;
-import de.dlr.shepard.search.SearchBody;
-import de.dlr.shepard.search.SearchParams;
-import de.dlr.shepard.search.SearchScope;
+import de.dlr.shepard.search.unified.QueryType;
+import de.dlr.shepard.search.unified.ResponseBody;
+import de.dlr.shepard.search.unified.ResultTriple;
+import de.dlr.shepard.search.unified.SearchBody;
+import de.dlr.shepard.search.unified.SearchParams;
+import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.restassured.builder.RequestSpecBuilder;

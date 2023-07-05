@@ -1,4 +1,6 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
+
+import de.dlr.shepard.search.QueryValidator;
 
 public class Searcher {
 

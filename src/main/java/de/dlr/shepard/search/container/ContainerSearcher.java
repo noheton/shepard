@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.container;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,9 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicContainerIO;
+import de.dlr.shepard.search.Neo4jEmitter;
+import de.dlr.shepard.search.QueryValidator;
 import de.dlr.shepard.util.Constants;
 
 public class ContainerSearcher {
@@ -18,44 +20,40 @@ public class ContainerSearcher {
 		ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
 		ContainerQueryType containerQueryType = containerSearchParams.getQueryType();
 		QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
-		List<BasicEntityIO> resultList = new ArrayList<>();
-		if (containerQueryType == null || containerQueryType.equals(ContainerQueryType.FILE)) {
-			resultList.addAll(findFileContainerList(containerSearchParams, userName));
-		}
-		if (containerQueryType == null || containerQueryType.equals(ContainerQueryType.TIMESERIES)) {
-			resultList.addAll(findTimeseriesContainerList(containerSearchParams, userName));
-		}
-		if (containerQueryType == null || containerQueryType.equals(ContainerQueryType.STRUCTUREDDATA)) {
-			resultList.addAll(findStructuredDataContainerList(containerSearchParams, userName));
-		}
-		BasicEntityIO[] resultArray = resultList.toArray(new BasicEntityIO[0]);
+		List<BasicContainerIO> resultList = switch (containerQueryType) {
+		case FILE -> findFileContainerList(containerSearchParams, userName);
+		case TIMESERIES -> findTimeseriesContainerList(containerSearchParams, userName);
+		case STRUCTUREDDATA -> findStructuredDataContainerList(containerSearchParams, userName);
+		default -> new ArrayList<>();
+		};
+		BasicContainerIO[] resultArray = resultList.toArray(new BasicContainerIO[0]);
 		ContainerSearchResult containerSearchResult = new ContainerSearchResult(resultArray,
 				containerSearchBody.getSearchParams());
 		return containerSearchResult;
 	}
 
-	private List<BasicEntityIO> findFileContainerList(ContainerSearchParams params, String userName) {
+	private List<BasicContainerIO> findFileContainerList(ContainerSearchParams params, String userName) {
 		String neo4jSelectionQuery = Neo4jEmitter.emitFileContainerSelectionQuery(params.getQuery(), userName);
 		List<FileContainer> resultContainers = searchDAO.findFileContainers(neo4jSelectionQuery,
 				Constants.FILECONTAINER_IN_QUERY);
-		List<BasicEntityIO> ret = resultContainers.stream().map(BasicEntityIO::new).toList();
+		List<BasicContainerIO> ret = resultContainers.stream().map(BasicContainerIO::new).toList();
 		return ret;
 	}
 
-	private List<BasicEntityIO> findTimeseriesContainerList(ContainerSearchParams params, String userName) {
+	private List<BasicContainerIO> findTimeseriesContainerList(ContainerSearchParams params, String userName) {
 		String neo4jSelectionQuery = Neo4jEmitter.emitTimeseriesContainerSelectionQuery(params.getQuery(), userName);
 		List<TimeseriesContainer> resultContainers = searchDAO.findTimeseriesContainers(neo4jSelectionQuery,
 				Constants.TIMESERIESCONTAINER_IN_QUERY);
-		List<BasicEntityIO> ret = resultContainers.stream().map(BasicEntityIO::new).toList();
+		List<BasicContainerIO> ret = resultContainers.stream().map(BasicContainerIO::new).toList();
 		return ret;
 	}
 
-	private List<BasicEntityIO> findStructuredDataContainerList(ContainerSearchParams params, String userName) {
+	private List<BasicContainerIO> findStructuredDataContainerList(ContainerSearchParams params, String userName) {
 		String neo4jSelectionQuery = Neo4jEmitter.emitStructuredDataContainerSelectionQuery(params.getQuery(),
 				userName);
 		List<StructuredDataContainer> resultContainers = searchDAO.findStructuredDataContainers(neo4jSelectionQuery,
 				Constants.STRUCTUREDDATACONTAINER_IN_QUERY);
-		List<BasicEntityIO> ret = resultContainers.stream().map(BasicEntityIO::new).toList();
+		List<BasicContainerIO> ret = resultContainers.stream().map(BasicContainerIO::new).toList();
 		return ret;
 	}
 

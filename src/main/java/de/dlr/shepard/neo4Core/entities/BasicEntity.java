@@ -53,7 +53,7 @@ public class BasicEntity implements HasId {
 	 *
 	 * @param id identifies the entity
 	 */
-	protected BasicEntity(long id) {
+	public BasicEntity(long id) {
 		this.id = id;
 	}
 

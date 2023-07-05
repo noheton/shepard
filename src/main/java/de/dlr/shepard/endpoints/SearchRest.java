@@ -1,12 +1,12 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.UserIO;
-import de.dlr.shepard.search.ContainerSearchBody;
-import de.dlr.shepard.search.ContainerSearchResult;
-import de.dlr.shepard.search.ResponseBody;
-import de.dlr.shepard.search.SearchBody;
-import de.dlr.shepard.search.UserSearchBody;
-import de.dlr.shepard.search.UserSearchResult;
+import de.dlr.shepard.search.container.ContainerSearchBody;
+import de.dlr.shepard.search.container.ContainerSearchResult;
+import de.dlr.shepard.search.unified.ResponseBody;
+import de.dlr.shepard.search.unified.SearchBody;
+import de.dlr.shepard.search.user.UserSearchBody;
+import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

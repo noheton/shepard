@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
 
 import de.dlr.shepard.util.TraversalRules;
 import jakarta.validation.constraints.NotNull;

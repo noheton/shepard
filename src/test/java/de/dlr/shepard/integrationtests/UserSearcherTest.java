@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.neo4Core.io.UserIO;
-import de.dlr.shepard.search.UserSearchBody;
-import de.dlr.shepard.search.UserSearchParams;
-import de.dlr.shepard.search.UserSearchResult;
+import de.dlr.shepard.search.user.UserSearchBody;
+import de.dlr.shepard.search.user.UserSearchParams;
+import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.util.Constants;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

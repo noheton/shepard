@@ -18,7 +18,11 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicContainerIO;
+import de.dlr.shepard.search.container.ContainerQueryType;
+import de.dlr.shepard.search.container.ContainerSearchBody;
+import de.dlr.shepard.search.container.ContainerSearchParams;
+import de.dlr.shepard.search.container.ContainerSearcher;
 import de.dlr.shepard.util.Constants;
 
 public class ContainerSearcherTest extends BaseTestCase {
@@ -48,7 +52,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findFileContainers(neo4jFileSelectionQuery, Constants.FILECONTAINER_IN_QUERY))
 				.thenReturn(fileResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(fileRes));
+		assertThat(actual.getResults()).containsExactly(new BasicContainerIO(fileRes));
 		assertThat(actual.getSearchParams()).isEqualTo(params);
 	}
 
@@ -65,7 +69,7 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findTimeseriesContainers(neo4jTimeseriesQuery, Constants.TIMESERIESCONTAINER_IN_QUERY))
 				.thenReturn(timeResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(timeRes1), new BasicEntityIO(timeRes2));
+		assertThat(actual.getResults()).containsExactly(new BasicContainerIO(timeRes1), new BasicContainerIO(timeRes2));
 	}
 
 	@Test
@@ -82,6 +86,6 @@ public class ContainerSearcherTest extends BaseTestCase {
 		when(searchDAO.findStructuredDataContainers(neo4jStructuredDataSelectionQuery,
 				Constants.STRUCTUREDDATACONTAINER_IN_QUERY)).thenReturn(sdResList);
 		var actual = containerSearcher.search(searchBody, username);
-		assertThat(actual.getResults()).containsExactly(new BasicEntityIO(sdRes1), new BasicEntityIO(sdRes2));
+		assertThat(actual.getResults()).containsExactly(new BasicContainerIO(sdRes1), new BasicContainerIO(sdRes2));
 	}
 }

@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
 
 public interface ISearcher {
 

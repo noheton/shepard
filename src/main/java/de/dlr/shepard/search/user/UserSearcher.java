@@ -1,7 +1,9 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.user;
 
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.io.UserIO;
+import de.dlr.shepard.search.Neo4jEmitter;
+import de.dlr.shepard.search.QueryValidator;
 import de.dlr.shepard.util.Constants;
 
 public class UserSearcher {

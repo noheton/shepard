@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.dlr.shepard.exceptions.ShepardParserException;
+import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.TraversalRules;

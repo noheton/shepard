@@ -31,6 +31,13 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.search.unified.QueryType;
+import de.dlr.shepard.search.unified.ResponseBody;
+import de.dlr.shepard.search.unified.ResultTriple;
+import de.dlr.shepard.search.unified.SearchBody;
+import de.dlr.shepard.search.unified.SearchParams;
+import de.dlr.shepard.search.unified.SearchScope;
+import de.dlr.shepard.search.unified.StructuredDataSearcher;
 import de.dlr.shepard.util.TraversalRules;
 
 public class StructuredDataSearcherTest extends BaseTestCase {
