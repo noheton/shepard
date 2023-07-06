@@ -134,13 +134,4 @@ public class UserServiceTest extends BaseTestCase {
 		assertEquals(old, actual);
 	}
 
-	@Test
-	public void searchUsersTest() {
-		User user = new User("user");
-		List<User> daoResult = List.of(user);
-		List<User> serviceResult = List.of(user);
-		when(dao.searchUsers("user", null, null, null)).thenReturn(daoResult);
-		List<User> actual = service.searchUsers("user", null, null, null);
-		assertEquals(actual, serviceResult);
-	}
 }

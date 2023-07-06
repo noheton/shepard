@@ -1,6 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.search.container.ContainerSearchBody;
 import de.dlr.shepard.search.container.ContainerSearchResult;
 import de.dlr.shepard.search.unified.ResponseBody;
@@ -28,13 +27,6 @@ public interface SearchRest {
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body);
 
 	@Tag(name = Constants.SEARCH)
-	@Deprecated
-	@Operation(description = "Search users")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response searchUsers(String username, String firstName, String lastName, String email);
-
-	@Tag(name = Constants.SEARCH)
 	@Operation(description = "Search containers")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ContainerSearchResult.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
@@ -45,6 +37,6 @@ public interface SearchRest {
 	@Operation(description = "Search users")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserSearchResult.class))))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response searchUsersNew(
+	Response searchUsers(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserSearchBody.class))) @Valid UserSearchBody userSearchBody);
 }

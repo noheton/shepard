@@ -37,33 +37,8 @@ public class UserSearcherTest extends BaseTestCaseIT {
 
 	@Test
 	@Order(1)
-	public void getUser1Test() {
-		UserIO[] response = given().spec(requestSpecification).queryParam("username", userIO1.getUsername()).when()
-				.get().then().statusCode(200).extract().as(UserIO[].class);
-		assertThat(response).containsExactly(userIO1);
-	}
-
-	@Test
-	@Order(2)
-	public void getTestIt() {
-		UserIO[] response = given().spec(requestSpecification).queryParam("email", "inte.*").when().get().then()
-				.statusCode(200).extract().as(UserIO[].class);
-
-		assertThat(response).anyMatch(user -> "test_it".equals(user.getUsername()));
-	}
-
-	@Test
-	@Order(3)
-	public void getUser12Test() {
-		UserIO[] response = given().spec(requestSpecification).queryParam("username", ".*ser.*").when().get().then()
-				.statusCode(200).extract().as(UserIO[].class);
-		assertThat(response).contains(userIO1, userIO2);
-	}
-
-	@Test
-	@Order(4)
 	public void findUserTest() {
-		String query = "{\"property\": \"username\", \"value\": \"tes\", \"operator\": \"contains\"}";
+		String query = "{\"property\": \"username\", \"value\": \"test_it\", \"operator\": \"eq\"}";
 		var params = new UserSearchParams(query);
 		var searchBody = new UserSearchBody(params);
 		var result = given().spec(requestSpecification).body(searchBody).when().post().then().statusCode(200).extract()
@@ -73,14 +48,38 @@ public class UserSearcherTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(5)
-	public void findUsersTest() {
+	@Order(2)
+	public void findUsersByEmailTest() {
 		String query = "{\"property\": \"email\", \"value\": \"integration@test.org\", \"operator\": \"eq\"}";
 		var params = new UserSearchParams(query);
 		var searchBody = new UserSearchBody(params);
 		var result = given().spec(requestSpecification).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(UserSearchResult.class);
 		assertThat(result.getResults()).contains(userIO, userIO1, userIO2);
+	}
+
+	@Test
+	@Order(3)
+	public void findOneUserTest() {
+		String query = "{\"property\": \"username\", \"value\": \"user1\", \"operator\": \"contains\"}";
+		var params = new UserSearchParams(query);
+		var searchBody = new UserSearchBody(params);
+		var result = given().spec(requestSpecification).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(UserSearchResult.class);
+		assertThat(result.getResults()).contains(userIO1);
+		assertThat(result.getResults()).doesNotContain(userIO2, userIO);
+	}
+
+	@Test
+	@Order(4)
+	public void findTwoUsersTest() {
+		String query = "{\"property\": \"username\", \"value\": \"user\", \"operator\": \"contains\"}";
+		var params = new UserSearchParams(query);
+		var searchBody = new UserSearchBody(params);
+		var result = given().spec(requestSpecification).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(UserSearchResult.class);
+		assertThat(result.getResults()).contains(userIO1, userIO2);
+		assertThat(result.getResults()).doesNotContain(userIO);
 	}
 
 }
