@@ -1,6 +1,6 @@
 import vue2 from "@vitejs/plugin-vue2";
 import dns from "dns";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/server-options.html#server-host

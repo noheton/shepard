@@ -1,46 +1,69 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base"],
+  "extends": [
+    "config:base"
+  ],
   "packageRules": [
     {
-      "matchPackageNames": ["node", "@types/node"],
+      "matchPackageNames": [
+        "node",
+        "@types/node"
+      ],
       "groupName": "Node.js",
       "versioning": "node"
     },
     {
-      "matchPackageNames": ["vue"],
+      "matchPackageNames": [
+        "vue"
+      ],
       "allowedVersions": "<3"
     },
     {
-      "matchPackageNames": ["vue-router"],
+      "matchPackageNames": [
+        "vue-router"
+      ],
       "allowedVersions": "<4"
     },
     {
-      "matchPackageNames": ["vuex"],
+      "matchPackageNames": [
+        "vuex"
+      ],
       "allowedVersions": "<4"
     },
     {
-      "matchPackageNames": ["portal-vue"],
+      "matchPackageNames": [
+        "portal-vue"
+      ],
       "allowedVersions": "<3"
     },
     {
-      "matchPackageNames": ["bootstrap"],
+      "matchPackageNames": [
+        "bootstrap"
+      ],
       "allowedVersions": "<5"
     },
     {
-      "matchPackageNames": ["typescript"],
+      "matchPackageNames": [
+        "typescript"
+      ],
       "allowedVersions": "<5"
     },
     {
-      "matchPackageNames": ["@vue/tsconfig"],
+      "matchPackageNames": [
+        "@vue/tsconfig"
+      ],
       "allowedVersions": "<0.2"
     },
     {
-      "matchSourceUrls": ["https://github.com/vuejs/language-tools"],
+      "matchSourceUrls": [
+        "https://github.com/vuejs/language-tools"
+      ],
       "groupName": "language-tools monorepo"
     }
   ],
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "dependencyDashboard": true,
   "prHourlyLimit": 0
 }
