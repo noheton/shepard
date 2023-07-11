@@ -239,9 +239,9 @@ onMounted(() => {
       <span v-if="props.timeseriesReference?.timeseriesContainerId != -1">
         <b-link
           :to="{
-            name: 'Files',
+            name: 'Timeseries',
             params: {
-              fileId: props.timeseriesReference?.timeseriesContainerId,
+              timeseriesId: props.timeseriesReference?.timeseriesContainerId,
             },
           }"
         >

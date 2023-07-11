@@ -4,7 +4,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import JsonStructruedDataModal from "@/components/references/JsonStructruedDataModal.vue";
+import JsonStructuredDataModal from "@/components/references/JsonStructuredDataModal.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
@@ -275,7 +275,7 @@ onMounted(() => {
       "
       @confirmation="handleDeleteStructuredData()"
     />
-    <JsonStructruedDataModal
+    <JsonStructuredDataModal
       v-if="currentStructuredData && currentStructuredData.oid"
       modal-id="json-structured-data-modal"
       modal-name="Structured Data"

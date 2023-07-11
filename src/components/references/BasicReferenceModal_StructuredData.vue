@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import GenericName from "@/components/generic/GenericName.vue";
-import JsonStructruedDataModal from "@/components/references/JsonStructruedDataModal.vue";
+import JsonStructuredDataModal from "@/components/references/JsonStructuredDataModal.vue";
 import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
 import { logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
@@ -61,9 +61,9 @@ onMounted(() => {
     <span v-if="structuredDataReference.structuredDataContainerId != -1">
       <b-link
         :to="{
-          name: 'Files',
+          name: 'StructuredData',
           params: {
-            fileId: structuredDataReference.structuredDataContainerId,
+            structuredDataId: structuredDataReference.structuredDataContainerId,
           },
         }"
       >
@@ -132,7 +132,7 @@ onMounted(() => {
         </div>
       </b-list-group-item>
     </b-list-group>
-    <JsonStructruedDataModal
+    <JsonStructuredDataModal
       v-if="structuredDataReference && currentStructuredDataOid"
       modal-id="json-structured-data-modal"
       modal-name="Structured Data Reference"
