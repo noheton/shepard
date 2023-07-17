@@ -41,9 +41,9 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 	public CollectionReference createReference(long dataObjectId, CollectionReferenceIO collectionReference,
 			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
 
-		var referenced = collectionDAO.find(collectionReference.getReferencedCollectionId());
+		var referenced = collectionDAO.findLight(collectionReference.getReferencedCollectionId());
 		if (referenced == null || referenced.isDeleted()) {
 			throw new InvalidBodyException(String.format("The referenced collection with id %d could not be found.",
 					collectionReference.getReferencedCollectionId()));

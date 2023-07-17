@@ -107,7 +107,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	 * @return a NamedInputStream
 	 */
 	public NamedInputStream getFile(long fileContainerId, String oid) {
-		var container = fileContainerDAO.find(fileContainerId);
+		var container = fileContainerDAO.findLight(fileContainerId);
 		if (container == null || container.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;

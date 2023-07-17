@@ -272,7 +272,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var result = new NamedInputStream(null, "name", 123L);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findLight(1L)).thenReturn(container);
 		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
 
 		var actual = service.getFile(1L, "oid");
@@ -281,7 +281,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getFileTest_containerIsNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findLight(1L)).thenReturn(null);
 
 		var actual = service.getFile(1L, "oid");
 		assertNull(actual);
@@ -293,7 +293,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findLight(1L)).thenReturn(container);
 
 		var actual = service.getFile(1L, "oid");
 		assertNull(actual);

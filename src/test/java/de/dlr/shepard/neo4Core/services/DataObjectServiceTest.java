@@ -187,7 +187,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(4L)).thenReturn(predecessor);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
 		var actual = service.createDataObject(2L, input, "bob");
@@ -231,7 +231,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
 		var actual = service.createDataObject(2L, input, "bob");
@@ -256,7 +256,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(3L)).thenReturn(null);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}
@@ -279,7 +279,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(3L)).thenReturn(null);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}
@@ -304,7 +304,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(3L)).thenReturn(parent);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}
@@ -329,7 +329,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(3L)).thenReturn(predecessor);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}
@@ -355,7 +355,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(3L)).thenReturn(parent);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}
@@ -381,7 +381,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 		when(dao.find(4L)).thenReturn(predecessor);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(userDAO.find("bob")).thenReturn(user);
-		when(collectionDAO.find(2L)).thenReturn(collection);
+		when(collectionDAO.findLight(2L)).thenReturn(collection);
 
 		assertThrows(InvalidBodyException.class, () -> service.createDataObject(2L, input, "bob"));
 	}

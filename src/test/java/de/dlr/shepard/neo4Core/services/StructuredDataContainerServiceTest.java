@@ -236,7 +236,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var result = new StructuredDataPayload(structuredData, "payload");
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findLight(1L)).thenReturn(container);
 		when(structuredDataService.getPayload("mongoId", "oid")).thenReturn(result);
 
 		var actual = service.getStructuredData(1L, "oid");
@@ -245,7 +245,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getStructuredDataTest_containerIsNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findLight(1L)).thenReturn(null);
 
 		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);
@@ -257,7 +257,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findLight(1L)).thenReturn(container);
 
 		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);

@@ -37,7 +37,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 	@Override
 	public URIReference createReference(long dataObjectId, URIReferenceIO uriReference, String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
 
 		var toCreate = new URIReference();
 		toCreate.setCreatedAt(dateHelper.getDate());

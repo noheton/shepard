@@ -144,8 +144,8 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.findLight(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileDAO.find(300L, "oid")).thenReturn(fileComplete);
@@ -191,8 +191,8 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.findLight(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileDAO.find(300L, "oid")).thenReturn(null);
@@ -216,8 +216,8 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.findLight(300L)).thenReturn(container);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
@@ -235,8 +235,8 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.find(300L)).thenReturn(null);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(fileContainerDAO.findLight(300L)).thenReturn(null);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}

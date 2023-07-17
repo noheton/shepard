@@ -126,8 +126,8 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(collectionDAO.find(100L)).thenReturn(referenced);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(collectionDAO.findLight(100L)).thenReturn(referenced);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 
@@ -148,8 +148,8 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(collectionDAO.find(100L)).thenReturn(null);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(collectionDAO.findLight(100L)).thenReturn(null);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
@@ -169,8 +169,8 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(collectionDAO.find(100L)).thenReturn(referenced);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(collectionDAO.findLight(100L)).thenReturn(referenced);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}

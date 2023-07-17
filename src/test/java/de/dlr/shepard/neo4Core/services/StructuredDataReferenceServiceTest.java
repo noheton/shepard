@@ -147,8 +147,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(structuredDataDAO.find(300L, "oid")).thenReturn(structuredData);
@@ -194,8 +194,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(structuredDataDAO.find(300L, "oid")).thenReturn(null);
@@ -219,8 +219,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.find(300L)).thenReturn(container);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}
@@ -238,8 +238,8 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.find(300L)).thenReturn(null);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLight(300L)).thenReturn(null);
 
 		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
 	}

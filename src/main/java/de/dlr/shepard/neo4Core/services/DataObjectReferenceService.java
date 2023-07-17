@@ -39,9 +39,9 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
 	public DataObjectReference createReference(long dataObjectId, DataObjectReferenceIO dataObjectReference,
 			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
 
-		var referenced = dataObjectDAO.find(dataObjectReference.getReferencedDataObjectId());
+		var referenced = dataObjectDAO.findLight(dataObjectReference.getReferencedDataObjectId());
 		if (referenced == null || referenced.isDeleted()) {
 			throw new InvalidBodyException(String.format("The referenced dataObject with id %d could not be found.",
 					dataObjectReference.getReferencedDataObjectId()));

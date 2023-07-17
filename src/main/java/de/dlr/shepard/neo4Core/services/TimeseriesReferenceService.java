@@ -56,8 +56,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 	public TimeseriesReference createReference(long dataObjectId, TimeseriesReferenceIO timeseriesReference,
 			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
-		var container = timeseriesContainerDAO.find(timeseriesReference.getTimeseriesContainerId());
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
+		var container = timeseriesContainerDAO.findLight(timeseriesReference.getTimeseriesContainerId());
 
 		if (container == null || container.isDeleted()) {
 			throw new InvalidBodyException(String.format("The timeseries container with id %d could not be found.",

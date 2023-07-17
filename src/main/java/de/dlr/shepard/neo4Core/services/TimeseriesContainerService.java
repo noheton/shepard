@@ -141,7 +141,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 */
 	public TimeseriesPayload getTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start,
 			long end, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
@@ -158,7 +158,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 * @return a list of timeseries objects
 	 */
 	public List<Timeseries> getTimeseriesAvailable(long timeseriesContainerId) {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return Collections.emptyList();
@@ -168,7 +168,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 
 	public InputStream exportTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start, long end,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) throws IOException {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
@@ -180,7 +180,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	}
 
 	public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return false;

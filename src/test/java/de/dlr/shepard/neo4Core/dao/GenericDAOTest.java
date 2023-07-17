@@ -99,6 +99,15 @@ public class GenericDAOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void findLightTest() {
+		var a = new TestObject(1);
+
+		when(session.load(TestObject.class, 1L, 0)).thenReturn(a);
+		var actual = dao.findLight(1L);
+		assertEquals(a, actual);
+	}
+
+	@Test
 	public void deleteTest_Successful() {
 		var a = new TestObject(1);
 

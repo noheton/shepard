@@ -133,7 +133,7 @@ public class StructuredDataContainerService
 	 * @return StructuredDataPayload
 	 */
 	public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
-		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
+		var structuredDataContainer = structuredDataContainerDAO.findLight(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
 			return null;

@@ -50,8 +50,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 	@Override
 	public FileReference createReference(long dataObjectId, FileReferenceIO fileReference, String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
-		var container = containerDAO.find(fileReference.getFileContainerId());
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
+		var container = containerDAO.findLight(fileReference.getFileContainerId());
 		if (container == null || container.isDeleted())
 			throw new InvalidBodyException("invalid container");
 		var toCreate = new FileReference();

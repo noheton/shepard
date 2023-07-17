@@ -58,6 +58,17 @@ public abstract class GenericDAO<T> {
 	}
 
 	/**
+	 * Find the entity with the given id without any related entities
+	 *
+	 * @param id The given id
+	 * @return The entity with the given id or null
+	 */
+	public T findLight(long id) {
+		T object = session.load(getEntityType(), id, 0);
+		return object;
+	}
+
+	/**
 	 * Find entities matching the given filter
 	 *
 	 * @param filter The given filter

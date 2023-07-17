@@ -37,8 +37,8 @@ public class StructuredDataReferenceService
 	public StructuredDataReference createReference(long dataObjectId, StructuredDataReferenceIO structuredDataReference,
 			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.find(dataObjectId);
-		var container = containerDAO.find(structuredDataReference.getStructuredDataContainerId());
+		var dataObject = dataObjectDAO.findLight(dataObjectId);
+		var container = containerDAO.findLight(structuredDataReference.getStructuredDataContainerId());
 		if (container == null || container.isDeleted())
 			throw new InvalidBodyException("invalid container");
 		var toCreate = new StructuredDataReference();

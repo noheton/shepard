@@ -29,7 +29,7 @@ public class DataObjectService {
 	 * @return the stored DataObject with the auto generated id
 	 */
 	public DataObject createDataObject(long collectionId, DataObjectIO dataObject, String username) {
-		var collection = collectionDAO.find(collectionId);
+		var collection = collectionDAO.findLight(collectionId);
 		var user = userDAO.find(username);
 
 		var parent = findRelatedDataObject(collection.getId(), dataObject.getParentId(), null);

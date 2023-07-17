@@ -114,7 +114,7 @@ public class URIReferenceServiceTest extends BaseTestCase {
 		};
 
 		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.find(200L)).thenReturn(dataObject);
+		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dateHelper.getDate()).thenReturn(date);
 
