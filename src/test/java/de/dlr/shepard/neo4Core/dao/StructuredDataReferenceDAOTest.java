@@ -79,4 +79,16 @@ public class StructuredDataReferenceDAOTest extends BaseTestCase {
 		assertEquals(List.of(reference), actual);
 	}
 
+	@Test
+	public void findReachableReferencesWithoutDataObjectIdTest() {
+		long collectionId = 2L;
+		String userName = "user";
+		String query = dao.getSearchForReachableReferencesQuery(collectionId, userName);
+		StructuredDataReference reference = new StructuredDataReference();
+		reference.setId(3L);
+		when(dao.findByQuery(query, Collections.emptyMap())).thenReturn(List.of(reference));
+		var actual = dao.findReachableReferences(collectionId, userName);
+		assertEquals(List.of(reference), actual);
+	}
+
 }

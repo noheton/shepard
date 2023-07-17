@@ -85,21 +85,30 @@ public class StructuredDataSearcher implements ISearcher {
 	private Set<StructuredDataReference> findReachableReferenceFromScope(SearchScope searchScope, String userName) {
 		Set<StructuredDataReference> ret = new HashSet<>();
 		TraversalRules[] traversalRules = searchScope.getTraversalRules();
-		if (searchScope.getDataObjectId() == null || searchScope.getCollectionId() == null) {
-			// TODO: These are mandatory?
-			throw new InvalidBodyException("DataObject and Collection are necessary");
+		Long collectionId = searchScope.getCollectionId();
+		if (collectionId == null) {
+			throw new InvalidBodyException("Collection is necessary");
 		}
-		long startId = searchScope.getDataObjectId();
-		long collectionId = searchScope.getCollectionId();
-		if (traversalRules.length == 0) {
-			List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-					.findReachableReferences(collectionId, startId, userName);
-			ret.addAll(reachableReferences);
-		} else {
-			for (TraversalRules traversalRule : traversalRules) {
+		// no DataObjectId given
+		if (searchScope.getDataObjectId() == null) {
+			ret.addAll(structuredDataReferenceDAO.findReachableReferences(collectionId, userName));
+		}
+		// DataObjectId given
+		else {
+			long startId = searchScope.getDataObjectId();
+			// consider only start node
+			if (traversalRules.length == 0) {
 				List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-						.findReachableReferences(traversalRule, collectionId, startId, userName);
+						.findReachableReferences(collectionId, startId, userName);
 				ret.addAll(reachableReferences);
+			}
+			// search according to traversal rules
+			else {
+				for (TraversalRules traversalRule : traversalRules) {
+					List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
+							.findReachableReferences(traversalRule, collectionId, startId, userName);
+					ret.addAll(reachableReferences);
+				}
 			}
 		}
 		return ret;

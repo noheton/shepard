@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,8 +12,6 @@ import java.util.List;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -31,13 +29,6 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
-import de.dlr.shepard.search.unified.QueryType;
-import de.dlr.shepard.search.unified.ResponseBody;
-import de.dlr.shepard.search.unified.ResultTriple;
-import de.dlr.shepard.search.unified.SearchBody;
-import de.dlr.shepard.search.unified.SearchParams;
-import de.dlr.shepard.search.unified.SearchScope;
-import de.dlr.shepard.search.unified.StructuredDataSearcher;
 import de.dlr.shepard.util.TraversalRules;
 
 public class StructuredDataSearcherTest extends BaseTestCase {
@@ -280,18 +271,55 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		assertEquals(responseBody, actual);
 	}
 
-	@ParameterizedTest
-	@CsvSource({ ",", "1,", ",2" })
-	public void getStructuredDataResponseTest_noIds(Long collectionId, Long dataObjectId) {
+	@Test
+	public void throwsExeption() {
+		SearchScope[] scope = { new SearchScope(null, 1L, null) };
+		SearchBody searchBody = new SearchBody(scope, null);
+		assertThrows(InvalidBodyException.class, () -> structuredDataSearcher.search(searchBody, "user1"));
+	}
+
+	@Test
+	public void getStructuredDataResponseTestWithoutCollectionId() {
+		Long collectionId = 1L;
+		Long dataObjectId = 2L;
+		String mongoID = "61371f2889b108615688e22e";
+		// create StructuredDataReferences
+		DataObject dataObject = new DataObject(dataObjectId);
+		List<StructuredData> structuredDatas = List
+				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
+		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
+		sdContainer.setMongoId(mongoID);
+		StructuredDataReference sdReference = new StructuredDataReference() {
+			{
+				setId(3L);
+				setDeleted(false);
+				setName("reference1");
+				setStructuredDatas(structuredDatas);
+				setStructuredDataContainer(sdContainer);
+				setDataObject(dataObject);
+			}
+		};
 		// create SearchBody
-		TraversalRules[] traversalRules = {};
-		SearchScope scope = new SearchScope(collectionId, dataObjectId, traversalRules);
+		SearchScope scope = new SearchScope(collectionId, null, null);
 		SearchScope scopes[] = { scope };
 		String query = "xwert: {$gt: 0}";
 		QueryType queryType = QueryType.StructuredData;
 		SearchParams searchParams = new SearchParams(query, queryType);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
+		// create ResponseBody
+		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
+		ResultTriple[] resultTriples = { resultTriple };
+		BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
+		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
+		// configure Mocks
+		when(structuredDataReferenceDAO.findReachableReferences(collectionId, "user1"))
+				.thenReturn(List.of(sdReference));
+		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
+		when(mongoQueryResult.first()).thenReturn(firstDocument);
 		// test
-		assertThrows(InvalidBodyException.class, () -> structuredDataSearcher.search(searchBody, "user1"));
+		var actual = structuredDataSearcher.search(searchBody, "user1");
+		assertEquals(responseBody, actual);
 	}
+
 }

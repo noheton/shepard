@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.search.QueryValidator;
 
 public class QueryValidatorTest extends BaseTestCase {
 

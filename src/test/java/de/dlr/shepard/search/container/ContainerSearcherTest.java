@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.container;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -19,6 +19,7 @@ import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.BasicContainerIO;
+import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.search.container.ContainerQueryType;
 import de.dlr.shepard.search.container.ContainerSearchBody;
 import de.dlr.shepard.search.container.ContainerSearchParams;

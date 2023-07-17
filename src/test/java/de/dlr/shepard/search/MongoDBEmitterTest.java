@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardParserException;
+import de.dlr.shepard.search.MongoDBEmitter;
 
 public class MongoDBEmitterTest extends BaseTestCase {
 

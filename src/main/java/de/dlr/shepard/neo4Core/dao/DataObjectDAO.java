@@ -135,4 +135,5 @@ public class DataObjectDAO extends GenericDAO<DataObject> {
 		List<DataObject> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
 	}
+
 }

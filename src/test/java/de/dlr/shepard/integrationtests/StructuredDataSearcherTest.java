@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -150,12 +151,37 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
-		assertThat(result.getResults()[0].getId()).isEqualTo(reference.getId());
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId());
 	}
 
 	@Test
 	@Order(2)
+	public void testFindWithoutDataObjectId() {
+		SearchBody searchBody = new SearchBody();
+		SearchScope searchScope = new SearchScope();
+		searchScope.setCollectionId(collection.getId());
+		TraversalRules[] traversalRules = {};
+		searchScope.setTraversalRules(traversalRules);
+		SearchScope[] scopes = { searchScope };
+		searchBody.setScopes(scopes);
+		SearchParams searchParams = new SearchParams();
+		searchParams.setQueryType(QueryType.StructuredData);
+		String query = "number1: {$gt: 1}";
+		searchParams.setQuery(query);
+		searchBody.setSearchParams(searchParams);
+		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
+				.as(ResponseBody.class);
+		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
+		assertThat(result.getResultSet()).containsExactly(triple);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId());
+	}
+
+	@Test
+	@Order(3)
 	public void testFindViaChildrenUniversalSyntaxAND() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -175,10 +201,12 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId());
 	}
 
 	@Test
-	@Order(3)
+	@Order(4)
 	public void testDoNotFindViaChildren() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -196,10 +224,12 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(0, result.getResultSet().length);
+		assertEquals(0, result.getResults().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(4)
+	@Order(5)
 	public void testFindViaChildrenUniversalSyntaxOR() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -223,10 +253,12 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		assertThat(result.getResultSet()).contains(triple);
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId(), reference1.getId());
 	}
 
 	@Test
-	@Order(5)
+	@Order(6)
 	public void testFindViaPredecessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -245,10 +277,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(6)
+	@Order(7)
 	public void testFindViaChildrenUniversalSyntaxNOT() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -269,10 +304,11 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId())).contains(reference1.getId());
 	}
 
 	@Test
-	@Order(7)
+	@Order(8)
 	public void testDoNotFindViaPredecessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -290,10 +326,12 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(0, result.getResultSet().length);
+		assertEquals(0, result.getResults().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(8)
+	@Order(9)
 	public void testFindViaChildrenUniversalSyntaxDeMorgan() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -315,10 +353,11 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).contains(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId())).contains(reference.getId());
 	}
 
 	@Test
-	@Order(9)
+	@Order(10)
 	public void testFindViaParent() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -337,10 +376,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(10)
+	@Order(11)
 	public void testFindViaSuccessor() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -359,10 +401,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), firstSuccessor.getId(), referenceSuccessor.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(referenceSuccessor.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(11)
+	@Order(12)
 	public void testFindMultipleResults() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -386,10 +431,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple expectedResult0 = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		ResultTriple expectedResult1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(resultTriples).containsExactlyInAnyOrder(expectedResult0, expectedResult1);
+		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+				.containsExactlyInAnyOrder(reference.getId(), reference1.getId());
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(12)
+	@Order(13)
 	public void testFindViaPredecessorCycle() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -407,10 +455,11 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(1, result.getResultSet().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(13)
+	@Order(14)
 	public void testFindViaPredecessorCycleUnauthorized() {
 		SearchBody searchBody = new SearchBody();
 		SearchScope searchScope = new SearchScope();
@@ -428,10 +477,12 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(0, result.getResultSet().length);
+		assertEquals(0, result.getResults().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(14)
+	@Order(15)
 	public void testFindViaPredecessorCyclePermissionsReader() {
 		String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
 		RequestSpecification permissionsSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
@@ -458,10 +509,11 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec1).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(1, result.getResultSet().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(15)
+	@Order(16)
 	public void testFindViaPredecessorCycleReaderGroup() {
 		String userGroupURL = String.format("%s/usergroup", baseURL);
 		UserGroupIO userGroup = new UserGroupIO();
@@ -498,10 +550,11 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec2).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(1, result.getResultSet().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	@Test
-	@Order(16)
+	@Order(17)
 	public void testDoNotFindViaDeletedNode() {
 		deleteDataObject(secondChild);
 		SearchBody searchBody = new SearchBody();
@@ -520,6 +573,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		var result = given().spec(searchRequestSpec).body(searchBody).when().post().then().statusCode(200).extract()
 				.as(ResponseBody.class);
 		assertEquals(0, result.getResultSet().length);
+		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
 
 	private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {

@@ -1,4 +1,4 @@
-package de.dlr.shepard.search;
+package de.dlr.shepard.search.unified;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -13,6 +13,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.search.unified.CollectionSearcher;
 import de.dlr.shepard.search.unified.QueryType;
 import de.dlr.shepard.search.unified.ResponseBody;
