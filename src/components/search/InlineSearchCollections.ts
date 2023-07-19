@@ -8,7 +8,7 @@ import {
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchCollections(text: Ref<string>) {
-  const resultSet = ref<BasicEntity[]>([]);
+  const results = ref<BasicEntity[]>([]);
   const totalResults = ref(0);
   const searchQuery = computed(() => {
     return JSON.stringify({
@@ -52,10 +52,10 @@ export function useSearchCollections(text: Ref<string>) {
       },
     })
       .then(response => {
-        resultSet.value = [];
+        results.value = [];
         if (response.results) {
           totalResults.value = response.resultSet?.length || 0;
-          resultSet.value = response.results.slice(0, 10);
+          results.value = response.results.slice(0, 10);
         } else {
           totalResults.value = 0;
         }
@@ -72,10 +72,10 @@ export function useSearchCollections(text: Ref<string>) {
     ) {
       inlineSearch();
     } else {
-      resultSet.value = [];
+      results.value = [];
       totalResults.value = 0;
     }
   });
 
-  return { resultSet, totalResults, searchQuery };
+  return { results, totalResults, searchQuery };
 }

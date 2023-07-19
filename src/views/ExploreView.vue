@@ -2,7 +2,7 @@
 import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { useSearchCollections } from "@/components/search/SearchCollections";
+import { useSearchCollections } from "@/components/search/InlineSearchCollections";
 import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -67,7 +67,7 @@ function filterChanged(options: FilterChangedData) {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults, searchQuery } =
+const { results, totalResults, searchQuery } =
   useSearchCollections(userInputDebounced);
 
 const searchRoute = computed(() => {
@@ -118,7 +118,7 @@ onMounted(() => {
             Advanced Search
           </b-link>
         </template>
-        <GenericEntityList :entities="resultSet" />
+        <GenericEntityList :entities="results" />
       </b-popover>
 
       <FilterListLine

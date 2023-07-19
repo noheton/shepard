@@ -14,9 +14,9 @@ const routerMap: { [key: string]: string } = {
 };
 
 export function useContainerSearch(
-  containerSearchParam: Ref<{
-    searchQuery: string | undefined;
-    selectedQueryType: string | undefined;
+  searchParam: Ref<{
+    selectedQueryType: string;
+    searchQuery?: string;
   }>,
 ) {
   const results = ref<{ id: number; name: string; link: string }[]>([]);
@@ -27,6 +27,8 @@ export function useContainerSearch(
       name: name,
       params: {
         fileId: String(containerId),
+        structuredDataId: String(containerId),
+        timeseriesId: String(containerId),
       },
     });
     results?.value.push({
@@ -37,14 +39,14 @@ export function useContainerSearch(
   }
 
   function search() {
-    if (!containerSearchParam.value.searchQuery) return;
+    if (!searchParam.value.searchQuery) return;
     loading.value = true;
     results.value = [];
     SearchService.searchContainers({
       containerSearchBody: {
         searchParams: {
-          query: containerSearchParam.value.searchQuery,
-          queryType: containerSearchParam.value
+          query: searchParam.value.searchQuery,
+          queryType: searchParam.value
             .selectedQueryType as keyof typeof ContainerSearchParamsQueryTypeEnum as ContainerSearchParamsQueryTypeEnum,
         },
       },
@@ -54,24 +56,39 @@ export function useContainerSearch(
           if (
             container.id &&
             container.name &&
-            containerSearchParam.value.selectedQueryType
+            searchParam.value.selectedQueryType
           ) {
             addResult(
-              routerMap[containerSearchParam.value.selectedQueryType],
+              routerMap[searchParam.value.selectedQueryType],
               container.id,
               container.name,
             );
           }
         });
+        results.value = [...results.value];
       })
       .catch(e => {
-        handleError(e as ResponseError, "fetching search data");
+        handleError(e as ResponseError, "fetching container search data");
+      })
+      .finally(() => {
+        loading.value = false;
       });
+  }
+
+  function reset() {
+    results.value = [];
     loading.value = false;
   }
 
-  watch(containerSearchParam, () => {
-    search();
+  watch(searchParam, newParam => {
+    if (
+      newParam.selectedQueryType &&
+      ["FILE", "STRUCTUREDDATA", "TIMESERIES"].includes(
+        newParam.selectedQueryType,
+      )
+    )
+      search();
+    else reset();
   });
 
   return { results, loading };

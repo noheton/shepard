@@ -2,7 +2,7 @@
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
-import { useInlineSearch } from "@/components/search/SearchContainers";
+import { useSearchContainers } from "@/components/search/InlineSearchContainers";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -99,7 +99,7 @@ function createContainer(options: {
 const userInput = ref("");
 const userInputDebounced = refDebounced(userInput, 700);
 
-const { resultSet, totalResults, searchQuery } = useInlineSearch(
+const { results, totalResults, searchQuery } = useSearchContainers(
   userInputDebounced,
   "FILE",
 );
@@ -152,7 +152,7 @@ onMounted(() => {
             Advanced Search
           </b-link>
         </template>
-        <GenericEntityList :entities="resultSet" />
+        <GenericEntityList :entities="results" />
       </b-popover>
 
       <FilterListLine

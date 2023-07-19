@@ -7,11 +7,11 @@ import type {
 } from "@dlr-shepard/shepard-client";
 import { computed, ref, watch, type Ref } from "vue";
 
-export function useInlineSearch(
+export function useSearchContainers(
   text: Ref<string>,
   queryType: ContainerSearchParamsQueryTypeEnum,
 ) {
-  const resultSet = ref<BasicContainer[]>([]);
+  const results = ref<BasicContainer[]>([]);
   const totalResults = ref(0);
 
   const searchQuery = computed(() => {
@@ -51,10 +51,10 @@ export function useInlineSearch(
       },
     })
       .then(response => {
-        resultSet.value = [];
+        results.value = [];
         if (response.results) {
           totalResults.value = response.results.length;
-          resultSet.value = response.results.slice(0, 10);
+          results.value = response.results.slice(0, 10);
         } else {
           totalResults.value = 0;
         }
@@ -71,9 +71,9 @@ export function useInlineSearch(
     ) {
       fetchResults();
     } else {
-      resultSet.value = [];
+      results.value = [];
     }
   });
 
-  return { resultSet, totalResults, searchQuery };
+  return { results, totalResults, searchQuery };
 }

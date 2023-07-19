@@ -1,26 +1,20 @@
 <script setup lang="ts">
 import Loading from "@/components/generic/Loading.vue";
-import { useContainerSearch } from "@/components/search/useContainerSearch";
-import { useUnifiedSearch } from "@/components/search/useUnifiedSearch";
-import BasicReferenceService from "@/services/basicReferenceService";
-import { logError } from "@/utils/error-handling";
+import { useCollectionSearch } from "@/components/search/CollectionSearch";
+import { useContainerSearch } from "@/components/search/ContainerSearch";
+import { useDataObjectSearch } from "@/components/search/DataObjectSearch";
+import { useReferenceSearch } from "@/components/search/ReferenceSearch";
+import { useStructuredDataSearch } from "@/components/search/StructuredDataSearch";
 import {
   getQueryParam,
   removeQueryParam,
   setQueryParam,
 } from "@/utils/helpers";
-import {
-  ResponseError,
-  SearchScopeTraversalRulesEnum,
-  type BasicReference,
-  type ResultTriple,
-} from "@dlr-shepard/shepard-client";
+import { SearchScopeTraversalRulesEnum } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { default as JSONEditor, type JSONEditorOptions } from "jsoneditor";
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue2-helpers/vue-router";
 
-const router = useRouter();
 const initialJson = {
   OR: [
     {
@@ -39,13 +33,18 @@ const initialJson = {
 };
 
 let startJson = initialJson;
-const selectedQueryType = ref<string>("Collection");
+const selectedQueryType = ref<string>("");
 
 const queryTypeUnifiedSearch = [
   { value: "Collection", text: "Collection" },
   { value: "DataObject", text: "Data Object" },
   { value: "Reference", text: "Reference" },
   { value: "StructuredData", text: "StructuredData" },
+];
+const queryTypeContainerSearch = [
+  { value: "FILE", text: "File Container" },
+  { value: "STRUCTUREDDATA", text: "Structured Data Container" },
+  { value: "TIMESERIES", text: "Timeseries Container" },
 ];
 const currentCollectionId = ref<number>();
 const currentDataObjectId = ref<number>();
@@ -60,38 +59,40 @@ const scopeDisabled = computed(() => {
   );
 });
 
-const unifiedSearchParam = ref<{
-  searchQuery: string | undefined;
-  selectedQueryType: string | undefined;
-  collectionId: number | undefined;
-  dataObjectId: number | undefined;
-  traversalRules: SearchScopeTraversalRulesEnum[];
-}>({
-  searchQuery: undefined,
-  selectedQueryType: undefined,
-  collectionId: undefined,
-  dataObjectId: undefined,
-  traversalRules: [],
-});
-const unifiedSearchData = useUnifiedSearch(unifiedSearchParam);
+const searchParam = ref<{
+  selectedQueryType: string;
+  searchQuery?: string;
+  collectionId?: number;
+  dataObjectId?: number;
+  traversalRules?: SearchScopeTraversalRulesEnum[];
+}>({ selectedQueryType: "" });
+const collectionResults = useCollectionSearch(searchParam);
+const dataObjectResults = useDataObjectSearch(searchParam);
+const referenceResults = useReferenceSearch(searchParam);
+const sdResults = useStructuredDataSearch(searchParam);
+const containerResults = useContainerSearch(searchParam);
 
-const queryTypeContainerSearch = [
-  { value: "FILE", text: "File Container" },
-  { value: "STRUCTUREDDATA", text: "Structured Data Container" },
-  { value: "TIMESERIES", text: "Timeseries Container" },
-];
-const containerSearchParam = ref<{
-  searchQuery: string | undefined;
-  selectedQueryType: string | undefined;
-}>({
-  searchQuery: undefined,
-  selectedQueryType: undefined,
-});
-const containerSearchData = useContainerSearch(containerSearchParam);
-const containerSearchFields = [
+const resultsTableFields = [
   { key: "id", label: "ID", sortable: true },
   { key: "name", label: "Name", sortable: true },
 ];
+const loading = computed(
+  () =>
+    collectionResults.loading.value ||
+    dataObjectResults.loading.value ||
+    referenceResults.loading.value ||
+    sdResults.loading.value ||
+    containerResults.loading.value,
+);
+const results = computed(() =>
+  [
+    collectionResults.results.value,
+    dataObjectResults.results.value,
+    referenceResults.results.value,
+    sdResults.results.value,
+    containerResults.results.value,
+  ].find(x => x.length > 0),
+);
 
 const editor = ref<JSONEditor>();
 function jsonEditor() {
@@ -113,121 +114,28 @@ function jsonEditor() {
 }
 
 function reset() {
-  if (editor.value) {
-    editor.value.set(initialJson);
-  }
+  editor.value?.set(initialJson);
   currentCollectionId.value = undefined;
   currentDataObjectId.value = undefined;
   selectedTraversalRules.value = [];
-  selectedQueryType.value = "Collection";
-  searchType.value = "";
-  removeAllQueryParam();
+  selectedQueryType.value = "";
+  searchParam.value = { selectedQueryType: "" };
+  removeAllQueryParams();
 }
 
-const searchType = ref<"unified" | "container" | "">("");
 function handleSearch() {
   // get actual json of the JsonEditor
   if (!editor.value) return;
   const searchQuery = JSON.stringify(editor.value.get());
 
-  if (
-    queryTypeUnifiedSearch.some(
-      element => element.value == selectedQueryType.value,
-    )
-  ) {
-    searchType.value = "unified";
-    unifiedSearchParam.value = {
-      searchQuery: searchQuery,
-      selectedQueryType: selectedQueryType.value,
-      collectionId: currentCollectionId.value,
-      dataObjectId: currentDataObjectId.value,
-      traversalRules: selectedTraversalRules.value,
-    };
-  } else if (
-    queryTypeContainerSearch.some(
-      element => element.value == selectedQueryType.value,
-    )
-  ) {
-    searchType.value = "container";
-    containerSearchParam.value = {
-      searchQuery: searchQuery,
-      selectedQueryType: selectedQueryType.value,
-    };
-  } else {
-    searchType.value = "";
-    return;
-  }
-  setAllQueryParam(searchQuery);
-}
-
-async function rowSelectedUnifiedSearch(item: ResultTriple) {
-  let routeData = undefined;
-
-  if (item.referenceId != undefined) {
-    // A reference
-    routeData = router.resolve({
-      name: "DataObject",
-      params: {
-        collectionId: String(item.collectionId),
-        dataObjectId: String(item.dataObjectId),
-      },
-    });
-    const params = await getReferenceQueryParams(item);
-    if (params) routeData.href += params;
-  } else if (item.dataObjectId != undefined) {
-    // A data object
-    routeData = router.resolve({
-      name: "DataObject",
-      params: {
-        collectionId: String(item.collectionId),
-        dataObjectId: String(item.dataObjectId),
-      },
-    });
-  } else {
-    // a collection
-    routeData = router.resolve({
-      name: "Collection",
-      params: {
-        collectionId: String(item.collectionId),
-      },
-    });
-  }
-  openLink(routeData.href);
-}
-
-async function getReferenceQueryParams(item: ResultTriple) {
-  const tabMapping: { [key: string]: number } = {
-    TimeseriesReference: 0,
-    StructuredDataReference: 1,
-    FileReference: 2,
-    URIReference: 3,
-    CollectionReference: 4,
-    DataObjectReference: 5,
+  searchParam.value = {
+    searchQuery: searchQuery,
+    selectedQueryType: selectedQueryType.value,
+    collectionId: currentCollectionId.value,
+    dataObjectId: currentDataObjectId.value,
+    traversalRules: selectedTraversalRules.value,
   };
-  const referenceType = await getReferenceType(item);
-  if (!referenceType) return;
-  return (
-    "?tabId=" + tabMapping[referenceType] + "&referenceId=" + item.referenceId
-  );
-}
-
-async function getReferenceType(
-  item: ResultTriple,
-): Promise<string | undefined> {
-  if (!item.collectionId || !item.dataObjectId || !item.referenceId) return;
-  let reference: BasicReference;
-  try {
-    reference = await BasicReferenceService.getBasicReference({
-      collectionId: item.collectionId,
-      dataObjectId: item.dataObjectId,
-      referenceId: item.referenceId,
-    });
-  } catch (error) {
-    logError(error as ResponseError, "fetching basic reference");
-    return;
-  }
-
-  return reference.type;
+  setAllQueryParam(searchQuery);
 }
 
 function openLink(link: string) {
@@ -250,7 +158,7 @@ function setAllQueryParam(searchQuery: string) {
 
 function getAllQueryParam() {
   const queryType = getQueryParam("queryType");
-  selectedQueryType.value = queryType ? queryType : "Collection";
+  selectedQueryType.value = queryType ? queryType : "";
 
   const collectionId = getQueryParam("collectionId");
   currentCollectionId.value = collectionId ? Number(collectionId) : undefined;
@@ -267,7 +175,7 @@ function getAllQueryParam() {
   startJson = searchQuery ? JSON.parse(searchQuery) : initialJson;
 }
 
-function removeAllQueryParam() {
+function removeAllQueryParams() {
   [
     "queryType",
     "collectionId",
@@ -295,6 +203,7 @@ onMounted(() => {
               <b-col cols="4">Query Type</b-col>
               <b-col cols="8">
                 <b-form-select v-model="selectedQueryType">
+                  <b-form-select-option value="" />
                   <b-form-select-option-group
                     label="Unified Search"
                     :options="queryTypeUnifiedSearch"
@@ -363,33 +272,16 @@ onMounted(() => {
 
           <b-col>
             <div class="pl-2 result-header">Result</div>
-            <Loading
-              v-if="
-                unifiedSearchData.loading.value ||
-                containerSearchData.loading.value
-              "
-            />
-            <div v-if="unifiedSearchData.results.value?.resultSet">
+            <Loading v-if="loading" />
+            <div v-else-if="results && results.length > 0">
               <b-table
                 sticky-header="766px"
                 head-variant="light"
                 striped
                 hover
                 class="table table-sm table-bordered"
-                :items="unifiedSearchData.results.value?.resultSet"
-                @row-clicked="rowSelectedUnifiedSearch($event)"
-              >
-              </b-table>
-            </div>
-            <div v-else-if="containerSearchData.results.value">
-              <b-table
-                sticky-header="766px"
-                head-variant="light"
-                striped
-                hover
-                class="table table-sm table-bordered"
-                :items="containerSearchData.results.value"
-                :fields="containerSearchFields"
+                :items="results"
+                :fields="resultsTableFields"
                 @row-clicked="openLink($event.link)"
               >
               </b-table>
