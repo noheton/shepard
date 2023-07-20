@@ -31,7 +31,7 @@ This was done
 ### Checklist
 
 - [ ] The code compiles without any warnings.
-- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/backend/-/blob/master/CONTRIBUTING.md#code-review-checklist).
+- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/backend/-/blob/main/CONTRIBUTING.md#code-review-checklist).
 - [ ] The documentation has been added/updated.
 - [ ] There are no `System.out.println()` statements.
 

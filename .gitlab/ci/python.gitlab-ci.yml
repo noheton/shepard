@@ -32,7 +32,7 @@ build_pythonclient_dev:
 
 upload_pythonclient_dev:
   <<: *upload_python
-  extends: .only_master
+  extends: .only_main
   needs: [build_pythonclient_dev]
   dependencies: [build_pythonclient_dev]
 

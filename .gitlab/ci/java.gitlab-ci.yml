@@ -28,7 +28,7 @@ build_javaclient_dev:
 
 upload_javaclient_dev:
   <<: *upload_java
-  extends: .only_master
+  extends: .only_main
   needs: [build_javaclient_dev]
   dependencies: [build_javaclient_dev]
 

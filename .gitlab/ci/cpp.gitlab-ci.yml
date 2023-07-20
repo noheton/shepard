@@ -23,7 +23,7 @@ build_cppclient:
 
 upload_cppclient_dev:
   <<: *upload_cpp
-  extends: .only_master
+  extends: .only_main
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}

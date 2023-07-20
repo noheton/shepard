@@ -35,7 +35,7 @@ build_typescriptclient_dev:
 
 upload_typescriptclient_dev:
   <<: *upload_typescript
-  extends: .only_master
+  extends: .only_main
   needs: [build_typescriptclient_dev]
   dependencies: [build_typescriptclient_dev]
   variables:
