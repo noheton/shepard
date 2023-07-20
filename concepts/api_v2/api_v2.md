@@ -8,7 +8,7 @@
   - in this context --> PID (Persistant Identifier) und DTR (Data Type Registry)
 - Collections
   - Collections contain data-objects
-  - enables master data (Stammdaten), personal data collections
+  - enables main data (Stammdaten), personal data collections
   - Basic Permissions can be managed via collections
   - References
     - <https://www.rd-alliance.org/groups/research-data-collections-wg.html>

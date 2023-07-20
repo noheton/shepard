@@ -53,4 +53,4 @@ After your first commit, you can add as many additional commits as you like.
 After your contribution is accepted, your changes will be squashed into one commit anyway.
 
 While you are working on your contribution, others may merge their merge request.
-To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current master branch.
+To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current main branch.

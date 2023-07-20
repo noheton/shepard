@@ -56,5 +56,5 @@ Comments, errors and planned changes are documented in issues.
 Initial discussions to find a solution can also take place there.
 As soon as a solution becomes apparent, a merge request is opened with the planned change.
 This serves as a basis for discussion.
-As soon as the merge request has been accepted by at least one other person, the changes are transferred to the master branch, the documentation is updated, and the merge request and the issue are closed.
+As soon as the merge request has been accepted by at least one other person, the changes are transferred to the main branch, the documentation is updated, and the merge request and the issue are closed.
 From this point on, the document is valid and will be implemented.
