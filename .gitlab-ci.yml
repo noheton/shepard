@@ -1,4 +1,4 @@
-image: node:18.16
+image: node:18.17
 
 variables:
   SECRET_DETECTION_EXCLUDED_PATHS: "node_modules"
