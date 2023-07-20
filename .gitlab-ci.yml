@@ -81,7 +81,7 @@ upload_docker_dev:
     - docker push ${CI_REGISTRY_IMAGE}:${VERSION_NUMBER}
     - docker push ${CI_REGISTRY_IMAGE}:dev
   only:
-    - master
+    - main
 
 upload_docker:
   <<: *upload_docker

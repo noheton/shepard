@@ -67,7 +67,7 @@ You'll get faster results by contacting us on [Mattermost at HZDR](https://matte
 
 ### Local backend
 
-If you don't have a working backend available, you can find a description of how to implement a local backend [here](https://gitlab.com/dlr-shepard/backend/-/blob/master/CONTRIBUTING.md#setting-up-a-developing-environment)
+If you don't have a working backend available, you can find a description of how to implement a local backend [here](https://gitlab.com/dlr-shepard/backend/-/blob/main/CONTRIBUTING.md#setting-up-a-developing-environment)
 
 ### First run
 
@@ -131,7 +131,7 @@ After your first commit, you can add as many additional commits as you like.
 After your contribution is accepted, your changes will be squashed into one commit anyway.
 
 While you are working on your contribution, others may merge their merge request.
-To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current master branch.
+To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current main branch.
 
 ## Code Review Checklist
 
