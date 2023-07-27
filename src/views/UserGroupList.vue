@@ -103,7 +103,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="component">
+  <div class="view">
     <b-button-group class="float-right">
       <b-button
         v-b-modal.create-usergroup-modal

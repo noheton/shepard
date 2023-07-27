@@ -118,64 +118,62 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="timeseries-container-list">
-    <div class="component">
-      <b-button-group class="float-right">
-        <b-button
-          v-b-modal.create-timeseries-container-modal
-          v-b-tooltip.hover
-          title="Create Timeseries Container"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-      </b-button-group>
-      <h4>Timeseries Containers</h4>
-      <br />
-
-      <b-form-input
-        id="userFormInput"
-        v-model="userInput"
-        class="mb-3"
-        placeholder="Name, Username, ID or Description"
-      ></b-form-input>
-
-      <b-popover
-        custom-class="wide-popover"
-        target="userFormInput"
-        triggers="focus"
-        placement="bottom"
-        boundary="scrollParent"
+  <div class="view">
+    <b-button-group class="float-right">
+      <b-button
+        v-b-modal.create-timeseries-container-modal
+        v-b-tooltip.hover
+        title="Create Timeseries Container"
+        variant="primary"
       >
-        <template #title>
-          Result Set ({{ totalResults }} total)
-          <b-link class="float-right font-weight-normal" :to="searchRoute">
-            Advanced Search
-          </b-link>
-        </template>
-        <GenericEntityList :entities="results" />
-      </b-popover>
+        <CreateIcon />
+      </b-button>
+    </b-button-group>
+    <h4>Timeseries Containers</h4>
+    <br />
 
-      <FilterListLine
-        :max-objects="totalRows"
-        :current-page="currentPage"
-        :filter-options="filterOptions"
-        @filter-changed="filterChanged($event)"
-      />
-      <GenericEntityList :entities="containers" />
-      <GenericCreateModal
-        modal-id="create-timeseries-container-modal"
-        modal-name="Create Timeseries Container"
-        @create="createContainer($event)"
-      />
-      <b-pagination
-        v-model="currentPage"
-        :total-rows="totalRows"
-        :per-page="filterOptions.perPage"
-        align="center"
-        size="sm"
-        @change="retrieveContainers($event)"
-      ></b-pagination>
-    </div>
+    <b-form-input
+      id="userFormInput"
+      v-model="userInput"
+      class="mb-3"
+      placeholder="Name, Username, ID or Description"
+    ></b-form-input>
+
+    <b-popover
+      custom-class="wide-popover"
+      target="userFormInput"
+      triggers="focus"
+      placement="bottom"
+      boundary="scrollParent"
+    >
+      <template #title>
+        Result Set ({{ totalResults }} total)
+        <b-link class="float-right font-weight-normal" :to="searchRoute">
+          Advanced Search
+        </b-link>
+      </template>
+      <GenericEntityList :entities="results" />
+    </b-popover>
+
+    <FilterListLine
+      :max-objects="totalRows"
+      :current-page="currentPage"
+      :filter-options="filterOptions"
+      @filter-changed="filterChanged($event)"
+    />
+    <GenericEntityList :entities="containers" />
+    <GenericCreateModal
+      modal-id="create-timeseries-container-modal"
+      modal-name="Create Timeseries Container"
+      @create="createContainer($event)"
+    />
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="filterOptions.perPage"
+      align="center"
+      size="sm"
+      @change="retrieveContainers($event)"
+    ></b-pagination>
   </div>
 </template>

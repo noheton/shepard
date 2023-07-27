@@ -84,64 +84,62 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="explore">
-    <div class="component">
-      <b-button-group class="float-right">
-        <b-button
-          v-b-modal.create-collection-modal
-          v-b-tooltip.hover
-          title="Create Collection"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-      </b-button-group>
-
-      <h4 class="mb-4">Explore Collections</h4>
-
-      <b-form-input
-        id="userFormInput"
-        v-model="userInput"
-        class="mb-3"
-        placeholder="Name, Username, ID or Description"
-      ></b-form-input>
-
-      <b-popover
-        custom-class="wide-popover"
-        target="userFormInput"
-        triggers="focus"
-        placement="bottom"
+  <div class="view">
+    <b-button-group class="float-right">
+      <b-button
+        v-b-modal.create-collection-modal
+        v-b-tooltip.hover
+        title="Create Collection"
+        variant="primary"
       >
-        <template #title>
-          Result Set ({{ totalResults }} total)
-          <b-link class="float-right font-weight-normal" :to="searchRoute">
-            Advanced Search
-          </b-link>
-        </template>
-        <GenericEntityList :entities="results" />
-      </b-popover>
+        <CreateIcon />
+      </b-button>
+    </b-button-group>
 
-      <FilterListLine
-        :max-objects="totalRows"
-        :current-page="currentPage"
-        :filter-options="filterOptions"
-        @filter-changed="filterChanged($event)"
-      />
-      <GenericEntityList :entities="collections" />
+    <h4 class="mb-4">Explore Collections</h4>
 
-      <b-pagination
-        v-model="currentPage"
-        :total-rows="totalRows"
-        :per-page="filterOptions.perPage"
-        align="center"
-        size="sm"
-        @change="retrieveCollections($event)"
-      ></b-pagination>
+    <b-form-input
+      id="userFormInput"
+      v-model="userInput"
+      class="mb-3"
+      placeholder="Name, Username, ID or Description"
+    ></b-form-input>
 
-      <CollectionModal
-        modal-id="create-collection-modal"
-        modal-name="Create Collection"
-      />
-    </div>
+    <b-popover
+      custom-class="wide-popover"
+      target="userFormInput"
+      triggers="focus"
+      placement="bottom"
+    >
+      <template #title>
+        Result Set ({{ totalResults }} total)
+        <b-link class="float-right font-weight-normal" :to="searchRoute">
+          Advanced Search
+        </b-link>
+      </template>
+      <GenericEntityList :entities="results" />
+    </b-popover>
+
+    <FilterListLine
+      :max-objects="totalRows"
+      :current-page="currentPage"
+      :filter-options="filterOptions"
+      @filter-changed="filterChanged($event)"
+    />
+    <GenericEntityList :entities="collections" />
+
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="filterOptions.perPage"
+      align="center"
+      size="sm"
+      @change="retrieveCollections($event)"
+    ></b-pagination>
+
+    <CollectionModal
+      modal-id="create-collection-modal"
+      modal-name="Create Collection"
+    />
   </div>
 </template>

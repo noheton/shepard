@@ -35,6 +35,6 @@ bus.on(e => {
       </small>
     </b-alert>
     <Breadcrumb class="view" />
-    <router-view :key="$route.fullPath" class="view" />
+    <router-view :key="$route.fullPath" />
   </div>
 </template>

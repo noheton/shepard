@@ -174,7 +174,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentCollection" class="collection">
+  <div v-if="currentCollection" class="view">
     <div>
       <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button

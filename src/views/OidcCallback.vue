@@ -18,5 +18,5 @@ callback()
 </script>
 
 <template>
-  <div></div>
+  <div class="view"></div>
 </template>

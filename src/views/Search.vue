@@ -193,104 +193,102 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="component">
-      <h4 class="mb-5">Search</h4>
-      <b-container>
-        <b-row>
-          <b-col>
-            <b-row class="mb-2">
-              <b-col cols="4">Query Type</b-col>
-              <b-col cols="8">
-                <b-form-select v-model="selectedQueryType">
-                  <b-form-select-option value="" />
-                  <b-form-select-option-group
-                    label="Unified Search"
-                    :options="queryTypeUnifiedSearch"
-                  >
-                  </b-form-select-option-group>
-                  <b-form-select-option-group
-                    label="Container Search"
-                    :options="queryTypeContainerSearch"
-                  >
-                  </b-form-select-option-group>
-                </b-form-select>
-              </b-col>
-            </b-row>
-
-            <b-row class="mb-2">
-              <b-col cols="4"> Collection ID </b-col>
-              <b-col cols="8">
-                <b-form-input
-                  v-model="currentCollectionId"
-                  :disabled="scopeDisabled"
-                  type="number"
-                  placeholder="Collection ID"
+  <div class="view">
+    <h4 class="mb-5">Search</h4>
+    <b-container>
+      <b-row>
+        <b-col>
+          <b-row class="mb-2">
+            <b-col cols="4">Query Type</b-col>
+            <b-col cols="8">
+              <b-form-select v-model="selectedQueryType">
+                <b-form-select-option value="" />
+                <b-form-select-option-group
+                  label="Unified Search"
+                  :options="queryTypeUnifiedSearch"
                 >
-                </b-form-input>
-              </b-col>
-            </b-row>
-            <b-row class="mb-2">
-              <b-col cols="4"> DataObject ID </b-col>
-              <b-col cols="8">
-                <b-form-input
-                  v-model="currentDataObjectId"
-                  :disabled="scopeDisabled"
-                  type="number"
-                  placeholder="DataObject ID"
+                </b-form-select-option-group>
+                <b-form-select-option-group
+                  label="Container Search"
+                  :options="queryTypeContainerSearch"
                 >
-                </b-form-input>
-              </b-col>
-            </b-row>
-            <b-row class="mb-2">
-              <b-col cols="4">Traversal Rules</b-col>
-              <b-col cols="5">
-                <b-form-group>
-                  <b-form-checkbox-group
-                    v-model="selectedTraversalRules"
-                    :disabled="traversalRulesDisabled"
-                    :options="traversalRuleOptions"
-                  >
-                  </b-form-checkbox-group>
-                </b-form-group>
-              </b-col>
-            </b-row>
-            <b-row>
-              <b-col>
-                <div id="jsoneditor" ref="jsoneditor"></div>
-                <div>
-                  <b-button-group class="float-right mt-2 mb-2">
-                    <b-button variant="info" @click="reset()"> Reset </b-button>
-                    <b-button variant="primary" @click="handleSearch()">
-                      Search
-                    </b-button>
-                  </b-button-group>
-                </div>
-              </b-col>
-            </b-row>
-          </b-col>
+                </b-form-select-option-group>
+              </b-form-select>
+            </b-col>
+          </b-row>
 
-          <b-col>
-            <div class="pl-2 result-header">Result</div>
-            <Loading v-if="loading" />
-            <div v-else-if="results && results.length > 0">
-              <b-table
-                sticky-header="766px"
-                head-variant="light"
-                striped
-                hover
-                class="table table-sm table-bordered"
-                :items="results"
-                :fields="resultsTableFields"
-                @row-clicked="openLink($event.link)"
+          <b-row class="mb-2">
+            <b-col cols="4"> Collection ID </b-col>
+            <b-col cols="8">
+              <b-form-input
+                v-model="currentCollectionId"
+                :disabled="scopeDisabled"
+                type="number"
+                placeholder="Collection ID"
               >
-              </b-table>
-            </div>
-            <div v-else class="pl-2">no results</div>
-          </b-col>
-        </b-row>
-      </b-container>
-    </div>
+              </b-form-input>
+            </b-col>
+          </b-row>
+          <b-row class="mb-2">
+            <b-col cols="4"> DataObject ID </b-col>
+            <b-col cols="8">
+              <b-form-input
+                v-model="currentDataObjectId"
+                :disabled="scopeDisabled"
+                type="number"
+                placeholder="DataObject ID"
+              >
+              </b-form-input>
+            </b-col>
+          </b-row>
+          <b-row class="mb-2">
+            <b-col cols="4">Traversal Rules</b-col>
+            <b-col cols="5">
+              <b-form-group>
+                <b-form-checkbox-group
+                  v-model="selectedTraversalRules"
+                  :disabled="traversalRulesDisabled"
+                  :options="traversalRuleOptions"
+                >
+                </b-form-checkbox-group>
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col>
+              <div id="jsoneditor" ref="jsoneditor"></div>
+              <div>
+                <b-button-group class="float-right mt-2 mb-2">
+                  <b-button variant="info" @click="reset()"> Reset </b-button>
+                  <b-button variant="primary" @click="handleSearch()">
+                    Search
+                  </b-button>
+                </b-button-group>
+              </div>
+            </b-col>
+          </b-row>
+        </b-col>
+
+        <b-col>
+          <div class="pl-2 result-header">Result</div>
+          <Loading v-if="loading" />
+          <div v-else-if="results && results.length > 0">
+            <b-table
+              sticky-header="766px"
+              head-variant="light"
+              striped
+              hover
+              class="table table-sm table-bordered"
+              :items="results"
+              :fields="resultsTableFields"
+              @row-clicked="openLink($event.link)"
+            >
+            </b-table>
+          </div>
+          <div v-else class="pl-2">no results</div>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 

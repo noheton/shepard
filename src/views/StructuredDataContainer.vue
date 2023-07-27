@@ -162,93 +162,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentStructuredDataContainer" class="structured-data-container">
-    <div class="component">
-      <b-alert
-        :show="deletedAlert"
-        dismissible
-        variant="info"
-        @dismissed="deletedAlert = false"
+  <div v-if="currentStructuredDataContainer" class="view">
+    <b-alert
+      :show="deletedAlert"
+      dismissible
+      variant="info"
+      @dismissed="deletedAlert = false"
+    >
+      Successfully deleted
+    </b-alert>
+    <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
+      <b-button
+        v-b-modal.create-structured-data-modal
+        v-b-tooltip.hover
+        title="Create Structured Data"
+        variant="primary"
       >
-        Successfully deleted
-      </b-alert>
-      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
-        <b-button
-          v-b-modal.create-structured-data-modal
-          v-b-tooltip.hover
-          title="Create Structured Data"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-        <b-button
-          v-if="roles?.owner || roles?.manager"
-          v-b-modal.permissions-modal
-          v-b-tooltip.hover
-          title="Edit Permissions"
-          variant="secondary"
-          @click="retrievePermissions()"
-        >
-          <PermissionsIcon />
-        </b-button>
-        <b-button
-          v-b-modal.delete-structured-data-container-confirmation-modal
-          v-b-tooltip.hover
-          title="Delete"
-          variant="info"
-        >
-          <DeleteIcon />
-        </b-button>
-      </b-button-group>
-      <h3>
-        {{ currentStructuredDataContainer.name }}
-        <CurrentRoleIcon :roles="roles" />
-      </h3>
-      <div class="mb-3">
-        <b>ID:</b> {{ currentStructuredDataContainer.id }}<br />
-        <b>Oid:</b> {{ currentStructuredDataContainer.oid }}<br />
-        <CreatedByLine
-          :created-at="currentStructuredDataContainer.createdAt"
-          :created-by="currentStructuredDataContainer.createdBy"
-          tooltip
-        />
-      </div>
-      <b-list-group>
-        <b-list-group-item
-          v-for="(structuredData, index) in structuredDataList"
-          :key="index"
-        >
-          <b-button-group class="float-right">
-            <b-button
-              v-b-modal.json-structured-data-modal
-              v-b-tooltip.hover
-              title="Show Editor"
-              variant="secondary"
-              @click="currentStructuredData = structuredData"
-            >
-              <EyeIcon />
-            </b-button>
-            <b-button
-              v-b-modal.delete-structured-data-confirmation-modal
-              v-b-tooltip.hover
-              title="Delete"
-              variant="info"
-              @click="currentStructuredData = structuredData"
-            >
-              <DeleteIcon />
-            </b-button>
-          </b-button-group>
-
-          <div>
-            <b>
-              <GenericName :name="structuredData.name || ''" :word-count="40" />
-            </b>
-            | {{ structuredData.oid }} |
-            {{ new Date(structuredData.createdAt || "").toLocaleString() }}
-          </div>
-        </b-list-group-item>
-      </b-list-group>
+        <CreateIcon />
+      </b-button>
+      <b-button
+        v-if="roles?.owner || roles?.manager"
+        v-b-modal.permissions-modal
+        v-b-tooltip.hover
+        title="Edit Permissions"
+        variant="secondary"
+        @click="retrievePermissions()"
+      >
+        <PermissionsIcon />
+      </b-button>
+      <b-button
+        v-b-modal.delete-structured-data-container-confirmation-modal
+        v-b-tooltip.hover
+        title="Delete"
+        variant="info"
+      >
+        <DeleteIcon />
+      </b-button>
+    </b-button-group>
+    <h3>
+      {{ currentStructuredDataContainer.name }}
+      <CurrentRoleIcon :roles="roles" />
+    </h3>
+    <div class="mb-3">
+      <b>ID:</b> {{ currentStructuredDataContainer.id }}<br />
+      <b>Oid:</b> {{ currentStructuredDataContainer.oid }}<br />
+      <CreatedByLine
+        :created-at="currentStructuredDataContainer.createdAt"
+        :created-by="currentStructuredDataContainer.createdBy"
+        tooltip
+      />
     </div>
+    <b-list-group>
+      <b-list-group-item
+        v-for="(structuredData, index) in structuredDataList"
+        :key="index"
+      >
+        <b-button-group class="float-right">
+          <b-button
+            v-b-modal.json-structured-data-modal
+            v-b-tooltip.hover
+            title="Show Editor"
+            variant="secondary"
+            @click="currentStructuredData = structuredData"
+          >
+            <EyeIcon />
+          </b-button>
+          <b-button
+            v-b-modal.delete-structured-data-confirmation-modal
+            v-b-tooltip.hover
+            title="Delete"
+            variant="info"
+            @click="currentStructuredData = structuredData"
+          >
+            <DeleteIcon />
+          </b-button>
+        </b-button-group>
+
+        <div>
+          <b>
+            <GenericName :name="structuredData.name || ''" :word-count="40" />
+          </b>
+          | {{ structuredData.oid }} |
+          {{ new Date(structuredData.createdAt || "").toLocaleString() }}
+        </div>
+      </b-list-group-item>
+    </b-list-group>
     <CreateStructuredDataModal
       modal-id="create-structured-data-modal"
       modal-name="Create Structured Data"

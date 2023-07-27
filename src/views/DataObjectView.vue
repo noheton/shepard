@@ -166,7 +166,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentDataObject" ref="root">
+  <div v-if="currentDataObject" ref="root" class="view">
     <div>
       <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
         <b-button

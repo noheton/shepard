@@ -89,41 +89,39 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="semantic-repository-list">
-    <div class="component">
-      <b-button-group class="float-right">
-        <b-button
-          v-b-modal.create-semantic-repository-modal
-          v-b-tooltip.hover
-          title="Create Semantic Repository"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-      </b-button-group>
-      <h4>Semantic Repositories</h4>
-      <br />
+  <div class="view">
+    <b-button-group class="float-right">
+      <b-button
+        v-b-modal.create-semantic-repository-modal
+        v-b-tooltip.hover
+        title="Create Semantic Repository"
+        variant="primary"
+      >
+        <CreateIcon />
+      </b-button>
+    </b-button-group>
+    <h4>Semantic Repositories</h4>
+    <br />
 
-      <FilterListLine
-        :max-objects="totalRows"
-        :current-page="currentPage"
-        :filter-options="filterOptions"
-        @filter-changed="filterChanged($event)"
-      />
-      <GenericEntityList :entities="repositories" />
-      <CreateSemanticRepositoryModal
-        modal-id="create-semantic-repository-modal"
-        modal-name="Create Semantic Repository"
-        @create="createRepository($event)"
-      />
-      <b-pagination
-        v-model="currentPage"
-        :total-rows="totalRows"
-        :per-page="filterOptions.perPage"
-        align="center"
-        size="sm"
-        @change="retrieveRepositories($event)"
-      ></b-pagination>
-    </div>
+    <FilterListLine
+      :max-objects="totalRows"
+      :current-page="currentPage"
+      :filter-options="filterOptions"
+      @filter-changed="filterChanged($event)"
+    />
+    <GenericEntityList :entities="repositories" />
+    <CreateSemanticRepositoryModal
+      modal-id="create-semantic-repository-modal"
+      modal-name="Create Semantic Repository"
+      @create="createRepository($event)"
+    />
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="filterOptions.perPage"
+      align="center"
+      size="sm"
+      @change="retrieveRepositories($event)"
+    ></b-pagination>
   </div>
 </template>

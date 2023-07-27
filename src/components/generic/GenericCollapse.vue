@@ -1,5 +1,5 @@
 <template>
-  <div class="component">
+  <div>
     <h4 @click="toggleVisible()">
       <span v-if="collapsedState">
         <ExtendIcon font-scale="0.5" />

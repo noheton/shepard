@@ -165,69 +165,67 @@ onUpdated(() => {
 </script>
 
 <template>
-  <div v-if="currentUserGroup">
-    <div class="component">
-      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
-        <b-button
-          v-b-modal.add-new-user-modal
-          v-b-tooltip.hover
-          title="Add User"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-        <b-button
-          v-if="roles?.owner || roles?.manager"
-          v-b-modal.permissions-modal
-          v-b-tooltip.hover
-          title="Edit Permissions"
-          variant="secondary"
-          @click="retrievePermissions()"
-        >
-          <PermissionsIcon />
-        </b-button>
-        <b-button
-          v-b-modal.delete-user-group-confirmation-modal
-          v-b-tooltip.hover
-          title="Delete"
-          variant="info"
-        >
-          <DeleteIcon />
-        </b-button>
-      </b-button-group>
-      <h3>
-        {{ currentUserGroup.name }}
-        <CurrentRoleIcon :roles="roles" />
-      </h3>
-      <p><b>ID:</b> {{ currentUserGroup.id }}<br /></p>
+  <div v-if="currentUserGroup" class="view">
+    <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
+      <b-button
+        v-b-modal.add-new-user-modal
+        v-b-tooltip.hover
+        title="Add User"
+        variant="primary"
+      >
+        <CreateIcon />
+      </b-button>
+      <b-button
+        v-if="roles?.owner || roles?.manager"
+        v-b-modal.permissions-modal
+        v-b-tooltip.hover
+        title="Edit Permissions"
+        variant="secondary"
+        @click="retrievePermissions()"
+      >
+        <PermissionsIcon />
+      </b-button>
+      <b-button
+        v-b-modal.delete-user-group-confirmation-modal
+        v-b-tooltip.hover
+        title="Delete"
+        variant="info"
+      >
+        <DeleteIcon />
+      </b-button>
+    </b-button-group>
+    <h3>
+      {{ currentUserGroup.name }}
+      <CurrentRoleIcon :roles="roles" />
+    </h3>
+    <p><b>ID:</b> {{ currentUserGroup.id }}<br /></p>
 
-      <b-list-group v-if="currentUserGroup.usernames">
-        <b-list-group-item
-          v-for="(user, index) in currentUserGroup.usernames"
-          :key="index"
-        >
-          <div class="float-left">
-            <b v-if="getUserFromCache(user)">
-              {{ getUserFromCache(user).lastName }},
-              {{ getUserFromCache(user).firstName }}
-            </b>
-            |
-            <small><GenericName :name="user" :word-count="40" /></small>
-          </div>
-          <b-button-group class="float-right">
-            <b-button
-              v-b-modal.delete-user-confirmation-modal
-              v-b-tooltip.hover
-              title="Delete"
-              variant="info"
-              @click="currentUser = user"
-            >
-              <DeleteIcon />
-            </b-button>
-          </b-button-group>
-        </b-list-group-item>
-      </b-list-group>
-    </div>
+    <b-list-group v-if="currentUserGroup.usernames">
+      <b-list-group-item
+        v-for="(user, index) in currentUserGroup.usernames"
+        :key="index"
+      >
+        <div class="float-left">
+          <b v-if="getUserFromCache(user)">
+            {{ getUserFromCache(user).lastName }},
+            {{ getUserFromCache(user).firstName }}
+          </b>
+          |
+          <small><GenericName :name="user" :word-count="40" /></small>
+        </div>
+        <b-button-group class="float-right">
+          <b-button
+            v-b-modal.delete-user-confirmation-modal
+            v-b-tooltip.hover
+            title="Delete"
+            variant="info"
+            @click="currentUser = user"
+          >
+            <DeleteIcon />
+          </b-button>
+        </b-button-group>
+      </b-list-group-item>
+    </b-list-group>
     <DeleteConfirmationModal
       v-if="currentUser"
       modal-id="delete-user-confirmation-modal"

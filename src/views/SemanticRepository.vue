@@ -62,44 +62,42 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentSemanticRepository" class="semantic-repository">
-    <div class="component">
-      <b-alert
-        :show="deletedAlert"
-        dismissible
+  <div v-if="currentSemanticRepository" class="view">
+    <b-alert
+      :show="deletedAlert"
+      dismissible
+      variant="info"
+      @dismissed="deletedAlert = false"
+    >
+      Successfully deleted
+    </b-alert>
+    <b-button-group class="float-right">
+      <b-button
+        v-b-modal.delete-semantic-repository-confirmation-modal
+        v-b-tooltip.hover
+        title="Delete"
         variant="info"
-        @dismissed="deletedAlert = false"
       >
-        Successfully deleted
-      </b-alert>
-      <b-button-group class="float-right">
-        <b-button
-          v-b-modal.delete-semantic-repository-confirmation-modal
-          v-b-tooltip.hover
-          title="Delete"
-          variant="info"
-        >
-          <DeleteIcon />
-        </b-button>
-      </b-button-group>
-      <h3>
-        {{ currentSemanticRepository?.name }}
-      </h3>
-      <div class="mb-3">
-        <b>ID:</b> {{ currentSemanticRepository.id }}<br />
-        <b>Type:</b> {{ currentSemanticRepository.type }}<br />
-        <b>Endpoint:</b>
-        <b-link :href="currentSemanticRepository.endpoint">
-          {{ currentSemanticRepository.endpoint }}
-        </b-link>
-        <br />
+        <DeleteIcon />
+      </b-button>
+    </b-button-group>
+    <h3>
+      {{ currentSemanticRepository?.name }}
+    </h3>
+    <div class="mb-3">
+      <b>ID:</b> {{ currentSemanticRepository.id }}<br />
+      <b>Type:</b> {{ currentSemanticRepository.type }}<br />
+      <b>Endpoint:</b>
+      <b-link :href="currentSemanticRepository.endpoint">
+        {{ currentSemanticRepository.endpoint }}
+      </b-link>
+      <br />
 
-        <CreatedByLine
-          :created-at="currentSemanticRepository.createdAt"
-          :created-by="currentSemanticRepository.createdBy"
-          tooltip
-        />
-      </div>
+      <CreatedByLine
+        :created-at="currentSemanticRepository.createdAt"
+        :created-by="currentSemanticRepository.createdBy"
+        tooltip
+      />
     </div>
     <DeleteConfirmationModal
       modal-id="delete-semantic-repository-confirmation-modal"

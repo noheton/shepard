@@ -27,30 +27,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="user">
-    <div class="component">
-      <h4>User Management</h4>
-      <table v-if="user" class="table">
-        <tbody>
-          <tr>
-            <th scope="row">Username</th>
-            <td>{{ user.username }}</td>
-          </tr>
-          <tr>
-            <th scope="row">First Name</th>
-            <td>{{ user.firstName }}</td>
-          </tr>
-          <tr>
-            <th scope="row">Last Name</th>
-            <td>{{ user.lastName }}</td>
-          </tr>
-          <tr>
-            <th scope="row">E-Mail</th>
-            <td>{{ user.email }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div class="view">
+    <h4>User Management</h4>
+    <table v-if="user" class="table">
+      <tbody>
+        <tr>
+          <th scope="row">Username</th>
+          <td>{{ user.username }}</td>
+        </tr>
+        <tr>
+          <th scope="row">First Name</th>
+          <td>{{ user.firstName }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Last Name</th>
+          <td>{{ user.lastName }}</td>
+        </tr>
+        <tr>
+          <th scope="row">E-Mail</th>
+          <td>{{ user.email }}</td>
+        </tr>
+      </tbody>
+    </table>
     <GenericCollapse v-if="user" title="Api Keys">
       <ApiKeyList :current-username="user.username || ''" />
     </GenericCollapse>

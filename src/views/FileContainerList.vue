@@ -118,63 +118,61 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="file-container-list">
-    <div class="component">
-      <b-button-group class="float-right">
-        <b-button
-          v-b-modal.create-file-container-modal
-          v-b-tooltip.hover
-          title="Create File Container"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-      </b-button-group>
-      <h4>File Containers</h4>
-      <br />
-
-      <b-form-input
-        id="userFormInput"
-        v-model="userInput"
-        class="mb-3"
-        placeholder="Name, Username, ID or Description"
-      ></b-form-input>
-
-      <b-popover
-        custom-class="wide-popover"
-        target="userFormInput"
-        triggers="focus"
-        placement="bottom"
+  <div class="view">
+    <b-button-group class="float-right">
+      <b-button
+        v-b-modal.create-file-container-modal
+        v-b-tooltip.hover
+        title="Create File Container"
+        variant="primary"
       >
-        <template #title>
-          Result Set ({{ totalResults }} total)
-          <b-link class="float-right font-weight-normal" :to="searchRoute">
-            Advanced Search
-          </b-link>
-        </template>
-        <GenericEntityList :entities="results" />
-      </b-popover>
+        <CreateIcon />
+      </b-button>
+    </b-button-group>
+    <h4>File Containers</h4>
+    <br />
 
-      <FilterListLine
-        :max-objects="totalRows"
-        :current-page="currentPage"
-        :filter-options="filterOptions"
-        @filter-changed="filterChanged($event)"
-      />
-      <GenericEntityList :entities="containers" />
-      <GenericCreateModal
-        modal-id="create-file-container-modal"
-        modal-name="Create File Container"
-        @create="createContainer($event)"
-      />
-      <b-pagination
-        v-model="currentPage"
-        :total-rows="totalRows"
-        :per-page="filterOptions.perPage"
-        align="center"
-        size="sm"
-        @change="retrieveContainers($event)"
-      ></b-pagination>
-    </div>
+    <b-form-input
+      id="userFormInput"
+      v-model="userInput"
+      class="mb-3"
+      placeholder="Name, Username, ID or Description"
+    ></b-form-input>
+
+    <b-popover
+      custom-class="wide-popover"
+      target="userFormInput"
+      triggers="focus"
+      placement="bottom"
+    >
+      <template #title>
+        Result Set ({{ totalResults }} total)
+        <b-link class="float-right font-weight-normal" :to="searchRoute">
+          Advanced Search
+        </b-link>
+      </template>
+      <GenericEntityList :entities="results" />
+    </b-popover>
+
+    <FilterListLine
+      :max-objects="totalRows"
+      :current-page="currentPage"
+      :filter-options="filterOptions"
+      @filter-changed="filterChanged($event)"
+    />
+    <GenericEntityList :entities="containers" />
+    <GenericCreateModal
+      modal-id="create-file-container-modal"
+      modal-name="Create File Container"
+      @create="createContainer($event)"
+    />
+    <b-pagination
+      v-model="currentPage"
+      :total-rows="totalRows"
+      :per-page="filterOptions.perPage"
+      align="center"
+      size="sm"
+      @change="retrieveContainers($event)"
+    ></b-pagination>
   </div>
 </template>

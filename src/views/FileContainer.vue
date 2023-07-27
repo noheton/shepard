@@ -185,109 +185,107 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="currentFileContainer" class="file-container">
-    <div class="component">
-      <b-alert
-        :show="deletedAlert"
-        dismissible
-        variant="info"
-        @dismissed="deletedAlert = false"
+  <div v-if="currentFileContainer" class="view">
+    <b-alert
+      :show="deletedAlert"
+      dismissible
+      variant="info"
+      @dismissed="deletedAlert = false"
+    >
+      Successfully deleted
+    </b-alert>
+    <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
+      <b-button
+        v-b-modal.upload-file-to-container-modal
+        v-b-tooltip.hover
+        title="Upload File"
+        variant="primary"
       >
-        Successfully deleted
-      </b-alert>
-      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
-        <b-button
-          v-b-modal.upload-file-to-container-modal
-          v-b-tooltip.hover
-          title="Upload File"
-          variant="primary"
-        >
-          <CreateIcon />
-        </b-button>
-        <b-button
-          v-if="roles?.owner || roles?.manager"
-          v-b-modal.permissions-modal
-          v-b-tooltip.hover
-          title="Edit Permissions"
-          variant="secondary"
-          @click="retrievePermissions()"
-        >
-          <PermissionsIcon />
-        </b-button>
-        <b-button
-          v-b-modal.delete-container-confirmation-modal
-          v-b-tooltip.hover
-          title="Delete"
-          variant="info"
-        >
-          <DeleteIcon />
-        </b-button>
-      </b-button-group>
-      <h3>
-        {{ currentFileContainer.name }}
-        <CurrentRoleIcon :roles="roles" />
-      </h3>
-      <div class="mb-3">
-        <b>ID:</b> {{ currentFileContainer.id }}<br />
-        <b>Oid:</b> {{ currentFileContainer.oid }}<br />
-        <CreatedByLine
-          :created-at="currentFileContainer.createdAt"
-          :created-by="currentFileContainer.createdBy"
-          tooltip
-        />
-      </div>
-      <ProcessAlert
-        process-name="Download"
-        :process-active="downloadActive"
-        :process-finished="downloadFinished"
-        :process-error="downloadError"
-        @success-message-dismissed="downloadFinished = false"
-        @error-message-dismissed="downloadError = false"
+        <CreateIcon />
+      </b-button>
+      <b-button
+        v-if="roles?.owner || roles?.manager"
+        v-b-modal.permissions-modal
+        v-b-tooltip.hover
+        title="Edit Permissions"
+        variant="secondary"
+        @click="retrievePermissions()"
+      >
+        <PermissionsIcon />
+      </b-button>
+      <b-button
+        v-b-modal.delete-container-confirmation-modal
+        v-b-tooltip.hover
+        title="Delete"
+        variant="info"
+      >
+        <DeleteIcon />
+      </b-button>
+    </b-button-group>
+    <h3>
+      {{ currentFileContainer.name }}
+      <CurrentRoleIcon :roles="roles" />
+    </h3>
+    <div class="mb-3">
+      <b>ID:</b> {{ currentFileContainer.id }}<br />
+      <b>Oid:</b> {{ currentFileContainer.oid }}<br />
+      <CreatedByLine
+        :created-at="currentFileContainer.createdAt"
+        :created-by="currentFileContainer.createdBy"
+        tooltip
       />
-      <ProcessAlert
-        process-name="Upload"
-        :process-active="uploadActive"
-        :process-finished="uploadFinished"
-        :process-error="uploadError"
-        @success-message-dismissed="uploadFinished = false"
-        @error-message-dismissed="uploadError = false"
-      />
-
-      <b-list-group>
-        <b-list-group-item v-for="(file, index) in fileList" :key="index">
-          <div v-if="file.createdAt" class="float-left">
-            <b><GenericName :name="file.filename || ''" :word-count="40" /></b>
-            | {{ file.oid }} |
-            {{ new Date(file.createdAt).toLocaleString() }}
-            <br />
-            <em v-if="file.md5"> md5: {{ file.md5 }} </em>
-          </div>
-          <b-button-group class="float-right">
-            <b-button
-              v-b-modal.file-download-confirmation-modal
-              v-b-tooltip.hover
-              title="Download"
-              variant="secondary"
-              @click="
-                if (file.oid != undefined)
-                  handleDownloadFile(file.oid, file.filename);
-              "
-            >
-              <DownloadIcon />
-            </b-button>
-            <b-button
-              v-b-modal.delete-file-confirmation-modal
-              v-b-tooltip.hover
-              title="Delete"
-              variant="info"
-              @click="currentFile = file"
-            >
-              <DeleteIcon />
-            </b-button>
-          </b-button-group>
-        </b-list-group-item>
-      </b-list-group>
     </div>
+    <ProcessAlert
+      process-name="Download"
+      :process-active="downloadActive"
+      :process-finished="downloadFinished"
+      :process-error="downloadError"
+      @success-message-dismissed="downloadFinished = false"
+      @error-message-dismissed="downloadError = false"
+    />
+    <ProcessAlert
+      process-name="Upload"
+      :process-active="uploadActive"
+      :process-finished="uploadFinished"
+      :process-error="uploadError"
+      @success-message-dismissed="uploadFinished = false"
+      @error-message-dismissed="uploadError = false"
+    />
+
+    <b-list-group>
+      <b-list-group-item v-for="(file, index) in fileList" :key="index">
+        <div v-if="file.createdAt" class="float-left">
+          <b><GenericName :name="file.filename || ''" :word-count="40" /></b>
+          | {{ file.oid }} |
+          {{ new Date(file.createdAt).toLocaleString() }}
+          <br />
+          <em v-if="file.md5"> md5: {{ file.md5 }} </em>
+        </div>
+        <b-button-group class="float-right">
+          <b-button
+            v-b-modal.file-download-confirmation-modal
+            v-b-tooltip.hover
+            title="Download"
+            variant="secondary"
+            @click="
+              if (file.oid != undefined)
+                handleDownloadFile(file.oid, file.filename);
+            "
+          >
+            <DownloadIcon />
+          </b-button>
+          <b-button
+            v-b-modal.delete-file-confirmation-modal
+            v-b-tooltip.hover
+            title="Delete"
+            variant="info"
+            @click="currentFile = file"
+          >
+            <DeleteIcon />
+          </b-button>
+        </b-button-group>
+      </b-list-group-item>
+    </b-list-group>
 
     <UploadFileModal
       modal-id="upload-file-to-container-modal"
