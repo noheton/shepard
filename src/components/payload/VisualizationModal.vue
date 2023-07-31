@@ -8,7 +8,7 @@ import {
   type ScatterDataPoint,
 } from "chart.js";
 import type { PropType } from "vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { Scatter } from "vue-chartjs";
 
 Chart.register(...registerables);
@@ -33,28 +33,30 @@ const props = defineProps({
   },
 });
 
-const chartOptions = {
-  datasets: { scatter: { showLine: true, tension: 0.1 } },
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: {
-    duration: 0,
-  },
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: props.inputData.xLabel,
+const chartOptions = computed(() => {
+  return {
+    datasets: { scatter: { showLine: true, tension: 0.1 } },
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 0,
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: props.inputData.xLabel,
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "y Value",
+        },
       },
     },
-    y: {
-      title: {
-        display: true,
-        text: "y Value",
-      },
-    },
-  },
-};
+  };
+});
 
 function reset() {
   colorCounter.value = 0;

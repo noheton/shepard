@@ -25,6 +25,8 @@ const props = defineProps({
   },
 });
 
+/* eslint-disable vue/no-setup-props-destructure*/
+// We only need the initial values here
 const curPage = ref(props.currentPage);
 const perPage = ref(props.filterOptions.perPage);
 const sizeOptions = [
@@ -44,6 +46,7 @@ const descendingOptions = [
   { value: false, text: "Ascending" },
   { value: true, text: "Descending" },
 ];
+/* eslint-enable vue/no-setup-props-destructure*/
 
 watch(
   () => props.currentPage,
