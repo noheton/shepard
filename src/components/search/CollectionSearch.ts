@@ -30,7 +30,6 @@ export function useCollectionSearch(
   function search() {
     if (!searchParam.value.searchQuery) return;
     loading.value = true;
-    console.log("loading true");
     results.value = [];
     SearchService.search({
       searchBody: {

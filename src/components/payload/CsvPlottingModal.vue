@@ -66,7 +66,6 @@ function handleParsedCsvData(parsedCsvData: { [key: string]: string }[]) {
   recordsParsed.value = parsedCsvData;
   dataForPreview.value = parsedCsvData.slice(0, maxObjects);
   if (!dataForPreview.value) {
-    console.log("here");
     plottingOptionListX.value = [
       { value: "", text: "Please parse your data first", disabled: true },
     ];
@@ -78,9 +77,6 @@ function handleParsedCsvData(parsedCsvData: { [key: string]: string }[]) {
     plottingOptionListX.value = updatePlottingOptions(columnNames.value);
     plottingOptionListY.value = updatePlottingOptions(columnNames.value);
   }
-  console.log(dataForPreview.value);
-  console.log(plottingOptionListX.value);
-  console.log(plottingOptionListY.value);
 }
 
 function updatePlottingOptions(
