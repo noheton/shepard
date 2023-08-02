@@ -45,7 +45,7 @@
 		<lombok.version>1.18.28</lombok.version>
 		<mockito.version>5.4.0</mockito.version>
 		<mongodb.version>4.10.2</mongodb.version>
-		<neo4j.version>3.2.42</neo4j.version>
+		<neo4j.version>3.3.0</neo4j.version>
 		<opencsv.version>5.8</opencsv.version>
 		<restassured.version>5.3.1</restassured.version>
 		<swagger.version>2.2.15</swagger.version>
