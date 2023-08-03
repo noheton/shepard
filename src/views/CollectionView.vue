@@ -31,6 +31,12 @@ const router = useRouter();
 const currentCollectionId = computed(() => {
   return Number(router.currentRoute.params.collectionId);
 });
+const editPermissions = computed(() => {
+  return roles.value != undefined && (roles.value.owner || roles.value.writer);
+});
+const managePermissions = computed(() => {
+  return roles.value != undefined && (roles.value.owner || roles.value.manager);
+});
 
 const currentCollection = ref<Collection | undefined>();
 const attributeItems = ref<Array<{ key: string; value: string }>>([]);
@@ -176,8 +182,9 @@ onMounted(() => {
 <template>
   <div v-if="currentCollection" class="view">
     <div>
-      <b-button-group v-if="roles?.owner || roles?.writer" class="float-right">
+      <b-button-group class="float-right">
         <b-button
+          v-if="editPermissions"
           v-b-modal.create-data-object-modal
           v-b-tooltip.hover
           title="Create"
@@ -186,6 +193,16 @@ onMounted(() => {
           <CreateIcon />
         </b-button>
         <b-button
+          v-b-tooltip.hover
+          to="graph"
+          append
+          title="Graph"
+          variant="secondary"
+        >
+          <GraphIcon />
+        </b-button>
+        <b-button
+          v-if="editPermissions"
           v-b-modal.edit-collection-modal
           v-b-tooltip.hover
           title="Edit"
@@ -194,6 +211,7 @@ onMounted(() => {
           <EditIcon />
         </b-button>
         <b-button
+          v-if="editPermissions"
           v-b-modal.edit-semantic-modal
           v-b-tooltip.hover
           title="Edit Semantic Annotation"
@@ -202,7 +220,7 @@ onMounted(() => {
           <SemanticIcon />
         </b-button>
         <b-button
-          v-if="roles?.owner || roles?.manager"
+          v-if="managePermissions"
           v-b-modal.permissions-modal
           v-b-tooltip.hover
           title="Edit Permissions"
@@ -212,6 +230,7 @@ onMounted(() => {
           <PermissionsIcon />
         </b-button>
         <b-button
+          v-if="editPermissions"
           v-b-modal.delete-confirmation-modal
           v-b-tooltip.hover
           title="Delete"

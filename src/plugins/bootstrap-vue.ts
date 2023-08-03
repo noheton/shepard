@@ -9,6 +9,7 @@ import BootstrapVue, {
   BIconChevronDown,
   BIconChevronUp,
   BIconDash,
+  BIconDiagram3,
   BIconDownload,
   BIconEye,
   BIconFiles,
@@ -64,6 +65,7 @@ Vue.component("HealthyIcon", BIconCheckCircle);
 Vue.component("UnhealthyIcon", BIconXCircle);
 
 Vue.component("PlottingIcon", BIconGraphUp);
+Vue.component("GraphIcon", BIconDiagram3);
 
 Vue.component("CheckboxChecked", BIconCheckSquare);
 Vue.component("CheckboxEmpty", BIconSquare);

@@ -21,6 +21,11 @@ const routes = [
     component: () => import("../views/CollectionView.vue"),
   },
   {
+    path: "/explore/:collectionId/graph",
+    name: "Graph",
+    component: () => import("../views/GraphView.vue"),
+  },
+  {
     path: "/explore/:collectionId/:dataObjectId",
     name: "DataObject",
     component: () => import("../views/DataObjectView.vue"),

@@ -14,7 +14,6 @@ interface Breadcrumb {
 
 const route = useRoute();
 
-const routeName = computed<string>(() => route.name || "");
 const collectionId = computed<string>(() => route.params.collectionId);
 const dataObjectId = computed<string>(() => route.params.dataObjectId);
 
@@ -36,7 +35,7 @@ function retrieveParentId() {
     })
     .catch(e => {
       parentId.value = undefined;
-      logError(e as ResponseError, "fetching data objects");
+      logError(e as ResponseError, "fetching data object for breadcrumbs");
     });
 }
 
@@ -44,53 +43,45 @@ const items = computed<Breadcrumb[]>(() => chooseBreadcrumb());
 
 function chooseBreadcrumb() {
   const ret: Breadcrumb[] = [];
-  if (routeName.value === "Explore") {
-    ret.push(getCollectionsBreadcrumb(true));
-  } else if (routeName.value === "Collection") {
-    ret.push(getCollectionsBreadcrumb(false));
-    ret.push(getCollectionBreadcrumb(true, collectionId.value));
-  } else if (routeName.value === "DataObject") {
-    ret.push(getCollectionsBreadcrumb(false));
-    ret.push(getCollectionBreadcrumb(false, collectionId.value));
+
+  if (route.path.startsWith("/explore/")) ret.push(getCollectionsBreadcrumb());
+
+  if (collectionId.value) {
+    ret.push(getCollectionBreadcrumb(collectionId.value));
+  }
+
+  if (route.path.endsWith("graph")) ret.push({ text: "Graph", active: false });
+
+  if (dataObjectId.value) {
     if (parentId.value) {
       ret.push(
-        getDataObjectBreadcrumb(
-          false,
-          collectionId.value,
-          parentId.value,
-          true,
-        ),
+        getDataObjectBreadcrumb(collectionId.value, parentId.value, true),
       );
     }
     ret.push(
-      getDataObjectBreadcrumb(
-        true,
-        collectionId.value,
-        dataObjectId.value,
-        false,
-      ),
+      getDataObjectBreadcrumb(collectionId.value, dataObjectId.value, false),
     );
   }
+
+  // The last element is always active
+  ret[ret.length - 1].active = true;
   return ret;
 }
 
-function getCollectionsBreadcrumb(active: boolean): Breadcrumb {
+function getCollectionsBreadcrumb(): Breadcrumb {
   return {
     text: "Collections",
-    active: active,
+    active: false,
     to: {
       name: "Explore",
     },
   };
 }
 
-function getCollectionBreadcrumb(
-  active: boolean,
-  collectionId: string,
-): Breadcrumb {
+function getCollectionBreadcrumb(collectionId: string): Breadcrumb {
   return {
     text: "Collection",
-    active: active,
+    active: false,
     to: {
       name: "Collection",
       params: {
@@ -101,14 +92,13 @@ function getCollectionBreadcrumb(
 }
 
 function getDataObjectBreadcrumb(
-  active: boolean,
   collectionId: string,
   dataObjectId: string,
   isParent: boolean,
 ): Breadcrumb {
   return {
     text: isParent ? "Parent" : "DataObject",
-    active: active,
+    active: false,
     to: {
       name: "DataObject",
       params: {
