@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
 import TimeseriesService from "@/services/timeseriesService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
+  BasicEntity,
   ResponseError,
   Timeseries,
   TimeseriesContainer,
   TimeseriesReference,
 } from "@dlr-shepard/shepard-client";
+import { refDebounced } from "@vueuse/core";
 import { reactive, ref } from "vue";
+import { useSearchContainers } from "../search/InlineSearchContainers";
 
 const props = defineProps({
   modalId: {
@@ -19,6 +23,16 @@ const props = defineProps({
     default: "TimeseriesReferenceModal",
   },
 });
+
+const userInputSearchContainer = ref("");
+const userInputSearchContainerDebounced = refDebounced(
+  userInputSearchContainer,
+  700,
+);
+const { results } = useSearchContainers(
+  userInputSearchContainerDebounced,
+  "TIMESERIES",
+);
 
 const emit = defineEmits(["create"]);
 
@@ -34,18 +48,11 @@ const getInitialFormData = () => ({
   startDate: "",
   endDate: "",
   currentContainerId: "",
+  selected: new Array<Timeseries>(),
 });
 
-const formData = reactive<{
-  name: string;
-  startTime: string;
-  endTime: string;
-  startDate: string;
-  endDate: string;
-  currentContainerId: string;
-}>(getInitialFormData());
+const formData = reactive(getInitialFormData());
 const timeseriesAvailable = ref<Option[]>([]);
-const selectedTimeseries = ref<Timeseries[]>([]);
 const currentContainer = ref<TimeseriesContainer>();
 const validContainer = ref<boolean>();
 
@@ -66,9 +73,9 @@ function convertTimeseriesToOption(ts: Timeseries): Option {
 function reset() {
   Object.assign(formData, getInitialFormData());
   timeseriesAvailable.value = [];
-  selectedTimeseries.value = [];
   currentContainer.value = undefined;
   validContainer.value = undefined;
+  userInputSearchContainer.value = "";
 }
 
 function handleOk() {
@@ -81,7 +88,7 @@ function handleOk() {
     start: startTs * 1e6,
     end: endTs * 1e6,
   };
-  selectedTimeseries.value.forEach(option => {
+  formData.selected.forEach(option => {
     if (option) newTimeseriesReference.timeseries.push(option);
   });
   emit("create", newTimeseriesReference);
@@ -89,19 +96,25 @@ function handleOk() {
 
 function resetSelection() {
   timeseriesAvailable.value = [];
-  selectedTimeseries.value = [];
+  formData.selected = [];
 }
 
-function fetchContainer() {
-  if (currentContainer.value?.id == +formData.currentContainerId) return;
+function chooseContainer(container: BasicEntity) {
+  if (!container.id) return;
+  userInputSearchContainer.value = String(container.id);
+  formData.currentContainerId = String(container.id);
+  fetchContainer(container.id);
+}
+
+function fetchContainer(id: number) {
   resetSelection();
   TimeseriesService.getTimeseriesContainer({
-    timeseriesContainerId: +formData.currentContainerId,
+    timeseriesContainerId: id,
   })
     .then(container => {
-      fetchTimeseriesAvailable();
       currentContainer.value = container;
       validContainer.value = true;
+      fetchTimeseriesAvailable(id);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching timeseries container");
@@ -110,9 +123,9 @@ function fetchContainer() {
     });
 }
 
-function fetchTimeseriesAvailable() {
+function fetchTimeseriesAvailable(id: number) {
   TimeseriesService.getTimeseriesAvailable({
-    timeseriesContainerId: +formData.currentContainerId,
+    timeseriesContainerId: id,
   })
     .then(result => {
       timeseriesAvailable.value = result.map(ts =>
@@ -155,20 +168,31 @@ function validateTime(input: string) {
         ></b-form-input>
       </b-form-group>
 
-      <b-form-group label-cols="3" label="Container ID" label-for="input-id">
+      <b-form-group
+        label-cols="3"
+        label="Container ID"
+        label-for="userFormInput"
+      >
         <b-form-input
-          id="input-id"
-          v-model="formData.currentContainerId"
+          id="userFormInput"
+          v-model="userInputSearchContainer"
           placeholder="Timeseries container id"
-          type="number"
           required
           :state="validContainer"
-          @blur="fetchContainer()"
+          @blur="
+            if (!isNaN(+userInputSearchContainer))
+              fetchContainer(+userInputSearchContainer);
+          "
         ></b-form-input>
         <small v-if="currentContainer">
           <em> {{ currentContainer.name }} </em>
         </small>
         <small v-else>Please enter a valid container id</small>
+        <EntitySelectionPopover
+          :results="results"
+          title-text="search for timeseries containers by name, username, id or description"
+          @selected="chooseContainer($event)"
+        />
       </b-form-group>
 
       <b-row class="mb-3">
@@ -265,7 +289,7 @@ function validateTime(input: string) {
 
       <b-form-group label="Choose timeseries">
         <b-form-select
-          v-model="selectedTimeseries"
+          v-model="formData.selected"
           class="mb-1"
           :options="timeseriesAvailable"
           :select-size="5"

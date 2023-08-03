@@ -1,17 +1,20 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
+  BasicEntity,
   ResponseError,
   StructuredData,
   StructuredDataContainer,
   StructuredDataPayload,
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
+import { refDebounced } from "@vueuse/core";
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import { reactive, ref } from "vue";
+import { useSearchContainers } from "../search/InlineSearchContainers";
 
 defineProps({
   modalId: {
@@ -29,31 +32,32 @@ interface Option {
   text: string;
 }
 
+const userInputSearchContainer = ref("");
+const userInputSearchContainerDebounced = refDebounced(
+  userInputSearchContainer,
+  700,
+);
+const { results } = useSearchContainers(
+  userInputSearchContainerDebounced,
+  "STRUCTUREDDATA",
+);
+
 const emit = defineEmits(["create"]);
 
+const possibleOids = ref<Option[]>();
+const currentContainer = ref<StructuredDataContainer>();
+const validContainer = ref<boolean>();
+
 const getInitialFormData = () => ({
-  newStructuredDataReferenceName: "",
+  currentContainerId: "",
   newContainerName: "",
-  existingContainerId: "",
-  currentContainer: undefined,
-  validContainer: undefined,
-  possibleOids: [],
-  selectedOids: [],
+  newStructuredDataReferenceName: "",
   containerSelection: "useExistingContainer",
   structuredDataSelection: "chooseUploadedStructuredData",
+  selectedOids: new Array<string>(),
 });
 
-const formData = reactive<{
-  newStructuredDataReferenceName: string;
-  newContainerName: string;
-  existingContainerId: string;
-  currentContainer: StructuredDataContainer | undefined;
-  validContainer: boolean | undefined;
-  possibleOids: Option[];
-  selectedOids: string[];
-  containerSelection: string;
-  structuredDataSelection: string;
-}>(getInitialFormData());
+const formData = reactive(getInitialFormData());
 
 const newStructuredDataName = ref<string>("");
 
@@ -61,7 +65,11 @@ const jsoneditor = ref<JSONEditor>();
 
 function handleReset() {
   Object.assign(formData, getInitialFormData());
+  possibleOids.value = undefined;
+  currentContainer.value = undefined;
+  validContainer.value = undefined;
   jsoneditor.value = undefined;
+  userInputSearchContainer.value = "";
 }
 
 function startJsonEditor() {
@@ -78,49 +86,54 @@ function startJsonEditor() {
   }
 }
 
-function fetchContainer() {
-  if (formData.existingContainerId)
-    StructuredDataService.getStructuredDataContainer({
-      structureddataContainerId: +formData.existingContainerId,
-    })
-      .then(container => {
-        formData.currentContainer = container;
-        formData.validContainer = true;
-        fetchStructuredData();
-      })
-      .catch(e => {
-        logError(e as ResponseError, "fetching structured data container");
-        formData.currentContainer = undefined;
-        formData.validContainer = false;
-      });
+function chooseContainer(container: BasicEntity) {
+  if (!container.id) return;
+  userInputSearchContainer.value = String(container.id);
+  formData.currentContainerId = String(container.id);
+  fetchContainer(container.id);
 }
 
-function fetchStructuredData() {
-  if (formData.existingContainerId)
-    StructuredDataService.getAllStructuredDatas({
-      structureddataContainerId: +formData.existingContainerId,
+function fetchContainer(id: number) {
+  StructuredDataService.getStructuredDataContainer({
+    structureddataContainerId: id,
+  })
+    .then(container => {
+      currentContainer.value = container;
+      validContainer.value = true;
+      fetchStructuredData(id);
     })
-      .then(response => {
-        response.forEach(structuredData => {
-          if (!structuredData.oid || !formData.possibleOids) {
-            return;
-          }
-          const option: Option = {
-            value: structuredData.oid,
-            text: structuredData.oid + " - " + structuredData.name,
-          };
-          formData.possibleOids.push(option);
-        });
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "fetching all structured datas");
+    .catch(e => {
+      logError(e as ResponseError, "fetching structured data container");
+      currentContainer.value = undefined;
+      validContainer.value = false;
+      possibleOids.value = [];
+    });
+}
+
+function fetchStructuredData(id: number) {
+  possibleOids.value = [];
+  StructuredDataService.getAllStructuredDatas({
+    structureddataContainerId: id,
+  })
+    .then(response => {
+      response.forEach(structuredData => {
+        if (!structuredData.oid) return;
+        const option: Option = {
+          value: structuredData.oid,
+          text: structuredData.oid + " - " + structuredData.name,
+        };
+        if (possibleOids.value) possibleOids.value.push(option);
       });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching all structured datas");
+    });
 }
 
 async function handleOk() {
-  const containerId = await getStructurdDataContainerId();
+  const containerId = await getStructuredDataContainerId();
   if (!containerId) return;
-  const oids = await getStructurdDataOids(containerId);
+  const oids = await getStructuredDataOids(containerId);
 
   const newStructuredDataReference: StructuredDataReference = {
     name: formData.newStructuredDataReferenceName,
@@ -130,10 +143,10 @@ async function handleOk() {
   emit("create", newStructuredDataReference);
 }
 
-async function getStructurdDataContainerId() {
+async function getStructuredDataContainerId() {
   let containerId = undefined;
   if (formData.containerSelection == "useExistingContainer") {
-    containerId = +formData.existingContainerId;
+    containerId = +userInputSearchContainer.value;
   } else {
     const createdContainer = await createNewStructuredDataContainer(
       formData.newContainerName,
@@ -143,7 +156,7 @@ async function getStructurdDataContainerId() {
   return containerId;
 }
 
-async function getStructurdDataOids(containerId: number) {
+async function getStructuredDataOids(containerId: number) {
   let oids = undefined;
   if (
     formData.containerSelection == "useExistingContainer" &&
@@ -173,7 +186,7 @@ async function createNewStructuredDataContainer(newName: string) {
       structuredDataContainer: { name: newName },
     });
   } catch (e: any) {
-    handleError(e as ResponseError, "creating structurd data container");
+    handleError(e as ResponseError, "creating structured data container");
   }
   return response;
 }
@@ -234,17 +247,25 @@ async function createStructuredData(
             <b-row class="mb-4">
               <b-col>
                 <b-form-input
-                  v-model="formData.existingContainerId"
+                  id="userFormInput"
+                  v-model="userInputSearchContainer"
                   placeholder="Structured Data container id"
-                  type="number"
                   required
-                  :state="formData.validContainer"
-                  @blur="fetchContainer()"
+                  :state="validContainer"
+                  @blur="
+                    if (!isNaN(+userInputSearchContainer))
+                      fetchContainer(+userInputSearchContainer);
+                  "
                 ></b-form-input>
-                <small v-if="formData.currentContainer">
-                  <em> {{ formData.currentContainer.name }} </em>
+                <small v-if="currentContainer">
+                  <em> {{ currentContainer.name }} </em>
                 </small>
                 <small v-else>Please enter a valid container id</small>
+                <EntitySelectionPopover
+                  :results="results"
+                  title-text="search for structured data containers by name, username, id or description"
+                  @selected="chooseContainer($event)"
+                />
               </b-col>
             </b-row>
 
@@ -292,7 +313,7 @@ async function createStructuredData(
             <b-col>
               <b-form-select
                 v-model="formData.selectedOids"
-                :options="formData.possibleOids"
+                :options="possibleOids"
                 multiple
                 required
               ></b-form-select>
