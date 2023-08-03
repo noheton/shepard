@@ -17,7 +17,7 @@
     "@vueuse/core": "10.3.0",
     "bootstrap": "4.6.2",
     "bootstrap-vue": "2.23.1",
-    "chart.js": "4.3.2",
+    "chart.js": "4.3.3",
     "csv-parse": "5.4.0",
     "jsoneditor": "9.10.2",
     "loglevel": "1.8.1",
