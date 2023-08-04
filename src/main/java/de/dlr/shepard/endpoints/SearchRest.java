@@ -8,7 +8,6 @@ import de.dlr.shepard.search.user.UserSearchBody;
 import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -35,7 +34,7 @@ public interface SearchRest {
 
 	@Tag(name = Constants.SEARCH)
 	@Operation(description = "Search users")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserSearchResult.class))))
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserSearchResult.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response searchUsers(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserSearchBody.class))) @Valid UserSearchBody userSearchBody);
