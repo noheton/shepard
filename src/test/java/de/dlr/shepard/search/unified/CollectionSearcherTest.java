@@ -14,13 +14,6 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
-import de.dlr.shepard.search.unified.CollectionSearcher;
-import de.dlr.shepard.search.unified.QueryType;
-import de.dlr.shepard.search.unified.ResponseBody;
-import de.dlr.shepard.search.unified.ResultTriple;
-import de.dlr.shepard.search.unified.SearchBody;
-import de.dlr.shepard.search.unified.SearchParams;
-import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 
 public class CollectionSearcherTest extends BaseTestCase {

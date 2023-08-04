@@ -14,10 +14,6 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.search.Neo4jEmitter;
-import de.dlr.shepard.search.user.UserSearchBody;
-import de.dlr.shepard.search.user.UserSearchParams;
-import de.dlr.shepard.search.user.UserSearchResult;
-import de.dlr.shepard.search.user.UserSearcher;
 
 public class UserSearcherTest extends BaseTestCase {
 

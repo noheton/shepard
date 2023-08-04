@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardParserException;
-import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.TraversalRules;
 

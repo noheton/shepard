@@ -19,13 +19,6 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
-import de.dlr.shepard.search.unified.DataObjectSearcher;
-import de.dlr.shepard.search.unified.QueryType;
-import de.dlr.shepard.search.unified.ResponseBody;
-import de.dlr.shepard.search.unified.ResultTriple;
-import de.dlr.shepard.search.unified.SearchBody;
-import de.dlr.shepard.search.unified.SearchParams;
-import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 

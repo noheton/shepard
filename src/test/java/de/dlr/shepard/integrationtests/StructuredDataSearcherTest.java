@@ -15,6 +15,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
@@ -152,7 +153,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId());
 	}
 
@@ -176,7 +177,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId());
 	}
 
@@ -201,7 +202,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId());
 	}
 
@@ -253,7 +254,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		assertThat(result.getResultSet()).contains(triple);
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId(), reference1.getId());
 	}
 
@@ -277,7 +278,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId());
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
@@ -304,7 +305,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(result.getResultSet()).contains(triple1);
 		assertEquals(query, result.getSearchParams().getQuery());
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId())).contains(reference1.getId());
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId)).contains(reference1.getId());
 	}
 
 	@Test
@@ -353,7 +354,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).contains(triple);
 		assertEquals(query, result.getSearchParams().getQuery());
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId())).contains(reference.getId());
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId)).contains(reference.getId());
 	}
 
 	@Test
@@ -376,7 +377,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId());
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
@@ -401,7 +402,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 				.as(ResponseBody.class);
 		ResultTriple triple = new ResultTriple(collection.getId(), firstSuccessor.getId(), referenceSuccessor.getId());
 		assertThat(result.getResultSet()).containsExactly(triple);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(referenceSuccessor.getId());
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}
@@ -431,7 +432,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 		ResultTriple expectedResult0 = new ResultTriple(collection.getId(), secondChild.getId(), reference.getId());
 		ResultTriple expectedResult1 = new ResultTriple(collection.getId(), firstChild.getId(), reference1.getId());
 		assertThat(resultTriples).containsExactlyInAnyOrder(expectedResult0, expectedResult1);
-		assertThat(Arrays.asList(result.getResults()).stream().map(elem -> elem.getId()))
+		assertThat(Arrays.asList(result.getResults()).stream().map(BasicEntityIO::getId))
 				.containsExactlyInAnyOrder(reference.getId(), reference1.getId());
 		assertThat(result.getSearchParams()).isEqualTo(searchParams);
 	}

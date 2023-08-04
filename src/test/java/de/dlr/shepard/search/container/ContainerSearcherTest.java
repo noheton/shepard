@@ -20,10 +20,6 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.BasicContainerIO;
 import de.dlr.shepard.search.Neo4jEmitter;
-import de.dlr.shepard.search.container.ContainerQueryType;
-import de.dlr.shepard.search.container.ContainerSearchBody;
-import de.dlr.shepard.search.container.ContainerSearchParams;
-import de.dlr.shepard.search.container.ContainerSearcher;
 import de.dlr.shepard.util.Constants;
 
 public class ContainerSearcherTest extends BaseTestCase {
