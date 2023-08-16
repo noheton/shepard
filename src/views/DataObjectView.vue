@@ -274,6 +274,7 @@ onMounted(() => {
     <GenericCollapse
       v-if="currentDataObject.parentId"
       id="parentCollapse"
+      class="mb-3"
       title="Parent"
     >
       <DataObjectElement
@@ -282,11 +283,15 @@ onMounted(() => {
       />
     </GenericCollapse>
 
-    <GenericCollapse id="relatedObjectsCollapse" title="Related Objects">
+    <GenericCollapse
+      id="relatedObjectsCollapse"
+      class="mb-3"
+      title="Related Objects"
+    >
       <RelatedObjectsTable :current-data-object="currentDataObject" />
     </GenericCollapse>
 
-    <GenericCollapse id="referencesCollapse" title="References">
+    <GenericCollapse id="referencesCollapse" class="mb-3" title="References">
       <ReferencesTable
         :current-data-object="currentDataObject"
         @count-references-changed="countReferences = $event"

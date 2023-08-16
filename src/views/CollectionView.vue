@@ -282,6 +282,7 @@ onMounted(() => {
 
     <GenericCollapse
       v-if="currentCollection.dataObjectIds?.length"
+      class="mb-3"
       title="Data Objects"
     >
       <DataObjectList
