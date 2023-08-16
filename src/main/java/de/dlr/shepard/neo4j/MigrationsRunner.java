@@ -21,10 +21,10 @@ public class MigrationsRunner {
 		var pHelper = new PropertiesHelper();
 		String username = pHelper.getProperty("neo4j.username");
 		String password = pHelper.getProperty("neo4j.password");
-		String host = pHelper.getProperty("neo4j.host");
+		String host = "neo4j://" + pHelper.getProperty("neo4j.host");
 		var path = this.getClass().getClassLoader().getResource("neo4j/migrations");
 
-		driver = GraphDatabase.driver("neo4j://" + host, AuthTokens.basic(username, password));
+		driver = GraphDatabase.driver(host, AuthTokens.basic(username, password));
 		var config = MigrationsConfig.builder().withTransactionMode(MigrationsConfig.TransactionMode.PER_STATEMENT)
 				.withPackagesToScan("de.dlr.shepard.neo4j.migrations").withLocationsToScan("file://" + path.toString())
 				.build();
