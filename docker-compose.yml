@@ -4,18 +4,18 @@ services:
     image: registry.gitlab.com/dlr-shepard/backend:latest
     environment:
       CATALINA_OPTS: "-Xms2G -Xmx2G"
-      oidc.public: ${OIDC_PUBLIC}
-      oidc.authority: ${OIDC_AUTHORITY}
-      oidc.role: ${OIDC_ROLE}
-      influx.host: influxdb:8086
-      influx.username: admin
-      influx.password: ${INFLUX_PW}
-      neo4j.host: neo4j:7687
-      neo4j.username: neo4j
-      neo4j.password: ${NEO4J_PW}
-      mongo.host: mongodb:27017
-      mongo.username: mongo
-      mongo.password: ${MONGO_PW}
+      OIDC_PUBLIC: ${OIDC_PUBLIC}
+      OIDC_AUTHORITY: ${OIDC_AUTHORITY}
+      OIDC_ROLE: ${OIDC_ROLE}
+      INFLUX_HOST: influxdb:8086
+      INFLUX_USERNAME: admin
+      INFLUX_PASSWORD: ${INFLUX_PW}
+      NEO4J_HOST: neo4j:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PW}
+      MONGO_HOST: mongodb:27017
+      MONGO_USERNAME: mongo
+      MONGO_PASSWORD: ${MONGO_PW}
     volumes:
       - /opt/shepard/backend/tomcat:/usr/local/tomcat/logs
       - /opt/shepard/backend/config:/root/.shepard
