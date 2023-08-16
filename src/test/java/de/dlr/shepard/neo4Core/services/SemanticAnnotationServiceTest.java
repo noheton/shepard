@@ -145,7 +145,7 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var actual = service.createAnnotation(5L, annotation);
 		assertEquals(expected, actual);
 		verify(semanticAnnotationDAO).createOrUpdate(toCreate);
-		verify(abstractEntityDAO).update(entityUpdated);
+		verify(abstractEntityDAO).createOrUpdate(entity);
 	}
 
 	@Test

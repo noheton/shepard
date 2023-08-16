@@ -17,7 +17,7 @@ public class SemanticAnnotationService {
 
 	private SemanticAnnotationDAO semanticAnnotationDAO = new SemanticAnnotationDAO();
 	private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
-	private BasicEntityDAO abstractEntityDAO = new BasicEntityDAO();
+	private BasicEntityDAO basicEntityDAO = new BasicEntityDAO();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
 	public List<SemanticAnnotation> getAllAnnotations(long entityId) {
@@ -34,7 +34,7 @@ public class SemanticAnnotationService {
 	}
 
 	public SemanticAnnotation createAnnotation(long entityId, SemanticAnnotationIO annotationIO) {
-		var entity = abstractEntityDAO.find(entityId);
+		var entity = basicEntityDAO.find(entityId);
 		if (entity == null || entity.isDeleted())
 			throw new InvalidBodyException("invalid entity");
 
@@ -53,7 +53,7 @@ public class SemanticAnnotationService {
 		var created = semanticAnnotationDAO.createOrUpdate(toCreate);
 
 		entity.addAnnotation(created);
-		abstractEntityDAO.update(entity);
+		basicEntityDAO.createOrUpdate(entity);
 
 		return created;
 	}
