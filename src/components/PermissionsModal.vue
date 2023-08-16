@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UserSelectionPopover from "@/components/user/UserSelectionPopover.vue";
 import UserGroupService from "@/services/userGroupService";
 import UserService from "@/services/userService";
 import { logError } from "@/utils/error-handling";
@@ -10,7 +11,9 @@ import type {
   User,
   UserGroup,
 } from "@dlr-shepard/shepard-client";
+import { refDebounced } from "@vueuse/core";
 import { reactive, ref, watch, type PropType } from "vue";
+import { useSearchUsers } from "./search/InlineSearchUsers";
 
 const props = defineProps({
   modalId: {
@@ -35,7 +38,7 @@ const props = defineProps({
 
 const permissionOptions = pOptions;
 const getInitialFormData = () => ({
-  usernameOrGroupId: "",
+  userGroup: "",
   owner: undefined,
   reader: [],
   readerGroup: [],
@@ -46,7 +49,7 @@ const getInitialFormData = () => ({
 });
 
 const formData = reactive<{
-  usernameOrGroupId: string;
+  userGroup: string;
   owner?: User;
   reader: User[];
   readerGroup: UserGroup[];
@@ -61,6 +64,11 @@ const currentUser = ref<User>();
 const currentUserGroup = ref<UserGroup>();
 
 const emit = defineEmits(["update"]);
+
+const userInputSearchUser = ref("");
+const userInputSearchUserDebounced = refDebounced(userInputSearchUser, 700);
+const { results } = useSearchUsers(userInputSearchUserDebounced);
+
 watch(
   () => props.oldPermissions,
   async () => parseOldPermissions(),
@@ -72,11 +80,16 @@ function reset() {
   validUserGroup.value = undefined;
   currentUser.value = undefined;
   currentUserGroup.value = undefined;
+  userInputSearchUser.value = "";
 }
 
-function resetInput() {
-  formData.usernameOrGroupId = "";
+function resetInputUser() {
+  userInputSearchUser.value = "";
   validUser.value = undefined;
+}
+
+function resetInputUserGroup() {
+  formData.userGroup = "";
   validUserGroup.value = undefined;
 }
 
@@ -111,7 +124,7 @@ function handleOk() {
 function setOwner() {
   if (currentUser.value) {
     formData.owner = currentUser.value;
-    resetInput();
+    resetInputUser();
   }
 }
 
@@ -123,7 +136,7 @@ function addReader() {
       )
     )
       formData.reader.push(currentUser.value);
-    resetInput();
+    resetInputUser();
   } else if (currentUserGroup.value && currentUserGroup.value.name) {
     if (
       !formData.readerGroup.some(
@@ -131,7 +144,7 @@ function addReader() {
       )
     )
       formData.readerGroup.push(currentUserGroup.value);
-    resetInput();
+    resetInputUserGroup();
   }
 }
 
@@ -144,7 +157,7 @@ function addWriter() {
       )
     )
       formData.writer.push(currentUser.value);
-    resetInput();
+    resetInputUser();
   } else if (currentUserGroup.value && currentUserGroup.value.name) {
     if (
       !formData.writerGroup.some(
@@ -152,7 +165,7 @@ function addWriter() {
       )
     )
       formData.writerGroup.push(currentUserGroup.value);
-    resetInput();
+    resetInputUserGroup();
   }
 }
 
@@ -166,31 +179,24 @@ function addManager() {
       )
     )
       formData.manager.push(currentUser.value);
-    resetInput();
+    resetInputUser();
   }
 }
 
-function fetch() {
-  if (!formData.usernameOrGroupId) {
+function chooseUser(user: User) {
+  if (user.username) {
+    userInputSearchUser.value = user.username;
+    fetchUser(user.username);
+  }
+}
+
+function fetchUser(username: string) {
+  if (!userInputSearchUser.value) {
     validUser.value = undefined;
     currentUser.value = undefined;
-    validUserGroup.value = undefined;
-    currentUserGroup.value = undefined;
     return;
   }
-  if (Number(formData.usernameOrGroupId)) {
-    fetchUserGroups();
-    validUser.value = false;
-    currentUser.value = undefined;
-  } else {
-    fetchUser();
-    validUserGroup.value = false;
-    currentUserGroup.value = undefined;
-  }
-}
-
-function fetchUser() {
-  UserService.getUser({ username: formData.usernameOrGroupId })
+  UserService.getUser({ username: username })
     .then(user => {
       currentUser.value = user;
       validUser.value = true;
@@ -202,9 +208,14 @@ function fetchUser() {
     });
 }
 
-function fetchUserGroups() {
+function fetchUserGroups(id: number) {
+  if (!formData.userGroup) {
+    validUserGroup.value = undefined;
+    currentUserGroup.value = undefined;
+    return;
+  }
   UserGroupService.getUserGroup({
-    usergroupId: Number(formData.usernameOrGroupId),
+    usergroupId: id,
   })
     .then(userGroup => {
       currentUserGroup.value = userGroup;
@@ -274,27 +285,22 @@ function parseOldPermissions() {
     ></b-form-select>
 
     <h5>Individual Permissions</h5>
-    <b-input-group prepend="Username or GroupID">
+    <b-input-group prepend="Username">
       <b-form-input
-        v-model="formData.usernameOrGroupId"
-        :state="validUser || validUserGroup"
-        @change="fetch()"
+        id="userFormInput"
+        v-model="userInputSearchUser"
+        :state="validUser"
+        @blur="fetchUser(userInputSearchUser)"
       ></b-form-input>
       <b-input-group-append>
         <b-dropdown text="Add" variant="info">
           <b-dropdown-item :disabled="!validUser" @click="setOwner()">
             Owner
           </b-dropdown-item>
-          <b-dropdown-item
-            :disabled="!validUser && !validUserGroup"
-            @click="addReader()"
-          >
+          <b-dropdown-item :disabled="!validUser" @click="addReader()">
             Reader
           </b-dropdown-item>
-          <b-dropdown-item
-            :disabled="!validUser && !validUserGroup"
-            @click="addWriter()"
-          >
+          <b-dropdown-item :disabled="!validUser" @click="addWriter()">
             Writer
           </b-dropdown-item>
           <b-dropdown-item :disabled="!validUser" @click="addManager()">
@@ -306,10 +312,42 @@ function parseOldPermissions() {
     <small v-if="currentUser">
       <em> {{ currentUser.firstName }} {{ currentUser.lastName }} </em>
     </small>
-    <small v-else-if="currentUserGroup">
+    <small v-else>Please enter a valid username</small>
+
+    <UserSelectionPopover
+      :results="results"
+      title-text="search for user by name, mail or username"
+      @selected="chooseUser($event)"
+    />
+
+    <h5>Group Permissions</h5>
+    <b-input-group prepend="GroupID">
+      <b-form-input
+        v-model="formData.userGroup"
+        :state="validUserGroup"
+        @blur="fetchUserGroups(+formData.userGroup)"
+      ></b-form-input>
+      <b-input-group-append>
+        <b-dropdown text="Add" variant="info">
+          <b-dropdown-item :disabled="!validUser" @click="setOwner()">
+            Owner
+          </b-dropdown-item>
+          <b-dropdown-item :disabled="!validUserGroup" @click="addReader()">
+            Reader
+          </b-dropdown-item>
+          <b-dropdown-item :disabled="!validUserGroup" @click="addWriter()">
+            Writer
+          </b-dropdown-item>
+          <b-dropdown-item :disabled="!validUser" @click="addManager()">
+            Manager
+          </b-dropdown-item>
+        </b-dropdown>
+      </b-input-group-append>
+    </b-input-group>
+    <small v-if="currentUserGroup">
       <em> {{ currentUserGroup.name }} </em>
     </small>
-    <small v-else>Please enter a valid username</small>
+    <small v-else>Please enter a valid user group</small>
 
     <div class="mt-3">Owner</div>
     <b-list-group>

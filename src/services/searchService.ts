@@ -2,6 +2,7 @@ import {
   SearchApi,
   type SearchContainersRequest,
   type SearchRequest,
+  type SearchUsersRequest,
 } from "@dlr-shepard/shepard-client";
 import { getConfiguration } from "./serviceHelper";
 
@@ -13,5 +14,9 @@ export default class SearchService {
   static searchContainers(params: SearchContainersRequest) {
     const api = new SearchApi(getConfiguration());
     return api.searchContainers(params);
+  }
+  static searchUsers(params: SearchUsersRequest) {
+    const api = new SearchApi(getConfiguration());
+    return api.searchUsers(params);
   }
 }

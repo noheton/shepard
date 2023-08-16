@@ -262,15 +262,21 @@ onMounted(() => {
 
     <SemanticBadge
       v-if="collectionAnnotationList"
+      class="mb-3"
       :annotation-list="collectionAnnotationList"
     />
 
     <GenericDescription
       v-if="currentCollection.description"
+      class="mb-3"
       :text="currentCollection.description"
     />
 
-    <GenericCollapse v-if="attributeItems.length" title="Attributes">
+    <GenericCollapse
+      v-if="attributeItems.length"
+      class="mb-3"
+      title="Attributes"
+    >
       <b-table striped small :items="attributeItems"> </b-table>
     </GenericCollapse>
 
