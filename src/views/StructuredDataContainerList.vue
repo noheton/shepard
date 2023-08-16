@@ -130,8 +130,7 @@ onMounted(() => {
       </b-button>
     </b-button-group>
 
-    <h4>Structured Data Containers</h4>
-    <br />
+    <h4 class="title">Structured Data Containers</h4>
 
     <b-form-input
       id="userFormInput"

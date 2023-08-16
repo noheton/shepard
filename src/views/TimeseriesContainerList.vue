@@ -129,8 +129,7 @@ onMounted(() => {
         <CreateIcon />
       </b-button>
     </b-button-group>
-    <h4>Timeseries Containers</h4>
-    <br />
+    <h4 class="title">Timeseries Containers</h4>
 
     <b-form-input
       id="userFormInput"

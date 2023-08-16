@@ -41,7 +41,7 @@ onMounted(() => {
 
 <template>
   <div class="view">
-    <h4>Your current user</h4>
+    <h4 class="title">Your current user</h4>
     <b-list-group>
       <b-list-group-item v-for="c in claims" :key="c.key">
         <strong>{{ c.key }}:</strong> {{ c.value }}

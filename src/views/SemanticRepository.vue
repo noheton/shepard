@@ -81,7 +81,7 @@ onMounted(() => {
         <DeleteIcon />
       </b-button>
     </b-button-group>
-    <h3>
+    <h3 class="title">
       {{ currentSemanticRepository?.name }}
     </h3>
     <div class="mb-3">

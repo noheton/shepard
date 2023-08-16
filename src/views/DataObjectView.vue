@@ -204,7 +204,7 @@ onMounted(() => {
         </b-button>
       </b-button-group>
 
-      <h3>
+      <h3 class="title">
         {{ currentDataObject.name }}
         <CurrentRoleIcon :roles="roles" />
       </h3>

@@ -28,7 +28,7 @@ onMounted(() => {
 
 <template>
   <div class="view">
-    <h4>User Management</h4>
+    <h4 class="title">User Management</h4>
     <table v-if="user" class="table">
       <tbody>
         <tr>

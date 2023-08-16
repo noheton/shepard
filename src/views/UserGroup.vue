@@ -194,7 +194,7 @@ onUpdated(() => {
         <DeleteIcon />
       </b-button>
     </b-button-group>
-    <h3>
+    <h3 class="title">
       {{ currentUserGroup.name }}
       <CurrentRoleIcon :roles="roles" />
     </h3>

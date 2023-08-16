@@ -100,8 +100,7 @@ onMounted(() => {
         <CreateIcon />
       </b-button>
     </b-button-group>
-    <h4>Semantic Repositories</h4>
-    <br />
+    <h4 class="title">Semantic Repositories</h4>
 
     <FilterListLine
       :max-objects="totalRows"

@@ -170,7 +170,7 @@ onMounted(() => {
         <DeleteIcon />
       </b-button>
     </b-button-group>
-    <h3>
+    <h3 class="title">
       {{ currentTimeseriesContainer.name }}
       <CurrentRoleIcon :roles="roles" />
     </h3>

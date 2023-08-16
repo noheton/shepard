@@ -49,7 +49,7 @@ onMounted(() => {
 
 <template>
   <div class="view">
-    <h4>About shepard</h4>
+    <h4 class="title">About shepard</h4>
     <b-list-group class="mb-3">
       <b-list-group-item>
         <strong>Frontend Version:</strong>

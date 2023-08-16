@@ -115,7 +115,7 @@ onMounted(() => {
       </b-button>
     </b-button-group>
 
-    <h4 class="mb-4">User Groups</h4>
+    <h4 class="title">User Groups</h4>
 
     <FilterListLine
       :max-objects="totalRows"

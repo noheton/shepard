@@ -120,7 +120,7 @@ function getDataObjectBreadcrumb(
 <style scoped>
 .breadcrumb {
   font-style: italic;
-  margin-top: 30px;
+  margin-top: 20px;
   margin-bottom: 0px;
   padding: 0px;
   background-color: var(--white);

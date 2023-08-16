@@ -96,7 +96,7 @@ onMounted(() => {
       </b-button>
     </b-button-group>
 
-    <h4 class="mb-4">Explore Collections</h4>
+    <h4 class="title">Explore Collections</h4>
 
     <b-form-input
       id="userFormInput"
