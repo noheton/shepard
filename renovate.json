@@ -32,15 +32,21 @@
     },
     {
       "matchPackageNames": [
+        "bootstrap"
+      ],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": [
         "portal-vue"
       ],
       "allowedVersions": "<3"
     },
     {
       "matchPackageNames": [
-        "bootstrap"
+        "sass"
       ],
-      "allowedVersions": "<5"
+      "allowedVersions": "<1.65"
     },
     {
       "matchPackageNames": [
