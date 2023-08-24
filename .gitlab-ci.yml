@@ -16,7 +16,6 @@ cache:
       - target/
 
 include:
-  - template: Security/License-Scanning.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
   - local: .gitlab/ci/*.gitlab-ci.yml
 
