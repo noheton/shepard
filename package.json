@@ -38,7 +38,7 @@
     "@tsconfig/node18": "18.2.1",
     "@types/chart.js": "2.9.37",
     "@types/jsoneditor": "9.9.0",
-    "@types/node": "18.17.8",
+    "@types/node": "18.17.9",
     "@vitejs/plugin-vue2": "2.2.0",
     "@volar/vue-typescript": "1.6.5",
     "@vue/eslint-config-prettier": "8.0.0",
