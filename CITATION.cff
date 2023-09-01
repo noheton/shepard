@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: shepard
+message: A storage for heterogeneous product and research data
+type: software
+authors:
+  - given-names: Tobias
+    family-names: Haase
+    email: Tobias.Haase@dlr.de
+    orcid: "https://orcid.org/0000-0001-6285-3242"
+  - given-names: Roland
+    family-names: Glück
+    orcid: "https://orcid.org/0000-0001-7909-1942"
+    email: Roland.Glueck@dlr.de
+  - given-names: Patrick
+    family-names: Kaufmann
+    email: Patrick.Kaufmann@dlr.de
+    orcid: "https://orcid.org/0000-0003-1181-7211"
+  - given-names: Mark
+    family-names: Willmeroth
+  - family-names: Krebs
+    given-names: Florian
+    email: Florian.Krebs@dlr.de
+    orcid: "https://orcid.org/0000-0001-6033-801X"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.5091603
+repository-code: "https://gitlab.com/dlr-shepard"
+url: >-
+  https://www.dlr.de/zlp/en/desktopdefault.aspx/tabid-18285/29082_read-76551/#/gallery/37839
+abstract: >-
+  shepard is a multi-database storage system for highly
+  heterogenous research data. It provides a consistent API
+  to deposit or access any type of supported data.
+license: Apache-2.0
