@@ -48,7 +48,7 @@ format-prettier:
   stage: test
   image: node:20-slim
   before_script:
-    - npm install -g prettier
+    - npm install --save-dev --save-exact prettier
   script:
     - npx prettier --check .
 
