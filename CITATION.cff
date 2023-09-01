@@ -30,8 +30,10 @@ identifiers:
 repository-code: "https://gitlab.com/dlr-shepard"
 url: >-
   https://www.dlr.de/zlp/en/desktopdefault.aspx/tabid-18285/29082_read-76551/#/gallery/37839
+
+
 abstract: >-
-  shepard is a multi-database storage system for highly
-  heterogenous research data. It provides a consistent API
-  to deposit or access any type of supported data.
+  shepard is a multi-database storage system for highly heterogenous research data. It provides a consistent API to deposit or access any type of supported data.
+
+
 license: Apache-2.0
