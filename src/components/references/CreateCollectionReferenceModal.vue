@@ -1,3 +1,64 @@
+<script setup lang="ts">
+import CollectionService from "@/services/collectionService";
+import { logError } from "@/utils/error-handling";
+import type {
+  Collection,
+  CollectionReference,
+  ResponseError,
+} from "@dlr-shepard/shepard-client";
+import { reactive } from "vue";
+
+defineProps({
+  modalId: {
+    type: String,
+    default: "CollectionReferenceModal",
+  },
+  modalName: {
+    type: String,
+    default: "CollectionReferenceModal",
+  },
+});
+
+const initialState = (): {
+  newCollectionReference: CollectionReference;
+  validCollection: boolean | undefined;
+  currentCollectionId: string;
+  currentCollection: Collection | undefined;
+} => ({
+  newCollectionReference: {
+    name: "",
+    referencedCollectionId: 0,
+    relationship: "",
+  },
+  validCollection: undefined,
+  currentCollectionId: "",
+  currentCollection: undefined,
+});
+
+const formData = reactive(initialState());
+
+function reset() {
+  Object.assign(formData, initialState());
+}
+
+function fetchCollection() {
+  CollectionService.getCollection({
+    collectionId: +formData.currentCollectionId,
+  })
+    .then(collection => {
+      formData.currentCollection = collection;
+      formData.validCollection = true;
+      if (collection.id)
+        formData.newCollectionReference.referencedCollectionId = collection.id;
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching collection");
+      formData.currentCollection = undefined;
+      formData.validCollection = false;
+    });
+}
+</script>
+
 <template>
   <b-modal
     :id="modalId"
@@ -6,7 +67,7 @@
     :title="modalName"
     lazy
     @show="reset()"
-    @ok="$emit('create', newCollectionReference)"
+    @ok="$emit('create', formData.newCollectionReference)"
   >
     <b-form-group>
       <b-container>
@@ -14,7 +75,7 @@
           <b-col cols="3"> Name </b-col>
           <b-col cols="9">
             <b-form-input
-              v-model="newCollectionReference.name"
+              v-model="formData.newCollectionReference.name"
               placeholder="Name"
               required
             ></b-form-input>
@@ -25,15 +86,15 @@
           <b-col cols="3"> Collection </b-col>
           <b-col cols="9">
             <b-form-input
-              v-model="currentCollectionId"
-              :state="validCollection"
+              v-model="formData.currentCollectionId"
+              :state="formData.validCollection"
               placeholder="Referenced collection id"
               type="number"
               required
               @blur="fetchCollection()"
             ></b-form-input>
-            <small v-if="currentCollection">
-              <em> {{ currentCollection.name }} </em>
+            <small v-if="formData.currentCollection">
+              <em> {{ formData.currentCollection.name }} </em>
             </small>
             <small v-else>Please enter a valid collection id</small>
           </b-col>
@@ -43,7 +104,7 @@
           <b-col cols="3"> Relationship </b-col>
           <b-col cols="9">
             <b-form-input
-              v-model="newCollectionReference.relationship"
+              v-model="formData.newCollectionReference.relationship"
               placeholder="Relationship"
             ></b-form-input>
           </b-col>
@@ -52,71 +113,3 @@
     </b-form-group>
   </b-modal>
 </template>
-
-<script lang="ts">
-import CollectionService from "@/services/collectionService";
-import { logError } from "@/utils/error-handling";
-import type {
-  Collection,
-  CollectionReference,
-  ResponseError,
-} from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface CollectionReferenceModelData {
-  newCollectionReference: CollectionReference;
-  validCollection?: boolean;
-  currentCollectionId: string;
-  currentCollection?: Collection;
-}
-
-function initialState(): CollectionReferenceModelData {
-  return {
-    newCollectionReference: {
-      name: "",
-      referencedCollectionId: 0,
-      relationship: "",
-    },
-    validCollection: undefined,
-    currentCollectionId: "",
-    currentCollection: undefined,
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "CollectionReferenceModal",
-    },
-    modalName: {
-      type: String,
-      default: "CollectionReferenceModal",
-    },
-  },
-  data() {
-    return initialState();
-  },
-  methods: {
-    reset() {
-      Object.assign(this.$data, initialState());
-    },
-    fetchCollection() {
-      CollectionService.getCollection({
-        collectionId: +this.currentCollectionId,
-      })
-        .then(collection => {
-          this.currentCollection = collection;
-          this.validCollection = true;
-          if (collection.id)
-            this.newCollectionReference.referencedCollectionId = collection.id;
-        })
-        .catch(e => {
-          logError(e as ResponseError, "fetching collection");
-          this.currentCollection = undefined;
-          this.validCollection = false;
-        });
-    },
-  },
-});
-</script>

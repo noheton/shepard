@@ -1,3 +1,30 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+defineProps({
+  modalId: {
+    type: String,
+    default: "FileContainerModal",
+  },
+  modalName: {
+    type: String,
+    default: "FileContainerModal",
+  },
+});
+
+const emit = defineEmits(["created"]);
+
+const newFile = ref<Blob>();
+
+function handlePrepare() {
+  newFile.value = undefined;
+}
+
+function handleOk() {
+  emit("created", newFile.value);
+}
+</script>
+
 <template>
   <div>
     <b-modal
@@ -18,40 +45,3 @@
     </b-modal>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-interface UploadFileModalData {
-  newFile?: Blob;
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "FileContainerModal",
-    },
-    modalName: {
-      type: String,
-      default: "FileContainerModal",
-    },
-  },
-  emits: ["created"],
-  data() {
-    return {
-      newFile: {},
-    } as UploadFileModalData;
-  },
-
-  methods: {
-    handlePrepare() {
-      this.newFile = undefined;
-    },
-
-    handleOk() {
-      this.$emit("created", this.newFile);
-    },
-  },
-});
-</script>

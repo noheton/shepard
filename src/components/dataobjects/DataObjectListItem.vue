@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import CreatedByLine from "@/components/generic/CreatedByLine.vue";
+import GenericName from "@/components/generic/GenericName.vue";
+import type { DataObject } from "@dlr-shepard/shepard-client";
+import type { PropType } from "vue";
+
+defineProps({
+  dataObject: {
+    type: Object as PropType<DataObject>,
+    required: true,
+  },
+});
+</script>
+
 <template>
   <b-list-group-item
     :to="{
@@ -43,23 +57,6 @@
     </div>
   </b-list-group-item>
 </template>
-
-<script lang="ts">
-import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import GenericName from "@/components/generic/GenericName.vue";
-import type { DataObject } from "@dlr-shepard/shepard-client";
-import { defineComponent, type PropType } from "vue";
-
-export default defineComponent({
-  components: { CreatedByLine, GenericName },
-  props: {
-    dataObject: {
-      type: Object as PropType<DataObject>,
-      required: true,
-    },
-  },
-});
-</script>
 
 <style scoped>
 .icon {

@@ -1,3 +1,16 @@
+<script setup lang="ts">
+defineProps({
+  name: {
+    type: String,
+    required: true,
+  },
+  wordCount: {
+    type: Number,
+    default: 50,
+  },
+});
+</script>
+
 <template>
   <span v-if="name">
     <span v-if="name.length < wordCount">
@@ -8,20 +21,3 @@
     </span>
   </span>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-export default defineComponent({
-  props: {
-    name: {
-      type: String,
-      required: true,
-    },
-    wordCount: {
-      type: Number,
-      default: 50,
-    },
-  },
-});
-</script>

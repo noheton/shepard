@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+const props = defineProps({
+  title: {
+    type: String,
+    required: true,
+  },
+  collapsed: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const collapsedState = ref<boolean>(props.collapsed);
+
+function toggleVisible() {
+  collapsedState.value = !collapsedState.value;
+}
+</script>
+
 <template>
   <div>
     <h4 @click="toggleVisible()">
@@ -14,27 +35,3 @@
     </b-collapse>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-export default defineComponent({
-  props: {
-    title: {
-      type: String,
-      required: true,
-    },
-    collapsed: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  data() {
-    return { collapsedState: this.collapsed };
-  },
-  methods: {
-    toggleVisible() {
-      this.collapsedState = !this.collapsedState;
-    },
-  },
-});
-</script>

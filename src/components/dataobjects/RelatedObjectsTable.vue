@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
+import type { DataObject } from "@dlr-shepard/shepard-client";
+import { ref, type PropType } from "vue";
+
+const props = defineProps({
+  currentDataObject: {
+    type: Object as PropType<DataObject>,
+    required: true,
+  },
+});
+
+const childrenIds = ref<number[]>(props.currentDataObject.childrenIds || []);
+const predecessorIds = ref<number[]>(
+  props.currentDataObject.predecessorIds || [],
+);
+const successorIds = ref<number[]>(props.currentDataObject.successorIds || []);
+</script>
+
 <template>
   <b-card no-body>
     <b-tabs v-if="currentDataObject.collectionId" card>
@@ -25,32 +44,3 @@
     </b-tabs>
   </b-card>
 </template>
-
-<script lang="ts">
-import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
-import type { DataObject } from "@dlr-shepard/shepard-client";
-import { defineComponent, type PropType } from "vue";
-
-interface RelatedObjectsTableData {
-  childrenIds: number[];
-  predecessorIds: number[];
-  successorIds: number[];
-}
-
-export default defineComponent({
-  components: { DataObjectList },
-  props: {
-    currentDataObject: {
-      type: Object as PropType<DataObject>,
-      required: true,
-    },
-  },
-  data() {
-    return {
-      childrenIds: this.currentDataObject.childrenIds || [],
-      predecessorIds: this.currentDataObject.predecessorIds || [],
-      successorIds: this.currentDataObject.successorIds || [],
-    } as RelatedObjectsTableData;
-  },
-});
-</script>

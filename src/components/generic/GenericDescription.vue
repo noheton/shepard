@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+defineProps({
+  text: {
+    type: String,
+    required: true,
+  },
+  wordCount: {
+    type: Number,
+    default: 300,
+  },
+});
+
+const readMore = ref<boolean>(false);
+</script>
+
 <template>
   <div v-if="text">
     <h4>Description</h4>
@@ -20,32 +37,6 @@
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-
-interface DescriptionData {
-  readMore: boolean;
-}
-
-export default defineComponent({
-  props: {
-    text: {
-      type: String,
-      required: true,
-    },
-    wordCount: {
-      type: Number,
-      default: 300,
-    },
-  },
-  data() {
-    return {
-      readMore: false,
-    } as DescriptionData;
-  },
-});
-</script>
 
 <style scoped>
 .description {

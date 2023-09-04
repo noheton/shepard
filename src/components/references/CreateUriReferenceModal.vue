@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import type { URIReference } from "@dlr-shepard/shepard-client";
+import { ref } from "vue";
+
+defineProps({
+  modalId: {
+    type: String,
+    default: "URIReferenceModal",
+  },
+  modalName: {
+    type: String,
+    default: "URIReferenceModal",
+  },
+});
+
+const newURIReference = ref<URIReference>({
+  name: "",
+  uri: "",
+});
+
+function reset() {
+  newURIReference.value = {
+    name: "",
+    uri: "",
+  };
+}
+</script>
+
 <template>
   <b-modal
     :id="modalId"
@@ -36,44 +64,3 @@
     </b-form-group>
   </b-modal>
 </template>
-
-<script lang="ts">
-import type { URIReference } from "@dlr-shepard/shepard-client";
-import { defineComponent } from "vue";
-
-interface URIReferenceModelData {
-  newURIReference: URIReference;
-}
-
-function initialState(): URIReferenceModelData {
-  return {
-    newURIReference: {
-      name: "",
-      uri: "",
-    },
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "URIReferenceModal",
-    },
-    modalName: {
-      type: String,
-      default: "URIReferenceModal",
-    },
-  },
-
-  data() {
-    return initialState();
-  },
-
-  methods: {
-    reset() {
-      Object.assign(this.$data, initialState());
-    },
-  },
-});
-</script>

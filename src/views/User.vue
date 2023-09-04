@@ -49,10 +49,10 @@ onMounted(() => {
         </tr>
       </tbody>
     </table>
-    <GenericCollapse v-if="user" title="Api Keys">
+    <GenericCollapse v-if="user" class="mb-3" title="Api Keys">
       <ApiKeyList :current-username="user.username || ''" />
     </GenericCollapse>
-    <GenericCollapse v-if="user" title="Subscriptions">
+    <GenericCollapse v-if="user" class="mb-3" title="Subscriptions">
       <SubscriptionList :current-username="user.username || ''" />
     </GenericCollapse>
   </div>

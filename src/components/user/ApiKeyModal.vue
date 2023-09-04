@@ -1,3 +1,36 @@
+<script setup lang="ts">
+import getEnv from "@/utils/env";
+import type { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
+import { useClipboard } from "@vueuse/core";
+import { getCurrentInstance, ref, watch, type PropType } from "vue";
+
+const props = defineProps({
+  createdApiKey: {
+    type: Object as PropType<ApiKeyWithJWT>,
+    default: undefined,
+  },
+});
+
+const vm = getCurrentInstance();
+
+const backendUrl = ref<string>(getEnv("VITE_BACKEND"));
+
+watch(
+  () => props.createdApiKey,
+  () => {
+    if (props.createdApiKey) vm?.proxy.$bvModal.show("created-apikey-modal");
+  },
+);
+
+function copyApiKey() {
+  if (!props.createdApiKey || !props.createdApiKey.jwt) return;
+  useClipboard().copy(props.createdApiKey.jwt);
+}
+function copyBackendUrl() {
+  useClipboard().copy(backendUrl.value);
+}
+</script>
+
 <template>
   <b-modal
     id="created-apikey-modal"
@@ -28,36 +61,3 @@
     </div>
   </b-modal>
 </template>
-
-<script lang="ts">
-import getEnv from "@/utils/env";
-import type { ApiKeyWithJWT } from "@dlr-shepard/shepard-client";
-import { useClipboard } from "@vueuse/core";
-import { defineComponent, type PropType } from "vue";
-
-export default defineComponent({
-  props: {
-    createdApiKey: {
-      type: Object as PropType<ApiKeyWithJWT>,
-      default: undefined,
-    },
-  },
-  data() {
-    return { backendUrl: getEnv("VITE_BACKEND") };
-  },
-  watch: {
-    createdApiKey() {
-      if (this.createdApiKey) this.$bvModal.show("created-apikey-modal");
-    },
-  },
-  methods: {
-    copyApiKey() {
-      if (!this.createdApiKey || !this.createdApiKey.jwt) return;
-      useClipboard().copy(this.createdApiKey.jwt);
-    },
-    copyBackendUrl() {
-      useClipboard().copy(this.backendUrl);
-    },
-  },
-});
-</script>

@@ -1,3 +1,58 @@
+<script setup lang="ts">
+import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
+import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
+import { ref } from "vue";
+
+defineProps({
+  modalId: {
+    type: String,
+    default: "CreateStructuredDataModal",
+  },
+  modalName: {
+    type: String,
+    default: "CreateStructuredDataModal",
+  },
+});
+
+const emit = defineEmits(["created"]);
+
+const newStructuredDataPayload = ref<StructuredDataPayload>();
+const newStructuredDataName = ref<string>();
+const jsoneditor = ref<JSONEditor>();
+
+function handlePrepare() {
+  newStructuredDataPayload.value = {};
+  newStructuredDataName.value = "";
+  jsoneditor.value = undefined;
+}
+
+function handleOk() {
+  newStructuredDataPayload.value = {
+    structuredData: { name: newStructuredDataName.value },
+    payload: "{}",
+  };
+  newStructuredDataPayload.value.payload = JSON.stringify(
+    jsoneditor.value?.get(),
+  );
+
+  emit("created", newStructuredDataPayload.value);
+}
+
+function startJsonEditor() {
+  // create the editor
+  const container = document.getElementById("jsoneditor");
+  const options: JSONEditorOptions = {
+    mode: "tree",
+    modes: ["code", "tree"], // allowed modes
+  };
+  if (container) {
+    jsoneditor.value = new JSONEditor(container, options);
+  } else {
+    jsoneditor.value = undefined;
+  }
+}
+</script>
+
 <template>
   <div>
     <b-modal
@@ -35,74 +90,6 @@
     </b-modal>
   </div>
 </template>
-
-<script lang="ts">
-import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
-import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
-import { defineComponent } from "vue";
-
-interface CreateStructuredDataModalData {
-  newStructuredDataPayload: StructuredDataPayload;
-  newStructuredDataName: string;
-  jsoneditor?: JSONEditor;
-}
-
-function initialState(): CreateStructuredDataModalData {
-  return {
-    newStructuredDataPayload: {},
-    newStructuredDataName: "",
-    jsoneditor: undefined,
-  };
-}
-
-export default defineComponent({
-  props: {
-    modalId: {
-      type: String,
-      default: "CreateStructuredDataModal",
-    },
-    modalName: {
-      type: String,
-      default: "CreateStructuredDataModal",
-    },
-  },
-  emits: ["created"],
-  data() {
-    return initialState();
-  },
-  methods: {
-    handlePrepare() {
-      Object.assign(this, initialState());
-    },
-
-    handleOk() {
-      this.newStructuredDataPayload = {
-        structuredData: { name: this.newStructuredDataName },
-        payload: "{}",
-      };
-      this.newStructuredDataPayload.payload = JSON.stringify(
-        this.jsoneditor?.get(),
-      );
-
-      this.$emit("created", this.newStructuredDataPayload);
-    },
-
-    startJsonEditor() {
-      // create the editor
-      const container = document.getElementById("jsoneditor");
-      const options: JSONEditorOptions = {
-        mode: "tree",
-        modes: ["code", "tree"], // allowed modes
-      };
-      if (container) {
-        this.jsoneditor = new JSONEditor(container, options);
-      } else {
-        this.jsoneditor = undefined;
-      }
-    },
-  },
-});
-</script>
 
 <style>
 #jsoneditor {
