@@ -42,7 +42,7 @@
 		<jjwt.version>0.11.5</jjwt.version>
 		<junit.version>5.10.0</junit.version>
 		<logback.version>1.4.11</logback.version>
-		<lombok.version>1.18.28</lombok.version>
+		<lombok.version>1.18.30</lombok.version>
 		<mockito.version>5.5.0</mockito.version>
 		<mongodb.version>4.10.2</mongodb.version>
 		<neo4j.version>3.3.0</neo4j.version>
