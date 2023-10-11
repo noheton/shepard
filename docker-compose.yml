@@ -134,9 +134,9 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - $PWD/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - $PWD/proxy/ssl:/etc/caddy/ssl:ro
-      - $PWD/proxy/shepard:/var/www/shepard:ro
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./proxy/ssl:/etc/caddy/ssl:ro
+      - ./proxy/shepard:/var/www/shepard:ro
       - /opt/shepard/caddy/data:/data
       - /opt/shepard/caddy/config:/config
     restart: unless-stopped
