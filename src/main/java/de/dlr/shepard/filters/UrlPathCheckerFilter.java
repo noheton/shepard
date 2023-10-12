@@ -23,7 +23,7 @@ public class UrlPathCheckerFilter implements ContainerRequestFilter {
 		try {
 			urlPathChecker.checkPathSegments(requestContext.getUriInfo().getPathSegments());
 		} catch (InvalidPathException e) {
-			log.warn("Cought invalid path exception: {}", e.getMessage());
+			log.warn("Caught invalid path exception: {}", e.getMessage());
 			var status = Status.NOT_FOUND.getStatusCode();
 			requestContext.abortWith(Response.status(status)
 					.entity(new ApiError(status, e.getClass().toString(), e.getMessage())).build());
