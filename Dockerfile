@@ -1,4 +1,4 @@
-FROM tomcat:10.1.13-jdk17-temurin
+FROM tomcat:10.1.14-jdk17-temurin
 
 COPY server.xml /usr/local/tomcat/conf/
 COPY target/shepard.war /usr/local/tomcat/webapps/shepard.war
