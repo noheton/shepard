@@ -48,10 +48,15 @@ public class JWTFilter implements ContainerRequestFilter {
 	private final String role;
 	private GracePeriodUtil lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
 
-	public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException {
+	public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalArgumentException {
 		var pHelper = new PropertiesHelper();
 		var kFactory = KeyFactory.getInstance("RSA");
-		var kcDecoded = Base64.getDecoder().decode(pHelper.getProperty("oidc.public"));
+		byte[] kcDecoded;
+		try {
+			kcDecoded = Base64.getDecoder().decode(pHelper.getProperty("oidc.public"));
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("The given oidc public key is invalid", e);
+		}
 		var kcSpec = new X509EncodedKeySpec(kcDecoded);
 		oidcPublicKey = kFactory.generatePublic(kcSpec);
 
