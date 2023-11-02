@@ -3,7 +3,6 @@ import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.
 import TimeseriesService from "@/services/timeseriesService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
-  BasicEntity,
   ResponseError,
   Timeseries,
   TimeseriesContainer,
@@ -43,11 +42,10 @@ interface Option {
 
 const getInitialFormData = () => ({
   name: "",
-  startTime: "",
-  endTime: "",
-  startDate: "",
-  endDate: "",
-  currentContainerId: "",
+  startTime: new Date().getHours() + ":00:00",
+  endTime: new Date().getHours() + 1 + ":00:00",
+  startDate: new Date().toISOString().split("T")[0],
+  endDate: new Date().toISOString().split("T")[0],
   selected: new Array<Timeseries>(),
 });
 
@@ -82,7 +80,7 @@ function handleOk() {
   const startTs = Date.parse(formData.startDate + " " + formData.startTime);
   const endTs = Date.parse(formData.endDate + " " + formData.endTime);
   const newTimeseriesReference: TimeseriesReference = {
-    timeseriesContainerId: +formData.currentContainerId,
+    timeseriesContainerId: +userInputSearchContainer.value,
     name: formData.name,
     timeseries: [],
     start: startTs * 1e6,
@@ -94,19 +92,17 @@ function handleOk() {
   emit("create", newTimeseriesReference);
 }
 
+function selectAll() {
+  formData.selected = timeseriesAvailable.value.map(ts => ts.value);
+}
+
 function resetSelection() {
   timeseriesAvailable.value = [];
   formData.selected = [];
 }
 
-function chooseContainer(container: BasicEntity) {
-  if (!container.id) return;
-  userInputSearchContainer.value = String(container.id);
-  formData.currentContainerId = String(container.id);
-  fetchContainer(container.id);
-}
-
 function fetchContainer(id: number) {
+  if (isNaN(id)) return;
   resetSelection();
   TimeseriesService.getTimeseriesContainer({
     timeseriesContainerId: id,
@@ -179,10 +175,7 @@ function validateTime(input: string) {
           placeholder="Timeseries container id"
           required
           :state="validContainer"
-          @blur="
-            if (!isNaN(+userInputSearchContainer))
-              fetchContainer(+userInputSearchContainer);
-          "
+          @blur="fetchContainer(+userInputSearchContainer)"
         ></b-form-input>
         <small v-if="currentContainer">
           <em> {{ currentContainer.name }} </em>
@@ -191,7 +184,10 @@ function validateTime(input: string) {
         <EntitySelectionPopover
           :results="results"
           title-text="search for timeseries containers by name, username, id or description"
-          @selected="chooseContainer($event)"
+          @selected="
+            userInputSearchContainer = String($event.id);
+            fetchContainer($event.id);
+          "
         />
       </b-form-group>
 
@@ -296,6 +292,7 @@ function validateTime(input: string) {
           multiple
           required
         ></b-form-select>
+        <b-button class="float-right" @click="selectAll"> Select All </b-button>
       </b-form-group>
     </b-container>
   </b-modal>
