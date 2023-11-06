@@ -1,28 +1,18 @@
 image: python:3
 
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .cache/pip
-    - venv/
-
 before_script:
-  - python -m venv venv
-  - source venv/bin/activate
-  - pip install -r requirements.txt
+  - pip install poetry
+  - poetry config virtualenvs.create false
+  - poetry install
 
 black:
   script:
     - python -m black main.py --check
 
-isort:
+lint:
   script:
-    - python -m isort main.py --check
+    - python -m ruff check .
 
-flake8:
+format:
   script:
-    - python -m flake8 main.py
-
-pylint:
-  script:
-    - python -m pylint main.py
+    - python -m ruff format .

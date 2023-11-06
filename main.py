@@ -4,12 +4,12 @@ from src.releases import create_release
 
 GITLAB_INSTANCE = "https://gitlab.com"
 PROJECTS = {"backend": 27250272, "frontend": 27250279}
-TOKEN_FILE = "token.txt"
+TOKEN_FILE = "token.txt"  # noqa: S105
 
 
 if __name__ == "__main__":
     TOKEN = ""
-    with open(TOKEN_FILE, "r", encoding="UTF-8") as token_file:
+    with open(TOKEN_FILE, encoding="UTF-8") as token_file:
         TOKEN = token_file.read()
 
     project_name = input("Project: ")

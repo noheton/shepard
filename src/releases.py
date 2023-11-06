@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Tuple
 
 import jinja2
 from gitlab.client import Gitlab
@@ -13,10 +12,10 @@ TEMPLATE_FILE = "release_notes.md"
 
 def get_changes(
     project: Project, merged_after: str
-) -> Tuple[List[MergeRequest], List[MergeRequest], List[MergeRequest]]:
-    breaking_changes: List[MergeRequest] = []
-    dependency_changes: List[MergeRequest] = []
-    other_changes: List[MergeRequest] = []
+) -> tuple[list[MergeRequest], list[MergeRequest], list[MergeRequest]]:
+    breaking_changes: list[MergeRequest] = []
+    dependency_changes: list[MergeRequest] = []
+    other_changes: list[MergeRequest] = []
 
     merge_requests = project.mergerequests.list(
         all=True,
@@ -39,7 +38,7 @@ def get_changes(
     return (breaking_changes, dependency_changes, other_changes)
 
 
-def get_mr_list(merge_requests: List[MergeRequest]) -> str:
+def get_mr_list(merge_requests: list[MergeRequest]) -> str:
     result = ""
     for merge_request in merge_requests:
         if len(result) > 0:
@@ -50,11 +49,11 @@ def get_mr_list(merge_requests: List[MergeRequest]) -> str:
 
 def get_release_notes(
     description: str,
-    breaking_changes: List[MergeRequest],
-    other_changes: List[MergeRequest],
+    breaking_changes: list[MergeRequest],
+    other_changes: list[MergeRequest],
 ) -> str:
     template_loader = jinja2.FileSystemLoader(searchpath="./")
-    template_env = jinja2.Environment(loader=template_loader)
+    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
     template = template_env.get_template(TEMPLATE_FILE)
     result = template.render(
         description=description,
