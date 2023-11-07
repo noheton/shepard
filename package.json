@@ -36,7 +36,7 @@
   "devDependencies": {
     "@rushstack/eslint-patch": "1.5.1",
     "@tsconfig/node18": "18.2.2",
-    "@types/chart.js": "2.9.39",
+    "@types/chart.js": "2.9.40",
     "@types/jsoneditor": "9.9.2",
     "@types/node": "18.18.8",
     "@vitejs/plugin-vue2": "2.2.0",
