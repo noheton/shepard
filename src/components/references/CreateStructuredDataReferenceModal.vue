@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
+import JsonEditor from "@/components/generic/JsonEditor.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
@@ -12,7 +13,6 @@ import type {
   StructuredDataReference,
 } from "@dlr-shepard/shepard-client";
 import { refDebounced } from "@vueuse/core";
-import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import { reactive, ref } from "vue";
 import { useSearchContainers } from "../search/InlineSearchContainers";
 
@@ -60,30 +60,15 @@ const getInitialFormData = () => ({
 const formData = reactive(getInitialFormData());
 
 const newStructuredDataName = ref<string>("");
-
-const jsoneditor = ref<JSONEditor>();
+const jsonPayload = ref<string>("");
 
 function handleReset() {
   Object.assign(formData, getInitialFormData());
   possibleOids.value = undefined;
   currentContainer.value = undefined;
   validContainer.value = undefined;
-  jsoneditor.value = undefined;
   userInputSearchContainer.value = "";
-}
-
-function startJsonEditor() {
-  // create the editor
-  const container = document.getElementById("jsoneditor");
-  const options: JSONEditorOptions = {
-    mode: "tree",
-    modes: ["code", "tree"], // allowed modes
-  };
-  if (container) {
-    jsoneditor.value = new JSONEditor(container, options);
-  } else {
-    jsoneditor.value = undefined;
-  }
+  jsonPayload.value = "";
 }
 
 function chooseContainer(container: BasicEntity) {
@@ -166,7 +151,7 @@ async function getStructuredDataOids(containerId: number) {
   } else {
     const structuredDataPayload: StructuredDataPayload = {
       structuredData: { name: newStructuredDataName.value },
-      payload: JSON.stringify(jsoneditor.value?.get()),
+      payload: jsonPayload.value,
     };
     const createdStructuredDataPayload = await createStructuredData(
       structuredDataPayload,
@@ -217,7 +202,6 @@ async function createStructuredData(
       :title="modalName"
       lazy
       @show="handleReset()"
-      @shown="startJsonEditor()"
       @ok="handleOk()"
     >
       <b-form-group>
@@ -339,13 +323,13 @@ async function createStructuredData(
 
           <b-row>
             <b-col>
-              <div
-                id="jsoneditor"
+              <JsonEditor
+                v-model="jsonPayload"
                 class="mt-3"
                 :hidden="
                   formData.structuredDataSelection != 'uploadNewStructuredData'
                 "
-              ></div>
+              />
             </b-col>
           </b-row>
         </b-container>

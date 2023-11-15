@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import JsonEditor from "@/components/generic/JsonEditor.vue";
 import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
-import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
 import { ref } from "vue";
 
 defineProps({
@@ -15,41 +15,24 @@ defineProps({
 });
 
 const emit = defineEmits(["created"]);
+const payload = ref<string>("");
 
 const newStructuredDataPayload = ref<StructuredDataPayload>();
 const newStructuredDataName = ref<string>();
-const jsoneditor = ref<JSONEditor>();
 
 function handlePrepare() {
   newStructuredDataPayload.value = {};
   newStructuredDataName.value = "";
-  jsoneditor.value = undefined;
+  payload.value = "";
 }
 
 function handleOk() {
   newStructuredDataPayload.value = {
     structuredData: { name: newStructuredDataName.value },
-    payload: "{}",
+    payload: payload.value,
   };
-  newStructuredDataPayload.value.payload = JSON.stringify(
-    jsoneditor.value?.get(),
-  );
 
   emit("created", newStructuredDataPayload.value);
-}
-
-function startJsonEditor() {
-  // create the editor
-  const container = document.getElementById("jsoneditor");
-  const options: JSONEditorOptions = {
-    mode: "tree",
-    modes: ["code", "tree"], // allowed modes
-  };
-  if (container) {
-    jsoneditor.value = new JSONEditor(container, options);
-  } else {
-    jsoneditor.value = undefined;
-  }
 }
 </script>
 
@@ -61,7 +44,6 @@ function startJsonEditor() {
       size="lg"
       :title="modalName"
       @show="handlePrepare()"
-      @shown="startJsonEditor()"
       @ok="handleOk()"
     >
       <b-form-group>
@@ -82,7 +64,7 @@ function startJsonEditor() {
           <b-row class="mb-3">
             <b-col cols="2"> JSON </b-col>
             <b-col cols="10">
-              <div id="jsoneditor"></div>
+              <JsonEditor v-model="payload" />
             </b-col>
           </b-row>
         </b-container>

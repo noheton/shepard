@@ -63,7 +63,7 @@ function retrievePayload() {
       ok-only
       @show="retrievePayload()"
     >
-      <JsonEditor v-if="payload" :payload="payload" />
+      <JsonEditor v-if="payload" v-model="payload" />
     </b-modal>
   </div>
 </template>

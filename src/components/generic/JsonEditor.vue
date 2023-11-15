@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const jsoneditor = ref<JSONEditor>();
 
 const props = defineProps({
-  payload: {
+  value: {
     type: String,
     required: true,
   },
 });
+
+const emits = defineEmits(["input"]);
+
+watch(
+  () => props.value,
+  value => {
+    const isSame = jsoneditor.value?.getText() === value;
+    if (!isSame) jsoneditor.value?.setText(value);
+  },
+);
 
 function startJsonEditor() {
   // create the editor
@@ -17,6 +27,9 @@ function startJsonEditor() {
   const options: JSONEditorOptions = {
     mode: "view",
     modes: ["code", "view"], // allowed modes
+    onChangeText: text => {
+      emits("input", text);
+    },
   };
 
   if (container) {
@@ -26,8 +39,8 @@ function startJsonEditor() {
   }
 
   // set json
-  if (jsoneditor.value && props.payload) {
-    jsoneditor.value.set(JSON.parse(props.payload));
+  if (jsoneditor.value && props.value) {
+    jsoneditor.value.setText(props.value);
   }
 }
 
