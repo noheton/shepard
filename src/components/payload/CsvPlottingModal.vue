@@ -42,8 +42,8 @@ const getInitialPlottingData = () => ({ datasets: [], xLabel: "x Value" });
 
 const plottingOptionListX = ref<selectOption[]>([]);
 const plottingOptionListY = ref<selectOption[]>([]);
-const dataForPreview = ref<{ [key: string]: string }[]>([]);
-const recordsParsed = ref<{ [key: string]: string }[]>([]);
+const dataForPreview = ref<Map<string, string>[]>([]);
+const recordsParsed = ref<Map<string, string>[]>([]);
 const plottingSelectionX = ref<string>("");
 const plottingSelectionY = ref<string[]>([]);
 const plottingData = ref<PlottingData>(getInitialPlottingData());
@@ -62,7 +62,7 @@ function reset() {
   plotShown.value = false;
 }
 
-function handleParsedCsvData(parsedCsvData: { [key: string]: string }[]) {
+function handleParsedCsvData(parsedCsvData: Map<string, string>[]) {
   recordsParsed.value = parsedCsvData;
   dataForPreview.value = parsedCsvData.slice(0, maxObjects);
   if (!dataForPreview.value) {
@@ -73,7 +73,7 @@ function handleParsedCsvData(parsedCsvData: { [key: string]: string }[]) {
       { value: "", text: "Please parse your data first", disabled: true },
     ];
   } else {
-    columnNames.value = Object.keys(dataForPreview.value[0]);
+    columnNames.value = Array.from(dataForPreview.value[0].keys());
     plottingOptionListX.value = updatePlottingOptions(columnNames.value);
     plottingOptionListY.value = updatePlottingOptions(columnNames.value);
   }
@@ -97,8 +97,8 @@ function createPlottableData() {
   choicesY.forEach(choiceY => {
     const data = recordsParsed.value.map(row => {
       return {
-        x: parseFloat(row[choiceX]),
-        y: parseFloat(row[choiceY]),
+        x: parseFloat(row.get(choiceX) || ""),
+        y: parseFloat(row.get(choiceY) || ""),
       };
     });
     plottingData.value.datasets.push({

@@ -31,7 +31,7 @@ const vm = getCurrentInstance();
 const emit = defineEmits(["reference-count-changed"]);
 
 const collectionList = ref<CollectionReference[]>();
-const referencedList = ref<{ [key: number]: Collection }>({});
+const referencedList = ref(new Map<number, Collection>());
 const currentCollectionReference = ref<CollectionReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
@@ -68,9 +68,8 @@ function retrieveCollection(referenceId: number) {
     collectionReferenceId: referenceId,
   })
     .then(response => {
-      const temp: { [key: number]: Collection } = {};
-      temp[referenceId] = response;
-      referencedList.value = { ...referencedList.value, ...temp };
+      referencedList.value.set(referenceId, response);
+      referencedList.value = new Map([...referencedList.value.entries()]);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching collection reference payload");
@@ -178,7 +177,7 @@ onMounted(() => {
             "
           >
             <b-link
-              v-if="referencedList[collectionItem.id]"
+              v-if="referencedList.has(collectionItem.id)"
               :to="{
                 name: 'Collection',
                 params: {
@@ -186,8 +185,8 @@ onMounted(() => {
                 },
               }"
             >
-              <b>{{ referencedList[collectionItem.id].name }}</b> | ID:
-              {{ referencedList[collectionItem.id].id }}
+              <b>{{ referencedList.get(collectionItem.id)?.name }}</b> | ID:
+              {{ referencedList.get(collectionItem.id)?.id }}
             </b-link>
           </span>
           <span v-else class="text-danger">Collection Deleted</span>
@@ -205,7 +204,9 @@ onMounted(() => {
     >
       <BasicReferenceModal_Collection
         :collection-reference="currentCollectionReference"
-        :referenced-collection="referencedList[currentCollectionReference.id]"
+        :referenced-collection="
+          referencedList.get(currentCollectionReference.id)
+        "
       />
     </BasicReferenceModal>
   </div>

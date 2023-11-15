@@ -56,7 +56,7 @@ export function useContainerSearch(
           if (
             container.id &&
             container.name &&
-            searchParam.value.selectedQueryType
+            Object.keys(routerMap).includes(searchParam.value.selectedQueryType)
           ) {
             addResult(
               routerMap[searchParam.value.selectedQueryType],
@@ -81,13 +81,7 @@ export function useContainerSearch(
   }
 
   watch(searchParam, newParam => {
-    if (
-      newParam.selectedQueryType &&
-      ["FILE", "STRUCTUREDDATA", "TIMESERIES"].includes(
-        newParam.selectedQueryType,
-      )
-    )
-      search();
+    if (Object.keys(routerMap).includes(newParam.selectedQueryType)) search();
     else reset();
   });
 

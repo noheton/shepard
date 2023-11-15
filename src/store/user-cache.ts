@@ -4,22 +4,23 @@ import type { ActionContext } from "vuex";
 import type { RootState } from ".";
 
 export interface UserCacheState {
-  users: { [key: string]: User };
+  users: Map<string, User>;
   pending: string[];
 }
 
 export default {
   namespaced: true,
   state: {
-    users: {},
+    users: new Map<string, User>(),
     pending: [],
   },
   mutations: {
     addUserToCache: (state: UserCacheState, user: User) => {
       if (user.username) {
-        const tmp: { [key: string]: User } = {};
-        tmp[user.username] = user;
-        state.users = { ...state.users, ...tmp };
+        state.users = new Map([
+          ...state.users.entries(),
+          [user.username, user],
+        ]);
       }
     },
     addUserToPending: (state: UserCacheState, username: string) => {
@@ -34,10 +35,10 @@ export default {
       return state.users;
     },
     getUserFromCache: (state: UserCacheState) => (username: string) => {
-      return state.users[username];
+      return state.users.get(username);
     },
     isUserInCache: (state: UserCacheState) => (username: string) => {
-      return username in state.users;
+      return state.users.has(username);
     },
     isUserPending: (state: UserCacheState) => (username: string) => {
       return state.pending.includes(username);

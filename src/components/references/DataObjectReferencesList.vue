@@ -31,7 +31,7 @@ const vm = getCurrentInstance();
 const emit = defineEmits(["reference-count-changed"]);
 
 const dataObjectList = ref<DataObjectReference[]>();
-const referencedList = ref<{ [key: number]: DataObject }>({});
+const referencedList = ref(new Map<number, DataObject>());
 const currentDataObjectReference = ref<DataObjectReference>();
 const createdAlert = ref(false);
 const deletedAlert = ref(false);
@@ -68,9 +68,8 @@ function retrieveDataObject(referenceId: number) {
     dataObjectReferenceId: referenceId,
   })
     .then(response => {
-      const temp: { [key: number]: DataObject } = {};
-      temp[referenceId] = response;
-      referencedList.value = { ...referencedList.value, ...temp };
+      referencedList.value.set(referenceId, response);
+      referencedList.value = new Map([...referencedList.value.entries()]);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching data object reference payload");
@@ -177,17 +176,18 @@ onMounted(() => {
             "
           >
             <b-link
-              v-if="referencedList[dataObjectItem.id]"
+              v-if="referencedList.has(dataObjectItem.id)"
               :to="{
                 name: 'DataObject',
                 params: {
-                  collectionId: referencedList[dataObjectItem.id].collectionId,
+                  collectionId: referencedList.get(dataObjectItem.id)
+                    ?.collectionId,
                   dataObjectId: dataObjectItem.referencedDataObjectId,
                 },
               }"
             >
-              <b>{{ referencedList[dataObjectItem.id].name }}</b> | ID:
-              {{ referencedList[dataObjectItem.id].id }}
+              <b>{{ referencedList.get(dataObjectItem.id)?.name }}</b> | ID:
+              {{ referencedList.get(dataObjectItem.id)?.id }}
             </b-link>
           </span>
           <span v-else class="text-danger">DateObject Deleted</span>
@@ -205,7 +205,9 @@ onMounted(() => {
     >
       <BasicReferenceModal_DataObject
         :data-object-reference="currentDataObjectReference"
-        :referenced-data-object="referencedList[currentDataObjectReference.id]"
+        :referenced-data-object="
+          referencedList.get(currentDataObjectReference.id)
+        "
       />
     </BasicReferenceModal>
   </div>

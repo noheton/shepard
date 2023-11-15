@@ -40,7 +40,7 @@ const getInitialDownloadState = () => ({
 });
 
 const downloadState = reactive(getInitialDownloadState());
-const files = ref<{ [key: string]: ShepardFile | undefined }>({});
+const files = ref(new Map<string, ShepardFile>());
 const currentFileOid = ref<string>();
 
 function getFiles() {
@@ -51,13 +51,12 @@ function getFiles() {
     fileReferenceId: props.fileReference.id,
   })
     .then(response => {
-      const temp: { [key: string]: ShepardFile } = {};
       response.forEach(payload => {
         if (payload?.oid) {
-          temp[payload.oid] = payload;
+          files.value.set(payload.oid, payload);
         }
       });
-      files.value = { ...files.value, ...temp };
+      files.value = new Map([...files.value.entries()]);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching files");
@@ -130,9 +129,12 @@ onMounted(() => {
         v-for="(oid, index) in fileReference?.fileOids"
         :key="index"
       >
-        <div v-if="files[oid]">
+        <div v-if="files.has(oid)">
           <b>
-            <GenericName :word-count="30" :name="files[oid]?.filename || ''" />
+            <GenericName
+              :word-count="30"
+              :name="files.get(oid)?.filename || ''"
+            />
           </b>
           | Oid:
           {{ oid }}
@@ -145,7 +147,9 @@ onMounted(() => {
             class="float-right"
           >
             <b-button
-              v-if="files[oid]?.filename?.match(/\.(jpg|jpeg|png|gif|bmp)$/i)"
+              v-if="
+                files.get(oid)?.filename?.match(/\.(jpg|jpeg|png|gif|bmp)$/i)
+              "
               v-b-modal.image-viewer-modal
               v-b-tooltip.hover
               variant="primary"
@@ -155,7 +159,9 @@ onMounted(() => {
               <EyeIcon />
             </b-button>
             <b-button
-              v-else-if="files[oid]?.filename?.match(/\.(txt|md|yaml|toml)$/i)"
+              v-else-if="
+                files.get(oid)?.filename?.match(/\.(txt|md|yaml|toml)$/i)
+              "
               v-b-modal.text-viewer-modal
               v-b-tooltip.hover
               variant="primary"
@@ -165,7 +171,7 @@ onMounted(() => {
               <EyeIcon />
             </b-button>
             <b-button
-              v-else-if="files[oid]?.filename?.match(/\.(csv)$/i)"
+              v-else-if="files.get(oid)?.filename?.match(/\.(csv)$/i)"
               v-b-modal.csv-table-modal
               v-b-tooltip.hover
               variant="primary"
@@ -175,7 +181,7 @@ onMounted(() => {
               <EyeIcon />
             </b-button>
             <b-button
-              v-else-if="files[oid]?.filename?.match(/\.(json)$/i)"
+              v-else-if="files.get(oid)?.filename?.match(/\.(json)$/i)"
               v-b-modal.json-file-modal
               v-b-tooltip.hover
               variant="primary"
@@ -192,7 +198,7 @@ onMounted(() => {
             <b-button
               v-b-modal.plotting-modal
               v-b-tooltip.hover
-              :disabled="!files[oid]?.filename?.match(/\.csv$/i)"
+              :disabled="!files.get(oid)?.filename?.match(/\.csv$/i)"
               variant="secondary"
               title="Plot Data"
               @click="currentFileOid = oid"
@@ -206,7 +212,7 @@ onMounted(() => {
               title="Download File"
               :disabled="downloadState.active"
               @click="
-                getFilePayload(fileReference?.id, oid, files[oid]?.filename)
+                getFilePayload(fileReference?.id, oid, files.get(oid)?.filename)
               "
             >
               <DownloadIcon />
@@ -227,8 +233,8 @@ onMounted(() => {
             </b-button>
           </b-button-group>
         </div>
-        <div v-if="files[oid]?.createdAt">
-          created at: {{ convertDate(files[oid]?.createdAt) }}
+        <div v-if="files.get(oid)?.createdAt">
+          created at: {{ convertDate(files.get(oid)?.createdAt) }}
         </div>
       </b-list-group-item>
     </b-list-group>
@@ -236,35 +242,35 @@ onMounted(() => {
     <ImageViewerModal
       v-if="fileReference && currentFileOid"
       modal-id="image-viewer-modal"
-      :modal-name="files[currentFileOid]?.filename"
+      :modal-name="files.get(currentFileOid)?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <TextViewerModal
       v-if="fileReference && currentFileOid"
       modal-id="text-viewer-modal"
-      :modal-name="files[currentFileOid]?.filename"
+      :modal-name="files.get(currentFileOid)?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <JsonFileModal
       v-if="fileReference && currentFileOid"
       modal-id="json-file-modal"
-      :modal-name="files[currentFileOid]?.filename"
+      :modal-name="files.get(currentFileOid)?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <CsvPlottingModal
       v-if="fileReference && currentFileOid"
       modal-id="plotting-modal"
-      :modal-name="files[currentFileOid]?.filename"
+      :modal-name="files.get(currentFileOid)?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />
     <CsvTableModal
       v-if="fileReference && currentFileOid"
       modal-id="csv-table-modal"
-      :modal-name="files[currentFileOid]?.filename"
+      :modal-name="files.get(currentFileOid)?.filename"
       :container-id="fileReference.fileContainerId"
       :oid="currentFileOid"
     />

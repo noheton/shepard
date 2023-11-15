@@ -140,7 +140,7 @@ function sliceRecords(records: string[][]): string[][] {
 function formatRecords(
   records: string[][],
   columnNames: string[],
-): { [key: string]: string }[] {
+): Map<string, string>[] {
   const formattedRecords = [];
   const numberOfColumns =
     columnNames.length > maxNumberOfColumns
@@ -149,12 +149,12 @@ function formatRecords(
 
   // iterate over the head of the data in order to display them
   for (let rowNumber = 0; rowNumber < records.length; rowNumber++) {
-    const row: { [key: string]: string } = {};
+    const row = new Map<string, string>();
     const rowValue = records[rowNumber];
     for (let colNumber = 0; colNumber < numberOfColumns; colNumber++) {
       const columName = columnNames[colNumber];
       if (rowValue && rowValue[colNumber]) {
-        row[columName] = rowValue[colNumber];
+        row.set(columName, rowValue[colNumber]);
       }
     }
     formattedRecords.push(row);

@@ -11,7 +11,7 @@ defineProps({
     required: true,
   },
   referencedCollection: {
-    type: Object as PropType<Collection>,
+    type: Object as PropType<Collection | undefined>,
     required: true,
   },
 });
@@ -27,12 +27,12 @@ defineProps({
           :to="{
             name: 'Collection',
             params: {
-              collectionId: referencedCollection.id,
+              collectionId: referencedCollection?.id,
             },
           }"
         >
-          <b>{{ referencedCollection.name }}</b> | ID:
-          {{ referencedCollection.id }}
+          <b>{{ referencedCollection?.name }}</b> | ID:
+          {{ referencedCollection?.id }}
         </b-link>
       </span>
       <span v-else class="text-danger">Collection Deleted</span>

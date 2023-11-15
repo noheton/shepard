@@ -27,7 +27,7 @@ const props = defineProps({
 });
 
 const currentStructuredDataOid = ref<string>();
-const structuredDatas = ref<{ [key: string]: StructuredDataPayload }>({});
+const structuredDatas = ref(new Map<string, StructuredDataPayload>());
 
 function getStructuredDataPayload() {
   if (!props.structuredDataReference.id) return;
@@ -37,13 +37,12 @@ function getStructuredDataPayload() {
     structureddataReferenceId: props.structuredDataReference.id,
   })
     .then(response => {
-      const temp: { [key: string]: StructuredDataPayload } = {};
       response.forEach(payload => {
         if (payload?.structuredData?.oid) {
-          temp[payload.structuredData.oid] = payload;
+          structuredDatas.value.set(payload.structuredData.oid, payload);
         }
       });
-      structuredDatas.value = { ...structuredDatas.value, ...temp };
+      structuredDatas.value = new Map([...structuredDatas.value.entries()]);
     })
     .catch(e => {
       logError(e as ResponseError, "fetching structured data");
@@ -77,11 +76,11 @@ onMounted(() => {
         v-for="(oid, index) in structuredDataReference?.structuredDataOids"
         :key="index"
       >
-        <div v-if="structuredDatas[oid]">
+        <div v-if="structuredDatas.get(oid)">
           <b>
             <GenericName
               :word-count="30"
-              :name="structuredDatas[oid]?.structuredData?.name || ''"
+              :name="structuredDatas.get(oid)?.structuredData?.name || ''"
             />
           </b>
           | Oid:
@@ -89,7 +88,7 @@ onMounted(() => {
           <span
             v-if="
               structuredDataReference?.structuredDataContainerId == -1 ||
-              !structuredDatas[oid]?.payload
+              !structuredDatas.get(oid)?.payload
             "
           >
             | <span class="text-danger"> Deleted </span>
@@ -106,7 +105,7 @@ onMounted(() => {
           </b-button>
           <!-- Payload deleted -->
           <b-button
-            v-else-if="!structuredDatas[oid]?.payload"
+            v-else-if="!structuredDatas.get(oid)?.payload"
             class="float-right"
             variant="primary"
             :disabled="true"
@@ -126,9 +125,9 @@ onMounted(() => {
             <EyeIcon />
           </b-button>
         </div>
-        <div v-if="structuredDatas[oid]?.structuredData?.createdAt">
+        <div v-if="structuredDatas.get(oid)?.structuredData?.createdAt">
           created at:
-          {{ convertDate(structuredDatas[oid]?.structuredData?.createdAt) }}
+          {{ convertDate(structuredDatas.get(oid)?.structuredData?.createdAt) }}
         </div>
       </b-list-group-item>
     </b-list-group>

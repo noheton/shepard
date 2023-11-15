@@ -30,8 +30,8 @@ function reset() {
   data.value = [];
 }
 
-function handleParsedCsvData(parsedCsvData: { [key: string]: string }[]) {
-  data.value = parsedCsvData;
+function handleParsedCsvData(parsedCsvData: Map<string, string>[]) {
+  data.value = parsedCsvData.map(m => Object.fromEntries(m));
 }
 </script>
 

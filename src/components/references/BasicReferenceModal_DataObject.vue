@@ -11,7 +11,7 @@ defineProps({
     required: true,
   },
   referencedDataObject: {
-    type: Object as PropType<DataObject>,
+    type: Object as PropType<DataObject | undefined>,
     required: true,
   },
 });
@@ -26,13 +26,13 @@ defineProps({
           :to="{
             name: 'DataObject',
             params: {
-              collectionId: referencedDataObject.collectionId,
-              dataObjectId: referencedDataObject.id,
+              collectionId: referencedDataObject?.collectionId,
+              dataObjectId: referencedDataObject?.id,
             },
           }"
         >
-          <b>{{ referencedDataObject.name }}</b> | ID:
-          {{ referencedDataObject.id }}
+          <b>{{ referencedDataObject?.name }}</b> | ID:
+          {{ referencedDataObject?.id }}
         </b-link>
       </span>
       <span v-else class="text-danger">DateObject Deleted</span>
