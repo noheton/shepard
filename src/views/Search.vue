@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import JsonEditor from "@/components/generic/JsonEditor.vue";
 import Loading from "@/components/generic/Loading.vue";
 import { useCollectionSearch } from "@/components/search/CollectionSearch";
 import { useContainerSearch } from "@/components/search/ContainerSearch";
@@ -12,10 +13,9 @@ import {
 } from "@/utils/helpers";
 import { SearchScopeTraversalRulesEnum } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
-import { default as JSONEditor, type JSONEditorOptions } from "jsoneditor";
 import { computed, onMounted, ref } from "vue";
 
-const initialJson = {
+const initialJson = JSON.stringify({
   OR: [
     {
       property: "name",
@@ -30,9 +30,9 @@ const initialJson = {
       },
     },
   ],
-};
+});
 
-let startJson = initialJson;
+const jsonQuery = ref<string>(initialJson);
 const selectedQueryType = ref<string>("");
 
 const queryTypeUnifiedSearch = [
@@ -94,27 +94,8 @@ const results = computed(() =>
   ].find(x => x.length > 0),
 );
 
-const editor = ref<JSONEditor>();
-function jsonEditor() {
-  const options: JSONEditorOptions = {
-    mode: "tree",
-    modes: ["code", "tree"],
-    search: false,
-  };
-  // create the editor
-  const container = document.getElementById("jsoneditor");
-  if (container) {
-    editor.value = new JSONEditor(container, options);
-  } else {
-    editor.value = undefined;
-  }
-  if (editor.value) {
-    editor.value.set(startJson);
-  }
-}
-
 function reset() {
-  editor.value?.set(initialJson);
+  jsonQuery.value = initialJson;
   currentCollectionId.value = undefined;
   currentDataObjectId.value = undefined;
   selectedTraversalRules.value = [];
@@ -125,24 +106,23 @@ function reset() {
 
 function handleSearch() {
   // get actual json of the JsonEditor
-  if (!editor.value) return;
-  const searchQuery = JSON.stringify(editor.value.get());
+  if (!jsonQuery.value) return;
 
   searchParam.value = {
-    searchQuery: searchQuery,
+    searchQuery: jsonQuery.value,
     selectedQueryType: selectedQueryType.value,
     collectionId: currentCollectionId.value,
     dataObjectId: currentDataObjectId.value,
     traversalRules: selectedTraversalRules.value,
   };
-  setAllQueryParam(searchQuery);
+  setAllQueryParam();
 }
 
 function openLink(link: string) {
   window.open(link, "_blank");
 }
 
-function setAllQueryParam(searchQuery: string) {
+function setAllQueryParam() {
   setQueryParam("queryType", String(selectedQueryType.value));
   if (currentCollectionId.value)
     setQueryParam("collectionId", String(currentCollectionId.value));
@@ -153,7 +133,7 @@ function setAllQueryParam(searchQuery: string) {
       "traversalRules",
       JSON.stringify(selectedTraversalRules.value),
     );
-  setQueryParam("searchQuery", searchQuery);
+  setQueryParam("searchQuery", JSON.stringify(JSON.parse(jsonQuery.value)));
 }
 
 function getAllQueryParam() {
@@ -172,7 +152,9 @@ function getAllQueryParam() {
     : [];
 
   const searchQuery = getQueryParam("searchQuery");
-  startJson = searchQuery ? JSON.parse(searchQuery) : initialJson;
+  jsonQuery.value = searchQuery
+    ? JSON.stringify(JSON.parse(searchQuery))
+    : initialJson;
 }
 
 function removeAllQueryParams() {
@@ -188,7 +170,6 @@ function removeAllQueryParams() {
 onMounted(() => {
   useTitle("Search | shepard");
   getAllQueryParam();
-  jsonEditor();
 });
 </script>
 
@@ -256,7 +237,7 @@ onMounted(() => {
           </b-row>
           <b-row>
             <b-col>
-              <div id="jsoneditor" ref="jsoneditor"></div>
+              <JsonEditor v-model="jsonQuery"></JsonEditor>
               <div>
                 <b-button-group class="float-right mt-2 mb-2">
                   <b-button variant="info" @click="reset()"> Reset </b-button>
@@ -292,7 +273,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style>
 #jsoneditor {
   height: 500px;
 }
@@ -302,6 +283,7 @@ onMounted(() => {
   color: var(--white);
   font-size: 1.5em;
   font-weight: bold;
-  border: 1px solid;
+  border: solid thin var(--info);
+  border-radius: 0.2rem;
 }
 </style>

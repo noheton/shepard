@@ -9,11 +9,11 @@ import { ref } from "vue";
 const props = defineProps({
   modalId: {
     type: String,
-    default: "JsonFileModal",
+    default: "StructuredDataModal",
   },
   modalName: {
     type: String,
-    default: "JsonFileModal",
+    default: "StructuredDataModal",
   },
   containerId: {
     type: Number,
@@ -51,7 +51,7 @@ function retrievePayload() {
       ok-only
       @show="retrievePayload()"
     >
-      <JsonEditor v-if="payload" v-model="payload" />
+      <JsonEditor v-if="payload" v-model="payload" read-only />
     </b-modal>
   </div>
 </template>

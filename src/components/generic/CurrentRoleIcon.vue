@@ -4,7 +4,7 @@ import type { PropType } from "vue";
 
 const props = defineProps({
   roles: {
-    type: Object as PropType<Roles>,
+    type: Object as PropType<Roles | undefined>,
     default: undefined,
   },
 });

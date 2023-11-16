@@ -6,7 +6,7 @@ import { getCurrentInstance, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   createdApiKey: {
-    type: Object as PropType<ApiKeyWithJWT>,
+    type: Object as PropType<ApiKeyWithJWT | undefined>,
     default: undefined,
   },
 });

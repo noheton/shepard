@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import JSONEditor, { type JSONEditorOptions } from "jsoneditor";
+import "jsoneditor/dist/jsoneditor.css";
 import { onMounted, ref, watch } from "vue";
 
 const jsoneditor = ref<JSONEditor>();
@@ -8,6 +9,10 @@ const props = defineProps({
   value: {
     type: String,
     required: true,
+  },
+  readOnly: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -25,8 +30,10 @@ function startJsonEditor() {
   // create the editor
   const container = document.getElementById("jsoneditor");
   const options: JSONEditorOptions = {
-    mode: "view",
-    modes: ["code", "view"], // allowed modes
+    mode: "tree",
+    modes: ["code", "tree"], // allowed modes
+    search: false,
+    onEditable: () => !props.readOnly,
     onChangeText: text => {
       emits("input", text);
     },
@@ -58,5 +65,15 @@ onMounted(() => {
 <style>
 #jsoneditor {
   height: 600px;
+}
+
+.jsoneditor {
+  border: solid thin var(--info);
+  border-radius: 0.15rem;
+}
+
+.jsoneditor-menu {
+  background-color: var(--info);
+  border-bottom: solid thin var(--info);
 }
 </style>

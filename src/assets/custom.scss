@@ -13,8 +13,6 @@ $dark: #343a40;
 @import "../node_modules/bootstrap/scss/bootstrap";
 // BootstrapVue and its default variables
 @import "../node_modules/bootstrap-vue/src/index.scss";
-// Json Editor variables
-@import "jsoneditor/dist/jsoneditor.css";
 
 // General style overrides and custom classes
 body {
@@ -47,15 +45,6 @@ h3 {
 .component {
   margin-bottom: 20px;
   margin-top: 20px;
-}
-
-.jsoneditor {
-  border: thin solid var(--info);
-}
-
-.jsoneditor-menu {
-  background-color: var(--info);
-  border-bottom: 1px solid var(--info);
 }
 
 .wide-popover {
