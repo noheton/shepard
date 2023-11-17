@@ -39,7 +39,7 @@
     "@types/chart.js": "2.9.40",
     "@types/jsoneditor": "9.9.3",
     "@types/node": "18.18.9",
-    "@vitejs/plugin-vue2": "2.2.0",
+    "@vitejs/plugin-vue2": "2.3.1",
     "@volar/vue-typescript": "1.6.5",
     "@vue/eslint-config-prettier": "8.0.0",
     "@vue/eslint-config-typescript": "12.0.0",
