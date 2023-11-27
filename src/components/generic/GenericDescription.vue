@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import TextEditor from "@/components/generic/TextEditor.vue";
+import { computed, ref } from "vue";
 
-defineProps({
+const props = defineProps({
   text: {
     type: String,
     required: true,
@@ -13,34 +14,26 @@ defineProps({
 });
 
 const readMore = ref<boolean>(false);
+const currentText = computed(() =>
+  readMore.value || props.text.length <= props.wordCount
+    ? props.text
+    : props.text.substring(0, props.wordCount) + "...",
+);
 </script>
 
 <template>
-  <div v-if="text">
+  <div v-if="currentText">
     <h4>Description</h4>
-    <div class="description">
-      <div v-if="text.length < wordCount">
-        {{ text }}
-      </div>
-      <div v-else>
-        <span v-if="readMore">
-          {{ text }}
-        </span>
-        <span v-else>
-          {{ text.substring(0, wordCount) + "..." }}
-        </span>
-        <b-link @click="readMore = !readMore">
-          <span v-if="readMore">Read Less</span>
-          <span v-else>Read More</span>
-        </b-link>
-      </div>
+    <div>
+      <TextEditor v-model="currentText" read-only></TextEditor>
+      <b-link
+        v-if="text.length > wordCount"
+        class="float-right"
+        @click="readMore = !readMore"
+      >
+        <span v-if="readMore">read less</span>
+        <span v-else>read more</span>
+      </b-link>
     </div>
   </div>
 </template>
-
-<style scoped>
-.description {
-  font-style: italic;
-  text-align: justify;
-}
-</style>

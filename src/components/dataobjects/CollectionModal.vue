@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TextEditor from "@/components/generic/TextEditor.vue";
 import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
 import { permissionOptions as pOptions } from "@/utils/helpers";
@@ -20,7 +21,7 @@ const props = defineProps({
     default: "collectionModal",
   },
   currentCollection: {
-    type: Object as PropType<Collection>,
+    type: Object as PropType<Collection | undefined>,
     default: undefined,
   },
 });
@@ -29,7 +30,8 @@ const permissionOptions = pOptions;
 const emit = defineEmits(["collection-changed"]);
 
 const router = useRouter();
-const newCollection = ref<Collection>({ name: "" });
+const name = ref<string>("");
+const description = ref<string>("");
 const possibleAttributes = ref<{ key: string; value: string }[]>([]);
 const validationError = ref(false);
 
@@ -38,9 +40,8 @@ const newPermissionType = ref<PermissionsPermissionTypeEnum>(
 );
 
 function prepare() {
-  newCollection.value = props.currentCollection
-    ? { ...props.currentCollection }
-    : { name: "" };
+  name.value = props.currentCollection?.name || "";
+  description.value = props.currentCollection?.description || "";
   possibleAttributes.value = [];
   validationError.value = false;
 
@@ -60,18 +61,24 @@ function prepare() {
 }
 
 function handleOk() {
+  const newCollection: Collection = {
+    id: props.currentCollection?.id,
+    name: name.value,
+    description: description.value,
+  };
+
   const attributes: { [key: string]: string } = {};
   possibleAttributes.value.forEach(attr => {
     if (attr.key != "") {
       attributes[attr.key] = attr.value;
     }
   });
-  newCollection.value.attributes = attributes;
+  newCollection.attributes = attributes;
 
   if (props.currentCollection) {
-    updateCollection(newCollection.value);
+    updateCollection(newCollection);
   } else {
-    createCollection(newCollection.value);
+    createCollection(newCollection);
   }
 }
 
@@ -103,9 +110,9 @@ function createCollection(collection: Collection) {
 }
 
 function updateCollection(collection: Collection) {
-  if (!props.currentCollection.id) return;
+  if (!collection.id) return;
   CollectionService.updateCollection({
-    collectionId: props.currentCollection.id,
+    collectionId: collection.id,
     collection: collection,
   })
     .then(() => {
@@ -132,11 +139,7 @@ function updateCollection(collection: Collection) {
         <b-row class="mb-3">
           <b-col cols="2"> Name </b-col>
           <b-col cols="8">
-            <b-form-input
-              v-model="newCollection.name"
-              required
-              placeholder="Name"
-            >
+            <b-form-input v-model="name" required placeholder="Name">
             </b-form-input>
           </b-col>
         </b-row>
@@ -144,13 +147,7 @@ function updateCollection(collection: Collection) {
         <b-row class="mb-3">
           <b-col cols="2"> Description </b-col>
           <b-col cols="8">
-            <b-form-textarea
-              v-model="newCollection.description"
-              placeholder="Description"
-              rows="3"
-              max-rows="6"
-            >
-            </b-form-textarea>
+            <TextEditor v-model="description"></TextEditor>
           </b-col>
         </b-row>
 

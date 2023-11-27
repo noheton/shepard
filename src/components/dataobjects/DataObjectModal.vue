@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TextEditor from "@/components/generic/TextEditor.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
 import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
@@ -19,7 +20,7 @@ const props = defineProps({
     required: true,
   },
   currentDataObject: {
-    type: Object as PropType<DataObject>,
+    type: Object as PropType<DataObject | undefined>,
     default: undefined,
   },
 });
@@ -27,24 +28,24 @@ const props = defineProps({
 const emit = defineEmits(["data-object-changed"]);
 
 const router = useRouter();
-const newDataObject = ref<DataObject>({ name: "" });
+const name = ref<string>("");
+const description = ref<string>("");
 const validParent = ref<boolean | undefined>();
-const validPredecessors = ref<Array<boolean | undefined>>([]);
 const possibleParent = ref<DataObject>({ name: "" });
+const validPredecessors = ref<Map<number, boolean | undefined>>(new Map());
 const possiblePredecessors = ref<Array<DataObject>>([]);
 const possibleAttributes = ref<{ key: string; value: string }[]>([]);
 
 function prepare() {
-  newDataObject.value = props.currentDataObject
-    ? { ...props.currentDataObject }
-    : { name: "" };
+  name.value = props.currentDataObject?.name || "";
+  description.value = props.currentDataObject?.description || "";
+  validPredecessors.value = new Map();
   possiblePredecessors.value = [];
   possibleAttributes.value = [];
-  validPredecessors.value = [];
 
   if (props.currentDataObject?.parentId) {
-    validateParent();
     possibleParent.value = { id: props.currentDataObject.parentId, name: "" };
+    validateParent();
   } else {
     possibleParent.value = {
       id: undefined,
@@ -52,32 +53,25 @@ function prepare() {
     };
   }
 
-  if (
-    props.currentDataObject?.predecessorIds &&
-    props.currentDataObject?.predecessorIds.length > 0
-  ) {
-    for (let i = 0; i < props.currentDataObject?.predecessorIds.length; i++) {
-      possiblePredecessors.value.push({
-        id: props.currentDataObject?.predecessorIds[i],
-        name: "",
-      });
+  if (props.currentDataObject?.predecessorIds?.length) {
+    props.currentDataObject.predecessorIds.forEach((pId, i) => {
+      possiblePredecessors.value.push({ id: pId, name: "" });
       validatePredecessor(i);
-    }
-  } else {
-    possiblePredecessors.value.push({
-      id: undefined,
-      name: "",
     });
+  } else {
+    possiblePredecessors.value.push({ id: undefined, name: "" });
   }
 
-  if (props.currentDataObject?.attributes) {
-    Object.entries(props.currentDataObject?.attributes).forEach(
+  if (
+    props.currentDataObject?.attributes &&
+    Object.keys(props.currentDataObject.attributes).length > 0
+  ) {
+    Object.entries(props.currentDataObject.attributes).forEach(
       ([key, value]) => {
         possibleAttributes.value.push({ key: key, value: value });
       },
     );
-  }
-  if (possibleAttributes.value.length == 0) {
+  } else {
     possibleAttributes.value.push({
       key: "",
       value: "",
@@ -86,30 +80,32 @@ function prepare() {
 }
 
 function handleOk() {
+  const newDataObject: DataObject = {
+    id: props.currentDataObject?.id,
+    name: name.value,
+    description: description.value,
+  };
+
   if (possibleParent.value.id != undefined) {
-    newDataObject.value.parentId = possibleParent.value.id;
+    newDataObject.parentId = possibleParent.value.id;
   }
 
-  const preIds: number[] = [];
-  possiblePredecessors.value.forEach(pre => {
-    if (pre.id) {
-      preIds.push(pre.id);
-    }
-  });
-  newDataObject.value.predecessorIds = preIds;
+  newDataObject.predecessorIds = possiblePredecessors.value
+    .filter(pre => pre.id != undefined)
+    .map(pre => pre.id) as number[];
 
   const attributes: { [key: string]: string } = {};
-  possibleAttributes.value.forEach(attr => {
-    if (attr.key != "") {
+  possibleAttributes.value
+    .filter(attr => attr.key != "")
+    .forEach(attr => {
       attributes[attr.key] = attr.value;
-    }
-  });
-  newDataObject.value.attributes = attributes;
+    });
+  newDataObject.attributes = attributes;
 
-  if (newDataObject.value.id) {
-    update();
+  if (props.currentDataObject) {
+    updateDataObject(newDataObject);
   } else {
-    create();
+    createDataObject(newDataObject);
   }
 }
 
@@ -125,16 +121,11 @@ function removeAttribute(i: number) {
 }
 
 function addPredecessor() {
-  possiblePredecessors.value.push({
-    id: undefined,
-    name: "",
-  });
-  validPredecessors.value.push(undefined);
+  possiblePredecessors.value.push({ id: undefined, name: "" });
 }
 
 function removePredecessor(i: number) {
   possiblePredecessors.value.splice(i, 1);
-  validPredecessors.value.splice(i, 1);
 }
 
 function validateParent() {
@@ -162,10 +153,9 @@ function validateParent() {
 }
 
 function validatePredecessor(i: number) {
-  const id = possiblePredecessors.value[i].id;
+  const id = possiblePredecessors.value[i]?.id;
   if (id == undefined) {
-    possiblePredecessors.value[i].name = "";
-    validParent.value = undefined;
+    possiblePredecessors.value[i] = { id: undefined, name: "" };
   } else {
     DataObjectService.getDataObject({
       collectionId: props.currentCollectionId,
@@ -173,25 +163,24 @@ function validatePredecessor(i: number) {
     })
       .then(response => {
         possiblePredecessors.value[i].name = response.name ? response.name : "";
-        if (possiblePredecessors.value[i].name == "") {
-          validPredecessors.value[i] = undefined;
-        } else {
-          validPredecessors.value[i] = true;
-        }
-        validPredecessors.value = [...validPredecessors.value];
+        validPredecessors.value.set(
+          id,
+          possiblePredecessors.value[i].name != undefined,
+        );
         possiblePredecessors.value = [...possiblePredecessors.value];
       })
       .catch(() => {
         possiblePredecessors.value[i].name = "";
-        validPredecessors.value[i] = false;
+        validPredecessors.value.set(id, false);
+        possiblePredecessors.value = [...possiblePredecessors.value];
       });
   }
 }
 
-function create() {
+function createDataObject(dataObject: DataObject) {
   DataObjectService.createDataObject({
     collectionId: props.currentCollectionId,
-    dataObject: newDataObject.value,
+    dataObject: dataObject,
   })
     .then(response => {
       router.push({
@@ -207,14 +196,14 @@ function create() {
     });
 }
 
-function update() {
-  if (!newDataObject.value.id) {
+function updateDataObject(dataObject: DataObject) {
+  if (!dataObject.id) {
     return;
   }
   DataObjectService.updateDataObject({
     collectionId: props.currentCollectionId,
-    dataObjectId: newDataObject.value.id,
-    dataObject: newDataObject.value,
+    dataObjectId: dataObject.id,
+    dataObject: dataObject,
   })
     .then(() => {
       emit("data-object-changed");
@@ -240,11 +229,7 @@ function update() {
         <b-row class="mb-3">
           <b-col cols="2"> Name </b-col>
           <b-col cols="8">
-            <b-form-input
-              v-model="newDataObject.name"
-              required
-              placeholder="Name"
-            >
+            <b-form-input v-model="name" required placeholder="Name">
             </b-form-input>
           </b-col>
         </b-row>
@@ -252,13 +237,7 @@ function update() {
         <b-row class="mb-3">
           <b-col cols="2"> Description </b-col>
           <b-col cols="8">
-            <b-form-textarea
-              v-model="newDataObject.description"
-              placeholder="Description"
-              rows="3"
-              max-rows="6"
-            >
-            </b-form-textarea>
+            <TextEditor v-model="description"></TextEditor>
           </b-col>
         </b-row>
 
@@ -303,7 +282,11 @@ function update() {
             <b-col cols="5">
               <b-form-input
                 v-model="predecessor.name"
-                :state="validPredecessors[i]"
+                :state="
+                  predecessor.id
+                    ? validPredecessors.get(predecessor.id)
+                    : undefined
+                "
                 readonly
                 placeholder="Name"
               ></b-form-input>

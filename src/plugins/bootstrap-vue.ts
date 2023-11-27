@@ -8,6 +8,7 @@ import BootstrapVue, {
   BIconCheckSquare,
   BIconChevronDown,
   BIconChevronUp,
+  BIconCode,
   BIconDash,
   BIconDiagram3,
   BIconDownload,
@@ -24,7 +25,18 @@ import BootstrapVue, {
   BIconPlus,
   BIconSquare,
   BIconTags,
+  BIconTextCenter,
+  BIconTextLeft,
+  BIconTextParagraph,
+  BIconTextRight,
   BIconTrash,
+  BIconTypeBold,
+  BIconTypeH1,
+  BIconTypeH2,
+  BIconTypeH3,
+  BIconTypeItalic,
+  BIconTypeStrikethrough,
+  BIconTypeUnderline,
   BIconUnlockFill,
   BIconXCircle,
   BIconXLg,
@@ -69,3 +81,16 @@ Vue.component("GraphIcon", BIconDiagram3);
 
 Vue.component("CheckboxChecked", BIconCheckSquare);
 Vue.component("CheckboxEmpty", BIconSquare);
+
+Vue.component("TypeBold", BIconTypeBold);
+Vue.component("TypeItalic", BIconTypeItalic);
+Vue.component("TypeStrike", BIconTypeStrikethrough);
+Vue.component("TypeUnderline", BIconTypeUnderline);
+Vue.component("TypeCode", BIconCode);
+Vue.component("TypeLeft", BIconTextLeft);
+Vue.component("TypeRight", BIconTextRight);
+Vue.component("TypeCenter", BIconTextCenter);
+Vue.component("TypeH1", BIconTypeH1);
+Vue.component("TypeH2", BIconTypeH2);
+Vue.component("TypeH3", BIconTypeH3);
+Vue.component("TypeText", BIconTextParagraph);

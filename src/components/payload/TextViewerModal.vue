@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TextEditor from "@/components/generic/TextEditor.vue";
 import FileService from "@/services/fileService";
 import { logError } from "@/utils/error-handling";
 import type { ResponseError } from "@dlr-shepard/shepard-client";
@@ -63,13 +64,7 @@ function retrievePayload() {
       @show="retrievePayload()"
     >
       <b-alert :show="error" variant="danger">File not found</b-alert>
-      <div>
-        <b-form-textarea
-          v-model="text"
-          plaintext
-          max-rows="20"
-        ></b-form-textarea>
-      </div>
+      <TextEditor v-model="text" read-only></TextEditor>
     </b-modal>
   </div>
 </template>
