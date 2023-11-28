@@ -17,13 +17,13 @@ def get_changes(
     dependency_changes: list[MergeRequest] = []
     other_changes: list[MergeRequest] = []
 
-    merge_requests = project.mergerequests.list(
+    merge_requests: list[MergeRequest] = project.mergerequests.list(
         all=True,
         state="merged",
         order_by="updated_at",
         updated_after=merged_after,
         target_branch=project.default_branch,
-    )
+    )  # type: ignore
 
     for merge_request in merge_requests:
         if merge_request.merged_at < merged_after:
@@ -77,7 +77,7 @@ def create_release(gitlab_instance: str, token: str, project_id: int) -> int:
         print(f"Project {ex} could not be found")
         return 1
 
-    latest_release = project.releases.list(per_page=1, page=0)[0]
+    latest_release = project.releases.list(per_page=1, page=0).next()  # type: ignore
     breaking, _dependencies, others = get_changes(project, latest_release.released_at)
     release_tag = get_release_tag()
 
