@@ -77,7 +77,7 @@ def create_release(gitlab_instance: str, token: str, project_id: int) -> int:
         print(f"Project {ex} could not be found")
         return 1
 
-    latest_release = project.releases.list(per_page=1, page=0).next()  # type: ignore
+    latest_release = project.releases.list(per_page=1, page=0)[0]  # type: ignore
     breaking, _dependencies, others = get_changes(project, latest_release.released_at)
     release_tag = get_release_tag()
 
