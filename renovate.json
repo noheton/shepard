@@ -3,7 +3,7 @@
   "extends": ["config:base"],
   "packageRules": [
     {
-      "matchFiles": ["requirements.txt"],
+      "matchFiles": ["pyproject.toml"],
       "groupName": "all python dependencies",
       "groupSlug": "all-python-deps"
     }
