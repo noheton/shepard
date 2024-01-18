@@ -44,7 +44,7 @@
     "@tsconfig/node20": "20.1.2",
     "@types/chart.js": "2.9.41",
     "@types/jsoneditor": "9.9.5",
-    "@types/node": "20.11.0",
+    "@types/node": "20.11.5",
     "@vitejs/plugin-vue2": "2.3.1",
     "@volar/vue-typescript": "1.6.5",
     "@vue/eslint-config-prettier": "9.0.0",
