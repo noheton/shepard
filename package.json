@@ -40,7 +40,7 @@
     "vuex-oidc": "4.0.2"
   },
   "devDependencies": {
-    "@rushstack/eslint-patch": "1.7.0",
+    "@rushstack/eslint-patch": "1.7.1",
     "@tsconfig/node20": "20.1.2",
     "@types/chart.js": "2.9.41",
     "@types/jsoneditor": "9.9.5",
