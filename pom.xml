@@ -43,7 +43,7 @@
 		<junit.version>5.10.1</junit.version>
 		<logback.version>1.4.14</logback.version>
 		<lombok.version>1.18.30</lombok.version>
-		<mockito.version>5.9.0</mockito.version>
+		<mockito.version>5.10.0</mockito.version>
 		<mongodb.version>4.11.1</mongodb.version>
 		<neo4j.version>3.3.3</neo4j.version>
 		<opencsv.version>5.9</opencsv.version>
