@@ -5,6 +5,7 @@ import ProcessAlert from "@/components/ProcessAlert.vue";
 import { useSearchContainers } from "@/components/search/InlineSearchContainers";
 import FileService from "@/services/fileService";
 import { handleError, logError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import type {
   BasicEntity,
   FileContainer,
@@ -255,7 +256,7 @@ async function uploadFile(newFile: Blob, containerId: number) {
                   required
                   :state="validContainer"
                   @blur="
-                    if (!isNaN(+userInputSearchContainer))
+                    if (isNumeric(userInputSearchContainer))
                       fetchContainer(+userInputSearchContainer);
                   "
                 ></b-form-input>

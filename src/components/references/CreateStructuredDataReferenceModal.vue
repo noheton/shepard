@@ -4,6 +4,7 @@ import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.
 import JsonEditor from "@/components/generic/JsonEditor.vue";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import type {
   BasicEntity,
   ResponseError,
@@ -237,7 +238,7 @@ async function createStructuredData(
                   required
                   :state="validContainer"
                   @blur="
-                    if (!isNaN(+userInputSearchContainer))
+                    if (isNumeric(userInputSearchContainer))
                       fetchContainer(+userInputSearchContainer);
                   "
                 ></b-form-input>

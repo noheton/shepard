@@ -1,5 +1,6 @@
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import type {
   BasicContainer,
   ContainerSearchParamsQueryTypeEnum,
@@ -65,10 +66,7 @@ export function useSearchContainers(
   }
 
   watch(text, () => {
-    if (
-      text.value.length != 0 &&
-      (text.value.length >= 3 || !isNaN(Number(text.value)))
-    ) {
+    if (isNumeric(text.value) || text.value.length >= 3) {
       fetchResults();
     } else {
       results.value = [];

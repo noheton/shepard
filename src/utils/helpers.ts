@@ -24,6 +24,10 @@ export function convertDate(date: Date | undefined | null) {
   if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
 }
 
+export function isNumeric(text: string): boolean {
+  return !isNaN(+text) && text != "";
+}
+
 export function getQueryParam(key: string) {
   const urlSearchParams = new URLSearchParams(window.location.search);
   return urlSearchParams.get(key);

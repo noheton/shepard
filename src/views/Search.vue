@@ -5,6 +5,7 @@ import { useCollectionSearch } from "@/components/search/CollectionSearch";
 import { useContainerSearch } from "@/components/search/ContainerSearch";
 import { useDataObjectSearch } from "@/components/search/DataObjectSearch";
 import { useReferenceSearch } from "@/components/search/ReferenceSearch";
+import ReteModal from "@/components/search/rete/ReteModal.vue";
 import { useStructuredDataSearch } from "@/components/search/StructuredDataSearch";
 import {
   getQueryParam,
@@ -237,14 +238,26 @@ onMounted(() => {
           </b-row>
           <b-row>
             <b-col>
-              <JsonEditor v-model="jsonQuery"></JsonEditor>
+              <JsonEditor v-model="jsonQuery" class="mb-2"></JsonEditor>
               <div>
-                <b-button-group class="float-right mt-2 mb-2">
-                  <b-button variant="info" @click="reset()"> Reset </b-button>
-                  <b-button variant="primary" @click="handleSearch()">
-                    Search
+                <b-button-group class="mb-2">
+                  <b-button
+                    v-b-modal.rete-modal
+                    v-b-tooltip.hover
+                    title="Graphical Query Editor"
+                    variant="secondary"
+                  >
+                    Graph
                   </b-button>
+                  <b-button variant="info" @click="reset()"> Reset </b-button>
                 </b-button-group>
+                <b-button
+                  class="float-right"
+                  variant="primary"
+                  @click="handleSearch()"
+                >
+                  Search
+                </b-button>
               </div>
             </b-col>
           </b-row>
@@ -270,6 +283,11 @@ onMounted(() => {
         </b-col>
       </b-row>
     </b-container>
+    <ReteModal
+      modal-id="rete-modal"
+      modal-name="Graphical Query Editor"
+      @changed="e => (jsonQuery = e.value)"
+    />
   </div>
 </template>
 
