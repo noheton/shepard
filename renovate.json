@@ -65,6 +65,18 @@
         "https://github.com/vuejs/language-tools"
       ],
       "groupName": "language-tools monorepo"
+    },
+    {
+      "matchSourceUrlPrefixes": [
+        "https://github.com/retejs"
+      ],
+      "groupName": "retejs organization"
+    },
+    {
+      "matchSourceUrls": [
+        "https://github.com/ueberdosis/tiptap"
+      ],
+      "groupName": "tiptap monorepo"
     }
   ],
   "labels": [
