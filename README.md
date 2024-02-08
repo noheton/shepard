@@ -131,8 +131,8 @@ The shepard backend can be configured to allow only users with a specific role. 
 Make sure that all requested resources are available. In particular, check the free memory, since the shepard backend and the databases will use a lot of it. You can adjust the maximum amount of used memory in `docker-compose.yml`.
 
 ```bash
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
 ```
 
 You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
@@ -146,11 +146,11 @@ Database upgrades may also require manual intervention. What exactly needs to be
 The upgrade process consists of shutting down the docker containers, updating the git repository, and restarting the docker containers again.
 
 ```bash
-docker-compose down
+docker compose down
 git pull
 # Check recent changes and adjust your configuration accordingly
-docker-compose pull
-docker-compose up -d
+docker compose pull
+docker compose up -d
 ```
 
 ## Troubleshooting
@@ -165,7 +165,7 @@ Verify that the configuration meets the given requirements. The file must have t
 
 ### Read the logs
 
-Most containers log to `STDOUT`. Therefore, you can observe the logs via `docker-compose logs <containername>`.
+Most containers log to `STDOUT`. Therefore, you can observe the logs via `docker compose logs <containername>`.
 
 The shepard backend also uses this method, but additionally writes to log files. These log files contain detailed log messages from the system and may contain important information about an issue. You can find the log files at `/opt/shepard/backend/tomcat/` unless you have changed the default location. The file `shepard.log` contains all logs since the last startup or rollover.
 
