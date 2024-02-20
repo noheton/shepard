@@ -3,19 +3,18 @@
   "extends": ["config:base"],
   "packageRules": [
     {
-      "matchPackageNames": ["influxdb"],
-      "allowedVersions": "<2",
-      "matchFileNames": ["docker-compose.yml"]
+      "matchPackageNames": ["neo4j"],
+      "allowedVersions": "<5"
     },
     {
-      "matchPackageNames": ["neo4j"],
-      "allowedVersions": "<5",
-      "matchFileNames": ["docker-compose.yml"]
+      "matchPackageNames": ["influxdb"],
+      "allowedVersions": "<2",
+      "matchFileNames": ["docker-compose.yml", ".gitlab-ci.yml"]
     },
     {
       "matchPackageNames": ["mongo"],
       "allowedVersions": "<5",
-      "matchFileNames": ["docker-compose.yml"]
+      "matchFileNames": ["docker-compose.yml", ".gitlab-ci.yml"]
     },
     {
       "matchPackageNames": ["openapitools/openapi-generator-cli"],
