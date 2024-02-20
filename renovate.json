@@ -4,11 +4,18 @@
   "packageRules": [
     {
       "matchPackageNames": ["influxdb"],
-      "allowedVersions": "<2"
+      "allowedVersions": "<2",
+      "matchFileNames": ["docker-compose.yml"]
     },
     {
       "matchPackageNames": ["neo4j"],
-      "allowedVersions": "<5"
+      "allowedVersions": "<5",
+      "matchFileNames": ["docker-compose.yml"]
+    },
+    {
+      "matchPackageNames": ["mongo"],
+      "allowedVersions": "<5",
+      "matchFileNames": ["docker-compose.yml"]
     },
     {
       "matchPackagePatterns": ["tomcat(-.+)?"],
