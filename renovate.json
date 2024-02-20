@@ -3,10 +3,7 @@
   "extends": ["config:base"],
   "packageRules": [
     {
-      "matchPackageNames": [
-        "org.neo4j:neo4j-ogm-core",
-        "org.neo4j:neo4j-ogm-bolt-native-types"
-      ],
+      "matchPackagePrefixes": ["org.neo4j:neo4j-ogm"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
     },
@@ -31,11 +28,11 @@
       "matchFileNames": [".gitlab/ci/python-legacy.gitlab-ci.yml"]
     },
     {
-      "matchPackagePatterns": ["tomcat(-.+)?"],
+      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
       "groupName": "tomcat"
     },
     {
-      "matchPackagePatterns": ["swagger(-.+)?"],
+      "matchPackagePrefixes": ["io.swagger.core.v3"],
       "groupName": "swagger"
     }
   ],
