@@ -18,6 +18,11 @@
       "matchFileNames": ["docker-compose.yml"]
     },
     {
+      "matchPackageNames": ["openapitools/openapi-generator-cli"],
+      "allowedVersions": "<7",
+      "matchFileNames": [".gitlab/ci/python-legacy.gitlab-ci.yml"]
+    },
+    {
       "matchPackagePatterns": ["tomcat(-.+)?"],
       "groupName": "tomcat"
     },
