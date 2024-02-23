@@ -27,6 +27,28 @@ export class LabelledInputControl extends ClassicPreset.Control {
   }
 }
 
+export class DropdownInputControl extends ClassicPreset.Control {
+  value = "";
+  constructor(
+    public label: string,
+    public options: Map<string, string>,
+    public change?: () => void,
+  ) {
+    super();
+  }
+}
+
+const operators = new Map<string, string>([
+  ["contains", "contains"],
+  ["eq", "equals"],
+  ["ge", "greater or equal"],
+  ["gt", "greater than"],
+  ["in", "in list"],
+  ["le", "lower or equal"],
+  ["lt", "lower than"],
+  ["ne", "not equal"],
+]);
+
 export class SimpleClauseNode extends ClassicPreset.Node<
   Record<string, never>,
   {
@@ -36,7 +58,7 @@ export class SimpleClauseNode extends ClassicPreset.Node<
   },
   {
     prop: LabelledInputControl;
-    op: LabelledInputControl;
+    op: DropdownInputControl;
     value: LabelledInputControl;
   }
 > {
@@ -47,7 +69,10 @@ export class SimpleClauseNode extends ClassicPreset.Node<
     super("Simple Clause");
 
     this.addControl("prop", new LabelledInputControl("property", change));
-    this.addControl("op", new LabelledInputControl("operator", change));
+    this.addControl(
+      "op",
+      new DropdownInputControl("operator", operators, change),
+    );
     this.addControl("value", new LabelledInputControl("value", change));
     this.addOutput("value", new ClassicPreset.Output(socket, "Output"));
   }

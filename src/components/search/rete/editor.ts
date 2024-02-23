@@ -1,7 +1,9 @@
 import { CustomContextMenu } from "@/components/search/rete/contextMenu";
+import DropdownInput from "@/components/search/rete/DropdownInput.vue";
 import LabelledInput from "@/components/search/rete/LabelledInput.vue";
 import {
   AndNode,
+  DropdownInputControl,
   LabelledInputControl,
   NotNode,
   OrNode,
@@ -115,6 +117,9 @@ export async function createEditor(container: HTMLElement) {
         control(data) {
           if (data.payload instanceof LabelledInputControl) {
             return LabelledInput;
+          }
+          if (data.payload instanceof DropdownInputControl) {
+            return DropdownInput;
           }
           return Presets.classic.Control;
         },
