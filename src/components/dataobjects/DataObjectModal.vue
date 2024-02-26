@@ -102,7 +102,7 @@ function handleOk() {
     });
   newDataObject.attributes = attributes;
 
-  if (props.currentDataObject) {
+  if (props.currentDataObject?.id) {
     updateDataObject(newDataObject);
   } else {
     createDataObject(newDataObject);
