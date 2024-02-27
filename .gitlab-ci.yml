@@ -146,13 +146,16 @@ build:
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER_DEV}
-    - apt-get update && apt-get install -y moreutils
-    - wget --no-verbose https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O yq && chmod +x yq
+    - wget --no-verbose https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64 -O yq && chmod +x yq
     - wget --no-verbose https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 -O jq && chmod +x jq
   script:
     - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} -DskipTests package -P prod
-    - ./yq 'del(.components.schemas.InfluxPoint.properties.value.type)' target/openapi/openapi.yaml | sponge target/openapi/openapi.yaml
-    - ./jq 'del(.components.schemas.InfluxPoint.properties.value.type)' target/openapi/openapi.json | sponge target/openapi/openapi.json
+    # Create a backup copy of the openapi spec for further use (see cpp generator)
+    - mv target/openapi/openapi.yaml target/openapi/openapi-obj.yaml
+    - mv target/openapi/openapi.json target/openapi/openapi-obj.json
+    # Delete the erroneously added key "type: object" from the InfluxPoint specification
+    - ./yq 'del(.components.schemas.InfluxPoint.properties.value.type)' target/openapi/openapi-obj.yaml > target/openapi/openapi.yaml
+    - ./jq 'del(.components.schemas.InfluxPoint.properties.value.type)' target/openapi/openapi-obj.json > target/openapi/openapi.json
   artifacts:
     when: always
     expire_in: 2 days
