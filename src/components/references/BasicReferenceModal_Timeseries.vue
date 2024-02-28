@@ -255,7 +255,7 @@ onMounted(() => {
           {{ convertDate(new Date(props.timeseriesReference.start / 1e6)) }}
           |
           <b>end:</b>
-          {{ convertDate(new Date(props.timeseriesReference.start / 1e6)) }}
+          {{ convertDate(new Date(props.timeseriesReference.end / 1e6)) }}
         </small>
       </div>
 
