@@ -59,7 +59,7 @@ public class SearchDAOTest extends BaseTestCase {
 	public void findFileContainersTest() {
 		var fileContainers = List.of(new FileContainer(1L));
 		String selectionQuery = "MATCH bla";
-		String query = "MATCH bla WITH fc MATCH path=(fc)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN fc, nodes(path), relationships(path)";
+		String query = "MATCH bla WITH fc MATCH path=(fc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN fc, nodes(path), relationships(path)";
 		when(session.query(FileContainer.class, query, Collections.emptyMap())).thenReturn(fileContainers);
 		var actual = dao.findFileContainers(selectionQuery, "fc");
 		assertEquals(fileContainers, actual);
@@ -69,7 +69,7 @@ public class SearchDAOTest extends BaseTestCase {
 	public void findStructuredDataContainersTest() {
 		var structuredDataContainers = List.of(new StructuredDataContainer(1L));
 		String selectionQuery = "MATCH bla";
-		String query = "MATCH bla WITH sd MATCH path=(sd)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN sd, nodes(path), relationships(path)";
+		String query = "MATCH bla WITH sd MATCH path=(sd)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN sd, nodes(path), relationships(path)";
 		when(session.query(StructuredDataContainer.class, query, Collections.emptyMap()))
 				.thenReturn(structuredDataContainers);
 		var actual = dao.findStructuredDataContainers(selectionQuery, "sd");
@@ -80,7 +80,7 @@ public class SearchDAOTest extends BaseTestCase {
 	public void findTimeseriesContainersTest() {
 		var timeseriesContainers = List.of(new TimeseriesContainer(1L));
 		String selectionQuery = "MATCH bla";
-		String query = "MATCH bla WITH ts MATCH path=(ts)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ts, nodes(path), relationships(path)";
+		String query = "MATCH bla WITH ts MATCH path=(ts)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN ts, nodes(path), relationships(path)";
 		when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(timeseriesContainers);
 		var actual = dao.findTimeseriesContainers(selectionQuery, "ts");
 		assertEquals(timeseriesContainers, actual);

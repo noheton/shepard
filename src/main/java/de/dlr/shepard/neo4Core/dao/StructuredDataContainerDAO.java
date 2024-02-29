@@ -7,6 +7,7 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.util.CypherQueryHelper;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContainer> {
@@ -28,7 +29,7 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 		if (params.hasPagination()) {
 			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + CypherQueryHelper.getReturnPart("c", true);
+		query += " " + CypherQueryHelper.getReturnPart("c", Neighborhood.ESSENTIAL);
 		var result = new ArrayList<StructuredDataContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

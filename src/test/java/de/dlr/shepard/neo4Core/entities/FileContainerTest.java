@@ -17,6 +17,7 @@ public class FileContainerTest extends BaseTestCase {
 	public void equalsContract() {
 		EqualsVerifier.simple().forClass(FileContainer.class)
 				.withPrefabValues(User.class, new User("bob"), new User("claus"))
+				.withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
 				.withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
 				.verify();
 	}

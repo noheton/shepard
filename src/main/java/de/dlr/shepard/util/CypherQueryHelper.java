@@ -4,6 +4,10 @@ import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 
 public class CypherQueryHelper {
 
+	public enum Neighborhood {
+		EVERYTHING, OUTGOING, ESSENTIAL
+	}
+
 	private CypherQueryHelper() {
 	}
 
@@ -31,14 +35,17 @@ public class CypherQueryHelper {
 	}
 
 	public static String getReturnPart(String entity) {
-		return getReturnPart(entity, false);
+		return getReturnPart(entity, Neighborhood.EVERYTHING);
 	}
 
-	public static String getReturnPart(String entity, boolean omitIncoming) {
-		var baseString = omitIncoming
-				? "MATCH path=(%s)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)"
-				: "MATCH path=(%s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN %s, nodes(path), relationships(path)";
-		var result = String.format(baseString, entity, entity);
+	public static String getReturnPart(String entity, Neighborhood neighborhood) {
+		String match = switch (neighborhood) {
+		case EVERYTHING -> "path=(%s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
+		case OUTGOING -> "path=(%s)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
+		case ESSENTIAL -> "path=(%s)-[*0..1]->(n) WHERE n:Permission OR n:User";
+		};
+		var result = "MATCH " + String.format(match, entity) + " RETURN "
+				+ String.format("%s, nodes(path), relationships(path)", entity);
 		return result;
 	}
 

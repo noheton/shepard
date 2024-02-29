@@ -7,6 +7,7 @@ import java.util.Map;
 
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.util.CypherQueryHelper;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.util.QueryParamHelper;
 
 public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
@@ -29,7 +30,7 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
 		if (params.hasPagination()) {
 			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + CypherQueryHelper.getReturnPart("c", true);
+		query += " " + CypherQueryHelper.getReturnPart("c", Neighborhood.ESSENTIAL);
 		var result = new ArrayList<TimeseriesContainer>();
 		for (var container : findByQuery(query, paramsMap)) {
 			if (matchName(container, params.getName())) {

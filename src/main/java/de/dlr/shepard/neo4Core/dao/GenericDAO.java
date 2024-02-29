@@ -10,6 +10,7 @@ import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.CypherQueryHelper;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
 import lombok.extern.slf4j.Slf4j;
@@ -184,7 +185,7 @@ public abstract class GenericDAO<T> {
 		String ret = "";
 		ret += " AND NONE(node IN " + nodesVar + " WHERE (node.deleted = TRUE))";
 		ret += " AND " + CypherQueryHelper.getReadableByQuery(collectionVar, username);
-		ret += " " + CypherQueryHelper.getReturnPart(retVar, false);
+		ret += " " + CypherQueryHelper.getReturnPart(retVar, Neighborhood.EVERYTHING);
 		return ret;
 	}
 

@@ -16,6 +16,7 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.CypherQueryHelper;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 
 public class SearchDAO {
 
@@ -81,7 +82,8 @@ public class SearchDAO {
 	}
 
 	private String emitContainerReturnPart(String containerVariable) {
-		return " WITH " + containerVariable + " " + CypherQueryHelper.getReturnPart(containerVariable, true);
+		return " WITH " + containerVariable + " "
+				+ CypherQueryHelper.getReturnPart(containerVariable, Neighborhood.ESSENTIAL);
 	}
 
 	private String emitCollectionReturnPart(String collectionVariable) {

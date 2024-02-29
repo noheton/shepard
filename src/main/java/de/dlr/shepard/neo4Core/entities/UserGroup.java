@@ -8,6 +8,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HasId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -21,6 +22,10 @@ public class UserGroup extends BasicEntity {
 	@Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
 	private List<User> users = new ArrayList<>();
 
+	@ToString.Exclude
+	@Relationship(type = Constants.HAS_PERMISSIONS)
+	private Permissions permissions;
+
 	public UserGroup(long id) {
 		super(id);
 	}
@@ -30,6 +35,7 @@ public class UserGroup extends BasicEntity {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + Objects.hash(users);
+		result = prime * result + HasId.hashcodeHelper(permissions);
 		return result;
 	}
 
@@ -42,7 +48,7 @@ public class UserGroup extends BasicEntity {
 		if (!(obj instanceof UserGroup))
 			return false;
 		UserGroup other = (UserGroup) obj;
-		return Objects.equals(users, other.users);
+		return Objects.equals(users, other.users) && HasId.equalsHelper(permissions, other.permissions);
 	}
 
 }

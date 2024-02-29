@@ -44,7 +44,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -67,7 +67,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c ORDER BY toLower(c.name) DESC \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -93,7 +93,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				WITH c MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -118,7 +118,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c ORDER BY toLower(c.name) DESC \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -145,7 +145,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -170,7 +170,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -199,7 +199,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -226,7 +226,7 @@ public class FileContainerDAOTest extends BaseTestCase {
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
 				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN c, nodes(path), relationships(path)""";
 		when(session.query(FileContainer.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");

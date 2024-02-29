@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 
 public class CypherQueryHelperTest extends BaseTestCase {
 
@@ -20,9 +21,17 @@ public class CypherQueryHelperTest extends BaseTestCase {
 
 	@Test
 	public void getReturnPartTest_omitIncoming() {
-		var actual = CypherQueryHelper.getReturnPart("entity", true);
+		var actual = CypherQueryHelper.getReturnPart("entity", Neighborhood.OUTGOING);
 		assertEquals(
 				"MATCH path=(entity)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN entity, nodes(path), relationships(path)",
+				actual);
+	}
+
+	@Test
+	public void getReturnPartTest_noNeighbors() {
+		var actual = CypherQueryHelper.getReturnPart("entity", Neighborhood.ESSENTIAL);
+		assertEquals(
+				"MATCH path=(entity)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN entity, nodes(path), relationships(path)",
 				actual);
 	}
 
