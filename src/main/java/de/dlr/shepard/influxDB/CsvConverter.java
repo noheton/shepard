@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
@@ -26,7 +28,7 @@ public class CsvConverter {
 		var tmpfile = Files.createTempFile("shepard", ".csv");
 		var stream = Files.newOutputStream(tmpfile);
 		var streamWriter = new OutputStreamWriter(stream);
-		var writer = new StatefulBeanToCsvBuilder<TimeseriesCsv>(streamWriter).build();
+		var writer = new StatefulBeanToCsvBuilder<TimeseriesCsv>(streamWriter).withApplyQuotesToAll(false).build();
 		log.debug("Write temp file to: {}", tmpfile.toAbsolutePath().toString());
 
 		for (var payload : payloads) {
@@ -61,9 +63,8 @@ public class CsvConverter {
 		var ts = payload.getTimeseries();
 		var result = new ArrayList<TimeseriesCsv>(payload.getPoints().size());
 		for (var p : payload.getPoints()) {
-			var value = p.getValue() != null ? p.getValue().toString() : null;
 			var tsc = new TimeseriesCsv(p.getTimeInNanoseconds(), ts.getMeasurement(), ts.getDevice(), ts.getLocation(),
-					ts.getSymbolicName(), ts.getField(), value);
+					ts.getSymbolicName(), ts.getField(), p.getValue());
 			result.add(tsc);
 		}
 		return result;
@@ -74,7 +75,7 @@ public class CsvConverter {
 		for (var input : inputList) {
 			var key = Objects.hash(input.getMeasurement(), input.getDevice(), input.getLocation(),
 					input.getSymbolicName(), input.getField());
-			var point = new InfluxPoint(input.getTimestamp(), input.getValue());
+			var point = new InfluxPoint(input.getTimestamp(), parseValue(input.getValue()));
 			if (result.containsKey(key)) {
 				result.get(key).getPoints().add(point);
 			} else {
@@ -86,6 +87,19 @@ public class CsvConverter {
 			}
 		}
 		return new ArrayList<>(result.values());
+	}
+
+	private Object parseValue(Object input) {
+		List<String> boolString = List.of("true", "false");
+
+		if (input instanceof String sInput) {
+			if (NumberUtils.isCreatable(sInput)) {
+				return NumberUtils.createNumber(sInput);
+			} else if (boolString.contains(sInput.toLowerCase())) {
+				return sInput.equalsIgnoreCase("true");
+			}
+		}
+		return input;
 	}
 
 }
