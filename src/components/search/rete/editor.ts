@@ -9,6 +9,7 @@ import {
   OrNode,
   SimpleClauseNode,
   SolutionNode,
+  XOrNode,
 } from "@/components/search/rete/ReteNodes";
 import { ClassicPreset, NodeEditor, type GetSchemes } from "rete";
 import { AreaExtensions, AreaPlugin } from "rete-area-plugin";
@@ -29,7 +30,7 @@ class Connection<
   B extends Node,
 > extends ClassicPreset.Connection<A, B> {}
 
-type ComplexClauseNode = AndNode | OrNode | NotNode;
+type ComplexClauseNode = AndNode | OrNode | XOrNode | NotNode;
 type Node = SimpleClauseNode | ComplexClauseNode | SolutionNode;
 
 type ConnProps = Connection<
@@ -60,6 +61,10 @@ export async function createEditor(container: HTMLElement) {
       .forEach(n => engine.fetch(n.id));
     editor
       .getNodes()
+      .filter(n => n instanceof XOrNode)
+      .forEach(n => engine.fetch(n.id));
+    editor
+      .getNodes()
       .filter(n => n instanceof NotNode)
       .forEach(n => engine.fetch(n.id));
     editor
@@ -72,6 +77,7 @@ export async function createEditor(container: HTMLElement) {
     { label: "Simple Clause", gen: () => new SimpleClauseNode(process) },
     { label: "AND", gen: () => new AndNode() },
     { label: "OR", gen: () => new OrNode() },
+    { label: "XOR", gen: () => new XOrNode() },
     { label: "NOT", gen: () => new NotNode() },
   ]);
   area.use(contextMenu);

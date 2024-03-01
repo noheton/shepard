@@ -167,6 +167,27 @@ export class OrNode extends LogicNode {
   }
 }
 
+export class XOrNode extends LogicNode {
+  constructor() {
+    super("XOR");
+  }
+
+  static makeXOr(e1: string, e2: string): string {
+    const e1Obj = jsonParse(e1);
+    const e2Obj = jsonParse(e2);
+
+    const result = { XOR: [e1Obj, e2Obj] };
+    return JSON.stringify(result);
+  }
+
+  data(inputs: { e1?: string[]; e2?: string[] }): { value: string } {
+    const e1 = inputs.e1 ? inputs.e1[0] : "";
+    const e2 = inputs.e2 ? inputs.e2[0] : "";
+    const value = XOrNode.makeXOr(e1, e2);
+    return { value };
+  }
+}
+
 export class NotNode extends ClassicPreset.Node<
   { e1: ClassicPreset.Socket },
   { value: ClassicPreset.Socket },
