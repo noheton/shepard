@@ -125,7 +125,7 @@ site:
 coverage:
   extends: .only_branches
   stage: build
-  image: haynes/jacoco2cobertura:1.0.9
+  image: haynes/jacoco2cobertura:1.0.10
   needs: [test]
   dependencies: [test]
   script:
