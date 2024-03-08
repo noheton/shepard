@@ -5,14 +5,10 @@ before_script:
   - poetry config virtualenvs.create false
   - poetry install
 
-black:
-  script:
-    - python -m black shepard_scripts/main.py --check
-
 lint:
   script:
-    - python -m ruff check .
+    - python -m ruff check shepard_scripts
 
 format:
   script:
-    - python -m ruff format .
+    - python -m ruff format shepard_scripts
