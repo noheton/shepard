@@ -8,10 +8,10 @@ from gitlab.v4.objects.projects import Project
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
 DEPENDENCY_BUMP_LABEL = "dependencies"
-TEMPLATE_FILE = "release_notes.md"
+TEMPLATE_FILE = "templates/release_notes.md"
 
 
-def get_changes(
+def _get_changes(
     project: Project, merged_after: str
 ) -> tuple[list[MergeRequest], list[MergeRequest], list[MergeRequest]]:
     breaking_changes: list[MergeRequest] = []
@@ -39,7 +39,7 @@ def get_changes(
     return (breaking_changes, dependency_changes, other_changes)
 
 
-def get_mr_list(merge_requests: list[MergeRequest]) -> str:
+def _get_mr_list(merge_requests: list[MergeRequest]) -> str:
     result = ""
     for merge_request in merge_requests:
         if len(result) > 0:
@@ -48,7 +48,7 @@ def get_mr_list(merge_requests: list[MergeRequest]) -> str:
     return result
 
 
-def get_release_notes(
+def _get_release_notes(
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
     description: str = "",
@@ -58,13 +58,13 @@ def get_release_notes(
     template = template_env.get_template(TEMPLATE_FILE)
     result = template.render(
         description=description,
-        breaking_changes=get_mr_list(breaking_changes),
-        other_changes=get_mr_list(other_changes),
+        breaking_changes=_get_mr_list(breaking_changes),
+        other_changes=_get_mr_list(other_changes),
     )
     return result
 
 
-def get_release_tag() -> str:
+def _get_release_tag() -> str:
     now = datetime.now()
     return now.strftime("%Y.%m.%d-release")
 
@@ -78,8 +78,8 @@ def create_release(gitlab_instance: str, token: str, project_id: int):
         raise click.Abort(f"Project {ex} could not be found") from ex
 
     latest_release = project.releases.list(per_page=1, page=0)[0]  # type: ignore
-    breaking, _dependencies, others = get_changes(project, latest_release.released_at)
-    release_tag = get_release_tag()
+    breaking, _dependencies, others = _get_changes(project, latest_release.released_at)
+    release_tag = _get_release_tag()
 
     click.echo({project.name_with_namespace})
     click.echo("Merge Requests:")
@@ -87,7 +87,7 @@ def create_release(gitlab_instance: str, token: str, project_id: int):
     click.echo()
 
     title = click.prompt("Release title: ")
-    release_notes = click.edit(get_release_notes(breaking, others))
+    release_notes = click.edit(_get_release_notes(breaking, others))
 
     click.echo(f"Title: {title}")
     click.echo(f"Tag: {release_tag}")

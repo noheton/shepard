@@ -1,7 +1,6 @@
 # shepard scripts
 
 This project provides useful scripts and tools to help maintain the shepard repository.
-Currently only the creation of new releases for frontend and backend is supported, more will follow.
 For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Prerequisites
@@ -16,4 +15,9 @@ For more information about shepard, its usage and infrastructure, check out [the
 
 ## Usage
 
-Run the script by using `poetry run cli [command]`
+Run the script by using `poetry run cli [command] [args] [options]`
+
+Possible commands are:
+
+- `release`: Create a Gitlab release for the given project
+- `packages`: Delete old development packages for the given project
