@@ -7,7 +7,7 @@ before_script:
 
 black:
   script:
-    - python -m black main.py --check
+    - python -m black shepard_scripts/main.py --check
 
 lint:
   script:

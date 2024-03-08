@@ -1,6 +1,7 @@
-# shepard releases
+# shepard scripts
 
-This project can be used to create automatic releases with release notes.
+This project provides useful scripts and tools to help maintain the shepard repository.
+Currently only the creation of new releases for frontend and backend is supported, more will follow.
 For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Prerequisites
@@ -11,9 +12,8 @@ For more information about shepard, its usage and infrastructure, check out [the
 
 1. go to [gitlab.com](https://gitlab.com/-/profile/personal_access_tokens) and add a personal access token with `api` permissions
 2. create a file `token.txt` and add your personal access token there
-3. install dependencies: `poetry install --no-root`
+3. install dependencies: `poetry install`
 
 ## Usage
 
-1. run the script by using `poetry run main.py`
-2. fill in all the required information and create the release
+Run the script by using `poetry run cli [command]`

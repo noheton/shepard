@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import click
 import jinja2
 from gitlab.client import Gitlab
 from gitlab.v4.objects.merge_requests import MergeRequest
@@ -48,9 +49,9 @@ def get_mr_list(merge_requests: list[MergeRequest]) -> str:
 
 
 def get_release_notes(
-    description: str,
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
+    description: str = "",
 ) -> str:
     template_loader = jinja2.FileSystemLoader(searchpath="./")
     template_env = jinja2.Environment(loader=template_loader, autoescape=True)
@@ -68,36 +69,33 @@ def get_release_tag() -> str:
     return now.strftime("%Y.%m.%d-release")
 
 
-def create_release(gitlab_instance: str, token: str, project_id: int) -> int:
+def create_release(gitlab_instance: str, token: str, project_id: int):
     instance = Gitlab(gitlab_instance, token)
 
     try:
         project = instance.projects.get(project_id)
     except KeyError as ex:
-        print(f"Project {ex} could not be found")
-        return 1
+        raise click.Abort(f"Project {ex} could not be found") from ex
 
     latest_release = project.releases.list(per_page=1, page=0)[0]  # type: ignore
     breaking, _dependencies, others = get_changes(project, latest_release.released_at)
     release_tag = get_release_tag()
 
-    print({project.name_with_namespace})
-    print("Merge Requests:")
-    print(*[mr.title for mr in breaking + others], sep="\n")
-    print()
-    title = input("Release title: ")
-    description = input("Description: ")
-    release_notes = get_release_notes(description, breaking, others)
+    click.echo({project.name_with_namespace})
+    click.echo("Merge Requests:")
+    click.echo("\n".join([mr.title for mr in breaking + others]))
+    click.echo()
 
-    print(f"Title: {title}")
-    print(f"Tag: {release_tag}")
-    print("Release notes:")
-    print(release_notes)
-    print()
+    title = click.prompt("Release title: ")
+    release_notes = click.edit(get_release_notes(breaking, others))
 
-    approve = input("OK? (y/N) ")
-    if approve != "y":
-        return 1
+    click.echo(f"Title: {title}")
+    click.echo(f"Tag: {release_tag}")
+    click.echo("Release notes:")
+    click.echo(release_notes)
+    click.echo()
+    if not click.confirm("OK?", abort=True):
+        raise click.Abort("Not confirmed")
 
     project.releases.create(
         {
@@ -107,5 +105,4 @@ def create_release(gitlab_instance: str, token: str, project_id: int) -> int:
             "ref": project.default_branch,
         }
     )
-    print("Successfully released")
-    return 0
+    click.echo("Successfully released")
