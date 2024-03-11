@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
 import { logError } from "@/utils/error-handling";
 import type { ResponseError } from "@dlr-shepard/shepard-client";
@@ -17,25 +18,37 @@ const route = useRoute();
 const collectionId = computed<string>(() => route.params.collectionId);
 const dataObjectId = computed<string>(() => route.params.dataObjectId);
 
-const parentId = ref<string | undefined>();
+const dataObjectName = ref<string>("DataObject");
+const collectionName = ref<string>("Collection");
 
 watch(dataObjectId, newDataObjectId => {
-  if (newDataObjectId) retrieveParentId();
-  else parentId.value = undefined;
+  if (newDataObjectId) retrieveDataObject();
+});
+watch(collectionId, newCollectionId => {
+  if (newCollectionId) retrieveCollection();
 });
 
-function retrieveParentId() {
+function retrieveDataObject() {
   DataObjectService.getDataObject({
     collectionId: +collectionId.value,
     dataObjectId: +dataObjectId.value,
   })
     .then(response => {
-      if (response.parentId) parentId.value = String(response.parentId);
-      else parentId.value = undefined;
+      if (response.name) dataObjectName.value = String(response.name);
     })
     .catch(e => {
-      parentId.value = undefined;
       logError(e as ResponseError, "fetching data object for breadcrumbs");
+    });
+}
+function retrieveCollection() {
+  CollectionService.getCollection({
+    collectionId: +collectionId.value,
+  })
+    .then(response => {
+      if (response.name) collectionName.value = String(response.name);
+    })
+    .catch(e => {
+      logError(e as ResponseError, "fetching collection for breadcrumbs");
     });
 }
 
@@ -53,14 +66,7 @@ function chooseBreadcrumb() {
   if (route.path.endsWith("graph")) ret.push({ text: "Graph", active: false });
 
   if (dataObjectId.value) {
-    if (parentId.value) {
-      ret.push(
-        getDataObjectBreadcrumb(collectionId.value, parentId.value, true),
-      );
-    }
-    ret.push(
-      getDataObjectBreadcrumb(collectionId.value, dataObjectId.value, false),
-    );
+    ret.push(getDataObjectBreadcrumb(collectionId.value, dataObjectId.value));
   }
 
   // The last element is always active
@@ -80,7 +86,7 @@ function getCollectionsBreadcrumb(): Breadcrumb {
 
 function getCollectionBreadcrumb(collectionId: string): Breadcrumb {
   return {
-    text: "Collection",
+    text: collectionName.value,
     active: false,
     to: {
       name: "Collection",
@@ -94,10 +100,9 @@ function getCollectionBreadcrumb(collectionId: string): Breadcrumb {
 function getDataObjectBreadcrumb(
   collectionId: string,
   dataObjectId: string,
-  isParent: boolean,
 ): Breadcrumb {
   return {
-    text: isParent ? "Parent" : "DataObject",
+    text: dataObjectName.value,
     active: false,
     to: {
       name: "DataObject",
