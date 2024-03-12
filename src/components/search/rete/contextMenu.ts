@@ -1,14 +1,15 @@
-import type { BaseSchemes, NodeEditor } from "rete";
+import type { NodeEditor } from "rete";
 import { ContextMenuPlugin } from "rete-context-menu-plugin";
 import type { Item, Items } from "rete-context-menu-plugin/_types/types";
-import { SolutionNode } from "./ReteNodes";
+import { AndNode, OrNode, SolutionNode, XOrNode } from "./ReteNodes";
+import type { Schemes } from "./scheme";
 
-export class CustomContextMenu<Scheme extends BaseSchemes> {
+export class CustomContextMenu {
   private createItem(
-    editor: NodeEditor<Scheme>,
+    editor: NodeEditor<Schemes>,
     key: string,
     label: string,
-    gen: () => Scheme["Node"],
+    gen: () => Schemes["Node"],
   ): Item {
     return {
       key: key,
@@ -18,14 +19,14 @@ export class CustomContextMenu<Scheme extends BaseSchemes> {
   }
 
   getContextMenu(
-    editor: NodeEditor<Scheme>,
-    nodes: { label: string; gen: () => Scheme["Node"] }[],
+    editor: NodeEditor<Schemes>,
+    nodes: { label: string; gen: () => Schemes["Node"] }[],
   ) {
     const items = nodes.map((value, index) =>
       this.createItem(editor, String(index), value.label, value.gen),
     );
 
-    const props: { items: Items<Scheme> } = {
+    const props: { items: Items<Schemes> } = {
       items(context) {
         if (context === "root") {
           return {
@@ -34,36 +35,55 @@ export class CustomContextMenu<Scheme extends BaseSchemes> {
           };
         }
 
-        if (!(context instanceof SolutionNode)) {
-          return {
-            searchBar: false,
-            list: [
-              {
-                label: "Delete",
-                key: "delete",
-                async handler() {
-                  const nodeId = context.id;
-                  const connections = editor.getConnections().filter(c => {
-                    return c.source === nodeId || c.target === nodeId;
-                  });
-
-                  for (const connection of connections) {
-                    await editor.removeConnection(connection.id);
-                  }
-                  await editor.removeNode(nodeId);
-                },
-              },
-            ],
-          };
-        }
-
-        return {
+        const menu: { searchBar: boolean; list: Item[] } = {
           searchBar: false,
           list: [],
         };
+        if (!(context instanceof SolutionNode)) {
+          menu.list.push({
+            label: "Delete",
+            key: "delete",
+            async handler() {
+              const nodeId = context.id;
+              const connections = editor
+                .getConnections()
+                .filter(c => c.source === nodeId || c.target === nodeId);
+
+              for (const connection of connections) {
+                await editor.removeConnection(connection.id);
+              }
+              await editor.removeNode(nodeId);
+            },
+          });
+        }
+        if (
+          context instanceof AndNode ||
+          context instanceof OrNode ||
+          context instanceof XOrNode
+        ) {
+          menu.list.push({
+            label: "Add Input",
+            key: "addInputNode",
+            async handler() {
+              context.addInputNode();
+            },
+          });
+
+          if (Object.keys(context.inputs).length > 2) {
+            menu.list.push({
+              label: "Del Input",
+              key: "removeInputNode",
+              async handler() {
+                context.removeInputNode(editor);
+              },
+            });
+          }
+        }
+
+        return menu;
       },
     };
 
-    return new ContextMenuPlugin<Scheme>(props);
+    return new ContextMenuPlugin<Schemes>(props);
   }
 }

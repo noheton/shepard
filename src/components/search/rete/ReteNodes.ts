@@ -1,5 +1,6 @@
 import { isNumeric } from "@/utils/helpers";
-import { ClassicPreset } from "rete";
+import { ClassicPreset, NodeEditor } from "rete";
+import type { Schemes } from "./scheme";
 
 function jsonParse(str: string) {
   try {
@@ -74,7 +75,7 @@ export class SimpleClauseNode extends ClassicPreset.Node<
       new DropdownInputControl("operator", operators, change),
     );
     this.addControl("value", new LabelledInputControl("value", change));
-    this.addOutput("value", new ClassicPreset.Output(socket, "Output"));
+    this.addOutput("value", new ClassicPreset.Output(socket, "Output", false));
   }
 
   convertValue(text: string): string | number | boolean {
@@ -101,89 +102,116 @@ export class SimpleClauseNode extends ClassicPreset.Node<
   }
 }
 
+const HEIGHT_PER_INPUT = 35;
 abstract class LogicNode extends ClassicPreset.Node<
-  { e1: ClassicPreset.Socket; e2: ClassicPreset.Socket },
+  Record<string, ClassicPreset.Socket>,
   { value: ClassicPreset.Socket },
   { value: ClassicPreset.Control }
 > {
   height = 180;
   width = 180;
 
-  constructor(operator: string) {
+  constructor(
+    operator: string,
+    private update?: (id: string) => void,
+  ) {
     super(operator);
-    const e1 = new ClassicPreset.Input(socket, "E1");
+    const e1 = new ClassicPreset.Input(socket, "E1", false);
     e1.showControl = false;
     e1.addControl(new ClassicPreset.InputControl("text", { readonly: true }));
 
-    const e2 = new ClassicPreset.Input(socket, "E2");
+    const e2 = new ClassicPreset.Input(socket, "E2", false);
     e2.showControl = false;
     e2.addControl(new ClassicPreset.InputControl("text", { readonly: true }));
 
     this.addInput("e1", e1);
     this.addInput("e2", e2);
-    this.addOutput("value", new ClassicPreset.Output(socket, "Output"));
+    this.addOutput("value", new ClassicPreset.Output(socket, "Output", false));
+  }
+
+  addInputNode() {
+    const index = Object.keys(this.inputs).length + 1;
+    this.height += HEIGHT_PER_INPUT;
+    const newNode = new ClassicPreset.Input(socket, "E" + index, false);
+    newNode.showControl = false;
+    newNode.addControl(
+      new ClassicPreset.InputControl("text", { readonly: true }),
+    );
+    this.addInput("e" + index, newNode);
+    if (this.update) this.update(this.id);
+  }
+
+  async removeInputNode(editor: NodeEditor<Schemes>) {
+    const index = Object.keys(this.inputs).length;
+    this.height -= HEIGHT_PER_INPUT;
+    const affectedConnections = editor
+      .getConnections()
+      .filter(c => c.target == this.id && c.targetInput == "e" + index);
+
+    for (const connection of affectedConnections) {
+      await editor.removeConnection(connection.id);
+    }
+    this.removeInput("e" + index);
+    if (this.update) this.update(this.id);
+  }
+
+  cleanInputs(inputs: { [key: string]: string[] }) {
+    return Object.values(inputs)
+      .filter(v => v?.length > 0)
+      .map(v => v[0]);
   }
 }
 
 export class AndNode extends LogicNode {
-  constructor() {
-    super("AND");
+  constructor(update?: (id: string) => void) {
+    super("AND", update);
   }
 
-  static makeAnd(e1: string, e2: string): string {
-    const e1Obj = jsonParse(e1);
-    const e2Obj = jsonParse(e2);
+  makeAnd(inputs: string[]): string {
+    const jsonObjects = inputs.map(s => jsonParse(s));
 
-    const result = { AND: [e1Obj, e2Obj] };
+    const result = { AND: jsonObjects };
     return JSON.stringify(result);
   }
 
-  data(inputs: { e1?: string[]; e2?: string[] }): { value: string } {
-    const e1 = inputs.e1 ? inputs.e1[0] : "";
-    const e2 = inputs.e2 ? inputs.e2[0] : "";
-    const value = AndNode.makeAnd(e1, e2);
+  data(inputs: { [key: string]: string[] }): { value: string } {
+    const value = this.makeAnd(this.cleanInputs(inputs));
     return { value };
   }
 }
 
 export class OrNode extends LogicNode {
-  constructor() {
-    super("OR");
+  constructor(update?: (id: string) => void) {
+    super("OR", update);
   }
 
-  static makeOr(e1: string, e2: string): string {
-    const e1Obj = jsonParse(e1);
-    const e2Obj = jsonParse(e2);
+  makeOr(inputs: string[]): string {
+    const jsonObjects = inputs.map(s => jsonParse(s));
 
-    const result = { OR: [e1Obj, e2Obj] };
+    const result = { OR: jsonObjects };
     return JSON.stringify(result);
   }
 
-  data(inputs: { e1?: string[]; e2?: string[] }): { value: string } {
-    const e1 = inputs.e1 ? inputs.e1[0] : "";
-    const e2 = inputs.e2 ? inputs.e2[0] : "";
-    const value = OrNode.makeOr(e1, e2);
+  data(inputs: { [key: string]: string[] }): { value: string } {
+    const value = this.makeOr(this.cleanInputs(inputs));
     return { value };
   }
 }
 
 export class XOrNode extends LogicNode {
-  constructor() {
-    super("XOR");
+  constructor(update?: (id: string) => void) {
+    super("XOR", update);
   }
 
-  static makeXOr(e1: string, e2: string): string {
-    const e1Obj = jsonParse(e1);
-    const e2Obj = jsonParse(e2);
+  makeXOr(inputs: string[]): string {
+    const jsonObjects = inputs.map(s => jsonParse(s));
 
-    const result = { XOR: [e1Obj, e2Obj] };
+    const result = { XOR: jsonObjects };
     return JSON.stringify(result);
   }
 
-  data(inputs: { e1?: string[]; e2?: string[] }): { value: string } {
-    const e1 = inputs.e1 ? inputs.e1[0] : "";
-    const e2 = inputs.e2 ? inputs.e2[0] : "";
-    const value = XOrNode.makeXOr(e1, e2);
+  data(inputs: { [key: string]: string[] }): { value: string } {
+    const value = this.makeXOr(this.cleanInputs(inputs));
     return { value };
   }
 }
@@ -198,12 +226,12 @@ export class NotNode extends ClassicPreset.Node<
 
   constructor() {
     super("NOT");
-    const e1 = new ClassicPreset.Input(socket, "E1");
+    const e1 = new ClassicPreset.Input(socket, "E1", false);
     e1.showControl = false;
     e1.addControl(new ClassicPreset.InputControl("text", { readonly: true }));
 
     this.addInput("e1", e1);
-    this.addOutput("value", new ClassicPreset.Output(socket, "Output"));
+    this.addOutput("value", new ClassicPreset.Output(socket, "Output", false));
   }
 
   static makeNot(e1: string): string {
@@ -230,7 +258,7 @@ export class SolutionNode extends ClassicPreset.Node<
 
   constructor() {
     super("Solution");
-    const input = new ClassicPreset.Input(socket, "Input");
+    const input = new ClassicPreset.Input(socket, "Input", false);
     input.showControl = false;
     input.addControl(
       new ClassicPreset.InputControl("text", { readonly: true }),

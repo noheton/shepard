@@ -11,7 +11,7 @@ import {
   SolutionNode,
   XOrNode,
 } from "@/components/search/rete/ReteNodes";
-import { ClassicPreset, NodeEditor, type GetSchemes } from "rete";
+import { NodeEditor } from "rete";
 import { AreaExtensions, AreaPlugin } from "rete-area-plugin";
 import {
   AutoArrangePlugin,
@@ -21,25 +21,9 @@ import {
   ConnectionPlugin,
   Presets as ConnectionPresets,
 } from "rete-connection-plugin";
-import type { ContextMenuExtra } from "rete-context-menu-plugin";
 import { DataflowEngine } from "rete-engine";
-import { Presets, VuePlugin, type VueArea2D } from "rete-vue-plugin/vue2";
-
-class Connection<
-  A extends Node,
-  B extends Node,
-> extends ClassicPreset.Connection<A, B> {}
-
-type ComplexClauseNode = AndNode | OrNode | XOrNode | NotNode;
-type Node = SimpleClauseNode | ComplexClauseNode | SolutionNode;
-
-type ConnProps = Connection<
-  SimpleClauseNode | ComplexClauseNode,
-  ComplexClauseNode | SolutionNode
->;
-type Schemes = GetSchemes<Node, ConnProps>;
-
-type AreaExtra = VueArea2D<Schemes> | ContextMenuExtra;
+import { Presets, VuePlugin } from "rete-vue-plugin/vue2";
+import type { AreaExtra, Schemes } from "./scheme";
 
 export async function createEditor(container: HTMLElement) {
   const editor = new NodeEditor<Schemes>();
@@ -51,33 +35,18 @@ export async function createEditor(container: HTMLElement) {
 
   function process() {
     engine.reset();
-    editor
-      .getNodes()
-      .filter(n => n instanceof AndNode)
-      .forEach(n => engine.fetch(n.id));
-    editor
-      .getNodes()
-      .filter(n => n instanceof OrNode)
-      .forEach(n => engine.fetch(n.id));
-    editor
-      .getNodes()
-      .filter(n => n instanceof XOrNode)
-      .forEach(n => engine.fetch(n.id));
-    editor
-      .getNodes()
-      .filter(n => n instanceof NotNode)
-      .forEach(n => engine.fetch(n.id));
-    editor
-      .getNodes()
-      .filter(n => n instanceof SolutionNode)
-      .forEach(n => engine.fetch(n.id));
+    editor.getNodes().forEach(n => engine.fetch(n.id));
   }
 
-  const contextMenu = new CustomContextMenu<Schemes>().getContextMenu(editor, [
+  function updateNode(id: string) {
+    area.update("node", id);
+  }
+
+  const contextMenu = new CustomContextMenu().getContextMenu(editor, [
     { label: "Simple Clause", gen: () => new SimpleClauseNode(process) },
-    { label: "AND", gen: () => new AndNode() },
-    { label: "OR", gen: () => new OrNode() },
-    { label: "XOR", gen: () => new XOrNode() },
+    { label: "AND", gen: () => new AndNode(updateNode) },
+    { label: "OR", gen: () => new OrNode(updateNode) },
+    { label: "XOR", gen: () => new XOrNode(updateNode) },
     { label: "NOT", gen: () => new NotNode() },
   ]);
   area.use(contextMenu);
