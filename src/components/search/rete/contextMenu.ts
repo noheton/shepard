@@ -74,7 +74,16 @@ export class CustomContextMenu {
               label: "Del Input",
               key: "removeInputNode",
               async handler() {
-                context.removeInputNode(editor);
+                const inputId = context.getLatestInputNodeId();
+                const affectedConnections = editor
+                  .getConnections()
+                  .filter(
+                    c => c.target == context.id && c.targetInput == inputId,
+                  );
+                for (const connection of affectedConnections) {
+                  await editor.removeConnection(connection.id);
+                }
+                context.removeInputNode();
               },
             });
           }

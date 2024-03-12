@@ -1,6 +1,5 @@
 import { isNumeric } from "@/utils/helpers";
-import { ClassicPreset, NodeEditor } from "rete";
-import type { Schemes } from "./scheme";
+import { ClassicPreset } from "rete";
 
 function jsonParse(str: string) {
   try {
@@ -141,21 +140,19 @@ abstract class LogicNode extends ClassicPreset.Node<
     if (this.update) this.update(this.id);
   }
 
-  async removeInputNode(editor: NodeEditor<Schemes>) {
+  removeInputNode() {
     const index = Object.keys(this.inputs).length;
     this.height -= HEIGHT_PER_INPUT;
-    const affectedConnections = editor
-      .getConnections()
-      .filter(c => c.target == this.id && c.targetInput == "e" + index);
-
-    for (const connection of affectedConnections) {
-      await editor.removeConnection(connection.id);
-    }
     this.removeInput("e" + index);
     if (this.update) this.update(this.id);
   }
 
-  cleanInputs(inputs: { [key: string]: string[] }) {
+  getLatestInputNodeId() {
+    const index = Object.keys(this.inputs).length;
+    return "e" + index;
+  }
+
+  protected cleanInputs(inputs: { [key: string]: string[] }) {
     return Object.values(inputs)
       .filter(v => v?.length > 0)
       .map(v => v[0]);
