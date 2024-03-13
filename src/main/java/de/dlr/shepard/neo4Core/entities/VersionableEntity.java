@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.entities;
 
 import java.util.Objects;
 
+import org.neo4j.ogm.annotation.Index;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 import lombok.Data;
@@ -14,6 +15,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class VersionableEntity extends BasicEntity {
 
+	@Index
 	private Long shepardId;
 
 	/**
