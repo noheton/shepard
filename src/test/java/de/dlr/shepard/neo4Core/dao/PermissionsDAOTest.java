@@ -42,11 +42,24 @@ public class PermissionsDAOTest extends BaseTestCase {
 	public void findByEntityTest() {
 		var perm = new Permissions(1L);
 		String query = """
-				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 \
+				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 2 \
 				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
 				RETURN p, nodes(path), relationships(path)""";
 		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(List.of(perm));
-		var actual = dao.findByEntity(1L);
+		var actual = dao.findByEntityNeo4jId(2L);
+		verify(session).query(Permissions.class, query, Collections.emptyMap());
+		assertEquals(perm, actual);
+	}
+
+	@Test
+	public void findByShepardIdTest() {
+		var perm = new Permissions(1L);
+		String query = """
+				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE e.shepardId = 11 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
+		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(List.of(perm));
+		var actual = dao.findByEntityShepardId(11L);
 		verify(session).query(Permissions.class, query, Collections.emptyMap());
 		assertEquals(perm, actual);
 	}
@@ -58,7 +71,19 @@ public class PermissionsDAOTest extends BaseTestCase {
 				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
 				RETURN p, nodes(path), relationships(path)""";
 		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(Collections.emptyList());
-		var actual = dao.findByEntity(1L);
+		var actual = dao.findByEntityNeo4jId(1L);
+		verify(session).query(Permissions.class, query, Collections.emptyMap());
+		assertNull(actual);
+	}
+
+	@Test
+	public void findByShepardIdTest_notFound() {
+		String query = """
+				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE e.shepardId = 11 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
+		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(Collections.emptyList());
+		var actual = dao.findByEntityShepardId(11L);
 		verify(session).query(Permissions.class, query, Collections.emptyMap());
 		assertNull(actual);
 	}
@@ -97,7 +122,46 @@ public class PermissionsDAOTest extends BaseTestCase {
 		when(session.query(query, Collections.emptyMap())).thenReturn(res);
 		when(session.load(Permissions.class, 1L, 1)).thenReturn(updated);
 
-		var actual = dao.createWithEntity(perm, 2L);
+		var actual = dao.createWithEntityNeo4jId(perm, 2L);
+		assertEquals(updated, actual);
+	}
+
+	@Test
+	public void createWithShepardIdTest() {
+		var user = new User("bob");
+		var perm = new Permissions();
+		perm.setOwner(user);
+		var col = new Collection(2L);
+		col.setShepardId(21L);
+
+		String query = "MATCH (e) WHERE e.shepardId = 21 MATCH (p:Permissions) WHERE ID(p) = 1 "
+				+ "CREATE path = (e)-[r:has_permissions]->(p)";
+
+		var created = new Permissions();
+		created.setOwner(user);
+		created.setId(1L);
+
+		var updated = new Permissions();
+		updated.setOwner(user);
+		updated.setId(1L);
+		updated.setEntity(col);
+
+		var stat = mock(QueryStatistics.class);
+		when(stat.containsUpdates()).thenReturn(true);
+		var res = mock(Result.class);
+		when(res.queryStatistics()).thenReturn(stat);
+
+		doAnswer(new Answer<Void>() {
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				perm.setId(1L);
+				return null;
+			}
+		}).when(session).save(perm, 1);
+		when(session.query(query, Collections.emptyMap())).thenReturn(res);
+		when(session.load(Permissions.class, 1L, 1)).thenReturn(updated);
+
+		var actual = dao.createWithEntityShepardId(perm, col.getShepardId());
 		assertEquals(updated, actual);
 	}
 }

@@ -187,7 +187,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-		var perms = permissionsService.getPermissionsByEntity(timeseriesContainerId);
+		var perms = permissionsService.getPermissionsByNeo4jId(timeseriesContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -197,7 +197,7 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Override
 	public Response editTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
 			@Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, timeseriesContainerId);
+		var perms = permissionsService.updatePermissionsByNeo4jId(permissions, timeseriesContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -206,7 +206,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
 	@Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
 	@Override
 	public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-		var roles = new PermissionsUtil().getRoles(timeseriesContainerId, securityContext.getUserPrincipal().getName());
+		var roles = new PermissionsUtil().getRolesByNeo4jId(timeseriesContainerId,
+				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 }

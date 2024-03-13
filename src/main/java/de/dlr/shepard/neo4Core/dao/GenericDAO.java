@@ -9,6 +9,7 @@ import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.neo4j.NeoConnector;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.util.PaginationHelper;
@@ -53,7 +54,7 @@ public abstract class GenericDAO<T> {
 	 * @param id The given id
 	 * @return The entity with the given id or null
 	 */
-	public T find(long id) {
+	public T findByNeo4jId(long id) {
 		T object = session.load(getEntityType(), id, DEPTH_ENTITY);
 		return object;
 	}
@@ -64,7 +65,7 @@ public abstract class GenericDAO<T> {
 	 * @param id The given id
 	 * @return The entity with the given id or null
 	 */
-	public T findLight(long id) {
+	public T findLightByNeo4jId(long id) {
 		T object = session.load(getEntityType(), id, 0);
 		return object;
 	}
@@ -86,7 +87,7 @@ public abstract class GenericDAO<T> {
 	 * @param id The entity to be deleted
 	 * @return Whether the deletion was successful or not
 	 */
-	public boolean delete(long id) {
+	public boolean deleteByNeo4jId(long id) {
 		T entity = session.load(getEntityType(), id);
 		if (entity != null) {
 			session.delete(entity);
@@ -136,13 +137,14 @@ public abstract class GenericDAO<T> {
 		return session.query(query, paramsMap);
 	}
 
-	protected String getSearchForReachableReferencesQuery(TraversalRules traversalRule, long collectionId, long startId,
-			String userName) {
+	protected String getSearchForReachableReferencesByShepardIdQuery(TraversalRules traversalRule,
+			long collectionShepardId, long startShepardId, String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
 		ret += getTraversalRulesPath(traversalRule);
 		ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
 		ret += getWithPart("ns", "ret");
-		ret += " WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+		ret += " WHERE d." + Constants.SHEPARD_ID + " = " + startShepardId + " AND col." + Constants.SHEPARD_ID + " = "
+				+ collectionShepardId;
 		ret += getReturnPart("ns", "ret", "col", userName);
 		return ret;
 	}
@@ -168,11 +170,31 @@ public abstract class GenericDAO<T> {
 		return ret;
 	}
 
+	protected String getSearchForReachableReferencesByShepardIdQuery(long collectionShepardId, String userName) {
+		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)";
+		ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
+		ret += getWithPart("ns", "ret");
+		ret += " WHERE col." + Constants.SHEPARD_ID + " = " + collectionShepardId;
+		ret += getReturnPart("ns", "ret", "col", userName);
+		return ret;
+	}
+
 	protected String getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
 		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)";
 		ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
 		ret += getWithPart("ns", "ret");
 		ret += " WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+		ret += getReturnPart("ns", "ret", "col", userName);
+		return ret;
+	}
+
+	protected String getSearchForReachableReferencesByShepardIdQuery(long collectionShepardId, long startShepardId,
+			String userName) {
+		String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)";
+		ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
+		ret += getWithPart("ns", "ret");
+		ret += " WHERE d." + Constants.SHEPARD_ID + " = " + startShepardId + " AND col." + Constants.SHEPARD_ID + " = "
+				+ collectionShepardId;
 		ret += getReturnPart("ns", "ret", "col", userName);
 		return ret;
 	}

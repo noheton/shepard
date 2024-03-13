@@ -66,7 +66,7 @@ public class PermissionsUtil {
 	 * @return whether the access is allowed or not
 	 */
 	public boolean isAllowed(long entityId, AccessType accessType, String username) {
-		var perms = permissionsService.getPermissionsByEntity(entityId);
+		var perms = permissionsService.getPermissionsByNeo4jId(entityId);
 		if (perms == null)
 			// No permissions
 			return true;
@@ -97,8 +97,17 @@ public class PermissionsUtil {
 		return ret;
 	}
 
-	public RolesIO getRoles(long entityId, String username) {
-		var perms = permissionsService.getPermissionsByEntity(entityId);
+	public RolesIO getRolesByNeo4jId(long id, String username) {
+		var perms = permissionsService.getPermissionsByNeo4jId(id);
+		return getRoles(perms, username);
+	}
+
+	public RolesIO getRolesByShepardId(long shepardId, String username) {
+		var perms = permissionsService.getPermissionsByShepardId(shepardId);
+		return getRoles(perms, username);
+	}
+
+	private RolesIO getRoles(Permissions perms, String username) {
 		if (perms == null) {
 			// Legacy entity without permissions
 			return new RolesIO(false, true, true, true);

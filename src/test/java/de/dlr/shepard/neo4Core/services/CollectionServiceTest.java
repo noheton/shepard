@@ -1,7 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,7 +20,6 @@ import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
-import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
@@ -53,79 +51,46 @@ public class CollectionServiceTest extends BaseTestCase {
 	private CollectionService service;
 
 	@Test
-	public void getCollectionTest() {
-		Collection collection = new Collection(1L);
-		when(dao.find(1L)).thenReturn(collection);
-		assertEquals(collection, service.getCollection(1L));
-	}
-
-	@Test
-	public void getCollectionTest_deleted() {
-		Collection collection = new Collection(1L);
-		collection.setDeleted(true);
-		when(dao.find(1L)).thenReturn(collection);
-		assertNull(service.getCollection(1L));
-	}
-
-	@Test
-	public void getCollectionTest_isNull() {
-		when(dao.find(10L)).thenReturn(null);
-		assertNull(service.getCollection(10L));
-	}
-
-	@Test
-	public void getCollectionTest_deletedEntites() {
-		DataObject doNotDeleted = new DataObject(1L);
-		DataObject doDeleted = new DataObject(2L);
-		doDeleted.setDeleted(true);
-
-		Collection collection = new Collection(5L);
-		collection.setDataObjects(List.of(doDeleted, doNotDeleted));
-
-		Collection collectionCut = new Collection(5L);
-		collectionCut.setDataObjects(List.of(doNotDeleted));
-
-		when(dao.find(5L)).thenReturn(collection);
-		Collection returned = service.getCollection(5L);
-		assertEquals(collectionCut, returned);
-	}
-
-	@Test
-	public void getCollectionsTest() {
+	public void getCollectionsByShepardIdTest() {
+		String username = "manni";
 		Collection collectionNotDeleted = new Collection(5L);
+		collectionNotDeleted.setShepardId(55L);
 		Collection collectionDeleted = new Collection(6L);
+		collectionDeleted.setShepardId(65L);
 		collectionDeleted.setDeleted(true);
 
-		when(dao.findAllCollections(null, "bob")).thenReturn(List.of(collectionNotDeleted));
-		List<Collection> returned = service.getAllCollections(null, "bob");
+		when(dao.findAllCollectionsByShepardId(null, username)).thenReturn(List.of(collectionNotDeleted));
+		List<Collection> returned = service.getAllCollectionsByShepardId(null, username);
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}
 
 	@Test
-	public void getCollectionsTest_withName() {
+	public void getCollectionsByShepardIdTest_withName() {
+		String username = "patrick";
 		Collection collectionNotDeleted = new Collection(5L);
+		collectionNotDeleted.setShepardId(55L);
 		Collection collectionDeleted = new Collection(6L);
+		collectionDeleted.setShepardId(65L);
 		collectionDeleted.setDeleted(true);
 
-		var params = new QueryParamHelper().withName("test");
-		when(dao.findAllCollections(params, "bob")).thenReturn(List.of(collectionNotDeleted));
-		List<Collection> returned = service.getAllCollections(params, "bob");
+		QueryParamHelper params = new QueryParamHelper().withName("test");
+		when(dao.findAllCollectionsByShepardId(params, username)).thenReturn(List.of(collectionNotDeleted));
+		List<Collection> returned = service.getAllCollectionsByShepardId(params, username);
 		assertEquals(List.of(collectionNotDeleted), returned);
 	}
 
 	@Test
 	public void createCollectionTest() {
-		var user = new User("bob");
-		var date = new Date(23);
-
-		var input = new CollectionIO() {
+		User user = new User("bob");
+		Date date = new Date(23);
+		CollectionIO input = new CollectionIO() {
 			{
 				setAttributes(Map.of("a", "b", "c", "d"));
 				setDescription("Desc");
 				setName("Name");
 			}
 		};
-		var toCreate = new Collection() {
+		Collection toCreate = new Collection() {
 			{
 				setAttributes(Map.of("a", "b", "c", "d"));
 				setDescription("Desc");
@@ -134,7 +99,7 @@ public class CollectionServiceTest extends BaseTestCase {
 				setCreatedBy(user);
 			}
 		};
-		var created = new Collection() {
+		Collection created = new Collection() {
 			{
 				setAttributes(Map.of("a", "b", "c", "d"));
 				setDescription("Desc");
@@ -144,24 +109,34 @@ public class CollectionServiceTest extends BaseTestCase {
 				setId(1L);
 			}
 		};
-
-		when(userDAO.find("bob")).thenReturn(user);
+		Collection createdWithShepardId = new Collection() {
+			{
+				setAttributes(Map.of("a", "b", "c", "d"));
+				setDescription("Desc");
+				setName("Name");
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setId(created.getId());
+				setShepardId(created.getId());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
-
-		var actual = service.createCollection(input, "bob");
-		assertEquals(created, actual);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+		Collection actual = service.createCollection(input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 		verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
 	}
 
 	@Test
-	public void updateCollectionTest() {
-		var user = new User("bob");
-		var date = new Date(23);
-		var updateUser = new User("claus");
-		var updateDate = new Date(43);
+	public void updateCollectionByShepardIdTest() {
+		User user = new User("bob");
+		Date date = new Date(23);
+		User updateUser = new User("claus");
+		Date updateDate = new Date(43);
 
-		var input = new CollectionIO() {
+		CollectionIO input = new CollectionIO() {
 			{
 				setId(1L);
 				setAttributes(Map.of("1", "2", "c", "d"));
@@ -169,14 +144,15 @@ public class CollectionServiceTest extends BaseTestCase {
 				setName("newName");
 			}
 		};
-		var old = new Collection() {
+		Collection old = new Collection() {
 			{
 				setAttributes(Map.of("a", "b", "c", "d"));
 				setDescription("Desc");
 				setName("Name");
 				setCreatedAt(date);
 				setCreatedBy(user);
-				setId(1L);
+				setId(15L);
+				setShepardId(input.getId());
 			}
 		};
 		var updated = new Collection() {
@@ -188,32 +164,33 @@ public class CollectionServiceTest extends BaseTestCase {
 				setCreatedBy(user);
 				setUpdatedAt(updateDate);
 				setUpdatedBy(updateUser);
-				setId(1L);
+				setId(old.getId());
+				setShepardId(old.getShepardId());
 			}
 		};
 
-		when(dao.find(1L)).thenReturn(old);
-		when(userDAO.find("claus")).thenReturn(updateUser);
+		when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+		when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
 		when(dateHelper.getDate()).thenReturn(updateDate);
 		when(dao.createOrUpdate(updated)).thenReturn(updated);
 
-		var actual = service.updateCollection(1L, input, "claus");
+		var actual = service.updateCollectionByShepardId(old.getShepardId(), input, updateUser.getUsername());
 		assertEquals(updated, actual);
 	}
 
 	@Test
-	public void deleteCollectionTest() {
-		var user = new User("bob");
-		var date = new Date(23);
+	public void deleteCollectionByShepardIdTest() {
+		User user = new User("bob");
+		Date date = new Date(23);
 
-		var collection = new Collection(1L);
+		Collection collection = new Collection(1L);
+		collection.setShepardId(15L);
 
-		when(userDAO.find("bob")).thenReturn(user);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(collection);
-		when(dao.deleteCollection(1L, user, date)).thenReturn(true);
+		when(dao.deleteCollectionByShepardId(collection.getShepardId(), user, date)).thenReturn(true);
 
-		var result = service.deleteCollection(1L, "bob");
+		var result = service.deleteCollectionByShepardId(collection.getShepardId(), user.getUsername());
 		assertTrue(result);
 	}
 }

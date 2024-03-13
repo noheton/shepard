@@ -34,7 +34,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	@Override
 	public Response getAllDataObjectReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = dataObjectReferenceService.getAllReferences(dataObjectId);
+		var references = dataObjectReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<DataObjectReferenceIO>(references.size());
 		for (var reference : references) {
 			result.add(new DataObjectReferenceIO(reference));
@@ -48,7 +48,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response getDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		var result = dataObjectReferenceService.getReference(dataObjectReferenceId);
+		var result = dataObjectReferenceService.getReferenceByShepardId(dataObjectReferenceId);
 		return Response.ok(new DataObjectReferenceIO(result)).build();
 	}
 
@@ -57,7 +57,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	@Override
 	public Response createDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectReferenceIO dataObjectReference) {
-		var result = dataObjectReferenceService.createReference(dataObjectId, dataObjectReference,
+		var result = dataObjectReferenceService.createReferenceByShepardId(dataObjectId, dataObjectReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new DataObjectReferenceIO(result)).status(Status.CREATED).build();
 	}
@@ -69,7 +69,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response deleteDataObjectReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		var result = dataObjectReferenceService.deleteReference(dataObjectReferenceId,
+		var result = dataObjectReferenceService.deleteReferenceByShepardId(dataObjectReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -81,7 +81,7 @@ public class DataObjectReferenceRestImpl implements DataObjectReferenceRest {
 	public Response getDataObjectReferencePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId) {
-		var payload = dataObjectReferenceService.getPayload(dataObjectReferenceId);
+		var payload = dataObjectReferenceService.getPayloadByShepardId(dataObjectReferenceId);
 		return payload != null ? Response.ok(new DataObjectIO(payload)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}

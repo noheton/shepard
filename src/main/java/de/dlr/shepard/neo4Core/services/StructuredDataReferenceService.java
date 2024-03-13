@@ -34,11 +34,11 @@ public class StructuredDataReferenceService
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	@Override
-	public StructuredDataReference createReference(long dataObjectId, StructuredDataReferenceIO structuredDataReference,
-			String username) {
+	public StructuredDataReference createReferenceByShepardId(long dataObjectShepardId,
+			StructuredDataReferenceIO structuredDataReference, String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.findLight(dataObjectId);
-		var container = containerDAO.findLight(structuredDataReference.getStructuredDataContainerId());
+		var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+		var container = containerDAO.findLightByNeo4jId(structuredDataReference.getStructuredDataContainerId());
 		if (container == null || container.isDeleted())
 			throw new InvalidBodyException("invalid container");
 		var toCreate = new StructuredDataReference();
@@ -58,27 +58,30 @@ public class StructuredDataReferenceService
 			}
 		}
 
-		return structuredDataReferenceDAO.createOrUpdate(toCreate);
+		StructuredDataReference created = structuredDataReferenceDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = structuredDataReferenceDAO.createOrUpdate(created);
+		return created;
 	}
 
 	@Override
-	public List<StructuredDataReference> getAllReferences(long dataObjectId) {
-		var references = structuredDataReferenceDAO.findByDataObject(dataObjectId);
+	public List<StructuredDataReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+		var references = structuredDataReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
 		return references;
 	}
 
 	/**
 	 * Searches the neo4j database for a StructuredDataReference
 	 *
-	 * @param id identifies the searched StructuredDataReference
+	 * @param shepardId identifies the searched StructuredDataReference
 	 *
 	 * @return the StructuredDataReference with the given id or null
 	 */
 	@Override
-	public StructuredDataReference getReference(long id) {
-		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.find(id);
+	public StructuredDataReference getReferenceByShepardId(long shepardId) {
+		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId);
 		if (structuredDataReference == null || structuredDataReference.isDeleted()) {
-			log.error("Structured Data Reference with id {} is null or deleted", id);
+			log.error("Structured Data Reference with id {} is null or deleted", shepardId);
 			return null;
 		}
 		return structuredDataReference;
@@ -87,15 +90,16 @@ public class StructuredDataReferenceService
 	/**
 	 * set the deleted flag for the Reference
 	 *
-	 * @param structuredDataReferenceId identifies the StructuredDataReference to be
-	 *                                  deleted
-	 * @param username                  the deleting user
+	 * @param structuredDataReferenceShepardId identifies the
+	 *                                         StructuredDataReference to be deleted
+	 * @param username                         the deleting user
 	 * @return a boolean to identify if the StructuredDataReference was successfully
 	 *         removed
 	 */
 	@Override
-	public boolean deleteReference(long structuredDataReferenceId, String username) {
-		StructuredDataReference structuredDataReference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+	public boolean deleteReferenceByShepardId(long structuredDataReferenceShepardId, String username) {
+		StructuredDataReference structuredDataReference = structuredDataReferenceDAO
+				.findByShepardId(structuredDataReferenceShepardId);
 		var user = userDAO.find(username);
 		structuredDataReference.setDeleted(true);
 		structuredDataReference.setUpdatedBy(user);
@@ -104,15 +108,15 @@ public class StructuredDataReferenceService
 		return true;
 	}
 
-	public List<StructuredDataPayload> getAllPayloads(long structuredDataReferenceId, String username) {
-		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+	public List<StructuredDataPayload> getAllPayloadsByShepardId(long structuredDataReferenceShepardId,
+			String username) {
+		StructuredDataReference reference = structuredDataReferenceDAO
+				.findByShepardId(structuredDataReferenceShepardId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
-
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			return structuredDatas.stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
-
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
 		for (var structuredData : structuredDatas) {
 			var payload = structuredDataService.getPayload(mongoId, structuredData.getOid());
@@ -124,14 +128,14 @@ public class StructuredDataReferenceService
 		return result;
 	}
 
-	public StructuredDataPayload getPayload(long structuredDataReferenceId, String oid, String username) {
-		StructuredDataReference reference = structuredDataReferenceDAO.find(structuredDataReferenceId);
+	public StructuredDataPayload getPayloadByShepardId(long structuredDataReferenceShepardId, String oid,
+			String username) {
+		StructuredDataReference reference = structuredDataReferenceDAO
+				.findByShepardId(structuredDataReferenceShepardId);
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
-
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			throw new InvalidAuthException("You are not authorized to access this structured data");
-
 		return structuredDataService.getPayload(mongoId, oid);
 	}
 }

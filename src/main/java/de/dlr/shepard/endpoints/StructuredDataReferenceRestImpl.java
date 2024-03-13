@@ -33,7 +33,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Override
 	public Response getAllStructuredDataReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = structuredDataReferenceService.getAllReferences(dataObjectId);
+		var references = structuredDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<StructuredDataReferenceIO>(references.size());
 		for (var ref : references) {
 			result.add(new StructuredDataReferenceIO(ref));
@@ -47,7 +47,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long referenceId) {
-		var ref = structuredDataReferenceService.getReference(referenceId);
+		var ref = structuredDataReferenceService.getReferenceByShepardId(referenceId);
 		return Response.ok(new StructuredDataReferenceIO(ref)).build();
 	}
 
@@ -56,7 +56,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	@Override
 	public Response createStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, StructuredDataReferenceIO structuredDataReference) {
-		var ref = structuredDataReferenceService.createReference(dataObjectId, structuredDataReference,
+		var ref = structuredDataReferenceService.createReferenceByShepardId(dataObjectId, structuredDataReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new StructuredDataReferenceIO(ref)).status(Status.CREATED).build();
 	}
@@ -68,7 +68,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response deleteStructuredDataReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataReferenceId) {
-		var result = structuredDataReferenceService.deleteReference(structuredDataReferenceId,
+		var result = structuredDataReferenceService.deleteReferenceByShepardId(structuredDataReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -80,7 +80,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 	public Response getStructuredDataPayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId) {
-		var payload = structuredDataReferenceService.getAllPayloads(structuredDataId,
+		var payload = structuredDataReferenceService.getAllPayloadsByShepardId(structuredDataId,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(payload).build();
 	}
@@ -92,7 +92,7 @@ public class StructuredDataReferenceRestImpl implements StructuredDataReferenceR
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.STRUCTUREDDATA_REFERENCE_ID) long structuredDataId,
 			@PathParam(Constants.OID) String oid) {
-		var payload = structuredDataReferenceService.getPayload(structuredDataId, oid,
+		var payload = structuredDataReferenceService.getPayloadByShepardId(structuredDataId, oid,
 				securityContext.getUserPrincipal().getName());
 		return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
 	}

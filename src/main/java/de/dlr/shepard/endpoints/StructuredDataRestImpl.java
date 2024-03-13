@@ -133,7 +133,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response getStructuredDataPermissions(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		var perms = permissionsService.getPermissionsByEntity(structuredDataId);
+		var perms = permissionsService.getPermissionsByNeo4jId(structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -143,7 +143,7 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Override
 	public Response editStructuredDataPermissions(
 			@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId, @Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, structuredDataId);
+		var perms = permissionsService.updatePermissionsByNeo4jId(permissions, structuredDataId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -152,7 +152,8 @@ public class StructuredDataRestImpl implements StructuredDataRest {
 	@Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.ROLES)
 	@Override
 	public Response getStructuredDataRoles(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-		var roles = new PermissionsUtil().getRoles(structuredDataId, securityContext.getUserPrincipal().getName());
+		var roles = new PermissionsUtil().getRolesByNeo4jId(structuredDataId,
+				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 

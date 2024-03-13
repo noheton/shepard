@@ -33,7 +33,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@Override
 	public Response getAllFileReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = fileReferenceService.getAllReferences(dataObjectId);
+		var references = fileReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<FileReferenceIO>(references.size());
 		for (var ref : references) {
 			result.add(new FileReferenceIO(ref));
@@ -47,7 +47,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long referenceId) {
-		var ref = fileReferenceService.getReference(referenceId);
+		var ref = fileReferenceService.getReferenceByShepardId(referenceId);
 		return Response.ok(new FileReferenceIO(ref)).build();
 	}
 
@@ -56,7 +56,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	@Override
 	public Response createFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, FileReferenceIO fileReference) {
-		var ref = fileReferenceService.createReference(dataObjectId, fileReference,
+		var ref = fileReferenceService.createReferenceByShepardId(dataObjectId, fileReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();
 	}
@@ -68,7 +68,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response deleteFileReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId) {
-		var result = fileReferenceService.deleteReference(fileReferenceId,
+		var result = fileReferenceService.deleteReferenceByShepardId(fileReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -81,7 +81,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFilePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId, @PathParam(Constants.OID) String oid) {
-		var payload = fileReferenceService.getPayload(fileReferenceId, oid,
+		var payload = fileReferenceService.getPayloadByShepardId(fileReferenceId, oid,
 				securityContext.getUserPrincipal().getName());
 		return payload != null
 				? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
@@ -97,7 +97,7 @@ public class FileReferenceRestImpl implements FileReferenceRest {
 	public Response getFiles(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.FILE_REFERENCE_ID) long fileId) {
-		var ret = fileReferenceService.getFiles(fileId);
+		var ret = fileReferenceService.getFilesByShepardId(fileId);
 		return Response.ok(ret).build();
 	}
 

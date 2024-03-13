@@ -19,14 +19,14 @@ public class BasicReferenceService {
 	/**
 	 * Searches the neo4j database for a BasicReference
 	 *
-	 * @param id identifies the searched BasicReference
+	 * @param shepardId identifies the searched BasicReference
 	 *
 	 * @return the BasicReference with the given id or null
 	 */
-	public BasicReference getReference(long id) {
-		BasicReference basicReference = basicReferenceDAO.find(id);
+	public BasicReference getReferenceByShepardId(long shepardId) {
+		BasicReference basicReference = basicReferenceDAO.findByShepardId(shepardId);
 		if (basicReference == null || basicReference.isDeleted()) {
-			log.error("Basic Reference with id {} is null or deleted", id);
+			log.error("Basic Reference with id {} is null or deleted", shepardId);
 			return null;
 		}
 		return basicReference;
@@ -35,26 +35,27 @@ public class BasicReferenceService {
 	/**
 	 * Searches the database for BasicReferences.
 	 *
-	 * @param dataObjectId identifies the DataObject
-	 * @param params       encapsulates possible parameters
+	 * @param dataObjectShepardId identifies the DataObject
+	 * @param params              encapsulates possible parameters
 	 * @return a List of BasicReferences
 	 */
-	public List<BasicReference> getAllBasicReferences(long dataObjectId, QueryParamHelper params) {
-		var references = basicReferenceDAO.findByDataObject(dataObjectId, params);
+	public List<BasicReference> getAllBasicReferencesByDataObjectShepardId(long dataObjectShepardId,
+			QueryParamHelper params) {
+		var references = basicReferenceDAO.findByDataObjectShepardId(dataObjectShepardId, params);
 		return references;
 	}
 
 	/**
 	 * Set the deleted flag for the Reference
 	 *
-	 * @param basicReferenceId identifies the BasicReference to be deleted
-	 * @param username         identifies the user
+	 * @param basicReferenceShepardId identifies the BasicReference to be deleted
+	 * @param username                identifies the user
 	 * @return a boolean to identify if the BasicReference was successfully removed
 	 */
-	public boolean deleteReference(long basicReferenceId, String username) {
+	public boolean deleteReferenceByShepardId(long basicReferenceShepardId, String username) {
 		var user = userDAO.find(username);
 
-		var basicReference = basicReferenceDAO.find(basicReferenceId);
+		var basicReference = basicReferenceDAO.findByShepardId(basicReferenceShepardId);
 		basicReference.setDeleted(true);
 		basicReference.setUpdatedAt(dateHelper.getDate());
 		basicReference.setUpdatedBy(user);

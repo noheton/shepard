@@ -17,7 +17,7 @@ import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
 import de.dlr.shepard.search.MongoDBEmitter;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -37,12 +37,12 @@ public class StructuredDataSearcher implements ISearcher {
 			SearchBody searchBody) {
 		BasicReference[] references = matchingReferences.keySet().toArray(new BasicReference[0]);
 		ResultTriple[] resultTriples = new ResultTriple[references.length];
-		BasicEntityIO[] results = new BasicEntityIO[references.length];
+		VersionableEntityIO[] results = new VersionableEntityIO[references.length];
 		for (var i = 0; i < references.length; i++) {
 			// The collection is not loaded at this time, so we have to use the given id
 			resultTriples[i] = new ResultTriple(matchingReferences.get(references[i]),
 					references[i].getDataObject().getId(), references[i].getId());
-			results[i] = new BasicEntityIO(references[i]);
+			results[i] = new VersionableEntityIO(references[i]);
 		}
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		return responseBody;
@@ -85,28 +85,29 @@ public class StructuredDataSearcher implements ISearcher {
 	private Set<StructuredDataReference> findReachableReferenceFromScope(SearchScope searchScope, String userName) {
 		Set<StructuredDataReference> ret = new HashSet<>();
 		TraversalRules[] traversalRules = searchScope.getTraversalRules();
-		Long collectionId = searchScope.getCollectionId();
-		if (collectionId == null) {
+		Long collectionShepardId = searchScope.getCollectionId();
+		if (collectionShepardId == null) {
 			throw new InvalidBodyException("Collection is necessary");
 		}
 		// no DataObjectId given
 		if (searchScope.getDataObjectId() == null) {
-			ret.addAll(structuredDataReferenceDAO.findReachableReferences(collectionId, userName));
+			ret.addAll(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionShepardId, userName));
 		}
 		// DataObjectId given
 		else {
-			long startId = searchScope.getDataObjectId();
+			long startShepardId = searchScope.getDataObjectId();
 			// consider only start node
 			if (traversalRules.length == 0) {
 				List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-						.findReachableReferences(collectionId, startId, userName);
+						.findReachableReferencesByShepardId(collectionShepardId, startShepardId, userName);
 				ret.addAll(reachableReferences);
 			}
 			// search according to traversal rules
 			else {
 				for (TraversalRules traversalRule : traversalRules) {
 					List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO
-							.findReachableReferences(traversalRule, collectionId, startId, userName);
+							.findReachableReferencesByShepardId(traversalRule, collectionShepardId, startShepardId,
+									userName);
 					ret.addAll(reachableReferences);
 				}
 			}

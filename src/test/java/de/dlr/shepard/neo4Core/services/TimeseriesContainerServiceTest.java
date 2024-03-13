@@ -59,7 +59,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	public void getTimeseriesContainerTest_successful() {
 		var container = new TimeseriesContainer(1L);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertEquals(container, actual);
@@ -67,7 +67,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getTimeseriesContainerTest_isNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -78,7 +78,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var container = new TimeseriesContainer(1L);
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -153,7 +153,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(old);
+		when(dao.findByNeo4jId(1L)).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 
 		var actual = service.deleteContainer(1L, "bob");
@@ -168,7 +168,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteContainer(1L, "bob");
 		assertFalse(actual);
@@ -181,7 +181,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.createTimeseries("database", payload)).thenReturn("");
 
 		var actual = service.createTimeseries(1L, payload);
@@ -193,7 +193,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.createTimeseries(1L, payload);
 		assertNull(actual);
@@ -207,7 +207,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.createTimeseries(1L, payload);
 		assertNull(actual);
@@ -220,7 +220,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
 		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.createTimeseries("database", payload)).thenReturn("error");
 
 		var actual = service.createTimeseries(1L, payload);
@@ -236,7 +236,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var start = 123L;
 		var end = 456L;
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.getTimeseriesPayload(start, end, "database", ts, SingleValuedUnaryFunction.MEAN, 10L,
 				FillOption.LINEAR)).thenReturn(payload);
 
@@ -251,7 +251,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var start = 123L;
 		var end = 456L;
 
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
 				FillOption.LINEAR);
@@ -267,7 +267,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var start = 123L;
 		var end = 456L;
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L,
 				FillOption.LINEAR);
@@ -280,7 +280,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		container.setDatabase("database");
 		var expected = List.of(new Timeseries("meas", "dev", "loc", "symName", "field"));
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.getTimeseriesAvailable("database")).thenReturn(expected);
 
 		var actual = service.getTimeseriesAvailable(1L);
@@ -289,7 +289,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getTimeseriesAvailableTest_containerNull() {
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getTimeseriesAvailable(1L);
 		assertEquals(0, actual.size());
@@ -301,7 +301,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		container.setDatabase("database");
 		container.setDeleted(true);
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getTimeseriesAvailable(1L);
 		assertEquals(0, actual.size());
@@ -316,7 +316,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var end = 456L;
 		var payload = new ByteArrayInputStream("123".getBytes());
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.exportTimeseriesPayload(start, end, "database", List.of(ts),
 				SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Collections.emptySet(), Collections.emptySet(),
 				Collections.emptySet())).thenReturn(payload);
@@ -332,7 +332,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var start = 123L;
 		var end = 456L;
 
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.exportTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, null);
 		assertNull(actual);
@@ -347,7 +347,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		var start = 123L;
 		var end = 456L;
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.exportTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, null);
 		assertNull(actual);
@@ -359,7 +359,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		container.setDatabase("database");
 		var payload = new ByteArrayInputStream("123".getBytes());
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.importTimeseries("database", payload)).thenReturn("");
 
 		var actual = service.importTimeseries(1L, payload);
@@ -372,7 +372,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		container.setDatabase("database");
 		var payload = new ByteArrayInputStream("123".getBytes());
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(timeseriesService.importTimeseries("database", payload)).thenReturn("error");
 
 		var actual = service.importTimeseries(1L, payload);
@@ -383,7 +383,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 	public void importTimeseriesTest_containerNull() throws IOException, InvalidBodyException {
 		var payload = new ByteArrayInputStream("123".getBytes());
 
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.importTimeseries(1L, payload);
 		assertFalse(actual);
@@ -396,7 +396,7 @@ public class TimeseriesContainerServiceTest extends BaseTestCase {
 		container.setDeleted(true);
 		var payload = new ByteArrayInputStream("123".getBytes());
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.importTimeseries(1L, payload);
 		assertFalse(actual);

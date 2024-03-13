@@ -88,7 +88,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		UserGroup userGroup = new UserGroup();
 		userGroup.setName("group");
 		Long userGroupId = 1L;
-		when(userGroupDAO.find(userGroupId)).thenReturn(userGroup);
+		when(userGroupDAO.findByNeo4jId(userGroupId)).thenReturn(userGroup);
 		UserGroup actual = service.getUserGroup(1L);
 		assertEquals(userGroup, actual);
 	}
@@ -132,7 +132,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 		newGroup.setUpdatedAt(updateDate);
 		newGroup.setUpdatedBy(updateUser);
 
-		when(userGroupDAO.find(1L)).thenReturn(oldGroup);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(oldGroup);
 		when(userDAO.find("updater")).thenReturn(updateUser);
 		when(dateHelper.getDate()).thenReturn(updateDate);
 		when(userGroupDAO.createOrUpdate(oldGroup)).thenReturn(newGroup);
@@ -148,10 +148,10 @@ public class UserGroupServiceTest extends BaseTestCase {
 		var permissions = new Permissions();
 		permissions.setId(2L);
 
-		when(userGroupDAO.find(1L)).thenReturn(userGroup);
-		when(userGroupDAO.delete(1L)).thenReturn(true);
-		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
-		when(permissionsDAO.delete(2L)).thenReturn(true);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
+		when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
+		when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
+		when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(true);
 
 		var result = service.deleteUserGroup(1L);
 		assertTrue(result);
@@ -162,9 +162,9 @@ public class UserGroupServiceTest extends BaseTestCase {
 		var userGroup = new UserGroup();
 		userGroup.setId(1L);
 
-		when(userGroupDAO.find(1L)).thenReturn(userGroup);
-		when(userGroupDAO.delete(1L)).thenReturn(true);
-		when(permissionsDAO.findByEntity(1L)).thenReturn(null);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
+		when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
+		when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(null);
 
 		var result = service.deleteUserGroup(1L);
 		assertTrue(result);
@@ -177,22 +177,22 @@ public class UserGroupServiceTest extends BaseTestCase {
 		var permissions = new Permissions();
 		permissions.setId(2L);
 
-		when(userGroupDAO.find(1L)).thenReturn(userGroup);
-		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
-		when(permissionsDAO.delete(2L)).thenReturn(false);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
+		when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
+		when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(false);
 
 		var result = service.deleteUserGroup(1L);
 		assertFalse(result);
-		verify(userGroupDAO, never()).delete(1L);
+		verify(userGroupDAO, never()).deleteByNeo4jId(1L);
 	}
 
 	@Test
 	public void deleteUserGroupTest_notFound() {
-		when(userGroupDAO.find(1L)).thenReturn(null);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(null);
 
 		var result = service.deleteUserGroup(1L);
 		assertFalse(result);
-		verify(userGroupDAO, never()).delete(1L);
+		verify(userGroupDAO, never()).deleteByNeo4jId(1L);
 	}
 
 	@Test
@@ -202,10 +202,10 @@ public class UserGroupServiceTest extends BaseTestCase {
 		var permissions = new Permissions();
 		permissions.setId(2L);
 
-		when(userGroupDAO.find(1L)).thenReturn(userGroup);
-		when(userGroupDAO.delete(1L)).thenReturn(false);
-		when(permissionsDAO.findByEntity(1L)).thenReturn(permissions);
-		when(permissionsDAO.delete(2L)).thenReturn(true);
+		when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
+		when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(false);
+		when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
+		when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(true);
 
 		var result = service.deleteUserGroup(1L);
 		assertFalse(result);

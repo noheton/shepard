@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +21,7 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.BasicEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
+import de.dlr.shepard.neo4Core.dao.VersionableEntityConcreteDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
@@ -38,6 +37,9 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 
 	@Mock
 	private SemanticRepositoryDAO semanticRepositoryDAO;
+
+	@Mock
+	private VersionableEntityConcreteDAO concreteDAO;
 
 	@Mock
 	private BasicEntityDAO abstractEntityDAO;
@@ -71,8 +73,8 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 
 	@BeforeEach
 	public void setUpRepositories() {
-		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
-		when(semanticRepositoryDAO.find(3L)).thenReturn(valRepo);
+		when(semanticRepositoryDAO.findByNeo4jId(2L)).thenReturn(propRepo);
+		when(semanticRepositoryDAO.findByNeo4jId(3L)).thenReturn(valRepo);
 
 		when(semanticRepositoryConnectorFactory.getRepositoryService(SemanticRepositoryType.SKOSMOS, "propEndpoint"))
 				.thenReturn(propConnector);
@@ -86,28 +88,36 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 	@Test
 	public void getAllAnnotationsTest() {
 		var expected = List.of(new SemanticAnnotation(1L));
-		when(semanticAnnotationDAO.findAllSemanticAnnotations(2L)).thenReturn(expected);
-		var actual = service.getAllAnnotations(2L);
+		when(semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(2L)).thenReturn(expected);
+		var actual = service.getAllAnnotationsByNeo4jId(2L);
+		assertEquals(expected, actual);
+	}
+
+	@Test
+	public void getAllAnnotationsByShepardIdTest() {
+		var expected = List.of(new SemanticAnnotation(1L));
+		when(semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(2L)).thenReturn(expected);
+		var actual = service.getAllAnnotationsByShepardId(2L);
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void getAnnotationTest() {
 		var expected = new SemanticAnnotation(1L);
-		when(semanticAnnotationDAO.find(1L)).thenReturn(expected);
-		var actual = service.getAnnotation(1L);
+		when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(expected);
+		var actual = service.getAnnotationByNeo4jId(1L);
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void getAnnotationTest_Null() {
-		when(semanticAnnotationDAO.find(1L)).thenReturn(null);
-		var actual = service.getAnnotation(1L);
+		when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(null);
+		var actual = service.getAnnotationByNeo4jId(1L);
 		assertNull(actual);
 	}
 
 	@Test
-	public void createAnnotationTest() {
+	public void createAnnotationByShepardIdTest() {
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -136,20 +146,22 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			}
 		};
 		var entity = new Collection(5L);
+		entity.setShepardId(6L);
 		var entityUpdated = new Collection(5L);
+		entityUpdated.setShepardId(6L);
 		entityUpdated.setAnnotations(List.of(expected));
 
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
+		when(concreteDAO.findByShepardId(entity.getShepardId())).thenReturn(entity);
 		when(semanticAnnotationDAO.createOrUpdate(toCreate)).thenReturn(expected);
 
-		var actual = service.createAnnotation(5L, annotation);
+		var actual = service.createAnnotationByShepardId(entity.getShepardId(), annotation);
 		assertEquals(expected, actual);
 		verify(semanticAnnotationDAO).createOrUpdate(toCreate);
-		verify(abstractEntityDAO).createOrUpdate(entity);
+		verify(concreteDAO).createOrUpdate(entity);
 	}
 
 	@Test
-	public void createAnnotationTest_EntityNull() {
+	public void createAnnotationByShepardIdTest_EntityNull() {
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -159,13 +171,13 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 			}
 		};
 
-		when(abstractEntityDAO.find(5L)).thenReturn(null);
+		when(concreteDAO.findByNeo4jId(5L)).thenReturn(null);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotationByShepardId(5L, annotation));
 	}
 
 	@Test
-	public void createAnnotationTest_EntityDeleted() {
+	public void createAnnotationByShepardIdTest_EntityDeleted() {
 		var annotation = new SemanticAnnotationIO() {
 			{
 				setPropertyIRI("propIri");
@@ -177,145 +189,24 @@ public class SemanticAnnotationServiceTest extends BaseTestCase {
 		var entity = new Collection(5L);
 		entity.setDeleted(true);
 
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
+		when(concreteDAO.findByShepardId(5L)).thenReturn(entity);
 
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
-	}
-
-	@Test
-	public void createAnnotationTest_PropRepoNull() {
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(semanticRepositoryDAO.find(2L)).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
-	}
-
-	@Test
-	public void createAnnotationTest_PropRepoDeleted() {
-		var propRepo = new SemanticRepository() {
-			{
-				setId(2L);
-				setType(SemanticRepositoryType.SKOSMOS);
-				setEndpoint("propEndpoint");
-				setDeleted(true);
-			}
-		};
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(semanticRepositoryDAO.find(2L)).thenReturn(propRepo);
-
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
-	}
-
-	@Test
-	public void createAnnotationTest_InvalidPropTermNull() {
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(propConnector.getTerm("propIri")).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
-	}
-
-	@Test
-	public void createAnnotationTest_InvalidPropTermEmpty() {
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(propConnector.getTerm("propIri")).thenReturn(Collections.emptyMap());
-
-		assertThrows(InvalidBodyException.class, () -> service.createAnnotation(5L, annotation));
-	}
-
-	@Test
-	public void createAnnotationTest_FirstLabel() {
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft"));
-		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
-
-		var actual = service.createAnnotation(5L, annotation);
-		assertEquals("Eigenschaft::valObject", actual.getName());
-
-	}
-
-	@Test
-	public void createAnnotationTest_EnglishLabel() {
-		var annotation = new SemanticAnnotationIO() {
-			{
-				setPropertyIRI("propIri");
-				setPropertyRepositoryId(2L);
-				setValueIRI("valIri");
-				setValueRepositoryId(3L);
-			}
-		};
-		var entity = new Collection(5L);
-
-		when(abstractEntityDAO.find(5L)).thenReturn(entity);
-		when(propConnector.getTerm("propIri")).thenReturn(Map.of("de", "Eigenschaft", "en", "Property"));
-		when(semanticAnnotationDAO.createOrUpdate(any())).thenAnswer(i -> i.getArguments()[0]);
-
-		var actual = service.createAnnotation(5L, annotation);
-		assertEquals("Property::valObject", actual.getName());
+		assertThrows(InvalidBodyException.class, () -> service.createAnnotationByShepardId(5L, annotation));
 	}
 
 	@Test
 	public void deleteAnnotationTest() {
-		when(semanticAnnotationDAO.delete(1L)).thenReturn(true);
+		when(semanticAnnotationDAO.deleteByNeo4jId(1L)).thenReturn(true);
 
-		var actual = service.deleteAnnotation(1L);
+		var actual = service.deleteAnnotationByNeo4jId(1L);
 		assertTrue(actual);
 	}
 
 	@Test
 	public void deleteAnnotationTest_isNull() {
-		when(semanticAnnotationDAO.delete(1L)).thenReturn(false);
+		when(semanticAnnotationDAO.deleteByNeo4jId(1L)).thenReturn(false);
 
-		var actual = service.deleteAnnotation(1L);
+		var actual = service.deleteAnnotationByNeo4jId(1L);
 		assertFalse(actual);
 	}
 

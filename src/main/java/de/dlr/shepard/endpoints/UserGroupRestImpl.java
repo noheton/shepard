@@ -96,7 +96,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-		var perms = permissionsService.getPermissionsByEntity(userGroupId);
+		var perms = permissionsService.getPermissionsByNeo4jId(userGroupId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -106,7 +106,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Override
 	public Response editUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId,
 			@Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, userGroupId);
+		var perms = permissionsService.updatePermissionsByNeo4jId(permissions, userGroupId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -115,7 +115,7 @@ public class UserGroupRestImpl implements UserGroupRest {
 	@Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.ROLES)
 	@Override
 	public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-		var roles = new PermissionsUtil().getRoles(userGroupId, securityContext.getUserPrincipal().getName());
+		var roles = new PermissionsUtil().getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 

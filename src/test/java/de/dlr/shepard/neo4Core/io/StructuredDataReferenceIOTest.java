@@ -31,10 +31,12 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(22L);
 		var container = new StructuredDataContainer(3L);
 		var structuredData = new StructuredData("oid", new Date(), "name");
 
 		var obj = new StructuredDataReference(1L);
+		obj.setShepardId(123L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -46,14 +48,14 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		String[] oids = obj.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
-		assertEquals(2L, converted.getDataObjectId());
-		assertEquals(3L, converted.getStructuredDataContainerId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
+		assertEquals(container.getId(), converted.getStructuredDataContainerId());
 		assertTrue(Arrays.equals(oids, converted.getStructuredDataOids()));
 	}
 
@@ -62,9 +64,11 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		var date = new Date();
 		var user = new User("bob");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(123L);
 		var structuredData = new StructuredData("oid", new Date(), "name");
 
 		var obj = new StructuredDataReference(1L);
+		obj.setShepardId(22L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -73,11 +77,11 @@ public class StructuredDataReferenceIOTest extends BaseTestCase {
 		String[] oids = obj.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
 
 		var converted = new StructuredDataReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
-		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
 		assertEquals(-1, converted.getStructuredDataContainerId());
 		assertTrue(Arrays.equals(oids, converted.getStructuredDataOids()));
 	}

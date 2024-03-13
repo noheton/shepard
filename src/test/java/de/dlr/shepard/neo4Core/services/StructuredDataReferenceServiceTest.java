@@ -68,115 +68,127 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	private StructuredDataReferenceService service;
 
 	@Test
-	public void getStructuredDataReferenceTest_successful() {
-		var ref = new StructuredDataReference(1L);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getStructuredDataReferenceByShepardIdTest_successful() {
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getStructuredDataReferenceTest_notFound() {
-		when(dao.find(1L)).thenReturn(null);
-
-		var actual = service.getReference(1L);
+	public void getStructuredDataReferenceByShepardIdTest_notFound() {
+		Long shepardId = 15L;
+		when(dao.findByShepardId(shepardId)).thenReturn(null);
+		StructuredDataReference actual = service.getReferenceByShepardId(shepardId);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getStructuredDataReferenceTest_deleted() {
-		var ref = new StructuredDataReference(1L);
+	public void getStructuredDataReferenceByShepardIdTest_deleted() {
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setDeleted(true);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertNull(actual);
 	}
 
 	@Test
-	public void getAllStructuredDataReferencesTest() {
-		var dataObject = new DataObject(200L);
-		var ref1 = new StructuredDataReference(1L);
-		var ref2 = new StructuredDataReference(2L);
+	public void getAllStructuredDataReferencesByShepardIdTest() {
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataReference ref1 = new StructuredDataReference(1L);
+		ref1.setShepardId(15L);
+		StructuredDataReference ref2 = new StructuredDataReference(2L);
+		ref2.setShepardId(25L);
 		dataObject.setReferences(List.of(ref1, ref2));
-
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllReferences(200L);
-
+		when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
+		List<StructuredDataReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new StructuredDataContainer(300L);
+	public void createStructuredDataReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataContainer container = new StructuredDataContainer(300L);
 		container.setMongoId("MongoId");
-		var date = new Date(30L);
-		var structuredData = new StructuredData("oid", new Date(), "name");
-		var input = new StructuredDataReferenceIO() {
+		Date date = new Date(30L);
+		StructuredData structuredData = new StructuredData("oid", new Date(), "name");
+		StructuredDataReferenceIO input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
-				setStructuredDataOids(new String[] { "oid" });
-				setStructuredDataContainerId(300L);
+				setStructuredDataOids(new String[] { structuredData.getOid() });
+				setStructuredDataContainerId(container.getId());
 			}
 		};
-		var toCreate = new StructuredDataReference() {
+		StructuredDataReference toCreate = new StructuredDataReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
+				setName(input.getName());
 				setStructuredDatas(List.of(structuredData));
 				setStructuredDataContainer(container);
 			}
 		};
-		var created = new StructuredDataReference() {
+		StructuredDataReference created = new StructuredDataReference() {
 			{
 				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setStructuredDatas(List.of(structuredData));
-				setStructuredDataContainer(container);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStructuredDatas(toCreate.getStructuredDatas());
+				setStructuredDataContainer(toCreate.getStructuredDataContainer());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
+		StructuredDataReference createdWithShepardId = new StructuredDataReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStructuredDatas(created.getStructuredDatas());
+				setStructuredDataContainer(created.getStructuredDataContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(structuredDataDAO.find(300L, "oid")).thenReturn(structuredData);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		when(structuredDataDAO.find(container.getId(), structuredData.getOid())).thenReturn(structuredData);
+		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_notFound() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new StructuredDataContainer(300L);
+	public void createStructuredDataReferenceByShepardIdTest_notFound() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataContainer container = new StructuredDataContainer(300L);
 		container.setMongoId("MongoId");
-		var date = new Date(30L);
-		var input = new StructuredDataReferenceIO() {
+		Date date = new Date(30L);
+		StructuredDataReferenceIO input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
 				setStructuredDataOids(new String[] { "oid" });
-				setStructuredDataContainerId(300L);
+				setStructuredDataContainerId(container.getId());
 			}
 		};
-		var toCreate = new StructuredDataReference() {
+		StructuredDataReference toCreate = new StructuredDataReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
+				setName(input.getName());
 				setStructuredDatas(Collections.emptyList());
 				setStructuredDataContainer(container);
 			}
@@ -184,195 +196,184 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		var created = new StructuredDataReference() {
 			{
 				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setStructuredDatas(Collections.emptyList());
-				setStructuredDataContainer(container);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStructuredDatas(toCreate.getStructuredDatas());
+				setStructuredDataContainer(toCreate.getStructuredDataContainer());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
+		var createdWithShepardId = new StructuredDataReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStructuredDatas(created.getStructuredDatas());
+				setStructuredDataContainer(created.getStructuredDataContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(structuredDataDAO.find(300L, "oid")).thenReturn(null);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(null);
+		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_ContainerIsNull() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new StructuredDataContainer(300L);
+	public void createStructuredDataReferenceByShepardIdTest_ContainerIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataContainer container = new StructuredDataContainer(300L);
 		container.setDeleted(true);
-		var input = new StructuredDataReferenceIO() {
+		StructuredDataReferenceIO input = new StructuredDataReferenceIO() {
 			{
 				setName("MyName");
 				setStructuredDataOids(new String[] { "oid" });
-				setStructuredDataContainerId(300L);
+				setStructuredDataContainerId(container.getId());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.findLight(300L)).thenReturn(container);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void createStructuredDataReferenceTest_ContainerIsDeleted() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var input = new StructuredDataReferenceIO() {
-			{
-				setName("MyName");
-				setStructuredDataOids(new String[] { "oid" });
-				setStructuredDataContainerId(300L);
-			}
-		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(structuredDataContainerDAO.findLight(300L)).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
-	}
-
-	@Test
-	public void deleteReferenceTest() {
-		var user = new User("Bob");
-		var date = new Date(30L);
-		var ref = new StructuredDataReference(1L);
-		var expected = new StructuredDataReference(1L);
+	public void deleteReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		Date date = new Date(30L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
+		StructuredDataReference expected = new StructuredDataReference(ref.getId());
+		expected.setShepardId(ref.getShepardId());
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dao.find(1L)).thenReturn(ref);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteReference(1L, "Bob");
-
+		boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
 	}
 
 	@Test
-	public void getAllPayloadTest() {
-		var container = new StructuredDataContainer(20L);
+	public void getAllPayloadByShepardIdTest() {
+		String username = "blob";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc", new Date(), "name");
-		var structuredDataB = new StructuredData("def", new Date(), "name");
+		StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
+		StructuredData structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
-
-		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
-		var payloadB = new StructuredDataPayload(structuredDataB, "json2");
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
-		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
-		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(payloadB);
-
-		var actual = service.getAllPayloads(1L, "bob");
+		StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
+		StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, "json2");
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
+		when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(payloadB);
+		List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 		assertEquals(List.of(payloadA, payloadB), actual);
 	}
 
 	@Test
-	public void getAllPayloadTest_notAllowed() {
-		var container = new StructuredDataContainer(20L);
+	public void getAllPayloadByShepardIdTest_notAllowed() {
+		String username = "blubb";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc", new Date(), "name");
-		var structuredDataB = new StructuredData("def", new Date(), "name");
+		StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
+		StructuredData structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
-
-		var payloadA = new StructuredDataPayload(structuredDataA, null);
-		var payloadB = new StructuredDataPayload(structuredDataB, null);
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
-
-		var actual = service.getAllPayloads(1L, "bob");
+		StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, null);
+		StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, null);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 		assertEquals(List.of(payloadA, payloadB), actual);
-		verify(structuredDataService, never()).getPayload(eq("mongoId"), any(String.class));
+		verify(structuredDataService, never()).getPayload(eq(container.getMongoId()), any(String.class));
 	}
 
 	@Test
-	public void getAllPayloadTest_unknownOid() {
-		var container = new StructuredDataContainer(20L);
+	public void getAllPayloadByShepardIdTest_unknownOid() {
+		String username = "bla";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc", new Date(), "name");
-		var structuredDataB = new StructuredData("def", new Date(), "name");
+		StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
+		StructuredData structuredDataB = new StructuredData("def", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
-
-		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
-		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
-		when(structuredDataService.getPayload("mongoId", "def")).thenReturn(null);
-
-		var actual = service.getAllPayloads(1L, "bob");
+		StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
+		when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(null);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 		assertEquals(List.of(payloadA, new StructuredDataPayload(structuredDataB, null)), actual);
 	}
 
 	@Test
-	public void getAllPayloadTest_isNull() {
-		var container = new StructuredDataContainer(20L);
+	public void getAllPayloadByShepardIdTest_isNull() {
+		String username = "schorsch";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setStructuredDataContainer(container);
 		ref.setStructuredDatas(Collections.emptyList());
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
-
-		var actual = service.getAllPayloads(1L, "bob");
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 		assertEquals(Collections.emptyList(), actual);
 	}
 
 	@Test
-	public void getPayloadTest() {
-		var container = new StructuredDataContainer(20L);
+	public void getPayloadByShepardIdTest() {
+		String username = "Murat";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15l);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc", new Date(), "name");
+		StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA));
-
-		var payloadA = new StructuredDataPayload(structuredDataA, "json1");
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
-		when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(payloadA);
-
-		var actual = service.getPayload(1L, "abc", "bob");
+		StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
+		var actual = service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username);
 		assertEquals(payloadA, actual);
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() {
-		var container = new StructuredDataContainer(20L);
+	public void getPayloadByShepardIdTest_notAllowed() {
+		String username = "Mehmet";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new StructuredDataReference(1L);
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
 		ref.setStructuredDataContainer(container);
-		var structuredDataA = new StructuredData("abc", new Date(), "name");
+		StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
 		ref.setStructuredDatas(List.of(structuredDataA));
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
-
-		assertThrows(InvalidAuthException.class, () -> service.getPayload(1L, "abc", "bob"));
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
+		assertThrows(InvalidAuthException.class,
+				() -> service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username));
 	}
 }

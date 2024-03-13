@@ -28,7 +28,7 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
 import de.dlr.shepard.util.TraversalRules;
 
 public class StructuredDataSearcherTest extends BaseTestCase {
@@ -69,6 +69,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		String mongoID = "61371f2889b108615688e22e";
 		// create StructuredDataReferences
 		DataObject dataObject = new DataObject(dataObjectId);
+		dataObject.setShepardId(dataObject.getId());
 		List<StructuredData> structuredDatas = List
 				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
@@ -76,6 +77,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		StructuredDataReference sdReference = new StructuredDataReference() {
 			{
 				setId(3L);
+				setShepardId(3L);
 				setDeleted(false);
 				setName("reference1");
 				setStructuredDatas(structuredDatas);
@@ -94,10 +96,10 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		// create ResponseBody
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1"))
 				.thenReturn(List.of(sdReference));
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
@@ -114,6 +116,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		String mongoID = "61371f2889b108615688e22e";
 		// create StructuredDataReferences
 		DataObject dataObject = new DataObject(dataObjectId);
+		dataObject.setShepardId(dataObject.getId());
 		List<StructuredData> structuredDatas = List
 				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
@@ -121,6 +124,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		StructuredDataReference sdReference = new StructuredDataReference() {
 			{
 				setId(3L);
+				setShepardId(3L);
 				setDeleted(false);
 				setName("reference1");
 				setStructuredDatas(structuredDatas);
@@ -139,11 +143,11 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		// create ResponseBody
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(TraversalRules.children, collectionId, dataObjectId,
-				"user1")).thenReturn(List.of(sdReference));
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(TraversalRules.children, collectionId,
+				dataObjectId, "user1")).thenReturn(List.of(sdReference));
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
 		when(mongoQueryResult.first()).thenReturn(firstDocument);
@@ -159,6 +163,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		String mongoID = "61371f2889b108615688e22e";
 		// create StructuredDataReferences
 		DataObject dataObject = new DataObject(dataObjectId);
+		dataObject.setShepardId(dataObject.getId());
 		List<StructuredData> structuredDatas = List
 				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
@@ -166,6 +171,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		StructuredDataReference sdReference = new StructuredDataReference() {
 			{
 				setId(3L);
+				setShepardId(3L);
 				setDeleted(false);
 				setName("reference1");
 				setStructuredDatas(structuredDatas);
@@ -190,10 +196,10 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		// create ResponseBody
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1"))
 				.thenReturn(List.of(sdReference));
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
@@ -217,10 +223,10 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = {};
-		BasicEntityIO[] results = {};
+		VersionableEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1"))
 				.thenReturn(Collections.emptyList());
 		// test
 		var actual = structuredDataSearcher.search(searchBody, "user1");
@@ -234,6 +240,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		String mongoID = "61371f2889b108615688e22e";
 		// create StructuredDataReferences
 		DataObject dataObject = new DataObject(dataObjectId);
+		dataObject.setShepardId(dataObject.getId());
 		List<StructuredData> structuredDatas = List
 				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
@@ -241,6 +248,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		StructuredDataReference sdReference = new StructuredDataReference() {
 			{
 				setId(3L);
+				setShepardId(3L);
 				setDeleted(false);
 				setName("reference1");
 				setStructuredDatas(structuredDatas);
@@ -258,10 +266,10 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		// create ResponseBody
 		ResultTriple[] resultTriples = {};
-		BasicEntityIO[] results = {};
+		VersionableEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(collectionId, dataObjectId, "user1"))
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1"))
 				.thenReturn(List.of(sdReference));
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
@@ -285,6 +293,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		String mongoID = "61371f2889b108615688e22e";
 		// create StructuredDataReferences
 		DataObject dataObject = new DataObject(dataObjectId);
+		dataObject.setShepardId(dataObject.getId());
 		List<StructuredData> structuredDatas = List
 				.of(new StructuredData("61371f2889b108615688e22e", new Date(), "name"));
 		StructuredDataContainer sdContainer = new StructuredDataContainer(2L);
@@ -292,6 +301,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		StructuredDataReference sdReference = new StructuredDataReference() {
 			{
 				setId(3L);
+				setShepardId(3L);
 				setDeleted(false);
 				setName("reference1");
 				setStructuredDatas(structuredDatas);
@@ -309,10 +319,10 @@ public class StructuredDataSearcherTest extends BaseTestCase {
 		// create ResponseBody
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		// configure Mocks
-		when(structuredDataReferenceDAO.findReachableReferences(collectionId, "user1"))
+		when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, "user1"))
 				.thenReturn(List.of(sdReference));
 		when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
 		when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);

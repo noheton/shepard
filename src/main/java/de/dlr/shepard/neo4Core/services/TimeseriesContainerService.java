@@ -60,7 +60,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 */
 	@Override
 	public TimeseriesContainer getContainer(long timeSeriesContainerId) {
-		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesContainerId);
+		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeSeriesContainerId);
 			return null;
@@ -93,7 +93,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	@Override
 	public boolean deleteContainer(long timeSeriesContainerId, String username) {
 		var user = userDAO.find(username);
-		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.find(timeSeriesContainerId);
+		TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
 		if (timeseriesContainer == null) {
 			return false;
 		}
@@ -114,7 +114,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 * @return created timeseries
 	 */
 	public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload) {
-		var timeseriesContainer = timeseriesContainerDAO.find(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
@@ -141,7 +141,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 */
 	public TimeseriesPayload getTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start,
 			long end, SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) {
-		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
@@ -158,7 +158,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	 * @return a list of timeseries objects
 	 */
 	public List<Timeseries> getTimeseriesAvailable(long timeseriesContainerId) {
-		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return Collections.emptyList();
@@ -168,7 +168,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 
 	public InputStream exportTimeseriesPayload(long timeseriesContainerId, Timeseries timeseries, long start, long end,
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption) throws IOException {
-		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return null;
@@ -180,7 +180,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
 	}
 
 	public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
-		var timeseriesContainer = timeseriesContainerDAO.findLight(timeseriesContainerId);
+		var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
 		if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
 			log.error("Timeseries Container with id {} is null or deleted", timeseriesContainerId);
 			return false;

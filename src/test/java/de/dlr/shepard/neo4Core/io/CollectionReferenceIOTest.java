@@ -27,9 +27,12 @@ public class CollectionReferenceIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(4L);
 		var referenced = new Collection(3L);
+		referenced.setShepardId(5L);
 
 		var obj = new CollectionReference(1L);
+		obj.setShepardId(2L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -40,29 +43,31 @@ public class CollectionReferenceIOTest extends BaseTestCase {
 		obj.setRelationship("TestRel");
 
 		var converted = new CollectionReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
-		assertEquals(2L, converted.getDataObjectId());
-		assertEquals(3L, converted.getReferencedCollectionId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
+		assertEquals(referenced.getShepardId(), converted.getReferencedCollectionId());
 		assertEquals(obj.getRelationship(), converted.getRelationship());
 	}
 
 	@Test
 	public void testConversion_Deleted() {
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(133L);
 
 		var obj = new CollectionReference(1L);
+		obj.setShepardId(33L);
 		obj.setDataObject(dataObject);
 		obj.setReferencedCollection(null);
 		obj.setRelationship("TestRel");
 
 		var converted = new CollectionReferenceIO(obj);
-		assertEquals(1L, converted.getId());
-		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(obj.getShepardId(), converted.getId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
 		assertEquals(-1, converted.getReferencedCollectionId());
 		assertEquals(obj.getRelationship(), converted.getRelationship());
 	}

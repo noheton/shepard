@@ -33,7 +33,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	@Override
 	public Response getAllUriReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = uriReferenceService.getAllReferences(dataObjectId);
+		var references = uriReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<URIReferenceIO>(references.size());
 		for (var ref : references) {
 			result.add(new URIReferenceIO(ref));
@@ -47,7 +47,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	public Response getUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.URI_REFERENCE_ID) long referenceId) {
-		var reference = uriReferenceService.getReference(referenceId);
+		var reference = uriReferenceService.getReferenceByShepardId(referenceId);
 		return Response.ok(new URIReferenceIO(reference)).build();
 	}
 
@@ -56,7 +56,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	@Override
 	public Response createUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, URIReferenceIO timeseriesReference) {
-		var result = uriReferenceService.createReference(dataObjectId, timeseriesReference,
+		var result = uriReferenceService.createReferenceByShepardId(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 
 		return Response.ok(new URIReferenceIO(result)).status(Status.CREATED).build();
@@ -69,7 +69,7 @@ public class URIReferenceRestImpl implements URIReferenceRest {
 	public Response deleteUriReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.URI_REFERENCE_ID) long referenceId) {
-		return uriReferenceService.deleteReference(referenceId, securityContext.getUserPrincipal().getName())
+		return uriReferenceService.deleteReferenceByShepardId(referenceId, securityContext.getUserPrincipal().getName())
 				? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}

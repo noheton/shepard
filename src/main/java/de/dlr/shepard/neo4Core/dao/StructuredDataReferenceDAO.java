@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
+import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.TraversalRules;
 
-public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReference> {
+public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredDataReference> {
 
 	/**
 	 * Searches the database for references.
@@ -16,7 +17,7 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 	 * @param dataObjectId identifies the dataObject
 	 * @return a List of references
 	 */
-	public List<StructuredDataReference> findByDataObject(long dataObjectId) {
+	public List<StructuredDataReference> findByDataObjectNeo4jId(long dataObjectId) {
 		String query = String.format("MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
 				CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false), dataObjectId)
 				+ CypherQueryHelper.getReturnPart("r");
@@ -27,26 +28,55 @@ public class StructuredDataReferenceDAO extends GenericDAO<StructuredDataReferen
 		return result;
 	}
 
-	public List<StructuredDataReference> findReachableReferences(TraversalRules traversalRule, long collectionId,
-			long startId, String userName) {
-		String query = getSearchForReachableReferencesQuery(traversalRule, collectionId, startId, userName);
+	public List<StructuredDataReference> findReachableReferencesByShepardId(TraversalRules traversalRule,
+			long collectionShepardId, long startShepardId, String userName) {
+		String query = getSearchForReachableReferencesByShepardIdQuery(traversalRule, collectionShepardId,
+				startShepardId, userName);
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
 	}
 
-	public List<StructuredDataReference> findReachableReferences(long collectionId, long startId, String userName) {
+	public List<StructuredDataReference> findReachableReferencesByNeo4jId(long collectionId, long startId,
+			String userName) {
 		String query = getSearchForReachableReferencesQuery(collectionId, startId, userName);
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
 	}
 
-	public List<StructuredDataReference> findReachableReferences(long collectionId, String userName) {
+	public List<StructuredDataReference> findReachableReferencesByShepardId(long collectionShepardId,
+			long startShepardId, String userName) {
+		String query = getSearchForReachableReferencesByShepardIdQuery(collectionShepardId, startShepardId, userName);
+		var queryResult = findByQuery(query, Collections.emptyMap());
+		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
+		return ret;
+	}
+
+	public List<StructuredDataReference> findReachableReferencesByNeo4jId(long collectionId, String userName) {
 		String query = getSearchForReachableReferencesQuery(collectionId, userName);
 		var queryResult = findByQuery(query, Collections.emptyMap());
 		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
 		return ret;
+	}
+
+	public List<StructuredDataReference> findReachableReferencesByShepardId(long collectionShepardId, String userName) {
+		String query = getSearchForReachableReferencesByShepardIdQuery(collectionShepardId, userName);
+		var queryResult = findByQuery(query, Collections.emptyMap());
+		List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
+		return ret;
+	}
+
+	public List<StructuredDataReference> findByDataObjectShepardId(long dataObjectShepardId) {
+		String query = String.format(
+				"MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d." + Constants.SHEPARD_ID + "=%d ",
+				CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false), dataObjectShepardId)
+				+ CypherQueryHelper.getReturnPart("r");
+		var queryResult = findByQuery(query, Collections.emptyMap());
+		List<StructuredDataReference> result = StreamSupport.stream(queryResult.spliterator(), false)
+				.filter(r -> r.getDataObject() != null)
+				.filter(r -> r.getDataObject().getShepardId().equals(dataObjectShepardId)).toList();
+		return result;
 	}
 
 	@Override

@@ -22,13 +22,28 @@ public class PermissionsService {
 	/**
 	 * Searches for permissions in Neo4j.
 	 *
-	 * @param entityId identifies the entity that the permissions object belongs to
+	 * @param id identifies the entity that the permissions object belongs to
 	 * @return Permissions with matching entity or null
 	 */
-	public Permissions getPermissionsByEntity(long entityId) {
-		var permissions = permissionsDAO.findByEntity(entityId);
+	public Permissions getPermissionsByNeo4jId(long id) {
+		var permissions = permissionsDAO.findByEntityNeo4jId(id);
 		if (permissions == null) {
-			log.error("Permissions with entity id {} is null", entityId);
+			log.error("Permissions with entity id {} is null", id);
+			return null;
+		}
+		return permissions;
+	}
+
+	/**
+	 * Searches for permissions in Neo4j.
+	 *
+	 * @param shepardId identifies the entity that the permissions object belongs to
+	 * @return Permissions with matching entity or null
+	 */
+	public Permissions getPermissionsByShepardId(long shepardId) {
+		var permissions = permissionsDAO.findByEntityShepardId(shepardId);
+		if (permissions == null) {
+			log.error("Permissions with shepardId {} is null", shepardId);
 			return null;
 		}
 		return permissions;
@@ -40,19 +55,63 @@ public class PermissionsService {
 	 * @param entityId identifies the entity
 	 * @return The created Permissions object
 	 */
-	public Permissions createPermissions(long entityId) {
+	public Permissions createPermissionsByNeo4jId(long entityId) {
 		var permissions = new Permissions();
-		return permissionsDAO.createWithEntity(permissions, entityId);
+		return permissionsDAO.createWithEntityNeo4jId(permissions, entityId);
 	}
 
 	/**
 	 * Updates the Permissions in Neo4j
 	 *
-	 * @param permissions the new Permissions object
-	 * @param entityId    identifies the entity
+	 * @param permissionsIo the new Permissions object
+	 * @param id            identifies the entity
 	 * @return the updated Permissions object
 	 */
-	public Permissions updatePermissions(PermissionsIO permissions, long entityId) {
+	public Permissions updatePermissionsByNeo4jId(PermissionsIO permissionsIo, long id) {
+		var permissions = convertPermissionsIO(permissionsIo);
+		var old = getPermissionsByNeo4jId(id);
+		if (old == null) {
+			// There is no old permissions object
+			return permissionsDAO.createWithEntityNeo4jId(permissions, id);
+		}
+		old.setOwner(permissions.getOwner());
+		old.setReader(permissions.getReader());
+		old.setWriter(permissions.getWriter());
+		old.setReaderGroups(permissions.getReaderGroups());
+		old.setWriterGroups(permissions.getWriterGroups());
+		old.setManager(permissions.getManager());
+		old.setPermissionType(permissions.getPermissionType());
+		return permissionsDAO.createOrUpdate(old);
+
+	}
+
+	/**
+	 * Updates the Permissions in Neo4j
+	 *
+	 * @param permissionsIo the new Permissions object
+	 * @param shepardId     identifies the entity
+	 * @return the updated Permissions object
+	 */
+	public Permissions updatePermissionsByShepardId(PermissionsIO permissionsIo, long shepardId) {
+		var permissions = convertPermissionsIO(permissionsIo);
+		var old = getPermissionsByShepardId(shepardId);
+		if (old == null) {
+			// There is no old permissions object
+			return permissionsDAO.createWithEntityShepardId(permissions, shepardId);
+		}
+		old.setOwner(permissions.getOwner());
+		old.setReader(permissions.getReader());
+		old.setWriter(permissions.getWriter());
+		old.setReaderGroups(permissions.getReaderGroups());
+		old.setWriterGroups(permissions.getWriterGroups());
+		old.setManager(permissions.getManager());
+		old.setPermissionType(permissions.getPermissionType());
+		var ret = permissionsDAO.createOrUpdate(old);
+		return ret;
+
+	}
+
+	private Permissions convertPermissionsIO(PermissionsIO permissions) {
 		var owner = permissions.getOwner() != null ? userDAO.find(permissions.getOwner()) : null;
 		var permissionType = permissions.getPermissionType();
 		var reader = fetchUsers(permissions.getReader());
@@ -60,22 +119,7 @@ public class PermissionsService {
 		var readerGroups = fetchUserGroups(permissions.getReaderGroupIds());
 		var writerGroups = fetchUserGroups(permissions.getWriterGroupIds());
 		var manager = fetchUsers(permissions.getManager());
-		var old = getPermissionsByEntity(entityId);
-		if (old == null) {
-			// There is no old permissions object
-			var toCreate = new Permissions(owner, reader, writer, readerGroups, writerGroups, manager,
-					permissions.getPermissionType());
-			return permissionsDAO.createWithEntity(toCreate, entityId);
-		}
-		old.setOwner(owner);
-		old.setReader(reader);
-		old.setWriter(writer);
-		old.setReaderGroups(readerGroups);
-		old.setWriterGroups(writerGroups);
-		old.setManager(manager);
-		old.setPermissionType(permissionType);
-		return permissionsDAO.createOrUpdate(old);
-
+		return new Permissions(owner, reader, writer, readerGroups, writerGroups, manager, permissionType);
 	}
 
 	private List<User> fetchUsers(String[] usernames) {
@@ -96,7 +140,7 @@ public class PermissionsService {
 	private List<UserGroup> fetchUserGroups(long[] userGroupIds) {
 		var result = new ArrayList<UserGroup>(userGroupIds.length);
 		for (var userGroupId : userGroupIds) {
-			var userGroup = userGroupDAO.find(userGroupId);
+			var userGroup = userGroupDAO.findByNeo4jId(userGroupId);
 			if (userGroup != null) {
 				result.add(userGroup);
 			}

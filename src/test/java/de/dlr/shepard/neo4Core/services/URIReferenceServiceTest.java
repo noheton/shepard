@@ -41,102 +41,102 @@ public class URIReferenceServiceTest extends BaseTestCase {
 	private URIReferenceService service;
 
 	@Test
-	public void getURIReferenceTest_successful() {
-		var ref = new URIReference(1L);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getURIReferenceByShepardIdTest_successful() {
+		URIReference ref = new URIReference(1L);
+		ref.setShepardId(15L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		URIReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getURIReferenceTest_notFound() {
-		when(dao.find(1L)).thenReturn(null);
-
-		var actual = service.getReference(1L);
+	public void getURIReferenceByShepardIdTest_notFound() {
+		Long shepardId = 15L;
+		when(dao.findByShepardId(shepardId)).thenReturn(null);
+		URIReference actual = service.getReferenceByShepardId(shepardId);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getURIReferenceTest_deleted() {
-		var ref = new URIReference(1L);
-		ref.setDeleted(true);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
-		assertNull(actual);
-	}
-
-	@Test
-	public void getAllURIReferencesTest() {
-		var dataObject = new DataObject(200L);
-		var ref1 = new URIReference(1L);
-		var ref2 = new URIReference(2L);
+	public void getAllURIReferencesByShepardIdTest() {
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		URIReference ref1 = new URIReference(1L);
+		ref1.setShepardId(15L);
+		URIReference ref2 = new URIReference(2L);
+		ref2.setShepardId(25L);
 		dataObject.setReferences(List.of(ref1, ref2));
-
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllReferences(200L);
-
+		when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
+		List<URIReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createURIReferenceTest() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var date = new Date(30L);
-		var input = new URIReferenceIO() {
+	public void createURIReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		Date date = new Date(30L);
+		URIReferenceIO input = new URIReferenceIO() {
 			{
 				setName("MyName");
 				setUri("http;//example.com");
 			}
 		};
-		var toCreate = new URIReference() {
+		URIReference toCreate = new URIReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
-				setUri("http;//example.com");
+				setName(input.getName());
+				setUri(input.getUri());
 			}
 		};
-		var created = new URIReference() {
+		URIReference created = new URIReference() {
 			{
 				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setUri("http;//example.com");
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setUri(toCreate.getUri());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
+		URIReference createdWithShepardId = new URIReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setUri(created.getUri());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		URIReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void deleteReferenceTest() {
-		var user = new User("Bob");
-		var date = new Date(30L);
-		var ref = new URIReference(1L);
-		var expected = new URIReference(1L);
+	public void deleteReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		Date date = new Date(30L);
+		URIReference ref = new URIReference(1L);
+		ref.setShepardId(15L);
+		URIReference expected = new URIReference(ref.getId());
+		expected.setShepardId(ref.getShepardId());
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dao.find(1L)).thenReturn(ref);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteReference(1L, "Bob");
-
+		boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
 	}

@@ -9,6 +9,8 @@ import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.CollectionReference;
+import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -22,34 +24,33 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 	private DateHelper dateHelper = new DateHelper();
 
 	@Override
-	public List<CollectionReference> getAllReferences(long dataObjectId) {
-		var references = collectionReferenceDAO.findByDataObject(dataObjectId);
+	public List<CollectionReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+		var references = collectionReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
 		return references;
 	}
 
 	@Override
-	public CollectionReference getReference(long collectionReferenceId) {
-		var reference = collectionReferenceDAO.find(collectionReferenceId);
+	public CollectionReference getReferenceByShepardId(long collectionReferenceShepardId) {
+		var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
 		if (reference == null || reference.isDeleted()) {
-			log.error("Collection Reference with id {} is null or deleted", collectionReferenceId);
+			log.error("Collection Reference with id {} is null or deleted", collectionReferenceShepardId);
 			return null;
 		}
 		return reference;
 	}
 
 	@Override
-	public CollectionReference createReference(long dataObjectId, CollectionReferenceIO collectionReference,
-			String username) {
-		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.findLight(dataObjectId);
-
-		var referenced = collectionDAO.findLight(collectionReference.getReferencedCollectionId());
+	public CollectionReference createReferenceByShepardId(long dataObjectShepardId,
+			CollectionReferenceIO collectionReference, String username) {
+		User user = userDAO.find(username);
+		DataObject dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+		Collection referenced = collectionDAO.findLightByShepardId(collectionReference.getReferencedCollectionId());
 		if (referenced == null || referenced.isDeleted()) {
 			throw new InvalidBodyException(String.format("The referenced collection with id %d could not be found.",
 					collectionReference.getReferencedCollectionId()));
 		}
 
-		var toCreate = new CollectionReference();
+		CollectionReference toCreate = new CollectionReference();
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setCreatedBy(user);
 		toCreate.setDataObject(dataObject);
@@ -57,26 +58,26 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 		toCreate.setReferencedCollection(referenced);
 		toCreate.setRelationship(collectionReference.getRelationship());
 
-		var created = collectionReferenceDAO.createOrUpdate(toCreate);
+		CollectionReference created = collectionReferenceDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = collectionReferenceDAO.createOrUpdate(created);
 		return created;
 	}
 
 	@Override
-	public boolean deleteReference(long dataObjectReferenceId, String username) {
-		var user = userDAO.find(username);
-
-		var old = collectionReferenceDAO.find(dataObjectReferenceId);
+	public boolean deleteReferenceByShepardId(long collectionReferenceShepardId, String username) {
+		User user = userDAO.find(username);
+		CollectionReference old = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
 		old.setDeleted(true);
 		old.setUpdatedAt(dateHelper.getDate());
 		old.setUpdatedBy(user);
-
 		collectionReferenceDAO.createOrUpdate(old);
 		return true;
 	}
 
-	public Collection getPayload(long dataObjectReferenceId) {
-		var reference = collectionReferenceDAO.find(dataObjectReferenceId);
-		var collection = collectionDAO.find(reference.getReferencedCollection().getId());
+	public Collection getPayloadByShepardId(long collectionReferenceShepardId) {
+		var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
+		var collection = collectionDAO.findByShepardId(reference.getReferencedCollection().getShepardId());
 		if (collection.isDeleted()) {
 			log.error("Collection with id {} is deleted", reference.getReferencedCollection().getId());
 			return null;

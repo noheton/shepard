@@ -35,13 +35,13 @@ public class DataObjectIO extends AbstractDataObjectIO {
 
 	public DataObjectIO(DataObject dataObject) {
 		super(dataObject);
-		this.collectionId = dataObject.getCollection().getId();
-		this.referenceIds = extractIds(dataObject.getReferences());
-		this.successorIds = extractIds(dataObject.getSuccessors());
-		this.predecessorIds = extractIds(dataObject.getPredecessors());
-		this.childrenIds = extractIds(dataObject.getChildren());
-		this.parentId = dataObject.getParent() != null ? dataObject.getParent().getId() : null;
-		this.incomingIds = extractIds(dataObject.getIncoming());
+		this.collectionId = dataObject.getCollection().getShepardId();
+		this.referenceIds = extractShepardIds(dataObject.getReferences());
+		this.successorIds = extractShepardIds(dataObject.getSuccessors());
+		this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
+		this.childrenIds = extractShepardIds(dataObject.getChildren());
+		this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
+		this.incomingIds = extractShepardIds(dataObject.getIncoming());
 	}
 
 }

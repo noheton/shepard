@@ -23,7 +23,7 @@ public class CollectionSemanticAnnotationRestImpl extends SemanticAnnotationRest
 	@Override
 	@Operation(operationId = "getAllCollectionAnnotations", description = "Get all semantic annotations")
 	public Response getAllAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		return getAll(collectionId);
+		return getAllByShepardId(collectionId);
 	}
 
 	@GET
@@ -41,7 +41,7 @@ public class CollectionSemanticAnnotationRestImpl extends SemanticAnnotationRest
 	@Operation(operationId = "createCollectionAnnotation", description = "Create a new semantic annotation")
 	public Response createAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			SemanticAnnotationIO semanticAnnotation) {
-		return create(collectionId, semanticAnnotation);
+		return createByShepardId(collectionId, semanticAnnotation);
 	}
 
 	@DELETE

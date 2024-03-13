@@ -46,7 +46,7 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var references = basicReferenceService.getAllBasicReferences(dataObjectId, params);
+		var references = basicReferenceService.getAllBasicReferencesByDataObjectShepardId(dataObjectId, params);
 		var result = new ArrayList<BasicReferenceIO>(references.size());
 
 		for (var ref : references) {
@@ -61,7 +61,7 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 	public Response getBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.BASIC_REFERENCE_ID) long referenceId) {
-		BasicReference basicReference = basicReferenceService.getReference(referenceId);
+		BasicReference basicReference = basicReferenceService.getReferenceByShepardId(referenceId);
 		return Response.ok(new BasicReferenceIO(basicReference)).build();
 	}
 
@@ -72,9 +72,9 @@ public class BasicReferenceRestImpl implements BasicReferenceRest {
 	public Response deleteBasicReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
-		return basicReferenceService.deleteReference(basicReferenceId, securityContext.getUserPrincipal().getName())
-				? Response.status(Status.NO_CONTENT).build()
-				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		return basicReferenceService.deleteReferenceByShepardId(basicReferenceId,
+				securityContext.getUserPrincipal().getName()) ? Response.status(Status.NO_CONTENT).build()
+						: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
 }

@@ -155,7 +155,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
 		when(collectionIdSeg.getPath()).thenReturn("100");
-		when(collectionService.getCollection(100L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(100L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Collection does not exist", e.getMessage());
@@ -169,7 +169,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionIdSeg.getPath()).thenReturn("100");
 
 		Collection collection = new Collection(100L);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
+		collection.setShepardId(100L);
+		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -185,8 +186,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectIdSeg.getPath()).thenReturn("102");
 
 		Collection collection = new Collection(100L);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(null);
+		collection.setShepardId(collection.getId());
+		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(102L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - DataObject does not exist", e.getMessage());
@@ -203,10 +205,12 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectIdSeg.getPath()).thenReturn("102");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -221,12 +225,15 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectIdSeg.getPath()).thenReturn("101");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(101L);
+		dataObject.setShepardId(dataObject.getId());
 		Collection wrong = new Collection(102L);
+		wrong.setShepardId(wrong.getId());
 		dataObject.setCollection(wrong);
 
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(101L)).thenReturn(dataObject);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between collection and dataObject", e.getMessage());
@@ -429,13 +436,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		TimeseriesReference reference = new TimeseriesReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -453,11 +463,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -477,14 +489,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(timeseriesReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		TimeseriesReference reference = new TimeseriesReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(timeseriesReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -531,13 +547,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		StructuredDataReference reference = new StructuredDataReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -555,11 +574,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -579,14 +600,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(structuredDataReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		StructuredDataReference reference = new StructuredDataReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(structuredDataReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -633,13 +658,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(fileReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		FileReference reference = new FileReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -657,11 +685,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(fileReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
+		when(fileReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -681,14 +711,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(fileReferenceIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		FileReference reference = new FileReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(fileReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -708,13 +742,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		URIReference reference = new URIReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -732,11 +769,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(uriReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -756,14 +795,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(uriReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		URIReference reference = new URIReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(uriReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -783,13 +826,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		CollectionReference reference = new CollectionReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -807,11 +853,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(collectionReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -831,14 +879,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		CollectionReference reference = new CollectionReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(collectionReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -858,13 +910,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObjectReference reference = new DataObjectReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -882,11 +937,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -906,14 +963,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(dataObjectReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		DataObjectReference reference = new DataObjectReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(dataObjectReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -933,13 +994,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		BasicReference reference = new BasicReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -957,11 +1021,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getReference(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(basicReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Reference does not exist", e.getMessage());
@@ -981,14 +1047,18 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(basicReferencesIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		DataObject wrong = new DataObject(103L);
+		wrong.setShepardId(wrong.getId());
 		BasicReference reference = new BasicReference(104L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getReference(104L)).thenReturn(reference);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
@@ -1057,10 +1127,12 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		collection.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
+				.thenReturn(semanticAnnotation);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -1078,13 +1150,15 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		dataObject.setCollection(collection);
 		dataObject.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -1105,16 +1179,20 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		BasicReference reference = new BasicReference(103L);
+		reference.setShepardId(reference.getId());
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
 		reference.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getReference(103L)).thenReturn(reference);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
+				.thenReturn(semanticAnnotation);
 		urlPathChecker.checkPathSegments(segments);
 	}
 
@@ -1132,11 +1210,13 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - SemanticAnnotation does not exist", e.getMessage());
@@ -1150,7 +1230,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - No entity was found annotated", e.getMessage());
@@ -1167,11 +1247,12 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		SemanticAnnotation wrong = new SemanticAnnotation(103L);
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		collection.setAnnotations(List.of(wrong));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between annotation and collection", e.getMessage());
@@ -1191,14 +1272,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
+		dataObject.setShepardId(dataObject.getId());
 		SemanticAnnotation wrong = new SemanticAnnotation(103L);
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		dataObject.setCollection(collection);
 		dataObject.setAnnotations(List.of(wrong));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between annotation and dataObject", e.getMessage());
@@ -1218,20 +1301,24 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(collectionIdSeg.getPath()).thenReturn("100");
 		when(dataObjectIdSeg.getPath()).thenReturn("102");
 		when(basicReferencesIdSeg.getPath()).thenReturn("103");
-		when(semanticAnnotationIdSeg.getPath()).thenReturn("104");
+		when(semanticAnnotationIdSeg.getPath()).thenReturn("105");
 
 		Collection collection = new Collection(100L);
+		collection.setShepardId(collection.getId());
 		DataObject dataObject = new DataObject(102L);
-		BasicReference reference = new BasicReference(102L);
-		SemanticAnnotation wrong = new SemanticAnnotation(103L);
-		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
+		dataObject.setShepardId(dataObject.getId());
+		BasicReference reference = new BasicReference(103L);
+		reference.setShepardId(reference.getId());
+		SemanticAnnotation wrong = new SemanticAnnotation(104L);
+		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(105L);
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
 		reference.setAnnotations(List.of(wrong));
-		when(collectionService.getCollection(100L)).thenReturn(collection);
-		when(dataObjectService.getDataObject(102L)).thenReturn(dataObject);
-		when(basicReferenceService.getReference(103L)).thenReturn(reference);
-		when(semanticAnnotationService.getAnnotation(104L)).thenReturn(semanticAnnotation);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
+				.thenReturn(semanticAnnotation);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - There is no association between annotation and reference", e.getMessage());
@@ -1254,7 +1341,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(slashSeg.getPath()).thenReturn("/");
 
 		Collection collection = new Collection(100L);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
+		collection.setShepardId(collection.getId());
+		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -1270,7 +1358,8 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		when(slashSeg.getPath()).thenReturn("");
 
 		Collection collection = new Collection(100L);
-		when(collectionService.getCollection(100L)).thenReturn(collection);
+		collection.setShepardId(collection.getId());
+		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}

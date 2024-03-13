@@ -11,8 +11,8 @@ public abstract class SemanticAnnotationRestImpl {
 
 	private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
 
-	protected Response getAll(long entityId) {
-		var annotations = semanticAnnotationService.getAllAnnotations(entityId);
+	protected Response getAllByShepardId(long shepardId) {
+		var annotations = semanticAnnotationService.getAllAnnotationsByShepardId(shepardId);
 		var result = new ArrayList<SemanticAnnotationIO>(annotations.size());
 		for (var reference : annotations) {
 			result.add(new SemanticAnnotationIO(reference));
@@ -21,17 +21,17 @@ public abstract class SemanticAnnotationRestImpl {
 	}
 
 	protected Response get(long semanticAnnotationId) {
-		var result = semanticAnnotationService.getAnnotation(semanticAnnotationId);
+		var result = semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotationId);
 		return Response.ok(new SemanticAnnotationIO(result)).build();
 	}
 
-	protected Response create(long entityId, SemanticAnnotationIO semanticAnnotation) {
-		var result = semanticAnnotationService.createAnnotation(entityId, semanticAnnotation);
+	protected Response createByShepardId(long entityShepardId, SemanticAnnotationIO semanticAnnotation) {
+		var result = semanticAnnotationService.createAnnotationByShepardId(entityShepardId, semanticAnnotation);
 		return Response.ok(new SemanticAnnotationIO(result)).status(Status.CREATED).build();
 	}
 
 	protected Response delete(long semanticAnnotationId) {
-		var result = semanticAnnotationService.deleteAnnotation(semanticAnnotationId);
+		var result = semanticAnnotationService.deleteAnnotationByNeo4jId(semanticAnnotationId);
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}

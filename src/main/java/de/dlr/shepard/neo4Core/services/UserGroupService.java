@@ -26,7 +26,7 @@ public class UserGroupService {
 	}
 
 	public UserGroup getUserGroup(Long userGroupId) {
-		return userGroupDAO.find(userGroupId);
+		return userGroupDAO.findByNeo4jId(userGroupId);
 	}
 
 	public UserGroup createUserGroup(UserGroupIO userGroup, String username) {
@@ -43,7 +43,7 @@ public class UserGroupService {
 
 	public UserGroup updateUserGroup(Long id, UserGroupIO userGroup, String username) {
 		var user = userDAO.find(username);
-		var old = userGroupDAO.find(id);
+		var old = userGroupDAO.findByNeo4jId(id);
 		old.setUpdatedBy(user);
 		old.setUpdatedAt(dateHelper.getDate());
 		old.setName(userGroup.getName());
@@ -53,16 +53,16 @@ public class UserGroupService {
 	}
 
 	public boolean deleteUserGroup(Long id) {
-		var old = userGroupDAO.find(id);
+		var old = userGroupDAO.findByNeo4jId(id);
 		if (old == null)
 			return false;
 
-		var permissions = permissionsDAO.findByEntity(id);
-		var permissionsResult = permissions == null || permissionsDAO.delete(permissions.getId());
+		var permissions = permissionsDAO.findByEntityNeo4jId(id);
+		var permissionsResult = permissions == null || permissionsDAO.deleteByNeo4jId(permissions.getId());
 		if (!permissionsResult)
 			return false;
 
-		return userGroupDAO.delete(id);
+		return userGroupDAO.deleteByNeo4jId(id);
 	}
 
 	private ArrayList<User> fetchUsers(String[] usernames) {

@@ -13,31 +13,32 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
 
-	private URIReferenceDAO dao = new URIReferenceDAO();
+	private URIReferenceDAO uRIReferenceDAO = new URIReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
 	@Override
-	public List<URIReference> getAllReferences(long dataObjectId) {
-		var references = dao.findByDataObject(dataObjectId);
+	public List<URIReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+		var references = uRIReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
 		return references;
 	}
 
 	@Override
-	public URIReference getReference(long uriReferenceId) {
-		var reference = dao.find(uriReferenceId);
+	public URIReference getReferenceByShepardId(long uriReferenceShepardId) {
+		var reference = uRIReferenceDAO.findByShepardId(uriReferenceShepardId);
 		if (reference == null || reference.isDeleted()) {
-			log.error("URI Reference with id {} is null or deleted", uriReferenceId);
+			log.error("URI Reference with id {} is null or deleted", uriReferenceShepardId);
 			return null;
 		}
 		return reference;
 	}
 
 	@Override
-	public URIReference createReference(long dataObjectId, URIReferenceIO uriReference, String username) {
+	public URIReference createReferenceByShepardId(long dataObjectShepardId, URIReferenceIO uriReference,
+			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.findLight(dataObjectId);
+		var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
 
 		var toCreate = new URIReference();
 		toCreate.setCreatedAt(dateHelper.getDate());
@@ -46,20 +47,22 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 		toCreate.setName(uriReference.getName());
 		toCreate.setUri(uriReference.getUri());
 
-		var created = dao.createOrUpdate(toCreate);
+		var created = uRIReferenceDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = uRIReferenceDAO.createOrUpdate(created);
 		return created;
 	}
 
 	@Override
-	public boolean deleteReference(long uriReferenceId, String username) {
+	public boolean deleteReferenceByShepardId(long uriReferenceShepardId, String username) {
 		var user = userDAO.find(username);
 
-		var old = dao.find(uriReferenceId);
+		var old = uRIReferenceDAO.findByShepardId(uriReferenceShepardId);
 		old.setDeleted(true);
 		old.setUpdatedAt(dateHelper.getDate());
 		old.setUpdatedBy(user);
 
-		dao.createOrUpdate(old);
+		uRIReferenceDAO.createOrUpdate(old);
 		return true;
 	}
 

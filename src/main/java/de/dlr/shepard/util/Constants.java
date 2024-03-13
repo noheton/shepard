@@ -19,6 +19,8 @@ public class Constants {
 	public static final String LASTNAME = "lastName";
 	public static final String EMAIL = "email";
 
+	public static final String SHEPARD_ID = "shepardId";
+
 	public static final String APIKEY = "apikey";
 	public static final String APIKEYS = "apikeys";
 	public static final String APIKEY_UID = "apikeyUid";

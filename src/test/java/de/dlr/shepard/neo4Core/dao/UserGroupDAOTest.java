@@ -41,7 +41,7 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setId(1L);
 		when(session.load(UserGroup.class, 1L)).thenReturn(userGroup);
 		doNothing().when(session).delete(userGroup);
-		var actual = dao.delete(1L);
+		var actual = dao.deleteByNeo4jId(1L);
 		assertTrue(actual);
 	}
 
@@ -52,7 +52,7 @@ public class UserGroupDAOTest extends BaseTestCase {
 		userGroup.setId(1L);
 		when(session.load(UserGroup.class, 2L)).thenReturn(null);
 		doNothing().when(session).delete(userGroup);
-		var actual = dao.delete(2L);
+		var actual = dao.deleteByNeo4jId(2L);
 		assertFalse(actual);
 	}
 

@@ -32,26 +32,27 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	@Override
-	public List<FileReference> getAllReferences(long dataObjectId) {
-		var references = fileReferenceDAO.findByDataObject(dataObjectId);
+	public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+		var references = fileReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
 		return references;
 	}
 
 	@Override
-	public FileReference getReference(long id) {
-		FileReference fileReference = fileReferenceDAO.find(id);
+	public FileReference getReferenceByShepardId(long shepardId) {
+		FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId);
 		if (fileReference == null || fileReference.isDeleted()) {
-			log.error("File Reference with id {} is null or deleted", id);
+			log.error("File Reference with id {} is null or deleted", shepardId);
 			return null;
 		}
 		return fileReference;
 	}
 
 	@Override
-	public FileReference createReference(long dataObjectId, FileReferenceIO fileReference, String username) {
+	public FileReference createReferenceByShepardId(long dataObjectShepardId, FileReferenceIO fileReference,
+			String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.findLight(dataObjectId);
-		var container = containerDAO.findLight(fileReference.getFileContainerId());
+		var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+		var container = containerDAO.findLightByNeo4jId(fileReference.getFileContainerId());
 		if (container == null || container.isDeleted())
 			throw new InvalidBodyException("invalid container");
 		var toCreate = new FileReference();
@@ -71,12 +72,15 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 			}
 		}
 
-		return fileReferenceDAO.createOrUpdate(toCreate);
+		var created = fileReferenceDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = fileReferenceDAO.createOrUpdate(created);
+		return created;
 	}
 
 	@Override
-	public boolean deleteReference(long fileReferenceId, String username) {
-		FileReference fileReference = fileReferenceDAO.find(fileReferenceId);
+	public boolean deleteReferenceByShepardId(long fileReferenceShepardId, String username) {
+		FileReference fileReference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
 		var user = userDAO.find(username);
 		fileReference.setDeleted(true);
 		fileReference.setUpdatedBy(user);
@@ -85,18 +89,17 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 		return true;
 	}
 
-	public NamedInputStream getPayload(long fileReferenceId, String oid, String username) {
-		FileReference reference = fileReferenceDAO.find(fileReferenceId);
+	public NamedInputStream getPayloadByShepardId(long fileReferenceShepardId, String oid, String username) {
+		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
 		long containerId = reference.getFileContainer().getId();
 		String mongoId = reference.getFileContainer().getMongoId();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
 			throw new InvalidAuthException("You are not authorized to access this file");
-
 		return fileService.getPayload(mongoId, oid);
 	}
 
-	public List<ShepardFile> getFiles(long fileReferenceId) {
-		FileReference reference = fileReferenceDAO.find(fileReferenceId);
+	public List<ShepardFile> getFilesByShepardId(long fileReferenceShepardId) {
+		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
 		return reference.getFiles();
 	}
 

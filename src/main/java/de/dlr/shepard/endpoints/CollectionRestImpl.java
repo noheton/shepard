@@ -51,7 +51,8 @@ public class CollectionRestImpl implements CollectionRest {
 			params = params.withPageAndSize(page, size);
 		if (orderBy != null)
 			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var collections = collectionService.getAllCollections(params, securityContext.getUserPrincipal().getName());
+		var collections = collectionService.getAllCollectionsByShepardId(params,
+				securityContext.getUserPrincipal().getName());
 
 		var result = new ArrayList<CollectionIO>(collections.size());
 		for (var collection : collections) {
@@ -64,7 +65,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}")
 	@Override
 	public Response getCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		Collection collection = collectionService.getCollection(collectionId);
+		Collection collection = collectionService.getCollectionByShepardId(collectionId);
 		return Response.ok(new CollectionIO(collection)).build();
 	}
 
@@ -73,7 +74,6 @@ public class CollectionRestImpl implements CollectionRest {
 	public Response createCollection(CollectionIO collection) {
 		Collection newCollection = collectionService.createCollection(collection,
 				securityContext.getUserPrincipal().getName());
-
 		return Response.ok(new CollectionIO(newCollection)).status(Status.CREATED).build();
 	}
 
@@ -82,7 +82,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Subscribable
 	@Override
 	public Response updateCollection(@PathParam(Constants.COLLECTION_ID) long collectionId, CollectionIO collection) {
-		Collection updatedCollection = collectionService.updateCollection(collectionId, collection,
+		Collection updatedCollection = collectionService.updateCollectionByShepardId(collectionId, collection,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionIO(updatedCollection)).build();
 	}
@@ -92,7 +92,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Subscribable
 	@Override
 	public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		return collectionService.deleteCollection(collectionId, securityContext.getUserPrincipal().getName())
+		return collectionService.deleteCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName())
 				? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
@@ -101,7 +101,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		var perms = permissionsService.getPermissionsByEntity(collectionId);
+		var perms = permissionsService.getPermissionsByShepardId(collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -111,7 +111,7 @@ public class CollectionRestImpl implements CollectionRest {
 	@Override
 	public Response editCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, collectionId);
+		var perms = permissionsService.updatePermissionsByShepardId(permissions, collectionId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -120,7 +120,8 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.ROLES)
 	@Override
 	public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		var roles = new PermissionsUtil().getRoles(collectionId, securityContext.getUserPrincipal().getName());
+		var roles = new PermissionsUtil().getRolesByShepardId(collectionId,
+				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 

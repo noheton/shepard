@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 
@@ -28,6 +28,7 @@ public class CollectionSearcherTest extends BaseTestCase {
 	public void test() {
 		String userName = "user1";
 		var collection = new Collection(1L);
+		collection.setShepardId(1L);
 		SearchScope scopes[] = { new SearchScope() };
 		String query = String.format("""
 				{
@@ -49,8 +50,8 @@ public class CollectionSearcherTest extends BaseTestCase {
 		String selectionQuery = Neo4jEmitter.emitCollectionSelectionQuery(searchBody.getSearchParams().getQuery(),
 				userName);
 		when(searchDAO.findCollections(selectionQuery, Constants.COLLECTION_IN_QUERY)).thenReturn(List.of(collection));
-		ResultTriple[] resultTriples = { new ResultTriple(collection.getId()) };
-		BasicEntityIO[] results = { new BasicEntityIO(collection) };
+		ResultTriple[] resultTriples = { new ResultTriple(collection.getShepardId()) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(collection) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		var actual = collectionSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);

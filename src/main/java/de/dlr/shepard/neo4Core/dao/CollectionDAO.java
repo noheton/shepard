@@ -12,7 +12,7 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 
-public class CollectionDAO extends GenericDAO<Collection> {
+public class CollectionDAO extends VersionableEntityDAO<Collection> {
 
 	@Override
 	public Class<Collection> getEntityType() {
@@ -26,7 +26,7 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	 * @param username the name of the user
 	 * @return a list of collections
 	 */
-	public List<Collection> findAllCollections(QueryParamHelper params, String username) {
+	public List<Collection> findAllCollectionsByNeo4jId(QueryParamHelper params, String username) {
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());
 		if (params.hasPagination()) {
@@ -54,6 +54,39 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	}
 
 	/**
+	 * Searches the database for collections.
+	 *
+	 * @param params   encapsulates possible parameters
+	 * @param username the name of the user
+	 * @return a list of collections
+	 */
+	public List<Collection> findAllCollectionsByShepardId(QueryParamHelper params, String username) {
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("name", params.getName());
+		if (params.hasPagination()) {
+			paramsMap.put("offset", params.getPagination().getOffset());
+			paramsMap.put("size", params.getPagination().getSize());
+		}
+		String query = String.format("MATCH %s WHERE %s WITH c",
+				CypherQueryHelper.getObjectPart("c", "Collection", params.hasName()),
+				CypherQueryHelper.getReadableByQuery("c", username));
+		if (params.hasOrderByAttribute()) {
+			query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+		}
+		if (params.hasPagination()) {
+			query += " " + CypherQueryHelper.getPaginationPart();
+		}
+		query += " " + CypherQueryHelper.getReturnPart("c");
+		ArrayList<Collection> result = new ArrayList<Collection>();
+		for (Collection col : findByQuery(query, paramsMap)) {
+			if (matchName(col, params.getName())) {
+				result.add(col);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Delete collection and all related dataObjects and references
 	 *
 	 * @param id        identifies the collection
@@ -61,8 +94,8 @@ public class CollectionDAO extends GenericDAO<Collection> {
 	 * @param updatedAt current user
 	 * @return whether the deletion was successful or not
 	 */
-	public boolean deleteCollection(long id, User updatedBy, Date updatedAt) {
-		var collection = find(id);
+	public boolean deleteCollectionByNeo4jId(long id, User updatedBy, Date updatedAt) {
+		var collection = findByNeo4jId(id);
 		collection.setUpdatedBy(updatedBy);
 		collection.setUpdatedAt(updatedAt);
 		collection.setDeleted(true);
@@ -72,6 +105,28 @@ public class CollectionDAO extends GenericDAO<Collection> {
 				OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
 				FOREACH (n in [c,d,r] | SET n.deleted = true)""", id);
 		var result = runQuery(query, Collections.emptyMap());
+		return result;
+	}
+
+	/**
+	 * Delete collection and all related dataObjects and references
+	 *
+	 * @param shepardId identifies the collection
+	 * @param updatedBy current date
+	 * @param updatedAt current user
+	 * @return whether the deletion was successful or not
+	 */
+	public boolean deleteCollectionByShepardId(long shepardId, User updatedBy, Date updatedAt) {
+		Collection collection = findByShepardId(shepardId);
+		collection.setUpdatedBy(updatedBy);
+		collection.setUpdatedAt(updatedAt);
+		collection.setDeleted(true);
+		createOrUpdate(collection);
+		String query = String.format("""
+				MATCH (c:Collection {shepardId:%d}) OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
+				OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
+				FOREACH (n in [c,d,r] | SET n.deleted = true)""", shepardId);
+		boolean result = runQuery(query, Collections.emptyMap());
 		return result;
 	}
 

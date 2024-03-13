@@ -38,7 +38,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Override
 	public Response getAllTimeseriesReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = timeseriesReferenceService.getAllReferences(dataObjectId);
+		var references = timeseriesReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<TimeseriesReferenceIO>(references.size());
 		for (var reference : references) {
 			result.add(new TimeseriesReferenceIO(reference));
@@ -53,7 +53,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response getTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		var result = timeseriesReferenceService.getReference(timeseriesId);
+		var result = timeseriesReferenceService.getReferenceByShepardId(timeseriesId);
 
 		return Response.ok(new TimeseriesReferenceIO(result)).build();
 	}
@@ -63,7 +63,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	@Override
 	public Response createTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, TimeseriesReferenceIO timeseriesReference) {
-		var result = timeseriesReferenceService.createReference(dataObjectId, timeseriesReference,
+		var result = timeseriesReferenceService.createReferenceByShepardId(dataObjectId, timeseriesReference,
 				securityContext.getUserPrincipal().getName());
 
 		return Response.ok(new TimeseriesReferenceIO(result)).status(Status.CREATED).build();
@@ -76,7 +76,7 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 	public Response deleteTimeseriesReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId) {
-		var result = timeseriesReferenceService.deleteReference(timeseriesId,
+		var result = timeseriesReferenceService.deleteReferenceByShepardId(timeseriesId,
 				securityContext.getUserPrincipal().getName());
 
 		return result ? Response.status(Status.NO_CONTENT).build()
@@ -94,8 +94,8 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) {
-		var payload = timeseriesReferenceService.getTimeseriesPayload(timeseriesReferenceId, function, groupBy,
-				fillOption, deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
+		var payload = timeseriesReferenceService.getTimeseriesPayloadByShepardId(timeseriesReferenceId, function,
+				groupBy, fillOption, deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(payload).build();
 	}
@@ -112,8 +112,8 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 			@QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
 			@QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
 			@QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag) throws IOException {
-		var stream = timeseriesReferenceService.exportTimeseriesPayload(timeseriesReferenceId, function, groupBy,
-				fillOption, deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
+		var stream = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(timeseriesReferenceId, function,
+				groupBy, fillOption, deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
 	}

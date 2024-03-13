@@ -21,7 +21,8 @@ public class DataObjectReferenceIO extends BasicReferenceIO {
 
 	public DataObjectReferenceIO(DataObjectReference ref) {
 		super(ref);
-		this.referencedDataObjectId = ref.getReferencedDataObject() != null ? ref.getReferencedDataObject().getId()
+		this.referencedDataObjectId = ref.getReferencedDataObject() != null
+				? ref.getReferencedDataObject().getShepardId()
 				: -1;
 		this.relationship = ref.getRelationship();
 	}

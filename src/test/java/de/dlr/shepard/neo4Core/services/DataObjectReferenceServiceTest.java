@@ -43,178 +43,194 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 	private DataObjectReferenceService service;
 
 	@Test
-	public void getDataObjectReferenceTest_successful() {
-		var ref = new DataObjectReference(1L);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getDataObjectReferenceByShepardIdTest_successful() {
+		DataObjectReference ref = new DataObjectReference(1L);
+		ref.setShepardId(15L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getDataObjectReferenceTest_notFound() {
-		when(dao.find(1L)).thenReturn(null);
-
-		var actual = service.getReference(1L);
+	public void getDataObjectReferenceByShepardIdTest_notFound() {
+		Long shepardId = 1L;
+		when(dao.findByShepardId(shepardId)).thenReturn(null);
+		var actual = service.getReferenceByShepardId(shepardId);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getDataObjectReferenceTest_deleted() {
+	public void getDataObjectReferenceByShepardIdTest_deleted() {
 		var ref = new DataObjectReference(1L);
+		ref.setShepardId(15L);
 		ref.setDeleted(true);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertNull(actual);
 	}
 
 	@Test
-	public void getAllDataObjectReferencesTest() {
-		var dataObject = new DataObject(200L);
-		var ref1 = new DataObjectReference(1L);
-		var ref2 = new DataObjectReference(2L);
-		var ref3 = new DataObjectReference(3L);
+	public void getAllDataObjectReferencesByShepardIdTest() {
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		DataObjectReference ref1 = new DataObjectReference(1L);
+		ref1.setShepardId(15L);
+		DataObjectReference ref2 = new DataObjectReference(2L);
+		ref2.setShepardId(25L);
+		DataObjectReference ref3 = new DataObjectReference(3L);
+		ref3.setShepardId(35L);
 		ref3.setDeleted(true);
 		dataObject.setReferences(List.of(ref1, ref2, ref3));
-
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllReferences(200L);
-
+		when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
+		List<DataObjectReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createDataObjectReferenceTest() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var date = new Date(30L);
-		var referenced = new DataObject(100L);
-
-		var input = new DataObjectReferenceIO() {
+	public void createDataObjectReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		Date date = new Date(30L);
+		DataObject referenced = new DataObject(100L);
+		referenced.setShepardId(1005L);
+		DataObjectReferenceIO input = new DataObjectReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedDataObjectId(referenced.getShepardId());
 				setRelationship("MyRelationship");
 			}
 		};
-		var toCreate = new DataObjectReference() {
+		DataObjectReference toCreate = new DataObjectReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
+				setName(input.getName());
 				setReferencedDataObject(referenced);
-				setRelationship("MyRelationship");
+				setRelationship(input.getRelationship());
 			}
 		};
-		var created = new DataObjectReference() {
+		DataObjectReference created = new DataObjectReference() {
 			{
 				setId(1L);
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
-				setReferencedDataObject(referenced);
-				setRelationship("MyRelationship");
+				setName(toCreate.getName());
+				setReferencedDataObject(toCreate.getReferencedDataObject());
+				setRelationship(toCreate.getRelationship());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.findLight(100L)).thenReturn(referenced);
+		DataObjectReference createdWithShepardId = new DataObjectReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName(created.getName());
+				setReferencedDataObject(created.getReferencedDataObject());
+				setRelationship(created.getRelationship());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		DataObjectReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input,
+				user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsNull() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var input = new DataObjectReferenceIO() {
+	public void createDataObjectReferenceByShepardIdTest_ReferencedIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		Long nullDataObjectShepardId = 100L;
+		DataObjectReferenceIO input = new DataObjectReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedDataObjectId(nullDataObjectShepardId);
 				setRelationship("MyRelationship");
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.findLight(100L)).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectDAO.findLightByShepardId(nullDataObjectShepardId)).thenReturn(null);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void createDataObjectReferenceTest_ReferencedIsDeleted() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var referenced = new DataObject(100L);
+	public void createDataObjectReferenceByShepardIdTest_ReferencedIsDeleted() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		DataObject referenced = new DataObject(100L);
+		referenced.setShepardId(1005L);
 		referenced.setDeleted(true);
-		var input = new DataObjectReferenceIO() {
+		DataObjectReferenceIO input = new DataObjectReferenceIO() {
 			{
 				setName("MyName");
-				setReferencedDataObjectId(100L);
+				setReferencedDataObjectId(referenced.getShepardId());
 				setRelationship("MyRelationship");
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(dataObjectDAO.findLight(100L)).thenReturn(referenced);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(dataObjectDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void deleteReferenceTest() {
-		var user = new User("Bob");
-		var date = new Date(30L);
-		var ref = new DataObjectReference(1L);
-		var expected = new DataObjectReference(1L);
+	public void deleteReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		Date date = new Date(30L);
+		DataObjectReference ref = new DataObjectReference(1L);
+		ref.setShepardId(15L);
+		DataObjectReference expected = new DataObjectReference(ref.getId());
+		expected.setShepardId(ref.getShepardId());
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
 
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dao.find(1L)).thenReturn(ref);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteReference(1L, "Bob");
-
+		boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
 	}
 
 	@Test
-	public void getPayloadTest() {
-		var referenced = new DataObject(100L);
-		var reference = new DataObjectReference(1L);
+	public void getPayloadByShepardIdTest() {
+		DataObject referenced = new DataObject(100L);
+		referenced.setShepardId(1005L);
+		DataObjectReference reference = new DataObjectReference(1L);
+		reference.setShepardId(15L);
 		reference.setReferencedDataObject(referenced);
-
-		when(dao.find(1L)).thenReturn(reference);
-		when(dataObjectDAO.find(100L)).thenReturn(referenced);
-		var actual = service.getPayload(1L);
-
+		when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
+		when(dataObjectDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
+		var actual = service.getPayloadByShepardId(reference.getShepardId());
 		assertEquals(referenced, actual);
 	}
 
 	@Test
-	public void getPayloadTest_Deleted() {
-		var referenced = new DataObject(100L);
+	public void getPayloadByShepardIdTest_Deleted() {
+		DataObject referenced = new DataObject(100L);
+		referenced.setShepardId(1005L);
 		referenced.setDeleted(true);
-		var reference = new DataObjectReference(1L);
+		DataObjectReference reference = new DataObjectReference(1L);
+		reference.setShepardId(15L);
 		reference.setReferencedDataObject(referenced);
-
-		when(dao.find(1L)).thenReturn(reference);
-		when(dataObjectDAO.find(100L)).thenReturn(referenced);
-		var actual = service.getPayload(1L);
-
+		when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
+		when(dataObjectDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
+		DataObject actual = service.getPayloadByShepardId(reference.getShepardId());
 		assertNull(actual);
 	}
 }

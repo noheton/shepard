@@ -56,7 +56,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	 */
 	@Override
 	public FileContainer getContainer(long id) {
-		FileContainer fileContainer = fileContainerDAO.find(id);
+		FileContainer fileContainer = fileContainerDAO.findByNeo4jId(id);
 		if (fileContainer == null || fileContainer.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", id);
 			return null;
@@ -87,7 +87,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	@Override
 	public boolean deleteContainer(long fileContainerId, String username) {
 		var user = userDAO.find(username);
-		FileContainer fileContainer = fileContainerDAO.find(fileContainerId);
+		FileContainer fileContainer = fileContainerDAO.findByNeo4jId(fileContainerId);
 		if (fileContainer == null) {
 			return false;
 		}
@@ -107,7 +107,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	 * @return a NamedInputStream
 	 */
 	public NamedInputStream getFile(long fileContainerId, String oid) {
-		var container = fileContainerDAO.findLight(fileContainerId);
+		var container = fileContainerDAO.findLightByNeo4jId(fileContainerId);
 		if (container == null || container.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;
@@ -125,7 +125,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	 * @return The newly created file
 	 */
 	public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
-		var fileContainer = fileContainerDAO.find(fileContainerId);
+		var fileContainer = fileContainerDAO.findByNeo4jId(fileContainerId);
 		if (fileContainer == null || fileContainer.isDeleted()) {
 			log.error("File Container with id {} is null or deleted", fileContainerId);
 			return null;
@@ -153,7 +153,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
 	 * @return Whether the deletion was successful or not
 	 */
 	public boolean deleteFile(long fileContainerId, String oid) {
-		var container = fileContainerDAO.find(fileContainerId);
+		var container = fileContainerDAO.findByNeo4jId(fileContainerId);
 		if (container == null || container.isDeleted())
 			return false;
 		var result = fileService.deleteFile(container.getMongoId(), oid);

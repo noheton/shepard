@@ -28,7 +28,7 @@ public class DataObjectSemanticAnnotationRestImpl extends SemanticAnnotationRest
 	@Operation(operationId = "getAllDataObjectAnnotations", description = "Get all semantic annotations", parameters = {
 			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
 	public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		return getAll(dataObjectId);
+		return getAllByShepardId(dataObjectId);
 	}
 
 	@GET
@@ -48,7 +48,7 @@ public class DataObjectSemanticAnnotationRestImpl extends SemanticAnnotationRest
 			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
 	public Response createAnnotation(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			SemanticAnnotationIO semanticAnnotation) {
-		return create(dataObjectId, semanticAnnotation);
+		return createByShepardId(dataObjectId, semanticAnnotation);
 	}
 
 	@DELETE

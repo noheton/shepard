@@ -31,13 +31,20 @@ public class DataObjectIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 		var incoming = new DataObjectReference(7L);
+		incoming.setShepardId(44L);
 		var parent = new DataObject(2L);
+		parent.setShepardId(498L);
 		var child = new DataObject(3L);
+		child.setShepardId(4090L);
 		var suc = new DataObject(4L);
+		suc.setShepardId(96L);
 		var pre = new DataObject(5L);
+		pre.setShepardId(4748L);
 		var col = new Collection(6L);
+		col.setShepardId(366L);
 
 		var obj = new DataObject(1L);
+		obj.setShepardId(98765L);
 		obj.setAttributes(Map.of("a", "b", "c", "1"));
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
@@ -53,26 +60,30 @@ public class DataObjectIOTest extends BaseTestCase {
 		obj.setCollection(col);
 
 		var converted = new DataObjectIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getAttributes(), converted.getAttributes());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getDescription(), converted.getDescription());
-		assertEquals("[7]", Arrays.toString(converted.getIncomingIds()));
+		assertEquals("[" + obj.getIncoming().get(0).getShepardId() + "]", Arrays.toString(converted.getIncomingIds()));
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
-		assertEquals(2L, converted.getParentId());
-		assertEquals(6L, converted.getCollectionId());
-		assertEquals("[3]", Arrays.toString(converted.getChildrenIds()));
-		assertEquals("[4]", Arrays.toString(converted.getSuccessorIds()));
-		assertEquals("[5]", Arrays.toString(converted.getPredecessorIds()));
+		assertEquals(parent.getShepardId(), converted.getParentId());
+		assertEquals(col.getShepardId(), converted.getCollectionId());
+		assertEquals("[" + obj.getChildren().get(0).getShepardId() + "]", Arrays.toString(converted.getChildrenIds()));
+		assertEquals("[" + obj.getSuccessors().get(0).getShepardId() + "]",
+				Arrays.toString(converted.getSuccessorIds()));
+		assertEquals("[" + obj.getPredecessors().get(0).getShepardId() + "]",
+				Arrays.toString(converted.getPredecessorIds()));
 	}
 
 	@Test
 	public void testConversionNoParent() {
 		var col = new Collection(2L);
+		col.setShepardId(432L);
 		var obj = new DataObject(1L);
+		obj.setShepardId(38383L);
 		obj.setCollection(col);
 
 		var converted = new DataObjectIO(obj);

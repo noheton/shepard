@@ -31,7 +31,7 @@ public class BasicReferenceSemanticAnnotationRestImpl extends SemanticAnnotation
 			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")),
 			@Parameter(in = ParameterIn.PATH, name = Constants.DATAOBJECT_ID, schema = @Schema(type = "integer", format = "int64")) })
 	public Response getAllAnnotations(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
-		return getAll(basicReferenceId);
+		return getAllByShepardId(basicReferenceId);
 	}
 
 	@GET
@@ -53,7 +53,7 @@ public class BasicReferenceSemanticAnnotationRestImpl extends SemanticAnnotation
 			@Parameter(in = ParameterIn.PATH, name = Constants.DATAOBJECT_ID, schema = @Schema(type = "integer", format = "int64")) })
 	public Response createAnnotation(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
 			SemanticAnnotationIO semanticAnnotation) {
-		return create(basicReferenceId, semanticAnnotation);
+		return createByShepardId(basicReferenceId, semanticAnnotation);
 	}
 
 	@DELETE

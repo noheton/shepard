@@ -54,7 +54,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 	public void getFileContainerTest_successful() {
 		var container = new FileContainer(1L);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertEquals(container, actual);
@@ -62,7 +62,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getFileContainerTest_isNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -73,7 +73,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		var container = new FileContainer(1L);
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -147,7 +147,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(old);
+		when(dao.findByNeo4jId(1L)).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 		when(fileService.deleteFileContainer("XYZ")).thenReturn(true);
 
@@ -162,7 +162,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteContainer(1L, "bob");
 		assertFalse(actual);
@@ -178,7 +178,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.addFile(file);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", "filename", null)).thenReturn(file);
 		var actual = service.createFile(1L, "filename", null);
 
@@ -202,7 +202,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.addFile(file);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
 		var actual = service.createFile(1L, null, null);
 
@@ -226,7 +226,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.addFile(file);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
 		var actual = service.createFile(1L, "", null);
 
@@ -236,7 +236,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void createFileTest_containerIsNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 		var actual = service.createFile(1L, "filename", null);
 
 		assertNull(actual);
@@ -248,7 +248,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		var actual = service.createFile(1L, "filename", null);
 
 		assertNull(actual);
@@ -259,7 +259,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		var container = new FileContainer(1L);
 		container.setMongoId("mongoId");
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.createFile("mongoId", "filename", null)).thenReturn(null);
 		var actual = service.createFile(1L, "filename", null);
 
@@ -272,7 +272,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var result = new NamedInputStream(null, "name", 123L);
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
 
 		var actual = service.getFile(1L, "oid");
@@ -281,7 +281,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getFileTest_containerIsNull() {
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getFile(1L, "oid");
 		assertNull(actual);
@@ -293,7 +293,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getFile(1L, "oid");
 		assertNull(actual);
@@ -312,7 +312,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.setFiles(List.of(file2));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(true);
 
 		var actual = service.deleteFile(1L, "abc");
@@ -333,7 +333,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.setFiles(List.of(file2));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(fileService.deleteFile("mongoId", "abc")).thenReturn(false);
 
 		var actual = service.deleteFile(1L, "abc");
@@ -343,7 +343,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteFileTest_containerIsNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteFile(1L, "oid");
 		assertFalse(actual);
@@ -355,7 +355,7 @@ public class FileContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.deleteFile(1L, "oid");
 		assertFalse(actual);

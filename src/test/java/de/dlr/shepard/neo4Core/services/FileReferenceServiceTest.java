@@ -65,103 +65,115 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	private FileReferenceService service;
 
 	@Test
-	public void getFileReferenceTest_successful() {
-		var ref = new FileReference(1L);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getFileReferenceByShepardIdTest_successful() {
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		FileReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getFileReferenceTest_notFound() {
-		when(dao.find(1L)).thenReturn(null);
-
-		var actual = service.getReference(1L);
+	public void getFileReferenceByShepardIdTest_notFound() {
+		Long shepardId = 15L;
+		when(dao.findByShepardId(shepardId)).thenReturn(null);
+		FileReference actual = service.getReferenceByShepardId(shepardId);
 		assertNull(actual);
 	}
 
 	@Test
-	public void getFileReferenceTest_deleted() {
-		var ref = new FileReference(1L);
+	public void getFileReferenceByShepardIdTest_deleted() {
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
 		ref.setDeleted(true);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		FileReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertNull(actual);
 	}
 
 	@Test
-	public void getAllFileReferencesTest() {
-		var dataObject = new DataObject(200L);
-		var ref1 = new FileReference(1L);
-		var ref2 = new FileReference(2L);
+	public void getAllFileReferencesByShepardIdTest() {
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		FileReference ref1 = new FileReference(1L);
+		ref1.setShepardId(15L);
+		FileReference ref2 = new FileReference(2L);
+		ref2.setShepardId(25L);
 		dataObject.setReferences(List.of(ref1, ref2));
-
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllReferences(200L);
-
+		when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
+		List<FileReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createFileReferenceTest() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new FileContainer(300L);
+	public void createFileReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		FileContainer container = new FileContainer(300L);
 		container.setMongoId("mongoId");
-		var date = new Date(30L);
-		var fileComplete = new ShepardFile("oid", new Date(), "name", "md5");
-		var input = new FileReferenceIO() {
+		Date date = new Date(30L);
+		ShepardFile fileComplete = new ShepardFile("oid", new Date(), "name", "md5");
+		FileReferenceIO input = new FileReferenceIO() {
 			{
 				setName("MyName");
 				setFileOids(new String[] { "oid" });
-				setFileContainerId(300L);
+				setFileContainerId(container.getId());
 			}
 		};
-		var toCreate = new FileReference() {
+		FileReference toCreate = new FileReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
+				setName(input.getName());
 				setFiles(List.of(fileComplete));
 				setFileContainer(container);
 			}
 		};
-		var created = new FileReference() {
+		FileReference created = new FileReference() {
 			{
 				setId(1L);
 				setCreatedAt(date);
 				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setFiles(List.of(fileComplete));
-				setFileContainer(container);
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setFiles(toCreate.getFiles());
+				setFileContainer(toCreate.getFileContainer());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.findLight(300L)).thenReturn(container);
+		FileReference createdWithShepardId = new FileReference() {
+			{
+				setId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setFiles(created.getFiles());
+				setFileContainer(created.getFileContainer());
+				setShepardId(created.getId());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(fileDAO.find(300L, "oid")).thenReturn(fileComplete);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
+		FileReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createFileReferenceTest_newFileIsNull() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new FileContainer(300L);
+	public void createFileReferenceByShepardIdTest_newFileIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		FileContainer container = new FileContainer(300L);
 		container.setMongoId("mongoId");
-		var date = new Date(30L);
-		var input = new FileReferenceIO() {
+		Date date = new Date(30L);
+		FileReferenceIO input = new FileReferenceIO() {
 			{
 				setName("MyName");
 				setFileOids(new String[] { "oid" });
@@ -189,115 +201,130 @@ public class FileReferenceServiceTest extends BaseTestCase {
 				setFileContainer(container);
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.findLight(300L)).thenReturn(container);
+		var createdWithShepardId = new FileReference() {
+			{
+				setId(1L);
+				setShepardId(1L);
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName("MyName");
+				setFiles(Collections.emptyList());
+				setFileContainer(container);
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(fileDAO.find(300L, "oid")).thenReturn(null);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		when(fileDAO.find(container.getId(), "oid")).thenReturn(null);
+		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createFileReferenceTest_ContainerIsNull() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new FileContainer(300L);
+	public void createFileReferenceByShepardIdTest_ContainerIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		FileContainer container = new FileContainer(300L);
 		container.setDeleted(true);
-		var input = new FileReferenceIO() {
+		FileReferenceIO input = new FileReferenceIO() {
 			{
 				setName("MyName");
 				setFileOids(new String[] { "oid" });
-				setFileContainerId(300L);
+				setFileContainerId(container.getId());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.findLight(300L)).thenReturn(container);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void createFileReferenceTest_ContainerIsDeleted() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var input = new FileReferenceIO() {
+	public void createFileReferenceByShepardIdTest_ContainerIsDeleted() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		Long nullFileContainerId = 300L;
+		FileReferenceIO input = new FileReferenceIO() {
 			{
 				setName("MyName");
 				setFileOids(new String[] { "oid" });
-				setFileContainerId(300L);
+				setFileContainerId(nullFileContainerId);
 			}
 		};
 
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(fileContainerDAO.findLight(300L)).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(fileContainerDAO.findLightByNeo4jId(nullFileContainerId)).thenReturn(null);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void deleteReferenceTest() {
-		var user = new User("Bob");
-		var date = new Date(30L);
-		var ref = new FileReference(1L);
-		var expected = new FileReference(1L);
+	public void deleteReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		Date date = new Date(30L);
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		FileReference expected = new FileReference(ref.getId());
+		expected.setShepardId(ref.getShepardId());
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dao.find(1L)).thenReturn(ref);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteReference(1L, "Bob");
-
+		boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
 	}
 
 	@Test
-	public void getPayloadTest() {
-		var container = new FileContainer(20L);
+	public void getPayloadByShepardIdTest() {
+		String username = "123";
+		String fileOID = "oid";
+		FileContainer container = new FileContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new FileReference(1L);
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
 		ref.setFileContainer(container);
-		var result = new NamedInputStream(null, "myInputStream", 123L);
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(true);
-		when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
-		var actual = service.getPayload(1L, "oid", "bob");
-
+		NamedInputStream result = new NamedInputStream(null, "myInputStream", 123L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
+		NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username);
 		assertEquals(result, actual);
 	}
 
 	@Test
-	public void getPayloadTest_NotAllowed() {
-		var container = new FileContainer(20L);
+	public void getPayloadByShepardIdTest_NotAllowed() {
+		String username = "Xrj§84eEi6fY?";
+		FileContainer container = new FileContainer(20L);
 		container.setMongoId("mongoId");
-		var ref = new FileReference(1L);
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
 		ref.setFileContainer(container);
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(20L, AccessType.Read, "bob")).thenReturn(false);
-
-		assertThrows(InvalidAuthException.class, () -> service.getPayload(1L, "oid", "bob"));
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, username)).thenReturn(false);
+		assertThrows(InvalidAuthException.class,
+				() -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username));
 	}
 
 	@Test
-	public void getFilesTest() {
-		var files = List.of(new ShepardFile("a", new Date(), "b", "c"), new ShepardFile("d", new Date(), "e", "f"));
-		var ref = new FileReference(1L);
+	public void getFilesByShepardIdTest() {
+		List<ShepardFile> files = List.of(new ShepardFile("a", new Date(), "b", "c"),
+				new ShepardFile("d", new Date(), "e", "f"));
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
 		ref.setFiles(files);
-
-		when(dao.find(1L)).thenReturn(ref);
-		var actual = service.getFiles(1L);
-
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		List<ShepardFile> actual = service.getFilesByShepardId(ref.getShepardId());
 		assertEquals(files, actual);
 	}
 

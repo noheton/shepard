@@ -25,12 +25,14 @@ public class CollectionIOTest extends BaseTestCase {
 	@Test
 	public void testConversion() {
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(4L);
 		var date = new Date();
 		var user = new User("bob");
 		var update = new Date();
 		var updateUser = new User("claus");
 
 		var obj = new Collection(1L);
+		obj.setShepardId(2L);
 		obj.setAttributes(Map.of("a", "b", "c", "1"));
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
@@ -41,11 +43,11 @@ public class CollectionIOTest extends BaseTestCase {
 		obj.setUpdatedBy(updateUser);
 
 		var converted = new CollectionIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getAttributes(), converted.getAttributes());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
-		assertEquals("[2]", Arrays.toString(converted.getDataObjectIds()));
+		assertEquals("[4]", Arrays.toString(converted.getDataObjectIds()));
 		assertEquals(obj.getDescription(), converted.getDescription());
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());

@@ -26,8 +26,10 @@ public class URIReferenceIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(4L);
 
 		var obj = new URIReference(1L);
+		obj.setShepardId(22L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -37,13 +39,13 @@ public class URIReferenceIOTest extends BaseTestCase {
 		obj.setUri("http://abc.de");
 
 		var converted = new URIReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
-		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
 		assertEquals(obj.getUri(), converted.getUri());
 	}
 

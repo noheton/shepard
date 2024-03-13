@@ -31,10 +31,12 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(654L);
 		var container = new FileContainer(3L);
 		var file = new ShepardFile("oid", new Date(), "name", "md5");
 
 		var obj = new FileReference(1L);
+		obj.setShepardId(48L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -46,13 +48,13 @@ public class FileReferenceIOTest extends BaseTestCase {
 		String[] oids = obj.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
 		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
 		assertEquals("claus", converted.getUpdatedBy());
-		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
 		assertEquals(3L, converted.getFileContainerId());
 		assertTrue(Arrays.equals(oids, converted.getFileOids()));
 	}
@@ -62,9 +64,11 @@ public class FileReferenceIOTest extends BaseTestCase {
 		var date = new Date();
 		var user = new User("bob");
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(734L);
 		var file = new ShepardFile("oid", new Date(), "name", "md5");
 
 		var obj = new FileReference(1L);
+		obj.setShepardId(399L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setName("MyName");
@@ -73,11 +77,11 @@ public class FileReferenceIOTest extends BaseTestCase {
 		String[] oids = obj.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
 
 		var converted = new FileReferenceIO(obj);
-		assertEquals(obj.getId(), converted.getId());
+		assertEquals(obj.getShepardId(), converted.getId());
 		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
 		assertEquals("bob", converted.getCreatedBy());
 		assertEquals(obj.getName(), converted.getName());
-		assertEquals(2L, converted.getDataObjectId());
+		assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
 		assertEquals(-1, converted.getFileContainerId());
 		assertTrue(Arrays.equals(oids, converted.getFileOids()));
 	}

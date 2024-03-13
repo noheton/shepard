@@ -37,40 +37,37 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
 	@Override
-	public List<TimeseriesReference> getAllReferences(long dataObjectId) {
-		var references = timeseriesReferenceDAO.findByDataObject(dataObjectId);
+	public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+		var references = timeseriesReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
 		return references;
 	}
 
 	@Override
-	public TimeseriesReference getReference(long id) {
-		var reference = timeseriesReferenceDAO.find(id);
+	public TimeseriesReference getReferenceByShepardId(long shepardId) {
+		var reference = timeseriesReferenceDAO.findByShepardId(shepardId);
 		if (reference == null || reference.isDeleted()) {
-			log.error("Timeseries Reference with id {} is null or deleted", id);
+			log.error("Timeseries Reference with id {} is null or deleted", shepardId);
 			return null;
 		}
 		return reference;
 	}
 
 	@Override
-	public TimeseriesReference createReference(long dataObjectId, TimeseriesReferenceIO timeseriesReference,
-			String username) {
+	public TimeseriesReference createReferenceByShepardId(long dataObjectShepardId,
+			TimeseriesReferenceIO timeseriesReference, String username) {
 		var user = userDAO.find(username);
-		var dataObject = dataObjectDAO.findLight(dataObjectId);
-		var container = timeseriesContainerDAO.findLight(timeseriesReference.getTimeseriesContainerId());
-
+		var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+		var container = timeseriesContainerDAO.findLightByNeo4jId(timeseriesReference.getTimeseriesContainerId());
 		if (container == null || container.isDeleted()) {
 			throw new InvalidBodyException(String.format("The timeseries container with id %d could not be found.",
 					timeseriesReference.getTimeseriesContainerId()));
 		}
-
 		// sanitize timeseries
 		var errors = Arrays.stream(timeseriesReference.getTimeseries()).map(InfluxUtil::sanitize)
 				.filter(e -> !e.isBlank()).toList();
 		if (!errors.isEmpty())
 			throw new InvalidBodyException(
 					"The timeseries list contains illegal characters: " + String.join(", ", errors));
-
 		var toCreate = new TimeseriesReference();
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setCreatedBy(user);
@@ -89,16 +86,17 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 				toCreate.addTimeseries(ts);
 			}
 		}
-
-		var created = timeseriesReferenceDAO.createOrUpdate(toCreate);
+		TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = timeseriesReferenceDAO.createOrUpdate(created);
 		return created;
 	}
 
 	@Override
-	public boolean deleteReference(long timeseriesId, String username) {
+	public boolean deleteReferenceByShepardId(long timeseriesShepardId, String username) {
 		var user = userDAO.find(username);
 
-		var old = timeseriesReferenceDAO.find(timeseriesId);
+		var old = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
 		old.setDeleted(true);
 		old.setUpdatedAt(dateHelper.getDate());
 		old.setUpdatedBy(user);
@@ -107,10 +105,10 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 		return true;
 	}
 
-	public List<TimeseriesPayload> getTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function,
-			Long groupBy, FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
-			Set<String> symbolicNameFilterSet, String username) {
-		var ref = timeseriesReferenceDAO.find(timeseriesId);
+	public List<TimeseriesPayload> getTimeseriesPayloadByShepardId(long timeseriesShepardId,
+			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> devicesFilterSet,
+			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username) {
+		var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
 
@@ -121,10 +119,10 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
 
-	public InputStream exportTimeseriesPayload(long timeseriesId, SingleValuedUnaryFunction function, Long groupBy,
-			FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
+	public InputStream exportTimeseriesPayloadByShepardId(long timeseriesShepardId, SingleValuedUnaryFunction function,
+			Long groupBy, FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
 			Set<String> symbolicNameFilterSet, String username) throws IOException {
-		var ref = timeseriesReferenceDAO.find(timeseriesId);
+		var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
 		var containerId = ref.getTimeseriesContainer().getId();
 		var database = ref.getTimeseriesContainer().getDatabase();
 

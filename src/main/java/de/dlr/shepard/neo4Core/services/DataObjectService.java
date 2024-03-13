@@ -1,13 +1,16 @@
 package de.dlr.shepard.neo4Core.services;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -23,19 +26,19 @@ public class DataObjectService {
 	/**
 	 * Creates a DataObject and stores it in Neo4J
 	 *
-	 * @param collectionId identifies the Collection
-	 * @param dataObject   to be stored
-	 * @param username     of the related user
+	 * @param collectionShepardId identifies the Collection
+	 * @param dataObject          to be stored
+	 * @param username            of the related user
 	 * @return the stored DataObject with the auto generated id
 	 */
-	public DataObject createDataObject(long collectionId, DataObjectIO dataObject, String username) {
-		var collection = collectionDAO.findLight(collectionId);
-		var user = userDAO.find(username);
-
-		var parent = findRelatedDataObject(collection.getId(), dataObject.getParentId(), null);
-		var predecessors = findRelatedDataObjects(collection.getId(), dataObject.getPredecessorIds(), null);
-
-		var toCreate = new DataObject();
+	public DataObject createDataObjectByCollectionShepardId(long collectionShepardId, DataObjectIO dataObject,
+			String username) {
+		Collection collection = collectionDAO.findLightByShepardId(collectionShepardId);
+		User user = userDAO.find(username);
+		DataObject parent = findRelatedDataObjectByShepardId(collection.getShepardId(), dataObject.getParentId(), null);
+		List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(collection.getShepardId(),
+				dataObject.getPredecessorIds(), null);
+		DataObject toCreate = new DataObject();
 		toCreate.setAttributes(dataObject.getAttributes());
 		toCreate.setDescription(dataObject.getDescription());
 		toCreate.setName(dataObject.getName());
@@ -44,21 +47,22 @@ public class DataObjectService {
 		toCreate.setPredecessors(predecessors);
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setCreatedBy(user);
-
-		var created = dataObjectDAO.createOrUpdate(toCreate);
+		DataObject created = dataObjectDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = dataObjectDAO.createOrUpdate(created);
 		return created;
 	}
 
 	/**
 	 * Searches the neo4j database for a dataObject
 	 *
-	 * @param id identifies the searched dataObject
+	 * @param shepardId identifies the searched dataObject
 	 * @return the DataObject with the given id or null
 	 */
-	public DataObject getDataObject(long id) {
-		var dataObject = dataObjectDAO.find(id);
+	public DataObject getDataObjectByShepardId(long shepardId) {
+		DataObject dataObject = dataObjectDAO.findByShepardId(shepardId);
 		if (dataObject == null || dataObject.isDeleted()) {
-			log.error("Data Object with id {} is null or deleted", id);
+			log.error("Data Object with id {} is null or deleted", shepardId);
 			return null;
 		}
 		cutDeleted(dataObject);
@@ -68,15 +72,14 @@ public class DataObjectService {
 	/**
 	 * Searches the database for DataObjects.
 	 *
-	 * @param collectionId identifies the collection
-	 * @param params       encapsulates possible parameters
+	 * @param collectionShepardId  identifies the collection
+	 * @param paramsWithShepardIds encapsulates possible parameters
 	 * @return a List of DataObjects
 	 */
-	public List<DataObject> getAllDataObjects(long collectionId, QueryParamHelper params) {
-		var unfiltered = dataObjectDAO.findByCollection(collectionId, params);
-
+	public List<DataObject> getAllDataObjectsByShepardIds(long collectionShepardId,
+			QueryParamHelper paramsWithShepardIds) {
+		var unfiltered = dataObjectDAO.findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds);
 		var dataObjects = unfiltered.stream().map(this::cutDeleted).toList();
-
 		return dataObjects;
 	}
 
@@ -84,19 +87,18 @@ public class DataObjectService {
 	 * Updates a DataObject with new attributes. Hereby only not null attributes
 	 * will replace the old attributes.
 	 *
-	 * @param dataObjectId Identifies the dataObject
-	 * @param dataObject   DataObject entity for updating.
-	 * @param username     of the related user
+	 * @param dataObjectShepardId Identifies the dataObject
+	 * @param dataObject          DataObject entity for updating.
+	 * @param username            of the related user
 	 * @return updated DataObject.
 	 */
-	public DataObject updateDataObject(long dataObjectId, DataObjectIO dataObject, String username) {
-		var old = dataObjectDAO.find(dataObjectId);
-		var user = userDAO.find(username);
-
-		var parent = findRelatedDataObject(old.getCollection().getId(), dataObject.getParentId(), dataObjectId);
-		var predecessors = findRelatedDataObjects(old.getCollection().getId(), dataObject.getPredecessorIds(),
-				dataObjectId);
-
+	public DataObject updateDataObjectByShepardId(long dataObjectShepardId, DataObjectIO dataObject, String username) {
+		DataObject old = dataObjectDAO.findByShepardId(dataObjectShepardId);
+		User user = userDAO.find(username);
+		DataObject parent = findRelatedDataObjectByShepardId(old.getCollection().getShepardId(),
+				dataObject.getParentId(), dataObjectShepardId);
+		List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(old.getCollection().getShepardId(),
+				dataObject.getPredecessorIds(), dataObjectShepardId);
 		old.setAttributes(dataObject.getAttributes());
 		old.setDescription(dataObject.getDescription());
 		old.setName(dataObject.getName());
@@ -104,8 +106,7 @@ public class DataObjectService {
 		old.setPredecessors(predecessors);
 		old.setUpdatedAt(dateHelper.getDate());
 		old.setUpdatedBy(user);
-
-		var updated = dataObjectDAO.createOrUpdate(old);
+		DataObject updated = dataObjectDAO.createOrUpdate(old);
 		cutDeleted(updated);
 		return updated;
 	}
@@ -113,15 +114,14 @@ public class DataObjectService {
 	/**
 	 * set the deleted flag for the DataObject
 	 *
-	 * @param dataObjectId identifies the DataObject to be deleted
-	 * @param username     of the related user
+	 * @param dataObjectShepardId identifies the DataObject to be deleted
+	 * @param username            of the related user
 	 * @return a boolean to identify if the DataObject was successfully removed
 	 */
-	public boolean deleteDataObject(long dataObjectId, String username) {
-		var date = dateHelper.getDate();
-		var user = userDAO.find(username);
-
-		var result = dataObjectDAO.deleteDataObject(dataObjectId, user, date);
+	public boolean deleteDataObjectByShepardId(long dataObjectShepardId, String username) {
+		Date date = dateHelper.getDate();
+		User user = userDAO.find(username);
+		boolean result = dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date);
 		return result;
 	}
 
@@ -142,33 +142,41 @@ public class DataObjectService {
 		return dataObject;
 	}
 
-	private List<DataObject> findRelatedDataObjects(long collectionId, long[] referencedIds, Long dataObjectId) {
-		if (referencedIds == null)
+	private List<DataObject> findRelatedDataObjectsByShepardIds(long collectionShepardId, long[] referencedShepardIds,
+			Long dataObjectShepardId) {
+		if (referencedShepardIds == null)
 			return new ArrayList<>();
 
-		var result = new ArrayList<DataObject>(referencedIds.length);
-		for (var id : referencedIds) {
-			result.add(findRelatedDataObject(collectionId, id, dataObjectId));
+		var result = new ArrayList<DataObject>(referencedShepardIds.length);
+		/*
+		 * TODO: seems to be inefficient since this loops generates referencedIds.length
+		 * calls to Neo4j this could possibly be packed into one query (or in chunks of
+		 * queries in case of a large referencedIds array)
+		 */
+		for (var shepardId : referencedShepardIds) {
+			result.add(findRelatedDataObjectByShepardId(collectionShepardId, shepardId, dataObjectShepardId));
 		}
 		return result;
 	}
 
-	private DataObject findRelatedDataObject(long collectionId, Long referencedId, Long dataObjectId) {
-		if (referencedId == null)
+	private DataObject findRelatedDataObjectByShepardId(long collectionShepardId, Long referencedShepardId,
+			Long dataObjectShepardId) {
+		if (referencedShepardId == null)
 			return null;
-		else if (referencedId.equals(dataObjectId))
+		else if (referencedShepardId.equals(dataObjectShepardId))
 			throw new InvalidBodyException("Self references are not allowed.");
 
-		var dataObject = dataObjectDAO.find(referencedId);
+		var dataObject = dataObjectDAO.findByShepardId(referencedShepardId);
 		if (dataObject == null || dataObject.isDeleted())
 			throw new InvalidBodyException(
-					String.format("The DataObject with id %d could not be found.", referencedId));
+					String.format("The DataObject with id %d could not be found.", referencedShepardId));
 
 		// Prevent cross collection references
-		if (!dataObject.getCollection().getId().equals(collectionId))
+		if (!dataObject.getCollection().getShepardId().equals(collectionShepardId))
 			throw new InvalidBodyException(
 					"Related data objects must belong to the same collection as the new data object");
 
 		return dataObject;
 	}
+
 }

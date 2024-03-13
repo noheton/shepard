@@ -53,7 +53,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 	public void getStructuredDataContainerTest_successful() {
 		var container = new StructuredDataContainer(1L);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertEquals(container, actual);
@@ -61,7 +61,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getStructuredDataContainerTest_isNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -72,7 +72,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		var container = new StructuredDataContainer(1L);
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getContainer(1L);
 		assertNull(actual);
@@ -146,7 +146,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(old);
+		when(dao.findByNeo4jId(1L)).thenReturn(old);
 		when(dao.createOrUpdate(expected)).thenReturn(expected);
 		when(structuredDataService.deleteStructuredDataContainer("XYZ")).thenReturn(true);
 
@@ -161,7 +161,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteContainer(1L, "bob");
 		assertFalse(actual);
@@ -179,7 +179,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.addStructuredData(structuredData);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
 
 		var actual = service.createStructuredData(1L, payload);
@@ -193,7 +193,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		var structuredData = new StructuredData("oid", new Date(), "name");
 		var payload = new StructuredDataPayload(structuredData, "payload");
 
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.createStructuredData(1L, payload);
 
@@ -207,7 +207,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setDeleted(true);
 		var payload = new StructuredDataPayload(structuredData, "payload");
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.createStructuredData(1L, payload);
 
@@ -221,7 +221,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var payload = new StructuredDataPayload(structuredData, "payload");
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(null);
 
 		var actual = service.createStructuredData(1L, payload);
@@ -236,7 +236,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		var result = new StructuredDataPayload(structuredData, "payload");
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 		when(structuredDataService.getPayload("mongoId", "oid")).thenReturn(result);
 
 		var actual = service.getStructuredData(1L, "oid");
@@ -245,7 +245,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void getStructuredDataTest_containerIsNull() {
-		when(dao.findLight(1L)).thenReturn(null);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);
@@ -257,7 +257,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.findLight(1L)).thenReturn(container);
+		when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.getStructuredData(1L, "oid");
 		assertNull(actual);
@@ -275,7 +275,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.setStructuredDatas(List.of(new StructuredData("123", date, "name")));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(true);
 
 		var actual = service.deleteStructuredData(1L, "abc");
@@ -295,7 +295,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		updated.setMongoId("mongoId");
 		updated.setStructuredDatas(List.of(new StructuredData("123", date, "name")));
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 		when(structuredDataService.deletePayload("mongoId", "abc")).thenReturn(false);
 
 		var actual = service.deleteStructuredData(1L, "abc");
@@ -305,7 +305,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteStructuredDataTest_containerIsNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteStructuredData(1L, "oid");
 		assertFalse(actual);
@@ -317,7 +317,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
 		container.setMongoId("mongoId");
 		container.setDeleted(true);
 
-		when(dao.find(1L)).thenReturn(container);
+		when(dao.findByNeo4jId(1L)).thenReturn(container);
 
 		var actual = service.deleteStructuredData(1L, "oid");
 		assertFalse(actual);

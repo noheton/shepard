@@ -3,11 +3,12 @@ package de.dlr.shepard.neo4Core.services;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.dao.BasicEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
+import de.dlr.shepard.neo4Core.dao.VersionableEntityConcreteDAO;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
+import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -17,15 +18,19 @@ public class SemanticAnnotationService {
 
 	private SemanticAnnotationDAO semanticAnnotationDAO = new SemanticAnnotationDAO();
 	private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
-	private BasicEntityDAO basicEntityDAO = new BasicEntityDAO();
+	private VersionableEntityConcreteDAO versionableEntityConcreteDAO = new VersionableEntityConcreteDAO();
 	private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory = new SemanticRepositoryConnectorFactory();
 
-	public List<SemanticAnnotation> getAllAnnotations(long entityId) {
-		return semanticAnnotationDAO.findAllSemanticAnnotations(entityId);
+	public List<SemanticAnnotation> getAllAnnotationsByNeo4jId(long entityId) {
+		return semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(entityId);
 	}
 
-	public SemanticAnnotation getAnnotation(long id) {
-		var annotation = semanticAnnotationDAO.find(id);
+	public List<SemanticAnnotation> getAllAnnotationsByShepardId(long shepardId) {
+		return semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(shepardId);
+	}
+
+	public SemanticAnnotation getAnnotationByNeo4jId(long id) {
+		var annotation = semanticAnnotationDAO.findByNeo4jId(id);
 		if (annotation == null) {
 			log.error("Semantic Annotation with id {} is null or deleted", id);
 			return null;
@@ -33,38 +38,35 @@ public class SemanticAnnotationService {
 		return annotation;
 	}
 
-	public SemanticAnnotation createAnnotation(long entityId, SemanticAnnotationIO annotationIO) {
-		var entity = basicEntityDAO.find(entityId);
+	public SemanticAnnotation createAnnotationByShepardId(long entityShepardId, SemanticAnnotationIO annotationIO) {
+		VersionableEntity entity = versionableEntityConcreteDAO.findByShepardId(entityShepardId);
 		if (entity == null || entity.isDeleted())
 			throw new InvalidBodyException("invalid entity");
 
-		var propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
-		var valueRepository = getRepository(annotationIO.getValueRepositoryId());
-		var name = String.join("::", validateTerm(propertyRepository, annotationIO.getPropertyIRI()),
+		SemanticRepository propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
+		SemanticRepository valueRepository = getRepository(annotationIO.getValueRepositoryId());
+		String name = String.join("::", validateTerm(propertyRepository, annotationIO.getPropertyIRI()),
 				validateTerm(valueRepository, annotationIO.getValueIRI()));
 
-		var toCreate = new SemanticAnnotation();
+		SemanticAnnotation toCreate = new SemanticAnnotation();
 		toCreate.setName(name);
 		toCreate.setPropertyIRI(annotationIO.getPropertyIRI());
 		toCreate.setValueIRI(annotationIO.getValueIRI());
 		toCreate.setPropertyRepository(propertyRepository);
 		toCreate.setValueRepository(valueRepository);
-
-		var created = semanticAnnotationDAO.createOrUpdate(toCreate);
-
+		SemanticAnnotation created = semanticAnnotationDAO.createOrUpdate(toCreate);
 		entity.addAnnotation(created);
-		basicEntityDAO.createOrUpdate(entity);
-
+		versionableEntityConcreteDAO.createOrUpdate(entity);
 		return created;
 	}
 
-	public boolean deleteAnnotation(long id) {
-		var result = semanticAnnotationDAO.delete(id);
+	public boolean deleteAnnotationByNeo4jId(long id) {
+		var result = semanticAnnotationDAO.deleteByNeo4jId(id);
 		return result;
 	}
 
 	private SemanticRepository getRepository(long id) {
-		var repository = semanticRepositoryDAO.find(id);
+		var repository = semanticRepositoryDAO.findByNeo4jId(id);
 		if (repository == null || repository.isDeleted())
 			throw new InvalidBodyException("invalid repository");
 

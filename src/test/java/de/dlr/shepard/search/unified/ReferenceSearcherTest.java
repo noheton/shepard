@@ -18,7 +18,7 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
@@ -51,8 +51,11 @@ public class ReferenceSearcherTest extends BaseTestCase {
 	@MethodSource
 	public void test(SearchScope scope, String selectionQuery) {
 		var collection = new Collection(1L);
+		collection.setShepardId(collection.getId());
 		var dataObject = new DataObject(2L);
+		dataObject.setShepardId(dataObject.getId());
 		var reference = new BasicReference(3L);
+		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
 		SearchScope[] scopes = { scope };
@@ -61,7 +64,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 		when(searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY)).thenReturn(List.of(reference));
 		ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
 		ResultTriple[] resultTriples = { resultTriple };
-		BasicEntityIO[] results = { new BasicEntityIO(reference) };
+		VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
 		var actual = referenceSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);
@@ -97,7 +100,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
 		SearchParams searchParams = new SearchParams(query, QueryType.Reference);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		ResultTriple[] resultTriples = {};
-		BasicEntityIO[] results = {};
+		VersionableEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
 		var actual = referenceSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);

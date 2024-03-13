@@ -34,7 +34,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Override
 	public Response getAllCollectionReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = collectionReferenceService.getAllReferences(dataObjectId);
+		var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
 		var result = new ArrayList<CollectionReferenceIO>(references.size());
 		for (var reference : references) {
 			result.add(new CollectionReferenceIO(reference));
@@ -48,7 +48,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response getCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.getReference(collectionReferenceId);
+		var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId);
 		return Response.ok(new CollectionReferenceIO(result)).build();
 	}
 
@@ -57,7 +57,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	@Override
 	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference) {
-		var result = collectionReferenceService.createReference(dataObjectId, collectionReference,
+		var result = collectionReferenceService.createReferenceByShepardId(dataObjectId, collectionReference,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
 	}
@@ -69,7 +69,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response deleteCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.deleteReference(collectionReferenceId,
+		var result = collectionReferenceService.deleteReferenceByShepardId(collectionReferenceId,
 				securityContext.getUserPrincipal().getName());
 		return result ? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -81,7 +81,7 @@ public class CollectionReferenceRestImpl implements CollectionReferenceRest {
 	public Response getCollectionReferencePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
 			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var payload = collectionReferenceService.getPayload(collectionReferenceId);
+		var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId);
 		return payload != null ? Response.ok(new CollectionIO(payload)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}

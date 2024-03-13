@@ -21,7 +21,8 @@ public class CollectionReferenceIO extends BasicReferenceIO {
 
 	public CollectionReferenceIO(CollectionReference ref) {
 		super(ref);
-		this.referencedCollectionId = ref.getReferencedCollection() != null ? ref.getReferencedCollection().getId()
+		this.referencedCollectionId = ref.getReferencedCollection() != null
+				? ref.getReferencedCollection().getShepardId()
 				: -1;
 		this.relationship = ref.getRelationship();
 	}

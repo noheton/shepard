@@ -7,11 +7,11 @@ import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
 
 public interface IReferenceService<T extends BasicReference, S extends BasicReferenceIO> {
 
-	List<T> getAllReferences(long dataObjectId);
+	List<T> getAllReferencesByDataObjectShepardId(long dataObjectShepardId);
 
-	T getReference(long id);
+	T getReferenceByShepardId(long shepardId);
 
-	T createReference(long dataObjectId, S referenceIO, String username);
+	T createReferenceByShepardId(long DataObjectShepardId, S referenceIO, String username);
 
-	boolean deleteReference(long id, String username);
+	boolean deleteReferenceByShepardId(long shepardId, String username);
 }

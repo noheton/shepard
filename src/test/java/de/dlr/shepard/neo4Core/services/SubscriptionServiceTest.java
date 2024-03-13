@@ -41,14 +41,14 @@ public class SubscriptionServiceTest extends BaseTestCase {
 	@Test
 	public void getSubscriptionTest() {
 		var sub = new Subscription(1L);
-		when(dao.find(1L)).thenReturn(sub);
+		when(dao.findByNeo4jId(1L)).thenReturn(sub);
 		var actual = service.getSubscription(1L);
 		assertEquals(sub, actual);
 	}
 
 	@Test
 	public void getSubscriptionTestNull() {
-		when(dao.find(1L)).thenReturn(null);
+		when(dao.findByNeo4jId(1L)).thenReturn(null);
 		var actual = service.getSubscription(1L);
 		assertNull(actual);
 	}
@@ -87,7 +87,7 @@ public class SubscriptionServiceTest extends BaseTestCase {
 
 	@Test
 	public void deleteSubscriptionTest() {
-		when(dao.delete(1L)).thenReturn(true);
+		when(dao.deleteByNeo4jId(1L)).thenReturn(true);
 		var actual = service.deleteSubscription(1L);
 
 		assertTrue(actual);
@@ -174,7 +174,7 @@ public class SubscriptionServiceTest extends BaseTestCase {
 			}
 		};
 
-		when(dao.find(1L)).thenReturn(old);
+		when(dao.findByNeo4jId(1L)).thenReturn(old);
 		when(dao.createOrUpdate(updated)).thenReturn(updated);
 
 		var actual = service.updateSubscription(1L, input);

@@ -150,7 +150,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setOwner(new User("principal"));
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "");
 		assertFalse(actual);
@@ -158,7 +158,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 
 	@Test
 	public void isAllowedTest_NoPermissions() {
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(null);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(null);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertTrue(actual);
@@ -172,7 +172,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertTrue(actual);
@@ -185,7 +185,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setOwner(new User("different"));
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertFalse(actual);
@@ -199,7 +199,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Manage, "principal");
 		assertTrue(actual);
@@ -209,7 +209,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 	public void isAllowedTest_NoManager() {
 		var perms = new Permissions();
 		when(pathSeg.getPath()).thenReturn("permissions");
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Manage, "principal");
 		assertFalse(actual);
@@ -222,7 +222,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setReader(List.of(new User("principal")));
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertTrue(actual);
@@ -231,7 +231,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 	@Test
 	public void isAllowedTest_NoReader() {
 		var perms = new Permissions();
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertFalse(actual);
@@ -244,7 +244,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setWriter(List.of(new User("principal")));
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Write, "principal");
 		assertTrue(actual);
@@ -266,7 +266,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 		assertTrue(util.isAllowed(123, AccessType.Write, "principal"));
 	}
 
@@ -286,7 +286,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 		assertFalse(util.isAllowed(123, AccessType.Write, "Heinz"));
 	}
 
@@ -306,7 +306,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 		assertTrue(util.isAllowed(123, AccessType.Read, "principal"));
 	}
 
@@ -326,14 +326,14 @@ public class PermissionsUtilTest extends BaseTestCase {
 			}
 		};
 		when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 		assertFalse(util.isAllowed(123, AccessType.Read, "AKP"));
 	}
 
 	@Test
 	public void isAllowedTest_NoWriter() {
 		var perms = new Permissions();
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Write, "principal");
 		assertFalse(actual);
@@ -346,7 +346,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.Private);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertFalse(actual);
@@ -359,7 +359,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.PublicReadable);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertTrue(actual);
@@ -372,7 +372,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.PublicReadable);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Write, "principal");
 		assertFalse(actual);
@@ -385,7 +385,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.Public);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Read, "principal");
 		assertTrue(actual);
@@ -398,7 +398,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.Public);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.Write, "principal");
 		assertTrue(actual);
@@ -411,7 +411,7 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.Public);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var actual = util.isAllowed(pathSegments, AccessType.None, "principal");
 		assertFalse(actual);
@@ -424,19 +424,19 @@ public class PermissionsUtilTest extends BaseTestCase {
 				setPermissionType(PermissionType.Public);
 			}
 		};
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(perms);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(perms);
 
 		var expected = new RolesIO(false, false, true, true);
-		var actual = util.getRoles(123, "bob");
+		var actual = util.getRolesByNeo4jId(123, "bob");
 		assertEquals(expected, actual);
 	}
 
 	@Test
 	public void getRolesTest_null() {
-		when(permissionsService.getPermissionsByEntity(123)).thenReturn(null);
+		when(permissionsService.getPermissionsByNeo4jId(123)).thenReturn(null);
 
 		var expected = new RolesIO(false, true, true, true);
-		var actual = util.getRoles(123, "bob");
+		var actual = util.getRolesByNeo4jId(123, "bob");
 		assertEquals(expected, actual);
 	}
 

@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Permissions;
+import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
@@ -29,34 +30,18 @@ public class CollectionService {
 	 * @return the created collection
 	 */
 	public Collection createCollection(CollectionIO collection, String username) {
-		var user = userDAO.find(username);
-
-		var toCreate = new Collection();
+		User user = userDAO.find(username);
+		Collection toCreate = new Collection();
 		toCreate.setAttributes(collection.getAttributes());
 		toCreate.setCreatedBy(user);
 		toCreate.setCreatedAt(dateHelper.getDate());
 		toCreate.setDescription(collection.getDescription());
 		toCreate.setName(collection.getName());
-
-		var created = collectionDAO.createOrUpdate(toCreate);
+		Collection created = collectionDAO.createOrUpdate(toCreate);
+		created.setShepardId(created.getId());
+		created = collectionDAO.createOrUpdate(created);
 		permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
 		return created;
-	}
-
-	/**
-	 * Searches the Collection in Neo4j
-	 *
-	 * @param id identifies the searched Collection
-	 * @return the Collection with matching id or null
-	 */
-	public Collection getCollection(long id) {
-		var collection = collectionDAO.find(id);
-		if (collection == null || collection.isDeleted()) {
-			log.error("Collection with id {} is null or deleted", id);
-			return null;
-		}
-		cutDeleted(collection);
-		return collection;
 	}
 
 	/**
@@ -66,31 +51,38 @@ public class CollectionService {
 	 * @param username the name of the user
 	 * @return a list of Collections
 	 */
-	public List<Collection> getAllCollections(QueryParamHelper params, String username) {
-		var queryResult = collectionDAO.findAllCollections(params, username);
-		var collections = queryResult.stream().map(this::cutDeleted).toList();
+	public List<Collection> getAllCollectionsByShepardId(QueryParamHelper params, String username) {
+		List<Collection> queryResult = collectionDAO.findAllCollectionsByShepardId(params, username);
+		List<Collection> collections = queryResult.stream().map(this::cutDeleted).toList();
 		return collections;
+	}
+
+	public Collection getCollectionByShepardId(long shepardId) {
+		Collection collection = collectionDAO.findByShepardId(shepardId);
+		if (collection == null || collection.isDeleted()) {
+			log.error("Collection with id {} is null or deleted", shepardId);
+			return null;
+		}
+		cutDeleted(collection);
+		return collection;
 	}
 
 	/**
 	 * Updates a Collection with new Attributes.
 	 *
-	 * @param collectionId identifies the Collection
-	 * @param collection   which contains the new Attributes
-	 * @param username     of the related user
+	 * @param shepardId  identifies the Collection
+	 * @param collection which contains the new Attributes
+	 * @param username   of the related user
 	 * @return updated Collection
 	 */
-	public Collection updateCollection(long collectionId, CollectionIO collection, String username) {
-		var old = collectionDAO.find(collectionId);
-
+	public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection, String username) {
+		Collection old = collectionDAO.findByShepardId(shepardId);
 		old.setUpdatedBy(userDAO.find(username));
 		old.setUpdatedAt(dateHelper.getDate());
-
 		old.setAttributes(collection.getAttributes());
 		old.setDescription(collection.getDescription());
 		old.setName(collection.getName());
-
-		var updated = collectionDAO.createOrUpdate(old);
+		Collection updated = collectionDAO.createOrUpdate(old);
 		cutDeleted(updated);
 		return updated;
 	}
@@ -98,14 +90,14 @@ public class CollectionService {
 	/**
 	 * Deletes a Collection in Neo4j
 	 *
-	 * @param collectionId identifies the Collection
-	 * @param username     of the related user
+	 * @param shepardId identifies the Collection
+	 * @param username  of the related user
 	 * @return a boolean to determine if Collection was successfully deleted
 	 */
-	public boolean deleteCollection(long collectionId, String username) {
+	public boolean deleteCollectionByShepardId(long shepardId, String username) {
 		var date = dateHelper.getDate();
 		var user = userDAO.find(username);
-		var result = collectionDAO.deleteCollection(collectionId, user, date);
+		var result = collectionDAO.deleteCollectionByShepardId(shepardId, user, date);
 		return result;
 	}
 

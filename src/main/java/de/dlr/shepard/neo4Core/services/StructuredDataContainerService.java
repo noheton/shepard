@@ -57,7 +57,7 @@ public class StructuredDataContainerService
 	 */
 	@Override
 	public StructuredDataContainer getContainer(long id) {
-		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.find(id);
+		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(id);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", id);
 			return null;
@@ -89,7 +89,7 @@ public class StructuredDataContainerService
 	@Override
 	public boolean deleteContainer(long structuredDataId, String username) {
 		var user = userDAO.find(username);
-		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.find(structuredDataId);
+		StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataId);
 		if (structuredDataContainer == null) {
 			return false;
 		}
@@ -109,7 +109,7 @@ public class StructuredDataContainerService
 	 * @return StructuredData with the new oid
 	 */
 	public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
-		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
+		var structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
 			return null;
@@ -133,7 +133,7 @@ public class StructuredDataContainerService
 	 * @return StructuredDataPayload
 	 */
 	public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
-		var structuredDataContainer = structuredDataContainerDAO.findLight(structuredDataContainerID);
+		var structuredDataContainer = structuredDataContainerDAO.findLightByNeo4jId(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
 			log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
 			return null;
@@ -151,7 +151,7 @@ public class StructuredDataContainerService
 	 * @return Whether the deletion was successful or not
 	 */
 	public boolean deleteStructuredData(long structuredDataContainerID, String oid) {
-		var structuredDataContainer = structuredDataContainerDAO.find(structuredDataContainerID);
+		var structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataContainerID);
 		if (structuredDataContainer == null || structuredDataContainer.isDeleted())
 			return false;
 		var result = structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);

@@ -27,7 +27,7 @@ public class SemanticRepositoryService {
 	}
 
 	public SemanticRepository getRepository(long id) {
-		var repository = semanticRepositoryDAO.find(id);
+		var repository = semanticRepositoryDAO.findByNeo4jId(id);
 		if (repository == null || repository.isDeleted()) {
 			log.error("Semantic Repository with id {} is null or deleted", id);
 			return null;
@@ -53,7 +53,7 @@ public class SemanticRepositoryService {
 
 	public boolean deleteRepository(long repositoryId, String username) {
 		var user = userDAO.find(username);
-		var repositoy = semanticRepositoryDAO.find(repositoryId);
+		var repositoy = semanticRepositoryDAO.findByNeo4jId(repositoryId);
 		if (repositoy == null) {
 			return false;
 		}

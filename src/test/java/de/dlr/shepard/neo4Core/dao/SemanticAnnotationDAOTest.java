@@ -39,7 +39,23 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
 				RETURN a, nodes(path), relationships(path)""";
 		when(session.query(SemanticAnnotation.class, query, Collections.emptyMap())).thenReturn(List.of(annotation));
 
-		var actual = dao.findAllSemanticAnnotations(1L);
+		var actual = dao.findAllSemanticAnnotationsByNeo4jId(1L);
+		verify(session).query(SemanticAnnotation.class, query, Collections.emptyMap());
+		assertEquals(List.of(annotation), actual);
+	}
+
+	@Test
+	public void findAllSemanticAnnotationsByShepardIdTest() {
+		var annotation = new SemanticAnnotation(1L);
+		annotation.setName("Test");
+
+		var query = """
+				MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) \
+				WHERE e.shepardId=11 WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN a, nodes(path), relationships(path)""";
+		when(session.query(SemanticAnnotation.class, query, Collections.emptyMap())).thenReturn(List.of(annotation));
+
+		var actual = dao.findAllSemanticAnnotationsByShepardId(11L);
 		verify(session).query(SemanticAnnotation.class, query, Collections.emptyMap());
 		assertEquals(List.of(annotation), actual);
 	}

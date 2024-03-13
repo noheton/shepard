@@ -79,7 +79,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 	public void getRepositoryTest() {
 		var expected = new SemanticRepository(1L);
 
-		when(semanticRepositoryDAO.find(1L)).thenReturn(expected);
+		when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(expected);
 		var actual = service.getRepository(1L);
 
 		assertEquals(expected, actual);
@@ -87,7 +87,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 	@Test
 	public void getRepositoryTest_isNull() {
-		when(semanticRepositoryDAO.find(1L)).thenReturn(null);
+		when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(null);
 		var actual = service.getRepository(1L);
 
 		assertNull(actual);
@@ -98,7 +98,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 		var expected = new SemanticRepository(1L);
 		expected.setDeleted(true);
 
-		when(semanticRepositoryDAO.find(1L)).thenReturn(expected);
+		when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(expected);
 		var actual = service.getRepository(1L);
 
 		assertNull(actual);
@@ -196,7 +196,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(semanticRepositoryDAO.find(1L)).thenReturn(repository);
+		when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(repository);
 
 		var actual = service.deleteRepository(1L, "bob");
 		assertTrue(actual);
@@ -210,7 +210,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
 
 		when(userDAO.find("bob")).thenReturn(user);
 		when(dateHelper.getDate()).thenReturn(date);
-		when(semanticRepositoryDAO.find(1L)).thenReturn(null);
+		when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(null);
 
 		var actual = service.deleteRepository(1L, "bob");
 		assertFalse(actual);

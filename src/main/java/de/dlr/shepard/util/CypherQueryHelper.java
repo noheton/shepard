@@ -49,6 +49,10 @@ public class CypherQueryHelper {
 		return result;
 	}
 
+	public static String getReturnPartLight(String entity) {
+		return "RETURN " + entity;
+	}
+
 	public static String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
 		String ret;
 		boolean isString = orderByAttribute.isString();
@@ -59,6 +63,10 @@ public class CypherQueryHelper {
 		if (orderDesc != null && orderDesc)
 			ret = ret + " DESC";
 		return ret;
+	}
+
+	public static String getShepardIdPart(String variable, long shepardId) {
+		return variable + "." + Constants.SHEPARD_ID + " = " + shepardId;
 	}
 
 	public static String getReadableByQuery(String variable, String username) {

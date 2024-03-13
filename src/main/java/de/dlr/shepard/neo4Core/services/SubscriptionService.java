@@ -48,7 +48,7 @@ public class SubscriptionService {
 	 * @return the Subscription with the given id
 	 */
 	public Subscription getSubscription(long id) {
-		Subscription subscription = subscriptionDAO.find(id);
+		Subscription subscription = subscriptionDAO.findByNeo4jId(id);
 		if (subscription == null) {
 			log.error("Subscription with id {} is null", id);
 			return null;
@@ -80,7 +80,7 @@ public class SubscriptionService {
 	 * @return a boolean to identify if the Subscription was successfully removed
 	 */
 	public boolean deleteSubscription(long subscriptionId) {
-		return subscriptionDAO.delete(subscriptionId);
+		return subscriptionDAO.deleteByNeo4jId(subscriptionId);
 	}
 
 	/**

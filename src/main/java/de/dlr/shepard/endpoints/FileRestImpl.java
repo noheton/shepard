@@ -139,7 +139,7 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		var perms = permissionsService.getPermissionsByEntity(fileContainerId);
+		var perms = permissionsService.getPermissionsByNeo4jId(fileContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -149,7 +149,7 @@ public class FileRestImpl implements FileRest {
 	@Override
 	public Response editFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
 			@Valid PermissionsIO permissions) {
-		var perms = permissionsService.updatePermissions(permissions, fileContainerId);
+		var perms = permissionsService.updatePermissionsByNeo4jId(permissions, fileContainerId);
 		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
 				: Response.status(Status.NOT_FOUND).build();
 	}
@@ -158,7 +158,8 @@ public class FileRestImpl implements FileRest {
 	@Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.ROLES)
 	@Override
 	public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-		var roles = new PermissionsUtil().getRoles(fileContainerId, securityContext.getUserPrincipal().getName());
+		var roles = new PermissionsUtil().getRolesByNeo4jId(fileContainerId,
+				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
 	}
 

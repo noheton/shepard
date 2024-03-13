@@ -70,61 +70,51 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	private TimeseriesReferenceService service;
 
 	@Test
-	public void getTimeseriesReferenceTest_successful() {
-		var ref = new TimeseriesReference(1L);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getTimeseriesReferenceByShepardIdTest_successful() {
+		TimeseriesReference ref = new TimeseriesReference(1L);
+		ref.setShepardId(15L);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		TimeseriesReference actual = service.getReferenceByShepardId(ref.getShepardId());
 		assertEquals(ref, actual);
 	}
 
 	@Test
-	public void getTimeseriesReferenceTest_notFound() {
-		when(dao.find(1L)).thenReturn(null);
-
-		var actual = service.getReference(1L);
-		assertNull(actual);
-	}
-
-	@Test
-	public void getTimeseriesReferenceTest_deleted() {
-		var ref = new TimeseriesReference(1L);
-		ref.setDeleted(true);
-
-		when(dao.find(1L)).thenReturn(ref);
-
-		var actual = service.getReference(1L);
+	public void getTimeseriesReferenceByShepardIdTest_notFound() {
+		Long shepardId = 15L;
+		when(dao.findByShepardId(shepardId)).thenReturn(null);
+		TimeseriesReference actual = service.getReferenceByShepardId(shepardId);
 		assertNull(actual);
 	}
 
 	@Test
 	public void getAllTimeseriesReferencesTest() {
-		var dataObject = new DataObject(200L);
-		var ref1 = new TimeseriesReference(1L);
-		var ref2 = new TimeseriesReference(2L);
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		TimeseriesReference ref1 = new TimeseriesReference(1L);
+		ref1.setShepardId(15L);
+		TimeseriesReference ref2 = new TimeseriesReference(2L);
+		ref2.setShepardId(25L);
 		dataObject.setReferences(List.of(ref1, ref2));
-
-		when(dao.findByDataObject(200L)).thenReturn(List.of(ref1, ref2));
-		var actual = service.getAllReferences(200L);
-
+		when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
+		List<TimeseriesReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
 		assertEquals(List.of(ref1, ref2), actual);
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new TimeseriesContainer(300L);
-		var date = new Date(30L);
-		var timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var input = new TimeseriesReferenceIO() {
+	public void createTimeseriesReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		TimeseriesContainer container = new TimeseriesContainer(300L);
+		Date date = new Date(30L);
+		Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
 				setTimeseries(new Timeseries[] { timeseries });
-				setTimeseriesContainerId(300L);
+				setTimeseriesContainerId(container.getId());
 			}
 		};
 		var toCreate = new TimeseriesReference() {
@@ -132,9 +122,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
-				setStart(123L);
-				setEnd(321L);
+				setName(input.getName());
+				setStart(input.getStart());
+				setEnd(input.getEnd());
 				setTimeseries(List.of(timeseries));
 				setTimeseriesContainer(container);
 			}
@@ -142,174 +132,208 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		var created = new TimeseriesReference() {
 			{
 				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setStart(123L);
-				setEnd(321L);
-				setTimeseries(List.of(timeseries));
-				setTimeseriesContainer(container);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStart(toCreate.getStart());
+				setEnd(toCreate.getEnd());
+				setTimeseries(toCreate.getTimeseries());
+				setTimeseriesContainer(toCreate.getTimeseriesContainer());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(timeseriesContainerDAO.findLight(300L)).thenReturn(container);
-		when(timeseriesDAO.find("meas", "dev", "loc", "symName", "field")).thenReturn(timeseries);
+		var createdWithShepardId = new TimeseriesReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStart(created.getStart());
+				setEnd(created.getEnd());
+				setTimeseries(created.getTimeseries());
+				setTimeseriesContainer(created.getTimeseriesContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
+		when(timeseriesDAO.find(timeseries.getMeasurement(), timeseries.getDevice(), timeseries.getLocation(),
+				timeseries.getSymbolicName(), timeseries.getField())).thenReturn(timeseries);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_timeseriesNotFound() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new TimeseriesContainer(300L);
-		var date = new Date(30L);
-		var timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var input = new TimeseriesReferenceIO() {
+	public void createTimeseriesReferenceByShepardIdTest_timeseriesNotFound() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		TimeseriesContainer container = new TimeseriesContainer(300L);
+		Date date = new Date(30L);
+		Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
 				setTimeseries(new Timeseries[] { timeseries });
-				setTimeseriesContainerId(300L);
+				setTimeseriesContainerId(container.getId());
 			}
 		};
-		var toCreate = new TimeseriesReference() {
+		TimeseriesReference toCreate = new TimeseriesReference() {
 			{
 				setCreatedAt(date);
 				setCreatedBy(user);
 				setDataObject(dataObject);
-				setName("MyName");
-				setStart(123L);
-				setEnd(321L);
+				setName(input.getName());
+				setStart(input.getStart());
+				setEnd(input.getEnd());
 				setTimeseries(List.of(timeseries));
 				setTimeseriesContainer(container);
 			}
 		};
-		var created = new TimeseriesReference() {
+		TimeseriesReference created = new TimeseriesReference() {
 			{
 				setId(1L);
-				setCreatedAt(date);
-				setCreatedBy(user);
-				setDataObject(dataObject);
-				setName("MyName");
-				setStart(123L);
-				setEnd(321L);
-				setTimeseries(List.of(timeseries));
-				setTimeseriesContainer(container);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStart(toCreate.getStart());
+				setEnd(toCreate.getEnd());
+				setTimeseries(toCreate.getTimeseries());
+				setTimeseriesContainer(toCreate.getTimeseriesContainer());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(timeseriesContainerDAO.findLight(300L)).thenReturn(container);
-		when(timeseriesDAO.find("meas", "dev", "loc", "symName", "field")).thenReturn(null);
+		var createdWithShepardId = new TimeseriesReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStart(created.getStart());
+				setEnd(created.getEnd());
+				setTimeseries(created.getTimeseries());
+				setTimeseriesContainer(created.getTimeseriesContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+		when(timeseriesDAO.find(timeseries.getMeasurement(), timeseries.getDevice(), timeseries.getLocation(),
+				timeseries.getSymbolicName(), timeseries.getField())).thenReturn(null);
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
-
-		var actual = service.createReference(200L, input, "Bob");
-		assertEquals(created, actual);
+		TimeseriesReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input,
+				user.getUsername());
+		assertEquals(createdWithShepardId, actual);
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_invalidTimeseries() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new TimeseriesContainer(300L);
-		var input = new TimeseriesReferenceIO() {
+	public void createTimeseriesReferenceByShepardIdTest_invalidTimeseries() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		TimeseriesContainer container = new TimeseriesContainer(300L);
+		TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
 				setTimeseries(new Timeseries[] { new Timeseries("me.as", "dev", "loc", "symName", "field") });
-				setTimeseriesContainerId(300L);
+				setTimeseriesContainerId(container.getId());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(timeseriesContainerDAO.findLight(300L)).thenReturn(container);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_ContainerIsNull() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var container = new TimeseriesContainer(300L);
+	public void createTimeseriesReferenceByShepardIdTest_ContainerIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		TimeseriesContainer container = new TimeseriesContainer(300L);
 		container.setDeleted(true);
-		var input = new TimeseriesReferenceIO() {
+		TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
 				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
-				setTimeseriesContainerId(300L);
+				setTimeseriesContainerId(container.getId());
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(timeseriesContainerDAO.findLight(300L)).thenReturn(container);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void createTimeseriesReferenceTest_ContainerIsDeleted() {
-		var user = new User("Bob");
-		var dataObject = new DataObject(200L);
-		var input = new TimeseriesReferenceIO() {
+	public void createTimeseriesReferenceByShepardIdTest_ContainerIsDeleted() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		Long containerShepardId = 12345L;
+		TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
 			{
 				setName("MyName");
 				setStart(123L);
 				setEnd(321L);
 				setTimeseries(new Timeseries[] { new Timeseries("meas", "dev", "loc", "symName", "field") });
-				setTimeseriesContainerId(300L);
+				setTimeseriesContainerId(containerShepardId);
 			}
 		};
-
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dataObjectDAO.findLight(200L)).thenReturn(dataObject);
-		when(timeseriesContainerDAO.findLight(300L)).thenReturn(null);
-
-		assertThrows(InvalidBodyException.class, () -> service.createReference(200L, input, "Bob"));
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(timeseriesContainerDAO.findLightByNeo4jId(containerShepardId)).thenReturn(null);
+		assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
 	}
 
 	@Test
-	public void deleteReferenceTest() {
-		var user = new User("Bob");
-		var date = new Date(30L);
-		var ref = new TimeseriesReference(1L);
-		var expected = new TimeseriesReference(1L);
+	public void deleteReferenceByShepardIdTest() {
+		User user = new User("Bob");
+		Date date = new Date(30L);
+		TimeseriesReference ref = new TimeseriesReference(1L);
+		ref.setShepardId(15L);
+		TimeseriesReference expected = new TimeseriesReference(ref.getId());
+		expected.setShepardId(ref.getShepardId());
 		expected.setDeleted(true);
 		expected.setUpdatedAt(date);
 		expected.setUpdatedBy(user);
 
-		when(userDAO.find("Bob")).thenReturn(user);
-		when(dao.find(1L)).thenReturn(ref);
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(dateHelper.getDate()).thenReturn(date);
-		var actual = service.deleteReference(1L, "Bob");
-
+		var actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 		verify(dao).createOrUpdate(expected);
 		assertTrue(actual);
 	}
 
 	@Test
-	public void getPayloadTest() {
-		var container = new TimeseriesContainer(2L);
+	public void getPayloadByShepardIdTest() {
+		String username = "Ali Baba";
+		TimeseriesContainer container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
-		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var ref = new TimeseriesReference() {
+		Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReference ref = new TimeseriesReference() {
 			{
 				setId(1L);
+				setShepardId(15L);
 				setEnd(321);
 				setStart(123);
 				setTimeseries(List.of(ts));
@@ -317,27 +341,28 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 			}
 		};
-		var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(50L, 7)));
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
-		when(timeseriesService.getTimeseriesPayloadList(123, 321, "Database", List.of(ts),
-				SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name")))
-				.thenReturn(List.of(payload));
-
-		var actual = service.getTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR,
-				Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+		TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(50L, 7)));
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(timeseriesService.getTimeseriesPayloadList(ref.getStart(), ref.getEnd(), container.getDatabase(),
+				ref.getTimeseries(), SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"),
+				Set.of("loc"), Set.of("name"))).thenReturn(List.of(payload));
+		List<TimeseriesPayload> actual = service.getTimeseriesPayloadByShepardId(ref.getShepardId(),
+				SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"),
+				username);
 		assertEquals(List.of(payload), actual);
 	}
 
 	@Test
-	public void getPayloadTest_notAllowed() {
-		var container = new TimeseriesContainer(2L);
+	public void getPayloadByShepardIdTest_notAllowed() {
+		String username = "Rocco Siffredi";
+		TimeseriesContainer container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
-		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var ref = new TimeseriesReference() {
+		Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReference ref = new TimeseriesReference() {
 			{
 				setId(1L);
+				setShepardId(15L);
 				setEnd(321);
 				setStart(123);
 				setTimeseries(List.of(ts));
@@ -345,23 +370,24 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 			}
 		};
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
-
-		assertThrows(InvalidAuthException.class, () -> service.getTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN,
-				10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), "bob"));
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
+		assertThrows(InvalidAuthException.class,
+				() -> service.getTimeseriesPayloadByShepardId(ref.getShepardId(), SingleValuedUnaryFunction.MEAN, 10L,
+						FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username));
 	}
 
 	@Test
-	public void exportTest() throws IOException, InvalidAuthException {
-		var is = new ByteArrayInputStream("Hello World".getBytes());
-		var container = new TimeseriesContainer(2L);
+	public void exportByShepardIdTest() throws IOException, InvalidAuthException {
+		String username = "Gina Wild";
+		ByteArrayInputStream is = new ByteArrayInputStream("Hello World".getBytes());
+		TimeseriesContainer container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
-		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var ref = new TimeseriesReference() {
+		Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReference ref = new TimeseriesReference() {
 			{
 				setId(1L);
+				setShepardId(15L);
 				setEnd(321);
 				setStart(123);
 				setTimeseries(List.of(ts));
@@ -369,26 +395,26 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 			}
 		};
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(true);
-		when(timeseriesService.exportTimeseriesPayload(123, 321, "Database", List.of(ts),
-				SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name")))
-				.thenReturn(is);
-
-		var actual = service.exportTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR,
-				Set.of("dev"), Set.of("loc"), Set.of("name"), "bob");
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), container.getDatabase(),
+				List.of(ts), SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"),
+				Set.of("name"))).thenReturn(is);
+		var actual = service.exportTimeseriesPayloadByShepardId(ref.getShepardId(), SingleValuedUnaryFunction.MEAN, 10L,
+				FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username);
 		assertEquals(is, actual);
 	}
 
 	@Test
-	public void exportTest_notAllowed() throws IOException, InvalidAuthException {
-		var container = new TimeseriesContainer(2L);
+	public void exportByShepardIdTest_notAllowed() throws IOException, InvalidAuthException {
+		String username = "Alektra Blue";
+		TimeseriesContainer container = new TimeseriesContainer(2L);
 		container.setDatabase("Database");
-		var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-		var ref = new TimeseriesReference() {
+		Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReference ref = new TimeseriesReference() {
 			{
 				setId(1L);
+				setShepardId(15L);
 				setEnd(321);
 				setStart(123);
 				setTimeseries(List.of(ts));
@@ -396,13 +422,11 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 			}
 		};
-
-		when(dao.find(1L)).thenReturn(ref);
-		when(permissionsUtil.isAllowed(2L, AccessType.Read, "bob")).thenReturn(false);
-
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
 		assertThrows(InvalidAuthException.class,
-				() -> service.exportTimeseriesPayload(1L, SingleValuedUnaryFunction.MEAN, 10L, FillOption.LINEAR,
-						Set.of("dev"), Set.of("loc"), Set.of("name"), "bob"));
+				() -> service.exportTimeseriesPayloadByShepardId(ref.getShepardId(), SingleValuedUnaryFunction.MEAN,
+						10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username));
 	}
 
 }

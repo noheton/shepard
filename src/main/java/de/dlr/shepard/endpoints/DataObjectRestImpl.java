@@ -42,21 +42,21 @@ public class DataObjectRestImpl implements DataObjectRest {
 			@QueryParam(Constants.QP_SUCCESSOR_ID) Long successorId,
 			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
 			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		var params = new QueryParamHelper();
+		var paramsWithShepardIds = new QueryParamHelper();
 		if (name != null)
-			params = params.withName(name);
+			paramsWithShepardIds = paramsWithShepardIds.withName(name);
 		if (page != null && size != null)
-			params = params.withPageAndSize(page, size);
+			paramsWithShepardIds = paramsWithShepardIds.withPageAndSize(page, size);
 		if (parentId != null)
-			params = params.withParentId(parentId);
+			paramsWithShepardIds = paramsWithShepardIds.withParentId(parentId);
 		if (predecessorId != null)
-			params = params.withPredecessorId(predecessorId);
+			paramsWithShepardIds = paramsWithShepardIds.withPredecessorId(predecessorId);
 		if (successorId != null)
-			params = params.withSuccessorId(successorId);
+			paramsWithShepardIds = paramsWithShepardIds.withSuccessorId(successorId);
 		if (orderBy != null)
-			params = params.withOrderByAttribute(orderBy, orderDesc);
+			paramsWithShepardIds = paramsWithShepardIds.withOrderByAttribute(orderBy, orderDesc);
 
-		var dataObjects = dataObjectService.getAllDataObjects(collectionId, params);
+		var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionId, paramsWithShepardIds);
 		var result = new ArrayList<DataObjectIO>(dataObjects.size());
 
 		for (var dataObject : dataObjects) {
@@ -70,7 +70,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Override
 	public Response getDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
+		DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
 		return Response.ok(new DataObjectIO(dataObject)).build();
 	}
 
@@ -78,7 +78,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Subscribable
 	@Override
 	public Response createDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId, DataObjectIO dataObject) {
-		DataObject newDataObject = dataObjectService.createDataObject(collectionId, dataObject,
+		DataObject newDataObject = dataObjectService.createDataObjectByCollectionShepardId(collectionId, dataObject,
 				securityContext.getUserPrincipal().getName());
 		return Response.ok(new DataObjectIO(newDataObject)).status(Status.CREATED).build();
 	}
@@ -89,7 +89,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Override
 	public Response updateDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, DataObjectIO dataObject) {
-		DataObject updatedDataObject = dataObjectService.updateDataObject(dataObjectId, dataObject,
+		DataObject updatedDataObject = dataObjectService.updateDataObjectByShepardId(dataObjectId, dataObject,
 				securityContext.getUserPrincipal().getName());
 		if (updatedDataObject == null) {
 			return Response.status(Status.NOT_FOUND).build();
@@ -103,7 +103,7 @@ public class DataObjectRestImpl implements DataObjectRest {
 	@Override
 	public Response deleteDataObject(@PathParam(Constants.COLLECTION_ID) long collectionId,
 			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		return dataObjectService.deleteDataObject(dataObjectId, securityContext.getUserPrincipal().getName())
+		return dataObjectService.deleteDataObjectByShepardId(dataObjectId, securityContext.getUserPrincipal().getName())
 				? Response.status(Status.NO_CONTENT).build()
 				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}

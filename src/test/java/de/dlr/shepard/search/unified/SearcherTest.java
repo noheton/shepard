@@ -16,7 +16,7 @@ import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
 
 public class SearcherTest extends BaseTestCase {
 
@@ -52,7 +52,9 @@ public class SearcherTest extends BaseTestCase {
 		var params = new SearchParams("{}", QueryType.Collection);
 		var searchBody = new SearchBody(scopes, params);
 		ResultTriple[] resultTriples = { new ResultTriple(1L) };
-		BasicEntityIO[] results = { new BasicEntityIO(new Collection(1L)) };
+		Collection collection = new Collection(1L);
+		collection.setShepardId(collection.getId());
+		VersionableEntityIO[] results = { new VersionableEntityIO(collection) };
 		var expected = new ResponseBody(resultTriples, results, params);
 		when(collectionSearcher.search(searchBody, userName)).thenReturn(expected);
 		ResponseBody actual = searcher.search(searchBody, userName);
@@ -66,7 +68,9 @@ public class SearcherTest extends BaseTestCase {
 		var params = new SearchParams("{}", QueryType.DataObject);
 		var searchBody = new SearchBody(scopes, params);
 		ResultTriple[] resultTriples = { new ResultTriple(1L) };
-		BasicEntityIO[] results = { new BasicEntityIO(new DataObject(1L)) };
+		DataObject dataObject = new DataObject(1L);
+		dataObject.setShepardId(dataObject.getId());
+		VersionableEntityIO[] results = { new VersionableEntityIO(dataObject) };
 		var expected = new ResponseBody(resultTriples, results, params);
 		when(dataObjectSearcher.search(searchBody, userName)).thenReturn(expected);
 		ResponseBody actual = searcher.search(searchBody, userName);
@@ -80,7 +84,9 @@ public class SearcherTest extends BaseTestCase {
 		var params = new SearchParams("{}", QueryType.Reference);
 		var searchBody = new SearchBody(scopes, params);
 		ResultTriple[] resultTriples = { new ResultTriple(1L) };
-		BasicEntityIO[] results = { new BasicEntityIO(new BasicReference(1L)) };
+		BasicReference reference = new BasicReference(1L);
+		reference.setShepardId(reference.getId());
+		VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
 		var expected = new ResponseBody(resultTriples, results, params);
 		when(referenceSearcher.search(searchBody, userName)).thenReturn(expected);
 		ResponseBody actual = searcher.search(searchBody, userName);
@@ -94,7 +100,9 @@ public class SearcherTest extends BaseTestCase {
 		var params = new SearchParams("{}", QueryType.StructuredData);
 		var searchBody = new SearchBody(scopes, params);
 		ResultTriple[] resultTriples = { new ResultTriple(1L) };
-		BasicEntityIO[] results = { new BasicEntityIO(new StructuredDataReference(1L)) };
+		StructuredDataReference reference = new StructuredDataReference(1L);
+		reference.setShepardId(reference.getId());
+		VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
 		var expected = new ResponseBody(resultTriples, results, params);
 		when(structuredDataSearcher.search(searchBody, userName)).thenReturn(expected);
 		ResponseBody actual = searcher.search(searchBody, userName);

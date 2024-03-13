@@ -21,8 +21,8 @@ public class CollectionIO extends AbstractDataObjectIO {
 
 	public CollectionIO(Collection collection) {
 		super(collection);
-		this.dataObjectIds = extractIds(collection.getDataObjects());
-		this.incomingIds = extractIds(collection.getIncoming());
+		this.dataObjectIds = extractShepardIds(collection.getDataObjects());
+		this.incomingIds = extractShepardIds(collection.getIncoming());
 	}
 
 }
