@@ -1,0 +1,9 @@
+templateDir: clients/cpp/template
+additionalProperties:
+  apiPackage: de.dlr.shepard.client.cpp.api
+  modelPackage: de.dlr.shepard.client.cpp.model
+  packageName: ShepardClient
+files:
+  cmake-lists.mustache:
+    templateType: SupportingFiles
+    destinationFilename: CMakeLists.txt

@@ -15,11 +15,11 @@ build_cppclient:
   needs: [build]
   dependencies: [build]
   script:
-    - docker-entrypoint.sh generate -i target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -p apiPackage=de.dlr.shepard.client.cpp.api -p modelPackage=de.dlr.shepard.client.cpp.model -p packageName=ShepardClient --type-mappings set=std::vector
+    - docker-entrypoint.sh generate -i target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -c clients/cpp/config.yaml --type-mappings set=std::vector
   artifacts:
     expire_in: 2 days
     paths:
-      - clients/cpp
+      - clients/cpp/client
 
 upload_cppclient_dev:
   <<: *upload_cpp
