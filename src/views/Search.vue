@@ -286,6 +286,7 @@ onMounted(() => {
     <ReteModal
       modal-id="rete-modal"
       modal-name="Graphical Query Editor"
+      :input="jsonQuery"
       @changed="e => (jsonQuery = e.value)"
     />
   </div>

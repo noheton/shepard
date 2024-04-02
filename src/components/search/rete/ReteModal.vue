@@ -2,7 +2,7 @@
 import { createEditor } from "@/components/search/rete/editor";
 import { ref } from "vue";
 
-defineProps({
+const props = defineProps({
   modalId: {
     type: String,
     default: "collectionModal",
@@ -10,6 +10,10 @@ defineProps({
   modalName: {
     type: String,
     default: "collectionModal",
+  },
+  input: {
+    type: String,
+    default: "{}",
   },
 });
 
@@ -22,7 +26,7 @@ const editor = ref<{
 }>();
 async function prepare() {
   if (container.value) {
-    editor.value = await createEditor(container.value);
+    editor.value = await createEditor(container.value, JSON.parse(props.input));
   }
 }
 

@@ -9,18 +9,22 @@ function jsonParse(str: string) {
   }
 }
 
-interface SimpleClause {
+export interface SimpleClause {
   property: string;
   operator: string;
   value: string | number | boolean;
 }
 
+export function isSimpleClause(object: object): object is SimpleClause {
+  return "property" in object && "operator" in object && "value" in object;
+}
+
 const socket = new ClassicPreset.Socket("socket");
 
 export class LabelledInputControl extends ClassicPreset.Control {
-  value = "";
   constructor(
     public label: string,
+    public value: string = "",
     public change?: () => void,
   ) {
     super();
@@ -28,10 +32,10 @@ export class LabelledInputControl extends ClassicPreset.Control {
 }
 
 export class DropdownInputControl extends ClassicPreset.Control {
-  value = "";
   constructor(
     public label: string,
     public options: Map<string, string>,
+    public value: string = "",
     public change?: () => void,
   ) {
     super();
@@ -65,15 +69,25 @@ export class SimpleClauseNode extends ClassicPreset.Node<
   height = 240;
   width = 180;
 
-  constructor(change?: () => void) {
+  constructor(change?: () => void, init?: SimpleClause) {
     super("Simple Clause");
 
-    this.addControl("prop", new LabelledInputControl("property", change));
+    this.addControl(
+      "prop",
+      new LabelledInputControl("property", init?.property, change),
+    );
     this.addControl(
       "op",
-      new DropdownInputControl("operator", operators, change),
+      new DropdownInputControl("operator", operators, init?.operator, change),
     );
-    this.addControl("value", new LabelledInputControl("value", change));
+    this.addControl(
+      "value",
+      new LabelledInputControl(
+        "value",
+        init ? init.value.toString() : undefined,
+        change,
+      ),
+    );
     this.addOutput("value", new ClassicPreset.Output(socket, "Output", false));
   }
 
@@ -107,24 +121,18 @@ abstract class LogicNode extends ClassicPreset.Node<
   { value: ClassicPreset.Socket },
   { value: ClassicPreset.Control }
 > {
-  height = 180;
+  height = 110;
   width = 180;
 
   constructor(
     operator: string,
     private update?: (id: string) => void,
+    inputs: number = 2,
   ) {
     super(operator);
-    const e1 = new ClassicPreset.Input(socket, "E1", false);
-    e1.showControl = false;
-    e1.addControl(new ClassicPreset.InputControl("text", { readonly: true }));
-
-    const e2 = new ClassicPreset.Input(socket, "E2", false);
-    e2.showControl = false;
-    e2.addControl(new ClassicPreset.InputControl("text", { readonly: true }));
-
-    this.addInput("e1", e1);
-    this.addInput("e2", e2);
+    for (let i = 0; i < inputs; i++) {
+      this.addInputNode();
+    }
     this.addOutput("value", new ClassicPreset.Output(socket, "Output", false));
   }
 
@@ -160,8 +168,8 @@ abstract class LogicNode extends ClassicPreset.Node<
 }
 
 export class AndNode extends LogicNode {
-  constructor(update?: (id: string) => void) {
-    super("AND", update);
+  constructor(update?: (id: string) => void, inputs = 2) {
+    super("AND", update, inputs);
   }
 
   makeAnd(inputs: string[]): string {
@@ -178,8 +186,8 @@ export class AndNode extends LogicNode {
 }
 
 export class OrNode extends LogicNode {
-  constructor(update?: (id: string) => void) {
-    super("OR", update);
+  constructor(update?: (id: string) => void, inputs = 2) {
+    super("OR", update, inputs);
   }
 
   makeOr(inputs: string[]): string {
@@ -196,8 +204,8 @@ export class OrNode extends LogicNode {
 }
 
 export class XOrNode extends LogicNode {
-  constructor(update?: (id: string) => void) {
-    super("XOR", update);
+  constructor(update?: (id: string) => void, inputs = 2) {
+    super("XOR", update, inputs);
   }
 
   makeXOr(inputs: string[]): string {
@@ -214,11 +222,11 @@ export class XOrNode extends LogicNode {
 }
 
 export class NotNode extends ClassicPreset.Node<
-  { e1: ClassicPreset.Socket },
+  Record<string, ClassicPreset.Socket>,
   { value: ClassicPreset.Socket },
   { value: ClassicPreset.Control }
 > {
-  height = 150;
+  height = 145;
   width = 180;
 
   constructor() {

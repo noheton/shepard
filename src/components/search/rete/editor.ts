@@ -1,16 +1,6 @@
 import { CustomContextMenu } from "@/components/search/rete/contextMenu";
 import DropdownInput from "@/components/search/rete/DropdownInput.vue";
 import LabelledInput from "@/components/search/rete/LabelledInput.vue";
-import {
-  AndNode,
-  DropdownInputControl,
-  LabelledInputControl,
-  NotNode,
-  OrNode,
-  SimpleClauseNode,
-  SolutionNode,
-  XOrNode,
-} from "@/components/search/rete/ReteNodes";
 import { NodeEditor } from "rete";
 import { AreaExtensions, AreaPlugin } from "rete-area-plugin";
 import {
@@ -23,9 +13,27 @@ import {
 } from "rete-connection-plugin";
 import { DataflowEngine } from "rete-engine";
 import { Presets, VuePlugin } from "rete-vue-plugin/vue2";
-import type { AreaExtra, Schemes } from "./scheme";
+import {
+  AndNode,
+  DropdownInputControl,
+  isSimpleClause,
+  LabelledInputControl,
+  NotNode,
+  OrNode,
+  SimpleClauseNode,
+  SolutionNode,
+  XOrNode,
+} from "./ReteNodes";
+import {
+  Connection,
+  type AreaExtra,
+  type ClauseNode,
+  type ConnProps,
+  type Node,
+  type Schemes,
+} from "./scheme";
 
-export async function createEditor(container: HTMLElement) {
+export async function createEditor(container: HTMLElement, input: object) {
   const editor = new NodeEditor<Schemes>();
   const area = new AreaPlugin<Schemes, AreaExtra>(container);
   const connection = new ConnectionPlugin<Schemes, AreaExtra>();
@@ -35,11 +43,14 @@ export async function createEditor(container: HTMLElement) {
 
   function process() {
     engine.reset();
-    editor.getNodes().forEach(n => engine.fetch(n.id));
+    editor
+      .getNodes()
+      .filter(n => !(n instanceof SimpleClauseNode))
+      .forEach(n => engine.fetch(n.id));
   }
 
-  function updateNode(id: string) {
-    area.update("node", id);
+  async function updateNode(id: string) {
+    await area.update("node", id);
   }
 
   const contextMenu = new CustomContextMenu().getContextMenu(editor, [
@@ -51,6 +62,88 @@ export async function createEditor(container: HTMLElement) {
   ]);
   area.use(contextMenu);
 
+  function parseNodes(input: object): {
+    nodes: Node[];
+    connections: ConnProps[];
+  } {
+    const nodes: Node[] = [];
+    const connections: ConnProps[] = [];
+
+    const s = new SolutionNode();
+    nodes.push(s);
+
+    const parsed = parseNode(input);
+    nodes.push(parsed.rootNode);
+    connections.push(new Connection(parsed.rootNode, "value", s, "input"));
+
+    nodes.push(...parsed.nodes);
+    connections.push(...parsed.connections);
+
+    return { nodes: nodes, connections: connections };
+  }
+
+  function parseNode(input_obj: object): {
+    rootNode: ClauseNode;
+    nodes: ClauseNode[];
+    connections: ConnProps[];
+  } {
+    if (isSimpleClause(input_obj)) {
+      return {
+        rootNode: new SimpleClauseNode(process, input_obj),
+        nodes: [],
+        connections: [],
+      };
+    }
+
+    let node: ClauseNode | undefined = undefined;
+    const nodes: ClauseNode[] = [];
+    const connections: ConnProps[] = [];
+    const operation = Object.keys(input_obj)[0];
+    const child = Object.values(input_obj)[0];
+    const children = [];
+
+    switch (operation) {
+      case "AND":
+        node = new AndNode(updateNode, child.length);
+        children.push(...child);
+        break;
+      case "OR":
+        node = new OrNode(updateNode, child.length);
+        children.push(...child);
+        break;
+      case "XOR":
+        node = new XOrNode(updateNode, child.length);
+        children.push(...child);
+        break;
+      case "NOT":
+        node = new NotNode();
+        children.push(child);
+        break;
+      default:
+        console.error("Operation not supported: " + operation);
+    }
+
+    if (node == undefined) {
+      return {
+        rootNode: new SimpleClauseNode(process),
+        nodes: [],
+        connections: [],
+      };
+    }
+
+    for (let i = 0; i < children.length; i++) {
+      const parsed = parseNode(children[i]);
+      nodes.push(parsed.rootNode);
+      connections.push(
+        new Connection(parsed.rootNode, "value", node, "e" + (i + 1)),
+      );
+      nodes.push(...parsed.nodes);
+      connections.push(...parsed.connections);
+    }
+
+    return { rootNode: node, nodes: nodes, connections: connections };
+  }
+
   // enables the user to select nodes
   AreaExtensions.selectableNodes(area, AreaExtensions.selector(), {
     accumulating: AreaExtensions.accumulateOnCtrl(),
@@ -58,6 +151,21 @@ export async function createEditor(container: HTMLElement) {
 
   render.addPreset(Presets.contextMenu.setup());
   render.addPreset(Presets.classic.setup());
+  render.addPreset(
+    Presets.classic.setup({
+      customize: {
+        control(data) {
+          if (data.payload instanceof LabelledInputControl) {
+            return LabelledInput;
+          }
+          if (data.payload instanceof DropdownInputControl) {
+            return DropdownInput;
+          }
+          return Presets.classic.Control;
+        },
+      },
+    }),
+  );
 
   connection.addPreset(ConnectionPresets.classic.setup());
 
@@ -80,30 +188,19 @@ export async function createEditor(container: HTMLElement) {
     return context;
   });
 
-  const s = new SolutionNode();
-  await editor.addNode(s);
+  const { nodes, connections } = parseNodes(input);
+  for (const node of nodes) {
+    await editor.addNode(node);
+  }
+  for (const connection of connections) {
+    await editor.addConnection(connection);
+  }
 
   await arrange.layout();
   AreaExtensions.zoomAt(area, editor.getNodes());
 
-  render.addPreset(
-    Presets.classic.setup({
-      customize: {
-        control(data) {
-          if (data.payload instanceof LabelledInputControl) {
-            return LabelledInput;
-          }
-          if (data.payload instanceof DropdownInputControl) {
-            return DropdownInput;
-          }
-          return Presets.classic.Control;
-        },
-      },
-    }),
-  );
-
   return {
-    get: () => engine.fetch(s.id),
+    get: () => engine.fetch(nodes[0].id),
     destroy: () => area.destroy(),
   };
 }
