@@ -33,7 +33,7 @@
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<assertj.version>3.25.3</assertj.version>
-		<commons.version>2.15.1</commons.version>
+		<commons.version>2.16.0</commons.version>
 		<equalsverifier.version>3.16</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
 		<influxdb.version>2.24</influxdb.version>
