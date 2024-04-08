@@ -21,3 +21,17 @@ Possible commands are:
 
 - `release`: Create a Gitlab release for the given project
 - `packages`: Delete old development packages for the given project
+
+## Example
+
+Clean packages
+
+```sh
+poetry run cli packages ./token.txt
+```
+
+Create a frontend release
+
+```sh
+poetry run cli release --project=frontend ./token.txt
+```

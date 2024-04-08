@@ -86,7 +86,7 @@ def create_release(gitlab_instance: str, token: str, project_id: int):
     click.echo("\n".join([mr.title for mr in breaking + others]))
     click.echo()
 
-    title = click.prompt("Release title: ")
+    title = click.prompt("Release title")
     release_notes = click.edit(_get_release_notes(breaking, others))
 
     click.echo(f"Title: {title}")
