@@ -87,7 +87,7 @@ def create_release(gitlab_instance: str, token: str, project_id: int):
     click.echo()
 
     title = click.prompt("Release title")
-    release_notes = click.edit(_get_release_notes(breaking, others))
+    release_notes = click.edit(_get_release_notes(breaking, others), require_save=False)
 
     click.echo(f"Title: {title}")
     click.echo(f"Tag: {release_tag}")
