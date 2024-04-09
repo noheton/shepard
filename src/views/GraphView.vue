@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
-import { colorCalculator } from "@/utils/colors";
+import ReferenceService from "@/services/referenceService";
 import { handleError } from "@/utils/error-handling";
 import type {
+  BasicReference,
   Collection,
   DataObject,
   ResponseError,
@@ -18,12 +19,13 @@ const route = useRoute();
 const currentCollectionId = computed<string>(() => route.params.collectionId);
 const loading = ref(false);
 
-const nodeColor = "#7fbadd";
-const parentChildColor = colorCalculator(3);
-const preSucColor = colorCalculator(0);
+const dataNodeColor = "#7fbadd"; // 5  shades lighter than $primary
+const refNodeColor = "#93d3a2"; // 5  shades lighter than $success
+const parentChildColor = "#b02a37"; // 2  shades darker than $danger
+const referenceColor = "#208537"; // 2 shades darker than $success
+const preSucColor = "#005d95"; // 2 shades darker than $primary
 const graphOptions = {
   nodes: {
-    color: nodeColor,
     shape: "box",
     shapeProperties: {
       interpolation: false,
@@ -72,24 +74,37 @@ function findChildEdge(edges: Edge[], from: number, to: number) {
   );
 }
 
-const selectedNode = ref<{ id: number; node: Node; dataObject: DataObject }>();
-const canExpand = computed(() => {
+function findReferenceEdge(edges: Edge[], from: number, to: number) {
+  return edges.find(
+    edge =>
+      edge?.from == from && edge?.to == to && edge.color == referenceColor,
+  );
+}
+
+const selectedNode = ref<{
+  id: number;
+  node: Node;
+  dataObject?: DataObject;
+  reference?: BasicReference;
+}>();
+const canExpandDataObjects = computed(() => {
   if (
     selectedNode.value?.id == undefined ||
-    selectedNode.value?.dataObject.childrenIds == undefined
+    selectedNode.value?.dataObject?.childrenIds == undefined
   )
     return false;
   const selectedId = selectedNode.value.id;
   const childrenIds = selectedNode.value.dataObject.childrenIds;
   const connectedEdges = getConnectedEdges(selectedId);
   return childrenIds.some(
-    childId => findChildEdge(connectedEdges, childId, selectedId) == undefined,
+    childId => findChildEdge(connectedEdges, selectedId, childId) == undefined,
   );
 });
-const canCollapse = computed(() => {
+
+const canCollapseDataObjects = computed(() => {
   if (
     selectedNode.value?.id == undefined ||
-    selectedNode.value?.dataObject.childrenIds == undefined
+    selectedNode.value?.dataObject?.childrenIds == undefined
   )
     return false;
   const selectedId = selectedNode.value.id;
@@ -99,7 +114,40 @@ const canCollapse = computed(() => {
     childrenIds.length > 0 &&
     childrenIds.every(
       childId =>
-        findChildEdge(connectedEdges, childId, selectedId) != undefined,
+        findChildEdge(connectedEdges, selectedId, childId) != undefined,
+    )
+  );
+});
+
+const canExpandReferences = computed(() => {
+  if (
+    selectedNode.value?.id == undefined ||
+    selectedNode.value?.dataObject?.referenceIds == undefined
+  )
+    return false;
+  const selectedId = selectedNode.value.id;
+  const referenceIds = selectedNode.value.dataObject.referenceIds;
+  const connectedEdges = getConnectedEdges(selectedId);
+  return referenceIds.some(
+    referenceId =>
+      findReferenceEdge(connectedEdges, selectedId, referenceId) == undefined,
+  );
+});
+
+const canCollapseReferences = computed(() => {
+  if (
+    selectedNode.value?.id == undefined ||
+    selectedNode.value?.dataObject?.referenceIds == undefined
+  )
+    return false;
+  const selectedId = selectedNode.value.id;
+  const referenceIds = selectedNode.value.dataObject.referenceIds;
+  const connectedEdges = getConnectedEdges(selectedId);
+  return (
+    referenceIds.length > 0 &&
+    referenceIds.every(
+      childId =>
+        findReferenceEdge(connectedEdges, selectedId, childId) != undefined,
     )
   );
 });
@@ -159,7 +207,33 @@ function fetchDataObjects() {
       handleError(e as ResponseError, "fetching data objects");
     })
     .finally(() => {
-      addNodes(rootObjects);
+      addDataNodes(rootObjects);
+      loading.value = false;
+    });
+}
+
+const references = ref<Map<number, BasicReference>>(new Map());
+function fetchReferences(dataObjectId: number) {
+  loading.value = true;
+  const refObjects = new Array<BasicReference>();
+  ReferenceService.getAllReferences({
+    collectionId: +currentCollectionId.value,
+    dataObjectId: dataObjectId,
+  })
+    .then(response => {
+      response.forEach(obj => {
+        if (obj.id) {
+          references.value.set(obj.id, obj);
+          refObjects.push(obj);
+        }
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching references");
+    })
+    .finally(() => {
+      addReferenceNodes(refObjects);
+      updateSelectedNode(dataObjectId);
       loading.value = false;
     });
 }
@@ -174,7 +248,7 @@ function addDataObjects(parentId?: number) {
     const obj = dataObjects.value.get(objId);
     if (obj?.id && !nodes.get(obj.id)) nodesToAdd.push(obj);
   });
-  addNodes(nodesToAdd);
+  addDataNodes(nodesToAdd);
   updateSelectedNode(parentId);
 }
 
@@ -192,8 +266,22 @@ function removeDataObjects(parentId: number) {
   edges.remove(edgesToRemove);
   updateSelectedNode(parentId);
 }
+function removeReferences(dataObjectId: number) {
+  const nodesToRemove = new Array<IdType>();
+  const edgesToRemove = new Array<IdType>();
 
-function addNodes(newObjects: DataObject[]) {
+  const dataObject = dataObjects.value.get(dataObjectId);
+  dataObject?.referenceIds?.forEach(objId => {
+    nodesToRemove.push(objId);
+    edgesToRemove.push(...network.getConnectedEdges(objId));
+  });
+
+  nodes.remove(nodesToRemove);
+  edges.remove(edgesToRemove);
+  updateSelectedNode(dataObjectId);
+}
+
+function addDataNodes(newObjects: DataObject[]) {
   const tmpNodes = new Array<Node>();
   const tmpEdges = new Array<Edge>();
 
@@ -202,11 +290,12 @@ function addNodes(newObjects: DataObject[]) {
       id: obj.id,
       label: obj.name || "",
       physics: true,
+      color: dataNodeColor,
     });
     if (obj.parentId)
       tmpEdges.push({
-        from: obj.id,
-        to: obj.parentId,
+        from: obj.parentId,
+        to: obj.id,
         color: parentChildColor,
       });
     obj.predecessorIds?.forEach(pre => {
@@ -214,6 +303,27 @@ function addNodes(newObjects: DataObject[]) {
     });
   });
 
+  nodes.add(tmpNodes);
+  edges.add(tmpEdges);
+}
+
+function addReferenceNodes(newReferences: BasicReference[]) {
+  const tmpNodes = new Array<Node>();
+  const tmpEdges = new Array<Edge>();
+
+  newReferences.forEach(obj => {
+    tmpNodes.push({
+      id: obj.id,
+      label: obj.name || "",
+      physics: true,
+      color: refNodeColor,
+    });
+    tmpEdges.push({
+      from: obj.dataObjectId,
+      to: obj.id,
+      color: referenceColor,
+    });
+  });
   nodes.add(tmpNodes);
   edges.add(tmpEdges);
 }
@@ -235,7 +345,7 @@ function reset() {
   for (const obj of dataObjects.value.values()) {
     if (obj.parentId == undefined) rootObjects.push(obj);
   }
-  addNodes(rootObjects);
+  addDataNodes(rootObjects);
   updateSelectedNode();
 }
 
@@ -258,12 +368,14 @@ function updateSelectedNode(id?: number) {
   } else {
     network.selectNodes([id]);
     const obj = dataObjects.value.get(id);
+    const ref = references.value.get(id);
     const node = nodes.get(id);
-    if (obj && node)
+    if (node && (obj || ref))
       selectedNode.value = {
         id: id,
         node: node,
         dataObject: obj,
+        reference: ref,
       };
   }
 }
@@ -281,12 +393,9 @@ onMounted(() => {
       <b-row>
         <b-col cols="3">
           <h3>{{ collection?.name }}</h3>
-          <div v-if="selectedNode">
-            <div class="mb-3">
-              <p>
-                ID: <b>{{ selectedNode.id }}</b>
-              </p>
-              <p>
+          <div class="mb-5">
+            <div>
+              <div v-if="selectedNode?.dataObject">
                 Name:
                 <b-link
                   :to="{
@@ -299,33 +408,84 @@ onMounted(() => {
                 >
                   {{ selectedNode.dataObject.name || "" }}
                 </b-link>
-              </p>
+                <div>
+                  ID: <b>{{ selectedNode.id }}</b>
+                </div>
+
+                <b-button-group class="mt-3" vertical>
+                  <b-button
+                    v-if="canExpandDataObjects"
+                    @click="addDataObjects(selectedNode.id)"
+                  >
+                    Show Data Objects
+                  </b-button>
+                  <b-button
+                    v-if="canCollapseDataObjects"
+                    @click="removeDataObjects(selectedNode.id)"
+                  >
+                    Hide Data Objects
+                  </b-button>
+
+                  <b-button
+                    v-if="canExpandReferences"
+                    @click="fetchReferences(selectedNode.id)"
+                  >
+                    Show References
+                  </b-button>
+                  <b-button
+                    v-if="canCollapseReferences"
+                    @click="removeReferences(selectedNode.id)"
+                  >
+                    Hide References
+                  </b-button>
+                  <b-button
+                    v-if="selectedNode.node.physics"
+                    @click="setPhysics(selectedNode.id, false)"
+                  >
+                    Pin
+                  </b-button>
+                  <b-button v-else @click="setPhysics(selectedNode.id, true)">
+                    Unpin
+                  </b-button>
+                </b-button-group>
+              </div>
+
+              <div v-else-if="selectedNode?.reference">
+                Name:
+                <b-link
+                  :to="{
+                    name: 'Reference',
+                    params: {
+                      collectionId: currentCollectionId,
+                      dataObjectId: selectedNode?.reference.dataObjectId,
+                    },
+                  }"
+                >
+                  {{ selectedNode.reference.name || "" }}
+                </b-link>
+                <div>
+                  ID: <b>{{ selectedNode.id }}</b>
+                </div>
+                <div>
+                  Type: <b>{{ selectedNode.reference.type }}</b>
+                </div>
+                <b-button-group class="mt-3" vertical>
+                  <b-button
+                    v-if="selectedNode.node.physics"
+                    @click="setPhysics(selectedNode.id, false)"
+                  >
+                    Pin
+                  </b-button>
+                  <b-button v-else @click="setPhysics(selectedNode.id, true)">
+                    Unpin
+                  </b-button>
+                </b-button-group>
+              </div>
+
+              <div v-else class="mb-3">Select a node...</div>
             </div>
-            <b-button-group class="mb-3" vertical>
-              <b-button
-                v-if="canExpand"
-                @click="addDataObjects(selectedNode.id)"
-              >
-                Expand
-              </b-button>
-              <b-button
-                v-if="canCollapse"
-                @click="removeDataObjects(selectedNode.id)"
-              >
-                Collapse
-              </b-button>
-              <b-button
-                v-if="selectedNode.node.physics"
-                @click="setPhysics(selectedNode.id, false)"
-              >
-                Pin
-              </b-button>
-              <b-button v-else @click="setPhysics(selectedNode.id, true)">
-                Unpin
-              </b-button>
-            </b-button-group>
           </div>
-          <div v-else class="mb-3">Select a node...</div>
+
           <b-button-group class="mb-3" vertical>
             <b-button @click="addDataObjects()">Expand All</b-button>
             <b-button @click="unpinAll()">Unpin All</b-button>
