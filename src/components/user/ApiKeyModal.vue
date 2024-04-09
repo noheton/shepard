@@ -15,20 +15,14 @@ const vm = getCurrentInstance();
 
 const backendUrl = ref<string>(getEnv("VITE_BACKEND"));
 
+const { isSupported, copy } = useClipboard();
+
 watch(
   () => props.createdApiKey,
   () => {
     if (props.createdApiKey) vm?.proxy.$bvModal.show("created-apikey-modal");
   },
 );
-
-function copyApiKey() {
-  if (!props.createdApiKey || !props.createdApiKey.jwt) return;
-  useClipboard().copy(props.createdApiKey.jwt);
-}
-function copyBackendUrl() {
-  useClipboard().copy(backendUrl.value);
-}
 </script>
 
 <template>
@@ -39,22 +33,34 @@ function copyBackendUrl() {
     ok-only
     @ok="$emit('ok')"
   >
-    <div v-if="createdApiKey && createdApiKey.jwt">
+    <div v-if="createdApiKey?.jwt">
       Successfully created Api Key named <em> {{ createdApiKey.name }} </em> !
-      <code>
-        {{ createdApiKey.jwt.substring(0, 50) + "... " }}
-      </code>
-      <b-link title="Copy Api Key" class="float-right" @click="copyApiKey()">
-        <CopyIcon />
-      </b-link>
+      <div v-if="isSupported">
+        <code>
+          {{ createdApiKey.jwt.substring(0, 50) + "... " }}
+        </code>
+        <b-link
+          title="Copy Api Key"
+          class="float-right"
+          @click="copy(createdApiKey.jwt)"
+        >
+          <CopyIcon />
+        </b-link>
+      </div>
+      <div v-else>
+        <code>
+          {{ createdApiKey.jwt }}
+        </code>
+      </div>
     </div>
     <div>
       The shepard backend can be reached via the following URL
       <code>{{ backendUrl }}</code>
       <b-link
+        v-if="isSupported"
         title="Copy Backend URL"
         class="float-right"
-        @click="copyBackendUrl()"
+        @click="copy(backendUrl)"
       >
         <CopyIcon />
       </b-link>
