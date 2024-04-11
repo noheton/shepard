@@ -56,7 +56,7 @@
     },
     {
       "matchPackageNames": [
-        "eslint/eslint"
+        "eslint"
       ],
       "allowedVersions": "<9"
     },
