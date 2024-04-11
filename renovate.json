@@ -61,6 +61,12 @@
       "allowedVersions": "<0.2"
     },
     {
+      "matchPackageNames": [
+        "eslint/eslint"
+      ],
+      "allowedVersions": "<9"
+    },
+    {
       "matchSourceUrls": [
         "https://github.com/vuejs/language-tools"
       ],
