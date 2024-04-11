@@ -44,12 +44,6 @@
     },
     {
       "matchPackageNames": [
-        "sass"
-      ],
-      "allowedVersions": "<1.65"
-    },
-    {
-      "matchPackageNames": [
         "typescript"
       ],
       "allowedVersions": "<5"
