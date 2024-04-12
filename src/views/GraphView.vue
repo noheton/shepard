@@ -380,6 +380,18 @@ function updateSelectedNode(id?: number) {
   }
 }
 
+function getTabId(reference: BasicReference) {
+  const tabIds: { [key: string]: number } = {
+    TimeseriesReference: 0,
+    StructuredDataReference: 1,
+    FileReference: 2,
+    URIReference: 3,
+    CollectionReference: 4,
+    DataObjectReference: 5,
+  };
+  return reference.type ? tabIds[reference.type] : 0;
+}
+
 onMounted(() => {
   initGraph();
   fetchCollection();
@@ -454,10 +466,14 @@ onMounted(() => {
                 Name:
                 <b-link
                   :to="{
-                    name: 'Reference',
+                    name: 'DataObject',
                     params: {
                       collectionId: currentCollectionId,
-                      dataObjectId: selectedNode?.reference.dataObjectId,
+                      dataObjectId: selectedNode.reference.dataObjectId,
+                    },
+                    query: {
+                      tabId: getTabId(selectedNode.reference),
+                      referenceId: selectedNode.reference.id,
                     },
                   }"
                 >
