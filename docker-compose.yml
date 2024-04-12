@@ -1,4 +1,3 @@
-version: "3"
 services:
   backend:
     image: registry.gitlab.com/dlr-shepard/backend:latest
