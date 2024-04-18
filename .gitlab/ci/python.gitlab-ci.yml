@@ -1,7 +1,7 @@
 .build_python: &build_python
   stage: build_clients
   image:
-    name: openapitools/openapi-generator-cli:v7.5.0
+    name: openapitools/openapi-generator-cli:v7.4.0
     entrypoint: [""]
   needs: [build]
   dependencies: [build]
