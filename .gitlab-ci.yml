@@ -181,7 +181,7 @@ openapi-diff:
   allow_failure: true
 
 .upload_docker: &upload_docker
-  image: docker:26.0
+  image: docker:26.1
   stage: upload
   needs: [build]
   dependencies: [build]
