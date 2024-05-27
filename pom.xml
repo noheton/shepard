@@ -49,7 +49,7 @@
 		<opencsv.version>5.9</opencsv.version>
 		<restassured.version>5.4.0</restassured.version>
 		<swagger.version>2.2.22</swagger.version>
-		<tomcat.version>10.1.23</tomcat.version>
+		<tomcat.version>10.1.24</tomcat.version>
 	</properties>
 	<profiles>
 		<profile>
