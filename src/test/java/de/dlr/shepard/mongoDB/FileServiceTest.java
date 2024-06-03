@@ -182,7 +182,7 @@ public class FileServiceTest extends BaseTestCase {
 
 		when(database.getCollection(existingMongoOid)).thenReturn(collection);
 		when(collection.find()).thenReturn(collectionReturn);
-		when(doc.getString("FileMongoId")).thenReturn(oid.toString());
+		when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 
 		var result = fileService.deleteFileContainer(existingMongoOid);
 		assertTrue(result);
@@ -216,14 +216,14 @@ public class FileServiceTest extends BaseTestCase {
 		when(database.getCollection(containerId)).thenReturn(collection);
 		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
 		when(collectionReturn.first()).thenReturn(doc);
-		when(doc.getString("FileMongoId")).thenReturn(oid.toString());
+		when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 		when(doc.getString("name")).thenReturn(fileName);
 		when(gridBucket.openDownloadStream(oid)).thenReturn(stream);
 		when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
 		when(filesCollectionReturn.first()).thenReturn(gridFsFile);
 		when(gridFsFile.getLength()).thenReturn(fileSize);
 
-		var expected = new NamedInputStream(stream, fileName, fileSize);
+		var expected = new NamedInputStream(oid.toHexString(), stream, fileName, fileSize);
 		var result = fileService.getPayload(containerId, fileoid);
 		assertEquals(expected, result);
 	}
@@ -265,7 +265,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
 		when(doc.getString("FileMongoId")).thenReturn(fileOid);
 
-		var result = fileService.deleteFile(mongoOid, oid.toString());
+		var result = fileService.deleteFile(mongoOid, oid.toHexString());
 		assertTrue(result);
 		verify(gridBucket).delete(new ObjectId(fileOid));
 	}
@@ -277,7 +277,7 @@ public class FileServiceTest extends BaseTestCase {
 
 		doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
 
-		var result = fileService.deleteFile(mongoOid, oid.toString());
+		var result = fileService.deleteFile(mongoOid, oid.toHexString());
 		assertFalse(result);
 	}
 
@@ -289,7 +289,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(database.getCollection(mongoOid)).thenReturn(collection);
 		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
-		var result = fileService.deleteFile(mongoOid, oid.toString());
+		var result = fileService.deleteFile(mongoOid, oid.toHexString());
 		assertTrue(result);
 	}
 

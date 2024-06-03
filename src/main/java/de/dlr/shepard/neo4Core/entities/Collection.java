@@ -14,18 +14,16 @@ import lombok.ToString;
 
 @NodeEntity
 @Data
-@ToString(callSuper = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 public class Collection extends AbstractDataObject {
 
 	@Relationship(type = Constants.HAS_DATAOBJECT)
 	private List<DataObject> dataObjects = new ArrayList<>();
 
-	@ToString.Exclude
 	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
 	private List<CollectionReference> incoming = new ArrayList<>();
 
-	@ToString.Exclude
 	@Relationship(type = Constants.HAS_PERMISSIONS)
 	private Permissions permissions;
 

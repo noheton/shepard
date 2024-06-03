@@ -14,7 +14,7 @@ import lombok.ToString;
 
 @NodeEntity
 @Data
-@ToString(callSuper = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 public class DataObject extends AbstractDataObject {
 
@@ -36,7 +36,6 @@ public class DataObject extends AbstractDataObject {
 	@Relationship(type = Constants.HAS_CHILD, direction = Relationship.INCOMING)
 	private DataObject parent;
 
-	@ToString.Exclude
 	@Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
 	private List<DataObjectReference> incoming = new ArrayList<>();
 

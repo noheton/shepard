@@ -103,4 +103,15 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 		return reference.getFiles();
 	}
 
+	public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
+		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
+		var container = reference.getFileContainer();
+		if (!permissionsUtil.isAllowed(container.getId(), AccessType.Read, username))
+			throw new InvalidAuthException();
+
+		var result = reference.getFiles().stream().map(f -> fileService.getPayload(container.getMongoId(), f.getOid()))
+				.toList();
+		return result;
+	}
+
 }

@@ -25,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CsvConverter {
 
 	public InputStream convertToCsv(List<TimeseriesPayload> payloads) throws IOException {
+		// TODO: Avoid writing files
+
 		var tmpfile = Files.createTempFile("shepard", ".csv");
 		var stream = Files.newOutputStream(tmpfile);
 		var streamWriter = new OutputStreamWriter(stream);

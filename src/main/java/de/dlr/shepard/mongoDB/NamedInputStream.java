@@ -7,6 +7,8 @@ import lombok.Value;
 @Value
 public class NamedInputStream {
 
+	private String oid;
+
 	private InputStream inputStream;
 
 	private String name;

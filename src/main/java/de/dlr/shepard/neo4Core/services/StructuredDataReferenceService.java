@@ -116,6 +116,7 @@ public class StructuredDataReferenceService
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+			// TODO: Should we throw an InvalidAuthException here?
 			return structuredDatas.stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
 		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
 		for (var structuredData : structuredDatas) {

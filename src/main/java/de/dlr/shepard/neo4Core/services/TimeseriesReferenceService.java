@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.services;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -131,6 +132,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 
 		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
+	}
+
+	public InputStream exportTimeseriesPayloadByShepardId(long timeseriesId, String username) throws IOException {
+		return exportTimeseriesPayloadByShepardId(timeseriesId, null, null, null, Collections.emptySet(),
+				Collections.emptySet(), Collections.emptySet(), username);
 	}
 
 }

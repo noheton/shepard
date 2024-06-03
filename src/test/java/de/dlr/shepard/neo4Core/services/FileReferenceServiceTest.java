@@ -294,11 +294,13 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		FileReference ref = new FileReference(1L);
 		ref.setShepardId(15L);
 		ref.setFileContainer(container);
-		NamedInputStream result = new NamedInputStream(null, "myInputStream", 123L);
+		NamedInputStream result = new NamedInputStream(fileOID, null, "myInputStream", 123L);
+
 		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
 		when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
 		NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username);
+
 		assertEquals(result, actual);
 	}
 
@@ -312,8 +314,41 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		ref.setFileContainer(container);
 		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(permissionsUtil.isAllowed(20L, AccessType.Read, username)).thenReturn(false);
-		assertThrows(InvalidAuthException.class,
-				() -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username));
+		assertThrows(InvalidAuthException.class, () -> service.getPayloadByShepardId(15L, "oid", username));
+	}
+
+	@Test
+	public void getAllPayloadsByShepardIdTest() {
+		String username = "123";
+		FileContainer container = new FileContainer(20L);
+		container.setMongoId("mongoId");
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		ref.setFileContainer(container);
+		ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
+		var nis1 = new NamedInputStream("oid1", null, "myInputStream", 123L);
+		var nis2 = new NamedInputStream("oid1", null, "mySecondStream", 124L);
+
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
+		when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(nis2);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+		assertEquals(List.of(nis1, nis2), actual);
+	}
+
+	@Test
+	public void getAllPayloadsByShepardIdTest_NotAllowed() {
+		String username = "Xrj§84eEi6fY?";
+		FileContainer container = new FileContainer(20L);
+		container.setMongoId("mongoId");
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		ref.setFileContainer(container);
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(20L, AccessType.Read, username)).thenReturn(false);
+		assertThrows(InvalidAuthException.class, () -> service.getAllPayloadsByShepardId(15L, username));
 	}
 
 	@Test

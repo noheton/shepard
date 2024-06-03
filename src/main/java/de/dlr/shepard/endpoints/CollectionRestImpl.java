@@ -1,9 +1,11 @@
 package de.dlr.shepard.endpoints;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.export.ExportService;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
@@ -33,6 +35,7 @@ import jakarta.ws.rs.core.SecurityContext;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CollectionRestImpl implements CollectionRest {
 	private CollectionService collectionService = new CollectionService();
+	private ExportService exportService = new ExportService();
 	private PermissionsService permissionsService = new PermissionsService();
 
 	@Context
@@ -123,6 +126,19 @@ public class CollectionRestImpl implements CollectionRest {
 		var roles = new PermissionsUtil().getRolesByShepardId(collectionId,
 				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.EXPORT)
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	@Override
+	public Response exportCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) throws IOException {
+
+		var is = exportService.exportCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName());
+		return is != null
+				? Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
+						.header("Content-Disposition", "attachment; filename=\"export.zip\"").build()
+				: Response.status(Status.NOT_FOUND).build();
 	}
 
 }

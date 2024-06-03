@@ -1,5 +1,7 @@
 package de.dlr.shepard.endpoints;
 
+import java.io.IOException;
+
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
@@ -13,6 +15,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public interface CollectionRest {
@@ -67,5 +70,11 @@ public interface CollectionRest {
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
 	Response getCollectionRoles(long collectionId);
+
+	@Tag(name = Constants.COLLECTION)
+	@Operation(description = "Export Collection as RoCrate")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM, schema = @Schema(type = "string", format = "binary")))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response exportCollection(long collectionId) throws IOException;
 
 }

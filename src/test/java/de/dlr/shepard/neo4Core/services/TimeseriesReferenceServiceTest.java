@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -256,7 +257,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		assertThrows(InvalidBodyException.class,
-				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
+				() -> service.createReferenceByShepardId(2005L, input, user.getUsername()));
 	}
 
 	@Test
@@ -279,7 +280,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
 		assertThrows(InvalidBodyException.class,
-				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
+				() -> service.createReferenceByShepardId(2005L, input, user.getUsername()));
 	}
 
 	@Test
@@ -301,7 +302,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesContainerDAO.findLightByNeo4jId(containerShepardId)).thenReturn(null);
 		assertThrows(InvalidBodyException.class,
-				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
+				() -> service.createReferenceByShepardId(2005L, input, user.getUsername()));
 	}
 
 	@Test
@@ -373,7 +374,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
 		assertThrows(InvalidAuthException.class,
-				() -> service.getTimeseriesPayloadByShepardId(ref.getShepardId(), SingleValuedUnaryFunction.MEAN, 10L,
+				() -> service.getTimeseriesPayloadByShepardId(15L, SingleValuedUnaryFunction.MEAN, 10L,
 						FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username));
 	}
 
@@ -406,6 +407,33 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void exportByShepardIdTest_lessParams() throws IOException, InvalidAuthException {
+		String username = "Gina Wild";
+		ByteArrayInputStream is = new ByteArrayInputStream("Hello World".getBytes());
+		TimeseriesContainer container = new TimeseriesContainer(2L);
+		container.setDatabase("Database");
+		Timeseries ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+		TimeseriesReference ref = new TimeseriesReference() {
+			{
+				setId(1L);
+				setShepardId(15L);
+				setEnd(321);
+				setStart(123);
+				setTimeseries(List.of(ts));
+				setTimeseriesContainer(container);
+
+			}
+		};
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), container.getDatabase(),
+				List.of(ts), null, null, null, Collections.emptySet(), Collections.emptySet(), Collections.emptySet()))
+				.thenReturn(is);
+		var actual = service.exportTimeseriesPayloadByShepardId(ref.getShepardId(), username);
+		assertEquals(is, actual);
+	}
+
+	@Test
 	public void exportByShepardIdTest_notAllowed() throws IOException, InvalidAuthException {
 		String username = "Alektra Blue";
 		TimeseriesContainer container = new TimeseriesContainer(2L);
@@ -425,8 +453,8 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
 		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
 		assertThrows(InvalidAuthException.class,
-				() -> service.exportTimeseriesPayloadByShepardId(ref.getShepardId(), SingleValuedUnaryFunction.MEAN,
-						10L, FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username));
+				() -> service.exportTimeseriesPayloadByShepardId(15L, SingleValuedUnaryFunction.MEAN, 10L,
+						FillOption.LINEAR, Set.of("dev"), Set.of("loc"), Set.of("name"), username));
 	}
 
 }

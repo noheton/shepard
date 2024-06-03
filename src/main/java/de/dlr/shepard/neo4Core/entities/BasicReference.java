@@ -11,11 +11,10 @@ import lombok.ToString;
 
 @NodeEntity
 @Data
-@ToString(callSuper = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 public class BasicReference extends VersionableEntity {
 
-	@ToString.Exclude
 	@Relationship(type = Constants.HAS_REFERENCE, direction = Relationship.INCOMING)
 	private DataObject dataObject;
 
