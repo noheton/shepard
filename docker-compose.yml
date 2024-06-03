@@ -113,7 +113,7 @@ services:
       - influxdata
 
   chronograf:
-    image: chronograf:alpine
+    image: chronograf:1.9-alpine
     environment:
       INFLUXDB_URL: http://influxdb:8086
       INFLUXDB_USERNAME: admin
