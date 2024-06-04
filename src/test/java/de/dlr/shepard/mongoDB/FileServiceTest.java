@@ -223,7 +223,7 @@ public class FileServiceTest extends BaseTestCase {
 		when(filesCollectionReturn.first()).thenReturn(gridFsFile);
 		when(gridFsFile.getLength()).thenReturn(fileSize);
 
-		var expected = new NamedInputStream(oid.toHexString(), stream, fileName, fileSize);
+		var expected = new NamedInputStream(fileoid, stream, fileName, fileSize);
 		var result = fileService.getPayload(containerId, fileoid);
 		assertEquals(expected, result);
 	}

@@ -13,12 +13,14 @@ import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.neo4Core.services.BasicReferenceService;
 import de.dlr.shepard.neo4Core.services.CollectionService;
 import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
+import de.dlr.shepard.neo4Core.services.URIReferenceService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,6 +32,7 @@ public class ExportService {
 	private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();
 	private FileReferenceService fileReferenceService = new FileReferenceService();
 	private StructuredDataReferenceService structuredDataReferenceService = new StructuredDataReferenceService();
+	private URIReferenceService uriReferenceService = new URIReferenceService();
 
 	public InputStream exportCollectionByShepardId(long collectionId, String username) throws IOException {
 		var collection = collectionService.getCollectionByShepardId(collectionId);
@@ -45,12 +48,14 @@ public class ExportService {
 		var dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
 		builder.addDataObject(dataObject);
 
+		// TODO: Add more types, maybe improve (StrategyPattern?)
 		for (var reference : dataObject.getReferences()) {
 			switch (reference.getType()) {
 			case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(builder, reference.getShepardId(), username);
 			case "FileReference" -> fetchAndWriteFileReference(builder, reference.getShepardId(), username);
 			case "StructuredDataReference" ->
 				fetchAndWriteStructuredDataReference(builder, reference.getShepardId(), username);
+			case "URIReference" -> fetchAndWriteUriReference(builder, reference.getShepardId(), username);
 			default -> fetchAndWriteBasicReference(builder, reference.getShepardId());
 			}
 		}
@@ -111,6 +116,13 @@ public class ExportService {
 		}
 	}
 
+	private void fetchAndWriteUriReference(ExportBuilder builder, long referenceId, String username)
+			throws IOException {
+		var reference = uriReferenceService.getReferenceByShepardId(referenceId);
+
+		builder.addReference(new URIReferenceIO(reference), reference.getCreatedBy());
+	}
+
 	private void fetchAndWriteBasicReference(ExportBuilder builder, long referenceId) throws IOException {
 		var reference = basicReferenceService.getReferenceByShepardId(referenceId);
 
@@ -121,7 +133,7 @@ public class ExportService {
 		var nameSplitted = nis.getName().split("\\.", 2);
 		var filename = nameSplitted.length > 1 ? nis.getOid() + "." + nameSplitted[1] : nis.getOid();
 
-		builder.addPayload(nis.getInputStream(), filename, nis.getName());
+		builder.addPayload(nis.getInputStream().readAllBytes(), filename, nis.getName());
 	}
 
 	private void writeStructuredDataPayload(ExportBuilder builder, StructuredDataPayload sdp) throws IOException {
@@ -135,7 +147,7 @@ public class ExportService {
 			throws IOException {
 		var filename = reference.getUniqueId() + ExportConstants.CSV_FILE_EXTENSION;
 
-		builder.addPayload(payload, filename, reference.getName(), "text/csv");
+		builder.addPayload(payload.readAllBytes(), filename, reference.getName(), "text/csv");
 	}
 
 }

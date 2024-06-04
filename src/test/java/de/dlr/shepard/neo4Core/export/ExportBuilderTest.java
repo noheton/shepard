@@ -3,7 +3,6 @@ package de.dlr.shepard.neo4Core.export;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
@@ -60,32 +59,13 @@ public class ExportBuilderTest extends BaseTestCase {
 	}
 
 	@Test
-	public void testAddPayload_streamPlusFormat() throws IOException {
+	public void testAddPayload_bytes() throws IOException {
 		var user = new User("bob");
 		var collection = getCollection(user);
 		var builder = new ExportBuilder(collection);
 
-		byte[] source = new byte[0];
-		var bis = new ByteArrayInputStream(source);
-
-		builder.addPayload(bis, "file", "name", "text/csv");
-
-		var crate = builder.getBuilder().build();
-		var entity = crate.getEntityById("file");
-		assertEquals("name", entity.getProperty("name").asText());
-		assertEquals("text/csv", entity.getProperty("encodingFormat").asText());
-	}
-
-	@Test
-	public void testAddPayload_stream() throws IOException {
-		var user = new User("bob");
-		var collection = getCollection(user);
-		var builder = new ExportBuilder(collection);
-
-		byte[] source = new byte[0];
-		var bis = new ByteArrayInputStream(source);
-
-		builder.addPayload(bis, "file", "name");
+		byte[] bytes = new byte[0];
+		builder.addPayload(bytes, "file", "name");
 
 		var crate = builder.getBuilder().build();
 		var entity = crate.getEntityById("file");

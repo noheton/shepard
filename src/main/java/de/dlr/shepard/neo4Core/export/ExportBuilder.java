@@ -8,7 +8,9 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,7 +30,9 @@ import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ExportBuilder {
 
 	private ObjectMapper objectMapper = new ObjectMapper();
@@ -37,10 +41,12 @@ public class ExportBuilder {
 	private RoCrateBuilder builder;
 	private ByteArrayOutputStream baos;
 	private ZipOutputStream zos;
+	private List<String> entries;
 
 	public ExportBuilder(Collection collection) throws IOException {
 		baos = new ByteArrayOutputStream();
 		zos = new ZipOutputStream(baos);
+		entries = new ArrayList<>();
 
 		var roCrateName = collection.getName() + " Research Object Crate";
 		var roCrateDescription = "Research Object Crate representing the shepard Collection " + collection.getName();
@@ -65,28 +71,15 @@ public class ExportBuilder {
 		return this;
 	}
 
-	public ExportBuilder addPayload(InputStream payload, String filename, String name, String encodingFormat)
-			throws IOException {
-		zos.putNextEntry(new ZipEntry(filename));
-		zos.write(payload.readAllBytes());
-
-		builder.addDataEntity(createFileEntityBuilder(filename, name, encodingFormat).build());
-		return this;
-	}
-
-	public ExportBuilder addPayload(InputStream payload, String filename, String name) throws IOException {
-		zos.putNextEntry(new ZipEntry(filename));
-		zos.write(payload.readAllBytes());
-
+	public ExportBuilder addPayload(byte[] payload, String filename, String name) throws IOException {
+		addToZip(filename, payload);
 		builder.addDataEntity(createFileEntityBuilder(filename, name).build());
 		return this;
 	}
 
 	public ExportBuilder addPayload(byte[] payload, String filename, String name, String encodingFormat)
 			throws IOException {
-		zos.putNextEntry(new ZipEntry(filename));
-		zos.write(payload);
-
+		addToZip(filename, payload);
 		builder.addDataEntity(createFileEntityBuilder(filename, name, encodingFormat).build());
 		return this;
 	}
@@ -103,9 +96,9 @@ public class ExportBuilder {
 
 	public InputStream build() throws IOException {
 		var roCrate = builder.build();
-		zos.putNextEntry(new ZipEntry(ExportConstants.ROCRATE_METADATA));
 		Object jsonObject = objectMapper.readValue(roCrate.getJsonMetadata(), Object.class);
-		zos.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(jsonObject));
+		byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(jsonObject);
+		addToZip(ExportConstants.ROCRATE_METADATA, bytes);
 		zos.close();
 
 		return new ByteArrayInputStream(baos.toByteArray());
@@ -130,8 +123,8 @@ public class ExportBuilder {
 	}
 
 	private void writeEntityToZip(String filename, Object entity) throws IOException {
-		zos.putNextEntry(new ZipEntry(filename));
-		zos.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(entity));
+		var bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(entity);
+		addToZip(filename, bytes);
 	}
 
 	private static FileEntityBuilder createFileEntityBuilder(String filename, String name) {
@@ -166,6 +159,18 @@ public class ExportBuilder {
 	private static String convertToIsoDate(Date dateToConvert) {
 		var localDateTime = LocalDateTime.ofInstant(dateToConvert.toInstant(), ZoneId.systemDefault());
 		return DateTimeFormatter.ISO_DATE_TIME.format(localDateTime);
+	}
+
+	private void addToZip(String filename, byte[] bytes) throws IOException {
+		if (entries.contains(filename)) {
+			log.warn("{} already in zip file, skipping", filename);
+			return;
+		}
+
+		zos.putNextEntry(new ZipEntry(filename));
+		zos.write(bytes);
+		zos.closeEntry();
+		entries.add(filename);
 	}
 
 }

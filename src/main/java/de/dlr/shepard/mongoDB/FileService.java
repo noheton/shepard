@@ -84,7 +84,7 @@ public class FileService {
 		var gridFsFile = gridBucket.find(eq(ID_ATTR, fileId)).first();
 		var inputStream = gridBucket.openDownloadStream(fileId);
 
-		return new NamedInputStream(fileId.toHexString(), inputStream, filename, gridFsFile.getLength());
+		return new NamedInputStream(fileoid, inputStream, filename, gridFsFile.getLength());
 	}
 
 	public ShepardFile getFile(String containerId, String fileoid) {

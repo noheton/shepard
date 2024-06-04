@@ -23,6 +23,7 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
+import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
@@ -34,6 +35,7 @@ import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
+import de.dlr.shepard.neo4Core.services.URIReferenceService;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.util.DateHelper;
 
@@ -61,6 +63,9 @@ public class ExportServiceTest extends BaseTestCase {
 
 	@Mock
 	private StructuredDataReferenceService structuredDataReferenceService;
+
+	@Mock
+	private URIReferenceService uriReferenceService;
 
 	@InjectMocks
 	private ExportService service;
@@ -96,6 +101,28 @@ public class ExportServiceTest extends BaseTestCase {
 		var reference = hydrateReferenceMock(mock(BasicReference.class), "BasicReference");
 		dataObject.addReference(reference);
 		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+
+		var mockStream = mock(InputStream.class);
+		try (var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
+			when(mock.build()).thenReturn(mockStream);
+		});) {
+
+			var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+
+			var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+			verify(exportBuilderMock).addReference(any(BasicReferenceIO.class), eq(user));
+			verify(exportBuilderMock).addDataObject(dataObject);
+
+			assertEquals(1, exportBuilderMockController.constructed().size());
+			assertEquals(mockStream, actual);
+		}
+	}
+
+	@Test
+	public void exportTest_uriReference() throws IOException {
+		var reference = hydrateReferenceMock(mock(URIReference.class), "URIReference");
+		dataObject.addReference(reference);
+		when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
 		var mockStream = mock(InputStream.class);
 		try (var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
