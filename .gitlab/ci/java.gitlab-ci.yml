@@ -1,7 +1,7 @@
 .build_java: &build_java
   stage: build_clients
   image:
-    name: openapitools/openapi-generator-cli:v7.6.0
+    name: openapitools/openapi-generator-cli:v7.4.0
     entrypoint: [""]
   needs: [build]
   dependencies: [build]
