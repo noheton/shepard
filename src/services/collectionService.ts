@@ -3,6 +3,7 @@ import {
   type CreateCollectionRequest,
   type DeleteCollectionRequest,
   type EditCollectionPermissionsRequest,
+  type ExportCollectionRequest,
   type GetAllCollectionsRequest,
   type GetCollectionPermissionsRequest,
   type GetCollectionRequest,
@@ -50,5 +51,10 @@ export default class CollectionService {
   static getCollectionRoles(params: GetCollectionRolesRequest) {
     const api = new CollectionApi(getConfiguration());
     return api.getCollectionRoles(params);
+  }
+
+  static exportCollection(params: ExportCollectionRequest) {
+    const api = new CollectionApi(getConfiguration());
+    return api.exportCollection(params);
   }
 }

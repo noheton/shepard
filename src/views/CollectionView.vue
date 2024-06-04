@@ -14,6 +14,7 @@ import {
   default as semanticAnnotationService,
   default as SemanticAnnotationService,
 } from "@/services/semanticAnnotationService";
+import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
 import type {
   Collection,
@@ -56,6 +57,23 @@ function retrieveCollection() {
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching collection");
+    });
+}
+
+function exportCollection() {
+  const filename = (currentCollection.value?.name || "export")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(" ", "_");
+  CollectionService.exportCollection({
+    collectionId: currentCollectionId.value,
+  })
+    .then(response => {
+      downloadFile(response, filename + ".zip");
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching file");
     });
 }
 
@@ -200,6 +218,15 @@ onMounted(() => {
           variant="secondary"
         >
           <GraphIcon />
+        </b-button>
+        <b-button
+          v-b-tooltip.hover
+          append
+          title="Export"
+          variant="secondary"
+          @click="exportCollection()"
+        >
+          <DownloadIcon />
         </b-button>
         <b-button
           v-if="editPermissions"
