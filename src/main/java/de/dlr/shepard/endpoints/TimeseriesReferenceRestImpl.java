@@ -115,7 +115,10 @@ public class TimeseriesReferenceRestImpl implements TimeseriesReferenceRest {
 		var stream = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(timeseriesReferenceId, function,
 				groupBy, fillOption, deviceFilterTag, locationFilterTag, symbolicNameFilterTag,
 				securityContext.getUserPrincipal().getName());
+		if (stream == null)
+			return Response.status(Status.NOT_FOUND).build();
 		return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();
+
 	}
 
 }

@@ -111,7 +111,7 @@ public class StructuredDataReferenceService
 			String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO
 				.findByShepardId(structuredDataReferenceShepardId);
-		if (reference.getStructuredDataContainer() == null)
+		if (reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted())
 			return reference.getStructuredDatas().stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
 
 		long containerId = reference.getStructuredDataContainer().getId();

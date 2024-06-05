@@ -359,6 +359,24 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getAllPayloadsByShepardIdTest_ContainerIsDeleted() {
+		String username = "123";
+		FileContainer container = new FileContainer(20L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		ref.setFileContainer(container);
+		ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
+
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+		assertEquals(Collections.EMPTY_LIST, actual);
+	}
+
+	@Test
 	public void getAllPayloadsByShepardIdTest_ContainerIsNull() {
 		String username = "123";
 		FileReference ref = new FileReference(1L);

@@ -107,7 +107,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
 	public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
 		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
-		if (reference.getFileContainer() == null)
+		if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted())
 			return Collections.emptyList();
 
 		if (!permissionsUtil.isAllowed(reference.getFileContainer().getId(), AccessType.Read, username))

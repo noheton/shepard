@@ -368,6 +368,24 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getAllPayloadByShepardIdTest_ContainerIsDeleted() {
+		String username = "schorsch";
+		StructuredDataContainer container = new StructuredDataContainer(20L);
+		container.setMongoId("mongoId");
+		container.setDeleted(true);
+		StructuredData structuredData = new StructuredData("abc", new Date(), "name");
+		StructuredDataReference ref = new StructuredDataReference(1L);
+		ref.setShepardId(15L);
+		ref.setStructuredDataContainer(container);
+		ref.setStructuredDatas(List.of(structuredData));
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+		StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
+		assertEquals(List.of(payload), actual);
+	}
+
+	@Test
 	public void getAllPayloadByShepardIdTest_ContainerIsNull() {
 		String username = "schorsch";
 		StructuredData structuredData = new StructuredData("abc", new Date(), "name");

@@ -110,12 +110,13 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 			SingleValuedUnaryFunction function, Long groupBy, FillOption fillOption, Set<String> devicesFilterSet,
 			Set<String> locationsFilterSet, Set<String> symbolicNameFilterSet, String username) {
 		var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-		var containerId = ref.getTimeseriesContainer().getId();
-		var database = ref.getTimeseriesContainer().getDatabase();
+		if (ref.getTimeseriesContainer() == null || ref.getTimeseriesContainer().isDeleted())
+			return Collections.emptyList();
 
-		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+		if (!permissionsUtil.isAllowed(ref.getTimeseriesContainer().getId(), AccessType.Read, username))
 			throw new InvalidAuthException("You are not authorized to access this timeseries");
 
+		var database = ref.getTimeseriesContainer().getDatabase();
 		return timeseriesService.getTimeseriesPayloadList(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
@@ -124,12 +125,13 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 			Long groupBy, FillOption fillOption, Set<String> devicesFilterSet, Set<String> locationsFilterSet,
 			Set<String> symbolicNameFilterSet, String username) throws IOException {
 		var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-		var containerId = ref.getTimeseriesContainer().getId();
-		var database = ref.getTimeseriesContainer().getDatabase();
+		if (ref.getTimeseriesContainer() == null || ref.getTimeseriesContainer().isDeleted())
+			return null;
 
-		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
+		if (!permissionsUtil.isAllowed(ref.getTimeseriesContainer().getId(), AccessType.Read, username))
 			throw new InvalidAuthException("You are not authorized to access this timeseries");
 
+		var database = ref.getTimeseriesContainer().getDatabase();
 		return timeseriesService.exportTimeseriesPayload(ref.getStart(), ref.getEnd(), database, ref.getTimeseries(),
 				function, groupBy, fillOption, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet);
 	}
