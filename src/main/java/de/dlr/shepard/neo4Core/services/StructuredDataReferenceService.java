@@ -5,7 +5,6 @@ import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
@@ -112,14 +111,16 @@ public class StructuredDataReferenceService
 			String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO
 				.findByShepardId(structuredDataReferenceShepardId);
+		if (reference.getStructuredDataContainer() == null)
+			return reference.getStructuredDatas().stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
+
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
-		List<StructuredData> structuredDatas = reference.getStructuredDatas();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
-			// TODO: Should we throw an InvalidAuthException here?
-			return structuredDatas.stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
-		var result = new ArrayList<StructuredDataPayload>(structuredDatas.size());
-		for (var structuredData : structuredDatas) {
+			return reference.getStructuredDatas().stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
+
+		var result = new ArrayList<StructuredDataPayload>(reference.getStructuredDatas().size());
+		for (var structuredData : reference.getStructuredDatas()) {
 			var payload = structuredDataService.getPayload(mongoId, structuredData.getOid());
 			if (payload != null)
 				result.add(payload);

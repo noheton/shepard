@@ -1,5 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
@@ -105,12 +107,19 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
 	public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
 		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
-		var container = reference.getFileContainer();
-		if (!permissionsUtil.isAllowed(container.getId(), AccessType.Read, username))
+		if (reference.getFileContainer() == null)
+			return Collections.emptyList();
+
+		if (!permissionsUtil.isAllowed(reference.getFileContainer().getId(), AccessType.Read, username))
 			throw new InvalidAuthException();
 
-		var result = reference.getFiles().stream().map(f -> fileService.getPayload(container.getMongoId(), f.getOid()))
-				.toList();
+		var files = reference.getFiles();
+		var result = new ArrayList<NamedInputStream>(files.size());
+		for (var file : files) {
+			var nis = fileService.getPayload(reference.getFileContainer().getMongoId(), file.getOid());
+			if (nis != null)
+				result.add(nis);
+		}
 		return result;
 	}
 

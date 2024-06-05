@@ -19,7 +19,6 @@ public class BasicReferenceIOTest extends BaseTestCase {
 		EqualsVerifier.simple().forClass(BasicReferenceIO.class).verify();
 	}
 
-	// TODO: maybe replace hardcoded names by .getUsername
 	@Test
 	public void testConversion() {
 		var date = new Date();

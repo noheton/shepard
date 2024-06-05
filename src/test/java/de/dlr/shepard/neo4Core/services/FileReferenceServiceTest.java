@@ -225,7 +225,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceByShepardIdTest_ContainerIsNull() {
+	public void createFileReferenceByShepardIdTest_ContainerIsDeleted() {
 		User user = new User("Bob");
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
@@ -246,7 +246,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
-	public void createFileReferenceByShepardIdTest_ContainerIsDeleted() {
+	public void createFileReferenceByShepardIdTest_ContainerIsNull() {
 		User user = new User("Bob");
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
@@ -336,6 +336,39 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 
 		assertEquals(List.of(nis1, nis2), actual);
+	}
+
+	@Test
+	public void getAllPayloadsByShepardIdTest_IsNull() {
+		String username = "123";
+		FileContainer container = new FileContainer(20L);
+		container.setMongoId("mongoId");
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		ref.setFileContainer(container);
+		ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
+		var nis1 = new NamedInputStream("oid1", null, "myInputStream", 123L);
+
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+		when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
+		when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(null);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+		assertEquals(List.of(nis1), actual);
+	}
+
+	@Test
+	public void getAllPayloadsByShepardIdTest_ContainerIsNull() {
+		String username = "123";
+		FileReference ref = new FileReference(1L);
+		ref.setShepardId(15L);
+		ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
+
+		when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+		var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+		assertEquals(Collections.EMPTY_LIST, actual);
 	}
 
 	@Test
