@@ -14,7 +14,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@dlr-shepard/shepard-client": "2024.6.4-dev.2816",
+    "@dlr-shepard/shepard-client": "2024.6.5",
     "@tiptap/extension-text-align": "2.4.0",
     "@tiptap/extension-underline": "2.4.0",
     "@tiptap/pm": "2.4.0",
