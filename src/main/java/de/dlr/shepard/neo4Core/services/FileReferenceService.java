@@ -93,6 +93,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
 	public NamedInputStream getPayloadByShepardId(long fileReferenceShepardId, String oid, String username) {
 		FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
+		// TODO: Handle missing container
 		long containerId = reference.getFileContainer().getId();
 		String mongoId = reference.getFileContainer().getMongoId();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))

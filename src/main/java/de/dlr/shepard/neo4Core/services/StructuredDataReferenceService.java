@@ -134,6 +134,7 @@ public class StructuredDataReferenceService
 			String username) {
 		StructuredDataReference reference = structuredDataReferenceDAO
 				.findByShepardId(structuredDataReferenceShepardId);
+		// TODO: Handle missing container
 		long containerId = reference.getStructuredDataContainer().getId();
 		String mongoId = reference.getStructuredDataContainer().getMongoId();
 		if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username))
