@@ -11,6 +11,10 @@ const props = defineProps({
     type: String,
     default: "Process",
   },
+  processMassage: {
+    type: String,
+    default: "Depending on the size of the file this may take a while.",
+  },
   processActive: {
     type: Boolean,
     default: false,
@@ -50,8 +54,7 @@ function countDownChanged(countDown: number) {
       variant="success"
       class="d-flex align-items-center"
     >
-      {{ props.processName }} started. Depending on the size of the file this
-      may take a while.
+      {{ props.processName }} started. {{ props.processMassage }}
       <b-spinner class="ml-auto" small type="grow"></b-spinner>
     </b-alert>
     <b-alert

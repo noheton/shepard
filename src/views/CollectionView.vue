@@ -9,6 +9,7 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
+import ProcessAlert from "@/components/ProcessAlert.vue";
 import CollectionService from "@/services/collectionService";
 import {
   default as semanticAnnotationService,
@@ -39,6 +40,10 @@ const managePermissions = computed(() => {
   return roles.value != undefined && (roles.value.owner || roles.value.manager);
 });
 
+const downloadActive = ref<boolean>(false);
+const downloadFinished = ref<boolean>(false);
+const downloadError = ref<boolean>(false);
+
 const currentCollection = ref<Collection | undefined>();
 const attributeItems = ref<Array<{ key: string; value: string }>>([]);
 function retrieveCollection() {
@@ -61,6 +66,7 @@ function retrieveCollection() {
 }
 
 function exportCollection() {
+  downloadActive.value = true;
   const filename = (currentCollection.value?.name || "export")
     .trim()
     .toLowerCase()
@@ -71,9 +77,14 @@ function exportCollection() {
   })
     .then(response => {
       downloadFile(response, filename + ".zip");
+      downloadFinished.value = true;
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching file");
+      downloadError.value = true;
+    })
+    .finally(() => {
+      downloadActive.value = false;
     });
 }
 
@@ -266,11 +277,23 @@ onMounted(() => {
           <DeleteIcon />
         </b-button>
       </b-button-group>
+
       <h3 class="title">
         {{ currentCollection.name }}
         <CurrentRoleIcon :roles="roles" />
       </h3>
     </div>
+
+    <ProcessAlert
+      process-name="Download"
+      processMassage="Depending on the size of the Collection this may take a while"
+      :process-active="downloadActive"
+      :process-finished="downloadFinished"
+      :process-error="downloadError"
+      @success-message-dismissed="downloadFinished = false"
+      @error-message-dismissed="downloadError = false"
+    />
+
     <div class="mb-3">
       Collection ID: {{ currentCollection.id }}
       <CreatedByLine
