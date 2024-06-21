@@ -1,0 +1,20 @@
+{
+  "editor.formatOnSave": true,
+  "cSpell.words": [
+    "Apikey",
+    "dataobjects",
+    "Datas",
+    "Healthz",
+    "jsoneditor",
+    "oidc",
+    "Oids",
+    "openapi",
+    "registerables",
+    "structureddata",
+    "Timeseries",
+    "usergroup",
+    "usergroups",
+    "VITE",
+    "vuex"
+  ]
+}

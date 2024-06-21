@@ -1,0 +1,59 @@
+// Define your variable overrides here
+
+$primary: #0075bb;
+$secondary: #e9ecef;
+$success: #28a745;
+$info: #343a40;
+$warning: #ffc107;
+$danger: #dc3545;
+$light: #f8f9fa;
+$dark: #343a40;
+
+// Bootstrap and its default variables
+@import "../node_modules/bootstrap/scss/bootstrap";
+// BootstrapVue and its default variables
+@import "../node_modules/bootstrap-vue/src/index.scss";
+
+// General style overrides and custom classes
+body {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+h3 {
+  font-weight: bold;
+}
+
+.title {
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+#app {
+  margin-bottom: 20%;
+}
+
+.view {
+  margin: auto;
+  max-width: 850px;
+}
+
+.view-full {
+  margin: auto;
+}
+
+.component {
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+.wide-popover {
+  max-width: 850px !important;
+  width: 800px !important;
+}
+
+.modal-popover {
+  max-width: 850px !important;
+  width: 75% !important;
+}
+
