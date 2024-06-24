@@ -1,5 +1,6 @@
 {
   "editor.formatOnSave": true,
+  "editor.defaultFormatter": "charliermarsh.ruff",
   "cSpell.words": [
     "Apikey",
     "dataobjects",

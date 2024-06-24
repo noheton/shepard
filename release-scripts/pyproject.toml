@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "shepard_scripts"
+version = "0.1.0"
+description = ""
+authors = ["Tobias Haase <tobias.haase@dlr.de>"]
+license = "Apache License 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-gitlab = "4.6.0"
+ruff = "^0.4.0"
+jinja2 = "^3.1.2"
+click = "^8.1.7"
+
+[tool.poetry.scripts]
+cli = "shepard_scripts.main:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+lint.select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-builtins
+    "A",
+    # flake8-bandit
+    "S",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+# Same as Black.
+line-length = 88
+indent-width = 4
