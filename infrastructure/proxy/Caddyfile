@@ -1,0 +1,61 @@
+# The Caddyfile is an easy way to configure your Caddy web server.
+#
+# Unless the file starts with a global options block, the first
+# uncommented line is always the address of your site.
+#
+# To use your own domain name (with automatic HTTPS), first make
+# sure your domain's A/AAAA DNS records are properly pointed to
+# this machine's public IP, then replace ":80" below with your
+# domain name.
+{
+	auto_https disable_certs
+}
+
+https://hostname_placeholder_do_not_change {
+	# Set this path to your site's directory.
+	root * /var/www/shepard/
+
+	# Enable the static file server.
+	file_server
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+https://backend.hostname_placeholder_do_not_change {
+	reverse_proxy backend:8080
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+https://frontend.hostname_placeholder_do_not_change {
+	reverse_proxy frontend:80
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+https://swagger.hostname_placeholder_do_not_change {
+	reverse_proxy swagger:8080
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+http://neo4j.hostname_placeholder_do_not_change {
+	reverse_proxy neo4j:7474
+
+	#tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+https://mongodb.hostname_placeholder_do_not_change {
+	reverse_proxy mongoexpress:8081
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+https://influxdb.hostname_placeholder_do_not_change {
+	reverse_proxy chronograf:8888
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+
+# Refer to the Caddy docs for more information:
+# https://caddyserver.com/docs/caddyfile
