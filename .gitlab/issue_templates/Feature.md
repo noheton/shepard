@@ -7,7 +7,7 @@ Before creating a feature request, please read this first:
 - Use the template below
 - Check if there are related issues
 - Determine which repository the request should be reported in:
-  https://gitlab.com/dlr-shepard/frontend/-/blob/main/CONTRIBUTING.md#how-can-i-contribute
+  https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#how-can-i-contribute
 - Use a clear and descriptive title for the issue to identify the suggestion
 - For code snippets and logs please use Markdown code blocks:
   https://docs.gitlab.com/ee/user/markdown.html
@@ -53,7 +53,12 @@ What is the benefit and why is it interesting for all users?
 ### Screenshots and Mockups
 
 <!--
-paste in screenshots or mockups of your new feature
+Paste in screenshots or mockups of your new feature.
+
+### Examples
+
+<!--
+Paste in examples of how to use your new feature
 -->
 
 ## Related Issues

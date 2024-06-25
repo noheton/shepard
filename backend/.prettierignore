@@ -1,0 +1,7 @@
+# Ignore all java files
+*.java
+
+# Target directory
+target
+.m2
+

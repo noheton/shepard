@@ -11,8 +11,15 @@ Before creating a merge request, please read this first:
 - Once you remove the draft label, your merge request will be considered for the review process
 - You can merge the merge request once you have approval from at least one developer. If you are not authorized to do so, please wait for a maintainer to merge the request for you.
 - After submitting your merge request, verify that the pipeline passes
-- Link to the issue you are working on
+- Link to the issue you are woking on
 
+-->
+
+## Breaking Changes
+
+<!--
+Description of how the API behaves differently now.
+If you have the permission, please also add the label "Breaking Change" to this merge request.
 -->
 
 ## Description
@@ -30,8 +37,9 @@ This is how the page looks now
 ### Checklist
 
 - [ ] The code compiles without any warnings.
-- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/frontend/-/blob/main/CONTRIBUTING.md#code-review-checklist).
+- [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#code-review-checklist).
 - [ ] The documentation has been added/updated.
+- [ ] There are no `System.out.println()` statements.
 - [ ] `package-lock.json` was not changed unless I added or edited dependencies.
 
 ### Related Issues

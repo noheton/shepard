@@ -1,0 +1,42 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchPackagePrefixes": ["org.neo4j:neo4j-ogm"],
+      "matchManagers": ["maven"],
+      "allowedVersions": "<4"
+    },
+    {
+      "matchPackageNames": ["neo4j"],
+      "allowedVersions": "<5",
+      "matchFileNames": ["docker-compose.yml", ".gitlab-ci.yml"]
+    },
+    {
+      "matchPackageNames": ["influxdb"],
+      "allowedVersions": "<2",
+      "matchFileNames": ["docker-compose.yml", ".gitlab-ci.yml"]
+    },
+    {
+      "matchPackageNames": ["mongo"],
+      "allowedVersions": "<5",
+      "matchFileNames": ["docker-compose.yml", ".gitlab-ci.yml"]
+    },
+    {
+      "matchPackageNames": ["openapitools/openapi-generator-cli"],
+      "allowedVersions": "<7",
+      "matchFileNames": [".gitlab/ci/python-legacy.gitlab-ci.yml"]
+    },
+    {
+      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
+      "groupName": "tomcat"
+    },
+    {
+      "matchPackagePrefixes": ["io.swagger.core.v3"],
+      "groupName": "swagger"
+    }
+  ],
+  "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "prHourlyLimit": 0
+}

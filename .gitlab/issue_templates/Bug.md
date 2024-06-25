@@ -7,7 +7,7 @@ Before creating a bug report, please read this first:
 - Use the template below
 - Check if there are related issues
 - Determine which repository the request should be reported in:
-  https://gitlab.com/dlr-shepard/frontend/-/blob/main/CONTRIBUTING.md#how-can-i-contribute
+  https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#how-can-i-contribute
 - Use a clear and descriptive title for the issue to identify the bug report
 - If you encounter a security issue, please mark this bug report as confidential
 - For code snippets and logs please use Markdown code blocks:
@@ -22,6 +22,7 @@ Before creating a bug report, please read this first:
 - Backend Version:
 - Frontend Version:
 - Webbrowser and version:
+- Programming language and version:
 - Operating system:
 
 ## Summary
@@ -38,7 +39,7 @@ Summarize the bug you encountered briefly and provide as much detail as possible
 ## Steps to reproduce
 
 <!--
-Check if you can reproduce the issue in the latest version of the shepard frontend.
+Check if you can reproduce the issue in the latest version of shepard.
 Describe the exact steps which reproduce the problem in as many details as possible.
 -->
 
@@ -61,8 +62,9 @@ What you should see instead
 ## Relevant logs and/or screenshots
 
 <!--
-Paste all relevant logs from your web browser's console/inspector, as well as screenshots and animated GIFs here
+Paste all relevant logs from your web browser's console/inspector, as well as screenshots and animated GIFs here.
 Recommended tool for creating GIFs: https://www.screentogif.com/
+You may add code examples as well.
 -->
 
 ```txt
