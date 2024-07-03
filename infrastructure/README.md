@@ -28,8 +28,7 @@ This folder contains everything you need to set up a shepard instance with Docke
 
 ```bash
 git clone https://gitlab.com/dlr-shepard/shepard.git
-cd shepard
-cd infrastructure
+cd shepard/infrastructure
 ```
 
 ### 2. Prepare the reverse proxy
@@ -142,14 +141,31 @@ You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
 
 Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/shepard/-/merge_requests?label_name%5B%5D=Breaking+Change&scope=all&sort=merged_at_desc&state=merged) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
 
-Database upgrades may also require manual intervention. What exactly needs to be adjusted can be found in the respective changelogs. The shepard backend can handle a relatively wide range of database versions. Therefore, it is possible to sit out database upgrades for some time and still update shepard. This repository will always use a recent version of the respective databases that have been successfully tested to work with shepard.
+Database upgrades may also require manual intervention. 
+What exactly needs to be adjusted can be found in the respective changelogs. 
+The shepard backend can handle a relatively wide range of database versions. 
+Therefore, it is possible to sit out database upgrades for some time and still update shepard. 
+This repository will always use a recent version of the respective databases that have been successfully tested to work with shepard.
 
 The upgrade process consists of shutting down the docker containers, updating the git repository, and restarting the docker containers again.
 
 ```bash
+# Go into infrastructure folder
+cd infrastructure
+
+# Stop Containers
 docker compose down
+
+# Check recent changes to the infrastructure folder
+git fetch
+git diff HEAD...origin/main .
+
+# Stash local changes, pull, apply stash and perform adaptions if necessary
+git stash 
 git pull
-# Check recent changes and adjust your configuration accordingly
+git stash apply
+
+# Pull new versions of docker images and restart containers
 docker compose pull
 docker compose up -d
 ```
