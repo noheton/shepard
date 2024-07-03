@@ -1,6 +1,6 @@
 # shepard backend
 
-This is the source code repository for the shepard backend written in Java. For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
+This is the source code folder for the shepard backend written in Java. For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/shepard/-/wikis/home).
 
 ## Getting started as a user
 
@@ -10,7 +10,7 @@ This is the source code repository for the shepard backend written in Java. For 
 
 ## Getting started as an administrator
 
-Information about the deployment can be found [here](https://gitlab.com/dlr-shepard/deployment).
+Information about the deployment can be found [here](https://gitlab.com/dlr-shepard/shepard).
 
 ## Getting started as a contributor
 

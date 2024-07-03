@@ -15,15 +15,15 @@
 		<url>https://www.dlr.de</url>
 	</organization>
 	<scm>
-		<url>https://gitlab.com/dlr-shepard/backend</url>
+		<url>https://gitlab.com/dlr-shepard/shepard</url>
 	</scm>
 	<issueManagement>
 		<system>GitLab</system>
-		<url>https://gitlab.com/dlr-shepard/backend/-/issues</url>
+		<url>https://gitlab.com/dlr-shepard/shepard/-/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitLab CI/CD</system>
-		<url>https://gitlab.com/dlr-shepard/backend/-/pipelines</url>
+		<url>https://gitlab.com/dlr-shepard/shepard/-/pipelines</url>
 	</ciManagement>
 	<properties>
 		<finalName>shepard</finalName>
