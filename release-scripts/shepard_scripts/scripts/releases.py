@@ -4,6 +4,7 @@ import click
 import jinja2
 from gitlab.client import Gitlab
 from gitlab.v4.objects.merge_requests import MergeRequest
+from gitlab.v4.objects.releases import ProjectRelease
 from gitlab.v4.objects.projects import Project
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
@@ -77,8 +78,11 @@ def create_release(gitlab_instance: str, token: str, project_id: int):
     except KeyError as ex:
         raise click.Abort(f"Project {ex} could not be found") from ex
 
-    latest_release = project.releases.list(per_page=1, page=0)[0]  # type: ignore
-    breaking, _dependencies, others = _get_changes(project, latest_release.released_at)
+    releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
+    latest_release = (
+        releases[0].released_at if len(releases) > 0 else "2001-01-01T00:00:00.000Z"
+    )
+    breaking, _dependencies, others = _get_changes(project, latest_release)
     release_tag = _get_release_tag()
 
     click.echo({project.name_with_namespace})

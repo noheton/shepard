@@ -27,10 +27,10 @@ Possible commands are:
 Clean packages
 
 ```sh
-poetry run cli packages --project=backend ./token.txt
+poetry run cli packages ./token.txt
 ```
 
-Create a frontend release
+Create a release
 
 ```sh
 poetry run cli release ./token.txt
