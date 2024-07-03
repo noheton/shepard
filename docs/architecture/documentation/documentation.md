@@ -2,7 +2,7 @@
 
 ## Location of the documentation
 
-The documentation is located in the project [Wiki](https://gitlab.com/dlr-shepard/shepard/-/wikis/home).
+The documentation is located in the project [Documentation](https://gitlab.com/dlr-shepard/documentation) in the Wiki area.
 There it can be read and written intuitively.
 Furthermore this project contains some selected sample projects for interaction with shepard as well as instructions for installation and maintenance of shepard for administrators.
 Thus, the documentation of the entire shepard infrastructure is completely in one place.
@@ -10,8 +10,8 @@ Thus, the documentation of the entire shepard infrastructure is completely in on
 Source code projects contain no in-depth documentation other than a `README.md` file with a short textual description.
 This description contains instructions for setting up a development environment as well as very short documentation aimed at developers.
 
-The [Architecture](https://gitlab.com/dlr-shepard/shepard/-/tree/main/docs/architecture) folder contains discussions about the further development of shepard in the form of issues and merge requests.
-Documentation of important architectural concepts is stored in the folder in the form of markdown files.
+The [Architecture](https://gitlab.com/dlr-shepard/architecture) project contains discussions about the further development of shepard in the form of issues and merge requests.
+Documentation of important architectural concepts is stored in the repository in the form of markdown files.
 In this way, the concepts can be worked out together.
 
 ## Target groups
@@ -24,11 +24,11 @@ The web frontend is largely self-explanatory and is not documented further.
 
 The API is described automatically via [OpenAPI](https://www.openapis.org/).
 A Swagger UI presents this documentation in a graphical format.
-Selected sample projects in the [Wiki](https://gitlab.com/dlr-shepard/shepard/-/wikis/home) serve as tutorials for users.
+Selected sample projects in [Documentation](https://gitlab.com/dlr-shepard/documentation) serve as tutorials for users.
 
 ### Administrators
 
-Installation and maintenance of shepard is described in the [infrastructure folder](https://gitlab.com/dlr-shepard/shepard/-/tree/main/infrastructure).
+Installation and maintenance of shepard is described in the project [Deployment](https://gitlab.com/dlr-shepard/deployment).
 In addition to instructions, there are also configuration files with examples.
 
 ### Backend/Frontend developers

@@ -1,6 +1,6 @@
 # shepard deployment
 
-This folder contains everything you need to set up a shepard instance with Docker and Docker Compose. For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/shepard/-/wikis/home).
+This repository contains everything you need to set up a shepard instance with Docker and Docker Compose. For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 [[_TOC_]]
 
@@ -27,9 +27,8 @@ This folder contains everything you need to set up a shepard instance with Docke
 ### 1. Clone repository
 
 ```bash
-git clone https://gitlab.com/dlr-shepard/shepard.git
-cd shepard
-cd infrastructure
+git clone https://gitlab.com/dlr-shepard/deployment.git
+cd deployment
 ```
 
 ### 2. Prepare the reverse proxy
@@ -140,7 +139,7 @@ You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
 
 ## Update
 
-Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/shepard/-/merge_requests?label_name%5B%5D=Breaking+Change&scope=all&sort=merged_at_desc&state=merged) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
+Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/deployment/-/merge_requests?label_name%5B%5D=Breaking+Change&scope=all&sort=merged_at_desc&state=merged) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
 
 Database upgrades may also require manual intervention. What exactly needs to be adjusted can be found in the respective changelogs. The shepard backend can handle a relatively wide range of database versions. Therefore, it is possible to sit out database upgrades for some time and still update shepard. This repository will always use a recent version of the respective databases that have been successfully tested to work with shepard.
 

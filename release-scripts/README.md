@@ -1,7 +1,7 @@
 # shepard scripts
 
 This project provides useful scripts and tools to help maintain the shepard repository.
-For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/shepard/-/wikis/home).
+For more information about shepard, its usage and infrastructure, check out [the wiki](https://gitlab.com/dlr-shepard/documentation/-/wikis/home).
 
 ## Prerequisites
 
