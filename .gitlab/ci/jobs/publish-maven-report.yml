@@ -1,7 +1,7 @@
 publish-maven-report:
   stage: upload
   needs:
-    - job: site
+    - job: [build-maven-report]
   script:
     - ls -hal backend/target/site
     - mkdir public
