@@ -19,36 +19,27 @@
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
 
-build_javaclient_dev:
+.build_javaclient_dev:
   <<: *build_java
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
     - echo ${VERSION_NUMBER}
 
-upload_javaclient_dev:
+.upload_javaclient_dev:
   <<: *upload_java
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
   needs:
     - job: build_javaclient_dev
       artifacts: true
 
-build_javaclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.build_javaclient:
   <<: *build_java
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
-upload_javaclient:
+.upload_javaclient:
   <<: *upload_java
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
   needs:
     - job: build_javaclient
       artifacts: true
-

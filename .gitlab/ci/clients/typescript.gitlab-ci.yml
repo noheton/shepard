@@ -25,35 +25,27 @@
     - npm run build
     - npm publish --tag ${NPM_TAG}
 
-build_typescriptclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.build_typescriptclient_dev:
   <<: *build_typescript
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-upload_typescriptclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.upload_typescriptclient_dev:
   <<: *upload_typescript
   needs:
     - job: build_typescriptclient_dev
   variables:
     NPM_TAG: dev
 
-build_typescriptclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.build_typescriptclient:
   <<: *build_typescript
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
-upload_typescriptclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.upload_typescriptclient:
   <<: *upload_typescript
   needs:
     - job: build_typescriptclient

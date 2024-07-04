@@ -1,4 +1,4 @@
-build_cppclient:
+.build_cppclient:
   stage: build
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
@@ -21,18 +21,14 @@ build_cppclient:
     - tar cvfz cpp-client.tgz client/
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file cpp-client.tgz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/cpp-client/${VERSION_NUMBER}/cpp-client.tgz"'
 
-upload_cppclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.upload_cppclient_dev:
   <<: *upload_cpp
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-upload_cppclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.upload_cppclient:
   <<: *upload_cpp
   before_script:
     - !reference [.version_number, script]
