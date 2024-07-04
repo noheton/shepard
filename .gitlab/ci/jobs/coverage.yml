@@ -1,0 +1,18 @@
+coverage:
+  stage: test
+  image: haynes/jacoco2cobertura:1.0.10
+  needs:
+    - job: test-backend
+      artifacts: true
+  script:
+    - ls -hal backend/target/site/jacoco
+    # convert report from jacoco to cobertura
+    - python /opt/cover2cover.py backend/target/site/jacoco/jacoco.xml backend/src/main/java > backend/target/site/cobertura.xml
+    # read the <source></source> tag and prepend the path to every filename attribute
+    - python /opt/source2filename.py backend/target/site/cobertura.xml
+  artifacts:
+    expire_in: 2 days
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/target/site/cobertura.xml

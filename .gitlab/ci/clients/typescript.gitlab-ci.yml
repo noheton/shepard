@@ -1,12 +1,12 @@
 .build_typescript: &build_typescript
-  stage: build_clients
+  stage: build
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
-  needs: [build]
-  dependencies: [build]
+  needs:
+    - job: build-backend
   script:
-    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
   artifacts:
     expire_in: 2 days
     paths:
@@ -26,32 +26,36 @@
     - npm publish --tag ${NPM_TAG}
 
 build_typescriptclient_dev:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
   <<: *build_typescript
-  extends: .only_branches
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
 upload_typescriptclient_dev:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
   <<: *upload_typescript
-  extends: .only_main
-  needs: [build_typescriptclient_dev]
-  dependencies: [build_typescriptclient_dev]
+  needs:
+    - job: build_typescriptclient_dev
   variables:
     NPM_TAG: dev
 
 build_typescriptclient:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
   <<: *build_typescript
-  extends: .only_releases
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
 upload_typescriptclient:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
   <<: *upload_typescript
-  extends: .only_releases
-  needs: [build_typescriptclient]
-  dependencies: [build_typescriptclient]
+  needs:
+    - job: build_typescriptclient
   variables:
     NPM_TAG: latest

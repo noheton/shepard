@@ -2,6 +2,6 @@
 *.java
 
 # Target directory
-target
+**/target/**/*
 .m2
 

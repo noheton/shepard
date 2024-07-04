@@ -1,0 +1,35 @@
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .npm/
+
+.prepare_npm: &prepare_npm
+  - cd frontend
+  - NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
+  - NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+  - echo //gitlab.com/api/v4/packages/npm/:_authToken=${CI_JOB_TOKEN} >> .npmrc
+
+lint-frontend:
+  image: node:20.14
+  stage: test
+  needs: []
+  before_script:
+    - *prepare_npm
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+
+build-frontend:
+  image: node:20.14
+  stage: build
+  before_script:
+    - !reference [.version_number, script]
+    - *prepare_npm
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm version --no-git-tag-version ${VERSION_NUMBER}
+    - npm run type-check
+    - npm run build-only
+  artifacts:
+    paths:
+      - frontend/dist/

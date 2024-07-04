@@ -1,4 +1,4 @@
-templateDir: clients/cpp/template
+templateDir: backend/clients/cpp/template
 additionalProperties:
   apiPackage: de.dlr.shepard.client.cpp.api
   modelPackage: de.dlr.shepard.client.cpp.model

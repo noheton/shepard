@@ -1,0 +1,14 @@
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+
+gemnasium-dependency_scanning:
+  stage: check
+  needs: []
+
+gemnasium-maven-dependency_scanning:
+  stage: check
+  needs: []
+
+gemnasium-python-dependency_scanning:
+  stage: check
+  needs: []

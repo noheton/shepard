@@ -1,0 +1,27 @@
+stages:
+  - check
+  - build
+  - test
+  - upload
+
+include:
+  - local: .gitlab/ci/jobs/secret-detection.yml
+  - local: .gitlab/ci/jobs/dependency-scanning.yml
+  - local: .gitlab/ci/jobs/format-prettier.yml
+  - local: .gitlab/ci/jobs/build-backend.yml
+  - local: .gitlab/ci/jobs/build-frontend.yml
+  - local: .gitlab/ci/jobs/test-backend.yml
+  - local: .gitlab/ci/jobs/integration-test.yml
+  - local: .gitlab/ci/jobs/build-maven-report.yml
+  - local: .gitlab/ci/jobs/coverage.yml
+  - local: .gitlab/ci/jobs/openapi-diff.yml
+    inputs:
+      target-branch: main
+  - local: .gitlab/ci/jobs/publish-maven-report.yml
+  - local: .gitlab/ci/jobs/build-and-upload-clients.yml
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image-name: backend
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image-name: frontend

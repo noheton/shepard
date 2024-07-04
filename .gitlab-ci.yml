@@ -1,0 +1,30 @@
+variables:
+  MAVEN_CLI_OPTS: "--batch-mode"
+  MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
+  BACKEND_IMAGE_NAME: "backend"
+  SECRET_DETECTION_EXCLUDED_PATHS: "node_modules"
+  DS_EXCLUDED_PATHS: "node_modules"
+  FRONTEND_IMAGE_NAME: "frontend"
+
+.version_number:
+  script:
+    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
+    - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
+
+include:
+
+    # Pipeline for feature branches
+  - local: .gitlab/ci/feature.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_NAME =~ /^feature/
+
+    # Pipeline for develop branch
+  - local: .gitlab/ci/dev.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_NAME == "develop"
+
+    # Pipeline for main branch
+  - local: .gitlab/ci/main.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_NAME == "main"

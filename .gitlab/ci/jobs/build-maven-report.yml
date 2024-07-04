@@ -1,0 +1,16 @@
+build-maven-report:
+  image: maven:3-eclipse-temurin-17
+  stage: test
+  needs: [test-backend]
+  before_script:
+    - !reference [.version_number, script]
+    - cd backend
+  script:
+    - ls -hal target
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} site -P test
+    - ls -hal target/site
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - backend/target/site/*

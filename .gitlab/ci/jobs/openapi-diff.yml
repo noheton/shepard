@@ -1,0 +1,23 @@
+spec:
+  inputs:
+    target-branch:
+      options: ["develop", "main"]
+
+---
+
+openapi-diff:
+  stage: test
+  image:
+    name: openapitools/openapi-diff:2.0.1
+    entrypoint: [""]
+  needs:
+    - job: build-backend
+      artifacts: true
+  script:
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target-branch ]]/raw/target/openapi/openapi.yaml?job=build backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - backend/target/openapi/*
+  allow_failure: true

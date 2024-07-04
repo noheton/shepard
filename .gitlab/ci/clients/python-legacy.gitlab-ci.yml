@@ -1,12 +1,12 @@
 .build_python_legacy: &build_python_legacy
-  stage: build_clients
+  stage: build
   image:
     name: openapitools/openapi-generator-cli:v6.6.0
     entrypoint: [""]
-  needs: [build]
-  dependencies: [build]
+  needs:
+    - job: build-backend
   script:
-    - docker-entrypoint.sh generate -i target/openapi/openapi.json -g python-legacy -o clients/python-legacy -p=packageName=shepard_client_legacy,packageVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python-legacy -o clients/python-legacy -p=packageName=shepard_client_legacy,packageVersion=${VERSION_NUMBER}
   artifacts:
     expire_in: 2 days
     paths:
@@ -23,28 +23,32 @@
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
 
 build_pythonclient_legacy_dev:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
   <<: *build_python_legacy
-  extends: .only_branches
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
 upload_pythonclient_legacy_dev:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
   <<: *upload_python_legacy
-  extends: .only_main
-  needs: [build_pythonclient_legacy_dev]
-  dependencies: [build_pythonclient_legacy_dev]
+  needs:
+    - job: build_pythonclient_legacy_dev
 
 build_pythonclient_legacy:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
   <<: *build_python_legacy
-  extends: .only_releases
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
 upload_pythonclient_legacy:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
   <<: *upload_python_legacy
-  extends: .only_releases
-  needs: [build_pythonclient_legacy]
-  dependencies: [build_pythonclient_legacy]
+  needs:
+    - job: build_pythonclient_legacy

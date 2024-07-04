@@ -1,0 +1,13 @@
+publish-maven-report:
+  stage: upload
+  needs:
+    - job: site
+  script:
+    - ls -hal backend/target/site
+    - mkdir public
+    - mv backend/target/site/* public/
+    - echo ${CI_PAGES_DOMAIN}
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - public
