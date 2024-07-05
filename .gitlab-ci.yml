@@ -21,6 +21,7 @@ include:
         when: never
       - if: $CI_COMMIT_REF_NAME == "develop"
         when: never
+      - when: on_success
 
     # Special pipeline for develop branch
   - local: .gitlab/ci/dev.gitlab-ci.yml
