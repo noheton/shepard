@@ -11,26 +11,26 @@ build_cpp_client:
 upload_cpp_client:
   extends: .upload_cpp_client_dev
 
-build_java:
+build_java_client:
   extends: .build_java_client_dev
 
-upload_java:
+upload_java_client:
   extends: .upload_java_client
 
-build_python_legacy:
-  extends: .build_python_client_legacy_dev
+build_python_legacy_client:
+  extends: .build_python_legacy_client_dev
 
 upload_python_legacy:
-  extends: .upload_python_client_legacy
+  extends: .upload_python_legacy_client
 
-build_python:
+build_python_client:
   extends: .build_python_client_dev
 
-upload_python:
+upload_python_client:
   extends: .upload_python_client
 
-build_typescript:
+build_typescript_client:
   extends: .build_typescript_client_dev
 
-upload_typescript:
+upload_typescript_client:
   extends: .upload_typescript_client_dev

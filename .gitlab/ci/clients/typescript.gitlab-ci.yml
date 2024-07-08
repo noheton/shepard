@@ -16,7 +16,7 @@
   stage: upload
   image: node:21-slim
   needs:
-    - job: build_typescript
+    - job: build_typescript_client
       artifacts: true
   before_script:
     - cd clients/typescript
