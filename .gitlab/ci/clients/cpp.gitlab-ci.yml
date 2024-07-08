@@ -15,7 +15,9 @@
 
 .upload_cpp: &upload_cpp
   stage: upload
-  dependencies: [build_cppclient]
+  needs:
+    - job: build-cppclient
+      artifacts: true
   script:
     - cd clients/cpp
     - tar cvfz cpp-client.tgz client/

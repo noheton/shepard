@@ -15,19 +15,19 @@ build_java:
   extends: .build_javaclient_dev
 
 upload_java:
-  extends: .upload_javaclient_dev
+  extends: .upload_javaclient
 
 build_python_legacy:
   extends: .build_pythonclient_legacy_dev
 
 upload_python_legacy:
-  extends: .upload_pythonclient_legacy_dev
+  extends: .upload_pythonclient_legacy
 
 build_python:
   extends: .build_pythonclient_dev
 
 upload_python:
-  extends: .upload_pythonclient_dev
+  extends: .upload_pythonclient
 
 build_typescript:
   extends: .build_typescriptclient_dev

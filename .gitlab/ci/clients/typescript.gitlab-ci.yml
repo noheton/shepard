@@ -15,6 +15,9 @@
 .upload_typescript: &upload_typescript
   stage: upload
   image: node:21-slim
+  needs:
+    - job: build_typescriptclient
+      artifacts: true
   before_script:
     - cd clients/typescript
     - touch .npmrc
@@ -34,8 +37,6 @@
 
 .upload_typescriptclient_dev:
   <<: *upload_typescript
-  needs:
-    - job: build_typescriptclient_dev
   variables:
     NPM_TAG: dev
 
@@ -47,7 +48,5 @@
 
 .upload_typescriptclient:
   <<: *upload_typescript
-  needs:
-    - job: build_typescriptclient
   variables:
     NPM_TAG: latest

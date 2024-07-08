@@ -12,9 +12,12 @@
     paths:
       - clients/python
 
-.upload_python: &upload_python
+.upload_pythonclient: &upload_python
   stage: upload
   image: python:3.12-slim
+  needs:
+    - job: build_pythonclient
+      artifacts: true
   before_script:
     - python3 -m pip install wheel setuptools twine
   script:
@@ -29,19 +32,8 @@
     - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-.upload_pythonclient_dev:
-  <<: *upload_python
-  needs:
-    - job: build_pythonclient_dev
-
 .build_pythonclient:
   <<: *build_python
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
-
-.upload_pythonclient:
-  <<: *upload_python
-  needs:
-    - job: build_pythonclient
-      artifacts: true

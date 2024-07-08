@@ -13,8 +13,11 @@
     paths:
       - clients/java
 
-.upload_java: &upload_java
+.upload_javaclient:
   stage: upload
+  needs:
+    - job: build-javaclient
+      artifacts: true
   script:
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
@@ -26,20 +29,8 @@
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
     - echo ${VERSION_NUMBER}
 
-.upload_javaclient_dev:
-  <<: *upload_java
-  needs:
-    - job: build_javaclient_dev
-      artifacts: true
-
 .build_javaclient:
   <<: *build_java
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
-
-.upload_javaclient:
-  <<: *upload_java
-  needs:
-    - job: build_javaclient
-      artifacts: true
