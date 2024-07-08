@@ -15,6 +15,7 @@
 
 .upload_java_client:
   stage: upload
+  image: maven:3-eclipse-temurin-17
   needs:
     - job: build_java_client
       artifacts: true
