@@ -4,7 +4,8 @@
     name: openapitools/openapi-generator-cli:v6.6.0
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
+      artifacts: true
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python-legacy -o clients/python-legacy -p=packageName=shepard_client_legacy,packageVersion=${VERSION_NUMBER}
   artifacts:
@@ -12,11 +13,11 @@
     paths:
       - clients/python-legacy
 
-.upload_pythonclient_legacy:
+.upload_python_client_legacy:
   stage: upload
   image: python:3.12-slim
   needs:
-    - job: build_pythonclient_legacy
+    - job: build_python_client_legacy
       artifacts: true
   before_script:
     - python3 -m pip install wheel setuptools twine
@@ -25,14 +26,14 @@
     - python3 setup.py sdist bdist_wheel
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
 
-.build_pythonclient_legacy_dev:
+.build_python_client_legacy_dev:
   <<: *build_python_legacy
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-.build_pythonclient_legacy:
+.build_python_client_legacy:
   <<: *build_python_legacy
   before_script:
     - !reference [.version_number, script]

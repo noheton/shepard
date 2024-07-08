@@ -5,32 +5,32 @@ include:
   - local: .gitlab/ci/clients/python.gitlab-ci.yml
   - local: .gitlab/ci/clients/typescript.gitlab-ci.yml
 
-build_cppclient:
-  extends: .build_cppclient
+build_cpp_client:
+  extends: .build_cpp_client
 
-upload_cppclient:
-  extends: .upload_cppclient_dev
+upload_cpp_client:
+  extends: .upload_cpp_client_dev
 
 build_java:
-  extends: .build_javaclient_dev
+  extends: .build_java_client_dev
 
 upload_java:
-  extends: .upload_javaclient
+  extends: .upload_java_client
 
 build_python_legacy:
-  extends: .build_pythonclient_legacy_dev
+  extends: .build_python_client_legacy_dev
 
 upload_python_legacy:
-  extends: .upload_pythonclient_legacy
+  extends: .upload_python_client_legacy
 
 build_python:
-  extends: .build_pythonclient_dev
+  extends: .build_python_client_dev
 
 upload_python:
-  extends: .upload_pythonclient
+  extends: .upload_python_client
 
 build_typescript:
-  extends: .build_typescriptclient_dev
+  extends: .build_typescript_client_dev
 
 upload_typescript:
-  extends: .upload_typescriptclient_dev
+  extends: .upload_typescript_client_dev

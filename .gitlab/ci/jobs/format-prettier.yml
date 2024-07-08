@@ -1,4 +1,4 @@
-format-prettier:
+format_prettier:
   image: node:21-slim
   stage: check
   needs: []

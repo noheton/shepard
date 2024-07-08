@@ -1,10 +1,10 @@
-.build_cppclient:
+.build_cpp_client:
   stage: build
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
       artifacts: true
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -c backend/clients/cpp/config.yaml --type-mappings set=std::vector
@@ -16,21 +16,21 @@
 .upload_cpp: &upload_cpp
   stage: upload
   needs:
-    - job: build-cppclient
+    - job: build_cpp_client
       artifacts: true
   script:
     - cd clients/cpp
     - tar cvfz cpp-client.tgz client/
     - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file cpp-client.tgz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/cpp-client/${VERSION_NUMBER}/cpp-client.tgz"'
 
-.upload_cppclient_dev:
+.upload_cpp_client_dev:
   <<: *upload_cpp
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-.upload_cppclient:
+.upload_cpp_client:
   <<: *upload_cpp
   before_script:
     - !reference [.version_number, script]

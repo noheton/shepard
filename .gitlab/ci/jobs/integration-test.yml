@@ -1,4 +1,4 @@
-integration-test:
+integration_test:
   image: maven:3-eclipse-temurin-17
   stage: test
   needs: []

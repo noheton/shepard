@@ -15,4 +15,4 @@ include:
   - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
-      target-branch: develop
+      target_branch: develop

@@ -4,7 +4,7 @@
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
       artifacts: true
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}
@@ -13,23 +13,23 @@
     paths:
       - clients/java
 
-.upload_javaclient:
+.upload_java_client:
   stage: upload
   needs:
-    - job: build-javaclient
+    - job: build_java_client
       artifacts: true
   script:
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
 
-.build_javaclient_dev:
+.build_java_client_dev:
   <<: *build_java
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
     - echo ${VERSION_NUMBER}
 
-.build_javaclient:
+.build_java_client:
   <<: *build_java
   before_script:
     - !reference [.version_number, script]
