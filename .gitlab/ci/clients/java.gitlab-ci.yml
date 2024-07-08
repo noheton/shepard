@@ -21,7 +21,7 @@
       artifacts: true
   script:
     - cd clients/java
-    - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
+    - mvn ${MAVEN_CLI_OPTS} deploy -s ../../backend/clients/java/ci_settings.xml
 
 .build_java_client_dev:
   <<: *build_java
