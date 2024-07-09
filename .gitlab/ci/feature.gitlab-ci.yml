@@ -16,3 +16,4 @@ include:
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: develop
+      artifact_job_name: build_backend
