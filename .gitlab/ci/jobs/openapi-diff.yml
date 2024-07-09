@@ -12,7 +12,7 @@ openapi-diff:
     - job: build_backend
       artifacts: true
   script:
-    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target_branch ]]/raw/target/openapi/openapi.yaml?job=build backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target_branch ]]/raw/backend/target/openapi/openapi.yaml?job=build_backend backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
   artifacts:
     when: always
     expire_in: 2 days
