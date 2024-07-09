@@ -3,7 +3,7 @@ spec:
     image_name:
       options: ["backend", "frontend"]
 ---
-"upload-docker-$[[ inputs.image-name ]]":
+"upload-docker-$[[ inputs.image_name ]]":
   image: docker:26.1
   stage: upload
   services:
