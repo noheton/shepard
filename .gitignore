@@ -78,3 +78,6 @@ local.properties
 ### Cypress ###
 cypress/videos/
 cypress/screenshots/
+
+# NPM
+node_modules

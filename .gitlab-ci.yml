@@ -13,8 +13,7 @@ variables:
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
 
 include:
-
-    # Minimal default pipeline
+  # Minimal default pipeline
   - local: .gitlab/ci/feature.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_NAME == "develop"

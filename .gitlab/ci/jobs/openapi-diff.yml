@@ -2,10 +2,8 @@ spec:
   inputs:
     target_branch:
       options: ["develop", "main"]
-
 ---
-
-openapi_diff:
+openapi-diff:
   stage: test
   image:
     name: openapitools/openapi-diff:2.0.1

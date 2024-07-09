@@ -11,9 +11,7 @@
   "developmentStatus": "active",
   "keywords": ["data management", "data analysis", "digital twin"],
   "programmingLanguage": ["Java", "Typescript"],
-  "relatedLink": [
-    "https://www.dlr.de/zlp/en/desktopdefault.aspx/tabid-18285/29082_read-76551/#/gallery/37839"
-  ],
+  "relatedLink": ["https://www.dlr.de/zlp/en/desktopdefault.aspx/tabid-18285/29082_read-76551/#/gallery/37839"],
   "author": [
     {
       "@type": "Person",

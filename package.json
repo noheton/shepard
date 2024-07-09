@@ -1,0 +1,15 @@
+{
+  "name": "shepard",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "format": "prettier . --write",
+    "check-format": "prettier . --check"
+  },
+  "devDependencies": {
+    "prettier": "3.3.2",
+    "prettier-plugin-organize-imports": "3.2.4"
+  }
+}

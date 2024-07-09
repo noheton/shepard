@@ -1,6 +1,6 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "charliermarsh.ruff",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "cSpell.words": [
     "Apikey",
     "dataobjects",

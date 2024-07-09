@@ -1,10 +1,14 @@
 format_prettier:
   image: node:21-slim
   stage: check
-  needs: []
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
   before_script:
-    - npm install prettier typescript prettier-plugin-organize-imports
+    - npm ci --cache .npm --prefer-offline
+  needs: []
   script:
-    - npx prettier --check ./backend
-    - npx prettier --check ./docs
-    - npx prettier --check ./infrastructure
+    - npm run check-format
