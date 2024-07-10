@@ -1,4 +1,4 @@
-* text eol=auto
+* text eol=lf
 
 # Declare files that will always have CRLF line endings on checkout.
 *.bat eol=crlf
