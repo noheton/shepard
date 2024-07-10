@@ -6,6 +6,7 @@
   "labels": ["dependencies"],
   "dependencyDashboard": true,
   "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
   "packageRules": [
     {
       "matchFiles": ["release-scripts/pyproject.toml"],
