@@ -13,18 +13,21 @@ variables:
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
 
 include:
-
-    # Pipeline for feature branches
+  # Minimal default pipeline
   - local: .gitlab/ci/feature.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_NAME =~ /^feature/
+      - if: $CI_COMMIT_REF_NAME == "develop"
+        when: never
+      - if: $CI_COMMIT_REF_NAME == "main"
+        when: never
+      - when: always
 
-    # Pipeline for develop branch
+    # Special pipeline for develop branch
   - local: .gitlab/ci/dev.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_NAME == "develop"
 
-    # Pipeline for main branch
+    # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_NAME == "main"

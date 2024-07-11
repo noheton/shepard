@@ -105,8 +105,7 @@ In this example, only `ParameterX` should be modified, all other fields, relatio
 
 ## Entities
 
-This is an internal class diagram.
-Some attributes are hidden or changed for the user.
+This is an internal class diagram. Some attributes are hidden or changed for the user.
 
 ![class_diagram.png](class_diagram.png "Class Diagram")
 

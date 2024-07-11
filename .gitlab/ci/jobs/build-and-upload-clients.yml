@@ -1,145 +1,36 @@
-build_cppclient:
-  stage: build
-  image:
-    name: openapitools/openapi-generator-cli:v7.6.0
-    entrypoint: [""]
-  needs:
-    - job: build-backend
-      artifacts: true
-  script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -c backend/clients/cpp/config.yaml --type-mappings set=std::vector
-  artifacts:
-    expire_in: 2 days
-    paths:
-      - clients/cpp/client
+include:
+  - local: .gitlab/ci/clients/cpp.gitlab-ci.yml
+  - local: .gitlab/ci/clients/java.gitlab-ci.yml
+  - local: .gitlab/ci/clients/python-legacy.gitlab-ci.yml
+  - local: .gitlab/ci/clients/python.gitlab-ci.yml
+  - local: .gitlab/ci/clients/typescript.gitlab-ci.yml
 
-upload_cppclient:
-  stage: upload
-  dependencies: [build_cppclient]
-  before_script:
-    - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
-  script:
-    - cd clients/cpp
-    - tar cvfz cpp-client.tgz client/
-    - 'curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" --upload-file cpp-client.tgz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/cpp-client/${VERSION_NUMBER}/cpp-client.tgz"'
+build_cpp_client:
+  extends: .build_cpp_client
 
-build_java:
-  stage: build
-  image:
-    name: openapitools/openapi-generator-cli:v7.6.0
-    entrypoint: [""]
-  needs:
-    - job: build-backend
-      artifacts: true
-  before_script:
-    - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
-  script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o backend/clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}
-  artifacts:
-    expire_in: 2 days
-    paths:
-      - backend/clients/java
+upload_cpp_client:
+  extends: .upload_cpp_client
 
-upload_java:
-  stage: upload
-  image: maven:3-eclipse-temurin-17
-  script:
-    - cd backend/clients/java
-    - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
-  needs:
-    - job: build_java
-      artifacts: true
+build_java_client:
+  extends: .build_java_client
 
-build_python_legacy:
-  stage: build
-  image:
-    name: openapitools/openapi-generator-cli:v6.6.0
-    entrypoint: [""]
-  needs:
-    - job: build-backend
-  before_script:
-    - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
-  script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python-legacy -o clients/python-legacy -p=packageName=shepard_client_legacy,packageVersion=${VERSION_NUMBER}
-  artifacts:
-    expire_in: 2 days
-    paths:
-      - clients/python-legacy
+upload_java_client:
+  extends: .upload_java_client
 
-upload_python_legacy:
-  stage: upload
-  image: python:3.12-slim
-  before_script:
-    - python3 -m pip install wheel setuptools twine
-  script:
-    - cd clients/python-legacy
-    - python3 setup.py sdist bdist_wheel
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
-  needs:
-    - job: build_python_legacy
+build_python_legacy_client:
+  extends: .build_python_legacy_client
 
-build_python:
-  stage: build
-  image:
-    name: openapitools/openapi-generator-cli:v7.6.0
-    entrypoint: [""]
-  needs:
-    - job: build-backend
-  before_script:
-    - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
-  script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
-  artifacts:
-    expire_in: 2 days
-    paths:
-      - clients/python
+upload_python_legacy_client:
+  extends: .upload_python_legacy_client
 
-upload_python:
-  stage: upload
-  image: python:3.12-slim
-  before_script:
-    - python3 -m pip install wheel setuptools twine
-  script:
-    - cd clients/python
-    - python3 setup.py sdist bdist_wheel
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
-  needs:
-    - job: build_python
+build_python_client:
+  extends: .build_python_client
 
-build_typescript:
-  stage: build
-  image:
-    name: openapitools/openapi-generator-cli:v7.6.0
-    entrypoint: [""]
-  needs:
-    - job: build-backend
-  before_script:
-    - !reference [.version_number, script]
-    - echo ${VERSION_NUMBER}
-  script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
-  artifacts:
-    expire_in: 2 days
-    paths:
-      - clients/typescript
+upload_python_client:
+  extends: .upload_python_client
 
-upload_typescript:
-  stage: upload
-  image: node:21-slim
-  before_script:
-    - cd clients/typescript
-    - touch .npmrc
-    - echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" >> .npmrc
-    - echo "${CI_API_V4_URL#http*:}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}" >> .npmrc
-  script:
-    - npm install
-    - npm run build
-    - npm publish --tag ${NPM_TAG}
-  needs:
-    - job: build_typescript
-  variables:
-    NPM_TAG: latest
+build_typescript_client:
+  extends: .build_typescript_client
+
+upload_typescript_client:
+  extends: .upload_typescript_client

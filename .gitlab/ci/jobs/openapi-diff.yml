@@ -1,20 +1,23 @@
 spec:
   inputs:
-    target-branch:
+    target_branch:
       options: ["develop", "main"]
-
+    # This is a workaround until the first job named "build_backend" ran on the main branch.
+    # It can then be safely removed once the following link does successfully download an OpenAPI spec:
+    # https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/main/raw/backend/target/openapi/openapi.yaml?job=build_backend
+    artifact_job_name:
+      options: ["build_backend", "build-backend"]
 ---
-
 openapi-diff:
   stage: test
   image:
     name: openapitools/openapi-diff:2.0.1
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
       artifacts: true
   script:
-    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target-branch ]]/raw/target/openapi/openapi.yaml?job=build backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target_branch ]]/raw/backend/target/openapi/openapi.yaml?job=$[[ inputs.artifact_job_name ]] backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
   artifacts:
     when: always
     expire_in: 2 days

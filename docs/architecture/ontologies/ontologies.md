@@ -4,8 +4,7 @@
 
 ## Registries
 
-BARTOC knows about terminology registries, including itself.
-Registries also provide access to full terminologies either via an API (terminology service) or by other means (terminology repository).
+BARTOC knows about terminology registries, including itself. Registries also provide access to full terminologies either via an API (terminology service) or by other means (terminology repository).
 
 <https://bartoc.org/registries>
 

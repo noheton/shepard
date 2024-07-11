@@ -4,7 +4,7 @@
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
   artifacts:
@@ -15,6 +15,9 @@
 .upload_typescript: &upload_typescript
   stage: upload
   image: node:21-slim
+  needs:
+    - job: build_typescript_client
+      artifacts: true
   before_script:
     - cd clients/typescript
     - touch .npmrc
@@ -25,37 +28,25 @@
     - npm run build
     - npm publish --tag ${NPM_TAG}
 
-build_typescriptclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.build_typescript_client_dev:
   <<: *build_typescript
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-upload_typescriptclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.upload_typescript_client_dev:
   <<: *upload_typescript
-  needs:
-    - job: build_typescriptclient_dev
   variables:
     NPM_TAG: dev
 
-build_typescriptclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.build_typescript_client:
   <<: *build_typescript
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
-upload_typescriptclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.upload_typescript_client:
   <<: *upload_typescript
-  needs:
-    - job: build_typescriptclient
   variables:
     NPM_TAG: latest

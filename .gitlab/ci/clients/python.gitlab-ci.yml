@@ -4,7 +4,7 @@
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
   needs:
-    - job: build-backend
+    - job: build_backend
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
@@ -12,9 +12,12 @@
     paths:
       - clients/python
 
-.upload_python: &upload_python
+.upload_python_client: &upload_python
   stage: upload
   image: python:3.12-slim
+  needs:
+    - job: build_python_client
+      artifacts: true
   before_script:
     - python3 -m pip install wheel setuptools twine
   script:
@@ -22,34 +25,15 @@
     - python3 setup.py sdist bdist_wheel
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
 
-build_pythonclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+.build_python_client_dev:
   <<: *build_python
   before_script:
     - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
-upload_pythonclient_dev:
-  rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
-  <<: *upload_python
-  needs:
-    - job: build_pythonclient_dev
-
-build_pythonclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
+.build_python_client:
   <<: *build_python
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
-
-upload_pythonclient:
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^.*-release$/
-  <<: *upload_python
-  needs:
-    - job: build_pythonclient
-      artifacts: true

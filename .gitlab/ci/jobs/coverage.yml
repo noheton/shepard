@@ -2,7 +2,7 @@ coverage:
   stage: test
   image: haynes/jacoco2cobertura:1.0.10
   needs:
-    - job: test-backend
+    - job: test_backend
       artifacts: true
   script:
     - ls -hal backend/target/site/jacoco

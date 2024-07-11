@@ -71,8 +71,7 @@ Query collections, data objects and references
 
 ### Query objects
 
-The query object consists of logical objects and matching objects.
-Matching objects can contain the following attributes:
+The query object consists of logical objects and matching objects. Matching objects can contain the following attributes:
 
 - `name` (String)
 - `description` (String)

@@ -1,8 +1,0 @@
-image: node:21-slim
-
-format-prettier:
-  stage: test
-  before_script:
-    - npm install --save-dev --save-exact prettier
-  script:
-    - npx prettier --check .
