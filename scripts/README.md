@@ -9,7 +9,7 @@ This project provides useful scripts and tools to help maintain the shepard repo
 ## Preparation (only required once)
 
 1. go to [gitlab.com](https://gitlab.com/-/profile/personal_access_tokens) and add a personal access token with `api` permissions
-2. create a file `token.txt` and add your personal access token there
+2. create a file `scripts/token.txt` and add your personal access token there
 3. install dependencies: `poetry install`
 
 ## Usage

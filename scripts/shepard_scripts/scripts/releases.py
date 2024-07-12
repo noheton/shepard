@@ -4,12 +4,14 @@ import click
 import jinja2
 from gitlab.client import Gitlab
 from gitlab.v4.objects.merge_requests import MergeRequest
-from gitlab.v4.objects.releases import ProjectRelease
 from gitlab.v4.objects.projects import Project
+from gitlab.v4.objects.releases import ProjectRelease
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
 DEPENDENCY_BUMP_LABEL = "dependencies"
 TEMPLATE_FILE = "templates/release_notes.md"
+MAIN_BRANCH = "main"
+DEV_BRANCH = "develop"
 
 
 def _get_changes(
@@ -24,7 +26,7 @@ def _get_changes(
         state="merged",
         order_by="updated_at",
         updated_after=merged_after,
-        target_branch=project.default_branch,
+        target_branch=DEV_BRANCH,
     )  # type: ignore
 
     for merge_request in merge_requests:
@@ -65,48 +67,73 @@ def _get_release_notes(
     return result
 
 
-def _get_release_tag() -> str:
+def _get_latest_release_date(project: Project) -> str:
+    releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
+    return releases[0].released_at if len(releases) > 0 else "2001-01-01T00:00:00.000Z"
+
+
+def get_release_version() -> str:
+    # TODO: replace with semver, ask user
     now = datetime.now()
-    return now.strftime("%Y.%m.%d-release")
+    return now.strftime("%Y.%m.%d")
 
 
-def create_release(gitlab_instance: str, token: str, project_id: int):
+def get_project(gitlab_instance: str, token: str, project_id: int) -> Project:
     instance = Gitlab(gitlab_instance, token)
-
     try:
-        project = instance.projects.get(project_id)
+        return instance.projects.get(project_id)
     except KeyError as ex:
         raise click.Abort(f"Project {ex} could not be found") from ex
 
-    releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
-    latest_release = (
-        releases[0].released_at if len(releases) > 0 else "2001-01-01T00:00:00.000Z"
-    )
+
+def get_release_notes(project: Project, version: str) -> tuple[str, str]:
+    latest_release = _get_latest_release_date(project)
     breaking, _dependencies, others = _get_changes(project, latest_release)
-    release_tag = _get_release_tag()
 
     click.echo({project.name_with_namespace})
     click.echo("Merge Requests:")
     click.echo("\n".join([mr.title for mr in breaking + others]))
     click.echo()
 
-    title = click.prompt("Release title")
-    release_notes = click.edit(_get_release_notes(breaking, others), require_save=False)
+    release_name = click.prompt("Release name")
+    title = f"{version} {release_name}"
+    release_notes = (
+        click.edit(_get_release_notes(breaking, others), require_save=False) or ""
+    )
 
     click.echo(f"Title: {title}")
-    click.echo(f"Tag: {release_tag}")
+    click.echo(f"Version: {version}")
     click.echo("Release notes:")
     click.echo(release_notes)
     click.echo()
     if not click.confirm("OK?", abort=True):
         raise click.Abort("Not confirmed")
 
+    return (title, release_notes)
+
+
+def create_release_mr(project: Project, title: str):
+    mr = project.mergerequests.create(
+        {
+            "source_branch": DEV_BRANCH,
+            "target_branch": MAIN_BRANCH,
+            "title": title,
+            "description": f"This is the Merge Request for {title}",
+            "remove_source_branch": False,
+            "squash": False,
+        }
+    )
+    mr.merge()
+    click.echo("MR created")
+
+
+def create_release(project: Project, title: str, tag: str, notes: str):
     project.releases.create(
         {
             "name": title,
-            "tag_name": release_tag,
-            "description": release_notes,
-            "ref": project.default_branch,
+            "tag_name": tag,
+            "description": notes,
+            "ref": MAIN_BRANCH,
         }
     )
     click.echo("Successfully released")

@@ -2,11 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Current File",
-      "type": "python",
+      "name": "Python: Release",
+      "cwd": "${workspaceFolder}/scripts",
+      "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
-      "console": "integratedTerminal"
+      "program": "shepard_scripts/main.py",
+      "console": "integratedTerminal",
+      "args": ["release", "./token.txt"]
     }
   ]
 }
