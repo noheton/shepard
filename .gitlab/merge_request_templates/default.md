@@ -39,8 +39,6 @@ This is how the page looks now
 - [ ] The code compiles without any warnings.
 - [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#code-review-checklist).
 - [ ] The documentation has been added/updated.
-- [ ] There are no `System.out.println()` statements.
-- [ ] `package-lock.json` was not changed unless I added or edited dependencies.
 
 ### Related Issues
 
