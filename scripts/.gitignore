@@ -139,3 +139,4 @@ cython_debug/
 
 # Personal access token
 token.txt
+api_key.txt

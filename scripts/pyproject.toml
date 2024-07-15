@@ -12,9 +12,15 @@ python-gitlab = "4.6.0"
 ruff = "^0.4.0"
 jinja2 = "^3.1.2"
 click = "^8.1.7"
+shepard-client = {version = "^2024.7.4", source = "shepard-gitlab"}
 
 [tool.poetry.scripts]
 cli = "shepard_scripts.main:cli"
+
+[[tool.poetry.source]]
+name = "shepard-gitlab"
+url = "https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]
