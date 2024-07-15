@@ -1,11 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.dlr.shepard</groupId>
   <artifactId>quarkend</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>${revision}</version>
+  <name>shepard backend</name>
+  <url>https://dlr-shepard.gitlab.io/dlr-shepard/shepard/</url>
+  <description>
+    This is the backend part of the shepard system.
+    The shepard backend manages all available databases and allows to create and query data via a rest api.
+  </description>
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+  <scm>
+    <url>https://gitlab.com/dlr-shepard/shepard</url>
+  </scm>
+  <issueManagement>
+    <system>GitLab</system>
+    <url>https://gitlab.com/dlr-shepard/shepard/-/issues</url>
+  </issueManagement>
+  <ciManagement>
+    <system>GitLab CI/CD</system>
+    <url>https://gitlab.com/dlr-shepard/shepard/-/pipelines</url>
+  </ciManagement>
 
   <properties>
+    <finalName>shepard</finalName>
+    <revision>1.0.0-SNAPSHOT</revision>
+    <skipTests>false</skipTests>
+    <skipITs>${skipTests}</skipITs>
+    <skipUTs>${skipTests}</skipUTs>
     <compiler-plugin.version>3.13.0</compiler-plugin.version>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -13,8 +40,25 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.12.1</quarkus.platform.version>
-    <skipITs>true</skipITs>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
+    <assertj.version>3.26.0</assertj.version>
+    <commons.version>2.16.1</commons.version>
+    <equalsverifier.version>3.16.1</equalsverifier.version>
+    <httpclient.version>4.5.13</httpclient.version>
+    <influxdb.version>2.24</influxdb.version>
+    <janino.version>3.1.12</janino.version>
+    <jersey.version>3.1.7</jersey.version>
+    <jjwt.version>0.11.5</jjwt.version>
+    <junit.version>5.10.2</junit.version>
+    <logback.version>1.5.6</logback.version>
+    <lombok.version>1.18.32</lombok.version>
+    <mockito.version>5.12.0</mockito.version>
+    <mongodb.version>5.1.1</mongodb.version>
+    <neo4j.version>3.3.4</neo4j.version>
+    <opencsv.version>5.9</opencsv.version>
+    <restassured.version>5.4.0</restassured.version>
+    <swagger.version>2.2.22</swagger.version>
+    <tomcat.version>10.1.25</tomcat.version>
   </properties>
 
   <dependencyManagement>
@@ -48,9 +92,234 @@
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-servlet-api -->
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-servlet-api</artifactId>
+      <version>${tomcat.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- ####### JERSEY ####### -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet -->
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.inject/jersey-hk2 -->
+    <dependency>
+      <groupId>org.glassfish.jersey.inject</groupId>
+      <artifactId>jersey-hk2</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart -->
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-multipart</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-json-jackson</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-jaxb -->
+    <dependency>
+      <groupId>org.glassfish.jersey.media</groupId>
+      <artifactId>jersey-media-jaxb</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+      <version>2.3.1</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-client</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.ext/jersey-bean-validation -->
+    <dependency>
+      <groupId>org.glassfish.jersey.ext</groupId>
+      <artifactId>jersey-bean-validation</artifactId>
+      <version>${jersey.version}</version>
+    </dependency>
+    <!-- ####### CSV ####### -->
+    <!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
+    <dependency>
+      <groupId>com.opencsv</groupId>
+      <artifactId>opencsv</artifactId>
+      <version>${opencsv.version}</version>
+    </dependency>
+    <!-- ####### LOGGING ####### -->
+    <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.codehaus.janino/janino -->
+    <dependency>
+      <groupId>org.codehaus.janino</groupId>
+      <artifactId>janino</artifactId>
+      <version>${janino.version}</version>
+    </dependency>
+    <!-- ####### TESTS ####### -->
+    <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>${restassured.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/nl.jqno.equalsverifier/equalsverifier -->
+    <dependency>
+      <groupId>nl.jqno.equalsverifier</groupId>
+      <artifactId>equalsverifier</artifactId>
+      <version>${equalsverifier.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- ####### SECURITY ####### -->
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <!-- ####### DATABASES ####### -->
+    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-core -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>${neo4j.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <!-- Only add if you're using the Bolt driver -->
+    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-bolt-driver -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-bolt-native-types</artifactId>
+      <version>${neo4j.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/eu.michael-simons.neo4j/neo4j-migrations -->
+    <dependency>
+      <groupId>eu.michael-simons.neo4j</groupId>
+      <artifactId>neo4j-migrations</artifactId>
+      <version>2.10.3</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongodb-driver-sync</artifactId>
+      <version>${mongodb.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
+    <dependency>
+      <groupId>org.influxdb</groupId>
+      <artifactId>influxdb-java</artifactId>
+      <version>${influxdb.version}</version>
+    </dependency>
+    <!-- ####### SWAGGER ####### -->
+    <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-jaxrs2-jakarta</artifactId>
+      <version>${swagger.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer-v2 -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
+      <version>${swagger.version}</version>
+    </dependency>
+    <!-- ####### Misc ####### -->
+    <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- RO Crates-->
+    <dependency>
+      <groupId>edu.kit.datamanager</groupId>
+      <artifactId>ro-crate-java</artifactId>
+      <version>1.1.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-jdk14</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
   <build>
+    <finalName>${finalName}</finalName>
+    <filters>
+      <filter>profiles/${build.profile.id}/config.properties</filter>
+    </filters>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
@@ -106,21 +375,118 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
+      <!-- https://mvnrepository.com/artifact/org.jacoco/jacoco-maven-plugin -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <configuration>
+          <skip>${skipUTs}</skip>
+          <excludes>
+            <exclude>**/Backend.*</exclude>
+            <exclude>**/Constants.*</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- ####### OpenAPI ####### -->
+      <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-maven-plugin -->
+      <plugin>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-maven-plugin-jakarta</artifactId>
+        <version>${swagger.version}</version>
+        <configuration>
+          <configurationFilePath>${project.build.directory}/${finalName}/WEB-INF/classes/openapi.yaml
+          </configurationFilePath>
+          <outputFileName>openapi</outputFileName>
+          <outputFormat>JSONANDYAML</outputFormat>
+          <outputPath>${project.build.directory}/openapi</outputPath>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>resolve</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- ####### Reports ####### -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>3.5.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.4.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.16.2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>3.4.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>3.23.0</version>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>4.8.5.0</version>
+      </plugin>
     </plugins>
   </build>
 
   <profiles>
     <profile>
-      <id>native</id>
+      <id>dev</id>
       <activation>
-        <property>
-          <name>native</name>
-        </property>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
+        <build.profile.id>dev</build.profile.id>
+        <logging.appender>STDOUT</logging.appender>
         <skipITs>false</skipITs>
         <quarkus.native.enabled>true</quarkus.native.enabled>
       </properties>
     </profile>
+    <profile>
+      <id>test</id>
+      <properties>
+        <build.profile.id>test</build.profile.id>
+        <logging.appender>STDOUT</logging.appender>
+        <quarkus.native.enabled>true</quarkus.native.enabled>
+      </properties>
+    </profile>
+    <profile>
+      <id>prod</id>
+      <properties>
+        <build.profile.id>prod</build.profile.id>
+        <logging.appender>FILE</logging.appender>
+        <quarkus.native.enabled>true</quarkus.native.enabled>
+      </properties>
+    </profile>
   </profiles>
+
 </project>

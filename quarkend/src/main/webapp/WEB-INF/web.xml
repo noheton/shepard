@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                      https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+	version="5.0" metadata-complete="true">
+
+	<display-name>shepard</display-name>
+
+	<listener>
+		<listener-class>de.dlr.shepard.endpoints.ServletContextClass</listener-class>
+	</listener>
+
+	<!-- CORS Header -->
+	<filter>
+		<filter-name>CorsFilter</filter-name>
+		<filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+		<init-param>
+			<param-name>cors.allowed.origins</param-name>
+			<param-value>*</param-value>
+		</init-param>
+		<init-param>
+			<param-name>cors.allowed.methods</param-name>
+			<param-value>GET, POST, HEAD, OPTIONS, DELETE, PUT</param-value>
+		</init-param>
+		<init-param>
+			<param-name>cors.allowed.headers</param-name>
+			<param-value>Origin, Accept, X-Requested-With, Content-Type,
+				Access-Control-Request-Method, Access-Control-Request-Headers,
+				Authorization, X-API-KEY
+			</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>CorsFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Backend Servlet declaration can be omitted in which case it would be 
+		automatically added by Jersey -->
+	<servlet>
+		<servlet-name>de.dlr.shepard.Backend</servlet-name>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>de.dlr.shepard.Backend</servlet-name>
+		<url-pattern>/api/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- OpenAPI Servlet declaration -->
+	<servlet>
+		<servlet-name>OpenApi</servlet-name>
+		<servlet-class>io.swagger.v3.jaxrs2.integration.OpenApiServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>OpenApi</servlet-name>
+		<url-pattern>/doc/*</url-pattern>
+	</servlet-mapping>
+
+</web-app>
