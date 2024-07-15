@@ -1,0 +1,19 @@
+check_scripts:
+  image: python:3
+  stage: check
+  cache:
+    key:
+      files:
+        - scripts/poetry.lock
+    paths:
+      - scripts/.venv
+  needs: []
+  before_script:
+    - cd scripts
+    - pip install poetry
+    - poetry config virtualenvs.in-project true
+    - poetry install --no-root
+    - source .venv/bin/activate
+  script:
+    - python -m ruff format shepard_scripts
+    - python -m ruff check shepard_scripts

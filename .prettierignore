@@ -1,7 +1,11 @@
 # Ignore all java files
 *.java
 
+# Ignore all python files
+*.py
+
 # Target directory
 **/target/**/*
 .m2
+.venv
 
