@@ -4,6 +4,8 @@
     "esbenp.prettier-vscode",
     "streetsidesoftware.code-spell-checker",
     "Vue.volar",
-    "charliermarsh.ruff"
+    "charliermarsh.ruff",
+    "redhat.vscode-quarkus",
+    "vscjava.vscode-java-pack"
   ]
 }

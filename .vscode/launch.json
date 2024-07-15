@@ -9,6 +9,14 @@
       "program": "shepard_scripts/main.py",
       "console": "integratedTerminal",
       "args": ["release", "./token.txt"]
+    },
+    {
+      "preLaunchTask": "quarkus:dev (quarkend)",
+      "type": "java",
+      "request": "attach",
+      "hostName": "localhost",
+      "name": "Debug Quarkus application (quarkend)",
+      "port": 5005
     }
   ]
 }
