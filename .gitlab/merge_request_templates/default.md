@@ -44,3 +44,5 @@ This is how the page looks now
 
 - Related #<issue number>
 - Closes #<issue number>
+
+/label ~"status::review"
