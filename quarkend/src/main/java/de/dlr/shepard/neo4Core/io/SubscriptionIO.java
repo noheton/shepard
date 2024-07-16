@@ -3,21 +3,20 @@ package de.dlr.shepard.neo4Core.io;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.util.RequestMethod;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.util.Date;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "Subscription")
 public class SubscriptionIO {
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private Long id;
 
   @NotBlank
@@ -38,11 +37,11 @@ public class SubscriptionIO {
   @Schema(nullable = true)
   private RequestMethod requestMethod;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private String createdBy;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private Date createdAt;
 
   public SubscriptionIO(Subscription sub) {

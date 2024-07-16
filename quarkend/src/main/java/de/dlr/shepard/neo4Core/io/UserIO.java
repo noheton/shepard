@@ -3,18 +3,17 @@ package de.dlr.shepard.neo4Core.io;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import java.util.UUID;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "User")
 public class UserIO {
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private String username;
 
   private String firstName;
@@ -23,10 +22,10 @@ public class UserIO {
 
   private String email;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private Long[] subscriptionIds;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private UUID[] apiKeyIds;
 
   public UserIO(User user) {

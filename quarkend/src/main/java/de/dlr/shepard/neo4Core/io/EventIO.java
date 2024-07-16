@@ -1,8 +1,8 @@
 package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.util.RequestMethod;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @Schema(name = "Event")

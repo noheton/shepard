@@ -1,11 +1,10 @@
 package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -13,24 +12,24 @@ import lombok.NoArgsConstructor;
 @Schema(name = "DataObject")
 public class DataObjectIO extends AbstractDataObjectIO {
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private long collectionId;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private long[] referenceIds;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private long[] successorIds;
 
   private long[] predecessorIds;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private long[] childrenIds;
 
   @Schema(nullable = true)
   private Long parentId;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private long[] incomingIds;
 
   public DataObjectIO(DataObject dataObject) {

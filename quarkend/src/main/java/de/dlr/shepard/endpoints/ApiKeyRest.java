@@ -3,45 +3,47 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 public interface ApiKeyRest {
   @Tag(name = Constants.APIKEY)
   @Operation(description = "Get all api keys")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = ApiKeyIO.class)))
+    content = @Content(
+      schema = @Schema(description = "The search result page", type = SchemaType.ARRAY, implementation = ApiKeyIO.class)
+    )
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllApiKeys(String username);
 
   @Tag(name = Constants.APIKEY)
   @Operation(description = "Get api key")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = ApiKeyIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getApiKey(String username, String apiKeyUid);
 
   @Tag(name = Constants.APIKEY)
   @Operation(description = "Create a new api key")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = ApiKeyWithJWTIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createApiKey(
     String username,
     @RequestBody(
@@ -52,7 +54,7 @@ public interface ApiKeyRest {
 
   @Tag(name = Constants.APIKEY)
   @Operation(description = "Delete api key")
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteApiKey(String username, String apiKeyUid);
 }

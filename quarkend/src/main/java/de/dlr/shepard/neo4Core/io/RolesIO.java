@@ -1,10 +1,9 @@
 package de.dlr.shepard.neo4Core.io;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @Schema(name = "Roles")
@@ -12,15 +11,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RolesIO {
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private boolean owner;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private boolean manager;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private boolean writer;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private boolean reader;
 }
