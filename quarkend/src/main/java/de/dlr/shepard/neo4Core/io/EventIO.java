@@ -8,39 +8,38 @@ import lombok.Data;
 @Schema(name = "Event")
 public class EventIO {
 
-	private SubscriptionIO subscription;
+  private SubscriptionIO subscription;
 
-	@Schema(nullable = true)
-	private HasIdIO subscribedObject;
+  @Schema(nullable = true)
+  private HasIdIO subscribedObject;
 
-	private String url;
+  private String url;
 
-	private RequestMethod requestMethod;
+  private RequestMethod requestMethod;
 
-	public EventIO(String url, RequestMethod requestMethod) {
-		this.url = url;
-		this.requestMethod = requestMethod;
-	}
+  public EventIO(String url, RequestMethod requestMethod) {
+    this.url = url;
+    this.requestMethod = requestMethod;
+  }
 
-	/**
-	 * Copy constructor
-	 *
-	 * @param event The event to be copied
-	 */
-	public EventIO(EventIO event) {
-		this.subscription = event.getSubscription();
-		this.url = event.getUrl();
-		this.requestMethod = event.getRequestMethod();
-		this.subscribedObject = event.getSubscribedObject();
-	}
+  /**
+   * Copy constructor
+   *
+   * @param event The event to be copied
+   */
+  public EventIO(EventIO event) {
+    this.subscription = event.getSubscription();
+    this.url = event.getUrl();
+    this.requestMethod = event.getRequestMethod();
+    this.subscribedObject = event.getSubscribedObject();
+  }
 
-	/**
-	 * For testing purposes only
-	 *
-	 * @param url the url that triggered the event
-	 */
-	public EventIO(String url) {
-		this.url = url;
-	}
-
+  /**
+   * For testing purposes only
+   *
+   * @param url the url that triggered the event
+   */
+  public EventIO(String url) {
+    this.url = url;
+  }
 }

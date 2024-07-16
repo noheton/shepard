@@ -11,11 +11,10 @@ import lombok.ToString;
 @AllArgsConstructor
 public class PaginationHelper {
 
-	private int page;
-	private int size;
+  private int page;
+  private int size;
 
-	public int getOffset() {
-		return page * size;
-	}
-
+  public int getOffset() {
+    return page * size;
+  }
 }

@@ -15,16 +15,15 @@ import lombok.NoArgsConstructor;
 @Schema(name = "FileReference")
 public class FileReferenceIO extends BasicReferenceIO {
 
-	@NotEmpty
-	private String[] fileOids;
+  @NotEmpty
+  private String[] fileOids;
 
-	@NotNull
-	private long fileContainerId;
+  @NotNull
+  private long fileContainerId;
 
-	public FileReferenceIO(FileReference ref) {
-		super(ref);
-		this.fileOids = ref.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
-		this.fileContainerId = ref.getFileContainer() != null ? ref.getFileContainer().getId() : -1;
-	}
-
+  public FileReferenceIO(FileReference ref) {
+    super(ref);
+    this.fileOids = ref.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
+    this.fileContainerId = ref.getFileContainer() != null ? ref.getFileContainer().getId() : -1;
+  }
 }

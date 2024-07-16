@@ -13,34 +13,33 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServletContextClass implements ServletContextListener {
 
-	private static IConnector neo4j = NeoConnector.getInstance();
-	private static IConnector mongodb = MongoDBConnector.getInstance();
-	private static IConnector influxdb = InfluxDBConnector.getInstance();
+  private static IConnector neo4j = NeoConnector.getInstance();
+  private static IConnector mongodb = MongoDBConnector.getInstance();
+  private static IConnector influxdb = InfluxDBConnector.getInstance();
 
-	@Override
-	public void contextInitialized(ServletContextEvent arg0) {
-		log.info("Starting shepard backend");
-		var pkiHelper = new PKIHelper();
-		var migrationRunner = new MigrationsRunner();
-		pkiHelper.init();
+  @Override
+  public void contextInitialized(ServletContextEvent arg0) {
+    log.info("Starting shepard backend");
+    var pkiHelper = new PKIHelper();
+    var migrationRunner = new MigrationsRunner();
+    pkiHelper.init();
 
-		log.info("Waiting for databases");
-		migrationRunner.waitForConnection();
+    log.info("Waiting for databases");
+    migrationRunner.waitForConnection();
 
-		log.info("Run database migrations");
-		migrationRunner.apply();
+    log.info("Run database migrations");
+    migrationRunner.apply();
 
-		log.info("Initialize databases");
-		neo4j.connect();
-		mongodb.connect();
-		influxdb.connect();
-	}
+    log.info("Initialize databases");
+    neo4j.connect();
+    mongodb.connect();
+    influxdb.connect();
+  }
 
-	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
-		neo4j.disconnect();
-		mongodb.disconnect();
-		influxdb.disconnect();
-	}
-
+  @Override
+  public void contextDestroyed(ServletContextEvent arg0) {
+    neo4j.disconnect();
+    mongodb.disconnect();
+    influxdb.disconnect();
+  }
 }

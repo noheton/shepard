@@ -11,14 +11,13 @@ import jakarta.ws.rs.core.Response.Status;
  **/
 public class InvalidRequestException extends ShepardException {
 
-	private static final long serialVersionUID = 8918170154141864994L;
+  private static final long serialVersionUID = 8918170154141864994L;
 
-	public InvalidRequestException() {
-		super("The request is incorrect and cannot be processed", Status.BAD_REQUEST);
-	}
+  public InvalidRequestException() {
+    super("The request is incorrect and cannot be processed", Status.BAD_REQUEST);
+  }
 
-	public InvalidRequestException(String message) {
-		super(message, Status.BAD_REQUEST);
-	}
-
+  public InvalidRequestException(String message) {
+    super(message, Status.BAD_REQUEST);
+  }
 }

@@ -14,12 +14,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "UserGroup")
 public class UserGroupIO extends BasicEntityIO {
 
-	@NotNull
-	private String[] usernames;
+  @NotNull
+  private String[] usernames;
 
-	public UserGroupIO(UserGroup userGroup) {
-		super(userGroup);
-		this.usernames = userGroup.getUsers().stream().map(User::getUsername).toArray(String[]::new);
-	}
-
+  public UserGroupIO(UserGroup userGroup) {
+    super(userGroup);
+    this.usernames = userGroup.getUsers().stream().map(User::getUsername).toArray(String[]::new);
+  }
 }

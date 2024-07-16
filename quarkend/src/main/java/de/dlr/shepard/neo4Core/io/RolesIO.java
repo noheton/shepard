@@ -11,12 +11,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RolesIO {
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private boolean owner;
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private boolean manager;
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private boolean writer;
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private boolean reader;
+
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private boolean owner;
+
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private boolean manager;
+
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private boolean writer;
+
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private boolean reader;
 }

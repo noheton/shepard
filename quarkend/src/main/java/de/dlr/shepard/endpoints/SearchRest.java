@@ -17,25 +17,48 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface SearchRest {
+  @Tag(name = Constants.SEARCH)
+  @Operation(description = "search")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = ResponseBody.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response search(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = SearchBody.class))
+    ) @Valid SearchBody body
+  );
 
-	@Tag(name = Constants.SEARCH)
-	@Operation(description = "search")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ResponseBody.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response search(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SearchBody.class))) @Valid SearchBody body);
+  @Tag(name = Constants.SEARCH)
+  @Operation(description = "Search containers")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = ContainerSearchResult.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response searchContainers(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))
+    ) @Valid ContainerSearchBody containerSearchBody
+  );
 
-	@Tag(name = Constants.SEARCH)
-	@Operation(description = "Search containers")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = ContainerSearchResult.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response searchContainers(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))) @Valid ContainerSearchBody containerSearchBody);
-
-	@Tag(name = Constants.SEARCH)
-	@Operation(description = "Search users")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserSearchResult.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response searchUsers(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserSearchBody.class))) @Valid UserSearchBody userSearchBody);
+  @Tag(name = Constants.SEARCH)
+  @Operation(description = "Search users")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserSearchResult.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response searchUsers(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserSearchBody.class))
+    ) @Valid UserSearchBody userSearchBody
+  );
 }

@@ -10,16 +10,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.core.Response;
 
 public interface UserRest {
+  @Tag(name = Constants.USER)
+  @Operation(description = "Get current user")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserIO.class))
+  )
+  Response getCurrentUser();
 
-	@Tag(name = Constants.USER)
-	@Operation(description = "Get current user")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserIO.class)))
-	Response getCurrentUser();
-
-	@Tag(name = Constants.USER)
-	@Operation(description = "Get user")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUser(String username);
-
+  @Tag(name = Constants.USER)
+  @Operation(description = "Get user")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getUser(String username);
 }

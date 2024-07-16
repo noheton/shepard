@@ -9,6 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public abstract class ASearchResults<T extends ASearchParams> {
 
-	private T searchParams;
-
+  private T searchParams;
 }

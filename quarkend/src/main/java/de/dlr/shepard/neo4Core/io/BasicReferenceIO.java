@@ -13,15 +13,15 @@ import lombok.NoArgsConstructor;
 @Schema(name = "BasicReference")
 public class BasicReferenceIO extends VersionableEntityIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long dataObjectId;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long dataObjectId;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String type;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String type;
 
-	public BasicReferenceIO(BasicReference ref) {
-		super(ref);
-		this.type = ref.getType();
-		this.dataObjectId = ref.getDataObject().getShepardId();
-	}
+  public BasicReferenceIO(BasicReference ref) {
+    super(ref);
+    this.type = ref.getType();
+    this.dataObjectId = ref.getDataObject().getShepardId();
+  }
 }

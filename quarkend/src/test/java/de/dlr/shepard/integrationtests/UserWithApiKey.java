@@ -6,6 +6,7 @@ import lombok.Value;
 
 @Value
 public class UserWithApiKey {
-	private User user;
-	private ApiKey apiKey;
+
+  private User user;
+  private ApiKey apiKey;
 }

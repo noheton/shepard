@@ -12,18 +12,18 @@ import lombok.extern.slf4j.Slf4j;
 @Provider
 public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
 
-	@Override
-	public Response toResponse(Exception exception) {
-		int status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
-		if (exception instanceof WebApplicationException webException) {
-			status = webException.getResponse().getStatus();
-		}
+  @Override
+  public Response toResponse(Exception exception) {
+    int status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
+    if (exception instanceof WebApplicationException webException) {
+      status = webException.getResponse().getStatus();
+    }
 
-		log.error(exception.toString());
+    log.error(exception.toString());
 
-		return Response.status(status)
-				.entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage()))
-				.type(MediaType.APPLICATION_JSON).build();
-	}
-
+    return Response.status(status)
+      .entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage()))
+      .type(MediaType.APPLICATION_JSON)
+      .build();
+  }
 }

@@ -26,39 +26,43 @@ import lombok.extern.slf4j.Slf4j;
 @Consumes(MediaType.APPLICATION_JSON)
 public class SearchRestImpl implements SearchRest {
 
-	@Context
-	private SecurityContext securityContext;
-	private Searcher searcher = new Searcher();
-	private UserSearcher userSearcher = new UserSearcher();
-	private ContainerSearcher containerSearcher = new ContainerSearcher();
+  @Context
+  private SecurityContext securityContext;
 
-	@POST
-	@Override
-	public Response search(SearchBody body) {
-		log.info("Search for {} with query: {}", body.getSearchParams().getQueryType(),
-				body.getSearchParams().getQuery());
-		ResponseBody ret = searcher.search(body, securityContext.getUserPrincipal().getName());
-		return Response.ok(ret).build();
-	}
+  private Searcher searcher = new Searcher();
+  private UserSearcher userSearcher = new UserSearcher();
+  private ContainerSearcher containerSearcher = new ContainerSearcher();
 
-	@POST
-	@Path("/" + Constants.CONTAINERS)
-	@Override
-	public Response searchContainers(ContainerSearchBody containerSearchBody) {
-		log.info("Search for containers of type {} with query: {}",
-				containerSearchBody.getSearchParams().getQueryType(), containerSearchBody.getSearchParams().getQuery());
-		ContainerSearchResult ret = containerSearcher.search(containerSearchBody,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(ret).build();
-	}
+  @POST
+  @Override
+  public Response search(SearchBody body) {
+    log.info("Search for {} with query: {}", body.getSearchParams().getQueryType(), body.getSearchParams().getQuery());
+    ResponseBody ret = searcher.search(body, securityContext.getUserPrincipal().getName());
+    return Response.ok(ret).build();
+  }
 
-	@POST
-	@Path("/" + Constants.USERS)
-	@Override
-	public Response searchUsers(UserSearchBody userSearchBody) {
-		log.info("Search for users with query: {}", userSearchBody.getSearchParams().getQuery());
-		UserSearchResult ret = userSearcher.search(userSearchBody);
-		return Response.ok(ret).build();
-	}
+  @POST
+  @Path("/" + Constants.CONTAINERS)
+  @Override
+  public Response searchContainers(ContainerSearchBody containerSearchBody) {
+    log.info(
+      "Search for containers of type {} with query: {}",
+      containerSearchBody.getSearchParams().getQueryType(),
+      containerSearchBody.getSearchParams().getQuery()
+    );
+    ContainerSearchResult ret = containerSearcher.search(
+      containerSearchBody,
+      securityContext.getUserPrincipal().getName()
+    );
+    return Response.ok(ret).build();
+  }
 
+  @POST
+  @Path("/" + Constants.USERS)
+  @Override
+  public Response searchUsers(UserSearchBody userSearchBody) {
+    log.info("Search for users with query: {}", userSearchBody.getSearchParams().getQuery());
+    UserSearchResult ret = userSearcher.search(userSearchBody);
+    return Response.ok(ret).build();
+  }
 }

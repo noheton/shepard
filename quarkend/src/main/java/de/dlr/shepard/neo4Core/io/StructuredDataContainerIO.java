@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "StructuredDataContainer")
 public class StructuredDataContainerIO extends BasicContainerIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String oid;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String oid;
 
-	public StructuredDataContainerIO(StructuredDataContainer container) {
-		super(container);
-		this.oid = container.getMongoId();
-	}
+  public StructuredDataContainerIO(StructuredDataContainer container) {
+    super(container);
+    this.oid = container.getMongoId();
+  }
 }

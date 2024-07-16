@@ -21,21 +21,19 @@ import lombok.extern.slf4j.Slf4j;
 @Path(Constants.HEALTHZ)
 public class HealthzRestImpl implements HealthzRest {
 
-	private static IConnector neo4j = NeoConnector.getInstance();
-	private static IConnector mongodb = MongoDBConnector.getInstance();
-	private static IConnector influxdb = InfluxDBConnector.getInstance();
+  private static IConnector neo4j = NeoConnector.getInstance();
+  private static IConnector mongodb = MongoDBConnector.getInstance();
+  private static IConnector influxdb = InfluxDBConnector.getInstance();
 
-	@GET
-	@Override
-	public Response getServerHealth() {
-		var neo4jAlive = neo4j.alive();
-		var mongodbAlive = mongodb.alive();
-		var influxdbAlive = influxdb.alive();
-		var result = new HealthzIO(neo4jAlive, mongodbAlive, influxdbAlive);
-		if (neo4jAlive && mongodbAlive && influxdbAlive)
-			return Response.ok(result).build();
-		log.error("UNHEALTY: {}", result);
-		return Response.status(Status.SERVICE_UNAVAILABLE).entity(result).build();
-	}
-
+  @GET
+  @Override
+  public Response getServerHealth() {
+    var neo4jAlive = neo4j.alive();
+    var mongodbAlive = mongodb.alive();
+    var influxdbAlive = influxdb.alive();
+    var result = new HealthzIO(neo4jAlive, mongodbAlive, influxdbAlive);
+    if (neo4jAlive && mongodbAlive && influxdbAlive) return Response.ok(result).build();
+    log.error("UNHEALTY: {}", result);
+    return Response.status(Status.SERVICE_UNAVAILABLE).entity(result).build();
+  }
 }

@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public abstract class ASearchParams {
 
-	@Valid
-	@NotBlank
-	private String query;
-
+  @Valid
+  @NotBlank
+  private String query;
 }

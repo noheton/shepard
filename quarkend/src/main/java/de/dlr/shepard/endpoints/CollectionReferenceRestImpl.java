@@ -1,7 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import java.util.ArrayList;
-
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
@@ -19,71 +17,95 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
-		+ Constants.DATAOBJECT_ID + "}/" + Constants.COLLECTION_REFERENCES)
+@Path(
+  Constants.COLLECTIONS +
+  "/{" +
+  Constants.COLLECTION_ID +
+  "}/" +
+  Constants.DATAOBJECTS +
+  "/{" +
+  Constants.DATAOBJECT_ID +
+  "}/" +
+  Constants.COLLECTION_REFERENCES
+)
 public class CollectionReferenceRestImpl implements CollectionReferenceRest {
-	private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();
 
-	@Context
-	private SecurityContext securityContext;
+  private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();
 
-	@GET
-	@Override
-	public Response getAllCollectionReferences(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
-		var result = new ArrayList<CollectionReferenceIO>(references.size());
-		for (var reference : references) {
-			result.add(new CollectionReferenceIO(reference));
-		}
-		return Response.ok(result).build();
-	}
+  @Context
+  private SecurityContext securityContext;
 
-	@GET
-	@Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}")
-	@Override
-	public Response getCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId);
-		return Response.ok(new CollectionReferenceIO(result)).build();
-	}
+  @GET
+  @Override
+  public Response getAllCollectionReferences(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+  ) {
+    var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var result = new ArrayList<CollectionReferenceIO>(references.size());
+    for (var reference : references) {
+      result.add(new CollectionReferenceIO(reference));
+    }
+    return Response.ok(result).build();
+  }
 
-	@POST
-	@Subscribable
-	@Override
-	public Response createCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId, CollectionReferenceIO collectionReference) {
-		var result = collectionReferenceService.createReferenceByShepardId(dataObjectId, collectionReference,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
-	}
+  @GET
+  @Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}")
+  @Override
+  public Response getCollectionReference(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
+  ) {
+    var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId);
+    return Response.ok(new CollectionReferenceIO(result)).build();
+  }
 
-	@DELETE
-	@Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}")
-	@Subscribable
-	@Override
-	public Response deleteCollectionReference(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var result = collectionReferenceService.deleteReferenceByShepardId(collectionReferenceId,
-				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(Status.NO_CONTENT).build()
-				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
-	}
+  @POST
+  @Subscribable
+  @Override
+  public Response createCollectionReference(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    CollectionReferenceIO collectionReference
+  ) {
+    var result = collectionReferenceService.createReferenceByShepardId(
+      dataObjectId,
+      collectionReference,
+      securityContext.getUserPrincipal().getName()
+    );
+    return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
+  }
 
-	@GET
-	@Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}/payload")
-	@Override
-	public Response getCollectionReferencePayload(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId) {
-		var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId);
-		return payload != null ? Response.ok(new CollectionIO(payload)).build()
-				: Response.status(Status.NOT_FOUND).build();
-	}
+  @DELETE
+  @Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}")
+  @Subscribable
+  @Override
+  public Response deleteCollectionReference(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
+  ) {
+    var result = collectionReferenceService.deleteReferenceByShepardId(
+      collectionReferenceId,
+      securityContext.getUserPrincipal().getName()
+    );
+    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+  }
 
+  @GET
+  @Path("/{" + Constants.COLLECTION_REFERENCE_ID + "}/payload")
+  @Override
+  public Response getCollectionReferencePayload(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
+  ) {
+    var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId);
+    return payload != null ? Response.ok(new CollectionIO(payload)).build() : Response.status(Status.NOT_FOUND).build();
+  }
 }

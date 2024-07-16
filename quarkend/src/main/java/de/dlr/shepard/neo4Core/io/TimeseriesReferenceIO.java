@@ -15,24 +15,23 @@ import lombok.NoArgsConstructor;
 @Schema(name = "TimeseriesReference")
 public class TimeseriesReferenceIO extends BasicReferenceIO {
 
-	@NotNull
-	private long start;
+  @NotNull
+  private long start;
 
-	@NotNull
-	private long end;
+  @NotNull
+  private long end;
 
-	@NotEmpty
-	private Timeseries[] timeseries;
+  @NotEmpty
+  private Timeseries[] timeseries;
 
-	@NotNull
-	private long timeseriesContainerId;
+  @NotNull
+  private long timeseriesContainerId;
 
-	public TimeseriesReferenceIO(TimeseriesReference ref) {
-		super(ref);
-		this.start = ref.getStart();
-		this.end = ref.getEnd();
-		this.timeseries = ref.getTimeseries().toArray(Timeseries[]::new);
-		this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
-	}
-
+  public TimeseriesReferenceIO(TimeseriesReference ref) {
+    super(ref);
+    this.start = ref.getStart();
+    this.end = ref.getEnd();
+    this.timeseries = ref.getTimeseries().toArray(Timeseries[]::new);
+    this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
+  }
 }

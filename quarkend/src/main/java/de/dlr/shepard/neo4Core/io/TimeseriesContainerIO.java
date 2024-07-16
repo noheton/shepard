@@ -13,12 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "TimeseriesContainer")
 public class TimeseriesContainerIO extends BasicContainerIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String database;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String database;
 
-	public TimeseriesContainerIO(TimeseriesContainer container) {
-		super(container);
-		this.database = container.getDatabase();
-	}
-
+  public TimeseriesContainerIO(TimeseriesContainer container) {
+    super(container);
+    this.database = container.getDatabase();
+  }
 }

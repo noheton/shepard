@@ -13,12 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "FileContainer")
 public class FileContainerIO extends BasicContainerIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String oid;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String oid;
 
-	public FileContainerIO(FileContainer container) {
-		super(container);
-		this.oid = container.getMongoId();
-	}
-
+  public FileContainerIO(FileContainer container) {
+    super(container);
+    this.oid = container.getMongoId();
+  }
 }

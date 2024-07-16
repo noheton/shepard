@@ -13,35 +13,34 @@ import lombok.NoArgsConstructor;
 @Schema(name = "DataObject")
 public class DataObjectIO extends AbstractDataObjectIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long collectionId;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long collectionId;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] referenceIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] referenceIds;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] successorIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] successorIds;
 
-	private long[] predecessorIds;
+  private long[] predecessorIds;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] childrenIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] childrenIds;
 
-	@Schema(nullable = true)
-	private Long parentId;
+  @Schema(nullable = true)
+  private Long parentId;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] incomingIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] incomingIds;
 
-	public DataObjectIO(DataObject dataObject) {
-		super(dataObject);
-		this.collectionId = dataObject.getCollection().getShepardId();
-		this.referenceIds = extractShepardIds(dataObject.getReferences());
-		this.successorIds = extractShepardIds(dataObject.getSuccessors());
-		this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
-		this.childrenIds = extractShepardIds(dataObject.getChildren());
-		this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
-		this.incomingIds = extractShepardIds(dataObject.getIncoming());
-	}
-
+  public DataObjectIO(DataObject dataObject) {
+    super(dataObject);
+    this.collectionId = dataObject.getCollection().getShepardId();
+    this.referenceIds = extractShepardIds(dataObject.getReferences());
+    this.successorIds = extractShepardIds(dataObject.getSuccessors());
+    this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
+    this.childrenIds = extractShepardIds(dataObject.getChildren());
+    this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
+    this.incomingIds = extractShepardIds(dataObject.getIncoming());
+  }
 }

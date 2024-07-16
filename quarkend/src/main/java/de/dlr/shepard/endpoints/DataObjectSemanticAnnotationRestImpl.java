@@ -19,47 +19,97 @@ import jakarta.ws.rs.core.Response;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS + "/{"
-		+ Constants.DATAOBJECT_ID + "}/" + Constants.SEMANTIC_ANNOTATIONS)
+@Path(
+  Constants.COLLECTIONS +
+  "/{" +
+  Constants.COLLECTION_ID +
+  "}/" +
+  Constants.DATAOBJECTS +
+  "/{" +
+  Constants.DATAOBJECT_ID +
+  "}/" +
+  Constants.SEMANTIC_ANNOTATIONS
+)
 public class DataObjectSemanticAnnotationRestImpl extends SemanticAnnotationRestImpl implements SemanticAnnotationRest {
 
-	@GET
-	@Override
-	@Operation(operationId = "getAllDataObjectAnnotations", description = "Get all semantic annotations", parameters = {
-			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
-	public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
-		return getAllByShepardId(dataObjectId);
-	}
+  @GET
+  @Override
+  @Operation(
+    operationId = "getAllDataObjectAnnotations",
+    description = "Get all semantic annotations",
+    parameters = {
+      @Parameter(
+        in = ParameterIn.PATH,
+        name = Constants.COLLECTION_ID,
+        schema = @Schema(type = "integer", format = "int64")
+      ),
+    }
+  )
+  public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
+    return getAllByShepardId(dataObjectId);
+  }
 
-	@GET
-	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
-	@Override
-	@Operation(operationId = "getDataObjectAnnotation", description = "Get semantic annotation", parameters = {
-			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
-	public Response getAnnotation(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
-		return get(semanticAnnotationId);
-	}
+  @GET
+  @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+  @Override
+  @Operation(
+    operationId = "getDataObjectAnnotation",
+    description = "Get semantic annotation",
+    parameters = {
+      @Parameter(
+        in = ParameterIn.PATH,
+        name = Constants.COLLECTION_ID,
+        schema = @Schema(type = "integer", format = "int64")
+      ),
+    }
+  )
+  public Response getAnnotation(
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    return get(semanticAnnotationId);
+  }
 
-	@POST
-	@Subscribable
-	@Override
-	@Operation(operationId = "createDataObjectAnnotation", description = "Create a new semantic annotation", parameters = {
-			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
-	public Response createAnnotation(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			SemanticAnnotationIO semanticAnnotation) {
-		return createByShepardId(dataObjectId, semanticAnnotation);
-	}
+  @POST
+  @Subscribable
+  @Override
+  @Operation(
+    operationId = "createDataObjectAnnotation",
+    description = "Create a new semantic annotation",
+    parameters = {
+      @Parameter(
+        in = ParameterIn.PATH,
+        name = Constants.COLLECTION_ID,
+        schema = @Schema(type = "integer", format = "int64")
+      ),
+    }
+  )
+  public Response createAnnotation(
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    SemanticAnnotationIO semanticAnnotation
+  ) {
+    return createByShepardId(dataObjectId, semanticAnnotation);
+  }
 
-	@DELETE
-	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
-	@Subscribable
-	@Override
-	@Operation(operationId = "deleteDataObjectAnnotation", description = "Delete semantic annotation", parameters = {
-			@Parameter(in = ParameterIn.PATH, name = Constants.COLLECTION_ID, schema = @Schema(type = "integer", format = "int64")) })
-	public Response deleteAnnotation(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
-		return delete(semanticAnnotationId);
-	}
-
+  @DELETE
+  @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+  @Subscribable
+  @Override
+  @Operation(
+    operationId = "deleteDataObjectAnnotation",
+    description = "Delete semantic annotation",
+    parameters = {
+      @Parameter(
+        in = ParameterIn.PATH,
+        name = Constants.COLLECTION_ID,
+        schema = @Schema(type = "integer", format = "int64")
+      ),
+    }
+  )
+  public Response deleteAnnotation(
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    return delete(semanticAnnotationId);
+  }
 }

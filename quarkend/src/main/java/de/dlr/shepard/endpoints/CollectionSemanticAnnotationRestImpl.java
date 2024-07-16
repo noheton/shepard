@@ -19,39 +19,44 @@ import jakarta.ws.rs.core.Response;
 @Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.SEMANTIC_ANNOTATIONS)
 public class CollectionSemanticAnnotationRestImpl extends SemanticAnnotationRestImpl implements SemanticAnnotationRest {
 
-	@GET
-	@Override
-	@Operation(operationId = "getAllCollectionAnnotations", description = "Get all semantic annotations")
-	public Response getAllAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		return getAllByShepardId(collectionId);
-	}
+  @GET
+  @Override
+  @Operation(operationId = "getAllCollectionAnnotations", description = "Get all semantic annotations")
+  public Response getAllAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+    return getAllByShepardId(collectionId);
+  }
 
-	@GET
-	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
-	@Override
-	@Operation(operationId = "getCollectionAnnotation", description = "Get semantic annotation")
-	public Response getAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
-		return get(semanticAnnotationId);
-	}
+  @GET
+  @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+  @Override
+  @Operation(operationId = "getCollectionAnnotation", description = "Get semantic annotation")
+  public Response getAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    return get(semanticAnnotationId);
+  }
 
-	@POST
-	@Subscribable
-	@Override
-	@Operation(operationId = "createCollectionAnnotation", description = "Create a new semantic annotation")
-	public Response createAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			SemanticAnnotationIO semanticAnnotation) {
-		return createByShepardId(collectionId, semanticAnnotation);
-	}
+  @POST
+  @Subscribable
+  @Override
+  @Operation(operationId = "createCollectionAnnotation", description = "Create a new semantic annotation")
+  public Response createAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    SemanticAnnotationIO semanticAnnotation
+  ) {
+    return createByShepardId(collectionId, semanticAnnotation);
+  }
 
-	@DELETE
-	@Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
-	@Subscribable
-	@Override
-	@Operation(operationId = "deleteCollectionAnnotation", description = "Delete semantic annotation")
-	public Response deleteAnnotation(@PathParam(Constants.COLLECTION_ID) long collectionId,
-			@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
-		return delete(semanticAnnotationId);
-	}
-
+  @DELETE
+  @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
+  @Subscribable
+  @Override
+  @Operation(operationId = "deleteCollectionAnnotation", description = "Delete semantic annotation")
+  public Response deleteAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    return delete(semanticAnnotationId);
+  }
 }

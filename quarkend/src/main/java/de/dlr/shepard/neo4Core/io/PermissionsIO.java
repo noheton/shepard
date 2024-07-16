@@ -1,7 +1,5 @@
 package de.dlr.shepard.neo4Core.io;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
@@ -11,43 +9,45 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.ArrayUtils;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "Permissions")
 public class PermissionsIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long entityId;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long entityId;
 
-	private String owner;
+  private String owner;
 
-	private PermissionType permissionType;
+  private PermissionType permissionType;
 
-	@NotNull
-	private String[] reader;
+  @NotNull
+  private String[] reader;
 
-	@NotNull
-	private String[] writer;
+  @NotNull
+  private String[] writer;
 
-	private long[] readerGroupIds = {};
+  private long[] readerGroupIds = {};
 
-	private long[] writerGroupIds = {};
+  private long[] writerGroupIds = {};
 
-	@NotNull
-	private String[] manager;
+  @NotNull
+  private String[] manager;
 
-	public PermissionsIO(Permissions permissions) {
-		this.entityId = permissions.getEntity().getId();
-		this.permissionType = permissions.getPermissionType();
-		this.owner = permissions.getOwner() != null ? permissions.getOwner().getUsername() : null;
-		this.reader = permissions.getReader().stream().map(User::getUsername).toArray(String[]::new);
-		this.writer = permissions.getWriter().stream().map(User::getUsername).toArray(String[]::new);
-		this.readerGroupIds = ArrayUtils
-				.toPrimitive(permissions.getReaderGroups().stream().map(UserGroup::getId).toArray(Long[]::new));
-		this.writerGroupIds = ArrayUtils
-				.toPrimitive(permissions.getWriterGroups().stream().map(UserGroup::getId).toArray(Long[]::new));
-		this.manager = permissions.getManager().stream().map(User::getUsername).toArray(String[]::new);
-	}
-
+  public PermissionsIO(Permissions permissions) {
+    this.entityId = permissions.getEntity().getId();
+    this.permissionType = permissions.getPermissionType();
+    this.owner = permissions.getOwner() != null ? permissions.getOwner().getUsername() : null;
+    this.reader = permissions.getReader().stream().map(User::getUsername).toArray(String[]::new);
+    this.writer = permissions.getWriter().stream().map(User::getUsername).toArray(String[]::new);
+    this.readerGroupIds = ArrayUtils.toPrimitive(
+      permissions.getReaderGroups().stream().map(UserGroup::getId).toArray(Long[]::new)
+    );
+    this.writerGroupIds = ArrayUtils.toPrimitive(
+      permissions.getWriterGroups().stream().map(UserGroup::getId).toArray(Long[]::new)
+    );
+    this.manager = permissions.getManager().stream().map(User::getUsername).toArray(String[]::new);
+  }
 }

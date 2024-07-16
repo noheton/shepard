@@ -11,11 +11,10 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class UserSearchResult extends ASearchResults<UserSearchParams> {
 
-	private UserIO[] results;
+  private UserIO[] results;
 
-	public UserSearchResult(UserIO[] results, UserSearchParams searchParams) {
-		super(searchParams);
-		this.results = results;
-	}
-
+  public UserSearchResult(UserIO[] results, UserSearchParams searchParams) {
+    super(searchParams);
+    this.results = results;
+  }
 }

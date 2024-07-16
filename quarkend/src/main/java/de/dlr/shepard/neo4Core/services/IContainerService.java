@@ -1,18 +1,16 @@
 package de.dlr.shepard.neo4Core.services;
 
-import java.util.List;
-
 import de.dlr.shepard.neo4Core.entities.BasicContainer;
 import de.dlr.shepard.neo4Core.io.BasicContainerIO;
 import de.dlr.shepard.util.QueryParamHelper;
+import java.util.List;
 
 public interface IContainerService<T extends BasicContainer, S extends BasicContainerIO> {
-	List<T> getAllContainers(QueryParamHelper params, String username);
+  List<T> getAllContainers(QueryParamHelper params, String username);
 
-	T getContainer(long id);
+  T getContainer(long id);
 
-	T createContainer(S containerIO, String username);
+  T createContainer(S containerIO, String username);
 
-	boolean deleteContainer(long containerId, String username);
-
+  boolean deleteContainer(long containerId, String username);
 }

@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "ApiKeyWithJWT")
 public class ApiKeyWithJWTIO extends ApiKeyIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String jwt;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String jwt;
 
-	public ApiKeyWithJWTIO(ApiKey key) {
-		super(key);
-		this.jwt = key.getJws();
-	}
+  public ApiKeyWithJWTIO(ApiKey key) {
+    super(key);
+    this.jwt = key.getJws();
+  }
 }

@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "BasicContainer")
 public class BasicContainerIO extends BasicEntityIO {
 
-	public BasicContainerIO(BasicContainer container) {
-		super(container);
-	}
-
+  public BasicContainerIO(BasicContainer container) {
+    super(container);
+  }
 }

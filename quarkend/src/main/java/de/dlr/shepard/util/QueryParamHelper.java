@@ -12,67 +12,66 @@ import lombok.ToString;
 @NoArgsConstructor
 public class QueryParamHelper {
 
-	private String name;
-	private PaginationHelper pagination;
-	private Long parentId;
-	private Long predecessorId;
-	private Long successorId;
-	private OrderByAttribute orderByAttribute;
-	private Boolean orderDesc;
+  private String name;
+  private PaginationHelper pagination;
+  private Long parentId;
+  private Long predecessorId;
+  private Long successorId;
+  private OrderByAttribute orderByAttribute;
+  private Boolean orderDesc;
 
-	public QueryParamHelper withName(String name) {
-		this.name = name;
-		return this;
-	}
+  public QueryParamHelper withName(String name) {
+    this.name = name;
+    return this;
+  }
 
-	public boolean hasName() {
-		return this.name != null;
-	}
+  public boolean hasName() {
+    return this.name != null;
+  }
 
-	public QueryParamHelper withPageAndSize(int page, int size) {
-		this.pagination = new PaginationHelper(page, size);
-		return this;
-	}
+  public QueryParamHelper withPageAndSize(int page, int size) {
+    this.pagination = new PaginationHelper(page, size);
+    return this;
+  }
 
-	public boolean hasPagination() {
-		return this.pagination != null;
-	}
+  public boolean hasPagination() {
+    return this.pagination != null;
+  }
 
-	public QueryParamHelper withPredecessorId(long predecessorId) {
-		this.predecessorId = predecessorId;
-		return this;
-	}
+  public QueryParamHelper withPredecessorId(long predecessorId) {
+    this.predecessorId = predecessorId;
+    return this;
+  }
 
-	public boolean hasPredecessorId() {
-		return this.predecessorId != null;
-	}
+  public boolean hasPredecessorId() {
+    return this.predecessorId != null;
+  }
 
-	public QueryParamHelper withSuccessorId(long successorId) {
-		this.successorId = successorId;
-		return this;
-	}
+  public QueryParamHelper withSuccessorId(long successorId) {
+    this.successorId = successorId;
+    return this;
+  }
 
-	public boolean hasSuccessorId() {
-		return this.successorId != null;
-	}
+  public boolean hasSuccessorId() {
+    return this.successorId != null;
+  }
 
-	public QueryParamHelper withParentId(long parentId) {
-		this.parentId = parentId;
-		return this;
-	}
+  public QueryParamHelper withParentId(long parentId) {
+    this.parentId = parentId;
+    return this;
+  }
 
-	public boolean hasParentId() {
-		return this.parentId != null;
-	}
+  public boolean hasParentId() {
+    return this.parentId != null;
+  }
 
-	public QueryParamHelper withOrderByAttribute(OrderByAttribute orderBy, Boolean orderDesc) {
-		this.orderByAttribute = orderBy;
-		this.orderDesc = orderDesc;
-		return this;
-	}
+  public QueryParamHelper withOrderByAttribute(OrderByAttribute orderBy, Boolean orderDesc) {
+    this.orderByAttribute = orderBy;
+    this.orderDesc = orderDesc;
+    return this;
+  }
 
-	public boolean hasOrderByAttribute() {
-		return this.orderByAttribute != null;
-	}
-
+  public boolean hasOrderByAttribute() {
+    return this.orderByAttribute != null;
+  }
 }

@@ -13,6 +13,7 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
 #### Downloads
 
 - OpenJDK 17 (LTS): <https://adoptium.net/index.html?variant=openjdk17&jvmVariant=hotspot>
+- Node JS and NPM: <https://nodejs.org/en/>
 - One of the following IDEs (VSCode is recommended):
   - VSCode: <https://code.visualstudio.com/download>
   - IntelliJ: <https://www.jetbrains.com/idea/download/>
@@ -20,9 +21,11 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
 #### Installation
 
 1. install OpenJDK
-2. install VSCode or IntelliJ
-3. clone Git repository
-4. Add Project to IDE:
+2. install Node JS and NPM
+3. install VSCode or IntelliJ
+4. clone Git repository
+5. run `npm install` in the top level
+6. Add Project to IDE:
    - IntelliJ:
      1. In the "Project Structure" settings go to "Modules" (or press F4).
      2. Click "+" and "Import Module".

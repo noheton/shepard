@@ -13,16 +13,15 @@ import lombok.NoArgsConstructor;
 @Schema(name = "Collection")
 public class CollectionIO extends AbstractDataObjectIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] dataObjectIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] dataObjectIds;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] incomingIds;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private long[] incomingIds;
 
-	public CollectionIO(Collection collection) {
-		super(collection);
-		this.dataObjectIds = extractShepardIds(collection.getDataObjects());
-		this.incomingIds = extractShepardIds(collection.getIncoming());
-	}
-
+  public CollectionIO(Collection collection) {
+    super(collection);
+    this.dataObjectIds = extractShepardIds(collection.getDataObjects());
+    this.incomingIds = extractShepardIds(collection.getIncoming());
+  }
 }

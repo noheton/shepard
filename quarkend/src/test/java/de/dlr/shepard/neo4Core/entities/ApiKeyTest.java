@@ -2,32 +2,31 @@ package de.dlr.shepard.neo4Core.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Date;
-
-import org.junit.jupiter.api.Test;
-
 import de.dlr.shepard.BaseTestCase;
+import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
+import org.junit.jupiter.api.Test;
 
 public class ApiKeyTest extends BaseTestCase {
 
-	@Test
-	public void equalsContract() {
-		EqualsVerifier.simple().forClass(ApiKey.class).withPrefabValues(User.class, new User("bob"), new User("claus"))
-				.verify();
-	}
+  @Test
+  public void equalsContract() {
+    EqualsVerifier.simple()
+      .forClass(ApiKey.class)
+      .withPrefabValues(User.class, new User("bob"), new User("claus"))
+      .verify();
+  }
 
-	@Test
-	public void reducedConstructorTest() {
-		var user = new User("bob");
-		var date = new Date();
-		var apiKey = new ApiKey();
-		apiKey.setBelongsTo(user);
-		apiKey.setCreatedAt(date);
-		apiKey.setName("MyApiKey");
+  @Test
+  public void reducedConstructorTest() {
+    var user = new User("bob");
+    var date = new Date();
+    var apiKey = new ApiKey();
+    apiKey.setBelongsTo(user);
+    apiKey.setCreatedAt(date);
+    apiKey.setName("MyApiKey");
 
-		var actual = new ApiKey("MyApiKey", date, user);
-		assertEquals(apiKey, actual);
-	}
-
+    var actual = new ApiKey("MyApiKey", date, user);
+    assertEquals(apiKey, actual);
+  }
 }

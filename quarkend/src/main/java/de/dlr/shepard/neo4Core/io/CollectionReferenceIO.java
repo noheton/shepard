@@ -13,18 +13,17 @@ import lombok.NoArgsConstructor;
 @Schema(name = "CollectionReference")
 public class CollectionReferenceIO extends BasicReferenceIO {
 
-	@NotNull
-	private long referencedCollectionId;
+  @NotNull
+  private long referencedCollectionId;
 
-	@Schema(nullable = true)
-	private String relationship;
+  @Schema(nullable = true)
+  private String relationship;
 
-	public CollectionReferenceIO(CollectionReference ref) {
-		super(ref);
-		this.referencedCollectionId = ref.getReferencedCollection() != null
-				? ref.getReferencedCollection().getShepardId()
-				: -1;
-		this.relationship = ref.getRelationship();
-	}
-
+  public CollectionReferenceIO(CollectionReference ref) {
+    super(ref);
+    this.referencedCollectionId = ref.getReferencedCollection() != null
+      ? ref.getReferencedCollection().getShepardId()
+      : -1;
+    this.relationship = ref.getRelationship();
+  }
 }

@@ -8,14 +8,13 @@ import de.dlr.shepard.util.Constants;
 
 public class UserSearcher {
 
-	private SearchDAO searchDAO = new SearchDAO();
+  private SearchDAO searchDAO = new SearchDAO();
 
-	public UserSearchResult search(UserSearchBody userSearchBody) {
-		String selectionQuery = Neo4jEmitter.emitUserSelectionQuery(userSearchBody.getSearchParams().getQuery());
-		QueryValidator.checkQuery(userSearchBody.getSearchParams().getQuery());
-		var users = searchDAO.findUsers(selectionQuery, Constants.USER_IN_QUERY);
-		var usersIO = users.stream().map(UserIO::new).toArray(UserIO[]::new);
-		return new UserSearchResult(usersIO, userSearchBody.getSearchParams());
-	}
-
+  public UserSearchResult search(UserSearchBody userSearchBody) {
+    String selectionQuery = Neo4jEmitter.emitUserSelectionQuery(userSearchBody.getSearchParams().getQuery());
+    QueryValidator.checkQuery(userSearchBody.getSearchParams().getQuery());
+    var users = searchDAO.findUsers(selectionQuery, Constants.USER_IN_QUERY);
+    var usersIO = users.stream().map(UserIO::new).toArray(UserIO[]::new);
+    return new UserSearchResult(usersIO, userSearchBody.getSearchParams());
+  }
 }

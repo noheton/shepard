@@ -11,13 +11,12 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ResponseBody extends ASearchResults<SearchParams> {
 
-	private ResultTriple[] resultSet;
-	private VersionableEntityIO[] results;
+  private ResultTriple[] resultSet;
+  private VersionableEntityIO[] results;
 
-	public ResponseBody(ResultTriple[] resultSet, VersionableEntityIO[] results, SearchParams searchParams) {
-		super(searchParams);
-		this.resultSet = resultSet;
-		this.results = results;
-	}
-
+  public ResponseBody(ResultTriple[] resultSet, VersionableEntityIO[] results, SearchParams searchParams) {
+    super(searchParams);
+    this.resultSet = resultSet;
+    this.results = results;
+  }
 }

@@ -21,27 +21,26 @@ import jakarta.ws.rs.core.SecurityContext;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserRestImpl implements UserRest {
 
-	private UserService userService = new UserService();
+  private UserService userService = new UserService();
 
-	@Context
-	private SecurityContext securityContext;
+  @Context
+  private SecurityContext securityContext;
 
-	@GET
-	@Override
-	public Response getCurrentUser() {
-		JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
-		User currentUser = userService.getUser(principal.getUsername());
-		return currentUser == null ? Response.status(Status.NOT_FOUND).build()
-				: Response.ok(new UserIO(currentUser)).build();
+  @GET
+  @Override
+  public Response getCurrentUser() {
+    JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
+    User currentUser = userService.getUser(principal.getUsername());
+    return currentUser == null
+      ? Response.status(Status.NOT_FOUND).build()
+      : Response.ok(new UserIO(currentUser)).build();
+  }
 
-	}
-
-	@GET
-	@Path("/{" + Constants.USERNAME + "}")
-	@Override
-	public Response getUser(@PathParam(Constants.USERNAME) String username) {
-		User user = userService.getUser(username);
-		return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
-	}
-
+  @GET
+  @Path("/{" + Constants.USERNAME + "}")
+  @Override
+  public Response getUser(@PathParam(Constants.USERNAME) String username) {
+    User user = userService.getUser(username);
+    return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
+  }
 }

@@ -9,17 +9,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ResultTriple {
 
-	private Long collectionId;
-	private Long dataObjectId;
-	private Long referenceId;
+  private Long collectionId;
+  private Long dataObjectId;
+  private Long referenceId;
 
-	public ResultTriple(Long collectionId) {
-		this.collectionId = collectionId;
-	}
+  public ResultTriple(Long collectionId) {
+    this.collectionId = collectionId;
+  }
 
-	public ResultTriple(Long collectionId, Long dataObjectId) {
-		this.collectionId = collectionId;
-		this.dataObjectId = dataObjectId;
-	}
-
+  public ResultTriple(Long collectionId, Long dataObjectId) {
+    this.collectionId = collectionId;
+    this.dataObjectId = dataObjectId;
+  }
 }

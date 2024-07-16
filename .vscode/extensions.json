@@ -6,6 +6,7 @@
     "Vue.volar",
     "charliermarsh.ruff",
     "redhat.vscode-quarkus",
-    "vscjava.vscode-java-pack"
+    "vscjava.vscode-java-pack",
+    "vscjava.vscode-lombok"
   ]
 }

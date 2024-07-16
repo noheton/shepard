@@ -16,55 +16,96 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface UserGroupRest {
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get all usergroups")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserGroupIO.class)))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getAllUserGroups(Integer page, Integer size, UserGroupAttributes orderAttribute, Boolean orderDesc);
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get all usergroups")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserGroupIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllUserGroups(Integer page, Integer size, UserGroupAttributes orderAttribute, Boolean orderDesc);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get usergroup")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getUserGroup(Long id);
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get usergroup")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroup(Long id);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Create a new usergroup")
+  @ApiResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response createUserGroup(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+    ) @Valid UserGroupIO userGroup
+  );
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Create a new usergroup")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response createUserGroup(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserGroupIO.class))) @Valid UserGroupIO userGroup);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Update usergroup")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response updateUserGroup(
+    Long id,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+    ) @Valid UserGroupIO userGroup
+  );
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Update usergroup")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response updateUserGroup(Long id,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserGroupIO.class))) @Valid UserGroupIO userGroup);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Delete usergroup")
+  @ApiResponse(description = "deleted", responseCode = "204")
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response deleteUserGroup(Long id);
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Delete usergroup")
-	@ApiResponse(description = "deleted", responseCode = "204")
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteUserGroup(Long id);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get permissions")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getUserGroupPermissions(long userGroupId);
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get permissions")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroupPermissions(long userGroupId);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Edit permissions")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response editUserGroupPermissions(
+    long userGroupId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+    ) @Valid PermissionsIO permissions
+  );
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Edit permissions")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response editUserGroupPermissions(long userGroupId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
-
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get roles")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroupRoles(long userGroupId);
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get roles")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = RolesIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getUserGroupRoles(long userGroupId);
 }

@@ -13,36 +13,36 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(name = "SemanticAnnotation")
 public class SemanticAnnotationIO implements HasId {
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private Long id;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String name;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private Long id;
 
-	@NotBlank
-	private String propertyIRI;
+  @Schema(accessMode = AccessMode.READ_ONLY)
+  private String name;
 
-	@NotBlank
-	private String valueIRI;
+  @NotBlank
+  private String propertyIRI;
 
-	@NotNull
-	private long propertyRepositoryId;
+  @NotBlank
+  private String valueIRI;
 
-	@NotNull
-	private long valueRepositoryId;
+  @NotNull
+  private long propertyRepositoryId;
 
-	public SemanticAnnotationIO(SemanticAnnotation ref) {
-		this.id = ref.getId();
-		this.name = ref.getName();
-		this.propertyIRI = ref.getPropertyIRI();
-		this.valueIRI = ref.getValueIRI();
-		this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
-		this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
-	}
+  @NotNull
+  private long valueRepositoryId;
 
-	@Override
-	public String getUniqueId() {
-		return id.toString();
-	}
+  public SemanticAnnotationIO(SemanticAnnotation ref) {
+    this.id = ref.getId();
+    this.name = ref.getName();
+    this.propertyIRI = ref.getPropertyIRI();
+    this.valueIRI = ref.getValueIRI();
+    this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
+    this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
+  }
 
+  @Override
+  public String getUniqueId() {
+    return id.toString();
+  }
 }

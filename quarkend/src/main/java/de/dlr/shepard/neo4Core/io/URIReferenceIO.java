@@ -13,12 +13,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "URIReference")
 public class URIReferenceIO extends BasicReferenceIO {
 
-	@NotBlank
-	private String uri;
+  @NotBlank
+  private String uri;
 
-	public URIReferenceIO(URIReference ref) {
-		super(ref);
-		this.uri = ref.getUri();
-	}
-
+  public URIReferenceIO(URIReference ref) {
+    super(ref);
+    this.uri = ref.getUri();
+  }
 }

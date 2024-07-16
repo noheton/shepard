@@ -6,16 +6,15 @@ import org.mockito.MockitoAnnotations;
 
 public abstract class BaseTestCase {
 
-	private AutoCloseable mocks;
+  private AutoCloseable mocks;
 
-	@BeforeEach
-	public void setUp() {
-		mocks = MockitoAnnotations.openMocks(this);
+  @BeforeEach
+  public void setUp() {
+    mocks = MockitoAnnotations.openMocks(this);
+  }
 
-	}
-
-	@AfterEach
-	public void tearDown() throws Exception {
-		mocks.close();
-	}
+  @AfterEach
+  public void tearDown() throws Exception {
+    mocks.close();
+  }
 }

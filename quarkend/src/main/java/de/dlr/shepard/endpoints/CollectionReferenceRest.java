@@ -14,35 +14,56 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface CollectionReferenceRest {
+  @Tag(name = Constants.COLLECTION_REFERENCE)
+  @Operation(description = "Get all collection references")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(array = @ArraySchema(schema = @Schema(implementation = CollectionReferenceIO.class)))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getAllCollectionReferences(long collectionId, long dataObjectId);
 
-	@Tag(name = Constants.COLLECTION_REFERENCE)
-	@Operation(description = "Get all collection references")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = CollectionReferenceIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllCollectionReferences(long collectionId, long dataObjectId);
+  @Tag(name = Constants.COLLECTION_REFERENCE)
+  @Operation(description = "Get collection reference")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getCollectionReference(long collectionId, long dataObjectId, long collectionReferenceId);
 
-	@Tag(name = Constants.COLLECTION_REFERENCE)
-	@Operation(description = "Get collection reference")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getCollectionReference(long collectionId, long dataObjectId, long collectionReferenceId);
+  @Tag(name = Constants.COLLECTION_REFERENCE)
+  @Operation(description = "Create a new collection reference")
+  @ApiResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response createCollectionReference(
+    long collectionId,
+    long dataObjectId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))
+    ) @Valid CollectionReferenceIO collectionReference
+  );
 
-	@Tag(name = Constants.COLLECTION_REFERENCE)
-	@Operation(description = "Create a new collection reference")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response createCollectionReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))) @Valid CollectionReferenceIO collectionReference);
+  @Tag(name = Constants.COLLECTION_REFERENCE)
+  @Operation(description = "Delete collection reference")
+  @ApiResponse(description = "deleted", responseCode = "204")
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response deleteCollectionReference(long collectionId, long dataObjectId, long collectionReferenceId);
 
-	@Tag(name = Constants.COLLECTION_REFERENCE)
-	@Operation(description = "Delete collection reference")
-	@ApiResponse(description = "deleted", responseCode = "204")
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteCollectionReference(long collectionId, long dataObjectId, long collectionReferenceId);
-
-	@Tag(name = Constants.COLLECTION_REFERENCE)
-	@Operation(description = "Get collection reference payload")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = CollectionIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getCollectionReferencePayload(long collectionId, long dataObjectId, long collectionReferenceId);
+  @Tag(name = Constants.COLLECTION_REFERENCE)
+  @Operation(description = "Get collection reference payload")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getCollectionReferencePayload(long collectionId, long dataObjectId, long collectionReferenceId);
 }

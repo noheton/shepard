@@ -1,5 +1,5 @@
 # Ignore all java files
-*.java
+backend/**/*.java
 
 # Ignore all python files
 *.py

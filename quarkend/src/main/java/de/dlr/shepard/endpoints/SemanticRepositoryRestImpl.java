@@ -1,7 +1,5 @@
 package de.dlr.shepard.endpoints;
 
-import java.util.ArrayList;
-
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.neo4Core.orderBy.SemanticRepositoryAttributes;
@@ -21,63 +19,67 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.SEMANTIC_REPOSITORIES)
 public class SemanticRepositoryRestImpl implements SemanticRepositoryRest {
-	private SemanticRepositoryService semanticRepositoryService = new SemanticRepositoryService();
 
-	@Context
-	private SecurityContext securityContext;
+  private SemanticRepositoryService semanticRepositoryService = new SemanticRepositoryService();
 
-	@GET
-	@Override
-	public Response getAllSemanticRepositories(@QueryParam(Constants.QP_NAME) String name,
-			@QueryParam(Constants.QP_PAGE) Integer page, @QueryParam(Constants.QP_SIZE) Integer size,
-			@QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) SemanticRepositoryAttributes orderBy,
-			@QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc) {
-		var params = new QueryParamHelper();
-		if (name != null)
-			params = params.withName(name);
-		if (page != null && size != null)
-			params = params.withPageAndSize(page, size);
-		if (orderBy != null)
-			params = params.withOrderByAttribute(orderBy, orderDesc);
-		var repositories = semanticRepositoryService.getAllRepositories(params);
+  @Context
+  private SecurityContext securityContext;
 
-		var result = new ArrayList<SemanticRepositoryIO>(repositories.size());
-		for (var repository : repositories) {
-			result.add(new SemanticRepositoryIO(repository));
-		}
-		return Response.ok(result).build();
-	}
+  @GET
+  @Override
+  public Response getAllSemanticRepositories(
+    @QueryParam(Constants.QP_NAME) String name,
+    @QueryParam(Constants.QP_PAGE) Integer page,
+    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) SemanticRepositoryAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+  ) {
+    var params = new QueryParamHelper();
+    if (name != null) params = params.withName(name);
+    if (page != null && size != null) params = params.withPageAndSize(page, size);
+    if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
+    var repositories = semanticRepositoryService.getAllRepositories(params);
 
-	@GET
-	@Path("/{" + Constants.SEMANTIC_REPOSITORY_ID + "}")
-	@Override
-	public Response getSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
-		var result = semanticRepositoryService.getRepository(semanticRepositoryId);
-		return Response.ok(new SemanticRepositoryIO(result)).build();
-	}
+    var result = new ArrayList<SemanticRepositoryIO>(repositories.size());
+    for (var repository : repositories) {
+      result.add(new SemanticRepositoryIO(repository));
+    }
+    return Response.ok(result).build();
+  }
 
-	@POST
-	@Override
-	public Response createSemanticRepository(SemanticRepositoryIO semanticRepository) {
-		var result = semanticRepositoryService.createRepository(semanticRepository,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(new SemanticRepositoryIO(result)).status(Status.CREATED).build();
-	}
+  @GET
+  @Path("/{" + Constants.SEMANTIC_REPOSITORY_ID + "}")
+  @Override
+  public Response getSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
+    var result = semanticRepositoryService.getRepository(semanticRepositoryId);
+    return Response.ok(new SemanticRepositoryIO(result)).build();
+  }
 
-	@DELETE
-	@Path("/{" + Constants.SEMANTIC_REPOSITORY_ID + "}")
-	@Subscribable
-	@Override
-	public Response deleteSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
-		var result = semanticRepositoryService.deleteRepository(semanticRepositoryId,
-				securityContext.getUserPrincipal().getName());
-		return result ? Response.status(Status.NO_CONTENT).build()
-				: Response.status(Status.INTERNAL_SERVER_ERROR).build();
-	}
+  @POST
+  @Override
+  public Response createSemanticRepository(SemanticRepositoryIO semanticRepository) {
+    var result = semanticRepositoryService.createRepository(
+      semanticRepository,
+      securityContext.getUserPrincipal().getName()
+    );
+    return Response.ok(new SemanticRepositoryIO(result)).status(Status.CREATED).build();
+  }
 
+  @DELETE
+  @Path("/{" + Constants.SEMANTIC_REPOSITORY_ID + "}")
+  @Subscribable
+  @Override
+  public Response deleteSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
+    var result = semanticRepositoryService.deleteRepository(
+      semanticRepositoryId,
+      securityContext.getUserPrincipal().getName()
+    );
+    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+  }
 }

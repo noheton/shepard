@@ -14,35 +14,56 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface DataObjectReferenceRest {
+  @Tag(name = Constants.DATAOBJECT_REFERENCE)
+  @Operation(description = "Get all dataObject references")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(array = @ArraySchema(schema = @Schema(implementation = DataObjectReferenceIO.class)))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getAllDataObjectReferences(long collectionId, long dataObjectId);
 
-	@Tag(name = Constants.DATAOBJECT_REFERENCE)
-	@Operation(description = "Get all dataObject references")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = DataObjectReferenceIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllDataObjectReferences(long collectionId, long dataObjectId);
+  @Tag(name = Constants.DATAOBJECT_REFERENCE)
+  @Operation(description = "Get dataObject reference")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getDataObjectReference(long collectionId, long dataObjectId, long dataObjectReferenceId);
 
-	@Tag(name = Constants.DATAOBJECT_REFERENCE)
-	@Operation(description = "Get dataObject reference")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getDataObjectReference(long collectionId, long dataObjectId, long dataObjectReferenceId);
+  @Tag(name = Constants.DATAOBJECT_REFERENCE)
+  @Operation(description = "Create a new dataObject reference")
+  @ApiResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response createDataObjectReference(
+    long collectionId,
+    long dataObjectId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
+    ) @Valid DataObjectReferenceIO dataObjectReference
+  );
 
-	@Tag(name = Constants.DATAOBJECT_REFERENCE)
-	@Operation(description = "Create a new dataObject reference")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response createDataObjectReference(long collectionId, long dataObjectId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))) @Valid DataObjectReferenceIO dataObjectReference);
+  @Tag(name = Constants.DATAOBJECT_REFERENCE)
+  @Operation(description = "Delete dataObject reference")
+  @ApiResponse(description = "deleted", responseCode = "204")
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response deleteDataObjectReference(long collectionId, long dataObjectId, long dataObjectReferenceId);
 
-	@Tag(name = Constants.DATAOBJECT_REFERENCE)
-	@Operation(description = "Delete dataObject reference")
-	@ApiResponse(description = "deleted", responseCode = "204")
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteDataObjectReference(long collectionId, long dataObjectId, long dataObjectReferenceId);
-
-	@Tag(name = Constants.DATAOBJECT_REFERENCE)
-	@Operation(description = "Get dataObject reference payload")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = DataObjectIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getDataObjectReferencePayload(long collectionId, long dataObjectId, long dataObjectReferenceId);
+  @Tag(name = Constants.DATAOBJECT_REFERENCE)
+  @Operation(description = "Get dataObject reference payload")
+  @ApiResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+  )
+  @ApiResponse(description = "not found", responseCode = "404")
+  Response getDataObjectReferencePayload(long collectionId, long dataObjectId, long dataObjectReferenceId);
 }

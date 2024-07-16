@@ -1,12 +1,11 @@
 package de.dlr.shepard.neo4Core.entities;
 
-import org.neo4j.ogm.annotation.Index;
-import org.neo4j.ogm.annotation.NodeEntity;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.neo4j.ogm.annotation.Index;
+import org.neo4j.ogm.annotation.NodeEntity;
 
 @NodeEntity
 @Data
@@ -15,16 +14,15 @@ import lombok.ToString;
 @NoArgsConstructor
 public class VersionableEntity extends BasicEntity {
 
-	@Index
-	private Long shepardId;
+  @Index
+  private Long shepardId;
 
-	/**
-	 * For testing purposes only
-	 *
-	 * @param id identifies the entity
-	 */
-	protected VersionableEntity(long id) {
-		super(id);
-	}
-
+  /**
+   * For testing purposes only
+   *
+   * @param id identifies the entity
+   */
+  protected VersionableEntity(long id) {
+    super(id);
+  }
 }

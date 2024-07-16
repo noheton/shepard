@@ -15,16 +15,15 @@ import lombok.NoArgsConstructor;
 @Schema(name = "SemanticRepository")
 public class SemanticRepositoryIO extends BasicEntityIO {
 
-	@NotNull
-	private SemanticRepositoryType type;
+  @NotNull
+  private SemanticRepositoryType type;
 
-	@NotBlank
-	private String endpoint;
+  @NotBlank
+  private String endpoint;
 
-	public SemanticRepositoryIO(SemanticRepository container) {
-		super(container);
-		this.type = container.getType();
-		this.endpoint = container.getEndpoint();
-	}
-
+  public SemanticRepositoryIO(SemanticRepository container) {
+    super(container);
+    this.type = container.getType();
+    this.endpoint = container.getEndpoint();
+  }
 }

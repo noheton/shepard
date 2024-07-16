@@ -15,18 +15,17 @@ import lombok.NoArgsConstructor;
 @Schema(name = "StructuredDataReference")
 public class StructuredDataReferenceIO extends BasicReferenceIO {
 
-	@NotEmpty
-	private String[] structuredDataOids;
+  @NotEmpty
+  private String[] structuredDataOids;
 
-	@NotNull
-	private long structuredDataContainerId;
+  @NotNull
+  private long structuredDataContainerId;
 
-	public StructuredDataReferenceIO(StructuredDataReference ref) {
-		super(ref);
-		this.structuredDataOids = ref.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
-		this.structuredDataContainerId = ref.getStructuredDataContainer() != null
-				? ref.getStructuredDataContainer().getId()
-				: -1;
-	}
-
+  public StructuredDataReferenceIO(StructuredDataReference ref) {
+    super(ref);
+    this.structuredDataOids = ref.getStructuredDatas().stream().map(StructuredData::getOid).toArray(String[]::new);
+    this.structuredDataContainerId = ref.getStructuredDataContainer() != null
+      ? ref.getStructuredDataContainer().getId()
+      : -1;
+  }
 }

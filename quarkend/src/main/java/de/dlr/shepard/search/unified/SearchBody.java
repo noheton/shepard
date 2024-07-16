@@ -12,13 +12,12 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SearchBody extends ASearchBody<SearchParams> {
 
-	@Valid
-	@NotEmpty
-	private SearchScope[] scopes;
+  @Valid
+  @NotEmpty
+  private SearchScope[] scopes;
 
-	public SearchBody(SearchScope[] scopes, SearchParams searchParams) {
-		super(searchParams);
-		this.scopes = scopes;
-	}
-
+  public SearchBody(SearchScope[] scopes, SearchParams searchParams) {
+    super(searchParams);
+    this.scopes = scopes;
+  }
 }

@@ -12,13 +12,12 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SearchParams extends ASearchParams {
 
-	@Valid
-	@NotNull
-	private QueryType queryType;
+  @Valid
+  @NotNull
+  private QueryType queryType;
 
-	public SearchParams(String query, QueryType queryType) {
-		super(query);
-		this.queryType = queryType;
-	}
-
+  public SearchParams(String query, QueryType queryType) {
+    super(query);
+    this.queryType = queryType;
+  }
 }
