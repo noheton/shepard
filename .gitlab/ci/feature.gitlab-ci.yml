@@ -18,3 +18,4 @@ include:
     inputs:
       target_branch: develop
       artifact_job_name: build_backend
+  # - local: .gitlab/ci/jobs/build-quarkend.yml
