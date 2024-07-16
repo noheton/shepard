@@ -7,25 +7,25 @@ import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface StructuredDataRest {
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Get all structured data containers")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredDataContainerIO.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY,implementation = StructuredDataContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllStructuredDataContainers(
     String name,
     Integer page,
@@ -36,28 +36,28 @@ public interface StructuredDataRest {
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Get structured data container")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getStructuredDataContainer(long structuredDataId);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Delete structured data container")
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteStructuredDataContainer(long structuredDataId);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Create a new structured data container")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createStructuredDataContainer(
     @RequestBody(
       required = true,
@@ -67,12 +67,12 @@ public interface StructuredDataRest {
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Upload a new structured data object")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = StructuredData.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createStructuredData(
     long structuredDataId,
     @RequestBody(
@@ -83,48 +83,48 @@ public interface StructuredDataRest {
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Get structured data objects")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = StructuredData.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredData.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllStructuredDatas(long structuredDataId);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Download structured data")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getStructuredData(long structuredDataId, String oid);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Delete structured data")
-  @ApiResponse(description = "ok", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "ok", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteStructuredData(long structuredDataId, String oid);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Get permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getStructuredDataPermissions(long structuredDataId);
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Edit permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response editStructuredDataPermissions(
     long structuredDataId,
     @RequestBody(
@@ -135,11 +135,11 @@ public interface StructuredDataRest {
 
   @Tag(name = Constants.STRUCTUREDDATA)
   @Operation(description = "Get roles")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getStructuredDataRoles(long structuredDataId);
 }

@@ -3,25 +3,25 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.neo4Core.orderBy.SemanticRepositoryAttributes;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
 
 public interface SemanticRepositoryRest {
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
   @Operation(description = "Get all semantic repositories")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = SemanticRepositoryIO.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticRepositoryIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllSemanticRepositories(
     String name,
     Integer page,
@@ -32,22 +32,22 @@ public interface SemanticRepositoryRest {
 
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
   @Operation(description = "Get semantic repository")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getSemanticRepository(long semanticRepositoryId);
 
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
   @Operation(description = "Create a new semantic repository")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createSemanticRepository(
     @RequestBody(
       required = true,
@@ -57,7 +57,7 @@ public interface SemanticRepositoryRest {
 
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
   @Operation(description = "Delete semantic repository")
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteSemanticRepository(long semanticRepositoryId);
 }
