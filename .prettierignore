@@ -1,4 +1,4 @@
-# Ignore all java files
+# Ignore all backend java files
 backend/**/*.java
 
 # Ignore all python files
@@ -8,4 +8,3 @@ backend/**/*.java
 **/target/**/*
 .m2
 .venv
-
