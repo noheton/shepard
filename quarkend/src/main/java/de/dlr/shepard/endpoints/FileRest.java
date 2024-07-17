@@ -19,6 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface FileRest {
   @Tag(name = Constants.FILE)
@@ -111,7 +112,7 @@ public interface FileRest {
       required = true,
       schema = @Schema(type = SchemaType.STRING, format = "binary", description = "File which you want to upload")
     ) InputStream fileInputStream,
-    @Parameter(hidden = true) FormDataContentDisposition fileMetaData
+    @Parameter(hidden = true) FileUpload fileUpload
   );
 
   @Tag(name = Constants.FILE)

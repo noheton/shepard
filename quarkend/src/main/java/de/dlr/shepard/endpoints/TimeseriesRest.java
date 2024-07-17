@@ -9,6 +9,11 @@ import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -17,12 +22,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface TimeseriesRest {
   @Tag(name = Constants.TIMESERIES)
@@ -154,7 +155,7 @@ public interface TimeseriesRest {
       required = true,
       schema = @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
     ) InputStream fileInputStream,
-    @Parameter(hidden = true) FormDataContentDisposition fileMetaData
+    @Parameter(hidden = true) FileUpload fileUpload
   ) throws IOException;
 
   @Tag(name = Constants.TIMESERIES)

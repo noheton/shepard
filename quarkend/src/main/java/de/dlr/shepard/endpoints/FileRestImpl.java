@@ -26,8 +26,9 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.InputStream;
 import java.util.ArrayList;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jboss.resteasy.reactive.PartType;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -129,10 +130,10 @@ public class FileRestImpl implements FileRest {
   @Override
   public Response createFile(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-    @FormDataParam(Constants.FILE) InputStream fileInputStream,
-    @FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData
+    @RestForm(Constants.FILE) @PartType(MediaType.APPLICATION_OCTET_STREAM) InputStream fileInputStream,
+    @RestForm(Constants.FILE) FileUpload fileUpload
   ) {
-    String fileName = fileMetaData != null ? fileMetaData.getFileName() : null;
+    String fileName = fileUpload != null ? fileUpload.fileName() : null;
     var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
     return result != null
       ? Response.status(Status.CREATED).entity(result).build()

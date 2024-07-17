@@ -32,10 +32,10 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jboss.resteasy.reactive.PartType;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -198,8 +198,8 @@ public class TimeseriesRestImpl implements TimeseriesRest {
   @Override
   public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
-    @FormDataParam(Constants.FILE) InputStream fileInputStream,
-    @FormDataParam(Constants.FILE) FormDataContentDisposition fileMetaData
+    @RestForm(Constants.FILE) @PartType(MediaType.APPLICATION_OCTET_STREAM) InputStream fileInputStream,
+    @RestForm(Constants.FILE) FileUpload fileUpload
   ) throws IOException {
     var result = timeseriesContainerService.importTimeseries(timeseriesId, fileInputStream);
 
