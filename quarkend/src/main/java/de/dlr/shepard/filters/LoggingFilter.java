@@ -1,3 +1,5 @@
+// TODO: Activate filter again
+/*
 package de.dlr.shepard.filters;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -20,3 +22,4 @@ public class LoggingFilter implements ContainerRequestFilter {
     log.info("Received {} request on {} from {} with query params {}", method, endpoint, username, queryParams);
   }
 }
+*/

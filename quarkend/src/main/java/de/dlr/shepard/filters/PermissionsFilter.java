@@ -1,3 +1,5 @@
+// TODO: Activate filter again
+/*
 package de.dlr.shepard.filters;
 
 import de.dlr.shepard.exceptions.ApiError;
@@ -74,3 +76,4 @@ public class PermissionsFilter implements ContainerRequestFilter {
     return new PermissionsUtil();
   }
 }
+*/
