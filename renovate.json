@@ -56,6 +56,14 @@
       "allowedVersions": "<0.2"
     },
     {
+      "matchPackageNames": ["vue-tsc"],
+      "allowedVersions": "<2.0.24"
+    },
+    {
+      "matchPackageNames": ["prettier-plugin-organize-imports"],
+      "allowedVersions": "<4.0.0"
+    },
+    {
       "matchPackageNames": ["eslint"],
       "allowedVersions": "<9"
     },
