@@ -32,7 +32,7 @@
 		<skipITs>${skipTests}</skipITs>
 		<skipUTs>${skipTests}</skipUTs>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<assertj.version>3.26.0</assertj.version>
+		<assertj.version>3.26.3</assertj.version>
 		<commons.version>2.16.1</commons.version>
 		<equalsverifier.version>3.16.1</equalsverifier.version>
 		<httpclient.version>4.5.13</httpclient.version>
@@ -40,14 +40,14 @@
 		<janino.version>3.1.12</janino.version>
 		<jersey.version>3.1.7</jersey.version>
 		<jjwt.version>0.11.5</jjwt.version>
-		<junit.version>5.10.2</junit.version>
+		<junit.version>5.10.3</junit.version>
 		<logback.version>1.5.6</logback.version>
 		<lombok.version>1.18.32</lombok.version>
 		<mockito.version>5.12.0</mockito.version>
 		<mongodb.version>5.1.1</mongodb.version>
 		<neo4j.version>3.3.4</neo4j.version>
 		<opencsv.version>5.9</opencsv.version>
-		<restassured.version>5.4.0</restassured.version>
+		<restassured.version>5.5.0</restassured.version>
 		<swagger.version>2.2.22</swagger.version>
 		<tomcat.version>10.1.25</tomcat.version>
 	</properties>
@@ -127,7 +127,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>3.3.1</version>
 				<configuration>
 					<skipTests>${skipUTs}</skipTests>
 					<excludes>
@@ -166,7 +166,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>3.3.0</version>
+				<version>3.3.1</version>
 				<configuration>
 					<skipTests>${skipTests}</skipTests>
 					<skipITs>${skipITs}</skipITs>
@@ -188,7 +188,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven3-plugin</artifactId>
-				<version>1.10.13</version>
+				<version>1.10.14</version>
 				<configuration>
 					<skip>${skipITs}</skip>
 					<container>
@@ -252,7 +252,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.5.0</version>
+				<version>3.6.2</version>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -262,7 +262,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>versions-maven-plugin</artifactId>
-				<version>2.16.2</version>
+				<version>2.17.1</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -272,7 +272,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.23.0</version>
+				<version>3.24.0</version>
 			</plugin>
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
