@@ -1,5 +1,3 @@
-// TODO: Activate filter again
-/*
 package de.dlr.shepard.filters;
 
 import de.dlr.shepard.neo4Core.entities.Subscription;
@@ -32,22 +30,18 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
   private Executor executor;
 
-  */
-/**
- * Default constructor
- *//*
-
+  /**
+   * Default constructor
+   */
   public SubscriptionFilter() {
     this.executor = Executors.newCachedThreadPool();
   }
 
-  */
-/**
- * Constructor to inject your own executor service
- *
- * @param executor Your own Executor Service
- *//*
-
+  /**
+   * Constructor to inject your own executor service
+   *
+   * @param executor Your own Executor Service
+   */
   public SubscriptionFilter(Executor executor) {
     this.executor = executor;
   }
@@ -118,4 +112,3 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     return new PermissionsUtil();
   }
 }
-*/
