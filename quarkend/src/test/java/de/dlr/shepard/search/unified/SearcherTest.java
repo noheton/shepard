@@ -12,7 +12,7 @@ import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -53,7 +53,7 @@ public class SearcherTest extends BaseTestCase {
     ResultTriple[] resultTriples = { new ResultTriple(1L) };
     Collection collection = new Collection(1L);
     collection.setShepardId(collection.getId());
-    VersionableEntityIO[] results = { new VersionableEntityIO(collection) };
+    BasicEntityIO[] results = { new BasicEntityIO(collection) };
     var expected = new ResponseBody(resultTriples, results, params);
     when(collectionSearcher.search(searchBody, userName)).thenReturn(expected);
     ResponseBody actual = searcher.search(searchBody, userName);
@@ -69,7 +69,7 @@ public class SearcherTest extends BaseTestCase {
     ResultTriple[] resultTriples = { new ResultTriple(1L) };
     DataObject dataObject = new DataObject(1L);
     dataObject.setShepardId(dataObject.getId());
-    VersionableEntityIO[] results = { new VersionableEntityIO(dataObject) };
+    BasicEntityIO[] results = { new BasicEntityIO(dataObject) };
     var expected = new ResponseBody(resultTriples, results, params);
     when(dataObjectSearcher.search(searchBody, userName)).thenReturn(expected);
     ResponseBody actual = searcher.search(searchBody, userName);
@@ -85,7 +85,7 @@ public class SearcherTest extends BaseTestCase {
     ResultTriple[] resultTriples = { new ResultTriple(1L) };
     BasicReference reference = new BasicReference(1L);
     reference.setShepardId(reference.getId());
-    VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
+    BasicEntityIO[] results = { new BasicEntityIO(reference) };
     var expected = new ResponseBody(resultTriples, results, params);
     when(referenceSearcher.search(searchBody, userName)).thenReturn(expected);
     ResponseBody actual = searcher.search(searchBody, userName);
@@ -101,7 +101,7 @@ public class SearcherTest extends BaseTestCase {
     ResultTriple[] resultTriples = { new ResultTriple(1L) };
     StructuredDataReference reference = new StructuredDataReference(1L);
     reference.setShepardId(reference.getId());
-    VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
+    BasicEntityIO[] results = { new BasicEntityIO(reference) };
     var expected = new ResponseBody(resultTriples, results, params);
     when(structuredDataSearcher.search(searchBody, userName)).thenReturn(expected);
     ResponseBody actual = searcher.search(searchBody, userName);

@@ -11,8 +11,11 @@ import org.junit.jupiter.api.Test;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.BasicEntity;
+import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 
 public class BasicEntityIOTest extends BaseTestCase {
 
@@ -26,6 +29,10 @@ public class BasicEntityIOTest extends BaseTestCase {
 			super(entity);
 		}
 
+		public EntityIO(VersionableEntity entity) {
+			super(entity);
+		}
+
 	}
 
 	@Test
@@ -35,7 +42,7 @@ public class BasicEntityIOTest extends BaseTestCase {
 		var update = new Date();
 		var updateUser = new User("claus");
 
-		var obj = new Collection(1L);
+		var obj = new FileContainer(1L);
 		obj.setCreatedAt(date);
 		obj.setCreatedBy(user);
 		obj.setUpdatedAt(update);
@@ -52,8 +59,32 @@ public class BasicEntityIOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void testConversionVersionable() {
+		var date = new Date();
+		var user = new User("bob");
+		var update = new Date();
+		var updateUser = new User("claus");
+
+		var obj = new BasicReference(1L);
+		obj.setShepardId(2L);
+		obj.setCreatedAt(date);
+		obj.setCreatedBy(user);
+		obj.setName("MyName");
+		obj.setUpdatedAt(update);
+		obj.setUpdatedBy(updateUser);
+
+		var converted = new EntityIO(obj);
+		assertEquals(obj.getShepardId(), converted.getId());
+		assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
+		assertEquals(obj.getCreatedBy().getUsername(), converted.getCreatedBy());
+		assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
+		assertEquals(obj.getUpdatedBy().getUsername(), converted.getUpdatedBy());
+		assertEquals(obj.getName(), converted.getName());
+	}
+
+	@Test
 	public void testConversion_userNull() {
-		var obj = new Collection(1L);
+		var obj = new FileContainer(1L);
 
 		var converted = new EntityIO(obj);
 		assertEquals(obj.getId(), converted.getId());
@@ -67,6 +98,16 @@ public class BasicEntityIOTest extends BaseTestCase {
 		var actual = BasicEntityIO.extractIds(input);
 
 		assertArrayEquals(new long[] { 2, 5 }, actual);
+	}
+
+	@Test
+	public void extractShepardIdsTest() {
+		var col = new Collection(1L);
+		col.setShepardId(2L);
+		var input = List.of(col);
+		var actual = BasicEntityIO.extractShepardIds(input);
+
+		assertArrayEquals(new long[] { 2 }, actual);
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import de.dlr.shepard.neo4Core.entities.BasicEntity;
+import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 import de.dlr.shepard.util.HasId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
@@ -46,8 +47,22 @@ public class BasicEntityIO implements HasId {
     this.name = entity.getName();
   }
 
+  public BasicEntityIO(VersionableEntity entity) {
+    this.id = entity.getShepardId();
+    this.createdAt = entity.getCreatedAt();
+    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
+    this.updatedAt = entity.getUpdatedAt();
+    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
+    this.name = entity.getName();
+  }
+
   protected static long[] extractIds(List<? extends BasicEntity> entities) {
     var result = entities.stream().map(BasicEntity::getId).mapToLong(Long::longValue).toArray();
+    return result;
+  }
+
+  protected static long[] extractShepardIds(List<? extends VersionableEntity> entities) {
+    var result = entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
     return result;
   }
 

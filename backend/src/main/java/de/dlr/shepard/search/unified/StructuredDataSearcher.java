@@ -17,7 +17,7 @@ import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.MongoDBEmitter;
 import de.dlr.shepard.util.TraversalRules;
 
@@ -37,12 +37,12 @@ public class StructuredDataSearcher implements ISearcher {
 			SearchBody searchBody) {
 		BasicReference[] references = matchingReferences.keySet().toArray(new BasicReference[0]);
 		ResultTriple[] resultTriples = new ResultTriple[references.length];
-		VersionableEntityIO[] results = new VersionableEntityIO[references.length];
+		BasicEntityIO[] results = new BasicEntityIO[references.length];
 		for (var i = 0; i < references.length; i++) {
 			// The collection is not loaded at this time, so we have to use the given id
 			resultTriples[i] = new ResultTriple(matchingReferences.get(references[i]),
 					references[i].getDataObject().getId(), references[i].getId());
-			results[i] = new VersionableEntityIO(references[i]);
+			results[i] = new BasicEntityIO(references[i]);
 		}
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		return responseBody;

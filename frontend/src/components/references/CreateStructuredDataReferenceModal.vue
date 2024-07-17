@@ -6,7 +6,6 @@ import StructuredDataService from "@/services/structuredDataService";
 import { handleError, logError } from "@/utils/error-handling";
 import { isNumeric } from "@/utils/helpers";
 import type {
-  BasicEntity,
   ResponseError,
   StructuredData,
   StructuredDataContainer,
@@ -72,7 +71,7 @@ function handleReset() {
   jsonPayload.value = "";
 }
 
-function chooseContainer(container: BasicEntity) {
+function chooseContainer(container: StructuredDataContainer) {
   if (!container.id) return;
   userInputSearchContainer.value = String(container.id);
   formData.currentContainerId = String(container.id);

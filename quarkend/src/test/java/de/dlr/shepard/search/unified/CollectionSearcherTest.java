@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import java.util.List;
@@ -54,7 +54,7 @@ public class CollectionSearcherTest extends BaseTestCase {
     );
     when(searchDAO.findCollections(selectionQuery, Constants.COLLECTION_IN_QUERY)).thenReturn(List.of(collection));
     ResultTriple[] resultTriples = { new ResultTriple(collection.getShepardId()) };
-    VersionableEntityIO[] results = { new VersionableEntityIO(collection) };
+    BasicEntityIO[] results = { new BasicEntityIO(collection) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     var actual = collectionSearcher.search(searchBody, userName);
     assertEquals(responseBody, actual);

@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "AbstractDataObject")
-public abstract class AbstractDataObjectIO extends VersionableEntityIO {
+public abstract class AbstractDataObjectIO extends BasicEntityIO {
 
   @Schema(nullable = true)
   private String description;

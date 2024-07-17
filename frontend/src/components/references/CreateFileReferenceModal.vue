@@ -7,7 +7,6 @@ import FileService from "@/services/fileService";
 import { handleError, logError } from "@/utils/error-handling";
 import { isNumeric } from "@/utils/helpers";
 import type {
-  BasicEntity,
   FileContainer,
   FileReference,
   ResponseError,
@@ -145,7 +144,7 @@ async function createNewFileContainer(newName: string) {
   return response;
 }
 
-function chooseContainer(container: BasicEntity) {
+function chooseContainer(container: FileContainer) {
   if (!container.id) return;
   userInputSearchContainer.value = String(container.id);
   formData.currentContainerId = String(container.id);

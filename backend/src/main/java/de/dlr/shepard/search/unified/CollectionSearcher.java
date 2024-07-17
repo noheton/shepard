@@ -1,7 +1,7 @@
 package de.dlr.shepard.search.unified;
 
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 
@@ -15,10 +15,10 @@ public class CollectionSearcher implements ISearcher {
 				userName);
 		var resultList = searchDAO.findCollections(selectionQuery, Constants.COLLECTION_IN_QUERY);
 		ResultTriple[] resultTriples = new ResultTriple[resultList.size()];
-		VersionableEntityIO[] results = new VersionableEntityIO[resultList.size()];
+		BasicEntityIO[] results = new BasicEntityIO[resultList.size()];
 		for (int i = 0; i < resultList.size(); i++) {
 			resultTriples[i] = new ResultTriple(resultList.get(i).getShepardId());
-			results[i] = new VersionableEntityIO(resultList.get(i));
+			results[i] = new BasicEntityIO(resultList.get(i));
 		}
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
 		return responseBody;

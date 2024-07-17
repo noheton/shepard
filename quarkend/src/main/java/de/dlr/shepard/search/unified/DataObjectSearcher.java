@@ -2,7 +2,7 @@ package de.dlr.shepard.search.unified;
 
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
@@ -64,10 +64,10 @@ public class DataObjectSearcher implements ISearcher {
     }
     DataObject[] dataObjects = resultsSet.toArray(new DataObject[0]);
     ResultTriple[] resultTriples = new ResultTriple[resultsSet.size()];
-    VersionableEntityIO[] results = new VersionableEntityIO[resultsSet.size()];
+    BasicEntityIO[] results = new BasicEntityIO[resultsSet.size()];
     for (var i = 0; i < resultsSet.size(); i++) {
       resultTriples[i] = new ResultTriple(dataObjects[i].getCollection().getShepardId(), dataObjects[i].getShepardId());
-      results[i] = new VersionableEntityIO(dataObjects[i]);
+      results[i] = new BasicEntityIO(dataObjects[i]);
     }
     ResponseBody ret = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     return ret;

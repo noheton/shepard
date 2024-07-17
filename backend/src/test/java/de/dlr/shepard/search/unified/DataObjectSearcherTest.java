@@ -17,7 +17,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
@@ -60,7 +60,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		when(searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY)).thenReturn(List.of(dataObject));
 		ResultTriple resultTriple = new ResultTriple(1L, 2L);
 		ResultTriple[] resultTriples = { resultTriple };
-		VersionableEntityIO[] results = { new VersionableEntityIO(dataObject) };
+		BasicEntityIO[] results = { new BasicEntityIO(dataObject) };
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
 		var actual = dataObjectSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);
@@ -96,7 +96,7 @@ public class DataObjectSearcherTest extends BaseTestCase {
 		SearchParams searchParams = new SearchParams(query, QueryType.DataObject);
 		SearchBody searchBody = new SearchBody(scopes, searchParams);
 		ResultTriple[] resultTriples = {};
-		VersionableEntityIO[] results = {};
+		BasicEntityIO[] results = {};
 		ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
 		var actual = dataObjectSearcher.search(searchBody, userName);
 		assertEquals(responseBody, actual);

@@ -17,7 +17,7 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.util.TraversalRules;
 import java.util.Collections;
 import java.util.Date;
@@ -92,7 +92,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     // create ResponseBody
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
+    BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
@@ -139,7 +139,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     // create ResponseBody
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
+    BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(
@@ -198,7 +198,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     // create ResponseBody
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
+    BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
@@ -226,7 +226,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     SearchBody searchBody = new SearchBody(scopes, searchParams);
     // create ResponseBody
     ResultTriple[] resultTriples = {};
-    VersionableEntityIO[] results = {};
+    BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
@@ -269,7 +269,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     SearchBody searchBody = new SearchBody(scopes, searchParams);
     // create ResponseBody
     ResultTriple[] resultTriples = {};
-    VersionableEntityIO[] results = {};
+    BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
@@ -322,7 +322,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     // create ResponseBody
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    VersionableEntityIO[] results = { new VersionableEntityIO(sdReference) };
+    BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, "user1")).thenReturn(

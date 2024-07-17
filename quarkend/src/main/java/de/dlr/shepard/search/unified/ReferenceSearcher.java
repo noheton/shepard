@@ -2,7 +2,7 @@ package de.dlr.shepard.search.unified;
 
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import java.util.HashSet;
@@ -63,14 +63,14 @@ public class ReferenceSearcher implements ISearcher {
     }
     BasicReference[] references = resultsSet.toArray(new BasicReference[0]);
     ResultTriple[] resultTriples = new ResultTriple[resultsSet.size()];
-    VersionableEntityIO[] results = new VersionableEntityIO[resultsSet.size()];
+    BasicEntityIO[] results = new BasicEntityIO[resultsSet.size()];
     for (var i = 0; i < resultsSet.size(); i++) {
       resultTriples[i] = new ResultTriple(
         references[i].getDataObject().getCollection().getShepardId(),
         references[i].getDataObject().getShepardId(),
         references[i].getShepardId()
       );
-      results[i] = new VersionableEntityIO(references[i]);
+      results[i] = new BasicEntityIO(references[i]);
     }
     ResponseBody ret = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     return ret;

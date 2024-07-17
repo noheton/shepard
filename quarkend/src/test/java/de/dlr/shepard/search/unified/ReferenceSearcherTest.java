@@ -8,7 +8,7 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import de.dlr.shepard.neo4Core.io.VersionableEntityIO;
+import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
@@ -65,7 +65,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
     when(searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY)).thenReturn(List.of(reference));
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    VersionableEntityIO[] results = { new VersionableEntityIO(reference) };
+    BasicEntityIO[] results = { new BasicEntityIO(reference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
     var actual = referenceSearcher.search(searchBody, userName);
     assertEquals(responseBody, actual);
@@ -105,7 +105,7 @@ public class ReferenceSearcherTest extends BaseTestCase {
     SearchParams searchParams = new SearchParams(query, QueryType.Reference);
     SearchBody searchBody = new SearchBody(scopes, searchParams);
     ResultTriple[] resultTriples = {};
-    VersionableEntityIO[] results = {};
+    BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
     var actual = referenceSearcher.search(searchBody, userName);
     assertEquals(responseBody, actual);
