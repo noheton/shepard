@@ -9,18 +9,17 @@
   "prConcurrentLimit": 0,
   "packageRules": [
     {
-      "matchFiles": ["release-scripts/pyproject.toml"],
-      "groupName": "python dependencies"
+      "matchCategories": ["ci"],
+      "groupName": "ci dependencies"
     },
     {
-      "matchPackageNames": ["influxdb"],
-      "groupName": "infrastructure dependencies",
-      "allowedVersions": "<2"
+      "matchManagers": ["docker-compose"],
+      "groupName": "infrastructure dependencies"
     },
     {
-      "matchPackageNames": ["neo4j"],
-      "groupName": "infrastructure dependencies",
-      "allowedVersions": "<5"
+      "matchPackageNames": ["influxdb", "neo4j", "mongo"],
+      "matchManagers": ["gitlabci"],
+      "groupName": "infrastructure dependencies"
     },
     {
       "matchPackageNames": ["node", "@types/node"],
@@ -28,36 +27,16 @@
       "versioning": "node"
     },
     {
-      "matchPackageNames": ["vue"],
-      "allowedVersions": "<3"
+      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
+      "groupName": "tomcat"
     },
     {
-      "matchPackageNames": ["vue-router"],
-      "allowedVersions": "<4"
+      "matchPackagePrefixes": ["io.swagger.core.v3"],
+      "groupName": "swagger"
     },
     {
-      "matchPackageNames": ["vuex"],
-      "allowedVersions": "<4"
-    },
-    {
-      "matchPackageNames": ["bootstrap"],
-      "allowedVersions": "<5"
-    },
-    {
-      "matchPackageNames": ["portal-vue"],
-      "allowedVersions": "<3"
-    },
-    {
-      "matchPackageNames": ["typescript"],
-      "allowedVersions": "<5"
-    },
-    {
-      "matchPackageNames": ["@vue/tsconfig"],
-      "allowedVersions": "<0.2"
-    },
-    {
-      "matchPackageNames": ["eslint"],
-      "allowedVersions": "<9"
+      "matchPackageNames": ["openapitools/openapi-generator-cli"],
+      "groupName": "openapi-generator"
     },
     {
       "matchSourceUrls": ["https://github.com/vuejs/language-tools"],
@@ -72,37 +51,83 @@
       "groupName": "tiptap monorepo"
     },
     {
+      "matchPackagePatterns": ["(@dlr-shepard/)?shepard-client"],
+      "groupName": "shepard client"
+    },
+    {
+      "matchPackageNames": ["influxdb"],
+      "matchManagers": ["docker-compose", "gitlabci"],
+      "allowedVersions": "<2"
+    },
+    {
+      "matchPackageNames": ["neo4j"],
+      "matchManagers": ["docker-compose", "gitlabci"],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["mongo"],
+      "matchManagers": ["docker-compose", "gitlabci"],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["vue"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<3"
+    },
+    {
+      "matchPackageNames": ["vue-router"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<4"
+    },
+    {
+      "matchPackageNames": ["vuex"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<4"
+    },
+    {
+      "matchPackageNames": ["bootstrap"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["portal-vue"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<3"
+    },
+    {
+      "matchPackageNames": ["typescript"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<5"
+    },
+    {
+      "matchPackageNames": ["@vue/tsconfig"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<0.2"
+    },
+    {
+      "matchPackageNames": ["vue-tsc"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<2.0.24"
+    },
+    {
+      "matchPackageNames": ["prettier-plugin-organize-imports"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<4.0.0"
+    },
+    {
+      "matchPackageNames": ["eslint"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<9"
+    },
+    {
       "matchPackagePrefixes": ["org.neo4j:neo4j-ogm"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
     },
     {
-      "matchPackageNames": ["neo4j"],
-      "allowedVersions": "<5",
-      "matchFileNames": ["infrastructure/docker-compose.yml", ".gitlab/**"]
-    },
-    {
-      "matchPackageNames": ["influxdb"],
-      "allowedVersions": "<2",
-      "matchFileNames": ["infrastructure/docker-compose.yml", ".gitlab/**"]
-    },
-    {
-      "matchPackageNames": ["mongo"],
-      "allowedVersions": "<5",
-      "matchFileNames": ["infrastructure/docker-compose.yml", ".gitlab/**"]
-    },
-    {
       "matchPackageNames": ["openapitools/openapi-generator-cli"],
-      "allowedVersions": "<7",
-      "matchFileNames": [".gitlab/ci/clients/python-legacy.gitlab-ci.yml"]
-    },
-    {
-      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
-      "groupName": "tomcat"
-    },
-    {
-      "matchPackagePrefixes": ["io.swagger.core.v3"],
-      "groupName": "swagger"
+      "matchFileNames": [".gitlab/ci/clients/python-legacy.gitlab-ci.yml"],
+      "allowedVersions": "<7"
     }
   ]
 }
