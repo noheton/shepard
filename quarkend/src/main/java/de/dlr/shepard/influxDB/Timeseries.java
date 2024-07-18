@@ -2,10 +2,10 @@ package de.dlr.shepard.influxDB;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.dlr.shepard.util.HasId;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;

@@ -3,12 +3,11 @@ package de.dlr.shepard.mongoDB;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.dlr.shepard.util.HasId;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import java.util.Date;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.Index;
@@ -25,10 +24,10 @@ public abstract class AbstractMongoObject implements HasId {
 
   @Index
   @BsonIgnore
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private String oid;
 
-  @Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
+  @Schema(readOnly = true, nullable = true)
   @JsonFormat(shape = JsonFormat.Shape.STRING)
   @DateLong
   private Date createdAt;

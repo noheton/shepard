@@ -1,3 +1,5 @@
+// TODO: Activate filter again
+/*
 package de.dlr.shepard.filters;
 
 import de.dlr.shepard.exceptions.ApiError;
@@ -34,3 +36,4 @@ public class UrlPathCheckerFilter implements ContainerRequestFilter {
     return new UrlPathChecker();
   }
 }
+*/

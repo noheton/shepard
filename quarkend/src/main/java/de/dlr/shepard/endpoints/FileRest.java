@@ -6,29 +6,30 @@ import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface FileRest {
   @Tag(name = Constants.FILE)
   @Operation(description = "Get all file containers")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = FileContainerIO.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllFileContainers(
     String name,
     Integer page,
@@ -39,22 +40,22 @@ public interface FileRest {
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Get file container")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = FileContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getFileContainer(long fileContainerId);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Create a new file container")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = FileContainerIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createFileContainer(
     @RequestBody(
       required = true,
@@ -64,74 +65,74 @@ public interface FileRest {
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Delete file container")
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteFileContainer(long fileContainerId);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Get files")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = ShepardFile.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardFile.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllFiles(long fileContainerId);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Get file")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(
       mediaType = MediaType.APPLICATION_OCTET_STREAM,
-      schema = @Schema(type = "string", format = "binary")
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getFile(long fileContainerId, String oid);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Delete file")
-  @ApiResponse(description = "ok", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "ok", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteFile(long fileContainerId, String oid);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Upload a new file")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = ShepardFile.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createFile(
     long fileContainerId,
     @Parameter(
       required = true,
-      schema = @Schema(type = "string", format = "binary", description = "File which you want to upload")
+      schema = @Schema(type = SchemaType.STRING, format = "binary", description = "File which you want to upload")
     ) InputStream fileInputStream,
-    @Parameter(hidden = true) FormDataContentDisposition fileMetaData
+    @Parameter(hidden = true) FileUpload fileUpload
   );
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Get permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getFilePermissions(long fileContainerId);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Edit permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response editFilePermissions(
     long fileContainerId,
     @RequestBody(
@@ -142,11 +143,11 @@ public interface FileRest {
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Get roles")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getFileRoles(long fileId);
 }

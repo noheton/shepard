@@ -3,10 +3,6 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -16,6 +12,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -42,19 +39,20 @@ public class BasicReferenceSemanticAnnotationRestImpl
   @Override
   @Operation(
     operationId = "getAllReferenceAnnotations",
-    description = "Get all semantic annotations",
-    parameters = {
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.COLLECTION_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.DATAOBJECT_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-    }
+    description = "Get all semantic annotations"
+    // TODO: Fix the two missing parameters
+    /*parameters = {
+		  @Parameter(
+			in = ParameterIn.PATH,
+			name = Constants.COLLECTION_ID,
+			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+		  ),
+		  @Parameter(
+			in = ParameterIn.PATH,
+			name = Constants.DATAOBJECT_ID,
+			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+		  ),
+		}*/
   )
   public Response getAllAnnotations(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
     return getAllByShepardId(basicReferenceId);
@@ -65,19 +63,20 @@ public class BasicReferenceSemanticAnnotationRestImpl
   @Override
   @Operation(
     operationId = "getReferenceAnnotation",
-    description = "Get semantic annotation",
-    parameters = {
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.COLLECTION_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.DATAOBJECT_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-    }
+    description = "Get semantic annotation"
+    // TODO: Fix the two missing parameters
+    /*parameters = {
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.COLLECTION_ID,
+				schema = @Schema(type = SchemaType.STRING, format = "int64")
+			),
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.DATAOBJECT_ID,
+				schema = @Schema(type = SchemaType.STRING, format = "int64")
+			),
+		}*/
   )
   public Response getAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
@@ -91,19 +90,20 @@ public class BasicReferenceSemanticAnnotationRestImpl
   @Override
   @Operation(
     operationId = "createReferenceAnnotation",
-    description = "Create a new semantic annotation",
-    parameters = {
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.COLLECTION_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.DATAOBJECT_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-    }
+    description = "Create a new semantic annotation"
+    // TODO: Fix the two missing parameters
+    /*	parameters = {
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.COLLECTION_ID,
+				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+			),
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.DATAOBJECT_ID,
+				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+			),
+		}*/
   )
   public Response createAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
@@ -118,19 +118,21 @@ public class BasicReferenceSemanticAnnotationRestImpl
   @Override
   @Operation(
     operationId = "deleteReferenceAnnotation",
-    description = "Delete semantic annotation",
-    parameters = {
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.COLLECTION_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-      @Parameter(
-        in = ParameterIn.PATH,
-        name = Constants.DATAOBJECT_ID,
-        schema = @Schema(type = "integer", format = "int64")
-      ),
-    }
+    description = "Delete semantic annotation"
+    // TODO: Fix the two missing parameters
+    /*
+		parameters = {
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.COLLECTION_ID,
+				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+			),
+			@Parameter(
+				in = ParameterIn.PATH,
+				name = Constants.DATAOBJECT_ID,
+				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+			),
+		}*/
   )
   public Response deleteAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,

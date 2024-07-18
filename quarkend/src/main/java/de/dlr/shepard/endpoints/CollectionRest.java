@@ -5,27 +5,27 @@ import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 public interface CollectionRest {
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Get all collections")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = CollectionIO.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllCollections(
     String name,
     Integer page,
@@ -36,17 +36,17 @@ public interface CollectionRest {
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Get collection")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getCollection(long collectionId);
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Create a new collection")
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
@@ -60,12 +60,12 @@ public interface CollectionRest {
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Update collection")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response updateCollection(
     long collectionId,
     @RequestBody(
@@ -76,28 +76,28 @@ public interface CollectionRest {
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Delete collection")
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteCollection(long collectionId);
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Get permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getCollectionPermissions(long collectionId);
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Edit permissions")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response editCollectionPermissions(
     long collectionId,
     @RequestBody(
@@ -108,24 +108,24 @@ public interface CollectionRest {
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Get roles")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getCollectionRoles(long collectionId);
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Export Collection as RoCrate")
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(
       mediaType = MediaType.APPLICATION_OCTET_STREAM,
-      schema = @Schema(type = "string", format = "binary")
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response exportCollection(long collectionId) throws IOException;
 }

@@ -2,20 +2,19 @@ package de.dlr.shepard.neo4Core.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Date;
 import java.util.UUID;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "ApiKey")
 public class ApiKeyIO {
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private UUID uid;
 
   @NotBlank
@@ -23,10 +22,10 @@ public class ApiKeyIO {
   private String name;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private Date createdAt;
 
-  @Schema(accessMode = AccessMode.READ_ONLY)
+  @Schema(readOnly = true)
   private String belongsTo;
 
   public ApiKeyIO(ApiKey key) {

@@ -2,41 +2,41 @@ package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 public interface SemanticAnnotationRest {
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(array = @ArraySchema(schema = @Schema(implementation = SemanticAnnotationIO.class)))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAllAnnotations(long entityId);
 
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
-  @ApiResponse(
+  @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response getAnnotation(long entityId, long semanticAnnotationId);
 
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
-  @ApiResponse(
+  @APIResponse(
     description = "created",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "not found", responseCode = "404")
   Response createAnnotation(
     long entityId,
     @RequestBody(
@@ -46,7 +46,7 @@ public interface SemanticAnnotationRest {
   );
 
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
-  @ApiResponse(description = "deleted", responseCode = "204")
-  @ApiResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
   Response deleteAnnotation(long entityId, long semanticAnnotationId);
 }
