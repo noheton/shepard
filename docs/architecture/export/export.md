@@ -1,0 +1,70 @@
+# Export Collections
+
+The export feature exports an entire collection including all data objects, references and referenced payloads to a zip file. Metadata is added in the form of a `ro-crate-metadata.json` file as per the [Research Object Crate](https://www.researchobject.org/ro-crate/) specification.
+
+```json
+{
+  "@context": "https://w3id.org/ro/crate/1.1/context",
+  "@graph": [
+    {
+      "name": "Research Object Crate",
+      "description": "Research Object Crate representing the shepard Collection",
+      "@id": "./",
+      "@type": "Dataset",
+      "hasPart": [
+        ...
+      ]
+    },
+    {
+      "about": {
+        "@id": "./"
+      },
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork"
+    },
+    ...
+  ]
+}
+```
+
+The zip file contains all files on top level. This conforms to both, the RoCrate specification and to our internal structure. Relationships between elements are written down as metadata.
+
+```txt
+<RO-Crate>/
+ | ro-crate-metadata.json
+ | DataObject1
+ | Reference2
+ | Payload3
+ | ...
+```
+
+Organizational elements are added as json files, as they would also be displayed via the rest api. These files are named according to their shepard ID. This ensures that the files are unique. Payloads are added as they are, time series are exported in the corresponding CSV format. For each exported part there is an object in the file `ro-crate-metadata.json` with additional metadata. We use the field `additionalType` to specify the respective data type of an organizational element.
+
+```json
+{
+  "name": "DataObject 1",
+  "encodingFormat": "application/json",
+  "dateCreated": "2024-07-02T06:41:19.813",
+  "additionalType": "DataObject",
+  "@id": "123.json",
+  "author": {
+    "@id": "haas_tb"
+  },
+  "@type": "File"
+}
+```
+
+Shepard also adds the respective authors to the metadata.
+
+```json
+{
+  "@id": "haas_tb",
+  "email": "tobias.haase@dlr.de",
+  "givenName": "Tobias",
+  "familyName": "Haase",
+  "@type": "Person"
+}
+```
