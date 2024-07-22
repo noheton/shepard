@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -15,20 +17,25 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ApiKeyTest extends BaseTestCaseIT {
 
-  private static String apikeysURL;
+  private static String apiKeyURL;
   private static RequestSpecification requestSpecification;
-
   private static ApiKeyIO apikey;
 
   @BeforeAll
   public static void setUp() {
-    apikeysURL = String.format("%s/%s/%s/%s", baseURL, Constants.USERS, username, Constants.APIKEYS);
+    // TODO: cannot use injection for static functions
+    // but maybe put it into the base class
+    RestAssured.baseURI = "http://localhost";
+    RestAssured.port = 8083;
+    RestAssured.basePath = "/shepard/api";
+
+    apiKeyURL = String.format("/%s/%s/%s", Constants.USERS, username, Constants.APIKEYS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(apikeysURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -43,7 +50,7 @@ public class ApiKeyTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post()
+      .post(apiKeyURL)
       .then()
       .statusCode(201)
       .extract()
@@ -65,10 +72,9 @@ public class ApiKeyTest extends BaseTestCaseIT {
 
     var newSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(apikeysURL)
       .addHeader("X-API-KEY", actual.getJwt())
       .build();
-    given().spec(newSpec).when().get().then().statusCode(200);
+    given().spec(newSpec).when().get(apiKeyURL).then().statusCode(200);
   }
 
   @Test
@@ -77,7 +83,7 @@ public class ApiKeyTest extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get(apikeysURL + "/" + apikey.getUid())
+      .get(apiKeyURL + "/" + apikey.getUid())
       .then()
       .statusCode(200)
       .extract()
@@ -88,14 +94,21 @@ public class ApiKeyTest extends BaseTestCaseIT {
   @Test
   @Order(3)
   public void getApiKeysTest() {
-    var actual = given().spec(requestSpecification).when().get().then().statusCode(200).extract().as(ApiKeyIO[].class);
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(apiKeyURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(ApiKeyIO[].class);
     assertThat(actual).contains(apikey);
   }
 
   @Test
   @Order(4)
   public void deleteApiKeyTest() {
-    given().spec(requestSpecification).when().delete(apikeysURL + "/" + apikey.getUid()).then().statusCode(204);
-    given().spec(requestSpecification).when().get(apikeysURL + "/" + apikey.getUid()).then().statusCode(404);
+    given().spec(requestSpecification).when().delete(apiKeyURL + "/" + apikey.getUid()).then().statusCode(204);
+    given().spec(requestSpecification).when().get(apiKeyURL + "/" + apikey.getUid()).then().statusCode(404);
   }
 }

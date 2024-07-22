@@ -93,189 +93,186 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mongodb-client</artifactId>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
+    <!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-servlet-api -->
     <dependency>
       <groupId>org.influxdb</groupId>
       <artifactId>influxdb-java</artifactId>
       <version>${influxdb.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.apache.tomcat/tomcat-servlet-api -->
+    <!-- ####### JERSEY ####### -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet -->
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
       <version>6.1.0</version>
       <scope>provided</scope>
     </dependency>
-    <!-- ####### JERSEY ####### -->
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.inject/jersey-hk2 -->
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-servlet-api</artifactId>
       <version>${tomcat.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.inject/jersey-hk2 -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart -->
     <dependency>
       <groupId>org.glassfish.jersey.containers</groupId>
       <artifactId>jersey-container-servlet</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
     <dependency>
       <groupId>org.glassfish.jersey.inject</groupId>
       <artifactId>jersey-hk2</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-jaxb -->
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-multipart</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-jaxb -->
+    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-jaxb</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
+    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.ext/jersey-bean-validation -->
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.1</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.ext/jersey-bean-validation -->
+    <!-- ####### CSV ####### -->
+    <!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- ####### CSV ####### -->
-    <!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
+    <!-- ####### LOGGING ####### -->
+    <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
     <dependency>
       <groupId>org.glassfish.jersey.ext</groupId>
       <artifactId>jersey-bean-validation</artifactId>
       <version>${jersey.version}</version>
     </dependency>
-    <!-- ####### LOGGING ####### -->
-    <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
+    <!-- https://mvnrepository.com/artifact/org.codehaus.janino/janino -->
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
       <version>${opencsv.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.codehaus.janino/janino -->
+    <!-- ####### TESTS ####### -->
+    <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback.version}</version>
     </dependency>
-    <!-- ####### TESTS ####### -->
-    <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
+    <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
     <dependency>
       <groupId>org.codehaus.janino</groupId>
       <artifactId>janino</artifactId>
       <version>${janino.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.assertj/assertj-core -->
+    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <version>${restassured.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+    <!-- https://mvnrepository.com/artifact/nl.jqno.equalsverifier/equalsverifier -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/nl.jqno.equalsverifier/equalsverifier -->
+    <!-- ####### SECURITY ####### -->
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- ####### SECURITY ####### -->
-    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
     <dependency>
       <groupId>nl.jqno.equalsverifier</groupId>
       <artifactId>equalsverifier</artifactId>
       <version>${equalsverifier.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
+    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
       <version>${jjwt.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
+    <!-- ####### DATABASES ####### -->
+    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-core -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-impl</artifactId>
       <version>${jjwt.version}</version>
       <scope>runtime</scope>
     </dependency>
-    <!-- ####### DATABASES ####### -->
-    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-core -->
+    <!-- Only add if you're using the Bolt driver -->
+    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-bolt-driver -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-jackson</artifactId>
       <version>${jjwt.version}</version>
-      <scope>compile</scope>
     </dependency>
-    <!-- Only add if you're using the Bolt driver -->
-    <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ogm-bolt-driver -->
+    <!-- https://mvnrepository.com/artifact/eu.michael-simons.neo4j/neo4j-migrations -->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
       <version>${neo4j.version}</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/eu.michael-simons.neo4j/neo4j-migrations -->
+    <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-bolt-native-types</artifactId>
       <version>${neo4j.version}</version>
       <scope>runtime</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync -->
+    <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
       <artifactId>neo4j-migrations</artifactId>
       <version>2.10.3</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.influxdb/influxdb-java -->
-    <dependency>
-      <groupId>org.mongodb</groupId>
-      <artifactId>mongodb-driver-sync</artifactId>
-      <version>${mongodb.version}</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+    <!-- RO Crates-->
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons.version}</version>
     </dependency>
-    <!-- RO Crates-->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>

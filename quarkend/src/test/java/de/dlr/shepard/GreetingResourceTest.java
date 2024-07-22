@@ -14,5 +14,9 @@ class GreetingResourceTest {
   @Test
   void testHelloEndpoint() {
     given().when().get().then().statusCode(200).body(is("Hello from Quarkus REST"));
+    given().when().get("http://localhost:8083/shepard/api/users/test_it/apikeys").then().statusCode(200);
+    given().when().get().then().statusCode(200).body(is("Hello from Quarkus REST"));
+    given().when().get("http://localhost:8083/shepard/api/users/test_it/apikeys").then().statusCode(200);
+    given().when().get("http://localhost:8083/shepard/api/users/test_it/apikeys").then().statusCode(200);
   }
 }

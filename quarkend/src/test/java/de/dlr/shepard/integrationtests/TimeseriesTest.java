@@ -8,6 +8,7 @@ import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TimeseriesTest extends BaseTestCaseIT {
 
@@ -38,7 +40,6 @@ public class TimeseriesTest extends BaseTestCaseIT {
     containerURL = String.format("%s/%s", baseURL, Constants.TIMESERIES);
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(containerURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -53,7 +54,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
       .spec(containerRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(containerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -75,7 +76,7 @@ public class TimeseriesTest extends BaseTestCaseIT {
     var actual = given()
       .spec(containerRequestSpec)
       .when()
-      .get()
+      .get(containerURL)
       .then()
       .statusCode(200)
       .extract()

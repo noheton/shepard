@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 
 public class BaseTestCaseIT {
 
-  protected static String baseURL = "http://127.0.0.1:8080/shepard/api";
+  protected static String baseURL = "http://127.0.0.1:8083/shepard/api";
 
   protected static String jws;
   protected static String username;

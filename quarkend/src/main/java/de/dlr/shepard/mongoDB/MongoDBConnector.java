@@ -3,19 +3,14 @@ package de.dlr.shepard.mongoDB;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import de.dlr.shepard.util.IConnector;
-import de.dlr.shepard.util.PropertiesHelper;
-import java.util.concurrent.TimeUnit;
 import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -28,7 +23,9 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 public class MongoDBConnector implements IConnector {
 
   private static MongoDBConnector instance;
+
   private MongoClient mongoClient;
+
   private MongoDatabase database;
   private CodecRegistry pojoCodecRegistry = fromRegistries(
     MongoClientSettings.getDefaultCodecRegistry(),
@@ -38,7 +35,14 @@ public class MongoDBConnector implements IConnector {
   /**
    * Private constructor
    */
-  private MongoDBConnector() {}
+  private MongoDBConnector(MongoClient client) {
+    this.mongoClient = client;
+  }
+
+  public static MongoDBConnector createInstance(MongoClient client) {
+    instance = new MongoDBConnector(client);
+    return instance;
+  }
 
   /**
    * For development reasons, there should always be just one MongoDBConnector
@@ -47,9 +51,6 @@ public class MongoDBConnector implements IConnector {
    * @return The one and only MongoDBConnector instance.
    */
   public static MongoDBConnector getInstance() {
-    if (instance == null) {
-      instance = new MongoDBConnector();
-    }
     return instance;
   }
 
@@ -60,24 +61,6 @@ public class MongoDBConnector implements IConnector {
    */
   @Override
   public boolean connect() {
-    PropertiesHelper helper = new PropertiesHelper();
-    String username = helper.getProperty("mongo.username");
-    String password = helper.getProperty("mongo.password");
-    String authDB = helper.getProperty("mongo.authDB");
-    String host = helper.getProperty("mongo.host");
-
-    MongoCredential credential = MongoCredential.createCredential(username, authDB, password.toCharArray());
-
-    ConnectionString connectionString = new ConnectionString("mongodb://" + host);
-
-    MongoClientSettings settings = MongoClientSettings.builder()
-      .credential(credential)
-      .applyConnectionString(connectionString)
-      .applyToClusterSettings(builder -> builder.serverSelectionTimeout(2, TimeUnit.SECONDS))
-      .codecRegistry(pojoCodecRegistry)
-      .build();
-
-    mongoClient = MongoClients.create(settings);
     database = mongoClient.getDatabase("database");
     return true;
   }
