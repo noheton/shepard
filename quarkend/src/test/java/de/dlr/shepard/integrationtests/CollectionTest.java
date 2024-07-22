@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CollectionTest extends BaseTestCaseIT {
 
@@ -26,10 +28,9 @@ public class CollectionTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS);
+    collectionsURL = "/" + Constants.COLLECTIONS;
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -46,7 +47,7 @@ public class CollectionTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post()
+      .post(collectionsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -70,25 +71,22 @@ public class CollectionTest extends BaseTestCaseIT {
     var payload = new CollectionIO();
     payload.setName(name);
 
-    var wrongSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
-      .build();
-    given().spec(wrongSpecification).body(payload).when().post().then().statusCode(401);
+    var wrongSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
+    given().spec(wrongSpecification).body(payload).when().post(collectionsURL).then().statusCode(401);
   }
 
   @Test
   @Order(3)
   public void postCollectionTest_BadJson() {
     String payload = "{,}";
-    given().spec(requestSpecification).body(payload).when().post().then().statusCode(400);
+    given().spec(requestSpecification).body(payload).when().post(collectionsURL).then().statusCode(400);
   }
 
   @Test
   @Order(4)
   public void postCollectionTest_BadBody() {
     String payload = "{\"attribute\":\"value\"}";
-    given().spec(requestSpecification).body(payload).when().post().then().statusCode(400);
+    given().spec(requestSpecification).body(payload).when().post(collectionsURL).then().statusCode(400);
   }
 
   @Test
@@ -142,7 +140,7 @@ public class CollectionTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("name", collection.getName())
       .when()
-      .get()
+      .get(collectionsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -157,7 +155,7 @@ public class CollectionTest extends BaseTestCaseIT {
     CollectionIO[] response = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(collectionsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -169,7 +167,7 @@ public class CollectionTest extends BaseTestCaseIT {
   @Test
   @Order(9)
   public void getCollectionTest_WrongId() {
-    given().spec(requestSpecification).when().get("9999").then().statusCode(404);
+    given().spec(requestSpecification).when().get(collectionsURL + "/9999").then().statusCode(404);
   }
 
   @Test

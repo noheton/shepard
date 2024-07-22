@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.util.Constants;
+import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import java.util.Map;
@@ -16,7 +17,9 @@ import org.junit.jupiter.api.BeforeAll;
 
 public class BaseTestCaseIT {
 
-  protected static String baseURL = "http://127.0.0.1:8083/shepard/api";
+  protected static String host = "http://127.0.0.1";
+  protected static int port = 8083;
+  protected static String basePath = "/shepard/api";
 
   protected static String jws;
   protected static String username;
@@ -25,6 +28,10 @@ public class BaseTestCaseIT {
 
   @BeforeAll
   public static void init() {
+    RestAssured.baseURI = host;
+    RestAssured.port = port;
+    RestAssured.basePath = basePath;
+
     var credentials = new PrepareDatabase().withUser().withApiKey().build();
     jws = credentials.getApiKey().getJws();
     username = credentials.getUser().getUsername();
@@ -41,17 +48,15 @@ public class BaseTestCaseIT {
   }
 
   protected static CollectionIO createCollection(String name) {
-    var collectionsURL = String.format("%s/%s/", baseURL, Constants.COLLECTIONS);
     var collectionSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     var collection = given()
       .spec(collectionSpecification)
       .body(Map.of("name", name))
       .when()
-      .post()
+      .post("/" + Constants.COLLECTIONS)
       .then()
       .statusCode(201)
       .extract()
@@ -60,17 +65,15 @@ public class BaseTestCaseIT {
   }
 
   protected static CollectionIO createCollection(String name, ApiKey apiKey) {
-    var collectionsURL = String.format("%s/%s/", baseURL, Constants.COLLECTIONS);
     var collectionSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", apiKey.getJws())
       .build();
     var collection = given()
       .spec(collectionSpecification)
       .body(Map.of("name", name))
       .when()
-      .post()
+      .post("/" + Constants.COLLECTIONS)
       .then()
       .statusCode(201)
       .extract()
@@ -79,16 +82,9 @@ public class BaseTestCaseIT {
   }
 
   protected static DataObjectIO createDataObject(String name, long collectionId) {
-    var dataObjectsURL = String.format(
-      "%s/%s/%d/%s/",
-      baseURL,
-      Constants.COLLECTIONS,
-      collectionId,
-      Constants.DATAOBJECTS
-    );
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
@@ -97,7 +93,7 @@ public class BaseTestCaseIT {
       .spec(dataObjectSpecification)
       .body(dataObjectIO)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()

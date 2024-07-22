@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SemanticRepositoryTest extends BaseTestCaseIT {
 
@@ -32,17 +34,15 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    repositoryURL = baseURL + "/" + Constants.SEMANTIC_REPOSITORIES;
+    repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
     repositoryRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(repositoryURL)
       .addHeader("X-API-KEY", jws)
       .build();
     collection = createCollection("SemanticsCollection");
-    collectionURL = String.format("%s/%s/%d/semanticAnnotations", baseURL, Constants.COLLECTIONS, collection.getId());
+    collectionURL = String.format("/%s/%d/semanticAnnotations", Constants.COLLECTIONS, collection.getId());
     collectionRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -59,7 +59,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
       .spec(repositoryRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(repositoryURL)
       .then()
       .statusCode(201)
       .extract()
@@ -82,7 +82,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
     var actual = given()
       .spec(repositoryRequestSpec)
       .when()
-      .get()
+      .get(repositoryURL)
       .then()
       .statusCode(200)
       .extract()
@@ -119,7 +119,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
       .spec(collectionRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(collectionURL)
       .then()
       .statusCode(201)
       .extract()
@@ -139,7 +139,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
   public void getSemanticAnnotations() {
     var actual = given()
       .spec(collectionRequestSpec)
-      .get()
+      .get(collectionURL)
       .then()
       .statusCode(200)
       .extract()
@@ -169,7 +169,7 @@ public class SemanticRepositoryTest extends BaseTestCaseIT {
     given().spec(collectionRequestSpec).get(collectionURL + "/" + annotation.getId()).then().statusCode(404);
     var actual = given()
       .spec(collectionRequestSpec)
-      .get()
+      .get(collectionURL)
       .then()
       .statusCode(200)
       .extract()

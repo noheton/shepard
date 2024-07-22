@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TimeseriesCSVTest extends BaseTestCaseIT {
 
@@ -44,8 +46,7 @@ public class TimeseriesCSVTest extends BaseTestCaseIT {
     dataObject = createDataObject("TimeseriesReferenceTestDataObject", collection.getId());
 
     referencesURL = String.format(
-      "%s/%s/%d/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,
@@ -54,14 +55,12 @@ public class TimeseriesCSVTest extends BaseTestCaseIT {
     );
     referencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(referencesURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    containerURL = String.format("%s/%s", baseURL, Constants.TIMESERIES);
+    containerURL = "/" + Constants.TIMESERIES;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(containerURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
@@ -71,7 +70,7 @@ public class TimeseriesCSVTest extends BaseTestCaseIT {
       .spec(containerRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(containerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -110,7 +109,7 @@ public class TimeseriesCSVTest extends BaseTestCaseIT {
       .spec(referencesRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(referencesURL)
       .then()
       .statusCode(201)
       .extract()

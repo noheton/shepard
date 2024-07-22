@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ExportTest extends BaseTestCaseIT {
 
@@ -31,10 +33,9 @@ public class ExportTest extends BaseTestCaseIT {
     collection = createCollection("ExportTestCollection");
     dataObject = createDataObject("ExportTestDataObject", collection.getId());
 
-    collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS + "/" + collection.getId() + "/export");
+    collectionsURL = "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/export";
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -42,7 +43,14 @@ public class ExportTest extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void exportCollection_successful() throws IOException {
-    var actual = given().spec(requestSpecification).when().get().then().statusCode(200).extract().asInputStream();
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .asInputStream();
     var zis = new ZipInputStream(actual);
     var filenames = new ArrayList<String>();
 

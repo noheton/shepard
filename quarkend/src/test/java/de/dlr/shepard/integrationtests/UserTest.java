@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserTest extends BaseTestCaseIT {
 
@@ -24,10 +26,9 @@ public class UserTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    usersURL = baseURL + "/" + Constants.USERS;
+    usersURL = "/" + Constants.USERS;
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(usersURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -35,7 +36,14 @@ public class UserTest extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void getCurrentUserTest() {
-    var actual = given().spec(requestSpecification).when().get().then().statusCode(200).extract().as(UserIO.class);
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(usersURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(UserIO.class);
     user = actual;
 
     assertThat(actual.getUsername()).isEqualTo("test_it");

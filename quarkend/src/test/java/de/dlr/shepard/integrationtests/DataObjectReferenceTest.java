@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectReferenceTest extends BaseTestCaseIT {
 
@@ -35,8 +37,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
     referenced = createDataObject("ReferencedDataObject", collection.getId());
 
     referencesURL = String.format(
-      "%s/%s/%d/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,
@@ -45,7 +46,6 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
     );
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(referencesURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -62,7 +62,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post()
+      .post(referencesURL)
       .then()
       .statusCode(201)
       .extract()
@@ -89,7 +89,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
     toCreate.setRelationship("integrationtests");
     toCreate.setReferencedDataObjectId(-2);
 
-    given().spec(requestSpecification).body(toCreate).when().post().then().statusCode(400);
+    given().spec(requestSpecification).body(toCreate).when().post(referencesURL).then().statusCode(400);
   }
 
   @Test
@@ -112,7 +112,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(referencesURL)
       .then()
       .statusCode(200)
       .extract()
@@ -124,8 +124,7 @@ public class DataObjectReferenceTest extends BaseTestCaseIT {
   @Order(5)
   public void getDataObjectReferencedTest() {
     var referencedURL = String.format(
-      "%s/%s/%d/%s/%d",
-      baseURL,
+      "/%s/%d/%s/%d",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,

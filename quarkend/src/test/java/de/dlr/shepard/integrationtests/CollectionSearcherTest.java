@@ -17,6 +17,7 @@ import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CollectionSearcherTest extends BaseTestCaseIT {
 
@@ -49,10 +51,9 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS);
+    collectionsURL = "/" + Constants.COLLECTIONS;
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     var payload1 = new CollectionIO();
@@ -62,7 +63,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload1)
       .when()
-      .post()
+      .post(collectionsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -74,42 +75,31 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload2)
       .when()
-      .post()
+      .post(collectionsURL)
       .then()
       .statusCode(201)
       .extract()
       .as(CollectionIO.class);
-    searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
-    searchRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    searchURL = "/" + Constants.SEARCH;
+    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
     jws1 = user1.getApiKey().getJws();
-    searchRequestSpec1 = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws1)
-      .build();
+    searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
 
     // for search involving SemanticAnnotations
-    repositoryURL = baseURL + "/" + Constants.SEMANTIC_REPOSITORIES;
+    repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
     repositoryRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(repositoryURL)
       .addHeader("X-API-KEY", jws)
       .build();
     annotatedCollection = createCollection("SemanticsCollection");
     annotatedCollectionURL = String.format(
-      "%s/%s/%d/semanticAnnotations",
-      baseURL,
+      "/%s/%d/semanticAnnotations",
       Constants.COLLECTIONS,
       annotatedCollection.getId()
     );
     annotatedCollectionRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(annotatedCollectionURL)
       .addHeader("X-API-KEY", jws)
       .build();
     var repositoryToCreate = new SemanticRepositoryIO();
@@ -120,7 +110,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(repositoryRequestSpec)
       .body(repositoryToCreate)
       .when()
-      .post()
+      .post(repositoryURL)
       .then()
       .statusCode(201)
       .extract()
@@ -134,7 +124,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(annotatedCollectionRequestSpec)
       .body(annotationToCreate)
       .when()
-      .post()
+      .post(annotatedCollectionURL)
       .then()
       .statusCode(201)
       .extract()
@@ -173,7 +163,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -208,7 +198,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -250,7 +240,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -293,7 +283,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -336,7 +326,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -380,7 +370,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -393,10 +383,9 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void authorizedCollectionsSearchTest() {
-    String permissionsURL = baseURL + "/collections/" + collection1.getId() + "/permissions";
+    String permissionsURL = "/collections/" + collection1.getId() + "/permissions";
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     PermissionsIO permissions = given()
@@ -448,7 +437,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -462,30 +451,27 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void collectionsSearchTestReaderGroup() {
-    String userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
+    String userGroupURL = "/" + Constants.USERGROUP;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
     RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws)
       .build();
     UserGroupIO userGroupCreated = given()
       .spec(userGroupSpecification)
       .body(userGroup)
       .when()
-      .post()
+      .post(userGroupURL)
       .then()
       .statusCode(201)
       .extract()
       .as(UserGroupIO.class);
 
-    String permissionsURL =
-      baseURL + "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
+    String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     PermissionsIO permissions = given()
@@ -537,7 +523,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -551,30 +537,27 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void inTest() {
-    String userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
+    String userGroupURL = "/" + Constants.USERGROUP;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
     RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws)
       .build();
     UserGroupIO userGroupCreated = given()
       .spec(userGroupSpecification)
       .body(userGroup)
       .when()
-      .post()
+      .post(userGroupURL)
       .then()
       .statusCode(201)
       .extract()
       .as(UserGroupIO.class);
 
-    String permissionsURL =
-      baseURL + "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
+    String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     PermissionsIO permissions = given()
@@ -618,7 +601,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -646,7 +629,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -674,7 +657,7 @@ public class CollectionSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()

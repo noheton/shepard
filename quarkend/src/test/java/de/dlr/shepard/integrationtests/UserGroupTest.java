@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserGroupTest extends BaseTestCaseIT {
 
@@ -28,7 +30,7 @@ public class UserGroupTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
+    userGroupURL = "/" + Constants.USERGROUP;
     user = getNewUserWithApiKey("user");
     user1 = getNewUserWithApiKey("user1");
     jws = user.getApiKey().getJws();
@@ -42,14 +44,13 @@ public class UserGroupTest extends BaseTestCaseIT {
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws)
       .build();
     userGroupCreated = given()
       .spec(userGroupSpecification)
       .body(userGroup)
       .when()
-      .post()
+      .post(userGroupURL)
       .then()
       .statusCode(201)
       .extract()
@@ -85,7 +86,7 @@ public class UserGroupTest extends BaseTestCaseIT {
     UserGroupIO[] allUserGroups = given()
       .spec(userGroupSpecification)
       .when()
-      .get()
+      .get(userGroupURL)
       .then()
       .statusCode(200)
       .extract()

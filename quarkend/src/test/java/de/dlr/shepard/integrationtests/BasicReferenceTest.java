@@ -9,6 +9,7 @@ import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BasicReferenceTest extends BaseTestCaseIT {
 
@@ -38,8 +40,7 @@ public class BasicReferenceTest extends BaseTestCaseIT {
     uriReference = createUriReference(collection.getId(), dataObject.getId());
 
     referencesURL = String.format(
-      "%s/%s/%d/%s/%d/references",
-      baseURL,
+      "/%s/%d/%s/%d/references",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,
@@ -48,7 +49,6 @@ public class BasicReferenceTest extends BaseTestCaseIT {
     );
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(referencesURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -107,7 +107,7 @@ public class BasicReferenceTest extends BaseTestCaseIT {
     BasicReferenceIO[] actual = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(referencesURL)
       .then()
       .statusCode(200)
       .extract()
@@ -124,7 +124,7 @@ public class BasicReferenceTest extends BaseTestCaseIT {
     BasicReferenceIO[] actual = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(referencesURL)
       .then()
       .statusCode(200)
       .extract()
@@ -137,7 +137,6 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 
   private static URIReferenceIO createUriReference(long collectionId, long dataObjectId) {
     var uriReferenceUrl =
-      baseURL +
       "/" +
       Constants.COLLECTIONS +
       "/" +
@@ -155,16 +154,12 @@ public class BasicReferenceTest extends BaseTestCaseIT {
         setUri("http://www.example.com");
       }
     };
-    var specification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(uriReferenceUrl)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var created = given()
       .spec(specification)
       .body(uriReference)
       .when()
-      .post()
+      .post(uriReferenceUrl)
       .then()
       .statusCode(201)
       .extract()
@@ -174,7 +169,6 @@ public class BasicReferenceTest extends BaseTestCaseIT {
 
   private static DataObjectReferenceIO createDataObjectReference(long collectionId, long dataObjectId) {
     var dataObjectReferenceUrl =
-      baseURL +
       "/" +
       Constants.COLLECTIONS +
       "/" +
@@ -193,16 +187,12 @@ public class BasicReferenceTest extends BaseTestCaseIT {
         setRelationship("self_reference");
       }
     };
-    var specification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectReferenceUrl)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var created = given()
       .spec(specification)
       .body(dataObjectReference)
       .when()
-      .post()
+      .post(dataObjectReferenceUrl)
       .then()
       .statusCode(201)
       .extract()

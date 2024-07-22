@@ -14,6 +14,7 @@ import de.dlr.shepard.search.unified.SearchParams;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectSearcherTest extends BaseTestCaseIT {
 
@@ -43,24 +45,13 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     collection = createCollection("DataObjectSearcherTestCollection");
-    dataObjectsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATAOBJECTS
-    );
+    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
-    searchURL = String.format("%s/%s", baseURL, Constants.SEARCH);
-    searchRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    searchURL = "/" + Constants.SEARCH;
+    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var payload1 = new DataObjectIO();
     payload1.setName("DataObjectSearchDummy1");
     payload1.setDescription("description1");
@@ -69,7 +60,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload1)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -82,7 +73,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload2)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -132,7 +123,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -177,7 +168,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -220,7 +211,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -263,7 +254,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -305,7 +296,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -349,7 +340,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -394,7 +385,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -438,7 +429,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -485,7 +476,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -520,7 +511,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -554,7 +545,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -563,16 +554,9 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format(
-      "%s/%s/%d/%s/",
-      baseURL,
-      Constants.COLLECTIONS,
-      collectionId,
-      Constants.DATAOBJECTS
-    );
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
@@ -582,7 +566,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
       .spec(dataObjectSpecification)
       .body(dataObjectIO)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()

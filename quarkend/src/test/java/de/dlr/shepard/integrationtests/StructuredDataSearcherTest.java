@@ -21,6 +21,7 @@ import de.dlr.shepard.search.unified.SearchParams;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StructuredDataSearcherTest extends BaseTestCaseIT {
 
@@ -130,26 +132,14 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       firstSuccessor
     );
     // prepare search API calls
-    searchURL = String.format("%s/search", baseURL);
-    searchRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    searchURL = "/search";
+    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
     jws1 = user1.getApiKey().getJws();
-    searchRequestSpec1 = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws1)
-      .build();
+    searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
     user2 = getNewUserWithApiKey("user2" + System.currentTimeMillis());
     jws2 = user2.getApiKey().getJws();
-    searchRequestSpec2 = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws2)
-      .build();
+    searchRequestSpec2 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws2).build();
   }
 
   @Test
@@ -172,7 +162,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -204,7 +194,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -238,7 +228,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -271,7 +261,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -303,7 +293,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -340,7 +330,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -373,7 +363,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -405,7 +395,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -437,7 +427,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -469,7 +459,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -502,7 +492,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -535,7 +525,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -574,7 +564,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -603,7 +593,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -616,10 +606,9 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   @Test
   @Order(15)
   public void testFindViaPredecessorCyclePermissionsReader() {
-    String permissionsURL = baseURL + "/collections/" + collection.getId() + "/permissions";
+    String permissionsURL = "/collections/" + collection.getId() + "/permissions";
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     PermissionsIO permissions = given()
@@ -658,7 +647,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec1)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -670,30 +659,27 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   @Test
   @Order(16)
   public void testFindViaPredecessorCycleReaderGroup() {
-    String userGroupURL = String.format("%s/usergroup", baseURL);
+    String userGroupURL = "/usergroup";
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user2.getUser().getUsername() });
     RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws)
       .build();
     UserGroupIO userGroupCreated = given()
       .spec(userGroupSpecification)
       .body(userGroup)
       .when()
-      .post()
+      .post(userGroupURL)
       .then()
       .statusCode(201)
       .extract()
       .as(UserGroupIO.class);
 
-    String permissionsURL =
-      baseURL + "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/" + Constants.PERMISSIONS;
+    String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/" + Constants.PERMISSIONS;
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     PermissionsIO permissions = given()
@@ -732,7 +718,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec2)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -762,7 +748,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -772,16 +758,9 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format(
-      "%s/%s/%d/%s/",
-      baseURL,
-      Constants.COLLECTIONS,
-      collectionId,
-      Constants.DATAOBJECTS
-    );
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
@@ -791,7 +770,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(dataObjectSpecification)
       .body(dataObjectIO)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -800,16 +779,9 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithPredecessors(String name, long collectionId, long[] predecessorsIDs) {
-    var dataObjectsURL = String.format(
-      "%s/%s/%d/%s/",
-      baseURL,
-      Constants.COLLECTIONS,
-      collectionId,
-      Constants.DATAOBJECTS
-    );
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
@@ -819,7 +791,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(dataObjectSpecification)
       .body(dataObjectIO)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -828,10 +800,9 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   }
 
   private static StructuredDataContainerIO createDataContainer(String name) {
-    containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
+    containerURL = "/" + Constants.STRUCTUREDDATAS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(containerURL)
       .addHeader("X-API-KEY", jws)
       .build();
     StructuredDataContainerIO containerToCreate = new StructuredDataContainerIO();
@@ -840,7 +811,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
       .spec(containerRequestSpec)
       .body(containerToCreate)
       .when()
-      .post()
+      .post(containerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -852,7 +823,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
     long containerID,
     StructuredDataPayload payload
   ) {
-    containerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
+    containerURL = "/" + Constants.STRUCTUREDDATAS;
     return given()
       .spec(containerRequestSpec)
       .body(payload)
@@ -875,8 +846,7 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
     toCreate.setStructuredDataOids(structuredDataOIDs);
     toCreate.setStructuredDataContainerId(container.getId());
     String referencesURL = String.format(
-      "%s/%s/%d/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,
@@ -885,14 +855,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
     );
     RequestSpecification referencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(referencesURL)
       .addHeader("X-API-KEY", jws)
       .build();
     return given()
       .spec(referencesRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(referencesURL)
       .then()
       .statusCode(201)
       .extract()
@@ -901,15 +870,13 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
 
   private static void deleteDataObject(DataObjectIO dataObject) {
     String dataObjectsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS
     );
     RequestSpecification dataObjectRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     given()
@@ -921,17 +888,10 @@ public class StructuredDataSearcherTest extends BaseTestCaseIT {
   }
 
   private static void putDataObject(Long dataObjectToChangeID, Long collectionID, DataObjectIO changedDataObject) {
-    String putURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATAOBJECTS
-    );
+    String putURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
     putURL = putURL + "/" + dataObjectToChangeID;
     RequestSpecification putSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(putURL)
       .addHeader("X-API-KEY", jws)
       .build();
     given().spec(putSpecification).body(changedDataObject).when().put(putURL).then().statusCode(200);

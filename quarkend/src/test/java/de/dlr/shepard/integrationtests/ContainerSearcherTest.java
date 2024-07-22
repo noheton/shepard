@@ -11,6 +11,7 @@ import de.dlr.shepard.search.container.ContainerSearchBody;
 import de.dlr.shepard.search.container.ContainerSearchParams;
 import de.dlr.shepard.search.container.ContainerSearchResult;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ContainerSearcherTest extends BaseTestCaseIT {
 
@@ -43,24 +45,21 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    fileContainerURL = String.format("%s/%s", baseURL, Constants.FILES);
+    fileContainerURL = "/" + Constants.FILES;
     fileContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(fileContainerURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    timeseriesContainerURL = String.format("%s/%s", baseURL, Constants.TIMESERIES);
+    timeseriesContainerURL = "/" + Constants.TIMESERIES;
     timeseriesContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(timeseriesContainerURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    dataContainerURL = String.format("%s/%s", baseURL, Constants.STRUCTUREDDATAS);
+    dataContainerURL = "/" + Constants.STRUCTUREDDATAS;
     dataContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataContainerURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
@@ -83,7 +82,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(fileContainerRequestSpec)
       .body(fileContainer1)
       .when()
-      .post()
+      .post(fileContainerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -92,7 +91,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(fileContainerRequestSpec)
       .body(fileContainer2)
       .when()
-      .post()
+      .post(fileContainerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -101,7 +100,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(timeseriesContainerRequestSpec)
       .body(timeseriesContainer1)
       .when()
-      .post()
+      .post(timeseriesContainerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -110,7 +109,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(timeseriesContainerRequestSpec)
       .body(timeseriesContainer2)
       .when()
-      .post()
+      .post(timeseriesContainerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -119,7 +118,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(dataContainerRequestSpec)
       .body(dataContainer1)
       .when()
-      .post()
+      .post(dataContainerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -128,18 +127,14 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(dataContainerRequestSpec)
       .body(dataContainer2)
       .when()
-      .post()
+      .post(dataContainerURL)
       .then()
       .statusCode(201)
       .extract()
       .as(StructuredDataContainerIO.class);
 
-    searchURL = baseURL.concat("/" + Constants.SEARCH + "/" + Constants.CONTAINERS);
-    searchRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    searchURL = "/" + Constants.SEARCH + "/" + Constants.CONTAINERS;
+    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
   }
 
   @Test
@@ -152,7 +147,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -179,7 +174,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -206,7 +201,7 @@ public class ContainerSearcherTest extends BaseTestCaseIT {
       .spec(searchRequestSpec)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()

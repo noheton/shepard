@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class FileTest extends BaseTestCaseIT {
 
@@ -37,15 +39,13 @@ public class FileTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    containerURL = String.format("%s/%s", baseURL, Constants.FILES);
+    containerURL = "/" + Constants.FILES;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(containerURL)
       .addHeader("X-API-KEY", jws)
       .build();
     fileRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.MULTIPART)
-      .setBaseUri(containerURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -60,7 +60,7 @@ public class FileTest extends BaseTestCaseIT {
       .spec(containerRequestSpec)
       .body(toCreate)
       .when()
-      .post()
+      .post(containerURL)
       .then()
       .statusCode(201)
       .extract()
@@ -82,7 +82,7 @@ public class FileTest extends BaseTestCaseIT {
     var actual = given()
       .spec(containerRequestSpec)
       .when()
-      .get()
+      .get(containerURL)
       .then()
       .statusCode(200)
       .extract()

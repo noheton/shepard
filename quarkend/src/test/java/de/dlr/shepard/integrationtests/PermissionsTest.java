@@ -10,6 +10,7 @@ import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PermissionType;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class PermissionsTest extends BaseTestCaseIT {
 
@@ -44,18 +46,11 @@ public class PermissionsTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    collectionsURL = baseURL.concat("/" + Constants.COLLECTIONS);
+    collectionsURL = "/" + Constants.COLLECTIONS;
     collection = createCollection("PermissionsTestCollection");
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     user1 = getNewUserWithApiKey("user1");
@@ -67,22 +62,19 @@ public class PermissionsTest extends BaseTestCaseIT {
     jws3 = user3.getApiKey().getJws();
     requestSpecification1 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws1)
       .build();
     requestSpecification2 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     requestSpecification3 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws3)
       .build();
     collection1 = createCollection("PermissionsTestCollection1", user1.getApiKey());
     collection2 = createCollection("PermissionsTestCollection2", user2.getApiKey());
-    userGroupURL = String.format("%s/%s", baseURL, Constants.USERGROUP);
+    userGroupURL = "/" + Constants.USERGROUP;
   }
 
   @Test
@@ -178,13 +170,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.PublicReadable);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification1).body(permissions).when().put(permissionsURL);
     var answer = given().spec(requestSpecification2).when().get(collectionsURL + "/" + collection1.getId());
     assertEquals(200, answer.statusCode());
@@ -226,13 +212,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Public);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification1).body(permissions).when().put(permissionsURL);
     var answer = given()
       .spec(requestSpecification2)
@@ -267,13 +247,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
     var answer = given().spec(requestSpecification1).when().get(collectionsURL + "/" + collection2.getId());
     assertEquals(200, answer.statusCode());
@@ -292,13 +266,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
     var answer = given()
       .spec(requestSpecification1)
@@ -316,7 +284,6 @@ public class PermissionsTest extends BaseTestCaseIT {
     readersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     readersGroup = given()
@@ -339,23 +306,15 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     requestSpecification2 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(permissionsURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     requestSpecification3 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(collectionsURL)
       .addHeader("X-API-KEY", jws3)
       .build();
     var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
@@ -370,7 +329,6 @@ public class PermissionsTest extends BaseTestCaseIT {
     readersGroup.setUsernames(new String[] { "user3" });
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     readersGroup = given()
@@ -393,13 +351,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
@@ -414,7 +366,6 @@ public class PermissionsTest extends BaseTestCaseIT {
     writersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     writersGroup = given()
@@ -437,13 +388,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     var answer = given()
@@ -462,7 +407,6 @@ public class PermissionsTest extends BaseTestCaseIT {
     writersGroup.setUsernames(new String[] { "user3" });
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(userGroupURL)
       .addHeader("X-API-KEY", jws2)
       .build();
     writersGroup = given()
@@ -485,13 +429,7 @@ public class PermissionsTest extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.PERMISSIONS
-    );
+    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     var answer = given()

@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectTest extends BaseTestCaseIT {
 
@@ -43,28 +45,19 @@ public class DataObjectTest extends BaseTestCaseIT {
     collection = createCollection("DataObjectTestCollection");
     collectionForOrderByTest = createCollection("OrderByTestCollection");
 
-    dataObjectsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATAOBJECTS
-    );
+    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
     orderByDataObjectsURL = String.format(
-      "%s/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s",
       Constants.COLLECTIONS,
       collectionForOrderByTest.getId(),
       Constants.DATAOBJECTS
     );
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(dataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
     orderByRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(orderByDataObjectsURL)
       .addHeader("X-API-KEY", jws)
       .build();
 
@@ -74,7 +67,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(aInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -85,7 +78,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(bInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -96,7 +89,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(cInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -107,7 +100,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(dInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -118,7 +111,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(eInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -129,7 +122,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .body(fInput)
       .when()
-      .post()
+      .post(orderByDataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -148,7 +141,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -183,7 +176,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -221,7 +214,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -260,7 +253,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post()
+      .post(dataObjectsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -321,7 +314,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("name", dataObject.getName())
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -338,7 +331,7 @@ public class DataObjectTest extends BaseTestCaseIT {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -356,7 +349,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("parentId", dataObject.getId())
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -374,7 +367,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("parentId", -1)
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -392,7 +385,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("predecessorId", dataObject.getId())
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -410,7 +403,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("predecessorId", -1)
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -428,7 +421,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("successorId", successor.getId())
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -446,7 +439,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .queryParam("successorId", -1)
       .when()
-      .get()
+      .get(dataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -567,7 +560,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .spec(orderByRequestSpecification)
       .queryParam("orderBy", DataObjectAttributes.name)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -583,7 +576,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("orderBy", DataObjectAttributes.name)
       .queryParam("orderDesc", true)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -599,7 +592,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", false)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -617,7 +610,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("page", 0)
       .queryParam("size", 3)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -635,7 +628,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("page", 1)
       .queryParam("size", 3)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -653,7 +646,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("page", 1)
       .queryParam("size", 3)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()
@@ -671,7 +664,7 @@ public class DataObjectTest extends BaseTestCaseIT {
       .queryParam("page", 0)
       .queryParam("size", 3)
       .when()
-      .get()
+      .get(orderByDataObjectsURL)
       .then()
       .statusCode(200)
       .extract()

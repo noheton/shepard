@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class URIReferenceTest extends BaseTestCaseIT {
 
@@ -33,8 +35,7 @@ public class URIReferenceTest extends BaseTestCaseIT {
     dataObject = createDataObject("URIReferenceDataObject", collection.getId());
 
     referencesURL = String.format(
-      "%s/%s/%d/%s/%d/%s",
-      baseURL,
+      "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
       Constants.DATAOBJECTS,
@@ -43,7 +44,6 @@ public class URIReferenceTest extends BaseTestCaseIT {
     );
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(referencesURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -59,7 +59,7 @@ public class URIReferenceTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post()
+      .post(referencesURL)
       .then()
       .statusCode(201)
       .extract()
@@ -97,7 +97,7 @@ public class URIReferenceTest extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(referencesURL)
       .then()
       .statusCode(200)
       .extract()

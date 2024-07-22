@@ -27,12 +27,6 @@ public class ApiKeyTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    // TODO: cannot use injection for static functions
-    // but maybe put it into the base class
-    RestAssured.baseURI = "http://localhost";
-    RestAssured.port = 8083;
-    RestAssured.basePath = "/shepard/api";
-
     apiKeyURL = String.format("/%s/%s/%s", Constants.USERS, username, Constants.APIKEYS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)

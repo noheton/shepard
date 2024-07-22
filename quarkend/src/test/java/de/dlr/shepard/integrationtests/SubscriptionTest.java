@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.RequestMethod;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SubscriptionTest extends BaseTestCaseIT {
 
@@ -25,10 +27,9 @@ public class SubscriptionTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    subscriptionsURL = String.format("%s/%s/%s/%s", baseURL, Constants.USERS, username, Constants.SUBSCRIPTIONS);
+    subscriptionsURL = String.format("/%s/%s/%s", Constants.USERS, username, Constants.SUBSCRIPTIONS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(subscriptionsURL)
       .addHeader("X-API-KEY", jws)
       .build();
   }
@@ -46,7 +47,7 @@ public class SubscriptionTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post()
+      .post(subscriptionsURL)
       .then()
       .statusCode(201)
       .extract()
@@ -82,7 +83,7 @@ public class SubscriptionTest extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get()
+      .get(subscriptionsURL)
       .then()
       .statusCode(200)
       .extract()

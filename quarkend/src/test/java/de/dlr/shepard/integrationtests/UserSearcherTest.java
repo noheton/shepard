@@ -8,6 +8,7 @@ import de.dlr.shepard.search.user.UserSearchBody;
 import de.dlr.shepard.search.user.UserSearchParams;
 import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserSearcherTest extends BaseTestCaseIT {
 
@@ -27,10 +29,9 @@ public class UserSearcherTest extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    searchURL = baseURL.concat("/" + Constants.SEARCH + "/" + Constants.USERS);
+    searchURL = "/" + Constants.SEARCH + "/" + Constants.USERS;
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
       .addHeader("X-API-KEY", jws)
       .build();
     userIO1 = new UserIO(getNewUser("user1" + System.currentTimeMillis()));
@@ -47,7 +48,7 @@ public class UserSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -66,7 +67,7 @@ public class UserSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -84,7 +85,7 @@ public class UserSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
@@ -103,7 +104,7 @@ public class UserSearcherTest extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(searchBody)
       .when()
-      .post()
+      .post(searchURL)
       .then()
       .statusCode(200)
       .extract()
