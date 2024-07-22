@@ -43,9 +43,26 @@ public class VersionableEntityDAOTest extends BaseTestCase {
 		ent.setId(1L);
 		ent.setShepardId(11L);
 		Map<String, Object> paramsMap = new HashMap<>();
-		String query = "MATCH (o {deleted: FALSE}) WHERE o.shepardId = 11 WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
+		String query = "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = "
+				+ ent.getShepardId()
+				+ " AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
 		when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
 		VersionableEntity actual = dao.findByShepardId(ent.getShepardId());
+		assertEquals(ent, actual);
+	}
+
+	@Test
+	public void findByShepardIdWithVersionUIDTest() {
+		TestObject ent = new TestObject();
+		ent.setId(1L);
+		ent.setShepardId(11L);
+		String versionUID = "123";
+		Map<String, Object> paramsMap = new HashMap<>();
+		String query = "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = "
+				+ ent.getShepardId() + " AND v.uid = '" + versionUID
+				+ "' WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
+		when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
+		VersionableEntity actual = dao.findByShepardId(ent.getShepardId(), versionUID);
 		assertEquals(ent, actual);
 	}
 
@@ -67,7 +84,7 @@ public class VersionableEntityDAOTest extends BaseTestCase {
 		ent.setId(1L);
 		ent.setShepardId(11L);
 		Map<String, Object> paramsMap = new HashMap<>();
-		String query = "MATCH (o {deleted: FALSE}) WHERE o.shepardId = 11 WITH o RETURN o";
+		String query = "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) WITH o RETURN o";
 		when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
 		VersionableEntity actual = dao.findLightByShepardId(ent.getShepardId());
 		assertEquals(ent, actual);

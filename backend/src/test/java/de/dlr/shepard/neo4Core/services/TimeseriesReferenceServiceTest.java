@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,10 +33,12 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -45,6 +48,9 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private TimeseriesReferenceDAO dao;
+
+	@Mock
+	private VersionDAO versionDAO;
 
 	@Mock
 	private TimeseriesService timeseriesService;
@@ -98,6 +104,17 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getTimeseriesReferenceByShepardIdTestIsDeleted() {
+		Long shepardId = 15L;
+		TimeseriesReference ref = new TimeseriesReference(20L);
+		ref.setShepardId(shepardId);
+		ref.setDeleted(true);
+		when(dao.findByShepardId(shepardId)).thenReturn(ref);
+		TimeseriesReference actual = service.getReferenceByShepardId(shepardId);
+		assertNull(actual);
+	}
+
+	@Test
 	public void getAllTimeseriesReferencesTest() {
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
@@ -114,6 +131,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createTimeseriesReferenceByShepardIdTest() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		TimeseriesContainer container = new TimeseriesContainer(300L);
@@ -175,6 +193,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
 		assertEquals(createdWithShepardId, actual);
 	}
@@ -182,6 +201,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createTimeseriesReferenceByShepardIdTest_timeseriesNotFound() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		TimeseriesContainer container = new TimeseriesContainer(300L);
@@ -243,6 +263,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(toCreate)).thenReturn(created);
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		TimeseriesReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input,
 				user.getUsername());
 		assertEquals(createdWithShepardId, actual);

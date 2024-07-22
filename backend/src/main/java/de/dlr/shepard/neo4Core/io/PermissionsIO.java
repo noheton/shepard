@@ -38,7 +38,7 @@ public class PermissionsIO {
 	private String[] manager;
 
 	public PermissionsIO(Permissions permissions) {
-		this.entityId = permissions.getEntity().getId();
+		this.entityId = permissions.getEntities().get(0).getNumericId();
 		this.permissionType = permissions.getPermissionType();
 		this.owner = permissions.getOwner() != null ? permissions.getOwner().getUsername() : null;
 		this.reader = permissions.getReader().stream().map(User::getUsername).toArray(String[]::new);

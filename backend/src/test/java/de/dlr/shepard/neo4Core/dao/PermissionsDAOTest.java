@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,6 +21,7 @@ import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
@@ -65,6 +67,19 @@ public class PermissionsDAOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void findByCollectionShepardIdTest() {
+		var perm = new Permissions(1L);
+		String query = """
+				MATCH (c:Collection)-[:has_permissions]->(p:Permissions) WHERE c.shepardId = 11 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
+		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(List.of(perm));
+		var actual = dao.findByCollectionShepardId(11L);
+		verify(session).query(Permissions.class, query, Collections.emptyMap());
+		assertEquals(perm, actual);
+	}
+
+	@Test
 	public void findByEntityTest_notFound() {
 		String query = """
 				MATCH (e)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 \
@@ -89,11 +104,27 @@ public class PermissionsDAOTest extends BaseTestCase {
 	}
 
 	@Test
+	public void findByCollectionShepardIdTest_notFound() {
+		String query = """
+				MATCH (c:Collection)-[:has_permissions]->(p:Permissions) WHERE c.shepardId = 11 \
+				MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN p, nodes(path), relationships(path)""";
+		when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(Collections.emptyList());
+		var actual = dao.findByCollectionShepardId(11L);
+		verify(session).query(Permissions.class, query, Collections.emptyMap());
+		assertNull(actual);
+	}
+
+	@Test
 	public void createWithEntityTest() {
 		var user = new User("bob");
 		var perm = new Permissions();
 		perm.setOwner(user);
 		var col = new Collection(2L);
+		var col2 = new Collection(3L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		colList.add(col);
+		colList.add(col2);
 
 		String query = "MATCH (e) WHERE ID(e) = 2 MATCH (p:Permissions) WHERE ID(p) = 1 "
 				+ "CREATE path = (e)-[r:has_permissions]->(p)";
@@ -105,7 +136,7 @@ public class PermissionsDAOTest extends BaseTestCase {
 		var updated = new Permissions();
 		updated.setOwner(user);
 		updated.setId(1L);
-		updated.setEntity(col);
+		updated.setEntities(colList);
 
 		var stat = mock(QueryStatistics.class);
 		when(stat.containsUpdates()).thenReturn(true);
@@ -113,6 +144,7 @@ public class PermissionsDAOTest extends BaseTestCase {
 		when(res.queryStatistics()).thenReturn(stat);
 
 		doAnswer(new Answer<Void>() {
+
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				perm.setId(1L);
@@ -133,6 +165,8 @@ public class PermissionsDAOTest extends BaseTestCase {
 		perm.setOwner(user);
 		var col = new Collection(2L);
 		col.setShepardId(21L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		colList.add(col);
 
 		String query = "MATCH (e) WHERE e.shepardId = 21 MATCH (p:Permissions) WHERE ID(p) = 1 "
 				+ "CREATE path = (e)-[r:has_permissions]->(p)";
@@ -144,7 +178,7 @@ public class PermissionsDAOTest extends BaseTestCase {
 		var updated = new Permissions();
 		updated.setOwner(user);
 		updated.setId(1L);
-		updated.setEntity(col);
+		updated.setEntities(colList);
 
 		var stat = mock(QueryStatistics.class);
 		when(stat.containsUpdates()).thenReturn(true);
@@ -152,6 +186,7 @@ public class PermissionsDAOTest extends BaseTestCase {
 		when(res.queryStatistics()).thenReturn(stat);
 
 		doAnswer(new Answer<Void>() {
+
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				perm.setId(1L);
@@ -164,4 +199,5 @@ public class PermissionsDAOTest extends BaseTestCase {
 		var actual = dao.createWithEntityShepardId(perm, col.getShepardId());
 		assertEquals(updated, actual);
 	}
+
 }

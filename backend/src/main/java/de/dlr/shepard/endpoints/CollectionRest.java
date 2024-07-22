@@ -5,6 +5,7 @@ import java.io.IOException;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
+import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,14 +29,34 @@ public interface CollectionRest {
 			Boolean orderDesc);
 
 	@Tag(name = Constants.COLLECTION)
+	@Operation(description = "Create a new version")
+	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = VersionIO.class)))
+	Response createVersion(long collectionId,
+			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = VersionIO.class))) @Valid VersionIO version);
+
+	@Tag(name = Constants.COLLECTION)
+	@Operation(description = "Get versions")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = VersionIO.class))))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getVersions(long collectionId);
+
+	@Tag(name = Constants.COLLECTION)
 	@Operation(description = "Get collection")
 	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = CollectionIO.class)))
 	@ApiResponse(description = "not found", responseCode = "404")
-	Response getCollection(long collectionId);
+	Response getCollection(long collectionId, String versionUID);
+
+	@Tag(name = Constants.COLLECTION)
+	@Operation(description = "Get version")
+	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = VersionIO.class)))
+	@ApiResponse(description = "not found", responseCode = "404")
+	Response getVersion(long collectionId, String versionUID);
 
 	@Tag(name = Constants.COLLECTION)
 	@Operation(description = "Create a new collection")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = CollectionIO.class)))
+	@ApiResponse(description = "created", responseCode = "201", content =
+
+	@Content(schema = @Schema(implementation = CollectionIO.class)))
 	Response createCollection(
 			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = CollectionIO.class))) @Valid CollectionIO collection);
 

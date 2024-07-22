@@ -28,6 +28,9 @@ public class CollectionDAOTest extends BaseTestCase {
 	@Mock
 	private Session session;
 
+	@Mock
+	private GenericDAO<?> genericDao;
+
 	@InjectMocks
 	private CollectionDAO dao;
 
@@ -68,11 +71,12 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = """
-				MATCH (c:Collection { deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
+				MATCH (c:Collection { deleted: FALSE })-[:has_version]->(v:Version) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
 				WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -116,13 +120,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", null);
 
 		var query = """
-				MATCH (c:Collection { deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c ORDER BY toLower(c.name) DESC \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper();
@@ -169,11 +175,13 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = """
-				MATCH (c:Collection { name : $name, deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				MATCH (c:Collection { name : $name, deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
 				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
 				WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -220,13 +228,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("name", "Yes");
 
 		var query = """
-				MATCH (c:Collection { name : $name, deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c ORDER BY toLower(c.name) DESC \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { name : $name, deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withName("Yes");
@@ -272,13 +282,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = """
-				MATCH (c:Collection { deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -325,13 +337,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = """
-				MATCH (c:Collection { deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) \
+				WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100);
@@ -383,13 +397,15 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = """
-				MATCH (c:Collection { name : $name, deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { name : $name, deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -441,13 +457,16 @@ public class CollectionDAOTest extends BaseTestCase {
 		paramsMap.put("size", 100);
 
 		var query = """
-				MATCH (c:Collection { name : $name, deleted: FALSE }) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "bob" })) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "bob"}))) \
-				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size \
-				MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
+				MATCH (c:Collection { name : $name, deleted: FALSE })-[:has_version]->(v:Version) \
+				WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+				OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+				AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+				WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) \
+				WHERE n.deleted = FALSE OR n.deleted IS NULL \
+				RETURN c, nodes(path), relationships(path)""";
 		when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
 		var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -456,32 +475,6 @@ public class CollectionDAOTest extends BaseTestCase {
 		var actual = dao.findAllCollectionsByShepardId(params, "bob");
 		verify(session).query(Collection.class, query, paramsMap);
 		assertEquals(List.of(col1), actual);
-	}
-
-	@Test
-	public void deleteCollectionByNeo4jIdTest() {
-		CollectionDAO spy = spy(CollectionDAO.class);
-
-		var collection = new Collection(1L);
-		var user = new User("bob");
-		var date = new Date();
-
-		var updated = new Collection(1L);
-		updated.setUpdatedBy(user);
-		updated.setUpdatedAt(date);
-		updated.setDeleted(true);
-
-		doReturn(collection).when(spy).findByNeo4jId(1L);
-		doReturn(updated).when(spy).createOrUpdate(updated);
-		doReturn(true).when(spy).runQuery("""
-				MATCH (c:Collection) WHERE ID(c) = 1 \
-				OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
-				OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
-				FOREACH (n in [c,d,r] | SET n.deleted = true)""", Collections.emptyMap());
-
-		var result = spy.deleteCollectionByNeo4jId(1L, user, date);
-		verify(spy).createOrUpdate(updated);
-		assertTrue(result);
 	}
 
 	@Test

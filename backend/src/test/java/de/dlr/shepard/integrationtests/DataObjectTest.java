@@ -46,10 +46,13 @@ public class DataObjectTest extends BaseTestCaseIT {
 
 		dataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS, collection.getId(),
 				Constants.DATAOBJECTS);
+
 		orderByDataObjectsURL = String.format("%s/%s/%d/%s", baseURL, Constants.COLLECTIONS,
 				collectionForOrderByTest.getId(), Constants.DATAOBJECTS);
+
 		requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).setBaseUri(dataObjectsURL)
 				.addHeader("X-API-KEY", jws).build();
+
 		orderByRequestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON)
 				.setBaseUri(orderByDataObjectsURL).addHeader("X-API-KEY", jws).build();
 
@@ -368,7 +371,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(19)
+	@Order(20)
 	public void getOrderByCreatedAt() {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false).when().get()
@@ -378,7 +381,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(20)
+	@Order(21)
 	public void getOrderByCreatedFirstPage() {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
@@ -388,7 +391,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(21)
+	@Order(22)
 	public void getOrderByCreatedSecondPage() {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", false)
@@ -398,7 +401,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(22)
+	@Order(23)
 	public void getOrderByCreatedDescSecondPage() {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)
@@ -408,7 +411,7 @@ public class DataObjectTest extends BaseTestCaseIT {
 	}
 
 	@Test
-	@Order(23)
+	@Order(24)
 	public void getOrderByCreatedDescFirstPage() {
 		DataObjectIO[] response = given().spec(orderByRequestSpecification)
 				.queryParam("orderBy", DataObjectAttributes.createdAt).queryParam("orderDesc", true)

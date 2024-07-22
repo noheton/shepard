@@ -155,7 +155,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		segments.add(collectionsSeg);
 		segments.add(collectionIdSeg);
 		when(collectionIdSeg.getPath()).thenReturn("100");
-		when(collectionService.getCollectionByShepardId(100L)).thenReturn(null);
+		when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
 		assertEquals("ID ERROR - Collection does not exist", e.getMessage());
@@ -170,7 +170,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Collection collection = new Collection(100L);
 		collection.setShepardId(100L);
-		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -187,7 +187,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Collection collection = new Collection(100L);
 		collection.setShepardId(collection.getId());
-		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(102L)).thenReturn(null);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -209,7 +209,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -232,7 +232,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		wrong.setShepardId(wrong.getId());
 		dataObject.setCollection(wrong);
 
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -443,7 +443,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -467,7 +467,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -498,7 +498,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -554,7 +554,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -578,7 +578,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(structuredDataReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -609,7 +609,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -665,7 +665,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -689,7 +689,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
 		when(fileReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -720,7 +720,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -749,7 +749,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -773,7 +773,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(uriReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -804,7 +804,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -833,7 +833,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -857,7 +857,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(collectionReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -888,7 +888,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -917,7 +917,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -941,7 +941,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(dataObjectReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -972,7 +972,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -1001,7 +1001,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		urlPathChecker.checkPathSegments(segments);
@@ -1025,7 +1025,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(basicReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
@@ -1056,7 +1056,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		reference.setShepardId(reference.getId());
 		dataObject.setCollection(collection);
 		reference.setDataObject(wrong);
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
@@ -1130,7 +1130,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		collection.setShepardId(collection.getId());
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		collection.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
 				.thenReturn(semanticAnnotation);
 		urlPathChecker.checkPathSegments(segments);
@@ -1156,7 +1156,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		dataObject.setCollection(collection);
 		dataObject.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 		urlPathChecker.checkPathSegments(segments);
@@ -1188,7 +1188,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
 		reference.setAnnotations(List.of(semanticAnnotation));
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
@@ -1214,7 +1214,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		DataObject dataObject = new DataObject(102L);
 		dataObject.setShepardId(dataObject.getId());
 		dataObject.setCollection(collection);
-		when(collectionService.getCollectionByShepardId(collection.getId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(null);
 
@@ -1251,7 +1251,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		SemanticAnnotation wrong = new SemanticAnnotation(103L);
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		collection.setAnnotations(List.of(wrong));
-		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
 		Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.checkPathSegments(segments));
@@ -1279,7 +1279,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
 		dataObject.setCollection(collection);
 		dataObject.setAnnotations(List.of(wrong));
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
@@ -1314,7 +1314,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 		dataObject.setCollection(collection);
 		reference.setDataObject(dataObject);
 		reference.setAnnotations(List.of(wrong));
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 		when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 		when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 		when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId()))
@@ -1342,7 +1342,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Collection collection = new Collection(100L);
 		collection.setShepardId(collection.getId());
-		when(collectionService.getCollectionByShepardId(100L)).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}
@@ -1359,7 +1359,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
 		Collection collection = new Collection(100L);
 		collection.setShepardId(collection.getId());
-		when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+		when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 
 		urlPathChecker.checkPathSegments(segments);
 	}

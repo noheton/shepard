@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -29,10 +30,12 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -42,6 +45,9 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private StructuredDataReferenceDAO dao;
+
+	@Mock
+	private VersionDAO versionDAO;
 
 	@Mock
 	private StructuredDataService structuredDataService;
@@ -111,6 +117,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createStructuredDataReferenceByShepardIdTest() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		StructuredDataContainer container = new StructuredDataContainer(300L);
@@ -164,6 +171,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(structuredDataDAO.find(container.getId(), structuredData.getOid())).thenReturn(structuredData);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
 		assertEquals(createdWithShepardId, actual);
 	}
@@ -171,6 +179,7 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createStructuredDataReferenceByShepardIdTest_notFound() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		StructuredDataContainer container = new StructuredDataContainer(300L);
@@ -223,8 +232,133 @@ public class StructuredDataReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(null);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
 		assertEquals(createdWithShepardId, actual);
+	}
+
+	@Test
+	public void createStructuredDataReferenceByShepardIdTestIsDeleted() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataContainer container = new StructuredDataContainer(300L);
+		container.setMongoId("MongoId");
+		container.setDeleted(true);
+		Date date = new Date(30L);
+		StructuredData structuredData = new StructuredData("oid", new Date(), "name");
+		StructuredDataReferenceIO input = new StructuredDataReferenceIO() {
+			{
+				setName("MyName");
+				setStructuredDataOids(new String[] { "oid" });
+				setStructuredDataContainerId(container.getId());
+			}
+		};
+		StructuredDataReference toCreate = new StructuredDataReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName(input.getName());
+				setStructuredDatas(Collections.emptyList());
+				setStructuredDataContainer(container);
+			}
+		};
+		var created = new StructuredDataReference() {
+			{
+				setId(1L);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStructuredDatas(toCreate.getStructuredDatas());
+				setStructuredDataContainer(toCreate.getStructuredDataContainer());
+			}
+		};
+		var createdWithShepardId = new StructuredDataReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStructuredDatas(created.getStructuredDatas());
+				setStructuredDataContainer(created.getStructuredDataContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
+		var ex = assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
+		assertEquals(ex.getMessage(), "invalid container");
+	}
+
+	@Test
+	public void createStructuredDataReferenceByShepardIdTestContainerIsNull() {
+		User user = new User("Bob");
+		DataObject dataObject = new DataObject(200L);
+		dataObject.setShepardId(2005L);
+		StructuredDataContainer container = new StructuredDataContainer(300L);
+		container.setMongoId("MongoId");
+		container.setDeleted(true);
+		Date date = new Date(30L);
+		StructuredData structuredData = new StructuredData("oid", new Date(), "name");
+		StructuredDataReferenceIO input = new StructuredDataReferenceIO() {
+			{
+				setName("MyName");
+				setStructuredDataOids(new String[] { "oid" });
+				setStructuredDataContainerId(container.getId());
+			}
+		};
+		StructuredDataReference toCreate = new StructuredDataReference() {
+			{
+				setCreatedAt(date);
+				setCreatedBy(user);
+				setDataObject(dataObject);
+				setName(input.getName());
+				setStructuredDatas(Collections.emptyList());
+				setStructuredDataContainer(container);
+			}
+		};
+		var created = new StructuredDataReference() {
+			{
+				setId(1L);
+				setCreatedAt(toCreate.getCreatedAt());
+				setCreatedBy(toCreate.getCreatedBy());
+				setDataObject(toCreate.getDataObject());
+				setName(toCreate.getName());
+				setStructuredDatas(toCreate.getStructuredDatas());
+				setStructuredDataContainer(toCreate.getStructuredDataContainer());
+			}
+		};
+		var createdWithShepardId = new StructuredDataReference() {
+			{
+				setId(created.getId());
+				setShepardId(created.getId());
+				setCreatedAt(created.getCreatedAt());
+				setCreatedBy(created.getCreatedBy());
+				setDataObject(created.getDataObject());
+				setName(created.getName());
+				setStructuredDatas(created.getStructuredDatas());
+				setStructuredDataContainer(created.getStructuredDataContainer());
+			}
+		};
+		when(userDAO.find(user.getUsername())).thenReturn(user);
+		when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+		when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(null);
+		when(dao.createOrUpdate(toCreate)).thenReturn(created);
+		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+		when(dateHelper.getDate()).thenReturn(date);
+		when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
+		var ex = assertThrows(InvalidBodyException.class,
+				() -> service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername()));
+		assertEquals(ex.getMessage(), "invalid container");
 	}
 
 	@Test

@@ -3,11 +3,14 @@ package de.dlr.shepard.endpoints;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.export.ExportService;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.CollectionService;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
@@ -65,19 +68,35 @@ public class CollectionRestImpl implements CollectionRest {
 	}
 
 	@GET
-	@Path("/{" + Constants.COLLECTION_ID + "}")
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)
 	@Override
-	public Response getCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		Collection collection = collectionService.getCollectionByShepardId(collectionId);
-		return Response.ok(new CollectionIO(collection)).build();
+	public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+		throw new NotImplementedException();
+//		List<Version> versions = versionService.getAllVersions(collectionId);
+//		var result = new ArrayList<VersionIO>(versions.size());
+//		for (var version : versions) {
+//			result.add(new VersionIO(version));
+//		}
+//		return Response.ok(result).build();
 	}
 
 	@POST
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)
 	@Override
-	public Response createCollection(CollectionIO collection) {
-		Collection newCollection = collectionService.createCollection(collection,
-				securityContext.getUserPrincipal().getName());
-		return Response.ok(new CollectionIO(newCollection)).status(Status.CREATED).build();
+	public Response createVersion(@PathParam(Constants.COLLECTION_ID) long collectionId, @Valid VersionIO version) {
+		throw new NotImplementedException();
+//		Version newVersion = versionService.createVersion(collectionId, version,
+//				securityContext.getUserPrincipal().getName());
+//		return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}")
+	@Override
+	public Response getCollection(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@QueryParam(Constants.VERSION_UID) String versionUID) {
+		Collection collection = collectionService.getCollectionByShepardId(collectionId, versionUID);
+		return Response.ok(new CollectionIO(collection)).build();
 	}
 
 	@PUT
@@ -104,9 +123,13 @@ public class CollectionRestImpl implements CollectionRest {
 	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.PERMISSIONS)
 	@Override
 	public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-		var perms = permissionsService.getPermissionsByShepardId(collectionId);
-		return perms != null ? Response.ok(new PermissionsIO(perms)).build()
-				: Response.status(Status.NOT_FOUND).build();
+		var perms = permissionsService.getPermissionsByCollectionShepardId(collectionId);
+		PermissionsIO permsIO = null;
+		if (perms != null) {
+			permsIO = new PermissionsIO(perms);
+			permsIO.setEntityId(collectionId);
+		}
+		return permsIO != null ? Response.ok(permsIO).build() : Response.status(Status.NOT_FOUND).build();
 	}
 
 	@PUT
@@ -126,6 +149,24 @@ public class CollectionRestImpl implements CollectionRest {
 		var roles = new PermissionsUtil().getRolesByShepardId(collectionId,
 				securityContext.getUserPrincipal().getName());
 		return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+	}
+
+	@POST
+	@Override
+	public Response createCollection(CollectionIO collection) {
+		Collection newCollection = collectionService.createCollection(collection,
+				securityContext.getUserPrincipal().getName());
+		return Response.ok(new CollectionIO(newCollection)).status(Status.CREATED).build();
+	}
+
+	@GET
+	@Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS + "/{" + Constants.VERSION_UID + "}")
+	@Override
+	public Response getVersion(@PathParam(Constants.COLLECTION_ID) long collectionId,
+			@PathParam(Constants.VERSION_UID) String versionUID) {
+		throw new NotImplementedException();
+//		Version version = versionService.getVersion(collectionId, versionUID);
+//		return Response.ok(new VersionIO(version)).build();
 	}
 
 	@GET

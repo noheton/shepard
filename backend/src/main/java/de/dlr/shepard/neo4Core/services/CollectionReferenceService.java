@@ -7,10 +7,12 @@ import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.CollectionReference;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 	private CollectionReferenceDAO collectionReferenceDAO = new CollectionReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private CollectionDAO collectionDAO = new CollectionDAO();
+	private VersionDAO versionDAO = new VersionDAO();
 	private UserDAO userDAO = new UserDAO();
 	private DateHelper dateHelper = new DateHelper();
 
@@ -61,6 +64,8 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 		CollectionReference created = collectionReferenceDAO.createOrUpdate(toCreate);
 		created.setShepardId(created.getId());
 		created = collectionReferenceDAO.createOrUpdate(created);
+		Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
+		versionDAO.createLink(created.getId(), version.getUid().toString());
 		return created;
 	}
 

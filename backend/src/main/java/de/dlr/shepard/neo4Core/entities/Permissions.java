@@ -26,7 +26,7 @@ public class Permissions implements HasId {
 	private Long id;
 
 	@Relationship(type = Constants.HAS_PERMISSIONS, direction = Relationship.INCOMING)
-	private BasicEntity entity;
+	private List<BasicEntity> entities;
 
 	@Relationship(type = Constants.OWNED_BY, direction = Relationship.OUTGOING)
 	private User owner;
@@ -63,7 +63,7 @@ public class Permissions implements HasId {
 	}
 
 	public Permissions(BasicEntity entity, User owner, PermissionType permissionType) {
-		this.entity = entity;
+		this.entities = List.of(entity);
 		this.owner = owner;
 		this.permissionType = permissionType;
 	}
@@ -84,7 +84,7 @@ public class Permissions implements HasId {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + Objects.hash(id, permissionType, readerGroups, writerGroups);
-		result = prime * result + HasId.hashcodeHelper(entity);
+		result = prime * result + HasId.hashcodeHelper(entities);
 		result = prime * result + HasId.hashcodeHelper(owner);
 		result = prime * result + HasId.hashcodeHelper(reader);
 		result = prime * result + HasId.hashcodeHelper(writer);
@@ -101,7 +101,7 @@ public class Permissions implements HasId {
 		Permissions other = (Permissions) obj;
 		return Objects.equals(id, other.id) && Objects.equals(permissionType, other.permissionType)
 				&& Objects.equals(readerGroups, other.readerGroups) && Objects.equals(writerGroups, other.writerGroups)
-				&& HasId.equalsHelper(entity, other.entity) && HasId.equalsHelper(owner, other.owner)
+				&& HasId.equalsHelper(entities, other.entities) && HasId.equalsHelper(owner, other.owner)
 				&& HasId.equalsHelper(reader, other.reader) && HasId.equalsHelper(writer, other.writer)
 				&& HasId.equalsHelper(manager, other.manager);
 	}

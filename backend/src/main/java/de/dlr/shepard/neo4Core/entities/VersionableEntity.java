@@ -14,7 +14,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class VersionableEntity extends BasicEntity {
-
 	@Index
 	private Long shepardId;
 
@@ -27,4 +26,8 @@ public class VersionableEntity extends BasicEntity {
 		super(id);
 	}
 
+	@Override
+	public long getNumericId() {
+		return getShepardId();
+	}
 }

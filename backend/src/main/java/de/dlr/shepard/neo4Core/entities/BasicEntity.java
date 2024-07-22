@@ -85,6 +85,10 @@ public class BasicEntity implements HasId {
 				&& HasId.equalsHelper(annotations, other.annotations);
 	}
 
+	public long getNumericId() {
+		return getId();
+	}
+
 	@Override
 	public String getUniqueId() {
 		return id.toString();

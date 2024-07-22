@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -26,10 +27,12 @@ import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.ShepardFileDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -54,6 +57,9 @@ public class FileReferenceServiceTest extends BaseTestCase {
 
 	@Mock
 	private UserDAO userDAO;
+
+	@Mock
+	private VersionDAO versionDAO;
 
 	@Mock
 	private DateHelper dateHelper;
@@ -108,6 +114,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createFileReferenceByShepardIdTest() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		FileContainer container = new FileContainer(300L);
@@ -161,6 +168,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		FileReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
 		assertEquals(createdWithShepardId, actual);
 	}
@@ -168,6 +176,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 	@Test
 	public void createFileReferenceByShepardIdTest_newFileIsNull() {
 		User user = new User("Bob");
+		Version version = new Version(new UUID(1L, 2L));
 		DataObject dataObject = new DataObject(200L);
 		dataObject.setShepardId(2005L);
 		FileContainer container = new FileContainer(300L);
@@ -220,6 +229,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
 		when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
 		when(dateHelper.getDate()).thenReturn(date);
 		when(fileDAO.find(container.getId(), "oid")).thenReturn(null);
+		when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
 		var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
 		assertEquals(createdWithShepardId, actual);
 	}

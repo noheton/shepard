@@ -151,4 +151,5 @@ public class CollectionTest extends BaseTestCaseIT {
 				.statusCode(204);
 		given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
 	}
+
 }

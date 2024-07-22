@@ -49,7 +49,6 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
 				result.add(col);
 			}
 		}
-
 		return result;
 	}
 
@@ -61,50 +60,33 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
 	 * @return a list of collections
 	 */
 	public List<Collection> findAllCollectionsByShepardId(QueryParamHelper params, String username) {
+		String versionVariable = "v";
+		String collectionVariable = "c";
 		Map<String, Object> paramsMap = new HashMap<>();
 		paramsMap.put("name", params.getName());
 		if (params.hasPagination()) {
 			paramsMap.put("offset", params.getPagination().getOffset());
 			paramsMap.put("size", params.getPagination().getSize());
 		}
-		String query = String.format("MATCH %s WHERE %s WITH c",
-				CypherQueryHelper.getObjectPart("c", "Collection", params.hasName()),
-				CypherQueryHelper.getReadableByQuery("c", username));
+		String query = String.format("MATCH %s WHERE %s AND %s WITH %s",
+				CypherQueryHelper.getObjectPartWithVersion(collectionVariable, "Collection", params.hasName(),
+						versionVariable),
+				CypherQueryHelper.getReadableByQuery(collectionVariable, username),
+				CypherQueryHelper.getVersionHeadPart(versionVariable), collectionVariable);
 		if (params.hasOrderByAttribute()) {
-			query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
+			query += " " + CypherQueryHelper.getOrderByPart(collectionVariable, params.getOrderByAttribute(),
+					params.getOrderDesc());
 		}
 		if (params.hasPagination()) {
 			query += " " + CypherQueryHelper.getPaginationPart();
 		}
-		query += " " + CypherQueryHelper.getReturnPart("c");
+		query += " " + CypherQueryHelper.getReturnPart(collectionVariable);
 		ArrayList<Collection> result = new ArrayList<Collection>();
 		for (Collection col : findByQuery(query, paramsMap)) {
 			if (matchName(col, params.getName())) {
 				result.add(col);
 			}
 		}
-		return result;
-	}
-
-	/**
-	 * Delete collection and all related dataObjects and references
-	 *
-	 * @param id        identifies the collection
-	 * @param updatedBy current date
-	 * @param updatedAt current user
-	 * @return whether the deletion was successful or not
-	 */
-	public boolean deleteCollectionByNeo4jId(long id, User updatedBy, Date updatedAt) {
-		var collection = findByNeo4jId(id);
-		collection.setUpdatedBy(updatedBy);
-		collection.setUpdatedAt(updatedAt);
-		collection.setDeleted(true);
-		createOrUpdate(collection);
-		String query = String.format("""
-				MATCH (c:Collection) WHERE ID(c) = %d OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
-				OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
-				FOREACH (n in [c,d,r] | SET n.deleted = true)""", id);
-		var result = runQuery(query, Collections.emptyMap());
 		return result;
 	}
 

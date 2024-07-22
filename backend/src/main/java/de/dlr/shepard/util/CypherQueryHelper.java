@@ -11,6 +11,13 @@ public class CypherQueryHelper {
 	private CypherQueryHelper() {
 	}
 
+	public static String getObjectPartWithVersion(String variable, String type, boolean hasName,
+			String versionVariable) {
+		String ret = getObjectPart(variable, type, hasName);
+		ret = ret + "-[:has_version]->(" + versionVariable + ":Version)";
+		return ret;
+	}
+
 	public static String getObjectPart(String variable, String type, boolean hasName) {
 		if (hasName)
 			return getObjectPartWithName(variable, type);
@@ -80,4 +87,13 @@ public class CypherQueryHelper {
 				variable, variable, username, variable, variable, variable, username);
 		return ret;
 	}
+
+	public static String getVersionHeadPart(String variable) {
+		return "(NOT exists ((" + variable + ")<-[:has_predecessor]-(:Version)))";
+	}
+
+	public static String getVersionPart(String variable, String versionUID) {
+		return variable + ".uid = '" + versionUID + "'";
+	}
+
 }

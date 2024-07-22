@@ -1,10 +1,11 @@
 package de.dlr.shepard.neo4Core.services;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,7 +17,9 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.dao.UserGroupDAO;
+import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
@@ -38,11 +41,13 @@ public class PermissionsServiceTest extends BaseTestCase {
 
 	@Test
 	public void createPermissionsTest() {
-		var col = new Collection(2L);
+		var con = new FileContainer(2L);
+		ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
+		conList.add(con);
 		var perms = new Permissions();
 
 		var created = new Permissions(1L);
-		created.setEntity(col);
+		created.setEntities(conList);
 
 		when(dao.createWithEntityNeo4jId(perms, 2L)).thenReturn(created);
 
@@ -52,9 +57,11 @@ public class PermissionsServiceTest extends BaseTestCase {
 
 	@Test
 	public void getPermissionsByNeo4jIdTest() {
-		var col = new Collection(2L);
-		var perms = new Permissions(1L);
-		perms.setEntity(col);
+		var con = new FileContainer(2L);
+		ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
+		conList.add(con);
+		var perms = new Permissions();
+		perms.setEntities(conList);
 
 		when(dao.findByEntityNeo4jId(2L)).thenReturn(perms);
 		var actual = service.getPermissionsByNeo4jId(2L);
@@ -64,12 +71,26 @@ public class PermissionsServiceTest extends BaseTestCase {
 	@Test
 	public void getPermissionsByShepardIdTest() {
 		var col = new Collection(2L);
-		col.setShepardId(4L);
+		col.setShepardId(3L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
 		var perms = new Permissions(1L);
-		perms.setEntity(col);
+		perms.setEntities(colList);
 
 		when(dao.findByEntityShepardId(col.getShepardId())).thenReturn(perms);
 		var actual = service.getPermissionsByShepardId(col.getShepardId());
+		assertEquals(perms, actual);
+	}
+
+	@Test
+	public void getPermissionsByCollectionShepardIdTest() {
+		var col = new Collection(2L);
+		col.setShepardId(3L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		var perms = new Permissions(1L);
+		perms.setEntities(colList);
+
+		when(dao.findByCollectionShepardId(col.getShepardId())).thenReturn(perms);
+		var actual = service.getPermissionsByCollectionShepardId(col.getShepardId());
 		assertEquals(perms, actual);
 	}
 
@@ -92,6 +113,15 @@ public class PermissionsServiceTest extends BaseTestCase {
 	}
 
 	@Test
+	public void getPermissionsByCollectionShepardIdTest_notFound() {
+		when(dao.findByCollectionShepardId(2L)).thenReturn(null);
+
+		var actual = service.getPermissionsByCollectionShepardId(2L);
+		assertNull(actual);
+		verify(dao).findByCollectionShepardId(2L);
+	}
+
+	@Test
 	public void updatePermissionsByNeo4jIdTest() {
 		var owner = new User("owner");
 		var reader = new User("reader");
@@ -103,9 +133,11 @@ public class PermissionsServiceTest extends BaseTestCase {
 		writerGroup.setUsers(writerGroupList);
 		List<UserGroup> writerGroupsList = List.of(writerGroup);
 
-		var col = new Collection(2L);
+		var con = new FileContainer(2L);
+		ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
+		conList.add(con);
 		var existing = new Permissions(1L);
-		existing.setEntity(col);
+		existing.setEntities(conList);
 
 		var perms = new PermissionsIO() {
 			{
@@ -120,7 +152,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(conList);
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
@@ -154,8 +186,10 @@ public class PermissionsServiceTest extends BaseTestCase {
 
 		var col = new Collection(2L);
 		col.setShepardId(4L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		colList.add(col);
 		var existing = new Permissions(1L);
-		existing.setEntity(col);
+		existing.setEntities(colList);
 
 		var perms = new PermissionsIO() {
 			{
@@ -170,7 +204,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(colList);
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
@@ -197,7 +231,9 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var writer = new User("writer");
 		var manager = new User("manager");
 
-		var col = new Collection(2L);
+		var con = new FileContainer(2L);
+		ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
+		conList.add(con);
 		var perms = new PermissionsIO() {
 			{
 				setOwner("owner");
@@ -222,7 +258,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(conList);
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
@@ -252,6 +288,8 @@ public class PermissionsServiceTest extends BaseTestCase {
 
 		var col = new Collection(2L);
 		col.setShepardId(4L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		colList.add(col);
 		var perms = new PermissionsIO() {
 			{
 				setOwner("owner");
@@ -276,7 +314,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(colList);
 				setOwner(owner);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
@@ -303,9 +341,11 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var writer = new User("writer");
 		var manager = new User("manager");
 
-		var col = new Collection(2L);
+		var con = new FileContainer(2L);
+		ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
+		conList.add(con);
 		var existing = new Permissions(1L);
-		existing.setEntity(col);
+		existing.setEntities(conList);
 
 		var perms = new PermissionsIO() {
 			{
@@ -320,7 +360,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(conList);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
 				setReaderGroups(Collections.emptyList());
@@ -346,8 +386,10 @@ public class PermissionsServiceTest extends BaseTestCase {
 
 		var col = new Collection(2L);
 		col.setShepardId(4L);
+		ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+		colList.add(col);
 		var existing = new Permissions(1L);
-		existing.setEntity(col);
+		existing.setEntities(colList);
 
 		var perms = new PermissionsIO() {
 			{
@@ -362,7 +404,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 		var updated = new Permissions() {
 			{
 				setId(1L);
-				setEntity(col);
+				setEntities(colList);
 				setReader(List.of(reader));
 				setWriter(List.of(writer));
 				setReaderGroups(Collections.emptyList());

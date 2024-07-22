@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -50,10 +51,12 @@ public class PermissionsTest extends BaseTestCase {
 	@Test
 	public void entityConstructorTest() {
 		var entity = new Collection(1L);
+		ArrayList<BasicEntity> entities = new ArrayList<BasicEntity>();
+		entities.add(entity);
 		var user = new User("bob");
 		var expected = new Permissions() {
 			{
-				setEntity(entity);
+				setEntities(entities);
 				setOwner(user);
 				setPermissionType(PermissionType.Public);
 			}

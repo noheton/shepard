@@ -22,9 +22,21 @@ public class PermissionsDAO extends GenericDAO<Permissions> {
 				"MATCH (e)-[:has_permissions]->(p:Permissions) WHERE e." + Constants.SHEPARD_ID + " = %d ",
 				entityShepardId) + CypherQueryHelper.getReturnPart("p");
 		var permissions = findByQuery(query, Collections.emptyMap());
+		Permissions ret = null;
 		if (permissions.iterator().hasNext())
-			return permissions.iterator().next();
-		return null;
+			ret = permissions.iterator().next();
+		return ret;
+	}
+
+	public Permissions findByCollectionShepardId(long collectionShepardId) {
+		String query = String.format(
+				"MATCH (c:Collection)-[:has_permissions]->(p:Permissions) WHERE c." + Constants.SHEPARD_ID + " = %d ",
+				collectionShepardId) + CypherQueryHelper.getReturnPart("p");
+		var permissions = findByQuery(query, Collections.emptyMap());
+		Permissions ret = null;
+		if (permissions.iterator().hasNext())
+			ret = permissions.iterator().next();
+		return ret;
 	}
 
 	public Permissions createWithEntityNeo4jId(Permissions permissions, long entityId) {

@@ -50,6 +50,21 @@ public class PermissionsService {
 	}
 
 	/**
+	 * Searches for permissions in Neo4j.
+	 *
+	 * @param shepardId identifies the entity that the permissions object belongs to
+	 * @return Permissions with matching entity or null
+	 */
+	public Permissions getPermissionsByCollectionShepardId(long shepardId) {
+		var permissions = permissionsDAO.findByCollectionShepardId(shepardId);
+		if (permissions == null) {
+			log.error("Permissions with shepardId {} is null", shepardId);
+			return null;
+		}
+		return permissions;
+	}
+
+	/**
 	 * Create Permissions based on an entity and the owner
 	 *
 	 * @param entityId identifies the entity

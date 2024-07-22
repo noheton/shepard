@@ -5,7 +5,9 @@ import java.util.List;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.URIReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.URIReference;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 	private URIReferenceDAO uRIReferenceDAO = new URIReferenceDAO();
 	private DataObjectDAO dataObjectDAO = new DataObjectDAO();
 	private UserDAO userDAO = new UserDAO();
+	private VersionDAO versionDAO = new VersionDAO();
 	private DateHelper dateHelper = new DateHelper();
 
 	@Override
@@ -50,6 +53,8 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 		var created = uRIReferenceDAO.createOrUpdate(toCreate);
 		created.setShepardId(created.getId());
 		created = uRIReferenceDAO.createOrUpdate(created);
+		Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
+		versionDAO.createLink(created.getId(), version.getUid().toString());
 		return created;
 	}
 

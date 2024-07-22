@@ -95,6 +95,10 @@ public class Constants {
 	public static final String PERMISSION_ID = "permissionId";
 
 	public static final String ROLES = "roles";
+	public static final String VERSION = "version";
+	public static final String VERSIONS = "versions";
+	public static final String INITIAL_VERSION = "initial version";
+	public static final String VERSION_UID = "versionUid";
 
 	public static final String OWNED_BY = "owned_by";
 	public static final String READABLE_BY = "readable_by";
@@ -103,6 +107,7 @@ public class Constants {
 	public static final String HAS_PERMISSIONS = "has_permissions";
 	public static final String READABLE_BY_GROUP = "readable_by_group";
 	public static final String WRITEABLE_BY_GROUP = "writeable_by_group";
+	public static final String HAS_VERSION = "has_version";
 
 	// Query Params
 	public static final String QP_NAME = "name";
@@ -124,6 +129,7 @@ public class Constants {
 	public static final String HAS_REFERENCE = "has_reference";
 	public static final String HAS_CHILD = "has_child";
 	public static final String HAS_SUCCESSOR = "has_successor";
+	public static final String HAS_PREDECESSOR = "has_predecessor";
 	public static final String CREATED_BY = "created_by";
 	public static final String UPDATED_BY = "updated_by";
 	public static final String BELONGS_TO = "belongs_to";

@@ -14,7 +14,9 @@ import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.FileReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.ShepardFileDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.FileReference;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -29,6 +31,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 	private FileContainerDAO containerDAO = new FileContainerDAO();
 	private ShepardFileDAO fileDAO = new ShepardFileDAO();
 	private UserDAO userDAO = new UserDAO();
+	private VersionDAO versionDAO = new VersionDAO();
 	private DateHelper dateHelper = new DateHelper();
 	private FileService fileService = new FileService();
 	private PermissionsUtil permissionsUtil = new PermissionsUtil();
@@ -77,6 +80,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 		var created = fileReferenceDAO.createOrUpdate(toCreate);
 		created.setShepardId(created.getId());
 		created = fileReferenceDAO.createOrUpdate(created);
+		Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
+		versionDAO.createLink(created.getId(), version.getUid().toString());
 		return created;
 	}
 
