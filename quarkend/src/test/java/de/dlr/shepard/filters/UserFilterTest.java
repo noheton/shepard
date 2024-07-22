@@ -1,4 +1,3 @@
-/*
 package de.dlr.shepard.filters;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -203,4 +202,3 @@ public class UserFilterTest extends BaseTestCase {
     verify(requestContext).abortWith(any());
   }
 }
-*/
