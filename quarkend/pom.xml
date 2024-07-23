@@ -37,7 +37,7 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.12.1</quarkus.platform.version>
-    <surefire-plugin.version>3.2.5</surefire-plugin.version>
+    <surefire-plugin.version>3.3.1</surefire-plugin.version>
     <assertj.version>3.26.0</assertj.version>
     <commons.version>2.16.1</commons.version>
     <equalsverifier.version>3.16.1</equalsverifier.version>
