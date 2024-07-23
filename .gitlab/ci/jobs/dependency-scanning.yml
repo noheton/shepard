@@ -1,5 +1,5 @@
 include:
-  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
 
 gemnasium-dependency_scanning:
   stage: check

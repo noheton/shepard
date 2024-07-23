@@ -12,22 +12,41 @@ variables:
     - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
 
+workflow:
+  rules:
+    # Run Merge Request Pipelines for all merge requests from unprotected branches
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_COMMIT_REF_PROTECTED == "false"
+    # Run Branch Pipelines on protected branches
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
+    # Skip Branch Pipelines for merge requests
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # Run branch pipelines when no merge request exists
+    - if: $CI_COMMIT_BRANCH
+
 include:
-  # Minimal default pipeline
-  - local: .gitlab/ci/feature.gitlab-ci.yml
+  # Minimal default pipeline for all non-protected branches
+  - local: .gitlab/ci/branches.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_NAME == "develop"
+      - if: $CI_COMMIT_REF_PROTECTED == "true"
         when: never
-      - if: $CI_COMMIT_REF_NAME == "main"
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
         when: never
       - when: always
 
-    # Special pipeline for develop branch
+  # Merge Request pipeline
+  - local: .gitlab/ci/mr.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_PROTECTED == "true"
+        when: never
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+  # Special pipeline for develop branch
   - local: .gitlab/ci/dev.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_NAME == "develop"
 
-    # Special pipeline for main branch
+  # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_NAME == "main"

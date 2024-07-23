@@ -1,0 +1,10 @@
+# For commits on any branches
+stages:
+  - check
+  - test
+
+include:
+  - local: .gitlab/ci/jobs/secret-detection.yml
+  - local: .gitlab/ci/jobs/dependency-scanning.yml
+  - local: .gitlab/ci/jobs/format-prettier.yml
+  - local: .gitlab/ci/jobs/check-scripts.yml
