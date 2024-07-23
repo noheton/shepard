@@ -22,6 +22,11 @@
       "groupName": "infrastructure dependencies"
     },
     {
+      "matchFileNames": ["quarkend/**"],
+      "matchManagers": ["dockerfile"],
+      "groupName": "quarkus docker"
+    },
+    {
       "matchPackageNames": ["node", "@types/node"],
       "groupName": "Node.js",
       "versioning": "node"
