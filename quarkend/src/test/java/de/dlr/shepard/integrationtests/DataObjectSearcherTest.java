@@ -82,11 +82,7 @@ public class DataObjectSearcherTest extends BaseTestCaseIT {
     dataObjectIO4 = createDataObjectWithParent("DataObjectSearchDummy4", collection.getId(), dataObjectIO3.getId());
     user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
     jws1 = user1.getApiKey().getJws();
-    searchRequestSpec1 = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .setBaseUri(searchURL)
-      .addHeader("X-API-KEY", jws1)
-      .build();
+    searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
   }
 
   @Test
