@@ -32,10 +32,6 @@
       "versioning": "node"
     },
     {
-      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
-      "groupName": "tomcat"
-    },
-    {
       "matchPackagePrefixes": ["io.swagger.core.v3"],
       "groupName": "swagger"
     },
@@ -58,6 +54,11 @@
     {
       "matchPackagePatterns": ["(@dlr-shepard/)?shepard-client"],
       "groupName": "shepard client"
+    },
+    {
+      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
+      "groupName": "tomcat",
+      "allowedVersions": "<11"
     },
     {
       "matchPackageNames": ["influxdb"],
