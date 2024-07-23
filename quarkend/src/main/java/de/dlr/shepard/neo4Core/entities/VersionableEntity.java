@@ -25,4 +25,9 @@ public class VersionableEntity extends BasicEntity {
   protected VersionableEntity(long id) {
     super(id);
   }
+
+  @Override
+  public long getNumericId() {
+    return getShepardId();
+  }
 }

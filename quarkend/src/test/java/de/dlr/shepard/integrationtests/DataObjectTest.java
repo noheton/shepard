@@ -46,16 +46,19 @@ public class DataObjectTest extends BaseTestCaseIT {
     collectionForOrderByTest = createCollection("OrderByTestCollection");
 
     dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
+
     orderByDataObjectsURL = String.format(
       "/%s/%d/%s",
       Constants.COLLECTIONS,
       collectionForOrderByTest.getId(),
       Constants.DATAOBJECTS
     );
+
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
+
     orderByRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -585,7 +588,7 @@ public class DataObjectTest extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(19)
+  @Order(20)
   public void getOrderByCreatedAt() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -601,7 +604,7 @@ public class DataObjectTest extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(20)
+  @Order(21)
   public void getOrderByCreatedFirstPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -619,7 +622,7 @@ public class DataObjectTest extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(21)
+  @Order(22)
   public void getOrderByCreatedSecondPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -637,7 +640,7 @@ public class DataObjectTest extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(22)
+  @Order(23)
   public void getOrderByCreatedDescSecondPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -655,7 +658,7 @@ public class DataObjectTest extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(23)
+  @Order(24)
   public void getOrderByCreatedDescFirstPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)

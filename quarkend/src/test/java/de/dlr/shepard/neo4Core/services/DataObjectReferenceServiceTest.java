@@ -12,13 +12,16 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -36,6 +39,9 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
   @Mock
   private DateHelper dateHelper;
+
+  @Mock
+  private VersionDAO versionDAO;
 
   @InjectMocks
   private DataObjectReferenceService service;
@@ -92,6 +98,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
     Date date = new Date(30L);
     DataObject referenced = new DataObject(100L);
     referenced.setShepardId(1005L);
+    Version version = new Version(new UUID(1L, 2L));
     DataObjectReferenceIO input = new DataObjectReferenceIO() {
       {
         setName("MyName");
@@ -138,6 +145,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
+    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     DataObjectReference actual = service.createReferenceByShepardId(
       dataObject.getShepardId(),
       input,

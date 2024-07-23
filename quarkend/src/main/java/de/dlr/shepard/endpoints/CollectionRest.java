@@ -3,6 +3,7 @@ package de.dlr.shepard.endpoints;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
+import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.util.Constants;
 import jakarta.validation.Valid;
@@ -35,6 +36,31 @@ public interface CollectionRest {
   );
 
   @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Create a new version")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = VersionIO.class))
+  )
+  Response createVersion(
+    long collectionId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = VersionIO.class))
+    ) @Valid VersionIO version
+  );
+
+  @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Get versions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = VersionIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  Response getVersions(long collectionId);
+
+  @Tag(name = Constants.COLLECTION)
   @Operation(description = "Get collection")
   @APIResponse(
     description = "ok",
@@ -42,7 +68,17 @@ public interface CollectionRest {
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  Response getCollection(long collectionId);
+  Response getCollection(long collectionId, String versionUID);
+
+  @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Get version")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = VersionIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  Response getVersion(long collectionId, String versionUID);
 
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Create a new collection")

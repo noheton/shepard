@@ -10,13 +10,16 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.URIReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -25,6 +28,9 @@ public class URIReferenceServiceTest extends BaseTestCase {
 
   @Mock
   private URIReferenceDAO dao;
+
+  @Mock
+  private VersionDAO versionDAO;
 
   @Mock
   private DataObjectDAO dataObjectDAO;
@@ -56,6 +62,17 @@ public class URIReferenceServiceTest extends BaseTestCase {
   }
 
   @Test
+  public void getURIReferenceByShepardIdTestIsDeleted() {
+    Long shepardId = 15L;
+    URIReference ref = new URIReference(20L);
+    ref.setShepardId(shepardId);
+    ref.setDeleted(true);
+    when(dao.findByShepardId(shepardId)).thenReturn(ref);
+    URIReference actual = service.getReferenceByShepardId(shepardId);
+    assertNull(actual);
+  }
+
+  @Test
   public void getAllURIReferencesByShepardIdTest() {
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
@@ -72,6 +89,7 @@ public class URIReferenceServiceTest extends BaseTestCase {
   @Test
   public void createURIReferenceByShepardIdTest() {
     User user = new User("Bob");
+    Version version = new Version(new UUID(1L, 2L));
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     Date date = new Date(30L);
@@ -116,6 +134,7 @@ public class URIReferenceServiceTest extends BaseTestCase {
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
+    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     URIReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
   }

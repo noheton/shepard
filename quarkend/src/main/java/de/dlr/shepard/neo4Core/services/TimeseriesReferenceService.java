@@ -12,7 +12,9 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -34,6 +36,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
   private TimeseriesDAO timeseriesDAO = new TimeseriesDAO();
   private UserDAO userDAO = new UserDAO();
+  private VersionDAO versionDAO = new VersionDAO();
   private DateHelper dateHelper = new DateHelper();
   private PermissionsUtil permissionsUtil = new PermissionsUtil();
 
@@ -104,6 +107,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = timeseriesReferenceDAO.createOrUpdate(created);
+    Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
+    versionDAO.createLink(created.getId(), version.getUid().toString());
     return created;
   }
 

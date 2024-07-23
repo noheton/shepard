@@ -25,6 +25,9 @@ public class Collection extends AbstractDataObject {
   @Relationship(type = Constants.HAS_PERMISSIONS)
   private Permissions permissions;
 
+  @Relationship(type = Constants.HAS_VERSION)
+  private Version version;
+
   /**
    * For testing purposes only
    *
@@ -32,6 +35,20 @@ public class Collection extends AbstractDataObject {
    */
   public Collection(long id) {
     super(id);
+  }
+
+  // copy constructor
+  public Collection(Collection collection) {
+    this.setAnnotations(collection.getAnnotations());
+    this.setAttributes(collection.getAttributes());
+    this.setCreatedAt(collection.getCreatedAt());
+    this.setCreatedBy(collection.getCreatedBy());
+    this.setDataObjects(collection.getDataObjects());
+    this.setDescription(collection.getDescription());
+    this.setIncoming(collection.getIncoming());
+    this.setName(collection.getName());
+    this.setPermissions(collection.getPermissions());
+    this.setShepardId(collection.getShepardId());
   }
 
   /**
@@ -50,6 +67,7 @@ public class Collection extends AbstractDataObject {
     result = prime * result + HasId.hashcodeHelper(dataObjects);
     result = prime * result + HasId.hashcodeHelper(incoming);
     result = prime * result + HasId.hashcodeHelper(permissions);
+    result = prime * result + HasId.hashcodeHelper(version);
     return result;
   }
 
@@ -62,7 +80,8 @@ public class Collection extends AbstractDataObject {
     return (
       HasId.equalsHelper(dataObjects, other.dataObjects) &&
       HasId.equalsHelper(incoming, other.incoming) &&
-      HasId.equalsHelper(permissions, other.permissions)
+      HasId.equalsHelper(permissions, other.permissions) &&
+      HasId.equalsHelper(version, other.version)
     );
   }
 }

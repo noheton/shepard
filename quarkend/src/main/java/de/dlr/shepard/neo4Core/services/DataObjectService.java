@@ -4,9 +4,11 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -22,6 +24,7 @@ public class DataObjectService {
   private CollectionDAO collectionDAO = new CollectionDAO();
   private UserDAO userDAO = new UserDAO();
   private DateHelper dateHelper = new DateHelper();
+  private VersionDAO versionDAO = new VersionDAO();
 
   /**
    * Creates a DataObject and stores it in Neo4J
@@ -36,7 +39,7 @@ public class DataObjectService {
     DataObjectIO dataObject,
     String username
   ) {
-    Collection collection = collectionDAO.findLightByShepardId(collectionShepardId);
+    Collection collection = collectionDAO.findByShepardId(collectionShepardId);
     User user = userDAO.find(username);
     DataObject parent = findRelatedDataObjectByShepardId(collection.getShepardId(), dataObject.getParentId(), null);
     List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(
@@ -56,6 +59,8 @@ public class DataObjectService {
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
+    Version version = collection.getVersion();
+    versionDAO.createLink(created.getId(), version.getUid().toString());
     return created;
   }
 

@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.services;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,9 +13,11 @@ import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
@@ -21,6 +25,7 @@ import de.dlr.shepard.util.QueryParamHelper;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -29,6 +34,9 @@ public class CollectionServiceTest extends BaseTestCase {
 
   @Mock
   private CollectionDAO dao;
+
+  @Mock
+  private VersionDAO versionDAO;
 
   @Mock
   private DataObjectDAO dataObjectDAO;
@@ -64,7 +72,7 @@ public class CollectionServiceTest extends BaseTestCase {
 
   @Test
   public void getCollectionsByShepardIdTest_withName() {
-    String username = "patrick";
+    String username = "kurac";
     Collection collectionNotDeleted = new Collection(5L);
     collectionNotDeleted.setShepardId(55L);
     Collection collectionDeleted = new Collection(6L);
@@ -81,6 +89,7 @@ public class CollectionServiceTest extends BaseTestCase {
   public void createCollectionTest() {
     User user = new User("bob");
     Date date = new Date(23);
+    Version nullVersion = new Version(new UUID(1L, 2L));
     CollectionIO input = new CollectionIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -118,10 +127,12 @@ public class CollectionServiceTest extends BaseTestCase {
         setShepardId(created.getId());
       }
     };
+    createdWithShepardId.setVersion(nullVersion);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+    when(versionDAO.createOrUpdate(any())).thenReturn(nullVersion);
     Collection actual = service.createCollection(input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
     verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
@@ -190,5 +201,62 @@ public class CollectionServiceTest extends BaseTestCase {
 
     var result = service.deleteCollectionByShepardId(collection.getShepardId(), user.getUsername());
     assertTrue(result);
+  }
+
+  @Test
+  public void getCollectionByShepardIdNoVersion() {
+    Collection ret = new Collection(1L);
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId)).thenReturn(ret);
+    var result = service.getCollectionByShepardId(shepardId, null);
+    assertEquals(ret, result);
+  }
+
+  @Test
+  public void getCollectionByShepardIdNoVersionNotFound() {
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId)).thenReturn(null);
+    var result = service.getCollectionByShepardId(shepardId, null);
+    assertNull(result);
+  }
+
+  @Test
+  public void getCollectionByShepardIdNoVersionDeleted() {
+    Collection ret = new Collection(1L);
+    ret.setDeleted(true);
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId)).thenReturn(ret);
+    var result = service.getCollectionByShepardId(shepardId, null);
+    assertNull(result);
+  }
+
+  @Test
+  public void getCollectionByShepardId() {
+    Collection ret = new Collection(1L);
+    String versionUID = "3";
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
+    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    assertEquals(ret, result);
+  }
+
+  @Test
+  public void getCollectionByShepardIdNotFound() {
+    String versionUID = "3";
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId, versionUID)).thenReturn(null);
+    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    assertNull(result);
+  }
+
+  @Test
+  public void getCollectionByShepardIdDeleted() {
+    Collection ret = new Collection(1L);
+    ret.setDeleted(true);
+    String versionUID = "3";
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
+    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    assertNull(result);
   }
 }

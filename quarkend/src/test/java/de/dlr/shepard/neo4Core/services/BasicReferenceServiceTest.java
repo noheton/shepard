@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.services;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,25 @@ public class BasicReferenceServiceTest extends BaseTestCase {
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     BasicReference actual = service.getReferenceByShepardId(ref.getShepardId());
     assertEquals(ref, actual);
+  }
+
+  @Test
+  public void getBasicReferenceByShepardIdNotFoundTest() {
+    BasicReference ref = new BasicReference(1L);
+    ref.setShepardId(15L);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(null);
+    BasicReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    assertNull(actual);
+  }
+
+  @Test
+  public void getBasicReferenceByShepardIdIsDeletedTest() {
+    BasicReference ref = new BasicReference(1L);
+    ref.setShepardId(15L);
+    ref.setDeleted(true);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    BasicReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    assertNull(actual);
   }
 
   @Test

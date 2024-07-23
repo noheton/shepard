@@ -9,7 +9,9 @@ import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
@@ -27,6 +29,7 @@ public class StructuredDataReferenceService
   private StructuredDataContainerDAO containerDAO = new StructuredDataContainerDAO();
   private StructuredDataDAO structuredDataDAO = new StructuredDataDAO();
   private UserDAO userDAO = new UserDAO();
+  private VersionDAO versionDAO = new VersionDAO();
   private DateHelper dateHelper = new DateHelper();
   private StructuredDataService structuredDataService = new StructuredDataService();
   private PermissionsUtil permissionsUtil = new PermissionsUtil();
@@ -61,6 +64,8 @@ public class StructuredDataReferenceService
     StructuredDataReference created = structuredDataReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = structuredDataReferenceDAO.createOrUpdate(created);
+    Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
+    versionDAO.createLink(created.getId(), version.getUid().toString());
     return created;
   }
 

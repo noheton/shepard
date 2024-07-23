@@ -77,7 +77,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.COLLECTIONS)) {
       long id = Long.parseLong(pathElems.get(Constants.COLLECTIONS));
-      collection = collectionService.getCollectionByShepardId(id);
+      collection = collectionService.getCollectionByShepardId(id, null);
       String error = checkCollection(collection);
       if (error != null) {
         return builder.append(error).toString();
