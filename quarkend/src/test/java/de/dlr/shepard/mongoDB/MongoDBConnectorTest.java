@@ -14,7 +14,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.BaseTestCase;
 import org.bson.Document;
-import org.bson.codecs.configuration.CodecRegistry;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,11 +26,8 @@ public class MongoDBConnectorTest extends BaseTestCase {
   @Mock
   private MongoDatabase database;
 
-  @Mock
-  private CodecRegistry pojoCodecRegistry;
-
   @InjectMocks
-  private MongoDBConnector mongoDBConnector;
+  private MongoDBConnector mongoDBConnector = MongoDBConnector.createInstance(mongoClient);
 
   @Test
   public void testGetInstance() {

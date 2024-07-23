@@ -27,10 +27,6 @@ public class MongoDBConnector implements IConnector {
   private MongoClient mongoClient;
 
   private MongoDatabase database;
-  private CodecRegistry pojoCodecRegistry = fromRegistries(
-    MongoClientSettings.getDefaultCodecRegistry(),
-    fromProviders(PojoCodecProvider.builder().automatic(true).build())
-  );
 
   /**
    * Private constructor
