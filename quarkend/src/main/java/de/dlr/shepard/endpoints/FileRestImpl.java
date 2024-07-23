@@ -1,6 +1,7 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
@@ -24,11 +25,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import org.jboss.resteasy.reactive.PartType;
-import org.jboss.resteasy.reactive.RestForm;
-import org.jboss.resteasy.reactive.multipart.FileUpload;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -125,19 +131,37 @@ public class FileRestImpl implements FileRest {
 
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
+  @Tag(name = Constants.FILE)
+  @Operation(description = "Upload a new file")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = ShepardFile.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
   @Subscribable
   @Override
   public Response createFile(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-    @RestForm(Constants.FILE) @PartType(MediaType.APPLICATION_OCTET_STREAM) InputStream fileInputStream,
-    @RestForm(Constants.FILE) FileUpload fileUpload
+    MultipartBodyFileUpload body
   ) {
-    String fileName = fileUpload != null ? fileUpload.fileName() : null;
-    var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
-    return result != null
-      ? Response.status(Status.CREATED).entity(result).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    String fileName = body.fileUpload != null ? body.fileUpload.fileName() : null;
+    String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
+
+    if (filePath == null) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    }
+
+    File file = new File(filePath);
+    try (InputStream fileInputStream = new FileInputStream(file)) {
+      var result = fileContainerService.createFile(fileContainerId, fileName, fileInputStream);
+      return result != null
+        ? Response.status(Status.CREATED).entity(result).build()
+        : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    } catch (IOException e) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    }
   }
 
   @GET

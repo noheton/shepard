@@ -15,27 +15,21 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.jboss.resteasy.reactive.PartType;
-import org.jboss.resteasy.reactive.RestForm;
-import org.jboss.resteasy.reactive.multipart.FileUpload;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -194,16 +188,28 @@ public class TimeseriesRestImpl implements TimeseriesRest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
+  @Tag(name = Constants.TIMESERIES)
+  @Operation(description = "Import timeseries payload")
+  @APIResponse(description = "ok", responseCode = "200")
+  @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
   @Override
   public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
-    @RestForm(Constants.FILE) @PartType(MediaType.APPLICATION_OCTET_STREAM) InputStream fileInputStream,
-    @RestForm(Constants.FILE) FileUpload fileUpload
+    MultipartBodyFileUpload body
   ) throws IOException {
-    var result = timeseriesContainerService.importTimeseries(timeseriesId, fileInputStream);
+    String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
 
-    return result ? Response.ok().build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    if (filePath == null) {
+      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    }
+
+    File file = new File(filePath);
+    try (InputStream fileInputStream = new FileInputStream(file)) {
+      var result = timeseriesContainerService.importTimeseries(timeseriesId, fileInputStream);
+
+      return result ? Response.ok().build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    }
   }
 
   @GET

@@ -9,16 +9,14 @@ import de.dlr.shepard.util.Constants;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.InputStream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface FileRest {
@@ -98,32 +96,29 @@ public interface FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   Response deleteFile(long fileContainerId, String oid);
 
-  @Tag(name = Constants.FILE)
-  @Operation(description = "Upload a new file")
-  @APIResponse(
-    description = "created",
-    responseCode = "201",
-    content = @Content(schema = @Schema(implementation = ShepardFile.class))
-  )
-  @APIResponse(description = "not found", responseCode = "404")
-  Response createFile(
-    long fileContainerId,
-    @Parameter(
-      required = true,
-      schema = @Schema(type = SchemaType.STRING, format = "binary", description = "File which you want to upload")
-    ) InputStream fileInputStream,
-    @Parameter(hidden = true) FileUpload fileUpload
-  );
+  Response createFile(long fileContainerId, MultipartBodyFileUpload body);
 
-  @Tag(name = Constants.FILE)
-  @Operation(description = "Get permissions")
-  @APIResponse(
+  @Schema(type = SchemaType.STRING, format = "binary", description = "File which you want to upload")
+  public interface UploadItemSchema {}
+
+  public class UploadFormSchema {
+
+    @Schema(required = true)
+    public UploadItemSchema file;
+  }
+
+  @Schema(implementation = UploadFormSchema.class)
+  public static class MultipartBodyFileUpload {
+
+    @RestForm(Constants.FILE)
+    public FileUpload fileUpload;
+  }
+
+  public @Tag(name = Constants.FILE) @Operation(description = "Get permissions") @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
-  )
-  @APIResponse(description = "not found", responseCode = "404")
-  Response getFilePermissions(long fileContainerId);
+  ) @APIResponse(description = "not found", responseCode = "404") Response getFilePermissions(long fileContainerId);
 
   @Tag(name = Constants.FILE)
   @Operation(description = "Edit permissions")

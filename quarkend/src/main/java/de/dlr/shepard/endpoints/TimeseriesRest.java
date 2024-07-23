@@ -13,16 +13,14 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.InputStream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 public interface TimeseriesRest {
@@ -145,18 +143,23 @@ public interface TimeseriesRest {
     FillOption fillOption
   ) throws IOException;
 
-  @Tag(name = Constants.TIMESERIES)
-  @Operation(description = "Import timeseries payload")
-  @APIResponse(description = "ok", responseCode = "200")
-  @APIResponse(description = "not found", responseCode = "404")
-  Response importTimeseries(
-    long timeseriesContainerId,
-    @Parameter(
-      required = true,
-      schema = @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
-    ) InputStream fileInputStream,
-    @Parameter(hidden = true) FileUpload fileUpload
-  ) throws IOException;
+  Response importTimeseries(long timeseriesContainerId, MultipartBodyFileUpload body) throws IOException;
+
+  @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
+  public interface UploadItemSchema {}
+
+  public class UploadFormSchema {
+
+    @Schema(required = true)
+    public UploadItemSchema file;
+  }
+
+  @Schema(implementation = UploadFormSchema.class)
+  public static class MultipartBodyFileUpload {
+
+    @RestForm(Constants.FILE)
+    public FileUpload fileUpload;
+  }
 
   @Tag(name = Constants.TIMESERIES)
   @Operation(description = "Get permissions")
