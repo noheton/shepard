@@ -1,6 +1,10 @@
 test_backend:
   image: maven:3-eclipse-temurin-17
   stage: test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
   needs: []
   before_script:
     - !reference [.version_number, script]

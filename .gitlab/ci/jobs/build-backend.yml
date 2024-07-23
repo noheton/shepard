@@ -1,6 +1,10 @@
 build_backend:
   image: maven:3-eclipse-temurin-17
   stage: build
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
   before_script:
     - !reference [.version_number, script]
     - echo ${VERSION_NUMBER_DEV}

@@ -3,9 +3,7 @@
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
-  needs:
-    - job: build_backend
-      artifacts: true
+  needs: [build_backend]
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -c clients/cpp/config.yaml --type-mappings set=std::vector
   artifacts:
@@ -15,9 +13,7 @@
 
 .upload_cpp: &upload_cpp
   stage: upload
-  needs:
-    - job: build_cpp_client
-      artifacts: true
+  needs: [build_cpp_client]
   script:
     - cd clients/cpp
     - tar cvfz cpp-client.tgz client/

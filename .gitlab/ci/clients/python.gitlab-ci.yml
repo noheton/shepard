@@ -3,8 +3,7 @@
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
-  needs:
-    - job: build_backend
+  needs: [build_backend]
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
@@ -15,9 +14,7 @@
 .upload_python_client: &upload_python
   stage: upload
   image: python:3.12-slim
-  needs:
-    - job: build_python_client
-      artifacts: true
+  needs: [build_python_client]
   before_script:
     - python3 -m pip install wheel setuptools twine
   script:

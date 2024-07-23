@@ -13,9 +13,7 @@ openapi-diff:
   image:
     name: openapitools/openapi-diff:2.0.1
     entrypoint: [""]
-  needs:
-    - job: build_backend
-      artifacts: true
+  needs: [build_backend]
   script:
     - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target_branch ]]/raw/backend/target/openapi/openapi.yaml?job=$[[ inputs.artifact_job_name ]] backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
   artifacts:

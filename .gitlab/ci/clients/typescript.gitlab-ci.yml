@@ -3,8 +3,7 @@
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
-  needs:
-    - job: build_backend
+  needs: [build_backend]
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript -p=npmName=@dlr-shepard/shepard-client,npmRepository=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true
   artifacts:
@@ -15,9 +14,7 @@
 .upload_typescript: &upload_typescript
   stage: upload
   image: node:21-slim
-  needs:
-    - job: build_typescript_client
-      artifacts: true
+  needs: [build_typescript_client]
   before_script:
     - cd clients/typescript
     - touch .npmrc

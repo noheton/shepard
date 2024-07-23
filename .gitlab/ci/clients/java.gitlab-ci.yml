@@ -3,9 +3,7 @@
   image:
     name: openapitools/openapi-generator-cli:v7.6.0
     entrypoint: [""]
-  needs:
-    - job: build_backend
-      artifacts: true
+  needs: [build_backend]
   script:
     - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}
   artifacts:
@@ -16,9 +14,7 @@
 .upload_java_client:
   stage: upload
   image: maven:3-eclipse-temurin-17
-  needs:
-    - job: build_java_client
-      artifacts: true
+  needs: [build_java_client]
   script:
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml

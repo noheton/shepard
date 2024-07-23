@@ -1,6 +1,10 @@
 integration_test:
   image: maven:3-eclipse-temurin-17
   stage: test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
   needs: []
   variables:
     NEO4J_AUTH: neo4j/shepard
