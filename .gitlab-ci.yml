@@ -14,11 +14,14 @@ variables:
 
 workflow:
   rules:
-    # Run Merge Request Pipelines for all merge requests from unprotected branches
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_COMMIT_REF_PROTECTED == "false"
-    # Run Branch Pipelines on protected branches
+    # Skip Merge Request Pipelines on protected branches
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_PROTECTED == "true"
+      when: never
+    # Run Merge Request Pipelines for all remaining merge requests
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Run branch pipelines for protected branches
     - if: $CI_COMMIT_REF_PROTECTED == "true"
-    # Skip Branch Pipelines for merge requests
+    # Skip all remaining branch pipelines for merge requests
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     # Run branch pipelines when no merge request exists
@@ -28,17 +31,15 @@ include:
   # Minimal default pipeline for all non-protected branches
   - local: .gitlab/ci/branches.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_PROTECTED == "true"
-        when: never
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        when: never
+      - if: $CI_COMMIT_REF_PROTECTED == "true"
         when: never
       - when: always
 
   # Merge Request pipeline
   - local: .gitlab/ci/mr.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_PROTECTED == "true"
-        when: never
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
   # Special pipeline for develop branch
