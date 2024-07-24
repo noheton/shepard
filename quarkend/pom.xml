@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.dlr.shepard</groupId>
   <artifactId>quarkend</artifactId>
@@ -7,7 +8,8 @@
   <name>shepard backend</name>
   <url>https://dlr-shepard.gitlab.io/dlr-shepard/shepard/</url>
   <description>This is the backend part of the shepard system.
-    The shepard backend manages all available databases and allows to create and query data via a rest api.</description>
+    The shepard backend manages all available databases and allows to create and query data via a rest api.
+  </description>
   <organization>
     <name>DLR e.V.</name>
     <url>https://www.dlr.de</url>
@@ -55,6 +57,7 @@
     <restassured.version>5.5.0</restassured.version>
     <swagger.version>2.2.22</swagger.version>
     <tomcat.version>10.1.26</tomcat.version>
+
   </properties>
 
   <dependencyManagement>
@@ -353,25 +356,8 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-maven-plugin-jakarta</artifactId>
-        <version>${swagger.version}</version>
-        <configuration>
-          <configurationFilePath>${project.build.directory}/${finalName}/WEB-INF/classes/openapi.yaml</configurationFilePath>
-          <outputFileName>openapi</outputFileName>
-          <outputFormat>JSONANDYAML</outputFormat>
-          <outputPath>${project.build.directory}/openapi</outputPath>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>resolve</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+
+      <!-- ####### Reports ####### -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
