@@ -1,0 +1,13 @@
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apikey:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+security:
+  - bearer: []
+  - apikey: []
