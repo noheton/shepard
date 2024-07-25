@@ -5,6 +5,7 @@ import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path(Constants.USERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequestScoped
 public class UserRest {
 
   private UserService userService = new UserService();

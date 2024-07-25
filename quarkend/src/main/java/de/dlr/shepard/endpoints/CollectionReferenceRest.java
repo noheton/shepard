@@ -5,6 +5,7 @@ import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.neo4Core.services.CollectionReferenceService;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -40,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "}/" +
   Constants.COLLECTION_REFERENCES
 )
+@RequestScoped
 public class CollectionReferenceRest {
 
   private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();

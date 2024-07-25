@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.orderBy.BasicReferenceAttributes;
 import de.dlr.shepard.neo4Core.services.BasicReferenceService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -40,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "}/" +
   Constants.BASIC_REFERENCES
 )
+@RequestScoped
 public class BasicReferenceRest {
 
   private BasicReferenceService basicReferenceService = new BasicReferenceService();

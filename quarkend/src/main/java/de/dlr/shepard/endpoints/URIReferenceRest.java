@@ -4,6 +4,7 @@ import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -39,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "}/" +
   Constants.URI_REFERENCES
 )
+@RequestScoped
 public class URIReferenceRest {
 
   private URIReferenceService uriReferenceService = new URIReferenceService();

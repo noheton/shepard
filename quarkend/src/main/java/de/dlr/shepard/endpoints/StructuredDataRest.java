@@ -12,6 +12,7 @@ import de.dlr.shepard.neo4Core.services.StructuredDataContainerService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -39,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.STRUCTUREDDATAS)
+@RequestScoped
 public class StructuredDataRest {
 
   private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();

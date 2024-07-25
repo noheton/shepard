@@ -5,6 +5,7 @@ import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -40,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "}/" +
   Constants.FILE_REFERENCES
 )
+@RequestScoped
 public class FileReferenceRest {
 
   private FileReferenceService fileReferenceService = new FileReferenceService();

@@ -7,6 +7,7 @@ import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -45,6 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "}/" +
   Constants.TIMESERIES_REFERENCES
 )
+@RequestScoped
 public class TimeseriesReferenceRest {
 
   private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();

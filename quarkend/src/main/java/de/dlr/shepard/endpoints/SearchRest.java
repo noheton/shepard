@@ -10,6 +10,7 @@ import de.dlr.shepard.search.user.UserSearchBody;
 import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.search.user.UserSearcher;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -31,6 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path(Constants.SEARCH)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RequestScoped
 public class SearchRest {
 
   @Context
