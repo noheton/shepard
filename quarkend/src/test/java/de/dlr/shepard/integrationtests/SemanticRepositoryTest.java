@@ -8,7 +8,7 @@ import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SemanticRepositoryTest extends BaseTestCaseIT {
 

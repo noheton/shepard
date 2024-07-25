@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.Constants;
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserGroupTest extends BaseTestCaseIT {
 

@@ -5,14 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.neo4Core.io.HealthzIO;
 import de.dlr.shepard.util.Constants;
-import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-@QuarkusTest
+@QuarkusIntegrationTest
 public class HealthzTest extends BaseTestCaseIT {
 
   private static String healthURL;
