@@ -20,5 +20,6 @@
     "usergroups",
     "VITE",
     "vuex"
-  ]
+  ],
+  "asciidoc.extensions.enableKroki": true
 }

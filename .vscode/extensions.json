@@ -8,6 +8,7 @@
     "redhat.vscode-quarkus",
     "vscjava.vscode-java-pack",
     "vscjava.vscode-lombok",
-    "ms-python.python"
+    "ms-python.python",
+    "asciidoctor.asciidoctor-vscode"
   ]
 }
