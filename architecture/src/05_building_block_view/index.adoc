@@ -1,0 +1,19 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-building-block-view]]
+
+[CAUTION]
+====
+This chapter is still under construction
+====
+
+== Building Block View
+
+=== Whitebox Overall System
+
+image::shepard.png[]
+
+=== Level 2
+
+
+=== Level 3

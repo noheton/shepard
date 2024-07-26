@@ -1,0 +1,40 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-technical-risks]]
+== Risks and Technical Debts
+
+=== Risks
+
+_Propability: very unprobable, unprobable, unsure, propable, very propable_
+
+_Costs: critical, expensive, unsure, cheap, negligible_
+
+[cols="1,1,1,1,1,1,1"]
+|===
+|ID|Name|Description|Possible Actions|Probability|Costs|Priority
+
+|
+|
+|
+|
+|
+|
+|
+
+|===
+
+=== Technical Debt
+
+_Priorities: 1=high, 2=normal, 3=low_
+
+[cols="1,1,1,1,1"]
+|===
+|ID|Name|Description|Solution Strategy|Priority
+
+|TD1
+|Integer as id
+|If a new project context is created, an autoincremented integer is used as Id. This Id is used for linking data to the context and is therefore very important.
+|The Id should be a semantic Id that will be created during creation of the context. The Id should be short enough to be remembered but long enough to be unique.
+|3
+
+|===

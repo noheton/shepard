@@ -1,0 +1,26 @@
+=== ADR-001 Monorepository
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|12.06.2024
+|Status|Done
+
+|Context|
+Currently the project is spread across multiple repositories for architecture work, backend, deployment, documentation, frontend, publication, releases and further tools of the ecosystem (shepard Timeseries Collector). This means increased effort when working with the repositories, especially for feature development concerning both the backend and the frontend. Also the documentation is not as close to the code as it could (reasonably) be.
+
+|Possible Alternatives|
+1. Leave repositories as they are.
+** This means the current downsides persist.
+** No effort to implement
+2. Migrate the repositories except the shepard Timeseries Collector to a monorepo named shepard.
+** A dev setup for work on both frontend and backend could be set up easier. This can enhance development speed
+** Documentation is closer to the code. The probability of outdated, duplicated or even contradicting documentation(s) is decreased.
+** Less repositories have to be handled when working on or with shepard
+
+|Decision|
+We decide for migrating all repos except the shepard Timeseries Collector. The commit history, open issues, wikis and pipelines should be migrated to the monorepo.
+
+|Consequences|
+Monorepo has to be set up and previous projects have to be migrated
+|===

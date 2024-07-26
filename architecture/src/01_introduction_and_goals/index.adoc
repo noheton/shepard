@@ -1,0 +1,22 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-introduction-and-goals]]
+== Introduction and Goals
+
+====
+Shepard is a multi-database storage system for highly heterogenous research data. It provides a consistent API to deposit or access any type of supported data. It is a platform to work with experiment data towards publication.
+====
+
+With the expansion of Shepard, we are creating a more accessible data management platform for research data in order to conduct excellent, data-based research at DLR and beyond.
+
+With the expansion of Shepard, we are increasing the usability, scalability and customizability of the platform to further expand its use, continue to build the community and promote research according to the FAIR principles.
+
+=== Quality Goals
+
+_Quality goals are prioritized from top to bottom._
+
+1. Usability: The interface should be intuitive to use and provide users with the best possible support in their work. It should be fun to use the interface. The user must be able to find corresponding data easily.
+2. Reliability: During an experiment the transferred data must not be lost. Software updates are not allowed to break data.
+3. Maintainability: Changes and extensions to the software should be possible efficiently and cost-effectively.
+4. Performance: The system must be able to handle large volumes of data efficiently.
+5. Operability: It should be easy to get the system up and running. Same for configuring and updating the system.

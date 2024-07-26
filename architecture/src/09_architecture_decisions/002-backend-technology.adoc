@@ -1,0 +1,260 @@
+=== ADR-002 Backend Technology
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|02.07.2024
+|Status|Done
+
+|Context|
+The purpose of shepards backend is to provide a generic REST interface for its frontend or external communication partners to retrieve and store data in different formats. This data includes different research data (e.g. timeseries data, structured documents, files) and a connecting meta data structure (graph structure). To persist the data it uses Neo4j, MongoDB and InfluxDB databases.
+
+The backend of shepard is implemented as a basic Jakarta EE application using Jakarta Servlet and Tomcat. Further used libraries are selected individually, added on top and their interoperability is checked manually. There is no dependency injection. Due to its purpose the backend does not contain a lot of business logic, it rather functions as an adapter for the data types.
+
+Replacing the current approach a framework should be chosen to provide more structure and a robust and future-proof architecture.
+
+The tender for the extension of shepard listed the following requirements for a new framework:
+
+* be in broad use
+* have an active open source community
+* have detailed and up-to-date documentation
+* a good integration for databases and tools currently in use
+* a good developer experience
+* an easy test and development setup
+* integrate newer Java or DB versions quickly
+* no vendor lock-in
+* have an easy integration for the frontend
+
+As the databases in use might change in the near future, not too much time should be spent on migrating the concerning code.
+
+|Possible Alternatives|
+
+The comparison of alternatives can be found in the <<adr-002-appendix, appendix>>.
+
+|Decision|
+We decide to go with Option Quarkus, because it uses established standards as opposed to Spring Boot defining its own standards. It also feels more modern while still being in broad use.
+
+|Consequences|
+* The application has to be migrated to Quarkus
+* Although we migrate the REST interface has to be stable
+* There will be breaking changes for administrators because configuration options may differ
+* Knowledge on Quarkus has to be shared in the xiDLRaso DEV team
+* We need to define a migration path, include development still in progress for the current backend and avoid duplicate work
+|===
+
+[[adr-002-appendix]]
+==== Appendix
+
+.Comparison of possible technologies
+
+[cols="1h,1a,1a,1a,1a,1a,1a"]
+|===
+||Keep current setup|Spring Boot|Quarkus|Javalin|Micronaut|Non-Java Backend
+
+|Migration effort
+|No effort
+|(+) Medium Effort
+|(+) Medium Effort
+|(-) Large Effort
+(Most things have to be added manually)
+|Medium Effort
+|(-) Huge effort (everything has to be rewritten)
+
+|Migration benefit
+|(-) No benefit
+|(+) Big Benefit, Batteries included (Hibernate integration, Security tools, Dependency Injection out of the box)
+|(+) Big Benefit, Batteries included (Hibernate integration, Security tools, Dependency Injection out of the box)
+|(-) Low benefit, most things still have to be manually integrated (e.g. database clients & hibernate connection)
+|-
+|-
+
+|Rest API migration effort
+|-
+|(+) Medium Effort
+|(+) Medium Effort
+|Medium Effort
+|-
+|-
+
+|Broad use and active community
+|-
+|(++)Widely used,
+Huge Community
+|(+) In productive use, e.g. Keycloak. Medium but growing community
+|Medium but growing community
+|(-) Small, growing community, small Project
+|-
+
+|Detailed and Up-To-Date Documentation
+|-
+|(++) Detailed docs, lots of questions on stackoverflow (some of them may be outdated)
+|(+) Tutorials & Guides provided by Quarkus, some resources on stackoverflow
+|(+)
+|-
+|-
+
+|Good Integration for REST Interface, Neo4j, MongoDB, InfluxDB, potentially PostgreSQL
+|-
+|(+)
+
+* Plugin Available:
+** Neo4j
+** MongoDB
+* Via Hibernate:
+** PostgresSQL
+* Client Available:
+** InfluxDB
+|(+)
+
+* Plugin Available:
+** Neo4j
+** MongoDB
+* Via Hibernate:
+** PostgresSQL
+* Client Available:
+** InfluxDB
+|
+
+* neo4j: (!) Only kotlin interface
+* mongoDB: (+)mongoDB client
+* Influx: (+) InfluxDB client
+* PostgresSQL via hibernate (+)
+* Manual integration of hibernate needed (!)
+|(+)
+
+* Plugin Available:
+** Neo4j
+** MongoDB
+* Via Hibernate:
+** PostgresSQL
+* Client Available:
+** InfluxDB
+|-
+
+|Developer Experience
+|-
+|(+) Great
+|(++) Best
+|Lots of boiler plate code, lots of integrations you have to write yourself
+|-
+|-
+
+|Easy dev tooling
+|-
+|(+) Fully integrated with IntelliJ Ultimate
+Support for Eclipse, VSCode, etc.
+|(+) Fully integrated with IntelliJ Ultimate
+Support for Eclipse, VSCode, etc.
+|(+) Standard Support for IntelliJ and Eclipse, no extra functionality e.g. Testing, Modelling, …
+|-
+|-
+
+|Testability
+|-
+|(+) Very flexible out of the box tools for Unit and Integration tests. However, “real” e2e tests need a framework like Spock, Cucumber or Cypress
+|(+) Extensive support for different testing mechanisms. Also expandable with other testing tools/frameworks. Real e2e tests may probably need a seperate framework
+|
+* Unit Tests via mockito
+* Functional/integration tests via javalin.testtools
+* e2e & UI tests via selenium
+|-
+|-
+
+|Scalability
+|-
+|(+) Established support for kubernetes
+|(++) Great support for containerization, kubernetes and microservices. Startup time (e.g. for autoscaling is very fast)
+|
+|-
+|-
+
+|Performance
+|-
+|(+) Similar to Quarkus
+|(+) Similar to Spring Boot. Extremely fast because of graalvm, native image support and small footprint
+|Small codebase and completely customizable
+|-
+|-
+
+|Ease of Updates
+|-
+|(+)  Provides ways to analyze potentially breaking changes & diagnoses the Project
+|(+)  Provides ways to analyze potentially breaking changes & diagnoses the Project
+|
+|-
+|-
+
+|HTTP Endpoint Standard
+|-
+|(+) Spring
+|(++) JAX-RS (same standard as currently in use)
+|
+|-
+|-
+
+|No Vendor Lock
+|-
+|(!) “Beans architecture” is used in other software too. Using Spring Boot includes using it’s features. So some “lock-in” will be there. But it is an open source framework.
+|(!) Using Quarkus includes using it’s features. So some “lock-in” will be there. But it is an open source framework.
+|
+|-
+|-
+
+|Frontend easily integratable
+|-
+|(+) A REST or GraphQL API can be provided e.g. for a VueJS App.
+|(+) A REST or GraphQL API can be provided e.g. for a VueJS App.
+|
+|-
+|-
+
+|Dependency Injection Pattern
+|-
+|(+) included
+|(+) included
+|(-) Only if self implemented
+|-
+|-
+
+|Singleton Pattern
+|-
+|(+) Beans
+|(+)
+|
+|-
+|-
+
+|OIDC support for external ID provider
+|-
+|(+) There is an OAuth2 client for spring boot
+|(+) There is an oidc plugin
+|
+|-
+|-
+
+|OIDC support with integrated ID provider
+|-
+|(+) Yes, with spring authorization server
+|(!) All resources on using OIDC with Quarkus expect a seperate OIDC Provider.
+|
+|
+|
+
+
+
+|Experience in the DEV Team
+|
+|(!) Limited experience in small projects
+|(!) Limited experience in small projects
+|
+|
+|
+
+|Gut Feeling
+|
+|
+|More modern, maybe less technical debt inside
+|
+|
+|
+|===

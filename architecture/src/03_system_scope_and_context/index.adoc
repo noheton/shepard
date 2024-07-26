@@ -1,0 +1,55 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-system-scope-and-context]]
+== System Scope and Context
+
+[CAUTION]
+====
+This chapter is still under construction
+====
+
+=== Business Context
+
+[plantuml, "{plantUMLDir}business-context", png]
+----
+@startuml Business Context
+
+actor Researcher
+actor Administrator
+
+[shepard] as shepard
+[OIDC Provider] as oidc #white
+[Data Analysis Scripts] as analysisscripts #white
+[Experiment Hardware] as hardware #white
+[Experiment Integration Scripts] as integrationscripts #white
+
+Researcher --> shepard
+Administrator --> shepard
+analysisscripts --> shepard
+hardware --> shepard
+integrationscripts --> shepard
+shepard -> oidc
+
+@enduml
+----
+
+=== Technical Context
+
+TDB
+
+=== Domain Stories / Use Cases
+
+TBD
+
+=== Users and Roles
+
+[cols="1,2"]
+|===
+|User/Role|Description
+
+|Administrator
+|The administrator sets up and configures a shepard instance.
+
+|Researcher
+|Researcher are using the system as data sink for external data sources. They are running experiments and link data that belongs together. They use the data for further analysis.
+|===

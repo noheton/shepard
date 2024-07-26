@@ -1,0 +1,14 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-architecture-constraints]]
+== Architecture Constraints
+
+* On-Premises: The system must be operational without accessing the internet. No cloud services allowed.
+* Respect FAIR principles: Data must meet the following principles: findability, accessibility, interoperability and reusability. The actual implementation in the project still needs to be clarified.
+* Integration ability: While shepard holds the data, analysis is done by different tools. Shepard has to provide a REST interface for accessing those data.
+* Open Source: In general, only software licences are allowed that comply with the Open Source definition - in brief, they allow software to be freely used, modified and shared.
+* Existing data must continue to be usable: Data must not be lost and must remain accessible, especially after software updates. Breaking changes are allowed but there must be a migration strategy if necessary.
+* Software must be operational in the DLR environment:
+** no access to the internet
+** DNS is not available everywhere
+* Accessibility: The basic features should be implemented like high contrast and big font sizes. No special features like support for screen readers are needed.

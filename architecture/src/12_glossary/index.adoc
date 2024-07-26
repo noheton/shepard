@@ -1,0 +1,81 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-glossary]]
+== Glossary
+
+[cols="1,1,2a,1a"]
+|===
+|Term (EN) | Term (DE) | Definition | Sources
+
+|AFP
+|AFP
+|Automated Fiber Placement
+|https://www.igcv.fraunhofer.de/de/forschung/referenzprojekte/impuls_technologien_effiziente_flugzeugspantproduktion.html
+
+|Collection
+|Collection
+|A collection consists of multiple Data Objects.
+|
+
+|Container
+|
+|Containers allow users to store data. There are different types of containers, e.g. TimeseriesContainer, StructuredDataContainer and FileContainer.
+|https://gitlab.com/dlr-shepard/documentation/-/wikis/data-model
+
+|Context
+|Context
+|The context defines which Data Objects belongs together and are related to an experiment.
+|
+
+|Data Management Plan
+|Datenmanagementplan
+|
+|https://forschungsdaten.info/themen/informieren-und-planen/datenmanagementplan/
+
+|Data Object
+|Data Object
+|Represents one piece of information. A DataObject belongs to exactly one Collection. DataObjects can have multiple attributes describing the information. A DataObject may have predecessors, successors or childs. There is only one parent allowed.
+|
+
+|End effector
+|Endeffektor
+|The device at the end of a robotic arm
+|https://en.wikipedia.org/wiki/Robot_end_effector#:~:text=An%20end%20effector%20is%20the,or%20end)%20of%20the%20robot.
+
+|Entities
+|
+|Entities are used to manage connections between payloads. It is an abstract term. The concrete instances are Collections and DataObjects.
+|
+
+|Experiment
+|Experiment
+|An Experiment is a period in time where data is collected and stored for further investigation.
+|
+
+|FAIR data principles
+|FAIR Prinzipien
+|FAIR data are data which meet principles of findability, accessibility, interoperability and reusability. The FAIR principles emphasize machine-actionability (i.e., the capacity of computational systems to find, access, interoperate, and reuse data with none or minimal human intervention) because humans increasingly rely on computational support to deal with data as a result of the increase in volume, complexity, and creation speed of data.
+|
+* https://www.forschungsdaten.org/index.php/FAIR_data_principles
+* https://en.wikipedia.org/wiki/FAIR_data
+
+|NDT: Non destructive testing
+|NDT: Non destructive testing
+|Tests with ultrasound, for example, that do not destroy the component
+|
+
+|Ply
+|Schicht
+|One layer of tapes that lie next to each other.
+|
+
+|Reference
+|Reference
+|A reference connects a Data Object to a concrete value type like documents, urls, timeseries, etc. A Data Object can have multiple References.
+|
+
+|Shepard
+|Shepard
+|Acronym for: Storage for HEterogeneous Product And Research Data
+|
+|===

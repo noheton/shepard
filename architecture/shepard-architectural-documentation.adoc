@@ -1,0 +1,36 @@
+// ====================================
+// asciidoc settings
+// ==================================
+:toc-title: Table of Contents
+// enable table-of-contents
+:toc:
+// where are images located?
+:imagesdir: ./images
+
+= shepard Architectural Documentation
+
+:numbered:
+
+include::src/01_introduction_and_goals/index.adoc[]
+
+include::src/02_architecture_constraints/index.adoc[]
+
+include::src/03_system_scope_and_context/index.adoc[]
+
+include::src/04_solution_strategy/index.adoc[]
+
+include::src/05_building_block_view/index.adoc[]
+
+include::src/06_runtime_view/index.adoc[]
+
+include::src/07_deployment_view/index.adoc[]
+
+include::src/08_concepts/index.adoc[]
+
+include::src/09_architecture_decisions/index.adoc[]
+
+include::src/10_quality_requirements/index.adoc[]
+
+include::src/11_technical_risks/index.adoc[]
+
+include::src/12_glossary/index.adoc[]

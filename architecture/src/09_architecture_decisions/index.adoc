@@ -3,5 +3,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-design-decisions]]
 == Architecture Decisions
 
-
+include::001-adr-monorepository.adoc[]
+include::002-backend-technology.adoc[]
 

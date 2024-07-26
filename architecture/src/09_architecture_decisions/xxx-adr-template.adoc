@@ -1,0 +1,20 @@
+=== ADR-xxx Title
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|
+|Status|Pending, Done
+
+|Context|
+
+
+|Possible Alternatives|
+
+
+|Decision|
+
+
+|Consequences|
+
+|===

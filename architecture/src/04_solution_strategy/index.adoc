@@ -1,0 +1,40 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-solution-strategy]]
+== Solution Strategy
+
+[CAUTION]
+====
+This chapter is still under construction
+====
+
+[cols="1,2,2,1"]
+|===
+|Quality Goal|Scenario|Solution Approach|Link to Details
+
+|Usability
+|
+|
+|
+
+|Reliability
+|
+|
+|
+
+|Maintainability
+|
+|
+|
+
+|Performance
+|
+|
+|
+
+|Operability
+|
+|
+|
+|===
+
