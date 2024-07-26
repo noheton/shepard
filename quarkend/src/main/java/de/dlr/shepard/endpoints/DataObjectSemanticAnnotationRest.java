@@ -15,9 +15,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -46,18 +48,11 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Operation(
-    operationId = "getAllDataObjectAnnotations",
-    description = "Get all semantic annotations"
-    // TODO: Fix parameters
-    /*
-		parameters = {
-		  @Parameter(
-			in = ParameterIn.PATH,
-			name = Constants.COLLECTION_ID,
-			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-		  ),
-		}*/
+  @Operation(operationId = "getAllDataObjectAnnotations", description = "Get all semantic annotations")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
     return getAllByShepardId(dataObjectId);
@@ -72,22 +67,18 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
-  @Operation(
-    operationId = "getDataObjectAnnotation",
-    description = "Get semantic annotation"
-    // TODO: Fix parameters
-    /*parameters = {
-		  @Parameter(
-			in = ParameterIn.PATH,
-			name = Constants.COLLECTION_ID,
-			schema = @Schema(type =  SchemaType.INTEGER, format = "int64")
-		  ),
-		}*/
+  @Operation(operationId = "getDataObjectAnnotation", description = "Get semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
-  public Response getAnnotation(
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
-  ) {
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  public Response getAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
     return get(semanticAnnotationId);
   }
 
@@ -100,17 +91,11 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
-  @Operation(
-    operationId = "createDataObjectAnnotation",
-    description = "Create a new semantic annotation"
-    // TODO: Fix parameters
-    /*parameters = {
-		  @Parameter(
-			in = ParameterIn.PATH,
-			name = Constants.COLLECTION_ID,
-			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-		  ),
-		}*/
+  @Operation(operationId = "createDataObjectAnnotation", description = "Create a new semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response createAnnotation(
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -128,22 +113,18 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
   @Subscribable
-  @Operation(
-    operationId = "deleteDataObjectAnnotation",
-    description = "Delete semantic annotation"
-    // TODO: Fix parameters
-    /*parameters = {
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.COLLECTION_ID,
-				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-			),
-		}*/
+  @Operation(operationId = "deleteDataObjectAnnotation", description = "Delete semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
-  public Response deleteAnnotation(
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
-  ) {
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  public Response deleteAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
     return delete(semanticAnnotationId);
   }
 }

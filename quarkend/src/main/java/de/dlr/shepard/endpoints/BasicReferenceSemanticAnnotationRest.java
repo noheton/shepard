@@ -15,9 +15,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -50,22 +52,16 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Operation(
-    operationId = "getAllReferenceAnnotations",
-    description = "Get all semantic annotations"
-    // TODO: Fix the two missing parameters
-    /*parameters = {
-		  @Parameter(
-			in = ParameterIn.PATH,
-			name = Constants.COLLECTION_ID,
-			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-		  ),
-		  @Parameter(
-			in = ParameterIn.PATH,
-			name = Constants.DATAOBJECT_ID,
-			schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-		  ),
-		}*/
+  @Operation(operationId = "getAllReferenceAnnotations", description = "Get all semantic annotations")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response getAllAnnotations(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
     return getAllByShepardId(basicReferenceId);
@@ -80,22 +76,16 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Operation(
-    operationId = "getReferenceAnnotation",
-    description = "Get semantic annotation"
-    // TODO: Fix the two missing parameters
-    /*parameters = {
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.COLLECTION_ID,
-				schema = @Schema(type = SchemaType.STRING, format = "int64")
-			),
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.DATAOBJECT_ID,
-				schema = @Schema(type = SchemaType.STRING, format = "int64")
-			),
-		}*/
+  @Operation(operationId = "getReferenceAnnotation", description = "Get semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.STRING, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.STRING, format = "int64")
   )
   public Response getAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
@@ -113,22 +103,16 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
-  @Operation(
-    operationId = "createReferenceAnnotation",
-    description = "Create a new semantic annotation"
-    // TODO: Fix the two missing parameters
-    /*	parameters = {
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.COLLECTION_ID,
-				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-			),
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.DATAOBJECT_ID,
-				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-			),
-		}*/
+  @Operation(operationId = "createReferenceAnnotation", description = "Create a new semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response createAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
@@ -146,23 +130,16 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @APIResponse(description = "not found", responseCode = "404")
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
   @Subscribable
-  @Operation(
-    operationId = "deleteReferenceAnnotation",
-    description = "Delete semantic annotation"
-    // TODO: Fix the two missing parameters
-    /*
-		parameters = {
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.COLLECTION_ID,
-				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-			),
-			@Parameter(
-				in = ParameterIn.PATH,
-				name = Constants.DATAOBJECT_ID,
-				schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-			),
-		}*/
+  @Operation(operationId = "deleteReferenceAnnotation", description = "Delete semantic annotation")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response deleteAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
