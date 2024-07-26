@@ -1,6 +1,3 @@
-servers:
-  - url: /shepard/api
-    description: shepard backend
 components:
   securitySchemes:
     bearer:
