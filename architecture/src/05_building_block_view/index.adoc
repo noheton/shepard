@@ -1,13 +1,12 @@
-ifndef::imagesdir[:imagesdir: ../images]
+ifndef::imagesdir[:imagesdir: ../../images]
 
 [[section-building-block-view]]
+== Building Block View
 
 [CAUTION]
 ====
 This chapter is still under construction
 ====
-
-== Building Block View
 
 === Whitebox Overall System
 

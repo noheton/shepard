@@ -1,8 +1,10 @@
-# Ontologies
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Ontologies
 
 [[_TOC_]]
 
-## Registries
+==== Registries
 
 BARTOC knows about terminology registries, including itself. Registries also provide access to full terminologies either via an API (terminology service) or by other means (terminology repository).
 
@@ -19,7 +21,7 @@ Typical "interfaces":
 
 (others could in include eclass or IEEE iris)
 
-## Semantic Repository
+==== Semantic Repository
 
 - GET, POST `.../semanticRepository/`
 - GET, PUT, DELETE `.../semanticRepository/{containerId}`
@@ -32,7 +34,7 @@ Typical "interfaces":
 }
 ```
 
-## Semantic Annotation
+==== Semantic Annotation
 
 - GET, POST `.../collections/{collectionId}/annotations/`
 - GET, PUT, DELETE `.../collections/{collectionId}/annotations/{annotationId}`
@@ -51,16 +53,16 @@ Typical "interfaces":
 }
 ```
 
-## Ideas
+==== Ideas
 
 - Look into Federated Queries regarding SPARQL <https://www.w3.org/TR/2013/REC-sparql11-federated-query-20130321/>
 
-### Ontologies of interest
+===== Ontologies of interest
 
 - Semantic Sensor Network Ontology <https://www.w3.org/TR/vocab-ssn/#intro>
 - Units of Measure <http://www.ontology-of-units-of-measure.org/>
 
-### References / Examples of semantic annotation in other systems
+===== References / Examples of semantic annotation in other systems
 
 - <https://eml.ecoinformatics.org/semantic-annotation-primer.html>
 

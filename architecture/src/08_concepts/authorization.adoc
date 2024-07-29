@@ -1,6 +1,8 @@
-# Authorization
+ifndef::imagesdir[:imagesdir: ../../images]
 
-## Requirements
+=== Authorization
+
+==== Requirements
 
 - The backend can verify the identity of users
 - Users are uniquely identified in the backend by usernames
@@ -8,7 +10,7 @@
 - This check is quick and easy to perform, so there is no noticeable delay
 - Current records can still be used
 
-### Owner
+===== Owner
 
 - Objects have an unique owner
 - Objects without owners belong to everyone (backward compatibility)
@@ -17,7 +19,7 @@
 - Owners automatically have all permissions on all subordinate objects (inheritance)
 - Newly created objects belong to the creator unless otherwise specified
 
-### Permissions
+===== Permissions
 
 - There are different permissions for readability, writability and managability
 - Permissions can be set only for collections and containers, but apply to all subordinate objects
@@ -27,14 +29,14 @@
 - Collections and container can be created by all users with access
 - Newly created objects can be read and written by everyone with access
 
-### Long living access tokens (Api Keys)
+===== Long living access tokens (Api Keys)
 
 - Api Keys are used to authenticate and authorize a client for a specific task
 - Api Keys belong to one user
 - Api Keys can only authorize something as long as the user is allowed to do so
 - If a user no longer exists, his Api Keys are automatically invalidated
 
-### Payload databases
+===== Payload databases
 
 - Creation of new data is allowed to any logged in user
 - Integrated databases contain payload containers represented by a `container` object in the data model
@@ -44,9 +46,9 @@
 - A reference contains the specific ID of the uploaded data inside the container
 - Multiple references can point to one and the same data, or narrow it down further
 
-## Implementation
+==== Implementation
 
-### Users
+===== Users
 
 - Users are stored in Neo4j
 - A user also has the following attributes (arrows -> indicate relationships)
@@ -55,7 +57,7 @@
   - writable_by -> List of entities (n:m)
   - managable_by -> List of entities (n:m)
 
-### Endpoints
+===== Endpoints
 
 - A endpoint `/.../<id>/permissions` can be used to manage permissions of an object
 - Allowed methods are `GET` and `PUT`
@@ -76,7 +78,7 @@
 }
 ```
 
-### Api Keys
+===== Api Keys
 
 - Api Keys are stored in Neo4j
 - Each time an AccessToken is accessed, it must be checked that the owner of this token also has the corresponding authorization
@@ -87,23 +89,24 @@
   - jws: Hex String (Will never be delivered after creation)
   - belongs_to: User (n:1)
 
-### Access
+===== Access
 
 - For each access it must be checked whether
   - the user owns the requested object
   - the user is authorized for the requested object
   - the user is authorized to write to the requested payload object (if a payload database is accessed)
 
-![authFlow](authFlow.png "Authentication Flow")
+// TODO: This image could be remodelled as plantuml diagram
+image::auth/authFlow.png[]
 
-## Consequences
+==== Consequences
 
 - Subscriptions belong to a user, whose privileges are used to filter callbacks
 - Simple, concrete requests are allowed or forbidden
 - Callbacks must be checked on a case-by-case basis
 - Results of search queries must be filtered
 
-## Open Issues
+==== Open Issues
 
 - Groups/Roles (OpenID Connect, internal, ...)
 - Restrict Api Keys to specific entities

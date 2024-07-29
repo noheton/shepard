@@ -1,6 +1,8 @@
-# Export Collections
+ifndef::imagesdir[:imagesdir: ../../images]
 
-The export feature exports an entire collection including all data objects, references and referenced payloads to a zip file. Metadata is added in the form of a `ro-crate-metadata.json` file as per the [Research Object Crate](https://www.researchobject.org/ro-crate/) specification.
+=== Export Collections
+
+The export feature exports an entire collection including all data objects, references and referenced payloads to a zip file. Metadata is added in the form of a `ro-crate-metadata.json` file as per the link:https://www.researchobject.org/ro-crate/[Research Object Crate] specification.
 
 ```json
 {

@@ -1,8 +1,11 @@
-ifndef::imagesdir[:imagesdir: ../images]
+ifndef::imagesdir[:imagesdir: ../../images]
 
 [[section-design-decisions]]
 == Architecture Decisions
 
+include::000-api_v2.adoc[]
+
 include::001-monorepository.adoc[]
+
 include::002-backend-technology.adoc[]
 

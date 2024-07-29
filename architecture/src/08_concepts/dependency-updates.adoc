@@ -1,0 +1,92 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Dependency Updates
+
+Dependencies of shepard are updated regularily. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
+
+The developer team is responsible of regularily handling the pull requests opened by renovate. This should happen once a week, except for weeks where new versions are released. As a weekly reminder, weekly update tickets are part of the sprints.
+
+==== Performing Updates
+
+We handle the merge requests opened by renovate by performing the following steps for each update:
+
+1. reading the change logs of the dependency
+2. testing if everything is still working
+3. applying necessary changes if they are not too much effort
+4. merging the branch *or* <<suspending-an-update, suspending the update>>.
+
+Also, the dependencies in package-lock.json should be updated. This is done by running `npm update` in the top level directory.
+
+[[suspending-an-update]]
+==== Suspending an Update
+
+In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>. The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
+
+===== Suspending a Single Version
+
+Close the renovate merge request (renovate will not open the same request for the same version) in case we don’t want to do the update. For subsequent versions renovate will open merge requests again.
+
+===== Pinning the Version in Renovate Config
+
+This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config]. Afterwards the config needs to be merged to main with the following commands:
+
+```
+git checkout main
+git cherry-pick <commit-hash>
+git push -o ci.skip
+```
+
+Afterwards the merge request can be closed.
+
+[[suspended-updates]]
+===== Suspended Updates
+
+[cols="1,1"]
+|===
+|Package and version|Issue that blocks an update
+
+|tomcat<11
+|v11 is still a pre-release
+
+|influxdb<2
+|V2 introduces major breaking changes
+
+|neo4j<5
+|V5 introduces major breaking changes
+
+|mongo<5
+|no real reason, there are some major changes, but nothing serious
+
+|vue<3
+|not compatible with bootstrap v4
+
+|vue-router<4
+|not compatible with vue v2
+
+|vuex<4
+|not compatible with vue v2
+
+|bootstrap<5
+|v5 has no vue intrgration
+
+|portal-vue<3
+|needed for bootstrap-vue
+
+|typescript<5
+|not compatible with vue v2
+
+|@vue/tsconfig<2
+|not compatible with vue v2
+
+|vue-tsc<2.0.24
+|
+
+|eslint<9
+|
+
+|neo4j-ogm<4
+|v5 is not compatible with neo4j v4
+
+|openapi-generator-cli<7 (for python-legacy client)
+|the python-legacy client was removed afterwards
+|===

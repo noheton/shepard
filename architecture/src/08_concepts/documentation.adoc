@@ -1,0 +1,96 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Documentation Concept
+
+==== Target Groups & Needs
+
+[INFO]
+====
+Needs marked with `(!)` are not yet fulfilled, but well be taken into account in the future.
+====
+
+[%autowidth.stretch]
+[cols="1,1a"]
+|===
+|Target Group|Needs
+
+|Researchers|
+* Know how to explore the meta data structure and data using the shepard frontend (!)
+* Know how to use the API to retrieve data for analysis including authentication
+* Know how to store data in shepard via API or UI
+* Understand the Meta Data Model created by the Project manager and the data structure of shepard (collections, data objects & containers)
+* Information on new features and breaking changes (!)
+
+|Integrators|
+* Understand containers to fill data into them
+* Know how to store data in shepard via API or UI
+* Information on new features and breaking changes (!)
+|Project Managers|
+* Know how to use the frontend to create collections and meta data structures (!)
+* Information on the data model and how to interact with it and use it
+* May need information on new features (!)
+
+|Administrators|
+* Instructions how to deploy, run and update a shepard instance
+* information on new features and breaking changes (also to know when to update and who to inform)
+
+|Backend/Frontend developers|
+* “Getting Started”-Guide on how to setup a working dev environment
+* May need additional information on development guidelines or best practices
+* Information on Context, Constraints & Requirements
+* Information on Architecture, Deployment Setup, Decisions, Technical Debt
+* Open Issues, Bugs,
+* Roadmap (!)
+
+|Maintainers|
+* Know how to release shepard
+* Know how to deploy shepard
+* Know previous decisions
+* Open Issues, Bugs,
+* Roadmap (!)
+|===
+
+==== Documentation Artifacts
+
+The following artifacts are provided as documentation of shepard:
+
+[cols="1,2a,1a"]
+|===
+|Artifact|Notes|Link
+
+|Architectural Documentation
+|
+* Follows the link:https://arc42.org/overview[arc42 template].
+* Describes architectural aspects of shepard like constraints, requirements, building blocks, decisions and concepts
+* Includes documentation on the release process and updating dependencies
+|https://gitlab.com/dlr-shepard/shepard/-/blob/main/architecture/shepard-architectural-documentation.adoc
+
+|Wiki (Consumer Documentation)
+|Explains basic concepts relevant for using shepard. Also includes examples how to interact with shepard.
+|https://gitlab.com/dlr-shepard/shepard/-/wikis/home
+
+|Release Notes
+|Contains information for each release of shepard.
+|https://gitlab.com/dlr-shepard/shepard/-/releases
+
+|OpenAPI Spec
+|The OpenAPI spec describes the REST API of shepard.
+|https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/main/file/backend/target/openapi/openapi.yaml?job=build-backend
+
+|Administrator Documentation
+|Contains all relevant information for administrators to successfully operate a shepard instance.
+|https://gitlab.com/dlr-shepard/shepard/-/tree/main/infrastructure
+
+|CONTRIBUTING.md
+|Contains all relevant information on how to contribute to shepard, including:
+
+* How to setup a dev environment
+* Coding & code review guidelines
+* How code is integrated and reviewed
+
+|https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md
+
+|GitLab Issues
+|GitLab issues are sued to track bugs, feature requests and todos for developers, including relevant discussions.
+|https://gitlab.com/dlr-shepard/shepard/-/issues
+|===

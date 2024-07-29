@@ -1,6 +1,15 @@
-# API V2
+ifndef::imagesdir[:imagesdir: ../../images]
 
-## Ideas
+=== ADR-000 API V2
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|2021
+|Status|Done
+
+|Context|
+==== Ideas
 
 - Major(!) rework of data structure
   - following Fair Digital Object (FDO)
@@ -27,9 +36,12 @@
   - To store data, a container must be created beforehand
   - Data can only be stored within an existing container
 
-## Endpoints
+|Solution|
 
-### Organisational Entities
+
+==== Endpoints
+
+===== Organisational Entities
 
 - `/collections` - get all collections, create a collections
 - `/collections/<id>` - get/update/delete a specific collections
@@ -37,7 +49,7 @@
 - `/collections/<id>/dataObjects/<id>/references` - get all references of the given DataObject
 - `/collections/<id>/dataObjects/<id>/references/<id>` - get/update/delete a specific reference
 
-### User
+===== User
 
 - `/user` - get the current User
 - `/user/<username>` - get a specific user
@@ -46,11 +58,11 @@
 - `/user/<username>/subscriptions` - get all subscriptions
 - `/user/<username>/subscriptions/<id>` - get/update/delete a specific subscription
 
-### Database Integrations
+===== Database Integrations
 
 The following endpoints exist optionally for each kind of data:
 
-#### Structured Data Container
+====== Structured Data Container
 
 - `/structureddata` - create structured data container
 - `/structureddata/<id>` - get/update/delete a specific structured data container
@@ -60,7 +72,7 @@ The following endpoints exist optionally for each kind of data:
 - `/collections/<id>/dataObjects/<id>/structureddataReferences/<id>` - get/update/delete a specific structured data reference
 - `/collections/<id>/dataObjects/<id>/structureddataReferences/<id>/payload` - get the payload of a specific structured data reference
 
-#### File Container
+====== File Container
 
 - `/file` - create file container
 - `/file/<id>` - get/update/delete a specific file container
@@ -69,7 +81,7 @@ The following endpoints exist optionally for each kind of data:
 - `/collections/<id>/dataObjects/<id>/fileReferences/<id>` - get/update/delete a specific file reference
 - `/collections/<id>/dataObjects/<id>/fileReferences/<id>/payload` - get the payload of a specific file reference
 
-#### Timeseries Container
+====== Timeseries Container
 
 - `/timeseries` - create timeseries databases
 - `/timeseries/<id>` - get/update/delete a specific timeseries
@@ -78,7 +90,7 @@ The following endpoints exist optionally for each kind of data:
 - `/collections/<id>/dataObjects/<id>/timeseriesReferences/<id>` - get/update/delete a specific timeseries reference
 - `/collections/<id>/dataObjects/<id>/timeseriesReferences/<id>/payload` - get the payload of a specific timeseries reference
 
-## Filtering
+==== Filtering
 
 Some filter option can be implemented:
 
@@ -87,7 +99,7 @@ Some filter option can be implemented:
 - `/collections/<id>/dataObjects/<id>/timeseriesReferences/<id>/attachment?field=value&symbolicName=temperature_A1` - filter timeseries by attributes
 - `...`
 
-## Behaviour
+==== Behaviour
 
 When a generated API client is used and existing objects are modified, only explicitly modified properties should be changed.
 
@@ -103,17 +115,17 @@ api.updateTypeA(objA);
 
 In this example, only `ParameterX` should be modified, all other fields, relations, etc. should remain untouched.
 
-## Entities
+==== Entities
 
 This is an internal class diagram. Some attributes are hidden or changed for the user.
 
-![class_diagram.png](class_diagram.png "Class Diagram")
+image::api_v2/class_diagram.png[]
 
-## Example Structures
+==== Example Structures
 
 The following structures are examples that demonstrate the user's view of entities.
 
-### Collection
+===== Collection
 
 ```json
 {
@@ -134,7 +146,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### DataObject
+===== DataObject
 
 ```json
 {
@@ -160,7 +172,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### BasicReference
+===== BasicReference
 
 ```json
 {
@@ -175,7 +187,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### CollectionReference(BasicReference)
+===== CollectionReference(BasicReference)
 
 ```json
 {
@@ -192,7 +204,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### DataObjectReference(BasicReference)
+===== DataObjectReference(BasicReference)
 
 ```json
 {
@@ -209,7 +221,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### URIReference(BasicReference)
+===== URIReference(BasicReference)
 
 ```json
 {
@@ -225,7 +237,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### TimeseriesReference(BasicReference)
+===== TimeseriesReference(BasicReference)
 
 ```json
 {
@@ -252,7 +264,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### TimeseriesContainer
+===== TimeseriesContainer
 
 ```json
 {
@@ -266,7 +278,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### TimeseriesPayload
+===== TimeseriesPayload
 
 ```json
 {
@@ -286,7 +298,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### FileReference(BasicReference)
+===== FileReference(BasicReference)
 
 ```json
 {
@@ -307,7 +319,7 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### FileContainer
+===== FileContainer
 
 ```json
 {
@@ -321,11 +333,11 @@ The following structures are examples that demonstrate the user's view of entiti
 }
 ```
 
-### FilePayload
+===== FilePayload
 
 _There is no such thing as a file payload, since a file is always treated as a binary stream_
 
-### StructuredDataReference(BasicReference)
+===== StructuredDataReference(BasicReference)
 
 ```json
 {
@@ -346,7 +358,7 @@ _There is no such thing as a file payload, since a file is always treated as a b
 }
 ```
 
-### StructuredDataContainer
+===== StructuredDataContainer
 
 ```json
 {
@@ -360,7 +372,7 @@ _There is no such thing as a file payload, since a file is always treated as a b
 }
 ```
 
-### StructuredDataPayload
+===== StructuredDataPayload
 
 ```json
 {
@@ -370,3 +382,5 @@ _There is no such thing as a file payload, since a file is always treated as a b
   "json": "string"
 }
 ```
+
+|===
