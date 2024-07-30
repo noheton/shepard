@@ -39,7 +39,7 @@ Please don't file an issue to ask a question. You'll get faster results by conta
 shepard uses three types of branches to organize development:
 
 - **main:** The main branch is always stable. On this branch the releases are created.
-- **develop:** This is the working branch for changes. The content of this branch will be regularly built and deployed to a test instance. New changes are merged to develop first and will move to main as part of the release process.
+- **develop:** This is the working branch for changes. The content of this branch will be regularly built and published as dev containers and packages. New changes are merged to develop first and will move to main as part of the release process.
 - **feature:** Features and changes are developed on feature branches. Feature branches are only build on the server but not deployed to an environment. They are merged to develop using merge requests. Branches are deleted and the commits squashed to one merge commit when a feature branch is merged.
 
 ## Setting up a Developing Environment
