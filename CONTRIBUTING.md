@@ -11,6 +11,7 @@ Please note we have a code of conduct, please follow it in all your interactions
 - [Code of Conduct](#code-of-conduct)
 - [I don't want to read this whole thing I just have a question!](#i-dont-want-to-read-this-whole-thing-i-just-have-a-question)
 - [Useful Links](#useful-links)
+- [Branching Strategy](#branching-strategy)
 - [Setting Up a Developing Environment](#setting-up-a-developing-environment)
 - [How Can I Contribute?](#how-can-i-contribute)
 - [Code Review Checklist](#code-review-checklist)
@@ -32,6 +33,14 @@ Please don't file an issue to ask a question. You'll get faster results by conta
 - [Guide: Writing Testable Code](http://misko.hevery.com/attachments/Guide-Writing%20Testable%20Code.pdf)
 - [Jersey Documentation](https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/user-guide.html)
 - [Tomcat Documentation](https://tomcat.apache.org/tomcat-10.0-doc/index.html)
+
+## Branching Strategy
+
+shepard uses three types of branches to organize development:
+
+- **main:** The main branch is always stable. On this branch the releases are created.
+- **develop:** This is the working branch for changes. The content of this branch will be regularly built and deployed to a test instance. New changes are merged to develop first and will move to main as part of the release process.
+- **feature:** Features and changes are developed on feature branches. Feature branches are only build on the server but not deployed to an environment. They are merged to develop using merge requests. Branches are deleted and the commits squashed to one merge commit when a feature branch is merged.
 
 ## Setting up a Developing Environment
 
@@ -150,21 +159,21 @@ Feature requests are tracked as GitLab issues. When you are creating a feature r
 
 Unsure where to begin contributing to shepard? You can start by looking through these [beginner issues](https://gitlab.com/dlr-shepard/shepard/-/issues?scope=all&state=opened&label_name[]=beginner)
 
+### Contributing to the Architectural Documentation
+
+The architectural documentation under `architecture/` follows the [arc42 template](https://arc42.org/overview). It is written using [AsciiDoc](https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/) with diagrams written in [PlantUML](https://plantuml.com/en/). Details and reasoning of the architecture of shepard can be found there. Make sure to update the documentation e.g. if your contribution changes the architecture or introduces new concepts to shepard.
+
 ### Merge Request Process
 
 This section guides you through submitting a merge request for shepard. Following these guidelines helps maintainers to review your merge request faster.
 
-First, create a new branch. You can create a branch within the repository if you have the necessary permissions. If not, you can always fork the repository and create a new branch there. Now you are ready to begin with your contribution.
+First, create a new branch based on `develop`. You can create a branch within the repository if you have the necessary permissions. If not, you can always fork the repository and create a new branch there. Now you are ready to begin with your contribution.
 
-Once you have created an initial prototype of your contribution, commit your changes to GitLab and open a merge request with a meaningful name. Open up your merge request as soon as possible and mark it as [draft](https://docs.gitlab.com/ee/user/project/merge_requests/drafts.html) so everyone knows you are working on an issue. This prevents duplicate work and unhappy contributors. Please fill in the required [template](.gitlab/merge_request_templates/default.md) and follow the [code review checklist](#code-review-checklist) below. As before with issues, the template can be selected when creating a new merge request.
+Once you have created an initial prototype of your contribution, commit your changes to GitLab and open a merge request with a meaningful name. Open up your merge request to `develop` as soon as possible and mark it as [draft](https://docs.gitlab.com/ee/user/project/merge_requests/drafts.html) so everyone knows you are working on an issue. This prevents duplicate work and unhappy contributors. Please fill in the required [template](.gitlab/merge_request_templates/default.md) and follow the [code review checklist](#code-review-checklist) below. As before with issues, the template can be selected when creating a new merge request.
 
 After your first commit, you can add as many additional commits as you like. After your contribution is accepted, your changes will be squashed into one commit anyway.
 
-While you are working on your contribution, others may merge their merge request. To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current main branch.
-
-### Contributing to the Architectural Documentation
-
-The architectural documentation under `architecture/` follows the [arc42 template](https://arc42.org/overview). It is written using [AsciiDoc](https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/) with diagrams written in [PlantUML](https://plantuml.com/en/). Details and reasoning of the architecture of shepard can be found there. Make sure to update the documentation e.g. if your contribution changes the architecture or introduces new concepts to shepard.
+While you are working on your contribution, others may merge their merge request. To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current `develop` branch.
 
 ## Code Review Checklist
 
