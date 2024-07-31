@@ -10,7 +10,9 @@ build-quarkend:
     - echo building Quarkus native executable
   script:
     - cd quarkend
-    - ./mvnw package -Dnative -Drevision=${VERSION_NUMBER_DEV}
+    - ./mvnw -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
+    - ./mvnw package -P prod -DskipTests -Dnative -Drevision=${VERSION_NUMBER_DEV}
+
   artifacts:
     when: always
     expire_in: 2 days

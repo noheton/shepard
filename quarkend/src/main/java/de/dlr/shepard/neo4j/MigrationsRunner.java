@@ -3,8 +3,8 @@ package de.dlr.shepard.neo4j;
 import ac.simons.neo4j.migrations.core.Migrations;
 import ac.simons.neo4j.migrations.core.MigrationsConfig;
 import ac.simons.neo4j.migrations.core.MigrationsException;
-import de.dlr.shepard.util.PropertiesHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -17,10 +17,9 @@ public class MigrationsRunner {
   private Driver driver;
 
   public MigrationsRunner() {
-    var pHelper = new PropertiesHelper();
-    String username = pHelper.getProperty("neo4j.username");
-    String password = pHelper.getProperty("neo4j.password");
-    String host = "neo4j://" + pHelper.getProperty("neo4j.host");
+    String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
+    String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
+    String host = "neo4j://" + ConfigProvider.getConfig().getValue("neo4j.host", String.class);
     var path = this.getClass().getClassLoader().getResource("neo4j/migrations");
 
     driver = GraphDatabase.driver(host, AuthTokens.basic(username, password));

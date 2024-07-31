@@ -1,6 +1,7 @@
 # For commits on any branches
 stages:
   - check
+  - build
   - test
 
 include:

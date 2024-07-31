@@ -1,0 +1,47 @@
+integration_test_quarkend:
+  image: maven:3-eclipse-temurin-17
+  stage: test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  variables:
+    #    Quarkend variables
+    OIDC_PUBLIC: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxEaUV7qV+I5OnnenzW20/QXx/yWElZYZcfjXT/gaAh6oq87AOmHh5weOFsRZVC7WU5sEjRKqH+C6kO/0xHoyGrngVTelteL1JYt/cZ9ynVd2A8nWpU+FCjQ8V174RgHuulyqiY4gGQR0lonLUGrShRv+blg9z8+ggm08U1ZOQh0spBpbcxpOoujyuxh2g1oM6RgKbNJv3dEPN1AtNEutOwXrqxELka2/d96iu9HKd2m6EAeOs3ylaTvPoeF1YQbOhoMooOlv0ToH5EMhc1mCyvsc0hXh3ggcFJeulB7ONXGfyeWeFZnL+PIuREY6OnGzD8xglsZjseBZtocD4SGNyQIDAQAB
+    OIDC_AUTHORITY: https://keycloak.desh.dev.xitaso.com/realms/shepard/
+    QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:shepard@mongodb:27017
+    INFLUX_HOST: influxdb:8086
+    NEO4J_HOST: neo4j:7687
+    NEO4J_CONNECTION_STRING: bolt://neo4j:shepard@neo4j:7687
+    INFLUX_USERNAME: influx
+    INFLUX_PASSWORD: shepard
+    NEO4J_USERNAME: neo4j
+    NEO4J_PASSWORD: shepard
+    #    Variables for used services
+    NEO4J_AUTH: neo4j/shepard
+    MONGO_INITDB_ROOT_USERNAME: mongo
+    MONGO_INITDB_ROOT_PASSWORD: shepard
+    MONGO_INITDB_DATABASE: test
+    INFLUXDB_ADMIN_USER: influx
+    INFLUXDB_ADMIN_PASSWORD: shepard
+  services:
+    - name: neo4j:4.4
+      alias: neo4j
+    - name: mongo:4.4
+      alias: mongodb
+    - name: influxdb:1.8
+      alias: influxdb
+  before_script:
+    - !reference [.version_number, script]
+    - cd quarkend
+  script:
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} verify -P test
+    - ls -hal target
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - quarkend/target/failsafe-reports/*
+    reports:
+      junit:
+        - quarkend/target/failsafe-reports/*.xml

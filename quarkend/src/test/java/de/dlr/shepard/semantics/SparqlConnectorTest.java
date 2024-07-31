@@ -15,8 +15,6 @@ import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -45,16 +43,14 @@ public class SparqlConnectorTest extends BaseTestCase {
   @InjectMocks
   private SparqlConnector connector = new SparqlConnector("endpoint");
 
-  private final String query = URLEncoder.encode(
+  private final String query =
     """
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT DISTINCT ?o WHERE {
         ?s rdfs:label ?o .
         FILTER ( ?s = <http://example.com> )
-    }""",
-    StandardCharsets.UTF_8
-  ).replace("+", "%20");
+    }""";
   private final String result =
     """
     {
@@ -100,7 +96,7 @@ public class SparqlConnectorTest extends BaseTestCase {
     }
     """;
 
-  private final String askQuery = URLEncoder.encode("ASK { ?x ?y ?z }", StandardCharsets.UTF_8).replace("+", "%20");
+  private final String askQuery = "ASK { ?x ?y ?z }";
   private final String askResult =
     """
     {

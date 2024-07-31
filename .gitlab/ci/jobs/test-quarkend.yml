@@ -1,0 +1,29 @@
+test_quarkend:
+  image: maven:3-eclipse-temurin-17
+  stage: test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  needs: []
+  variables:
+    OIDC_PUBLIC: MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB0Y8ymfJXn19M1zPkIkNj4xlvgRQmq0jcdvklpYhuoCVWl339+fW7a2ibhBx/9FDlCPUuJeTqW03KDI+SCmsSF/uATcDgZdJwaxcxpX8jDXXUrAeU3LglcfYUaqe2um7osuEP5R5urjaNl4CJUJlWAptlxKhMb5SVZ7gyZBTab0j9qXxY7BT/+nAdbRsXc9RnIayUmCSVPS/XWiNwefQ+6J2aDqvLyZI104vTG04Y5HS1YjmybfSQjJP+QEWUkYE34/3l0+qkxqpezP4MkXFGw49sq219vp9JmL8T+lZc0jDmui2yA7yo5tuFV7wvUjLT2KJCeKOT8yZ84yayRDgtNAgMBAAE=
+    OIDC_AUTHORITY: https://example.com/
+  before_script:
+    - !reference [.version_number, script]
+    - cd quarkend
+  script:
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} verify -DskipITs
+    - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
+    - ls -hal target
+  coverage: "/Total.*?([0-9]{1,3})%/"
+  artifacts:
+    when: always
+    expire_in: 2 days
+    paths:
+      - quarkend/target/jacoco.exec
+      - quarkend/target/surefire-reports/*
+      - quarkend/target/site/jacoco/*
+    reports:
+      junit:
+        - quarkend/target/surefire-reports/*.xml

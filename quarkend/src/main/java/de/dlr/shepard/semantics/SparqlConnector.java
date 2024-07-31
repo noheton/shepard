@@ -40,8 +40,11 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
 
   @Override
   public boolean healthCheck() {
-    var query = formatQuery(ASK_TEMPLATE);
-    var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON).buildGet();
+    var invocation = client
+      .target(endpoint)
+      .queryParam("query", ASK_TEMPLATE)
+      .request(MediaType.APPLICATION_JSON)
+      .buildGet();
     String requestResult = request(invocation);
     client.close();
 
@@ -60,7 +63,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
   }
 
   private String requestTerm(String termIri) {
-    var query = formatQuery(String.format(SELECT_TEMPLATE, termIri));
+    var query = String.format(SELECT_TEMPLATE, termIri);
     var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON).buildGet();
     String responseEntity = request(invocation);
     client.close();
@@ -90,11 +93,6 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
       return Optional.empty();
     }
     return Optional.of(tree);
-  }
-
-  private String formatQuery(String query) {
-    // https://stackoverflow.com/a/1634293
-    return URLEncoder.encode(query, StandardCharsets.UTF_8).replace("+", "%20");
   }
 
   /**

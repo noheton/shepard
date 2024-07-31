@@ -8,7 +8,6 @@ import de.dlr.shepard.security.JWTSecurityContext;
 import de.dlr.shepard.security.RolesList;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PKIHelper;
-import de.dlr.shepard.util.PropertiesHelper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
@@ -34,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 @Provider
 @Priority(Priorities.AUTHENTICATION)
@@ -48,11 +48,10 @@ public class JWTFilter implements ContainerRequestFilter {
   private GracePeriodUtil lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
 
   public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalArgumentException {
-    var pHelper = new PropertiesHelper();
     var kFactory = KeyFactory.getInstance("RSA");
     byte[] kcDecoded;
     try {
-      kcDecoded = Base64.getDecoder().decode(pHelper.getProperty("oidc.public"));
+      kcDecoded = Base64.getDecoder().decode(ConfigProvider.getConfig().getValue("oidc.public", String.class));
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("The given oidc public key is invalid", e);
     }
@@ -63,7 +62,7 @@ public class JWTFilter implements ContainerRequestFilter {
     pkiHelper.init();
     jwtPublicKey = pkiHelper.getPublicKey();
 
-    role = pHelper.getProperty("oidc.role");
+    role = ConfigProvider.getConfig().getOptionalValue("oidc.role", String.class).orElse("");
   }
 
   @Override

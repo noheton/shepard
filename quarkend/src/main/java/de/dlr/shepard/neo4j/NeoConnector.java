@@ -1,9 +1,9 @@
 package de.dlr.shepard.neo4j;
 
 import de.dlr.shepard.util.IConnector;
-import de.dlr.shepard.util.PropertiesHelper;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.exception.ConnectionException;
 import org.neo4j.ogm.model.Result;
@@ -45,10 +45,9 @@ public class NeoConnector implements IConnector {
    */
   @Override
   public boolean connect() {
-    var pHelper = new PropertiesHelper();
-    String username = pHelper.getProperty("neo4j.username");
-    String password = pHelper.getProperty("neo4j.password");
-    String host = pHelper.getProperty("neo4j.host");
+    String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
+    String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
+    String host = ConfigProvider.getConfig().getValue("neo4j.host", String.class);
     Configuration configuration = new Configuration.Builder()
       .uri("neo4j://" + host)
       .credentials(username, password)

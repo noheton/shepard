@@ -3,10 +3,11 @@ package de.dlr.shepard.integrationtests;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.PKIHelper;
-import de.dlr.shepard.util.PropertiesHelper;
 import io.jsonwebtoken.Jwts;
 import java.security.PrivateKey;
 import java.util.Date;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
@@ -20,8 +21,11 @@ public class PrepareDatabase {
   private User user;
   private ApiKey apiKey;
 
+  String neo4jConnectionString;
+
   public PrepareDatabase() {
-    session = openSession();
+    neo4jConnectionString = ConfigProvider.getConfig().getValue("neo4j.connection-string", String.class);
+    session = openSession(neo4jConnectionString);
   }
 
   public PrepareDatabase withUser() {
@@ -45,13 +49,7 @@ public class PrepareDatabase {
     return new UserWithApiKey(user, apiKey);
   }
 
-  private Session openSession() {
-    String username = "", password = "", host = "";
-    PropertiesHelper helper = new PropertiesHelper();
-    username = helper.getProperty("neo4j.username");
-    password = helper.getProperty("neo4j.password");
-    host = helper.getProperty("neo4j.host");
-    String connectionString = String.format("bolt://%s:%s@%s", username, password, host);
+  public Session openSession(String connectionString) {
     Configuration configuration = new Configuration.Builder().uri(connectionString).build();
     sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities");
     return sessionFactory.openSession();

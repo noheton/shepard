@@ -3,7 +3,6 @@ package de.dlr.shepard.security;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
-import de.dlr.shepard.util.PropertiesHelper;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -13,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger;
 
 @Data
 @AllArgsConstructor
@@ -44,6 +45,7 @@ class OpenIdConfiguration {
 @Slf4j
 public class UserinfoService {
 
+  private static final Logger LOG = Logger.getLogger(UserinfoService.class);
   private static final String WELL_KNOWN_PATH = ".well-known/openid-configuration";
 
   private final String oidcConfidurationUrl;
@@ -52,8 +54,8 @@ public class UserinfoService {
   private Client client = ClientBuilder.newClient();
 
   public UserinfoService() {
-    PropertiesHelper helper = new PropertiesHelper();
-    String oidcAuthority = helper.getProperty("oidc.authority");
+    LOG.error("UserInfoService called.");
+    String oidcAuthority = ConfigProvider.getConfig().getValue("oidc.authority", String.class);
     this.oidcConfidurationUrl = oidcAuthority + WELL_KNOWN_PATH;
   }
 

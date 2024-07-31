@@ -2,13 +2,13 @@ package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
-import de.dlr.shepard.util.PropertiesHelper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBException;
@@ -54,10 +54,9 @@ public class InfluxDBConnector implements IConnector {
    */
   @Override
   public boolean connect() {
-    PropertiesHelper helper = new PropertiesHelper();
-    String host = helper.getProperty("influx.host");
-    String username = helper.getProperty("influx.username");
-    String password = helper.getProperty("influx.password");
+    String host = ConfigProvider.getConfig().getValue("influx.host", String.class);
+    String username = ConfigProvider.getConfig().getValue("influx.username", String.class);
+    String password = ConfigProvider.getConfig().getValue("influx.password", String.class);
 
     influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password);
     influxDB.enableBatch(
