@@ -463,7 +463,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       collection1DataObject.getId(),
       Constants.COLLECTION_REFERENCES
     );
-    RequestSpecification collectionReferenceRequestSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification collectionReferenceRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -558,12 +558,12 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       sDataObject.getId(),
       Constants.STRUCTUREDDATA_REFERENCES
     );
-    sDataReferencesRequestSpec = getNewRequestSpecBuilderWithBasePath()
+    sDataReferencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
     sDataContainerURL = "/structureddatas";
-    sDataContainerRequestSpec = getNewRequestSpecBuilderWithBasePath()
+    sDataContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -652,12 +652,12 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       tSerDataObject.getId(),
       Constants.TIMESERIES_REFERENCES
     );
-    tSerReferencesRequestSpec = getNewRequestSpecBuilderWithBasePath()
+    tSerReferencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
     tSerContainerURL = "/timeseries";
-    tSerContainerRequestSpec = getNewRequestSpecBuilderWithBasePath()
+    tSerContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();

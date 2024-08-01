@@ -34,7 +34,7 @@ public class UserGroupIT extends BaseTestCaseIT {
     user = getNewUserWithApiKey("user");
     user1 = getNewUserWithApiKey("user1");
     jws = user.getApiKey().getJws();
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath().build();
+    userGroupSpecification = new RequestSpecBuilder().build();
   }
 
   @Test
@@ -43,7 +43,7 @@ public class UserGroupIT extends BaseTestCaseIT {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();

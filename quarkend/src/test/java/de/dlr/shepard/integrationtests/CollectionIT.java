@@ -71,7 +71,7 @@ public class CollectionIT extends BaseTestCaseIT {
     var payload = new CollectionIO();
     payload.setName(name);
 
-    var wrongSpecification = getNewRequestSpecBuilderWithBasePath().setContentType(ContentType.JSON).build();
+    var wrongSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
     given().spec(wrongSpecification).body(payload).when().post(collectionsURL).then().statusCode(401);
   }
 

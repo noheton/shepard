@@ -39,10 +39,6 @@ public class BaseTestCaseIT {
     userIO = new UserIO(credentials.getUser());
   }
 
-  protected static RequestSpecBuilder getNewRequestSpecBuilderWithBasePath() {
-    return new RequestSpecBuilder().setBaseUri(host).setPort(port).setBasePath(basePath);
-  }
-
   protected static UserWithApiKey getNewUserWithApiKey(String username) {
     return new PrepareDatabase().withUser(username).withApiKey().build();
   }
@@ -52,7 +48,7 @@ public class BaseTestCaseIT {
   }
 
   protected static CollectionIO createCollection(String name) {
-    var collectionSpecification = getNewRequestSpecBuilderWithBasePath()
+    var collectionSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -69,7 +65,7 @@ public class BaseTestCaseIT {
   }
 
   protected static CollectionIO createCollection(String name, ApiKey apiKey) {
-    var collectionSpecification = getNewRequestSpecBuilderWithBasePath()
+    var collectionSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", apiKey.getJws())
       .build();
@@ -87,7 +83,7 @@ public class BaseTestCaseIT {
 
   protected static DataObjectIO createDataObject(String name, long collectionId) {
     var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
-    var dataObjectSpecification = getNewRequestSpecBuilderWithBasePath()
+    var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();

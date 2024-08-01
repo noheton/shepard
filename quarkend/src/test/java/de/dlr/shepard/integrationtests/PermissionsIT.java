@@ -60,15 +60,15 @@ public class PermissionsIT extends BaseTestCaseIT {
     jws1 = user1.getApiKey().getJws();
     jws2 = user2.getApiKey().getJws();
     jws3 = user3.getApiKey().getJws();
-    requestSpecification1 = getNewRequestSpecBuilderWithBasePath()
+    requestSpecification1 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws1)
       .build();
-    requestSpecification2 = getNewRequestSpecBuilderWithBasePath()
+    requestSpecification2 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
-    requestSpecification3 = getNewRequestSpecBuilderWithBasePath()
+    requestSpecification3 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws3)
       .build();
@@ -282,7 +282,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     UserGroupIO readersGroup = new UserGroupIO();
     readersGroup.setName("readersGroup");
     readersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
@@ -307,13 +307,13 @@ public class PermissionsIT extends BaseTestCaseIT {
       }
     };
     permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
-    requestSpecification2 = getNewRequestSpecBuilderWithBasePath()
+    requestSpecification2 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
-    requestSpecification3 = getNewRequestSpecBuilderWithBasePath()
+    requestSpecification3 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws3)
       .build();
@@ -327,7 +327,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     UserGroupIO readersGroup = new UserGroupIO();
     readersGroup.setName("readersGroup1");
     readersGroup.setUsernames(new String[] { "user3" });
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
@@ -364,7 +364,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     UserGroupIO writersGroup = new UserGroupIO();
     writersGroup.setName("writersGroup");
     writersGroup.setUsernames(new String[] { user4.getUser().getUsername() });
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
@@ -405,7 +405,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     UserGroupIO writersGroup = new UserGroupIO();
     writersGroup.setName("writersGroup1");
     writersGroup.setUsernames(new String[] { "user3" });
-    userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();

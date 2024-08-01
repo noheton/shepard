@@ -63,7 +63,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
     assertThat(actual.getName()).isEqualTo("ApiKeyDummy");
     assertThat(actual.getJwt()).isNotNull();
 
-    var newSpec = getNewRequestSpecBuilderWithBasePath()
+    var newSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", actual.getJwt())
       .build();

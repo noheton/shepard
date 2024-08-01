@@ -384,7 +384,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   @Order(7)
   public void authorizedCollectionsSearchTest() {
     String permissionsURL = "/collections/" + collection1.getId() + "/permissions";
-    RequestSpecification permissionsSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -455,7 +455,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -470,7 +470,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -541,7 +541,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -556,7 +556,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();

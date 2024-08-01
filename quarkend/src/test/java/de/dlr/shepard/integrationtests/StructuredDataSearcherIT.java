@@ -607,7 +607,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   @Order(15)
   public void testFindViaPredecessorCyclePermissionsReader() {
     String permissionsURL = "/collections/" + collection.getId() + "/permissions";
-    RequestSpecification permissionsSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -663,7 +663,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user2.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -678,7 +678,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
@@ -875,7 +875,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       collection.getId(),
       Constants.DATAOBJECTS
     );
-    RequestSpecification dataObjectRequestSpecification = getNewRequestSpecBuilderWithBasePath()
+    RequestSpecification dataObjectRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
