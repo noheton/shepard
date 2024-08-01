@@ -289,7 +289,7 @@
         <configuration>
           <skipTests>${skipITs}</skipTests>
           <systemPropertyVariables>
-<!--            <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>-->
+            <!--            <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>-->
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
@@ -381,14 +381,14 @@
         <build.profile.id>prod</build.profile.id>
         <logging.appender>FILE</logging.appender>
         <skipTests>true</skipTests>
-        <quarkus.native.enabled>true</quarkus.native.enabled>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
       </properties>
     </profile>
     <profile>
       <id>integration</id>
       <properties>
         <build.profile.id>integration</build.profile.id>
-        <logging.appender>FILE</logging.appender>
+        <logging.appender>STDOUT</logging.appender>
         <skipUTs>true</skipUTs>
         <quarkus.native.enabled>false</quarkus.native.enabled>
       </properties>

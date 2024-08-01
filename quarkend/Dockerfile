@@ -1,14 +1,14 @@
-FROM quay.io/quarkus/quarkus-micro-image:2.0
-WORKDIR /work/
-COPY target/*-runner /work/application
+FROM registry.access.redhat.com/ubi8/openjdk-17:1.19
 
-# set up permissions for user `1001`
-RUN chmod 775 /work /work/application \
-  && chown -R 1001 /work \
-  && chmod -R "g+rwX" /work \
-  && chown -R 1001:root /work
+COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 target/quarkus-app/*.jar /deployments/
+COPY --chown=185 target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
-USER 1001
+USER 185
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
-CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
+ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh" ]
+
