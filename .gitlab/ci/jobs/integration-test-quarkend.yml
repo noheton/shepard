@@ -7,18 +7,18 @@ integration_test_quarkend:
       - .m2/repository
   needs: [build-quarkend]
   variables:
-    #    Quarkend variables
+    # Quarkend variables
     OIDC_PUBLIC: MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB0Y8ymfJXn19M1zPkIkNj4xlvgRQmq0jcdvklpYhuoCVWl339+fW7a2ibhBx/9FDlCPUuJeTqW03KDI+SCmsSF/uATcDgZdJwaxcxpX8jDXXUrAeU3LglcfYUaqe2um7osuEP5R5urjaNl4CJUJlWAptlxKhMb5SVZ7gyZBTab0j9qXxY7BT/+nAdbRsXc9RnIayUmCSVPS/XWiNwefQ+6J2aDqvLyZI104vTG04Y5HS1YjmybfSQjJP+QEWUkYE34/3l0+qkxqpezP4MkXFGw49sq219vp9JmL8T+lZc0jDmui2yA7yo5tuFV7wvUjLT2KJCeKOT8yZ84yayRDgtNAgMBAAE=
     OIDC_AUTHORITY: https://example.com/
-    QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:shepard@mongodb:27017
     INFLUX_HOST: influxdb:8086
-    NEO4J_HOST: neo4j:7687
-    NEO4J_CONNECTION_STRING: bolt://neo4j:shepard@neo4j:7687
     INFLUX_USERNAME: influx
     INFLUX_PASSWORD: shepard
+    NEO4J_HOST: neo4j:7687
     NEO4J_USERNAME: neo4j
     NEO4J_PASSWORD: shepard
-    #    Variables for used services
+    QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:shepard@mongodb:27017
+
+    # Variables for Database Services
     NEO4J_AUTH: neo4j/shepard
     MONGO_INITDB_ROOT_USERNAME: mongo
     MONGO_INITDB_ROOT_PASSWORD: shepard

@@ -7,7 +7,6 @@ import io.jsonwebtoken.Jwts;
 import java.security.PrivateKey;
 import java.util.Date;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
@@ -24,7 +23,10 @@ public class PrepareDatabase {
   String neo4jConnectionString;
 
   public PrepareDatabase() {
-    neo4jConnectionString = ConfigProvider.getConfig().getValue("neo4j.connection-string", String.class);
+    String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
+    String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
+    String host = ConfigProvider.getConfig().getValue("neo4j.host", String.class);
+    neo4jConnectionString = "bolt://" + username + ":" + password + "@" + host;
     session = openSession(neo4jConnectionString);
   }
 
