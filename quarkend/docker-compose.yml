@@ -5,8 +5,8 @@ services:
     image: registry.gitlab.com/dlr-shepard/frontend:dev
     environment:
       - VUE_APP_BACKEND=http://localhost:8080/shepard/api
-      - VUE_APP_OIDC_AUTHORITY=https://keycloak.desh.dev.xitaso.com/realms/shepard/
-      - VUE_APP_CLIENT_ID=shepard-client-local
+      - VUE_APP_OIDC_AUTHORITY=${VUE_APP_OIDC_AUTHORITY}
+      - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
     ports:
       - 8081:80
     restart: unless-stopped

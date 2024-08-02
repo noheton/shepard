@@ -8,8 +8,8 @@ integration_test_quarkend:
   needs: [build-quarkend]
   variables:
     #    Quarkend variables
-    OIDC_PUBLIC: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxEaUV7qV+I5OnnenzW20/QXx/yWElZYZcfjXT/gaAh6oq87AOmHh5weOFsRZVC7WU5sEjRKqH+C6kO/0xHoyGrngVTelteL1JYt/cZ9ynVd2A8nWpU+FCjQ8V174RgHuulyqiY4gGQR0lonLUGrShRv+blg9z8+ggm08U1ZOQh0spBpbcxpOoujyuxh2g1oM6RgKbNJv3dEPN1AtNEutOwXrqxELka2/d96iu9HKd2m6EAeOs3ylaTvPoeF1YQbOhoMooOlv0ToH5EMhc1mCyvsc0hXh3ggcFJeulB7ONXGfyeWeFZnL+PIuREY6OnGzD8xglsZjseBZtocD4SGNyQIDAQAB
-    OIDC_AUTHORITY: https://keycloak.desh.dev.xitaso.com/realms/shepard/
+    OIDC_PUBLIC: MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB0Y8ymfJXn19M1zPkIkNj4xlvgRQmq0jcdvklpYhuoCVWl339+fW7a2ibhBx/9FDlCPUuJeTqW03KDI+SCmsSF/uATcDgZdJwaxcxpX8jDXXUrAeU3LglcfYUaqe2um7osuEP5R5urjaNl4CJUJlWAptlxKhMb5SVZ7gyZBTab0j9qXxY7BT/+nAdbRsXc9RnIayUmCSVPS/XWiNwefQ+6J2aDqvLyZI104vTG04Y5HS1YjmybfSQjJP+QEWUkYE34/3l0+qkxqpezP4MkXFGw49sq219vp9JmL8T+lZc0jDmui2yA7yo5tuFV7wvUjLT2KJCeKOT8yZ84yayRDgtNAgMBAAE=
+    OIDC_AUTHORITY: https://example.com/
     QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:shepard@mongodb:27017
     INFLUX_HOST: influxdb:8086
     NEO4J_HOST: neo4j:7687
