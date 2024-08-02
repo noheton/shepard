@@ -15,32 +15,21 @@ Before creating a merge request, please read this first:
 
 -->
 
-## Breaking Changes
+## :bomb: Breaking Changes
 
-<!--
-Description of how the API behaves differently now.
-If you have the permission, please also add the label "Breaking Change" to this merge request.
--->
+## :goal_net: Description
 
-## Description
+### :camera: Screenshot
 
-<!--
-This was done
--->
+<!-- if applicable  -->
 
-### Screenshot
-
-<!--
-This is how the page looks now
--->
-
-### Checklist
+### :notebook: Checklist
 
 - [ ] The code compiles without any warnings.
 - [ ] I followed the [code review checklist](https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#code-review-checklist).
 - [ ] The documentation has been added/updated.
 
-### Related Issues
+### :link: Related Issues
 
 - Related #<issue number>
 - Closes #<issue number>

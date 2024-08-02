@@ -14,55 +14,22 @@ Before creating a feature request, please read this first:
 
 -->
 
-## Role-Feature-Reason Template
+## :goal_net: Goal
 
 As a `role` I want `feature` so that `reason`.
 
-## Category according to the [Kano Model](https://en.wikipedia.org/wiki/Kano_model)
+## :sports_medal: Acceptance Criteria
 
-<!-- Please check only 1 box -->
+1.
+2.
+3.
 
-- [ ] must-be <!-- these are the requirements that the customers expect and are taken for granted -->
-- [ ] performance <!-- these attributes result in satisfaction when fulfilled and dissatisfaction when not fulfilled -->
-- [ ] attractive <!-- these attributes provide satisfaction when achieved fully, but do not cause dissatisfaction when not fulfilled -->
+## :star: Special Testing hints
 
-## Describe your new feature
+## :bomb: Out of Scope
 
-<!--
-Describe the new feature with as many details as possible
--->
+## :bulb: Hints
 
-### Current behavior
-
-<!--
-What is the current behavior?
--->
-
-### New behavior
-
-<!--
-What would you expect the new behavior should look like?
--->
-
-### Improvement
-
-<!--
-What is the benefit and why is it interesting for all users?
--->
-
-### Screenshots and Mockups
-
-<!--
-Paste in screenshots or mockups of your new feature.
-
-### Examples
-
-<!--
-Paste in examples of how to use your new feature
--->
-
-## Related Issues
-
-- #<issue number>
+## :thinking_face: Risks & Open Questions
 
 /label ~"issue::feature"

@@ -15,70 +15,37 @@ Before creating a bug report, please read this first:
 
 -->
 
-## Environment
+## :bug: Summary
 
-<!-- You can find out the exact version on the "About" page -->
-
-- Backend Version:
-- Frontend Version:
-- Webbrowser and version:
-- Programming language and version:
-- Operating system:
-
-## Summary
-
-<!--
-Summarize the bug you encountered briefly and provide as much detail as possible:
-
-- Has the issue occurred recently (e.g., after updating to a new version of shepard) or has it always been a problem?
-- Can you reliably reproduce the issue? If not, please indicate how often the problem occurs and under what conditions it usually occurs.
-- If the issue was not triggered by a specific action, describe what you did before the problem occurred and provide further information.
-
--->
-
-## Steps to reproduce
-
-<!--
-Check if you can reproduce the issue in the latest version of shepard.
-Describe the exact steps which reproduce the problem in as many details as possible.
--->
+## :clipboard: Steps to reproduce
 
 1.
 2.
 3.
 
-## What is the current bug behavior?
+## :package: Environment
 
-<!--
-What actually happens
--->
+<!-- You can find out the exact version on the "About" page -->
 
-## What is the expected correct behavior?
+- shepard Version:
+- Webbrowser and version:
+- shepard client and version:
+- Operating system:
 
-<!--
-What you should see instead
--->
+## :bomb: What is the current bug behavior?
 
-## Relevant logs and/or screenshots
+## :goal_net: What is the expected correct behavior?
 
-<!--
-Paste all relevant logs from your web browser's console/inspector, as well as screenshots and animated GIFs here.
-Recommended tool for creating GIFs: https://www.screentogif.com/
-You may add code examples as well.
--->
+## :notebook: Relevant logs and/or screenshots
+
+<!-- Paste all relevant logs from your web browser's console/inspector, as well as screenshots and animated GIFs here. -->
 
 ```txt
 Paste logs here
 ```
 
-## Possible fixes
+## :bulb: Hints
 
-<!--
-If you can, link to the line of code that might be responsible for the problem
--->
-
-## Related Issues
-
-- #<issue number>
+## :thinking_face: Risks & Open Questions
 
 /label ~"issue::bug"
