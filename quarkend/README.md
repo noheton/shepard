@@ -55,3 +55,26 @@ The Quarkend configuration is environment dependant and specific properties need
 - VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
 
 > **Warning:** Using the the VSCode run configuration "Debug Quarkus" above an opened file can edit the run configuration and cause issues. Stick to the "Run and Debug" tab on the left side to avoid this.
+
+The Swagger UI can then be found at http://localhost:8080/shepard/doc/swagger-ui
+
+#### Running Tests
+
+Running Unit Tests:
+
+Either start quarkus with `./mvnw quarkus:dev` and start the interactive test runner or run the following command:
+
+```
+./mvnw verify -DskipITs
+```
+
+Running Integration Tests
+
+```
+./mvnw verify -DskipUTs
+```
+
+##### Known VSCode Issues
+
+- [Test runner for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-test) has issues when the project is not built, build it first using `./mvnw package -DskipUTs`
+- Test runner added by the [Oracle Java extension](https://marketplace.visualstudio.com/items?itemName=Oracle.oracle-java) works without building first, but adds a duplicate extension since we prefer the Java-Package by Red Hat that is recommended by Microsoft. For that reason we don't use it.
