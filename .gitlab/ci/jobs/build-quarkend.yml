@@ -7,8 +7,8 @@ build-quarkend:
     - echo building Quarkend jar
   script:
     - cd quarkend
-    - mvn -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
-    - mvn package -P prod -Drevision=${VERSION_NUMBER_DEV}
+    - mvn ${MAVEN_CLI_OPTS} -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
+    - mvn ${MAVEN_CLI_OPTS} package -P prod -Drevision=${VERSION_NUMBER_DEV}
 
   artifacts:
     when: always
