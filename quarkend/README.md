@@ -39,6 +39,16 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
      1. Install the recommended extensions in `.vscode/extensions.json` (VSCode should already suggest it)
      2. The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
 
+#### Configuration
+
+The Quarkend configuration is environment dependant and specific properties need to be setup. This setup is done using environment variables to override or append existing application properties in `application.properties` file according to [the Quarkus documentation](https://quarkus.io/guides/config-reference#env-file).
+
+1. Copy `env.example` to `.env`
+2. Add the keycloak realm url in `oidc.authority` and the public key in `oidc.public` (`oidc.role` is optional)
+3. Adjust the configurations for the other services according to your setup
+
+> **_NOTE:_** For local environment, it is enough to just add the Keycloak configuration (`oidc.authority` and `oidc.public`) since the existing service configurations are already matching the docker compose setup in `docker-compose.yml`.
+
 #### First run
 
 - IntelliJ: use the existing run configuration on the top right to run quarkus.
