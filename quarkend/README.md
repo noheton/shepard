@@ -65,7 +65,7 @@ Running Unit Tests:
 Either start quarkus with `./mvnw quarkus:dev` and start the interactive test runner or run the following command:
 
 ```
-./mvnw verify -DskipITs
+./mvnw test
 ```
 
 Running Integration Tests
