@@ -94,16 +94,16 @@ cp env.example .env
 - URLs have to end with a trailing slash
 - The database passwords can be changed arbitrarily at the beginning
 
-| Variable | Description | Example |
-| --- | --- | --- |
-| BACKEND_URL | contains the URL of the backend to be accessed by the clients | `https://backend.shepard.example.com/` |
-| NEO4J_PW | initial Neo4j password |  |
-| MONGO_PW | initial MongoDB password |  |
-| INFLUX_PW | initial InfluxDB password |  |
-| OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/` |
-| OIDC_PUBLIC | is the public key of the signature of the oidc identity provider (e.g. keycloak) | `MII...` |
-| OIDC_ROLE | allows to restrict access to users with a specific realm role | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID | is the client ID of the frontend as known to the oidc identity provider | `shepard-frontend-dev` |
+| Variable       | Description                                                                                               | Example                                                                                           |
+| -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL    | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW       | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_PW       | initial MongoDB password                                                                                  |                                                                                                   |
+| INFLUX_PW      | initial InfluxDB password                                                                                 |                                                                                                   |
+| OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID      | is the client ID of the frontend as known to the oidc identity provider                                   | `shepard-frontend-dev`                                                                            |
 
 ## Restrict access to users with specific roles
 
