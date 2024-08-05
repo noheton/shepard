@@ -1,8 +1,10 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import de.dlr.shepard.neo4Core.entities.ApiKey;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.UUID;
 
+@RequestScoped
 public class ApiKeyDAO extends GenericDAO<ApiKey> {
 
   /**

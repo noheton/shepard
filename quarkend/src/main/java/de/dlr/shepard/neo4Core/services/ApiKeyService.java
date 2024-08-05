@@ -8,16 +8,26 @@ import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@RequestScoped
 public class ApiKeyService {
 
-  private ApiKeyDAO apiKeyDAO = new ApiKeyDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private PKIHelper pkiHelper = new PKIHelper();
+  @Inject
+  ApiKeyDAO apiKeyDAO;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  PKIHelper pkiHelper;
 
   /**
    * Searches the neo4j database for all ApiKeys associated with a given user.
@@ -56,7 +66,7 @@ public class ApiKeyService {
 
     var toCreate = new ApiKey();
     toCreate.setBelongsTo(user);
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setName(apiKey.getName());
 
     var createdApiKey = apiKeyDAO.createOrUpdate(toCreate);
@@ -87,7 +97,7 @@ public class ApiKeyService {
    */
   private String generateJws(ApiKey apiKey, String baseUri) {
     pkiHelper.init();
-    var currentDate = dateHelper.getDate();
+    var currentDate = DateHelper.getDate();
     var jws = Jwts.builder()
       .setSubject(apiKey.getBelongsTo().getUsername())
       .setIssuer(baseUri)
