@@ -82,7 +82,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       "The timeseries list contains illegal characters: " + String.join(", ", errors)
     );
     var toCreate = new TimeseriesReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(timeseriesReference.getName());
@@ -118,7 +118,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 
     var old = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
     old.setDeleted(true);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setUpdatedBy(user);
 
     timeseriesReferenceDAO.createOrUpdate(old);

@@ -46,7 +46,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
 
     var toCreate = new URIReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(uriReference.getName());
@@ -66,7 +66,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 
     var old = uRIReferenceDAO.findByShepardId(uriReferenceShepardId);
     old.setDeleted(true);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setUpdatedBy(user);
 
     uRIReferenceDAO.createOrUpdate(old);

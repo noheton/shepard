@@ -57,7 +57,7 @@ public class FileService {
       .withChunkSizeBytes(CHUNK_SIZE_BYTES)
       .uploadFromStream(fileName, dis)
       .toHexString();
-    var file = new ShepardFile(dateHelper.getDate(), fileName, DatatypeConverter.printHexBinary(md.digest()));
+    var file = new ShepardFile(DateHelper.getDate(), fileName, DatatypeConverter.printHexBinary(md.digest()));
     var doc = toDocument(file).append(FILEID_ATTR, fileMongoId);
     collection.insertOne(doc);
     file.setOid(doc.getObjectId(ID_ATTR).toHexString());

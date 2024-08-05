@@ -72,14 +72,14 @@ public class ExportServiceTest extends BaseTestCase {
   private final DataObject dataObject = new DataObject() {
     {
       setShepardId(25L);
-      setCreatedAt(dateHelper.getDate());
+      setCreatedAt(DateHelper.getDate());
       setCreatedBy(user);
     }
   };
   private final Collection collection = new Collection() {
     {
       setShepardId(15L);
-      setCreatedAt(dateHelper.getDate());
+      setCreatedAt(DateHelper.getDate());
       setCreatedBy(user);
     }
   };
@@ -212,7 +212,7 @@ public class ExportServiceTest extends BaseTestCase {
   private <T extends BasicReference> T hydrateReferenceMock(T reference, String type) {
     when(reference.getShepardId()).thenReturn(35L);
     when(reference.getCreatedBy()).thenReturn(user);
-    when(reference.getCreatedAt()).thenReturn(dateHelper.getDate());
+    when(reference.getCreatedAt()).thenReturn(DateHelper.getDate());
     when(reference.getDataObject()).thenReturn(dataObject);
     when(reference.getType()).thenReturn(type);
     return reference;

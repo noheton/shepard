@@ -118,7 +118,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
     };
 
     when(structuredDataService.createStructuredDataContainer()).thenReturn("collection");
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find("bob")).thenReturn(user);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
@@ -143,7 +143,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
     when(structuredDataService.deleteStructuredDataContainer("XYZ")).thenReturn(true);
@@ -158,7 +158,7 @@ public class StructuredDataContainerServiceTest extends BaseTestCase {
     var date = new Date(23);
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(null);
 
     var actual = service.deleteContainer(1L, "bob");

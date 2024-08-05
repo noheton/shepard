@@ -129,7 +129,7 @@ public class CollectionServiceTest extends BaseTestCase {
     };
     createdWithShepardId.setVersion(nullVersion);
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(versionDAO.createOrUpdate(any())).thenReturn(nullVersion);
@@ -180,7 +180,7 @@ public class CollectionServiceTest extends BaseTestCase {
 
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
-    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(DateHelper.getDate()).thenReturn(updateDate);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
     var actual = service.updateCollectionByShepardId(old.getShepardId(), input, updateUser.getUsername());
@@ -196,7 +196,7 @@ public class CollectionServiceTest extends BaseTestCase {
     collection.setShepardId(15L);
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.deleteCollectionByShepardId(collection.getShepardId(), user, date)).thenReturn(true);
 
     var result = service.deleteCollectionByShepardId(collection.getShepardId(), user.getUsername());

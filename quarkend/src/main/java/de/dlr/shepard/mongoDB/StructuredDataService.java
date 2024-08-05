@@ -49,7 +49,7 @@ public class StructuredDataService {
 
     // Add meta data
     var newName = payload.getStructuredData() != null ? payload.getStructuredData().getName() : null;
-    var structuredData = new StructuredData(newName, dateHelper.getDate());
+    var structuredData = new StructuredData(newName, DateHelper.getDate());
     toInsert.append(META_OBJECT, structuredData);
     try {
       collection.insertOne(toInsert);

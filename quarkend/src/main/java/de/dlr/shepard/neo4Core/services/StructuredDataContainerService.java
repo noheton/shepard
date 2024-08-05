@@ -37,7 +37,7 @@ public class StructuredDataContainerService
     var user = userDAO.find(username);
     String mongoid = structuredDataService.createStructuredDataContainer();
     var toCreate = new StructuredDataContainer();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setMongoId(mongoid);
     toCreate.setName(structuredDataContainerIO.getName());
@@ -93,7 +93,7 @@ public class StructuredDataContainerService
     }
     String mongoid = structuredDataContainer.getMongoId();
     structuredDataContainer.setDeleted(true);
-    structuredDataContainer.setUpdatedAt(dateHelper.getDate());
+    structuredDataContainer.setUpdatedAt(DateHelper.getDate());
     structuredDataContainer.setUpdatedBy(user);
     structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
     return structuredDataService.deleteStructuredDataContainer(mongoid);

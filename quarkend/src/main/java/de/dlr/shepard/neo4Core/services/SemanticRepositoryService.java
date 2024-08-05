@@ -42,7 +42,7 @@ public class SemanticRepositoryService {
 
     validateRepository(repositoryIO);
 
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setName(repositoryIO.getName());
     toCreate.setType(repositoryIO.getType());
@@ -59,7 +59,7 @@ public class SemanticRepositoryService {
       return false;
     }
     repositoy.setDeleted(true);
-    repositoy.setUpdatedAt(dateHelper.getDate());
+    repositoy.setUpdatedAt(DateHelper.getDate());
     repositoy.setUpdatedBy(user);
     semanticRepositoryDAO.createOrUpdate(repositoy);
     return true;

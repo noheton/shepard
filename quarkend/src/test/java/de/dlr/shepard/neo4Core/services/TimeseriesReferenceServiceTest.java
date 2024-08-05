@@ -197,7 +197,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
     ).thenReturn(timeseries);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
@@ -274,7 +274,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
     ).thenReturn(null);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     TimeseriesReference actual = service.createReferenceByShepardId(
       dataObject.getShepardId(),
@@ -365,7 +365,7 @@ public class TimeseriesReferenceServiceTest extends BaseTestCase {
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     var actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
     verify(dao).createOrUpdate(expected);
     assertTrue(actual);

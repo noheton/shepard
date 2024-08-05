@@ -73,7 +73,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 
     when(userDAO.find("creator")).thenReturn(creator);
     when(userDAO.find("user")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userGroupDAO.createOrUpdate(toCreate)).thenReturn(created);
     when(permissionsDAO.createOrUpdate(any(Permissions.class))).thenReturn(null);
 
@@ -132,7 +132,7 @@ public class UserGroupServiceTest extends BaseTestCase {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(oldGroup);
     when(userDAO.find("updater")).thenReturn(updateUser);
-    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(DateHelper.getDate()).thenReturn(updateDate);
     when(userGroupDAO.createOrUpdate(oldGroup)).thenReturn(newGroup);
 
     var actual = service.updateUserGroup(input.getId(), input, "updater");

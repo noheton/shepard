@@ -129,7 +129,7 @@ public class SubscriptionServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
     var actual = service.createSubscription(input, "bob");

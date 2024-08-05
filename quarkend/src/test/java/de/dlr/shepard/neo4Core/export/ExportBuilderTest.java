@@ -101,7 +101,7 @@ public class ExportBuilderTest extends BaseTestCase {
         setShepardId(2L);
         setName("Collection Name");
         setDescription("Desc");
-        setCreatedAt(dateHelper.getDate());
+        setCreatedAt(DateHelper.getDate());
         setCreatedBy(user);
       }
     };
@@ -114,8 +114,8 @@ public class ExportBuilderTest extends BaseTestCase {
         setId(3L);
         setShepardId(3L);
         setName("DataObject Name");
-        setCreatedAt(dateHelper.getDate());
-        setUpdatedAt(dateHelper.getDate());
+        setCreatedAt(DateHelper.getDate());
+        setUpdatedAt(DateHelper.getDate());
         setCollection(collection);
       }
     };
@@ -128,7 +128,7 @@ public class ExportBuilderTest extends BaseTestCase {
         setId(4L);
         setShepardId(4L);
         setName("Reference Name");
-        setCreatedAt(dateHelper.getDate());
+        setCreatedAt(DateHelper.getDate());
         setCreatedBy(user);
         setDataObject(dataObject);
       }

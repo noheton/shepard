@@ -224,7 +224,7 @@ public class DataObjectServiceTest extends BaseTestCase {
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
@@ -252,7 +252,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(input.getParentId())).thenReturn(null);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -275,7 +275,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(input.getPredecessorIds()[0])).thenReturn(null);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -301,7 +301,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -327,7 +327,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(input.getPredecessorIds()[0])).thenReturn(predecessor);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -355,7 +355,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -383,7 +383,7 @@ public class DataObjectServiceTest extends BaseTestCase {
       }
     };
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
     assertThrows(InvalidBodyException.class, () ->
@@ -449,7 +449,7 @@ public class DataObjectServiceTest extends BaseTestCase {
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
     when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
-    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(DateHelper.getDate()).thenReturn(updateDate);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
     var actual = service.updateDataObjectByShepardId(old.getShepardId(), input, updateUser.getUsername());
@@ -479,7 +479,7 @@ public class DataObjectServiceTest extends BaseTestCase {
 
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
 
     assertThrows(InvalidBodyException.class, () ->
       service.updateDataObjectByShepardId(old.getShepardId(), input, user.getUsername())
@@ -495,7 +495,7 @@ public class DataObjectServiceTest extends BaseTestCase {
     dataObject.setShepardId(15L);
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(dao.deleteDataObjectByShepardId(dataObject.getShepardId(), user, date)).thenReturn(true);
 

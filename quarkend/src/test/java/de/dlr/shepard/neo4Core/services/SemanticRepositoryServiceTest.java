@@ -135,7 +135,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryConnector.healthCheck()).thenReturn(true);
     when(semanticRepositoryDAO.createOrUpdate(toCreate)).thenReturn(expected);
 
@@ -156,7 +156,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
 
     assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
   }
@@ -174,7 +174,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryConnector.healthCheck()).thenReturn(false);
 
     assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
@@ -192,7 +192,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
     expected.setUpdatedAt(date);
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(repository);
 
     var actual = service.deleteRepository(1L, "bob");
@@ -206,7 +206,7 @@ public class SemanticRepositoryServiceTest extends BaseTestCase {
     var date = new Date();
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(null);
 
     var actual = service.deleteRepository(1L, "bob");

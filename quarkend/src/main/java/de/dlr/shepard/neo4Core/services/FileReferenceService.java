@@ -62,7 +62,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     var container = containerDAO.findLightByNeo4jId(fileReference.getFileContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new FileReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(fileReference.getName());
@@ -92,7 +92,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     var user = userDAO.find(username);
     fileReference.setDeleted(true);
     fileReference.setUpdatedBy(user);
-    fileReference.setUpdatedAt(dateHelper.getDate());
+    fileReference.setUpdatedAt(DateHelper.getDate());
     fileReferenceDAO.createOrUpdate(fileReference);
     return true;
   }

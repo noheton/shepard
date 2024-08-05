@@ -119,7 +119,7 @@ public class FileContainerServiceTest extends BaseTestCase {
     };
 
     when(fileService.createFileContainer()).thenReturn("collection");
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find("bob")).thenReturn(user);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
@@ -144,7 +144,7 @@ public class FileContainerServiceTest extends BaseTestCase {
     };
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
     when(fileService.deleteFileContainer("XYZ")).thenReturn(true);
@@ -159,7 +159,7 @@ public class FileContainerServiceTest extends BaseTestCase {
     var date = new Date(23);
 
     when(userDAO.find("bob")).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(null);
 
     var actual = service.deleteContainer(1L, "bob");
@@ -191,9 +191,9 @@ public class FileContainerServiceTest extends BaseTestCase {
     var file = new ShepardFile("oid", new Date(), "name", "md5");
 
     var date = new Date();
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-    var dateStr = sdf.format(dateHelper.getDate());
+    var dateStr = sdf.format(DateHelper.getDate());
     var fileName = "shepard-file-" + dateStr;
 
     var updated = new FileContainer(1L);
@@ -215,9 +215,9 @@ public class FileContainerServiceTest extends BaseTestCase {
     var file = new ShepardFile("oid", new Date(), "name", "md5");
 
     var date = new Date();
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-    var dateStr = sdf.format(dateHelper.getDate());
+    var dateStr = sdf.format(DateHelper.getDate());
     var fileName = "shepard-file-" + dateStr;
 
     var updated = new FileContainer(1L);

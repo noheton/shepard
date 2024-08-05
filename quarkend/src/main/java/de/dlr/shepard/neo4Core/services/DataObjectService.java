@@ -54,7 +54,7 @@ public class DataObjectService {
     toCreate.setCollection(collection);
     toCreate.setParent(parent);
     toCreate.setPredecessors(predecessors);
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
@@ -123,7 +123,7 @@ public class DataObjectService {
     old.setName(dataObject.getName());
     old.setParent(parent);
     old.setPredecessors(predecessors);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setUpdatedBy(user);
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
@@ -138,7 +138,7 @@ public class DataObjectService {
    * @return a boolean to identify if the DataObject was successfully removed
    */
   public boolean deleteDataObjectByShepardId(long dataObjectShepardId, String username) {
-    Date date = dateHelper.getDate();
+    Date date = DateHelper.getDate();
     User user = userDAO.find(username);
     boolean result = dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date);
     return result;

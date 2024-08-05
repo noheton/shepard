@@ -31,11 +31,11 @@ public class VersionService {
     var user = userDAO.find(username);
     Collection collection = collectionService.getCollectionByShepardId(collectionId, null);
     Collection collectionCopy = new Collection(collection);
-    collectionCopy.setCreatedAt(dateHelper.getDate());
+    collectionCopy.setCreatedAt(DateHelper.getDate());
     collectionCopy.setCreatedBy(user);
 
     Version newVersion = new Version();
-    newVersion.setCreatedAt(dateHelper.getDate());
+    newVersion.setCreatedAt(DateHelper.getDate());
     newVersion.setCreatedBy(user);
     newVersion.setDescription(version.getDescription());
     newVersion.setName(version.getName());

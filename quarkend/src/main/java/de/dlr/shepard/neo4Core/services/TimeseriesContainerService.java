@@ -41,7 +41,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
     var user = userDAO.find(username);
 
     var toCreate = new TimeseriesContainer();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDatabase(timeseriesService.createDatabase());
     toCreate.setName(timeseriesContainer.getName());
@@ -98,7 +98,7 @@ public class TimeseriesContainerService implements IContainerService<TimeseriesC
     }
 
     timeseriesContainer.setDeleted(true);
-    timeseriesContainer.setUpdatedAt(dateHelper.getDate());
+    timeseriesContainer.setUpdatedAt(DateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
     timeseriesService.deleteDatabase(timeseriesContainer.getDatabase());

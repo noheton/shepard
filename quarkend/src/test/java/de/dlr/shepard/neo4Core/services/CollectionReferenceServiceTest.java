@@ -146,7 +146,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
     when(collectionDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     CollectionReference actual = service.createReferenceByShepardId(
       dataObject.getShepardId(),
@@ -209,7 +209,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
     when(collectionDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(null);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     var ex = assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );
@@ -273,7 +273,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
     when(collectionDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     var ex = assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );
@@ -297,7 +297,7 @@ public class CollectionReferenceServiceTest extends BaseTestCase {
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 
     verify(dao).createOrUpdate(expected);

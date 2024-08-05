@@ -32,7 +32,7 @@ public class SubscriptionService {
 
     var toCreate = new Subscription();
     toCreate.setCallbackURL(subscription.getCallbackURL());
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setName(subscription.getName());
     toCreate.setRequestMethod(subscription.getRequestMethod());

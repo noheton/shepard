@@ -77,7 +77,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     Document toInsert = Document.parse(payload);
     toInsert.append("_meta", data);
 
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(database.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {
@@ -108,7 +108,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     Document toInsert = Document.parse(payloadCleaned);
     toInsert.append("_meta", data);
 
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(database.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {
@@ -138,7 +138,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     Document toInsert = Document.parse(payload);
     toInsert.append("_meta", data);
 
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(database.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {

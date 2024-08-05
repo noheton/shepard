@@ -58,7 +58,7 @@ public class BasicReferenceService {
 
     var basicReference = basicReferenceDAO.findByShepardId(basicReferenceShepardId);
     basicReference.setDeleted(true);
-    basicReference.setUpdatedAt(dateHelper.getDate());
+    basicReference.setUpdatedAt(DateHelper.getDate());
     basicReference.setUpdatedBy(user);
 
     basicReferenceDAO.createOrUpdate(basicReference);

@@ -144,7 +144,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
     when(dataObjectDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     DataObjectReference actual = service.createReferenceByShepardId(
       dataObject.getShepardId(),
@@ -212,7 +212,7 @@ public class DataObjectReferenceServiceTest extends BaseTestCase {
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
     verify(dao).createOrUpdate(expected);
     assertTrue(actual);

@@ -61,7 +61,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     }
 
     CollectionReference toCreate = new CollectionReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(collectionReference.getName());
@@ -81,7 +81,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     User user = userDAO.find(username);
     CollectionReference old = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
     old.setDeleted(true);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setUpdatedBy(user);
     collectionReferenceDAO.createOrUpdate(old);
     return true;

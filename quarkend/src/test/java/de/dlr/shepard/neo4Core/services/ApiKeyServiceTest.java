@@ -137,7 +137,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
       }
     };
 
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(userDAO.find("bob")).thenReturn(user);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(signed)).thenReturn(signed);

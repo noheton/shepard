@@ -140,7 +140,7 @@ public class FileServiceTest extends BaseTestCase {
     String mongoid = "mongoid";
     Date date = new Date();
 
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(database.getCollection(mongoid)).thenReturn(collection);
     when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
     when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);

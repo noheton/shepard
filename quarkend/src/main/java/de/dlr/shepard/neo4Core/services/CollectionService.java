@@ -33,7 +33,7 @@ public class CollectionService {
    * @return the created collection
    */
   public Collection createCollection(CollectionIO collection, String username) {
-    Date date = dateHelper.getDate();
+    Date date = DateHelper.getDate();
     var user = userDAO.find(username);
     var toCreate = new Collection();
     toCreate.setAttributes(collection.getAttributes());
@@ -101,7 +101,7 @@ public class CollectionService {
   public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection, String username) {
     Collection old = collectionDAO.findByShepardId(shepardId);
     old.setUpdatedBy(userDAO.find(username));
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setAttributes(collection.getAttributes());
     old.setDescription(collection.getDescription());
     old.setName(collection.getName());
@@ -118,7 +118,7 @@ public class CollectionService {
    * @return a boolean to determine if Collection was successfully deleted
    */
   public boolean deleteCollectionByShepardId(long shepardId, String username) {
-    var date = dateHelper.getDate();
+    var date = DateHelper.getDate();
     var user = userDAO.find(username);
     var result = collectionDAO.deleteCollectionByShepardId(shepardId, user, date);
     return result;

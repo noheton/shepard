@@ -11,7 +11,7 @@ public class DateHelperTest extends BaseTestCase {
 
   @Test
   public void getDateTest() {
-    var actual = helper.getDate();
+    var actual = DateHelper.getDate();
     assertNotNull(actual);
   }
 }

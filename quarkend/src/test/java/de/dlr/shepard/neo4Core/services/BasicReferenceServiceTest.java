@@ -91,7 +91,7 @@ public class BasicReferenceServiceTest extends BaseTestCase {
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
 
     verify(dao).createOrUpdate(expected);

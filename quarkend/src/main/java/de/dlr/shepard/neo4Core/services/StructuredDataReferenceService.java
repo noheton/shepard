@@ -45,7 +45,7 @@ public class StructuredDataReferenceService
     var container = containerDAO.findLightByNeo4jId(structuredDataReference.getStructuredDataContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new StructuredDataReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(structuredDataReference.getName());
@@ -109,7 +109,7 @@ public class StructuredDataReferenceService
     var user = userDAO.find(username);
     structuredDataReference.setDeleted(true);
     structuredDataReference.setUpdatedBy(user);
-    structuredDataReference.setUpdatedAt(dateHelper.getDate());
+    structuredDataReference.setUpdatedAt(DateHelper.getDate());
     structuredDataReferenceDAO.createOrUpdate(structuredDataReference);
     return true;
   }

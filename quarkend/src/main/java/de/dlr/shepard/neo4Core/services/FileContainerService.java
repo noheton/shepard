@@ -37,7 +37,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   public FileContainer createContainer(FileContainerIO fileContainerIO, String username) {
     var user = userDAO.find(username);
     var toCreate = new FileContainer();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setMongoId(fileService.createFileContainer());
     toCreate.setName(fileContainerIO.getName());
@@ -92,7 +92,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
     }
     String mongoid = fileContainer.getMongoId();
     fileContainer.setDeleted(true);
-    fileContainer.setUpdatedAt(dateHelper.getDate());
+    fileContainer.setUpdatedAt(DateHelper.getDate());
     fileContainer.setUpdatedBy(user);
     fileContainerDAO.createOrUpdate(fileContainer);
     return fileService.deleteFileContainer(mongoid);
@@ -131,7 +131,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
     }
     if (fileName == null || fileName.isBlank()) {
       var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-      var dateStr = sdf.format(dateHelper.getDate());
+      var dateStr = sdf.format(DateHelper.getDate());
       fileName = "shepard-file-" + dateStr;
     }
     var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);

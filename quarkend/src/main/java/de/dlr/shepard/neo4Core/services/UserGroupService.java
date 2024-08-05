@@ -33,7 +33,7 @@ public class UserGroupService {
     var toCreate = new UserGroup();
     toCreate.setName(userGroup.getName());
     toCreate.setCreatedBy(user);
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setUsers(fetchUsers(userGroup.getUsernames()));
     var created = userGroupDAO.createOrUpdate(toCreate);
     permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
@@ -44,7 +44,7 @@ public class UserGroupService {
     var user = userDAO.find(username);
     var old = userGroupDAO.findByNeo4jId(id);
     old.setUpdatedBy(user);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setName(userGroup.getName());
     old.setUsers(fetchUsers(userGroup.getUsernames()));
     var updated = userGroupDAO.createOrUpdate(old);

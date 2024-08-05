@@ -164,7 +164,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     FileReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
@@ -225,7 +225,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(null);
     when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
     var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
@@ -289,7 +289,7 @@ public class FileReferenceServiceTest extends BaseTestCase {
     expected.setUpdatedBy(user);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(dateHelper.getDate()).thenReturn(date);
+    when(DateHelper.getDate()).thenReturn(date);
     boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
     verify(dao).createOrUpdate(expected);
     assertTrue(actual);

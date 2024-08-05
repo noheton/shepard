@@ -57,7 +57,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
       );
     }
     DataObjectReference toCreate = new DataObjectReference();
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(DateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(dataObjectReference.getName());
@@ -76,7 +76,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     User user = userDAO.find(username);
     DataObjectReference old = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId);
     old.setDeleted(true);
-    old.setUpdatedAt(dateHelper.getDate());
+    old.setUpdatedAt(DateHelper.getDate());
     old.setUpdatedBy(user);
     dataObjectReferenceDAO.createOrUpdate(old);
     return true;
