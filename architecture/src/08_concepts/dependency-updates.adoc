@@ -2,9 +2,9 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === Dependency Updates
 
-Dependencies of shepard are updated regularily. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
+Dependencies of shepard are updated regularly. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
 
-The developer team is responsible of regularily handling the pull requests opened by renovate. This should happen once a week, except for weeks where new versions are released. As a weekly reminder, weekly update tickets are part of the sprints.
+The developer team is responsible of regularly handling the pull requests opened by renovate. This should happen once a week, except for weeks where new versions are released. As a weekly reminder, weekly update tickets are part of the sprints.
 
 ==== Performing Updates
 
@@ -67,7 +67,7 @@ Afterwards the merge request can be closed.
 |not compatible with vue v2
 
 |bootstrap<5
-|v5 has no vue intrgration
+|v5 has no vue integration
 
 |portal-vue<3
 |needed for bootstrap-vue
