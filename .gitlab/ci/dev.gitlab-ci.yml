@@ -21,7 +21,6 @@ include:
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: main
-      artifact_job_name: build-backend
   - local: .gitlab/ci/jobs/build-and-upload-clients-dev.yml
   - local: .gitlab/ci/jobs/upload-docker-dev.yml
     inputs:
