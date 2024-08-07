@@ -22,7 +22,7 @@
       "groupName": "infrastructure dependencies"
     },
     {
-      "matchFileNames": ["quarkend/**"],
+      "matchFileNames": ["backend/**"],
       "matchManagers": ["dockerfile"],
       "groupName": "quarkus docker"
     },
