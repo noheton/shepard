@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class StructuredDataPayload {
 
-	private StructuredData structuredData;
+  private StructuredData structuredData;
 
-	@Size(min = 2)
-	private String payload;
-
+  @Size(min = 2)
+  private String payload;
 }

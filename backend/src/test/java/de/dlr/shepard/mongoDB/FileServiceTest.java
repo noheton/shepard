@@ -12,24 +12,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.UUID;
-
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -39,283 +21,310 @@ import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.model.Filters;
-
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
 import jakarta.xml.bind.DatatypeConverter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.UUID;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class FileServiceTest extends BaseTestCase {
 
-	@Mock
-	private MongoDBConnector mongoDBConnector;
-	@Mock
-	private DateHelper dateHelper;
-	@Mock
-	private UUIDHelper uuidhelper;
-	@InjectMocks
-	private FileService fileService;
+  @Mock
+  private MongoDBConnector mongoDBConnector;
 
-	@Mock
-	private MongoCollection<Document> collection;
-	@Mock
-	private MongoDatabase database;
-	@Mock
-	private GridFSBucket gridBucket;
+  @Mock
+  private DateHelper dateHelper;
 
-	@BeforeEach
-	public void setUpConnector() {
-		when(mongoDBConnector.getDatabase()).thenReturn(database);
-		when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
-	}
+  @Mock
+  private UUIDHelper uuidhelper;
 
-	@Test
-	public void createFileContainerTest() {
-		var uuid = UUID.randomUUID();
-		when(uuidhelper.getUUID()).thenReturn(uuid);
-		var result = fileService.createFileContainer();
-		var expectedUUID = "FileContainer" + uuid.toString();
-		assertEquals(expectedUUID, result);
-		verify(mongoDBConnector).createCollection(expectedUUID);
-	}
+  @InjectMocks
+  private FileService fileService;
 
-	@Test
-	public void getExistingFileTest() {
-		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
-		ObjectId fileoid = new ObjectId("60b73212cfa45d2d5baa795d");
-		String name = "name";
-		String md5 = "md5";
-		Date date = new Date();
-		Document file = mock(Document.class);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = mock(FindIterable.class);
+  @Mock
+  private MongoCollection<Document> collection;
 
-		when(database.getCollection(containerId)).thenReturn(collection);
-		when(collection.find(Filters.eq("_id", fileoid))).thenReturn(collectionReturn);
-		when(collectionReturn.first()).thenReturn(file);
-		when(file.getObjectId("_id")).thenReturn(fileoid);
-		when(file.getString("name")).thenReturn(name);
-		when(file.getDate("createdAt")).thenReturn(date);
-		when(file.getString("md5")).thenReturn(md5);
+  @Mock
+  private MongoDatabase database;
 
-		var expected = new ShepardFile(fileoid.toHexString(), date, name, md5);
-		var result = fileService.getFile(containerId, fileoid.toHexString());
-		assertEquals(expected, result);
-	}
+  @Mock
+  private GridFSBucket gridBucket;
 
-	@Test
-	public void getNonExistingContainerFileTest() {
-		String nonExistingContainerId = "FileContainer123";
-		String fileoid = "60b73212cfa45d2d5baa795d";
+  @BeforeEach
+  public void setUpConnector() {
+    when(mongoDBConnector.getDatabase()).thenReturn(database);
+    when(mongoDBConnector.createBucket()).thenReturn(gridBucket);
+  }
 
-		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+  @Test
+  public void createFileContainerTest() {
+    var uuid = UUID.randomUUID();
+    when(uuidhelper.getUUID()).thenReturn(uuid);
+    var result = fileService.createFileContainer();
+    var expectedUUID = "FileContainer" + uuid.toString();
+    assertEquals(expectedUUID, result);
+    verify(mongoDBConnector).createCollection(expectedUUID);
+  }
 
-		var result = fileService.getFile(nonExistingContainerId, fileoid);
-		assertNull(result);
-	}
+  @Test
+  public void getExistingFileTest() {
+    String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
+    ObjectId fileoid = new ObjectId("60b73212cfa45d2d5baa795d");
+    String name = "name";
+    String md5 = "md5";
+    Date date = new Date();
+    Document file = mock(Document.class);
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
 
-	@Test
-	public void getNonExistingFileTest() {
-		String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
-		String nonExistingFileoid = "60b73212cfa45d2d5baa795b";
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = mock(FindIterable.class);
+    when(database.getCollection(containerId)).thenReturn(collection);
+    when(collection.find(Filters.eq("_id", fileoid))).thenReturn(collectionReturn);
+    when(collectionReturn.first()).thenReturn(file);
+    when(file.getObjectId("_id")).thenReturn(fileoid);
+    when(file.getString("name")).thenReturn(name);
+    when(file.getDate("createdAt")).thenReturn(date);
+    when(file.getString("md5")).thenReturn(md5);
 
-		when(database.getCollection(containerId)).thenReturn(collection);
-		when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
-		when(collectionReturn.first()).thenReturn(null);
-		var result = fileService.getFile(containerId, nonExistingFileoid);
-		assertNull(result);
-	}
+    var expected = new ShepardFile(fileoid.toHexString(), date, name, md5);
+    var result = fileService.getFile(containerId, fileoid.toHexString());
+    assertEquals(expected, result);
+  }
 
-	@Test
-	public void createFileTest() throws NoSuchAlgorithmException, IOException {
-		ObjectId oid = new ObjectId();
-		ObjectId moid = new ObjectId();
-		String fileName = "fileName";
-		String md5 = DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest());
-		InputStream inputStream = mock(InputStream.class);
-		String mongoid = "mongoid";
-		Date date = new Date();
+  @Test
+  public void getNonExistingContainerFileTest() {
+    String nonExistingContainerId = "FileContainer123";
+    String fileoid = "60b73212cfa45d2d5baa795d";
 
-		when(dateHelper.getDate()).thenReturn(date);
-		when(database.getCollection(mongoid)).thenReturn(collection);
-		when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
-		when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
-		doAnswer(new Answer<Void>() {
-			@Override
-			public Void answer(InvocationOnMock invocation) throws Throwable {
-				Object[] args = invocation.getArguments();
-				((Document) args[0]).append("_id", moid);
-				return null;
-			}
-		}).when(collection).insertOne(any(Document.class));
+    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
 
-		var newFile = new Document("_id", moid).append("name", fileName).append("FileMongoId", oid.toHexString())
-				.append("createdAt", date).append("md5", md5);
-		var expected = new ShepardFile(moid.toHexString(), date, fileName, md5);
-		var result = fileService.createFile(mongoid, fileName, inputStream);
-		assertEquals(expected, result);
-		verify(collection).insertOne(newFile);
-	}
+    var result = fileService.getFile(nonExistingContainerId, fileoid);
+    assertNull(result);
+  }
 
-	@Test
-	public void createNonExistingMongoidFileTest() {
-		String fileName = "fileName";
-		InputStream inputStream = mock(InputStream.class);
-		String nonExistingMongoid = "mongoid";
+  @Test
+  public void getNonExistingFileTest() {
+    String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
+    String nonExistingFileoid = "60b73212cfa45d2d5baa795b";
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
 
-		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoid);
+    when(database.getCollection(containerId)).thenReturn(collection);
+    when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
+    when(collectionReturn.first()).thenReturn(null);
+    var result = fileService.getFile(containerId, nonExistingFileoid);
+    assertNull(result);
+  }
 
-		var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
-		assertNull(result);
-	}
+  @Test
+  public void createFileTest() throws NoSuchAlgorithmException, IOException {
+    ObjectId oid = new ObjectId();
+    ObjectId moid = new ObjectId();
+    String fileName = "fileName";
+    String md5 = DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest());
+    InputStream inputStream = mock(InputStream.class);
+    String mongoid = "mongoid";
+    Date date = new Date();
 
-	@Test
-	public void deleteExistingFileContainerTest() {
-		String existingMongoOid = "60b73212cfa45d2d5baa795d";
-		ObjectId oid = new ObjectId();
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = mock(FindIterable.class);
-		Document doc = mock(Document.class);
-		mockIterable(collectionReturn, doc);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(database.getCollection(mongoid)).thenReturn(collection);
+    when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
+    when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          Object[] args = invocation.getArguments();
+          ((Document) args[0]).append("_id", moid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
 
-		when(database.getCollection(existingMongoOid)).thenReturn(collection);
-		when(collection.find()).thenReturn(collectionReturn);
-		when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
+    var newFile = new Document("_id", moid)
+      .append("name", fileName)
+      .append("FileMongoId", oid.toHexString())
+      .append("createdAt", date)
+      .append("md5", md5);
+    var expected = new ShepardFile(moid.toHexString(), date, fileName, md5);
+    var result = fileService.createFile(mongoid, fileName, inputStream);
+    assertEquals(expected, result);
+    verify(collection).insertOne(newFile);
+  }
 
-		var result = fileService.deleteFileContainer(existingMongoOid);
-		assertTrue(result);
-		verify(gridBucket).delete(oid);
-	}
+  @Test
+  public void createNonExistingMongoidFileTest() {
+    String fileName = "fileName";
+    InputStream inputStream = mock(InputStream.class);
+    String nonExistingMongoid = "mongoid";
 
-	@Test
-	public void deleteNonExistingFileContainerTest() {
-		String nonExistingMongoOid = "60b73212cfa45d2d5baa795d";
+    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoid);
 
-		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoOid);
+    var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
+    assertNull(result);
+  }
 
-		var result = fileService.deleteFileContainer(nonExistingMongoOid);
-		assertFalse(result);
-	}
+  @Test
+  public void deleteExistingFileContainerTest() {
+    String existingMongoOid = "60b73212cfa45d2d5baa795d";
+    ObjectId oid = new ObjectId();
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
+    Document doc = mock(Document.class);
+    mockIterable(collectionReturn, doc);
 
-	@Test
-	public void getPayloadTest() {
-		String containerId = "4";
-		String fileoid = "60b73212cfa45d2d5baa795d";
-		String fileName = "FileName";
-		Long fileSize = 123L;
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> collectionReturn = mock(FindIterable.class);
-		Document doc = mock(Document.class);
-		ObjectId oid = new ObjectId();
-		GridFSDownloadStream stream = mock(GridFSDownloadStream.class);
-		GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
-		GridFSFile gridFsFile = mock(GridFSFile.class);
+    when(database.getCollection(existingMongoOid)).thenReturn(collection);
+    when(collection.find()).thenReturn(collectionReturn);
+    when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 
-		when(database.getCollection(containerId)).thenReturn(collection);
-		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
-		when(collectionReturn.first()).thenReturn(doc);
-		when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
-		when(doc.getString("name")).thenReturn(fileName);
-		when(gridBucket.openDownloadStream(oid)).thenReturn(stream);
-		when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
-		when(filesCollectionReturn.first()).thenReturn(gridFsFile);
-		when(gridFsFile.getLength()).thenReturn(fileSize);
+    var result = fileService.deleteFileContainer(existingMongoOid);
+    assertTrue(result);
+    verify(gridBucket).delete(oid);
+  }
 
-		var expected = new NamedInputStream(fileoid, stream, fileName, fileSize);
-		var result = fileService.getPayload(containerId, fileoid);
-		assertEquals(expected, result);
-	}
+  @Test
+  public void deleteNonExistingFileContainerTest() {
+    String nonExistingMongoOid = "60b73212cfa45d2d5baa795d";
 
-	@Test
-	public void getPayloadNonExistingContainerIdTest() {
-		String nonExistingContainerId = "4";
-		String fileoid = "60b73212cfa45d2d5baa795d";
+    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoOid);
 
-		doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+    var result = fileService.deleteFileContainer(nonExistingMongoOid);
+    assertFalse(result);
+  }
 
-		var result = fileService.getPayload(nonExistingContainerId, fileoid);
-		assertNull(result);
-	}
+  @Test
+  public void getPayloadTest() {
+    String containerId = "4";
+    String fileoid = "60b73212cfa45d2d5baa795d";
+    String fileName = "FileName";
+    Long fileSize = 123L;
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
+    Document doc = mock(Document.class);
+    ObjectId oid = new ObjectId();
+    GridFSDownloadStream stream = mock(GridFSDownloadStream.class);
+    GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+    GridFSFile gridFsFile = mock(GridFSFile.class);
 
-	@Test
-	public void getPayloadNonExistingFileOidTest() {
-		String containerId = "4";
-		String fileoid = "60b73212cfa45d2d5baa795d";
+    when(database.getCollection(containerId)).thenReturn(collection);
+    when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
+    when(collectionReturn.first()).thenReturn(doc);
+    when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
+    when(doc.getString("name")).thenReturn(fileName);
+    when(gridBucket.openDownloadStream(oid)).thenReturn(stream);
+    when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+    when(filesCollectionReturn.first()).thenReturn(gridFsFile);
+    when(gridFsFile.getLength()).thenReturn(fileSize);
 
-		when(database.getCollection(containerId)).thenReturn(collection);
-		@SuppressWarnings("unchecked")
-		FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
-		when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
-		when(emptyCollectionReturn.first()).thenReturn(null);
+    var expected = new NamedInputStream(fileoid, stream, fileName, fileSize);
+    var result = fileService.getPayload(containerId, fileoid);
+    assertEquals(expected, result);
+  }
 
-		var result = fileService.getPayload(containerId, fileoid);
-		assertNull(result);
-	}
+  @Test
+  public void getPayloadNonExistingContainerIdTest() {
+    String nonExistingContainerId = "4";
+    String fileoid = "60b73212cfa45d2d5baa795d";
 
-	@Test
-	public void deletePayloadTest() {
-		String fileOid = "60b73212cfa45d2d5baa795a";
-		String mongoOid = "60b73212cfa45d2d5baa795b";
-		Document doc = mock(Document.class);
-		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
 
-		when(database.getCollection(mongoOid)).thenReturn(collection);
-		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
-		when(doc.getString("FileMongoId")).thenReturn(fileOid);
+    var result = fileService.getPayload(nonExistingContainerId, fileoid);
+    assertNull(result);
+  }
 
-		var result = fileService.deleteFile(mongoOid, oid.toHexString());
-		assertTrue(result);
-		verify(gridBucket).delete(new ObjectId(fileOid));
-	}
+  @Test
+  public void getPayloadNonExistingFileOidTest() {
+    String containerId = "4";
+    String fileoid = "60b73212cfa45d2d5baa795d";
 
-	@Test
-	public void deletePayloadTest_collectionIsNull() {
-		String mongoOid = "60b73212cfa45d2d5baa795b";
-		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+    when(database.getCollection(containerId)).thenReturn(collection);
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
+    when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
+    when(emptyCollectionReturn.first()).thenReturn(null);
 
-		doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
+    var result = fileService.getPayload(containerId, fileoid);
+    assertNull(result);
+  }
 
-		var result = fileService.deleteFile(mongoOid, oid.toHexString());
-		assertFalse(result);
-	}
+  @Test
+  public void deletePayloadTest() {
+    String fileOid = "60b73212cfa45d2d5baa795a";
+    String mongoOid = "60b73212cfa45d2d5baa795b";
+    Document doc = mock(Document.class);
+    ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-	@Test
-	public void deletePayloadTest_documentIsNull() {
-		String mongoOid = "60b73212cfa45d2d5baa795b";
-		ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
+    when(doc.getString("FileMongoId")).thenReturn(fileOid);
 
-		when(database.getCollection(mongoOid)).thenReturn(collection);
-		when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
+    var result = fileService.deleteFile(mongoOid, oid.toHexString());
+    assertTrue(result);
+    verify(gridBucket).delete(new ObjectId(fileOid));
+  }
 
-		var result = fileService.deleteFile(mongoOid, oid.toHexString());
-		assertTrue(result);
-	}
+  @Test
+  public void deletePayloadTest_collectionIsNull() {
+    String mongoOid = "60b73212cfa45d2d5baa795b";
+    ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-	/**
-	 * From https://www.batey.info/mocking-iterable-objects-generically.html
-	 */
-	@SuppressWarnings("unchecked")
-	private static void mockIterable(FindIterable<Document> iterable, Document... values) {
-		MongoCursor<Document> mockIterator = mock(MongoCursor.class);
-		when(iterable.iterator()).thenReturn(mockIterator);
+    doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
 
-		if (values.length == 0) {
-			when(mockIterator.hasNext()).thenReturn(false);
-		} else if (values.length == 1) {
-			when(mockIterator.hasNext()).thenReturn(true, false);
-			when(mockIterator.next()).thenReturn(values[0]);
-		} else {
-			// build boolean array for hasNext()
-			Boolean[] hasNextResponses = new Boolean[values.length];
-			for (int i = 0; i < hasNextResponses.length - 1; i++) {
-				hasNextResponses[i] = true;
-			}
-			hasNextResponses[hasNextResponses.length - 1] = false;
-			when(mockIterator.hasNext()).thenReturn(true, hasNextResponses);
-			Document[] valuesMinusTheFirst = Arrays.copyOfRange(values, 1, values.length);
-			when(mockIterator.next()).thenReturn(values[0], valuesMinusTheFirst);
-		}
-	}
+    var result = fileService.deleteFile(mongoOid, oid.toHexString());
+    assertFalse(result);
+  }
+
+  @Test
+  public void deletePayloadTest_documentIsNull() {
+    String mongoOid = "60b73212cfa45d2d5baa795b";
+    ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
+
+    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
+
+    var result = fileService.deleteFile(mongoOid, oid.toHexString());
+    assertTrue(result);
+  }
+
+  /**
+   * From https://www.batey.info/mocking-iterable-objects-generically.html
+   */
+  @SuppressWarnings("unchecked")
+  private static void mockIterable(FindIterable<Document> iterable, Document... values) {
+    MongoCursor<Document> mockIterator = mock(MongoCursor.class);
+    when(iterable.iterator()).thenReturn(mockIterator);
+
+    if (values.length == 0) {
+      when(mockIterator.hasNext()).thenReturn(false);
+    } else if (values.length == 1) {
+      when(mockIterator.hasNext()).thenReturn(true, false);
+      when(mockIterator.next()).thenReturn(values[0]);
+    } else {
+      // build boolean array for hasNext()
+      Boolean[] hasNextResponses = new Boolean[values.length];
+      for (int i = 0; i < hasNextResponses.length - 1; i++) {
+        hasNextResponses[i] = true;
+      }
+      hasNextResponses[hasNextResponses.length - 1] = false;
+      when(mockIterator.hasNext()).thenReturn(true, hasNextResponses);
+      Document[] valuesMinusTheFirst = Arrays.copyOfRange(values, 1, values.length);
+      when(mockIterator.next()).thenReturn(values[0], valuesMinusTheFirst);
+    }
+  }
 }

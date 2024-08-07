@@ -4,8 +4,7 @@ import java.util.UUID;
 
 public class UUIDHelper {
 
-	public UUID getUUID() {
-		return UUID.randomUUID();
-	}
-
+  public UUID getUUID() {
+    return UUID.randomUUID();
+  }
 }

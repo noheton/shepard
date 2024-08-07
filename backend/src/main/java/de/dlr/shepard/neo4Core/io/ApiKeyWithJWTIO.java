@@ -1,11 +1,10 @@
 package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.ApiKey;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -13,11 +12,11 @@ import lombok.NoArgsConstructor;
 @Schema(name = "ApiKeyWithJWT")
 public class ApiKeyWithJWTIO extends ApiKeyIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String jwt;
+  @Schema(readOnly = true)
+  private String jwt;
 
-	public ApiKeyWithJWTIO(ApiKey key) {
-		super(key);
-		this.jwt = key.getJws();
-	}
+  public ApiKeyWithJWTIO(ApiKey key) {
+    super(key);
+    this.jwt = key.getJws();
+  }
 }

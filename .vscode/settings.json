@@ -22,5 +22,6 @@
     "VITE",
     "vuex"
   ],
-  "asciidoc.extensions.enableKroki": true
+  "asciidoc.extensions.enableKroki": true,
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

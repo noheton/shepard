@@ -1,64 +1,60 @@
 package de.dlr.shepard.neo4Core.entities;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Relationship;
-
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Relationship;
 
 @NodeEntity
 @Data
 @NoArgsConstructor
 public class StructuredDataReference extends BasicReference {
 
-	@Relationship(type = Constants.HAS_PAYLOAD)
-	private List<StructuredData> structuredDatas = new ArrayList<>();
+  @Relationship(type = Constants.HAS_PAYLOAD)
+  private List<StructuredData> structuredDatas = new ArrayList<>();
 
-	@ToString.Exclude
-	@Relationship(type = Constants.IS_IN_CONTAINER)
-	private StructuredDataContainer structuredDataContainer;
+  @ToString.Exclude
+  @Relationship(type = Constants.IS_IN_CONTAINER)
+  private StructuredDataContainer structuredDataContainer;
 
-	/**
-	 * For testing purposes only
-	 *
-	 * @param id identifies the entity
-	 */
-	public StructuredDataReference(long id) {
-		super(id);
-	}
+  /**
+   * For testing purposes only
+   *
+   * @param id identifies the entity
+   */
+  public StructuredDataReference(long id) {
+    super(id);
+  }
 
-	public void addStructuredData(StructuredData structuredData) {
-		structuredDatas.add(structuredData);
-	}
+  public void addStructuredData(StructuredData structuredData) {
+    structuredDatas.add(structuredData);
+  }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + Objects.hash(structuredDatas);
-		result = prime * result + HasId.hashcodeHelper(structuredDataContainer);
-		return result;
-	}
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = super.hashCode();
+    result = prime * result + Objects.hash(structuredDatas);
+    result = prime * result + HasId.hashcodeHelper(structuredDataContainer);
+    return result;
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (!(obj instanceof StructuredDataReference))
-			return false;
-		StructuredDataReference other = (StructuredDataReference) obj;
-		return HasId.equalsHelper(structuredDataContainer, other.structuredDataContainer)
-				&& Objects.equals(structuredDatas, other.structuredDatas);
-	}
-
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (!super.equals(obj)) return false;
+    if (!(obj instanceof StructuredDataReference)) return false;
+    StructuredDataReference other = (StructuredDataReference) obj;
+    return (
+      HasId.equalsHelper(structuredDataContainer, other.structuredDataContainer) &&
+      Objects.equals(structuredDatas, other.structuredDatas)
+    );
+  }
 }

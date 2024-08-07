@@ -1,107 +1,108 @@
 package de.dlr.shepard.integrationtests;
 
+import de.dlr.shepard.neo4Core.entities.ApiKey;
+import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.util.PKIHelper;
+import io.jsonwebtoken.Jwts;
 import java.security.PrivateKey;
 import java.util.Date;
-
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.session.Session;
 import org.neo4j.ogm.session.SessionFactory;
 
-import de.dlr.shepard.neo4Core.entities.ApiKey;
-import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.util.PKIHelper;
-import de.dlr.shepard.util.PropertiesHelper;
-import io.jsonwebtoken.Jwts;
-
 public class PrepareDatabase {
 
-	private SessionFactory sessionFactory;
+  private SessionFactory sessionFactory;
 
-	private Session session;
+  private Session session;
 
-	private User user;
-	private ApiKey apiKey;
+  private User user;
+  private ApiKey apiKey;
 
-	public PrepareDatabase() {
-		session = openSession();
-	}
+  String neo4jConnectionString;
 
-	public PrepareDatabase withUser() {
-		user = generateUser("test_it");
-		return this;
-	}
+  public PrepareDatabase() {
+    String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
+    String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
+    String host = ConfigProvider.getConfig().getValue("neo4j.host", String.class);
+    neo4jConnectionString = "bolt://" + username + ":" + password + "@" + host;
+    session = openSession(neo4jConnectionString);
+  }
 
-	public PrepareDatabase withUser(String username) {
-		user = generateUser(username);
-		return this;
-	}
+  public PrepareDatabase withUser() {
+    user = generateUser("test_it");
+    return this;
+  }
 
-	public PrepareDatabase withApiKey() {
-		if (user == null)
-			user = generateUser("test_it");
-		apiKey = generateApiKey(user);
-		return this;
-	}
+  public PrepareDatabase withUser(String username) {
+    user = generateUser(username);
+    return this;
+  }
 
-	public UserWithApiKey build() {
-		sessionFactory.close();
-		return new UserWithApiKey(user, apiKey);
-	}
+  public PrepareDatabase withApiKey() {
+    if (user == null) user = generateUser("test_it");
+    apiKey = generateApiKey(user);
+    return this;
+  }
 
-	private Session openSession() {
-		String username = "", password = "", host = "";
-		PropertiesHelper helper = new PropertiesHelper();
-		username = helper.getProperty("neo4j.username");
-		password = helper.getProperty("neo4j.password");
-		host = helper.getProperty("neo4j.host");
-		String connectionString = String.format("bolt://%s:%s@%s", username, password, host);
-		Configuration configuration = new Configuration.Builder().uri(connectionString).build();
-		sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities");
-		return sessionFactory.openSession();
-	}
+  public UserWithApiKey build() {
+    sessionFactory.close();
+    return new UserWithApiKey(user, apiKey);
+  }
 
-	private static String generateJws(ApiKey apiKey, String issuer) {
-		PKIHelper pkiHelper = new PKIHelper();
-		pkiHelper.init();
-		PrivateKey key = pkiHelper.getPrivateKey();
+  public Session openSession(String connectionString) {
+    Configuration configuration = new Configuration.Builder().uri(connectionString).build();
+    sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities");
+    return sessionFactory.openSession();
+  }
 
-		Date currentDate = new Date();
-		String jws = Jwts.builder().setSubject(apiKey.getBelongsTo().getUsername()).setIssuer(issuer)
-				.setNotBefore(currentDate).setIssuedAt(currentDate).setId(apiKey.getUid().toString()).signWith(key)
-				.compact();
-		return jws;
-	}
+  private static String generateJws(ApiKey apiKey, String issuer) {
+    PKIHelper pkiHelper = new PKIHelper();
+    pkiHelper.init();
+    PrivateKey key = pkiHelper.getPrivateKey();
 
-	private User generateUser(String userName) {
-		User user = session.load(User.class, userName, 2);
+    Date currentDate = new Date();
+    String jws = Jwts.builder()
+      .setSubject(apiKey.getBelongsTo().getUsername())
+      .setIssuer(issuer)
+      .setNotBefore(currentDate)
+      .setIssuedAt(currentDate)
+      .setId(apiKey.getUid().toString())
+      .signWith(key)
+      .compact();
+    return jws;
+  }
 
-		if (user == null) {
-			user = new User(userName);
-		}
-		user.setFirstName("Integration");
-		user.setLastName("Test");
-		user.setEmail("integration@test.org");
-		session.save(user);
-		return user;
-	}
+  private User generateUser(String userName) {
+    User user = session.load(User.class, userName, 2);
 
-	private ApiKey generateApiKey(User user) {
-		ApiKey apiKey;
+    if (user == null) {
+      user = new User(userName);
+    }
+    user.setFirstName("Integration");
+    user.setLastName("Test");
+    user.setEmail("integration@test.org");
+    session.save(user);
+    return user;
+  }
 
-		if (user.getApiKeys().isEmpty()) {
-			// ApiKey does not exist yet
-			apiKey = new ApiKey("IntegrationTestApiKey", new Date(), user);
-			session.save(apiKey);
-		} else {
-			apiKey = user.getApiKeys().get(0);
-		}
+  private ApiKey generateApiKey(User user) {
+    ApiKey apiKey;
 
-		// Update Api Key
-		apiKey.setJws(generateJws(apiKey, "integraton tests"));
-		session.save(apiKey);
-		this.user = apiKey.getBelongsTo();
+    if (user.getApiKeys().isEmpty()) {
+      // ApiKey does not exist yet
+      apiKey = new ApiKey("IntegrationTestApiKey", new Date(), user);
+      session.save(apiKey);
+    } else {
+      apiKey = user.getApiKeys().get(0);
+    }
 
-		return apiKey;
-	}
+    // Update Api Key
+    apiKey.setJws(generateJws(apiKey, "integraton tests"));
+    session.save(apiKey);
+    this.user = apiKey.getBelongsTo();
 
+    return apiKey;
+  }
 }

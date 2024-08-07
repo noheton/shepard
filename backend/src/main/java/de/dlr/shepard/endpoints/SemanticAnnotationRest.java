@@ -1,36 +1,36 @@
 package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
-import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import de.dlr.shepard.neo4Core.services.SemanticAnnotationService;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 
-public interface SemanticAnnotationRest {
+public abstract class SemanticAnnotationRest {
 
-	@Tag(name = Constants.SEMANTIC_ANNOTATION)
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SemanticAnnotationIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllAnnotations(long entityId);
+  private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
 
-	@Tag(name = Constants.SEMANTIC_ANNOTATION)
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAnnotation(long entityId, long semanticAnnotationId);
+  protected Response getAllByShepardId(long shepardId) {
+    var annotations = semanticAnnotationService.getAllAnnotationsByShepardId(shepardId);
+    var result = new ArrayList<SemanticAnnotationIO>(annotations.size());
+    for (var reference : annotations) {
+      result.add(new SemanticAnnotationIO(reference));
+    }
+    return Response.ok(result).build();
+  }
 
-	@Tag(name = Constants.SEMANTIC_ANNOTATION)
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response createAnnotation(long entityId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))) @Valid SemanticAnnotationIO semanticAnnotation);
+  protected Response get(long semanticAnnotationId) {
+    var result = semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotationId);
+    return Response.ok(new SemanticAnnotationIO(result)).build();
+  }
 
-	@Tag(name = Constants.SEMANTIC_ANNOTATION)
-	@ApiResponse(description = "deleted", responseCode = "204")
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteAnnotation(long entityId, long semanticAnnotationId);
+  protected Response createByShepardId(long entityShepardId, SemanticAnnotationIO semanticAnnotation) {
+    var result = semanticAnnotationService.createAnnotationByShepardId(entityShepardId, semanticAnnotation);
+    return Response.ok(new SemanticAnnotationIO(result)).status(Status.CREATED).build();
+  }
+
+  protected Response delete(long semanticAnnotationId) {
+    var result = semanticAnnotationService.deleteAnnotationByNeo4jId(semanticAnnotationId);
+    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+  }
 }

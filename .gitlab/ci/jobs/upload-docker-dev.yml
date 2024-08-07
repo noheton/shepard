@@ -1,7 +1,7 @@
 spec:
   inputs:
     image_name:
-      options: ["backend", "frontend"]
+      options: ["frontend"]
 ---
 "upload-docker-dev-$[[ inputs.image_name ]]":
   image: docker:26.1

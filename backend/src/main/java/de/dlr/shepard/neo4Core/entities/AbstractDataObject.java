@@ -1,13 +1,11 @@
 package de.dlr.shepard.neo4Core.entities;
 
 import java.util.Map;
-
-import org.neo4j.ogm.annotation.Properties;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.neo4j.ogm.annotation.Properties;
 
 @Data
 @ToString(callSuper = true)
@@ -15,19 +13,18 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public abstract class AbstractDataObject extends VersionableEntity {
 
-	private String description;
+  private String description;
 
-	@ToString.Exclude
-	@Properties
-	private Map<String, String> attributes;
+  @ToString.Exclude
+  @Properties
+  private Map<String, String> attributes;
 
-	/**
-	 * For testing purposes only
-	 *
-	 * @param id identifies the entity
-	 */
-	protected AbstractDataObject(long id) {
-		super(id);
-	}
-
+  /**
+   * For testing purposes only
+   *
+   * @param id identifies the entity
+   */
+  protected AbstractDataObject(long id) {
+    super(id);
+  }
 }

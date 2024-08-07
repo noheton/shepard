@@ -9,6 +9,16 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.exceptions.ShepardProcessingException;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.Invocation.Builder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,127 +29,125 @@ import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.exceptions.ShepardProcessingException;
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.Invocation.Builder;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-
 public class UserinfoServiceTest extends BaseTestCase {
 
-	@Mock
-	private Client client;
+  @Mock
+  private Client client;
 
-	@Mock
-	private WebTarget target;
+  @Mock
+  private WebTarget target;
 
-	@Mock
-	private Builder builder;
+  @Mock
+  private Builder builder;
 
-	@Mock
-	private Invocation invocation;
+  @Mock
+  private Invocation invocation;
 
-	@Spy
-	private UserinfoService service;
+  @Spy
+  private UserinfoService service;
 
-	@Captor
-	private ArgumentCaptor<String> urlCaptor;
+  @Captor
+  private ArgumentCaptor<String> urlCaptor;
 
-	@Captor
-	private ArgumentCaptor<String> headerCaptor;
+  @Captor
+  private ArgumentCaptor<String> headerCaptor;
 
-	@BeforeEach
-	public void prepareSpy() throws IllegalAccessException {
-		var oidcConfidurationUrl = "https://my.oidc.provider.com/realm/.well-known/openid-configuration";
-		FieldUtils.writeField(service, "oidcConfidurationUrl", oidcConfidurationUrl, true);
-		FieldUtils.writeField(service, "client", client, true);
-	}
+  @BeforeEach
+  public void prepareSpy() throws IllegalAccessException {
+    var oidcConfidurationUrl = "https://my.oidc.provider.com/realm/.well-known/openid-configuration";
+    FieldUtils.writeField(service, "oidcConfidurationUrl", oidcConfidurationUrl, true);
+    FieldUtils.writeField(service, "client", client, true);
+  }
 
-	@BeforeEach
-	public void setUpClient() throws IllegalAccessException {
-		doReturn(target).when(client).target(urlCaptor.capture());
-		when(target.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		doReturn(builder).when(builder).header(eq(HttpHeaders.AUTHORIZATION), headerCaptor.capture());
-		when(builder.buildGet()).thenReturn(invocation);
-	}
+  @BeforeEach
+  public void setUpClient() throws IllegalAccessException {
+    doReturn(target).when(client).target(urlCaptor.capture());
+    when(target.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    doReturn(builder).when(builder).header(eq(HttpHeaders.AUTHORIZATION), headerCaptor.capture());
+    when(builder.buildGet()).thenReturn(invocation);
+  }
 
-	@Test
-	public void testFetchUser_Successful() throws IllegalAccessException {
-		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
-				"name_fi");
+  @Test
+  public void testFetchUser_Successful() throws IllegalAccessException {
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
 
-		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-		when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
+    FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
+    when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
 
-		var actual = service.fetchUserinfo("Bearer myToken");
-		assertEquals(userinfo, actual);
-		assertEquals("https://userinfo.endpoint/userinfo", urlCaptor.getValue());
-		assertEquals("Bearer myToken", headerCaptor.getValue());
-	}
+    var actual = service.fetchUserinfo("Bearer myToken");
+    assertEquals(userinfo, actual);
+    assertEquals("https://userinfo.endpoint/userinfo", urlCaptor.getValue());
+    assertEquals("Bearer myToken", headerCaptor.getValue());
+  }
 
-	@Test
-	public void testFetchUser_InvokeInit() throws IllegalAccessException {
-		var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name",
-				"name_fi");
+  @Test
+  public void testFetchUser_InvokeInit() throws IllegalAccessException {
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
 
-		doAnswer(new Answer<>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-				return null;
-			}
-		}).when(service).init();
-		when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
+    doAnswer(
+      new Answer<>() {
+        @Override
+        public Object answer(InvocationOnMock invocation) throws Throwable {
+          FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
+          return null;
+        }
+      }
+    )
+      .when(service)
+      .init();
+    when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
 
-		var actual = service.fetchUserinfo("Bearer myToken");
-		assertEquals(userinfo, actual);
-		verify(service).init();
-	}
+    var actual = service.fetchUserinfo("Bearer myToken");
+    assertEquals(userinfo, actual);
+    verify(service).init();
+  }
 
-	@Test
-	public void testInit_Successful() {
-		var conf = new OpenIdConfiguration("iss", "auth", "userinfo.endpoint", "jwks", new String[0], new String[0],
-				new String[0]);
+  @Test
+  public void testInit_Successful() {
+    var conf = new OpenIdConfiguration(
+      "iss",
+      "auth",
+      "userinfo.endpoint",
+      "jwks",
+      new String[0],
+      new String[0],
+      new String[0]
+    );
 
-		when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(conf);
+    when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(conf);
 
-		service.init();
-		assertEquals("https://my.oidc.provider.com/realm/.well-known/openid-configuration", urlCaptor.getValue());
-		assertTrue(headerCaptor.getAllValues().isEmpty());
-	}
+    service.init();
+    assertEquals("https://my.oidc.provider.com/realm/.well-known/openid-configuration", urlCaptor.getValue());
+    assertTrue(headerCaptor.getAllValues().isEmpty());
+  }
 
-	@Test
-	public void testInit_ReturnNull() {
-		when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(null);
+  @Test
+  public void testInit_ReturnNull() {
+    when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(null);
 
-		assertThrows(ShepardProcessingException.class, service::init);
-	}
+    assertThrows(ShepardProcessingException.class, service::init);
+  }
 
-	@Test
-	public void testInit_ProcessingException() {
-		when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new ProcessingException("Message"));
+  @Test
+  public void testInit_ProcessingException() {
+    when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new ProcessingException("Message"));
 
-		assertThrows(ShepardProcessingException.class, service::init);
-	}
+    assertThrows(ShepardProcessingException.class, service::init);
+  }
 
-	@Test
-	public void testFetchUser_ReturnNull() throws IllegalAccessException {
-		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-		when(invocation.invoke(Userinfo.class)).thenReturn(null);
+  @Test
+  public void testFetchUser_ReturnNull() throws IllegalAccessException {
+    FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
+    when(invocation.invoke(Userinfo.class)).thenReturn(null);
 
-		assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
-	}
+    assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
+  }
 
-	@Test
-	public void testFetchUser_ProcessingException() throws IllegalAccessException {
-		FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
-		when(invocation.invoke(Userinfo.class)).thenThrow(new ProcessingException("Message"));
+  @Test
+  public void testFetchUser_ProcessingException() throws IllegalAccessException {
+    FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
+    when(invocation.invoke(Userinfo.class)).thenThrow(new ProcessingException("Message"));
 
-		assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
-	}
-
+    assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
+  }
 }

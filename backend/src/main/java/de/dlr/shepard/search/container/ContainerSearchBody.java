@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ContainerSearchBody extends ASearchBody<ContainerSearchParams> {
 
-	public ContainerSearchBody(ContainerSearchParams searchParams) {
-		super(searchParams);
-	}
-
+  public ContainerSearchBody(ContainerSearchParams searchParams) {
+    super(searchParams);
+  }
 }

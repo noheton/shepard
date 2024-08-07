@@ -1,47 +1,42 @@
 package de.dlr.shepard.neo4Core.io;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import de.dlr.shepard.neo4Core.entities.Version;
 import java.util.Date;
 import java.util.UUID;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-import de.dlr.shepard.neo4Core.entities.Version;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "Version")
 public class VersionIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private UUID uid;
+  @Schema(readOnly = true)
+  private UUID uid;
 
-	private String name;
+  private String name;
 
-	private String description;
+  private String description;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private Date createdAt;
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  @Schema(readOnly = true)
+  private Date createdAt;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String createdBy;
+  @Schema(readOnly = true)
+  private String createdBy;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private UUID predecessorUUID;
+  @Schema(readOnly = true)
+  private UUID predecessorUUID;
 
-	public VersionIO(Version version) {
-		this.uid = version.getUid();
-		this.name = version.getName();
-		this.description = version.getDescription();
-		this.createdAt = version.getCreatedAt();
-		this.createdBy = version.getCreatedBy().getUsername();
-		if (version.getPredecessor() != null)
-			this.predecessorUUID = version.getPredecessor().getUid();
-		else
-			this.predecessorUUID = null;
-	}
+  public VersionIO(Version version) {
+    this.uid = version.getUid();
+    this.name = version.getName();
+    this.description = version.getDescription();
+    this.createdAt = version.getCreatedAt();
+    this.createdBy = version.getCreatedBy().getUsername();
+    if (version.getPredecessor() != null) this.predecessorUUID = version.getPredecessor().getUid();
+    else this.predecessorUUID = null;
+  }
 }

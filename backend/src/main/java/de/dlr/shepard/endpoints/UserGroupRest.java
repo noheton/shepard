@@ -1,70 +1,202 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.neo4Core.orderBy.UserGroupAttributes;
+import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.neo4Core.services.UserGroupService;
+import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-public interface UserGroupRest {
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Path(Constants.USERGROUP)
+@RequestScoped
+public class UserGroupRest {
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get all usergroups")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserGroupIO.class))))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getAllUserGroups(Integer page, Integer size, UserGroupAttributes orderAttribute, Boolean orderDesc);
+  @Context
+  private SecurityContext securityContext;
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get usergroup")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroup(Long id);
+  private UserGroupService userGroupService = new UserGroupService();
+  private PermissionsService permissionsService = new PermissionsService();
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Create a new usergroup")
-	@ApiResponse(description = "created", responseCode = "201", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response createUserGroup(
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserGroupIO.class))) @Valid UserGroupIO userGroup);
+  @POST
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Create a new usergroup")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response createUserGroup(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+    ) @Valid UserGroupIO userGroup
+  ) {
+    var newUserGroup = userGroupService.createUserGroup(userGroup, securityContext.getUserPrincipal().getName());
+    return Response.ok(new UserGroupIO(newUserGroup)).status(Status.CREATED).build();
+  }
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Update usergroup")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = UserGroupIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response updateUserGroup(Long id,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = UserGroupIO.class))) @Valid UserGroupIO userGroup);
+  @PUT
+  @Path("/{" + Constants.USERGROUP_ID + "}")
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Update usergroup")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response updateUserGroup(
+    @PathParam(Constants.USERGROUP_ID) Long id,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+    ) @Valid UserGroupIO userGroup
+  ) {
+    UserGroup updatedUserGroup = userGroupService.updateUserGroup(
+      id,
+      userGroup,
+      securityContext.getUserPrincipal().getName()
+    );
+    return Response.ok(new UserGroupIO(updatedUserGroup)).build();
+  }
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Delete usergroup")
-	@ApiResponse(description = "deleted", responseCode = "204")
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response deleteUserGroup(Long id);
+  @DELETE
+  @Path("/{" + Constants.USERGROUP_ID + "}")
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Delete usergroup")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
+    return userGroupService.deleteUserGroup(id)
+      ? Response.status(Status.NO_CONTENT).build()
+      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+  }
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get permissions")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroupPermissions(long userGroupId);
+  @GET
+  @Path("/{" + Constants.USERGROUP_ID + "}")
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get usergroup")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserGroupIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
+    UserGroup ret = userGroupService.getUserGroup(id);
+    if (ret == null) return Response.status(Status.NOT_FOUND).build();
+    return Response.ok(new UserGroupIO(ret)).build();
+  }
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Edit permissions")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = PermissionsIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response editUserGroupPermissions(long userGroupId,
-			@RequestBody(required = true, content = @Content(schema = @Schema(implementation = PermissionsIO.class))) @Valid PermissionsIO permissions);
+  @GET
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get all usergroups")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response getAllUserGroups(
+    @QueryParam(Constants.QP_PAGE) Integer page,
+    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+  ) {
+    var params = new QueryParamHelper();
+    if (page != null && size != null) params = params.withPageAndSize(page, size);
+    if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
+    List<UserGroup> allUserGroups = userGroupService.getAllUserGroups(
+      params,
+      securityContext.getUserPrincipal().getName()
+    );
+    var result = new ArrayList<UserGroupIO>(allUserGroups.size());
+    for (UserGroup userGroup : allUserGroups) {
+      result.add(new UserGroupIO(userGroup));
+    }
+    return Response.ok(result).build();
+  }
 
-	@Tag(name = Constants.USERGROUP)
-	@Operation(description = "Get roles")
-	@ApiResponse(description = "ok", responseCode = "200", content = @Content(schema = @Schema(implementation = RolesIO.class)))
-	@ApiResponse(description = "not found", responseCode = "404")
-	Response getUserGroupRoles(long userGroupId);
+  @GET
+  @Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+    var perms = permissionsService.getPermissionsByNeo4jId(userGroupId);
+    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+  }
+
+  @PUT
+  @Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Edit permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response editUserGroupPermissions(
+    @PathParam(Constants.USERGROUP_ID) long userGroupId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+    ) @Valid PermissionsIO permissions
+  ) {
+    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, userGroupId);
+    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.USERGROUP_ID + "}/" + Constants.ROLES)
+  @Tag(name = Constants.USERGROUP)
+  @Operation(description = "Get roles")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = RolesIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+    var roles = new PermissionsUtil().getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
+    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+  }
 }

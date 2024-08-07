@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SearchScope {
 
-	private Long collectionId;
-	private Long dataObjectId;
-	@NotNull
-	private TraversalRules[] traversalRules;
+  private Long collectionId;
+  private Long dataObjectId;
 
+  @NotNull
+  private TraversalRules[] traversalRules;
 }

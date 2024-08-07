@@ -2,7 +2,6 @@ package de.dlr.shepard.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,16 +11,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Userinfo {
-	private String sub;
-	private String name;
-	private String email;
 
-	@JsonProperty("given_name")
-	private String givenName;
+  private String sub;
+  private String name;
+  private String email;
 
-	@JsonProperty("family_name")
-	private String familyName;
+  @JsonProperty("given_name")
+  private String givenName;
 
-	@JsonProperty("preferred_username")
-	private String preferredUsername;
+  @JsonProperty("family_name")
+  private String familyName;
+
+  @JsonProperty("preferred_username")
+  private String preferredUsername;
 }

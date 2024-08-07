@@ -7,17 +7,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
 import de.dlr.shepard.BaseTestCase;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
@@ -26,172 +15,190 @@ import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Collections;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class SparqlConnectorTest extends BaseTestCase {
 
-	@Mock
-	private Client client;
-	@Mock
-	private WebTarget webTarget;
-	@Mock
-	private Builder builder;
-	@Mock
-	private Invocation invocation;
-	@Mock
-	private Response response;
+  @Mock
+  private Client client;
 
-	@InjectMocks
-	private SparqlConnector connector = new SparqlConnector("endpoint");
+  @Mock
+  private WebTarget webTarget;
 
-	private final String query = URLEncoder.encode("""
-			PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  @Mock
+  private Builder builder;
 
-			SELECT DISTINCT ?o WHERE {
-			    ?s rdfs:label ?o .
-			    FILTER ( ?s = <http://example.com> )
-			}""", StandardCharsets.UTF_8).replace("+", "%20");
-	private final String result = """
-			{
-			   "results":{
-			      "bindings":[
-			         {
-			            "o":{
-			               "type":"label",
-			               "value":"kelvin"
-			            }
-			         },
-			         {
-			            "o":{
-			               "type":"label",
-			               "xml:lang":"en",
-			               "value":"kelvin@en"
-			            }
-			         },
-			         {
-			            "o":{
-			               "type":"label",
-			               "xml:lang":"de",
-			               "value":"kelvin@de"
-			            }
-			         }
-			      ]
-			   }
-			}
-			""";
-	private final String resultOBlank = """
-			{
-			   "results":{
-			      "bindings":[
-			         {
-			            "o":{
-			               "type":"bla",
-			               "value":""
-			            }
-			         }
-			      ]
-			   }
-			}
-			""";
+  @Mock
+  private Invocation invocation;
 
-	private final String askQuery = URLEncoder.encode("ASK { ?x ?y ?z }", StandardCharsets.UTF_8).replace("+", "%20");
-	private final String askResult = """
-			{
-			  "head": { "link": [] },
-			  "boolean": true
-			}
-			""";
-	private final String resultBooleanBlank = """
-			{
-			  "head": { "link": [] },
-			  "boolean": ""
-			}
-			""";
-	private final String resultBooleanFalse = """
-			{
-			  "head": { "link": [] },
-			  "boolean": false
-			}
-			""";
+  @Mock
+  private Response response;
 
-	private final String resultInvalid = """
-			{
-			  "invalid": "JSON"
-			}
-			""";
+  @InjectMocks
+  private SparqlConnector connector = new SparqlConnector("endpoint");
 
-	@Test
-	public void getTermTest() {
-		when(client.target("endpoint")).thenReturn(webTarget);
-		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
-		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.buildGet()).thenReturn(invocation);
-		when(invocation.invoke()).thenReturn(response);
-		when(response.readEntity(String.class)).thenReturn(result);
+  private final String query =
+    """
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-		var actual = connector.getTerm("http://example.com");
+    SELECT DISTINCT ?o WHERE {
+        ?s rdfs:label ?o .
+        FILTER ( ?s = <http://example.com> )
+    }""";
+  private final String result =
+    """
+    {
+       "results":{
+          "bindings":[
+             {
+                "o":{
+                   "type":"label",
+                   "value":"kelvin"
+                }
+             },
+             {
+                "o":{
+                   "type":"label",
+                   "xml:lang":"en",
+                   "value":"kelvin@en"
+                }
+             },
+             {
+                "o":{
+                   "type":"label",
+                   "xml:lang":"de",
+                   "value":"kelvin@de"
+                }
+             }
+          ]
+       }
+    }
+    """;
+  private final String resultOBlank =
+    """
+    {
+       "results":{
+          "bindings":[
+             {
+                "o":{
+                   "type":"bla",
+                   "value":""
+                }
+             }
+          ]
+       }
+    }
+    """;
 
-		assertEquals(Map.of("", "kelvin","de", "kelvin@de", "en","kelvin@en"), actual);
-		verify(client).close();
-	}
+  private final String askQuery = "ASK { ?x ?y ?z }";
+  private final String askResult =
+    """
+    {
+      "head": { "link": [] },
+      "boolean": true
+    }
+    """;
+  private final String resultBooleanBlank =
+    """
+    {
+      "head": { "link": [] },
+      "boolean": ""
+    }
+    """;
+  private final String resultBooleanFalse =
+    """
+    {
+      "head": { "link": [] },
+      "boolean": false
+    }
+    """;
 
-	@Test
-	public void getTermTest_RequestFailsException() {
-		when(client.target("endpoint")).thenReturn(webTarget);
-		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
-		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.buildGet()).thenReturn(invocation);
-		doThrow(ProcessingException.class).when(invocation).invoke();
+  private final String resultInvalid =
+    """
+    {
+      "invalid": "JSON"
+    }
+    """;
 
-		var actual = connector.getTerm("http://example.com");
+  @Test
+  public void getTermTest() {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", query)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    when(invocation.invoke()).thenReturn(response);
+    when(response.readEntity(String.class)).thenReturn(result);
 
-		assertEquals(Collections.emptyMap(), actual);
-		verify(client).close();
-	}
+    var actual = connector.getTerm("http://example.com");
 
-	@ParameterizedTest
-	@ValueSource(strings = { "", "  ", "No JSON", resultInvalid, resultOBlank })
-	public void getTermTest_RequestFailsBlank(String requestResult) {
-		when(client.target("endpoint")).thenReturn(webTarget);
-		when(webTarget.queryParam("query", query)).thenReturn(webTarget);
-		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.buildGet()).thenReturn(invocation);
-		when(invocation.invoke()).thenReturn(response);
-		when(response.readEntity(String.class)).thenReturn(requestResult);
+    assertEquals(Map.of("", "kelvin", "de", "kelvin@de", "en", "kelvin@en"), actual);
+    verify(client).close();
+  }
 
-		var actual = connector.getTerm("http://example.com");
+  @Test
+  public void getTermTest_RequestFailsException() {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", query)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    doThrow(ProcessingException.class).when(invocation).invoke();
 
-		assertEquals(Collections.emptyMap(), actual);
-		verify(client).close();
-	}
+    var actual = connector.getTerm("http://example.com");
 
-	@Test
-	public void healthCheckTest() {
-		when(client.target("endpoint")).thenReturn(webTarget);
-		when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
-		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.buildGet()).thenReturn(invocation);
-		when(invocation.invoke()).thenReturn(response);
-		when(response.readEntity(String.class)).thenReturn(askResult);
+    assertEquals(Collections.emptyMap(), actual);
+    verify(client).close();
+  }
 
-		var actual = connector.healthCheck();
+  @ParameterizedTest
+  @ValueSource(strings = { "", "  ", "No JSON", resultInvalid, resultOBlank })
+  public void getTermTest_RequestFailsBlank(String requestResult) {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", query)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    when(invocation.invoke()).thenReturn(response);
+    when(response.readEntity(String.class)).thenReturn(requestResult);
 
-		assertTrue(actual);
-		verify(client).close();
-	}
+    var actual = connector.getTerm("http://example.com");
 
-	@ParameterizedTest
-	@ValueSource(strings = { resultInvalid, resultBooleanBlank, resultBooleanFalse })
-	public void healthCheckTest_False(String requestResult) {
-		when(client.target("endpoint")).thenReturn(webTarget);
-		when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
-		when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
-		when(builder.buildGet()).thenReturn(invocation);
-		when(invocation.invoke()).thenReturn(response);
-		when(response.readEntity(String.class)).thenReturn(requestResult);
+    assertEquals(Collections.emptyMap(), actual);
+    verify(client).close();
+  }
 
-		var actual = connector.healthCheck();
+  @Test
+  public void healthCheckTest() {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    when(invocation.invoke()).thenReturn(response);
+    when(response.readEntity(String.class)).thenReturn(askResult);
 
-		assertFalse(actual);
-		verify(client).close();
-	}
+    var actual = connector.healthCheck();
+
+    assertTrue(actual);
+    verify(client).close();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { resultInvalid, resultBooleanBlank, resultBooleanFalse })
+  public void healthCheckTest_False(String requestResult) {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    when(invocation.invoke()).thenReturn(response);
+    when(response.readEntity(String.class)).thenReturn(requestResult);
+
+    var actual = connector.healthCheck();
+
+    assertFalse(actual);
+    verify(client).close();
+  }
 }

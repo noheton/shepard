@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class UserSearchParams extends ASearchParams {
 
-	public UserSearchParams(String query) {
-		super(query);
-	}
+  public UserSearchParams(String query) {
+    super(query);
+  }
 }

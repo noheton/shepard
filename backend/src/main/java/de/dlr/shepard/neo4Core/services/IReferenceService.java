@@ -1,17 +1,15 @@
 package de.dlr.shepard.neo4Core.services;
 
-import java.util.List;
-
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
+import java.util.List;
 
 public interface IReferenceService<T extends BasicReference, S extends BasicReferenceIO> {
+  List<T> getAllReferencesByDataObjectShepardId(long dataObjectShepardId);
 
-	List<T> getAllReferencesByDataObjectShepardId(long dataObjectShepardId);
+  T getReferenceByShepardId(long shepardId);
 
-	T getReferenceByShepardId(long shepardId);
+  T createReferenceByShepardId(long DataObjectShepardId, S referenceIO, String username);
 
-	T createReferenceByShepardId(long DataObjectShepardId, S referenceIO, String username);
-
-	boolean deleteReferenceByShepardId(long shepardId, String username);
+  boolean deleteReferenceByShepardId(long shepardId, String username);
 }

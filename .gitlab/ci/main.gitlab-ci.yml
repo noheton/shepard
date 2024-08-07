@@ -12,14 +12,12 @@ include:
   - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
-  - local: .gitlab/ci/jobs/integration-test-backend.yml
+  - local: .gitlab/ci/jobs/integration-test.yml
   - local: .gitlab/ci/jobs/build-maven-report.yml
   - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/publish-maven-report.yml
   - local: .gitlab/ci/jobs/build-and-upload-clients.yml
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
-      image_name: backend
-  - local: .gitlab/ci/jobs/upload-docker.yml
-    inputs:
       image_name: frontend
+  # TODO: add upload of new quarkus backend

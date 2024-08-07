@@ -11,11 +11,10 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class ContainerSearchResult extends ASearchResults<ContainerSearchParams> {
 
-	private BasicContainerIO[] results;
+  private BasicContainerIO[] results;
 
-	public ContainerSearchResult(BasicContainerIO[] results, ContainerSearchParams searchParams) {
-		super(searchParams);
-		this.results = results;
-	}
-
+  public ContainerSearchResult(BasicContainerIO[] results, ContainerSearchParams searchParams) {
+    super(searchParams);
+    this.results = results;
+  }
 }

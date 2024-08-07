@@ -1,11 +1,10 @@
 package de.dlr.shepard.neo4Core.io;
 
 import de.dlr.shepard.neo4Core.entities.DataObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -13,35 +12,34 @@ import lombok.NoArgsConstructor;
 @Schema(name = "DataObject")
 public class DataObjectIO extends AbstractDataObjectIO {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long collectionId;
+  @Schema(readOnly = true)
+  private long collectionId;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] referenceIds;
+  @Schema(readOnly = true)
+  private long[] referenceIds;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] successorIds;
+  @Schema(readOnly = true)
+  private long[] successorIds;
 
-	private long[] predecessorIds;
+  private long[] predecessorIds;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] childrenIds;
+  @Schema(readOnly = true)
+  private long[] childrenIds;
 
-	@Schema(nullable = true)
-	private Long parentId;
+  @Schema(nullable = true)
+  private Long parentId;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private long[] incomingIds;
+  @Schema(readOnly = true)
+  private long[] incomingIds;
 
-	public DataObjectIO(DataObject dataObject) {
-		super(dataObject);
-		this.collectionId = dataObject.getCollection().getShepardId();
-		this.referenceIds = extractShepardIds(dataObject.getReferences());
-		this.successorIds = extractShepardIds(dataObject.getSuccessors());
-		this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
-		this.childrenIds = extractShepardIds(dataObject.getChildren());
-		this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
-		this.incomingIds = extractShepardIds(dataObject.getIncoming());
-	}
-
+  public DataObjectIO(DataObject dataObject) {
+    super(dataObject);
+    this.collectionId = dataObject.getCollection().getShepardId();
+    this.referenceIds = extractShepardIds(dataObject.getReferences());
+    this.successorIds = extractShepardIds(dataObject.getSuccessors());
+    this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
+    this.childrenIds = extractShepardIds(dataObject.getChildren());
+    this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
+    this.incomingIds = extractShepardIds(dataObject.getIncoming());
+  }
 }

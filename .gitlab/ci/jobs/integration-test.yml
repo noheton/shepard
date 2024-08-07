@@ -1,13 +1,12 @@
-integration_test_quarkend:
+integration_test:
   image: maven:3-eclipse-temurin-17
   stage: test
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .m2/repository
-  needs: [build-quarkend]
+  needs: [build_backend]
   variables:
-    # Quarkend variables
     OIDC_PUBLIC: MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB0Y8ymfJXn19M1zPkIkNj4xlvgRQmq0jcdvklpYhuoCVWl339+fW7a2ibhBx/9FDlCPUuJeTqW03KDI+SCmsSF/uATcDgZdJwaxcxpX8jDXXUrAeU3LglcfYUaqe2um7osuEP5R5urjaNl4CJUJlWAptlxKhMb5SVZ7gyZBTab0j9qXxY7BT/+nAdbRsXc9RnIayUmCSVPS/XWiNwefQ+6J2aDqvLyZI104vTG04Y5HS1YjmybfSQjJP+QEWUkYE34/3l0+qkxqpezP4MkXFGw49sq219vp9JmL8T+lZc0jDmui2yA7yo5tuFV7wvUjLT2KJCeKOT8yZ84yayRDgtNAgMBAAE=
     OIDC_AUTHORITY: https://example.com/
     INFLUX_HOST: influxdb:8086
@@ -34,14 +33,14 @@ integration_test_quarkend:
       alias: influxdb
   before_script:
     - !reference [.version_number, script]
-    - cd quarkend
+    - cd backend
   script:
     - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} test-compile failsafe:integration-test -P integration
   artifacts:
     when: always
     expire_in: 2 days
     paths:
-      - quarkend/target/failsafe-reports/*
+      - backend/target/failsafe-reports/*
     reports:
       junit:
-        - quarkend/target/failsafe-reports/*.xml
+        - backend/target/failsafe-reports/*.xml

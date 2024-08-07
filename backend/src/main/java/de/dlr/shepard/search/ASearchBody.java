@@ -11,8 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ASearchBody<T extends ASearchParams> {
 
-	@Valid
-	@NotNull
-	private T searchParams;
-
+  @Valid
+  @NotNull
+  private T searchParams;
 }

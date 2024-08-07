@@ -1,76 +1,72 @@
 package de.dlr.shepard.neo4Core.io;
 
-import java.util.Date;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 import de.dlr.shepard.util.HasId;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Date;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @Schema(name = "BasicEntity")
 public class BasicEntityIO implements HasId {
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private Long id;
+  @Schema(readOnly = true)
+  private Long id;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private Date createdAt;
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  @Schema(readOnly = true)
+  private Date createdAt;
 
-	@Schema(accessMode = AccessMode.READ_ONLY)
-	private String createdBy;
+  @Schema(readOnly = true)
+  private String createdBy;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING)
-	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
-	private Date updatedAt;
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  @Schema(readOnly = true, nullable = true)
+  private Date updatedAt;
 
-	@Schema(accessMode = AccessMode.READ_ONLY, nullable = true)
-	private String updatedBy;
+  @Schema(readOnly = true, nullable = true)
+  private String updatedBy;
 
-	@NotBlank
-	@Schema(nullable = true)
-	private String name;
+  @NotBlank
+  @Schema(nullable = true)
+  private String name;
 
-	public BasicEntityIO(BasicEntity entity) {
-		this.id = entity.getId();
-		this.createdAt = entity.getCreatedAt();
-		this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
-		this.updatedAt = entity.getUpdatedAt();
-		this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
-		this.name = entity.getName();
-	}
+  public BasicEntityIO(BasicEntity entity) {
+    this.id = entity.getId();
+    this.createdAt = entity.getCreatedAt();
+    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
+    this.updatedAt = entity.getUpdatedAt();
+    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
+    this.name = entity.getName();
+  }
 
-	public BasicEntityIO(VersionableEntity entity) {
-		this.id = entity.getShepardId();
-		this.createdAt = entity.getCreatedAt();
-		this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
-		this.updatedAt = entity.getUpdatedAt();
-		this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
-		this.name = entity.getName();
-	}
+  public BasicEntityIO(VersionableEntity entity) {
+    this.id = entity.getShepardId();
+    this.createdAt = entity.getCreatedAt();
+    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
+    this.updatedAt = entity.getUpdatedAt();
+    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
+    this.name = entity.getName();
+  }
 
-	protected static long[] extractIds(List<? extends BasicEntity> entities) {
-		var result = entities.stream().map(BasicEntity::getId).mapToLong(Long::longValue).toArray();
-		return result;
-	}
+  protected static long[] extractIds(List<? extends BasicEntity> entities) {
+    var result = entities.stream().map(BasicEntity::getId).mapToLong(Long::longValue).toArray();
+    return result;
+  }
 
-	protected static long[] extractShepardIds(List<? extends VersionableEntity> entities) {
-		var result = entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
-		return result;
-	}
+  protected static long[] extractShepardIds(List<? extends VersionableEntity> entities) {
+    var result = entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
+    return result;
+  }
 
-	@Override
-	public String getUniqueId() {
-		return id.toString();
-	}
-
+  @Override
+  public String getUniqueId() {
+    return id.toString();
+  }
 }

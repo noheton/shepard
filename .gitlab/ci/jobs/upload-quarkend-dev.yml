@@ -7,7 +7,7 @@ upload-docker-dev-quarkend:
     - export DOCKER_IMAGE_NAME=${CI_REGISTRY_IMAGE}/quarkend
     - echo building docker image $DOCKER_IMAGE_NAME
   script:
-    - cd quarkend
+    - cd backend
     - echo "${CI_DEPLOY_PASSWORD}" | docker login ${CI_REGISTRY} -u ${CI_DEPLOY_USER} --password-stdin
     - docker build -t $DOCKER_IMAGE_NAME:dev .
     - docker push $DOCKER_IMAGE_NAME:dev
