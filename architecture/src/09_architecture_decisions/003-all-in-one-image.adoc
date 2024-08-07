@@ -1,0 +1,64 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-003 All-in-One Image
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|06.08.2024
+|Status|Done
+
+|Context|
+Currently, shepards front- and backend are build, published and run as two separate containers.
+This leads to effort for administrators because they have to maintain two services in their docker compose file.
+Even with an integrated image administrators still need to maintain a docker-compose file for the databases and reverse proxy.
+
+Exposing two images of basically the same implementation is exposing an implementation detail of shepard to users.
+Backend and frontend always have the same version number as they share a release process.
+This could be mitigated by adding a variable to the docker-compose file.
+
+Both services have similarities in their configuration, e.g. they both need the OIDC authority.
+The frontend receives the backend url (which the backend could also use, e.g. for generating a OpenAPI spec with the base URL).
+
+Usually Docker containers should follow the single responsibility principle and have one process per container.
+From https://docs.docker.com/config/containers/multi-service_container/:
+
+> It's ok to have multiple processes, but to get the most benefit out of Docker, avoid one container being responsible for multiple aspects of your overall application. You can connect multiple containers using user-defined networks and shared volumes.
+
+The frontend does not have it's own process apart from nginx since it's only static html, css and javascript files.
+
+Scaling is easier with separate images.
+Since there is not a lot of server-side load in the current frontend individual scaling is not important.
+
+Building an integrated image involves more effort than publishing two separate images following the best practices of their frameworks.
+
+If future frontend developments add separate UIs additional efforts for administrators or efforts in integration are necessary.
+
+As a full stack developer I want the current version of the frontend to develop vertical features.
+
+|Possible Alternatives|
+. Keep separate images for frontend and backend
+** No change necessary
+** Easier to maintain from a dev perspective
+** Admins still have to maintain two images
+. Merge front- and backend in one image
+.. Adding nginx and the static frontend files to the backend image
+*** Violates the one process per container principle
+.. Putting the frontend into the Quarkend
+*** Merges code into the backend folder that does not need to be merged
+*** Makes changing the frontend harder
+*** https://quarkus.io/guides/web#single-page-applications
+.. Keeping the frontend seperate and adding the compiled files to quarkus before bundling
+*** Frontend-Development stays as simple as currently
+*** There may be differences between dev and deployed frontend build-wise
+.. Publish a frontend package and include it in Quarkend
+*** Similar to home-assistant
+
+|Decision|
+We keep the seperate images for now and will revisit the topic when we work on the facilitate deployment.
+By then, we expect to have a new frontend setup, so that we also save duplicate efforts by postponing the topic for now.
+
+|Consequences|
+* We will switch the backend and frontend images to the monorepo immediately.
+* We will add a version variable in the infrastructure repo to ease switching the version for administrators
+|===

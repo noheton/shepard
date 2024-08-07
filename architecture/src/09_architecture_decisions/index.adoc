@@ -9,3 +9,5 @@ include::001-monorepository.adoc[]
 
 include::002-backend-technology.adoc[]
 
+include::003-all-in-one-image.adoc[]
+

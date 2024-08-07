@@ -6,7 +6,7 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [cols="h,1a"]
 |===
 |Date|
-|Status|Pending, Done
+|Status|Draft, Pending, Done
 
 |Context|
 
