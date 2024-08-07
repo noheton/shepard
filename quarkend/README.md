@@ -50,10 +50,9 @@ The Quarkend configuration is environment dependant and specific properties need
 This setup is done using environment variables to override or append existing application properties in `application.properties` file according to [the Quarkus documentation](https://quarkus.io/guides/config-reference#env-file).
 
 1. Copy `env.example` to `.env`
-2. Add the keycloak realm url in `oidc.authority` and the public key in `oidc.public` (`oidc.role` is optional)
-3. Adjust the configurations for the other services according to your setup
+2. Adjust the configurations according to your setup
 
-> **NOTE:** For local environment, it is enough to just add the Keycloak configuration (`oidc.authority` and `oidc.public`) since the existing service configurations are already matching the docker compose setup in `docker-compose.yml`.
+> **NOTE:** For local environment, the database configurations can be left as is since the existing service configurations are already matching the docker compose setup in `docker-compose.yml`.
 
 #### First run
 
