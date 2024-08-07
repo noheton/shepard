@@ -54,10 +54,37 @@ This setup is done using environment variables to override or append existing ap
 
 > **NOTE:** For local environment, the database configurations can be left as is since the existing service configurations are already matching the docker compose setup in `docker-compose.yml`.
 
+#### Local databases & frontend
+
+1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
+2. change to the quarkend root directory (quarkend folder)
+3. run `docker-compose up` (or `podman-compose up`)
+4. local instances of the databases will be launched without persistent storage
+5. quick tip: run the integration tests to fill your databases with some content
+
+| Service           | URL                      | Comment                     |
+| ----------------- | ------------------------ | --------------------------- |
+| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_         |
+| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepard_  |
+| neo4j Frontend    | <http://localhost:7474>  |                             |
+| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_  |
+| mongodb Frontend  | <http://localhost:8084/> |                             |
+| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_ |
+| influxdb Frontend | <http://localhost:8888>  |                             |
+
 #### First run
 
-- IntelliJ: use the existing run configuration on the top right to run quarkus.
-- VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
+> If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
+
+1. start the project:
+
+   - IntelliJ: use the existing run configuration on the top right to run quarkus.
+   - VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
+
+2. run the integration tests: `./mvnw verify -DskipUTs`
+3. go to <http://localhost:7474/> and log in to your local neo4j database
+4. obtain your api key with the following query: `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
+5. switch to the table view and copy the attribute `jws`, this is your api key
 
 > **Warning:** Using the VSCode run configuration "Debug Quarkus" above an opened file can edit the run configuration and cause issues.
 > Stick to the "Run and Debug" tab on the left side to avoid this.
