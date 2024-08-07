@@ -1,4 +1,4 @@
-# quarkend
+# backend
 
 > **Experimental project:** We are in the process of migrating the backend under `backend/` to use quarkus in this directory.
 
@@ -6,7 +6,7 @@ This is the new backend based on Quarkus.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
-## CONTRIBUTING to Quarkend (Setup)
+## CONTRIBUTING to Backend (Setup)
 
 ### Backend
 
@@ -34,7 +34,7 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
    - IntelliJ:
      1. In the "Project Structure" settings go to "Modules" (or press F4).
      2. Click "+" and "Import Module".
-     3. Select the "quarkend" folder.
+     3. Select the "backend" folder.
      4. Select "Import Module from External Model".
      5. Select "Maven" and create.
      6. Click "ok" to save the new module.
@@ -46,18 +46,17 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
 
 #### Configuration
 
-The Quarkend configuration is environment dependant and specific properties need to be setup.
+The Backend configuration is environment dependant and specific properties need to be setup.
 This setup is done using environment variables to override or append existing application properties in `application.properties` file according to [the Quarkus documentation](https://quarkus.io/guides/config-reference#env-file).
+The variables preconfigured in `env.example` also contain variables for local databases and frontend as described below.
 
 1. Copy `env.example` to `.env`
-2. Adjust the configurations according to your setup
-
-> **NOTE:** For local environment, the database configurations can be left as is since the existing service configurations are already matching the docker compose setup in `docker-compose.yml`.
+2. Enter valid OIDC parameters
 
 #### Local databases & frontend
 
 1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
-2. change to the quarkend root directory (quarkend folder)
+2. change to the backend root directory (backedn folder)
 3. run `docker-compose up` (or `podman-compose up`)
 4. local instances of the databases will be launched without persistent storage
 5. quick tip: run the integration tests to fill your databases with some content

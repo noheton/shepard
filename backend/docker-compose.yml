@@ -4,7 +4,7 @@ services:
   frontend:
     image: registry.gitlab.com/dlr-shepard/frontend:dev
     environment:
-      - VUE_APP_BACKEND=http://localhost:8080/shepard/api
+      - VUE_APP_BACKEND=${VUE_APP_BACKEND}
       - VUE_APP_OIDC_AUTHORITY=${VUE_APP_OIDC_AUTHORITY}
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
     ports:
@@ -14,7 +14,7 @@ services:
   neo4j:
     image: neo4j:4.4
     environment:
-      - NEO4J_AUTH=neo4j/shepard
+      - NEO4J_AUTH=${NEO4J_AUTH}
     ports:
       - 7474:7474
       - 7687:7687
@@ -25,8 +25,8 @@ services:
     ports:
       - 27017:27017
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=mongo
-      - MONGO_INITDB_ROOT_PASSWORD=shepard
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - MONGO_INITDB_DATABASE=test
     restart: unless-stopped
 
@@ -36,11 +36,11 @@ services:
       - 8084:8081
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_BASICAUTH_USERNAME=mongo
-      - ME_CONFIG_BASICAUTH_PASSWORD=shepard
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=mongo
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=shepard
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     restart: unless-stopped
     depends_on:
       - mongodb
@@ -48,8 +48,8 @@ services:
   influxdb:
     image: influxdb:1.8
     environment:
-      - INFLUXDB_ADMIN_USER=influx
-      - INFLUXDB_ADMIN_PASSWORD=shepard
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_ADMIN_USER}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
     ports:
       - 8086:8086
       - 8088:8088
@@ -59,8 +59,8 @@ services:
     image: chronograf:latest
     environment:
       - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=influx
-      - INFLUXDB_PASSWORD=shepard
+      - INFLUXDB_USERNAME=${INFLUXDB_ADMIN_USER}
+      - INFLUXDB_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
     ports:
       - 8888:8888
     restart: unless-stopped
