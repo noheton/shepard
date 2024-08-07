@@ -5,7 +5,7 @@
     entrypoint: [""]
   needs: [build_backend]
   script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi-obj.json -g cpp-restsdk -o clients/cpp/client -c clients/cpp/config.yaml --type-mappings set=std::vector
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g cpp-restsdk -o clients/cpp/client -c clients/cpp/config.yaml --type-mappings set=std::vector
   artifacts:
     expire_in: 2 days
     paths:
