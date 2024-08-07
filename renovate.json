@@ -56,11 +56,6 @@
       "groupName": "shepard client"
     },
     {
-      "matchPackagePatterns": ["(org.apache.tomcat:)?tomcat(-.+)?"],
-      "groupName": "tomcat",
-      "allowedVersions": "<11"
-    },
-    {
       "matchPackageNames": ["influxdb"],
       "matchManagers": ["docker-compose", "gitlabci"],
       "allowedVersions": "<2"
