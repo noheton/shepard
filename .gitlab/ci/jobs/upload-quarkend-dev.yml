@@ -1,5 +1,5 @@
 upload-docker-dev-quarkend:
-  image: docker:26.1
+  image: docker:27.1
   stage: upload
   services:
     - name: docker:dind
