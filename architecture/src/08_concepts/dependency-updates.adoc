@@ -30,7 +30,7 @@ Close the renovate merge request (renovate will not open the same request for th
 
 This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config]. Afterwards the config needs to be merged to main with the following commands:
 
-```
+```sh
 git checkout main
 git cherry-pick <commit-hash>
 git push -o ci.skip

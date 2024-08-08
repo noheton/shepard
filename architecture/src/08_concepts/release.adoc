@@ -1,0 +1,57 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Release Process
+
+A shepard release consists of a new version number, build artifacts (container, clients, etc.), a release tag on `main`, and release notes.
+
+==== Release frequency
+
+Usually a new shepard version is released on the first Monday of the month.
+However, this date is not fixed and can be postponed by a few days if necessary.
+
+==== Performing the release
+
+.The following steps are necessary to provide a new release of shepard:
+1. Finish development and make sure the develop branch is stable, the pipeline is successful and no code reviews are open
+2. Merge the `main` branch into `develop` in order to reapply any cherry-picked commits
+3. Follow the setup steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts#preparation-only-when-you-want-to-interact-with-the-gitlab-repository[Scripts README.md]
+4. Run the following command:
++
+```sh
+poetry run cli release ./token.txt
+```
+5. Verify merged merge requests
+6. Think of a name for the upcoming release
+7. Complete the release notes template (editor opens automatically)
+8. Verify the release and confirm with `y`
+9. Verify that everything was successfully created (GitLab Release Notes, Pipelines, etc.)
+
+===== Actions done by the release script in the background
+
+.The following steps are carried out by the release script:
+* A Merge Request is created to merge the `develop` branch into `main`
+** The title is the new version number
+** Without squashing the commits
+** Without deleting the source branch
+* That Merge Request is merged right away
+* A https://gitlab.com/dlr-shepard/shepard/-/releases[Gitlab Release] including release notes directed at administrators and users is created
+** The title is the new version number
+** A short paragraph describes the most important changes
+** Breaking changes are listed in a prominent way
+** Other changes besides dependency updates are listed below
+* A release tag `<version number>-release` on `main` is created
+
+==== Hotfixes
+
+Hotfixes are changes to the `main` branch outside the regular releases to fix urgent bugs or make small changes that need to be applied to the default branch of the project.
+
+.Hotfix process
+1. As usual, a merge request with the hotfix must be created, reviewed, and merged to `develop`
+2. The resulting commit must be cherry-picked from `develop` to `main`
++
+```sh
+git checkout main
+git cherry-pick <commit-hash>
+git push
+```
+3. This starts a release pipeline on `main` that creates publishing artifacts with the current date tag

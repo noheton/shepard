@@ -124,7 +124,7 @@ def create_release_mr(project: Project, title: str):
         }
     )
     mr.merge()
-    click.echo("MR created")
+    click.echo("Merge Request created and merged")
 
 
 def create_release(project: Project, title: str, tag: str, notes: str):

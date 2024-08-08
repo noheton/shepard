@@ -16,3 +16,5 @@ include::export.adoc[]
 include::ontologies.adoc[]
 
 include::search.adoc[]
+
+include::release.adoc[]
