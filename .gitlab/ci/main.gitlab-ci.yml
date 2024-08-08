@@ -20,4 +20,6 @@ include:
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: frontend
-  # TODO: add upload of new quarkus backend
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image_name: backend
