@@ -4,8 +4,8 @@ import LabelledInput from "@/components/search/rete/LabelledInput.vue";
 import { NodeEditor } from "rete";
 import { AreaExtensions, AreaPlugin } from "rete-area-plugin";
 import {
-  AutoArrangePlugin,
   Presets as ArrangePresets,
+  AutoArrangePlugin,
 } from "rete-auto-arrange-plugin";
 import {
   ConnectionPlugin,
