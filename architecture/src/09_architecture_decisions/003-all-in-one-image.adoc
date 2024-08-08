@@ -44,14 +44,14 @@ As a full stack developer I want the current version of the frontend to develop 
 . Merge front- and backend in one image
 .. Adding nginx and the static frontend files to the backend image
 *** Violates the one process per container principle
-.. Putting the frontend into the Quarkend
+.. Putting the frontend into the Backend
 *** Merges code into the backend folder that does not need to be merged
 *** Makes changing the frontend harder
 *** https://quarkus.io/guides/web#single-page-applications
 .. Keeping the frontend seperate and adding the compiled files to quarkus before bundling
 *** Frontend-Development stays as simple as currently
 *** There may be differences between dev and deployed frontend build-wise
-.. Publish a frontend package and include it in Quarkend
+.. Publish a frontend package and include it in Backend
 *** Similar to home-assistant
 
 |Decision|
