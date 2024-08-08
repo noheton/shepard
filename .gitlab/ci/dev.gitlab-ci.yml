@@ -22,4 +22,6 @@ include:
   - local: .gitlab/ci/jobs/upload-docker-dev.yml
     inputs:
       image_name: frontend
-  - local: .gitlab/ci/jobs/upload-quarkend-dev.yml
+  - local: .gitlab/ci/jobs/upload-docker-dev.yml
+    inputs:
+      image_name: backend

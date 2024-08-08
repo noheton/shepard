@@ -21,6 +21,7 @@ lint_frontend:
 build_frontend:
   extends: .prepare_npm
   stage: build
+  needs: []
   script:
     - cd frontend
     - npm version --no-git-tag-version ${VERSION_NUMBER}
