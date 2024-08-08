@@ -56,7 +56,7 @@ The variables preconfigured in `env.example` also contain variables for local da
 #### Local databases & frontend
 
 1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
-2. change to the backend root directory (backedn folder)
+2. change to the backend root directory (backend folder)
 3. run `docker-compose up` (or `podman-compose up`)
 4. local instances of the databases will be launched without persistent storage
 5. quick tip: run the integration tests to fill your databases with some content
