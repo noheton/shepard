@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[dependency-updates,Dependency Updates]]
 === Dependency Updates
 
 Dependencies of shepard are updated regularly. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].

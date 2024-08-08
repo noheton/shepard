@@ -1,6 +1,10 @@
 # Refactoring
 
-## :goal_net: Goal
+## :mount_fuji: Summary
+
+## :bomb: Why is the current state bad?
+
+## :goal_net: How could that be improved?
 
 ## :bulb: Hints
 

@@ -25,16 +25,30 @@ _Costs: critical, expensive, unsure, cheap, negligible_
 
 === Technical Debt
 
-_Priorities: 1=high, 2=normal, 3=low_
+> Software systems are prone to the build up of cruft - deficiencies in internal quality that make it harder than it would ideally be to modify and extend the system further. Technical Debt is a metaphor, coined by Ward Cunningham, that frames how to think about dealing with this cruft [...]
+> - 21 May 2019, Martin Fowler (https://martinfowler.com/bliki/TechnicalDebt.html)
 
+==== Technical Debt Process
+
+The following process handles all technical debt except for dependency updates, which have <<dependency-updates, their own process>>.
+Besides dependency updates, every other technical debt is to be documented in the form of an issue in the backlog.
+
+If a technical debt has been identified and a corresponding issue has been created in the backlog, the usual planning and prioritization process takes care of this debt.
+This makes the backlog the single source of truth for all known and unresolved technical debt.
+
+Usually, the technical debt can be resolved in this way.
+In rare cases, it can happen that we want to keep this debt or decide that the debt is not really a problem for us.
+In these cases, the situation needs to be described in the <<technical-debt, table below>> and the corresponding issue can then be closed.
+
+[[technical-debt]]
 [cols="1,1,1,1,1"]
 |===
 |ID|Name|Description|Solution Strategy|Priority
 
-|TD1
-|Integer as id
-|If a new project context is created, an autoincremented integer is used as Id. This Id is used for linking data to the context and is therefore very important.
-|The Id should be a semantic Id that will be created during creation of the context. The Id should be short enough to be remembered but long enough to be unique.
-|3
+|
+|
+|
+|
+|
 
 |===
