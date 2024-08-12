@@ -97,7 +97,7 @@ If you don't have a working backend available, you can find a description of how
 #### Installation
 
 1. Install OpenJDK
-2. Install Node.js v.21.2.0 or later
+2. Install Node.js
 3. Install VSCode or IntelliJ
 4. Clone Git repository
 5. Run `npm install` in the top level
