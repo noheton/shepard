@@ -17,3 +17,4 @@ build_backend:
       - backend/target/quarkus-artifact.properties
       - backend/target/quarkus-app
       - backend/target/openapi/*
+      - backend/target/neo4j
