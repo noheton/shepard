@@ -27,13 +27,13 @@
         }
       ],
       "group": "build",
-      "label": "quarkus:dev (quarkend)",
+      "label": "quarkus:dev",
       "command": "./mvnw compile quarkus:dev ",
       "windows": {
         "command": ".\\mvnw.cmd compile quarkus:dev "
       },
       "options": {
-        "cwd": "${workspaceFolder}/quarkend"
+        "cwd": "${workspaceFolder}/backend"
       }
     },
     {
@@ -58,13 +58,13 @@
         }
       ],
       "group": "build",
-      "label": "package -Pnative (quarkend)",
+      "label": "package -Pnative",
       "command": "./mvnw package -Pnative ",
       "windows": {
         "command": ".\\mvnw.cmd package -Pnative "
       },
       "options": {
-        "cwd": "quarkend"
+        "cwd": "backend"
       }
     }
   ]

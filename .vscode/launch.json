@@ -11,11 +11,11 @@
       "args": ["release", "./token.txt"]
     },
     {
-      "preLaunchTask": "quarkus:dev (quarkend)",
+      "preLaunchTask": "quarkus:dev",
       "type": "java",
       "request": "attach",
       "hostName": "localhost",
-      "name": "Debug Quarkus application (quarkend)",
+      "name": "Debug Backend application",
       "port": 5005
     }
   ]
