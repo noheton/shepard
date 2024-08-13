@@ -33,12 +33,6 @@ https://frontend.hostname_placeholder_do_not_change {
 	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
 
-https://swagger.hostname_placeholder_do_not_change {
-	reverse_proxy swagger:8080
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
 http://neo4j.hostname_placeholder_do_not_change {
 	reverse_proxy neo4j:7474
 

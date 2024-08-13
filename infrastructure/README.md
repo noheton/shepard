@@ -53,12 +53,26 @@ sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/Caddyfile
 sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/shepard/index.html
 ```
 
-### 4. Check configuration in `docker-compose.yml` and especially check available memory
+### 4. Create necessary directories
+
+- Prepare needed directories for volume mounts:
+
+```bash
+mkdir /opt/shepard/backend/logs/ /opt/shepard/backend/config
+```
+
+- Adapt user permissions
+
+```bash
+sudo chown 185:185 /opt/shepard/backend/logs/ /opt/shepard/backend/config
+```
+
+### 5. Check configuration in `docker-compose.yml` and especially check available memory
 
 - Backend:
 
 ```yaml
-CATALINA_OPTS: "-Xms2G -Xmx2G
+JAVA_OPTS: "-Xms2G -Xmx2G"
 ```
 
 - Neo4j:
@@ -81,14 +95,14 @@ command: --wiredTigerCacheSizeGB 2.0
 INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
 ```
 
-### 5. Copy the file `env.example` to `.env`
+### 6. Copy the file `env.example` to `.env`
 
 ```bash
 # copy configuration file
 cp env.example .env
 ```
 
-### 6. Set passwords and configuration in `.env` the file
+### 7. Set passwords and configuration in the `.env` file
 
 - All variables except `OIDC_ROLE` must be set!
 - URLs have to end with a trailing slash
@@ -103,7 +117,7 @@ cp env.example .env
 | OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
 | OIDC_PUBLIC    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
 | OIDC_ROLE      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID      | is the client ID of the frontend as known to the oidc identity provider                                   | `shepard-frontend-dev`                                                                            |
+| CLIENT_ID      | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
 
 ## Restrict access to users with specific roles
 
@@ -135,7 +149,7 @@ docker compose pull
 docker compose up -d
 ```
 
-You can find the backend logs in `/opt/shepard/backend/tomcat/shepard.log`.
+You can find the backend logs in `/opt/shepard/backend/logs`.
 
 ## Update
 
@@ -216,4 +230,13 @@ The following error is reported in the backend log:
 
 > User is missing required role: bt_shepard_users_test_msc
 
-You may have entered the OIDC_ROLES variable incorrectly or made a mistake when configuring the identity provider. Ensure that the identity provider embeds the role information in the access tokens. For Keycloak, you must configure the realm roles to accomplish this.
+You may have entered the OIDC_ROLE variable incorrectly or made a mistake when configuring the identity provider. Ensure that the identity provider embeds the role information in the access tokens. For Keycloak, you must configure the realm roles to accomplish this.
+
+### Permission issue for logs and API key config
+
+When having the following error, it is a result of using two directories that require root permissions with a limited
+access user (UID=185).
+
+> LogManager error of type OPEN_FAILURE: Failed to set log file
+
+To keep the backend docker image secure and clean we can keep relying on the same user and make sure to [set the right directory permissions](#4-create-necessary-directories).
