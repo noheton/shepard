@@ -1,0 +1,22 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Configuration
+
+==== Quarkus
+
+This section is a short summary of link:https://quarkus.io/guides/config[this page].
+
+===== Setting Properties
+
+Quarkus reads configuration properties from several sources.
+More information on the sources and how they override each other can be found link:https://quarkus.io/guides/config-reference#configuration-sources[here].
+
+We define a standard value for most properties under `src/main/resources/application.properties`.
+In a dev environment, they can be overridden using a `.env` file.
+In a dockerized setup they can be overridden by providing environment variables to the service.
+
+To support administrators, relevant configuration options are documented in link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/env.example[infrastructure/env.example] and link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/README.md[infrastructure/README.md].
+
+===== Reading Properties
+
+Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
