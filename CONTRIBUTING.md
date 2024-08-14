@@ -22,7 +22,8 @@ Everyone participating in this project is asked to conduct themselves in a reaso
 
 ## I don't want to read this whole thing I just have a question!
 
-Please don't file an issue to ask a question. You'll get faster results by contacting us on [Mattermost at HZDR](https://mattermost.hzdr.de/signup_user_complete/?id=f5ycfi3nmigixxaerhpdg6q66y)
+Please don't file an issue to ask a question.
+You'll get faster results by contacting us on [Mattermost at HZDR](https://mattermost.hzdr.de/signup_user_complete/?id=f5ycfi3nmigixxaerhpdg6q66y)
 
 ## Useful Links
 
@@ -52,7 +53,6 @@ shepard uses three types of branches to organize development:
 - Vue CLI: <https://cli.vuejs.org/>
 - Visual Studio Code: <https://code.visualstudio.com/>
 - Volar: <https://marketplace.visualstudio.com/items?itemName=Vue.volar>
-- TypeScript Vue Plugin (Volar) <https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin>
 - Vue Devtools for Firefox: <https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/>
 - Vue Devtools for Chrome: <https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd>
 
@@ -64,13 +64,6 @@ shepard uses three types of branches to organize development:
 - clone Git repository
 - `cd` into the frontend folder
 - open command line, type in `npm install .`
-
-#### Type Support for `.vue` Imports in TS (optional)
-
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
 
 #### Local backend
 
@@ -144,22 +137,21 @@ The variables preconfigured in `env.example` also contain variables for local da
 
 #### First run
 
-> If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
+- start the project:
+  - IntelliJ: use the existing run configuration on the top right to run quarkus.
+  - VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
+    > **Warning:** Using the VSCode run configuration "Debug Quarkus" above an opened file can edit the run configuration and cause issues.
+    > Stick to the "Run and Debug" tab on the left side to avoid this.
+- visit your local frontend and generate an api key
+- the Swagger UI for development and testing can then be found at <http://localhost:8080/shepard/doc/swagger-ui>
 
-1. start the project:
-
-   - IntelliJ: use the existing run configuration on the top right to run quarkus.
-   - VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
-
-2. run the integration tests: `./mvnw verify -DskipUTs`
-3. go to <http://localhost:7474/> and log in to your local neo4j database
-4. obtain your api key with the following query: `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
-5. switch to the table view and copy the attribute `jws`, this is your api key
-
-> **Warning:** Using the VSCode run configuration "Debug Quarkus" above an opened file can edit the run configuration and cause issues.
-> Stick to the "Run and Debug" tab on the left side to avoid this.
-
-The Swagger UI can then be found at http://localhost:8080/shepard/doc/swagger-ui
+> **Hint:** If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
+>
+> 1. run the integration tests: `./mvnw verify -DskipUTs`
+> 2. go to <http://localhost:7474/> and log in to your local neo4j database
+> 3. obtain your api key with the following query:
+>    `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
+> 4. switch to the table view and copy the attribute `jws`, this is your api key
 
 #### Running Tests
 
@@ -167,21 +159,22 @@ Running Unit Tests:
 
 Either start quarkus with `./mvnw quarkus:dev` and start the interactive test runner or run the following command:
 
-```
+```sh
 ./mvnw test
 ```
 
 Running Integration Tests
 
-```
+```sh
 ./mvnw verify -DskipUTs
 ```
 
-##### Known VSCode Issues
+#### Known Issues
 
-- [Test runner for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-test) has issues when the project is not built, build it first using `./mvnw package -DskipUTs`
-- Test runner added by the [Oracle Java extension](https://marketplace.visualstudio.com/items?itemName=Oracle.oracle-java) works without building first, but adds a duplicate extension since we prefer the Java-Package by Red Hat that is recommended by Microsoft.
-  For that reason we don't use it.
+- VSCode
+  - [Test runner for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-test) has issues when the project is not built, build it first using `./mvnw package -DskipUTs`
+  - Test runner added by the [Oracle Java extension](https://marketplace.visualstudio.com/items?itemName=Oracle.oracle-java) works without building first, but adds a duplicate extension since we prefer the Java-Package by Red Hat that is recommended by Microsoft.
+    For that reason we don't use it.
 
 ## How Can I Contribute?
 
@@ -233,36 +226,32 @@ While you are working on your contribution, others may merge their merge request
 
 ### General
 
-- The code on the main branch is always functional.
-- There is no commented out code for the main branch.
-- No console output (`System.out.println()` or `console.log()`) is used on the main branch.
-- All files except Java files are formatted according to our prettier configuration
+- The code on the develop branch is always functional.
+- All files are formatted according to our prettier configuration
 - Changes in merge requests are complete, self-contained, and implement only a single functionality.
 - Changes that do not belong to an existing merge request are implemented in a separate merge request.
+- The existing package structure is not violated by the new code.
+- There is no commented out code for the develop branch.
+- No console output (`System.out.println()` or `console.log()`) is used on the develop branch.
+- No warnings occur during compilation.
+- Do not include unnecessary packages.
+- Included packages should be backed by a company or a large community.
+- Don't add comments to obvious things.
+- Write meaningful log messages.
 
 ### Frontend Code
 
-- The existing package structure is not violated by the new code.
 - Use the latest JavaScript standard.
-- Define components using Vue [Single File Components](https://v2.vuejs.org/v2/guide/single-file-components.html).
-- Do not include unnecessary packages.
-- Included packages should be backed by company or large community.
+- Define components using Vue [Single File Components](https://vuejs.org/api/sfc-spec.html) and [script setup](https://vuejs.org/api/sfc-script-setup.html).
 - Do not change the `package-lock.json` unless you have included or updated a package.
-- Write meaningful log messages.
-- All code is formatted according to our prettier configuration.
-- No warnings occur during compilation.
 
 ### Backend Code
 
 - Added functionality is tested by unit tests.
 - Regular use cases are tested with integration tests.
-- The existing package structure is not violated by the new code.
 - Do not introduce dependency cycles.
-- All code is formatted according to the eclipse buildin code style.
-- No warnings occur during compilation.
 - The OpenAPI documentation is consistent with the actual behavior of the software.
 - Classes and public methods are uniformly documented using javadoc comments.
-- Don't add comments to obvious things.
 - If you need any of the features of objects, use them otherwise use primitives.
 - Try to offload as much work as possible to the databases.
 - Parallelize things only when needed (e.g. if more than 1000 objects will occur in a stream).
