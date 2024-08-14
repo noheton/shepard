@@ -1,8 +1,7 @@
-from datetime import datetime
+import re
 
 import click
 import jinja2
-import re
 from gitlab.client import Gitlab
 from gitlab.v4.objects.merge_requests import MergeRequest
 from gitlab.v4.objects.projects import Project
