@@ -14,10 +14,11 @@ from shepard_scripts.scripts.example_data import (
 from shepard_scripts.scripts.packages import cleanup_packages
 from shepard_scripts.scripts.releases import (
     create_release,
+    create_release_details,
     create_release_mr,
     get_project,
-    get_release_notes,
-    get_release_version,
+    prompt_confirm,
+    prompt_title,
 )
 
 GITLAB_INSTANCE = "https://gitlab.com"
@@ -35,10 +36,11 @@ def release(token_file):
     """Create a gitlab release for a given project."""
     token = str(token_file.readline()).rstrip("\n")
     project = get_project(GITLAB_INSTANCE, token, PROJECT_ID)
-    version = get_release_version()
-    title, notes = get_release_notes(project, version)
-    create_release_mr(project, f"Release {version}")
-    create_release(project, title, f"{version}-release", notes)
+    tag, notes = create_release_details(project)
+    title = prompt_title(tag)
+    prompt_confirm(title, tag, notes)
+    create_release_mr(project, f"Release {title}")
+    create_release(project, title, tag, notes)
 
 
 @cli.command
