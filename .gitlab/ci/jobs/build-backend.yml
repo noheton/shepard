@@ -14,7 +14,4 @@ build_backend:
     when: always
     expire_in: 2 days
     paths:
-      - backend/target/quarkus-artifact.properties
-      - backend/target/quarkus-app
-      - backend/target/openapi/*
-      - backend/target/classes/neo4j
+      - backend/target/
