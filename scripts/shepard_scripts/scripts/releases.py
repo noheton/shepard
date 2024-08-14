@@ -99,9 +99,9 @@ def _create_next_tag(latest_release_tag) -> str:
         )
         return "1.0.0"
 
+    click.echo(f"The current version tag is {latest_release_tag}.")
     release_type = click.prompt(
-        f"The current version tag is {latest_release_tag}. What is the next release type? (patch, minor, major)",
-        default="patch",
+        "What is the next release type? (patch, minor, major)", default="patch"
     )
     if release_type not in ("patch", "minor", "major"):
         click.echo("Invalid option")
