@@ -6,8 +6,6 @@ compare_typescript_client:
         - clients/tests/typescript/package-lock.json
     paths:
       - .npm/
-  before_script:
-    - !reference [.version_number, script]
   stage: build
   needs: [build_typescript_client]
   script:
