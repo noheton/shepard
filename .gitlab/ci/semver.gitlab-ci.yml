@@ -1,8 +1,8 @@
 stages:
-  - tag
+  - check
 
 fetch_latest_tag:
-  stage: tag
+  stage: check
   script:
     - echo "Fetching the latest tag..."
     # - LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
