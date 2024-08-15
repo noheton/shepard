@@ -50,5 +50,4 @@ include:
   # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
-      -  # make sure this only works when there is a tagged commit
       - if: $CI_COMMIT_REF_NAME == "main"
