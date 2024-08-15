@@ -28,14 +28,14 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 include:
-  #   # Minimal default pipeline for all non-protected branches
-  #   - local: .gitlab/ci/branches.gitlab-ci.yml
-  #     rules:
-  #       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  #         when: never
-  #       - if: $CI_COMMIT_REF_PROTECTED == "true"
-  #         when: never
-  #       - when: always
+    # Minimal default pipeline for all non-protected branches
+    - local: .gitlab/ci/branches.gitlab-ci.yml
+      rules:
+        - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+          when: never
+        - if: $CI_COMMIT_REF_PROTECTED == "true"
+          when: never
+        - when: always
 
   # Merge Request pipeline
   - local: .gitlab/ci/mr.gitlab-ci.yml

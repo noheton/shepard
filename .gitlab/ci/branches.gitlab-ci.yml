@@ -1,6 +1,5 @@
 # For commits on any branches
 stages:
-  - fetch_tag
   - check
   - build
   - test
@@ -10,11 +9,3 @@ include:
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
-
-fetch_latest_tag:
-  stage: fetch_tag
-  script:
-    - echo "Fetching the latest tag..."
-    # - LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-    # - echo "The latest tag is: $LATEST_TAG"
-    - echo ${CI_COMMIT_TAG}
