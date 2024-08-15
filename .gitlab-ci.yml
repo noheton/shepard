@@ -29,7 +29,6 @@ workflow:
 
 include:
   # Minimal default pipeline for all non-protected branches #
-
   - local: .gitlab/ci/semver.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_REF_PROTECTED == "true"
