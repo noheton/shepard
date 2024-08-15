@@ -81,3 +81,5 @@ cypress/screenshots/
 
 # NPM
 node_modules
+
+clients/typescript

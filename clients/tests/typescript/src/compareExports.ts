@@ -1,5 +1,5 @@
 import * as client from "@dlr-shepard/shepard-client";
-import * as newClient from "../new-shepard-client/src/index";
+import * as newClient from "../../../typescript/src/index";
 
 export const compareExports = () => {
   const oldExports = Object.keys(client);
