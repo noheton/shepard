@@ -51,7 +51,7 @@ include:
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
       -  # make sure this only works when there is a tagged commit
-      - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
+      - if: $CI_COMMIT_REF_NAME == "main"
 # # Special test pipeline for SEMVER branch
 #   - local: .gitlab/ci/semver.gitlab-ci.yml
 #     rules:
