@@ -54,7 +54,7 @@ include:
     rules:
       - if: $CI_COMMIT_REF_NAME == "main"
 
-    # Special pipeline for #154-switch-to-semver
+    ## Special pipeline for #154-switch-to-semver
   # - local: .gitlab/ci/semver.gitlab-ci.yml
   #   rules:
   #     # - if: $CI_COMMIT_REF_NAME == "#154-switch-to-semver"
