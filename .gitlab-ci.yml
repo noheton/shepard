@@ -35,9 +35,15 @@ include:
         when: never
       - if: $CI_COMMIT_REF_PROTECTED == "true"
         when: never
+      - when: always
+
+  - local: .gitlab/ci/semver.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_PROTECTED == "true"
+        when: never
       - if: $CI_COMMIT_TAG
         when: always
-      - when: always
+      - when: never
 
   # Merge Request pipeline
   - local: .gitlab/ci/mr.gitlab-ci.yml
