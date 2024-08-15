@@ -10,6 +10,6 @@ include:
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
   # TODO: Remove
-  - local: .gitlab/ci/jobs/build_backend.yml
+  - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/build-and-upload-clients-dev.yml
   - local: .gitlab/ci/jobs/compare-typescript-client-dev.yml
