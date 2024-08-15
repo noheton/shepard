@@ -1,4 +1,4 @@
-import * as client from "@dlr-shepard/shepard-client";
+import * as client from "../../../typescript/src/index";
 import * as newClient from "../../../typescript/src/index";
 
 export const compareExports = () => {
