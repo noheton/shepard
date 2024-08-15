@@ -10,9 +10,88 @@ This chapter is still under construction
 
 === Whitebox Overall System
 
-image::shepard.png[]
+[plantuml, "{plantUMLDir}whitebox-overview", png]
+----
+@startuml Whitebox Overview
+
+:User: as user
+[Webfrontend (UI)] as frontend
+[shepard Timeseries Collector (sTC)] as stc #ffffff
+
+[Backend] as backend
+database "Neo4j" as neo4j #DAE8FC
+database "InfluxDB" as influxdb #D5E8D4
+database "MongoDB" as mongodb #FFE6CC
+
+stc --> backend
+frontend --> backend
+
+backend --> neo4j
+backend --> influxdb
+backend --> mongodb
+
+user --> frontend
+user --> backend
+@enduml
+----
+
+
+The backend is designed to be modular and expandable.
+One of the main tasks of the backend is the management of metadata.
+The data structure is used to manage the attached data.
+This structure as well as the corresponding references is managed by the `core` package and stored in Neo4j.
+
+**Contained Blackboxes:**
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
+| Backend
+| Handles incoming requests from actors like the shepard Timeseries Collector, Webfrontend and Users. 
+Allows these actors to upload, search and retrieve different kinds of data.
+
+| Webfrontend (UI)
+| Allows users to interact (upload, search, retrieve) with the stored data via a webapp.
+
+| shepard Timeseries Collector (sTC)
+| The shepard timeseries collector aims to collect data from different sources and stores them as timeseries data to shepard.
+
+|===
 
 === Level 2
 
+image::building_block/backend-view-databases.png[]
 
-=== Level 3
+Multiple databases are used to enable CRUD operations for many types of data.
+The user can access these databases via the REST API.
+
+Each database integration has to create its own data structure as needed.
+The general structure with `Entities`, `References` and `IOEntities` is available to all integrations.
+In order to create a new database integration, one needs to create a new package.
+This package has to contain at least one database connector instance, the necessary data objects and a service class.
+In addition, the corresponding REST endpoints and the respective references must be implemented.
+
+**Contained Blackboxes:**
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
+| Neo4j
+| Manages metadata and references of uploaded data in `DataObjects`, `Collections` and `Containers`. Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
+
+| InfluxDB
+| Manages timeseries data. Consists of a connector to handle the database and a service to provide a higher level view on the database operations.
+
+| MongoDB
+| Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
+|===
+
+=== Class Diagram
+
+image::building_block/backend-class-diagram.png[]
+
+A complete class diagram with all objects and data types can be seen above.
+The class diagram represents the internal data structure as seen by the backend.
+There are slight differences between the classes seen by the backend and the representation shown to the user.
+E.g. objects with `deleted = true` won't be shown to the user at all.
+
