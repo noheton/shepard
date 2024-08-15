@@ -29,23 +29,23 @@ workflow:
 
 include:
   # Minimal default pipeline for all non-protected branches
-  - local: .gitlab/ci/semver.gitlab-ci.yml
+  - local: .gitlab/ci/branches.gitlab-ci.yml
     rules:
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
         when: never
       - if: $CI_COMMIT_REF_PROTECTED == "true"
         when: never
       - if: $CI_COMMIT_TAG
-        when: always
+        when: never
       - when: always
 
-  # - local: .gitlab/ci/semver.gitlab-ci.yml
-  #   rules:
-  #     - if: $CI_COMMIT_REF_PROTECTED == "true"
-  #       when: never
-  #     - if: $CI_COMMIT_TAG
-  #       when: always
-  #     - when: never
+  - local: .gitlab/ci/semver.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_PROTECTED == "true"
+        when: never
+      - if: $CI_COMMIT_TAG
+        when: always
+      - when: never
 
   # Merge Request pipeline
   - local: .gitlab/ci/mr.gitlab-ci.yml
