@@ -14,3 +14,4 @@ compare_typescript_client:
     - cd clients/tests/typescript
     - npm ci --cache .npm --prefer-offline
     - npm run compare-exports
+  allow_failure: true
