@@ -20,7 +20,7 @@ workflow:
     # Run Merge Request Pipelines for all remaining merge requests
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     # Run branch pipelines for protected branches
-    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_REF_NAME == "develop"
     # Skip all remaining branch pipelines for merge requests
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
@@ -50,4 +50,11 @@ include:
   # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_NAME == "main"
+      -  # make sure this only works when there is a tagged commit
+      - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
+
+  # Special test pipeline for SEMVER branch
+  - local: .gitlab/ci/semver.gitlab-ci.yml
+    rules:
+      -  # make sure this only works when there is a tagged commit
+      - if: $CI_COMMIT_REF_NAME == "#154-switch-to-semver" && $CI_COMMIT_TAG
