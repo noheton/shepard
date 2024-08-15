@@ -20,14 +20,14 @@ public class BasicEntityIO implements HasId {
   private Long id;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
   @Schema(readOnly = true)
   private String createdBy;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, nullable = true)
+  @Schema(readOnly = true, nullable = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date updatedAt;
 
   @Schema(readOnly = true, nullable = true)

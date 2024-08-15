@@ -41,7 +41,7 @@ public class SubscriptionIO {
   private String createdBy;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
   public SubscriptionIO(Subscription sub) {
