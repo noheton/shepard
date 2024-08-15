@@ -3,6 +3,8 @@ stages:
   - check
   - build
   - test
+  # TODO: Remove
+  - upload
 
 include:
   - local: .gitlab/ci/jobs/secret-detection.yml
