@@ -28,7 +28,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 include:
-  # Minimal default pipeline for all non-protected branches
+  # Minimal default pipeline for all non-protected branches #
   - local: .gitlab/ci/branches.gitlab-ci.yml
     rules:
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
