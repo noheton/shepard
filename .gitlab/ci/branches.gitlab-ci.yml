@@ -17,4 +17,4 @@ fetch_latest_tag:
     - echo "Fetching the latest tag..."
     # - LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
     # - echo "The latest tag is: $LATEST_TAG"
-    - echo $CI_COMMIT_TAG
+    - echo ${CI_COMMIT_TAG}
