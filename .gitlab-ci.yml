@@ -35,6 +35,7 @@ include:
         when: never
       - if: $CI_COMMIT_REF_PROTECTED == "true"
         when: never
+      - if: $CI_COMMIT_TAG
       - when: always
 
   # Merge Request pipeline
