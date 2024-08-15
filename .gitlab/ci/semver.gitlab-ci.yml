@@ -6,4 +6,3 @@ fetch_tag:
   stage: check
   script:
     - ls -la
-    - echo ${CI_COMMIT_TAG}
