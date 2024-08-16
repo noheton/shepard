@@ -11,7 +11,7 @@ variables:
   script:
     - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
-    - export LATEST_TAG=$(curl "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases" | jq ".[0].tag_name")
+    - export LATEST_TAG=$(curl "https://gitlab.com/api/v4/projects/59082852/releases" | jq ".[0].tag_name")
 
 workflow:
   rules:
