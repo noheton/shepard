@@ -1,5 +1,5 @@
 .prepare_npm:
-  image: node:21-slim
+  image: node:21
   cache:
     key:
       files:
