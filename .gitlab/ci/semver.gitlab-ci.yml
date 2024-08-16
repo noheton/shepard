@@ -4,6 +4,8 @@ stages:
 
 fetch_tag:
   stage: tag
+  before_script:
+    - !reference [.version_number, script]
   script:
     - ls -la
     - echo ${CI_COMMIT_TAG}
