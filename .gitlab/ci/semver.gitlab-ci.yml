@@ -7,3 +7,4 @@ fetch_tag:
   script:
     - ls -la
     - echo ${CI_COMMIT_TAG}
+    - echo ${LATEST_TAG}
