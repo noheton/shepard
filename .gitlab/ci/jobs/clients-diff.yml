@@ -30,7 +30,7 @@ diff_python_client:
     - source env/bin/activate
     - pip install -r requirements.txt
     - pip install -r ../../python/requirements.txt
-    - cp -r /clients/python/shepard_client src/shepard_client_local
+    - cp -r ../../python/shepard_client src/shepard_client_local
     - grep -rl "from shepard_client." src/shepard_client_local/ | xargs sed -i 's/from shepard_client\./from shepard_client_local\./g'
     - python src/main.py
   allow_failure: true
