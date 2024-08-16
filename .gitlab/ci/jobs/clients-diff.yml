@@ -13,3 +13,24 @@ diff_typescript_client:
     - npm ci --cache .npm --prefer-offline
     - npm run compare-exports
   allow_failure: true
+
+diff_python_client:
+  image: python:3.12.5-alpine3.19
+  cache:
+    key:
+      files:
+        - clients/tests/python/requirements.txt
+    paths:
+      - env/
+  stage: test
+  needs: [build_python_client]
+  script:
+    - cd clients/tests/python
+    - python -m venv env
+    - source env/bin/activate
+    - pip install -r requirements.txt
+    - pip install -r clients/python/requirements.txt
+    - cp -r clients/python/shepard_client src/shepard_client_local
+    - grep -rl "from shepard_client." src/shepard_client_local/ | xargs sed -i 's/from shepard_client\./from shepard_client_local\./g'
+    - python src/main.py
+  allow_failure: true

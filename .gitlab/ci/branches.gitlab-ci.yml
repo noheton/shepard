@@ -9,3 +9,5 @@ include:
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
+  - local: .gitlab/ci/jobs/build-clients.yml
+  - local: .gitlab/ci/jobs/clients-diff.yml
