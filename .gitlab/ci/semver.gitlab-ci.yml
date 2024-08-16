@@ -1,8 +1,9 @@
 # For commits of pushed tags
 stages:
-  - check
+  - tag
 
 fetch_tag:
-  stage: check
+  stage: tag
   script:
     - ls -la
+    - echo ${CI_COMMIT_TAG}
