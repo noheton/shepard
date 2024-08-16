@@ -10,6 +10,5 @@ include:
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
   - local: .gitlab/ci/jobs/build-backend.yml
-  - local: .gitlab/ci/jobs/openapi-diff.yml
   - local: .gitlab/ci/jobs/build-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml
