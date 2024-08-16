@@ -1,4 +1,4 @@
-compare_typescript_client:
+diff_typescript_client:
   image: node:21-slim
   cache:
     key:

@@ -19,7 +19,7 @@ include:
     inputs:
       target_branch: main
   - local: .gitlab/ci/jobs/build-clients-dev.yml
-  - local: .gitlab/ci/jobs/compare-typescript-client-dev.yml
+  - local: .gitlab/ci/jobs/clients-diff.yml
   - local: .gitlab/ci/jobs/upload-clients-dev.yml
   - local: .gitlab/ci/jobs/upload-docker-dev.yml
     inputs:
