@@ -31,16 +31,16 @@ poetry run cli release ./token.txt
 
 .The following steps are carried out by the release script:
 * A Merge Request is created to merge the `develop` branch into `main`
-** The title is the new version number
+** The title is the title given by the user concatenated with the version tag
 ** Without squashing the commits
 ** Without deleting the source branch
 * That Merge Request is merged right away
 * A https://gitlab.com/dlr-shepard/shepard/-/releases[Gitlab Release] including release notes directed at administrators and users is created
-** The title is the new version number
+** The title is the title given by the user concatenated with the version tag
 ** A short paragraph describes the most important changes
 ** Breaking changes are listed in a prominent way
 ** Other changes besides dependency updates are listed below
-* A release tag `<version number>-release` on `main` is created
+* A release tag `<version number>` on `main` is created
 
 ==== Hotfixes
 
