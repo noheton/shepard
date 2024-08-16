@@ -15,16 +15,17 @@ However, this date is not fixed and can be postponed by a few days if necessary.
 1. Finish development and make sure the develop branch is stable, the pipeline is successful and no code reviews are open
 2. Merge the `main` branch into `develop` in order to reapply any cherry-picked commits
 3. Follow the setup steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts#preparation-only-when-you-want-to-interact-with-the-gitlab-repository[Scripts README.md]
-4. Run the following command:
+4. Run the following command under shepard/scripts:
 +
 ```sh
 poetry run cli release ./token.txt
 ```
-5. Verify merged merge requests
-6. Think of a name for the upcoming release
-7. Complete the release notes template (editor opens automatically)
-8. Verify the release and confirm with `y`
-9. Verify that everything was successfully created (GitLab Release Notes, Pipelines, etc.)
+5. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly.
+6. Verify the release notes created by the script. (editor opens automatically)
+7. Suggest a release title that will be appended to the version number.
+8. Confirm the generated details.
+9. Verify merged merge requests and that the merge commit was tagged.
+10. Verify that everything was successfully created. (GitLab Release, Release Notes, Pipelines, etc.)
 
 ===== Actions done by the release script in the background
 
