@@ -6,4 +6,3 @@ fetch_tag:
   stage: tag
   script:
     - echo ${CI_COMMIT_TAG}
-    - curl -s https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases | grep -oP -m 1 '"tag_name":.*?[^\\]",' | head -n 1 | sed 's/.*"tag_name":"\([^"]*\)".*/\1/'

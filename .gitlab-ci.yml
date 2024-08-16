@@ -9,9 +9,9 @@ variables:
 
 .version_number:
   script:
-    - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
+    # Latest release version tag
+    - export VERSION_NUMBER=${CI_COMMIT_TAG:-$(curl -s https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases | grep -oP -m 1 '"tag_name":.*?[^\\]",' | head -n 1 | sed 's/.*"tag_name":"\([^"]*\)".*/\1/')}
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
-    - export LATEST_TAG=$(curl -s https://gitlab.com/api/v4/projects/59082852/releases | grep -oP -m 1 '"tag_name":.*?[^\\]",' | head -n 1 | sed 's/.*"tag_name":"\([^"]*\)".*/\1/')
 
 workflow:
   rules:
