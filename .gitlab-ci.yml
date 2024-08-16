@@ -11,8 +11,7 @@ variables:
   script:
     - export VERSION_NUMBER=$(echo ${CI_PIPELINE_CREATED_AT} | cut -d'T' -f 1 | tr - .)
     - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
-    - git fetch origin main --tags
-    - export LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1 --branches=main))
+    - export LATEST_TAG=$(curl "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases" | jq ".[0].tag_name")
 
 workflow:
   rules:
