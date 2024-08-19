@@ -4,7 +4,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
@@ -15,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class BasicEntityIOTest extends BaseTestCase {
+public class BasicEntityIOTest {
 
   private static class EntityIO extends BasicEntityIO {
 

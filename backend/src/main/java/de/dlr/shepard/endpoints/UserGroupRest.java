@@ -11,6 +11,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -45,8 +46,23 @@ public class UserGroupRest {
   @Context
   private SecurityContext securityContext;
 
-  private UserGroupService userGroupService = new UserGroupService();
-  private PermissionsService permissionsService = new PermissionsService();
+  private UserGroupService userGroupService;
+  private PermissionsService permissionsService;
+
+  private PermissionsUtil permissionsUtil;
+
+  UserGroupRest() {}
+
+  @Inject
+  public UserGroupRest(
+    UserGroupService userGroupService,
+    PermissionsService permissionsService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.userGroupService = userGroupService;
+    this.permissionsService = permissionsService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @POST
   @Tag(name = Constants.USERGROUP)
@@ -196,7 +212,7 @@ public class UserGroupRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-    var roles = new PermissionsUtil().getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsUtil.getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

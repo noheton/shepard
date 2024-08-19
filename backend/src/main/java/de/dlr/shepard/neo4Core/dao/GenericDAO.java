@@ -53,8 +53,7 @@ public abstract class GenericDAO<T> {
    * @return The entity with the given id or null
    */
   public T findByNeo4jId(long id) {
-    T object = session.load(getEntityType(), id, DEPTH_ENTITY);
-    return object;
+    return session.load(getEntityType(), id, DEPTH_ENTITY);
   }
 
   /**
@@ -64,8 +63,7 @@ public abstract class GenericDAO<T> {
    * @return The entity with the given id or null
    */
   public T findLightByNeo4jId(long id) {
-    T object = session.load(getEntityType(), id, 0);
-    return object;
+    return session.load(getEntityType(), id, 0);
   }
 
   /**
@@ -75,8 +73,7 @@ public abstract class GenericDAO<T> {
    * @return An iterable with the found entities
    */
   public Collection<T> findMatching(Filter filter) {
-    Collection<T> iter = session.loadAll(getEntityType(), filter, DEPTH_ENTITY);
-    return iter;
+    return session.loadAll(getEntityType(), filter, DEPTH_ENTITY);
   }
 
   /**

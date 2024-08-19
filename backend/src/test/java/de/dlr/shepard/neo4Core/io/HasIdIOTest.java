@@ -2,12 +2,11 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.HasId;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class HasIdIOTest extends BaseTestCase {
+public class HasIdIOTest {
 
   @Test
   public void equalsContract() {

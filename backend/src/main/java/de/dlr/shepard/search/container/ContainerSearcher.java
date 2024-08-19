@@ -8,12 +8,22 @@ import de.dlr.shepard.neo4Core.io.BasicContainerIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.search.QueryValidator;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequestScoped
 public class ContainerSearcher {
 
-  private SearchDAO searchDAO = new SearchDAO();
+  private SearchDAO searchDAO;
+
+  ContainerSearcher() {}
+
+  @Inject
+  public ContainerSearcher(SearchDAO searchDAO) {
+    this.searchDAO = searchDAO;
+  }
 
   public ContainerSearchResult search(ContainerSearchBody containerSearchBody, String userName) {
     ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();

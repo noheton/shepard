@@ -12,18 +12,38 @@ import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class CollectionService {
 
-  private CollectionDAO collectionDAO = new CollectionDAO();
-  private UserDAO userDAO = new UserDAO();
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private VersionDAO versionDAO = new VersionDAO();
+  private CollectionDAO collectionDAO;
+  private UserDAO userDAO;
+  private PermissionsDAO permissionsDAO;
+  private DateHelper dateHelper;
+  private VersionDAO versionDAO;
+
+  CollectionService() {}
+
+  @Inject
+  public CollectionService(
+    CollectionDAO collectionDAO,
+    UserDAO userDAO,
+    PermissionsDAO permissionsDAO,
+    DateHelper dateHelper,
+    VersionDAO versionDAO
+  ) {
+    this.collectionDAO = collectionDAO;
+    this.userDAO = userDAO;
+    this.permissionsDAO = permissionsDAO;
+    this.dateHelper = dateHelper;
+    this.versionDAO = versionDAO;
+  }
 
   /**
    * Creates a Collection and stores it in Neo4J
@@ -42,7 +62,6 @@ public class CollectionService {
     toCreate.setDescription(collection.getDescription());
     toCreate.setName(collection.getName());
     var createdCollection = collectionDAO.createOrUpdate(toCreate);
-    permissionsDAO.createOrUpdate(new Permissions(createdCollection, user, PermissionType.Private));
 
     Version nullVersion = new Version(Constants.INITIAL_VERSION, Constants.INITIAL_VERSION, date, user);
     Version savedNullVersion = versionDAO.createOrUpdate(nullVersion);
@@ -51,6 +70,8 @@ public class CollectionService {
     createdCollection.setShepardId(collectionId);
     createdCollection.setVersion(savedNullVersion);
     var updated = collectionDAO.createOrUpdate(createdCollection);
+    permissionsDAO.createOrUpdate(new Permissions(updated, user, PermissionType.Private));
+
     return updated;
   }
 

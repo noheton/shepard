@@ -12,38 +12,79 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+@RequestScoped
 public class UrlPathChecker {
 
-  private CollectionService collectionService = new CollectionService();
-  private DataObjectService dataObjectService = new DataObjectService();
-  private BasicReferenceService basicReferenceService = new BasicReferenceService();
+  private CollectionService collectionService;
+  private DataObjectService dataObjectService;
+  private BasicReferenceService basicReferenceService;
+  private CollectionReferenceService collectionReferenceService;
+  private DataObjectReferenceService dataObjectReferenceService;
+  private URIReferenceService uriReferenceService;
+  private TimeseriesReferenceService timeseriesReferenceService;
+  private TimeseriesContainerService timeseriesContainerService;
+  private StructuredDataReferenceService structuredDataReferenceService;
+  private StructuredDataContainerService structuredDataContainerService;
+  private FileReferenceService fileReferenceService;
+  private FileContainerService fileContainerService;
+  private UserService userService;
+  private ApiKeyService apiKeyService;
+  private SubscriptionService subscriptionService;
+  private UserGroupService userGroupService;
 
-  private CollectionReferenceService collectionReferenceService = new CollectionReferenceService();
-  private DataObjectReferenceService dataObjectReferenceService = new DataObjectReferenceService();
-  private URIReferenceService uriReferenceService = new URIReferenceService();
+  private SemanticRepositoryService semanticRepositoryService;
 
-  private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();
-  private TimeseriesContainerService timeseriesContainerService = new TimeseriesContainerService();
+  private SemanticAnnotationService semanticAnnotationService;
 
-  private StructuredDataReferenceService structuredDataReferenceService = new StructuredDataReferenceService();
-  private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
+  UrlPathChecker() {}
 
-  private FileReferenceService fileReferenceService = new FileReferenceService();
-  private FileContainerService fileContainerService = new FileContainerService();
-
-  private UserService userService = new UserService();
-  private ApiKeyService apiKeyService = new ApiKeyService();
-  private SubscriptionService subscrptionService = new SubscriptionService();
-
-  private UserGroupService userGroupService = new UserGroupService();
-
-  private SemanticRepositoryService semanticRepositoryService = new SemanticRepositoryService();
-  private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
+  @Inject
+  public UrlPathChecker(
+    CollectionService collectionService,
+    DataObjectService dataObjectService,
+    BasicReferenceService basicReferenceService,
+    CollectionReferenceService collectionReferenceService,
+    DataObjectReferenceService dataObjectReferenceService,
+    URIReferenceService uriReferenceService,
+    TimeseriesReferenceService timeseriesReferenceService,
+    TimeseriesContainerService timeseriesContainerService,
+    StructuredDataReferenceService structuredDataReferenceService,
+    StructuredDataContainerService structuredDataContainerService,
+    FileReferenceService fileReferenceService,
+    FileContainerService fileContainerService,
+    UserService userService,
+    ApiKeyService apiKeyService,
+    SubscriptionService subscriptionService,
+    UserGroupService userGroupService,
+    SemanticRepositoryService semanticRepositoryService,
+    SemanticAnnotationService semanticAnnotationService
+  ) {
+    this.collectionService = collectionService;
+    this.dataObjectService = dataObjectService;
+    this.basicReferenceService = basicReferenceService;
+    this.collectionReferenceService = collectionReferenceService;
+    this.dataObjectReferenceService = dataObjectReferenceService;
+    this.uriReferenceService = uriReferenceService;
+    this.timeseriesReferenceService = timeseriesReferenceService;
+    this.timeseriesContainerService = timeseriesContainerService;
+    this.structuredDataReferenceService = structuredDataReferenceService;
+    this.structuredDataContainerService = structuredDataContainerService;
+    this.fileReferenceService = fileReferenceService;
+    this.fileContainerService = fileContainerService;
+    this.userService = userService;
+    this.apiKeyService = apiKeyService;
+    this.subscriptionService = subscriptionService;
+    this.userGroupService = userGroupService;
+    this.semanticRepositoryService = semanticRepositoryService;
+    this.semanticAnnotationService = semanticAnnotationService;
+  }
 
   /**
    * Checks the url for wrong ids. A wrong id could identify a non existing
@@ -202,7 +243,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.SUBSCRIPTIONS)) {
       long id = Long.parseLong(pathElems.get(Constants.SUBSCRIPTIONS));
-      var subscription = subscrptionService.getSubscription(id);
+      var subscription = subscriptionService.getSubscription(id);
       String error = checkSubscription(subscription, user);
       if (error != null) {
         return builder.append(error).toString();

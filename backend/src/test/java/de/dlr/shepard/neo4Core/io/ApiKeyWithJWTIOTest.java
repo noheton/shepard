@@ -2,13 +2,12 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import java.util.UUID;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class ApiKeyWithJWTIOTest extends BaseTestCase {
+public class ApiKeyWithJWTIOTest {
 
   @Test
   public void equalsContract() {

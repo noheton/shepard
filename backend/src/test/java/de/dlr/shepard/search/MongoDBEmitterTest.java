@@ -3,7 +3,6 @@ package de.dlr.shepard.search;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardParserException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class MongoDBEmitterTest extends BaseTestCase {
+public class MongoDBEmitterTest {
 
   private static Stream<Arguments> queryTest() {
     var queryEq = Arguments.of(

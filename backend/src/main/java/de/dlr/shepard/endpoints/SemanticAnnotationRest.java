@@ -2,13 +2,21 @@ package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.neo4Core.services.SemanticAnnotationService;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 
 public abstract class SemanticAnnotationRest {
 
-  private SemanticAnnotationService semanticAnnotationService = new SemanticAnnotationService();
+  private SemanticAnnotationService semanticAnnotationService;
+
+  SemanticAnnotationRest() {}
+
+  @Inject
+  public SemanticAnnotationRest(SemanticAnnotationService semanticAnnotationService) {
+    this.semanticAnnotationService = semanticAnnotationService;
+  }
 
   protected Response getAllByShepardId(long shepardId) {
     var annotations = semanticAnnotationService.getAllAnnotationsByShepardId(shepardId);

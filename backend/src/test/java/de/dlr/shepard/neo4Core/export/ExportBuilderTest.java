@@ -3,19 +3,22 @@ package de.dlr.shepard.neo4Core.export;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
-public class ExportBuilderTest extends BaseTestCase {
+@QuarkusComponentTest
+public class ExportBuilderTest {
 
-  private DateHelper dateHelper = new DateHelper();
+  @Inject
+  DateHelper dateHelper;
 
   @Test
   public void testConstructor() throws IOException {

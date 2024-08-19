@@ -4,6 +4,7 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 
 @Slf4j
+@RequestScoped
 public class CsvConverter {
 
   public InputStream convertToCsv(List<TimeseriesPayload> payloads) throws IOException {

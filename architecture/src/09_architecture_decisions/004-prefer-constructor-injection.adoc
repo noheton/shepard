@@ -1,0 +1,35 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-004 Prefer Constructor Injection
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|19.08.2024
+|Status|Done
+
+|Context|
+Quarkus supports dependency injection that we want to use.
+It supports loosely coupled components providing a better flexibility, modifiability and testability.
+In general there are two possibilities to use DI, constructor and member injection.
+
+|Decision|
+We decided to use constructor injection.
+
+- When creating an instance manually we directly see the dependencies.
+- There are existing components that make use of injected configuration values and services in the constructor.
+That is not possible with member injection because the constructor is executed first.
+- During the migration process we can directly see if someone is still using the standard constructor which should not be the case.
+
+|Possible Alternatives|
+Using the @Inject annotation on non private members.
+
+- Quarkus does not recommend injection on private members.
+In this case quarkus has to use reflection which complicates with the optimization for native images.
+- When developers create an instance manually by using the default constructor, the dependent beans are not set which leads to strange NullPointer exceptions during runtime.
+
+|Consequences|
+- An additional parameterless constructor must be defined.
+- Adding a new dependent service means to modify the existing constructor.
+
+|===

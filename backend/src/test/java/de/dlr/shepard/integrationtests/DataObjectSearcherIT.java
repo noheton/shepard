@@ -14,6 +14,7 @@ import de.dlr.shepard.search.unified.SearchParams;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+@QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectSearcherIT extends BaseTestCaseIT {
 

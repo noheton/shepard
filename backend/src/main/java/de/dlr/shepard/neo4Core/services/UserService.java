@@ -2,12 +2,22 @@ package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.User;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class UserService {
 
-  private UserDAO userDAO = new UserDAO();
+  private UserDAO userDAO;
+
+  UserService() {}
+
+  @Inject
+  public UserService(UserDAO userDAO) {
+    this.userDAO = userDAO;
+  }
 
   /**
    * Stores a new user in Neo4J.

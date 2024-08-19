@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -29,8 +30,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class HealthzRest {
 
   private static IConnector neo4j = NeoConnector.getInstance();
-  private static IConnector mongodb = MongoDBConnector.getInstance();
-  private static IConnector influxdb = InfluxDBConnector.getInstance();
+  private InfluxDBConnector influxdb;
+
+  private MongoDBConnector mongodb;
+
+  HealthzRest() {}
+
+  @Inject
+  public HealthzRest(InfluxDBConnector influxdb, MongoDBConnector mongodb) {
+    this.influxdb = influxdb;
+    this.mongodb = mongodb;
+  }
 
   @GET
   @Tag(name = Constants.HEALTHZ)

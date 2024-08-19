@@ -6,6 +6,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.gridfs.GridFSBucket;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.xml.bind.DatatypeConverter;
 import java.io.InputStream;
 import java.security.DigestInputStream;
@@ -16,6 +18,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 @Slf4j
+@RequestScoped
 public class FileService {
 
   private static final int CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MiB
@@ -25,9 +28,18 @@ public class FileService {
   private static final String CREATEDAT_ATTR = "createdAt";
   private static final String MD5_ATTR = "md5";
 
-  private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
-  private UUIDHelper uuidHelper = new UUIDHelper();
-  private DateHelper dateHelper = new DateHelper();
+  private MongoDBConnector mongoDBConnector;
+  private UUIDHelper uuidHelper;
+  private DateHelper dateHelper;
+
+  FileService() {}
+
+  @Inject
+  public FileService(MongoDBConnector mongoDBConnector, UUIDHelper uuidHelper, DateHelper dateHelper) {
+    this.mongoDBConnector = mongoDBConnector;
+    this.uuidHelper = uuidHelper;
+    this.dateHelper = dateHelper;
+  }
 
   public String createFileContainer() {
     String oid = "FileContainer" + uuidHelper.getUUID().toString();
@@ -38,7 +50,7 @@ public class FileService {
   public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getDatabase().getCollection(mongoid);
+      collection = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       log.error("Could not find container with mongoid: {}", mongoid);
       return null;
@@ -67,7 +79,7 @@ public class FileService {
   public NamedInputStream getPayload(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getDatabase().getCollection(containerId);
+      collection = mongoDBConnector.getCollection(containerId);
     } catch (IllegalArgumentException e) {
       log.error("Could not find container with mongoid: {}", containerId);
       return null;
@@ -90,7 +102,7 @@ public class FileService {
   public ShepardFile getFile(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getDatabase().getCollection(containerId);
+      collection = mongoDBConnector.getCollection(containerId);
     } catch (IllegalArgumentException e) {
       log.error("Could not find container with mongoid: {}", containerId);
       return null;
@@ -106,7 +118,7 @@ public class FileService {
   public boolean deleteFileContainer(String mongoid) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoDBConnector.getDatabase().getCollection(mongoid);
+      toDelete = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       log.error("Could not delete container with mongoid: {}", mongoid);
       return false;
@@ -122,7 +134,7 @@ public class FileService {
   public boolean deleteFile(String mongoId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getDatabase().getCollection(mongoId);
+      collection = mongoDBConnector.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
       log.error("Could not find container with mongoid: {}", mongoId);
       return false;

@@ -3,12 +3,15 @@ package de.dlr.shepard.semantics;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.dlr.shepard.BaseTestCase;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-public class SemanticRepositoryConnectorFactoryTest extends BaseTestCase {
+@QuarkusComponentTest
+public class SemanticRepositoryConnectorFactoryTest {
 
-  private SemanticRepositoryConnectorFactory factory = new SemanticRepositoryConnectorFactory();
+  @Inject
+  SemanticRepositoryConnectorFactory factory;
 
   @Test
   public void getRepositoryService_Sparql() {

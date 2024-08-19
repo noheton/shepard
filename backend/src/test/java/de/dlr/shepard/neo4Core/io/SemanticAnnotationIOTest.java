@@ -2,13 +2,12 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class SemanticAnnotationIOTest extends BaseTestCase {
+public class SemanticAnnotationIOTest {
 
   @Test
   public void equalsContract() {

@@ -2,13 +2,12 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-public class HealthzIOTest extends BaseTestCase {
+public class HealthzIOTest {
 
   @Test
   public void equalsContract() {

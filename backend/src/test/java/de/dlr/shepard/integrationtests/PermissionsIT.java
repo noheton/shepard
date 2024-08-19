@@ -28,7 +28,6 @@ public class PermissionsIT extends BaseTestCaseIT {
   private static CollectionIO collection1;
   private static CollectionIO collection2;
   private static String collectionsURL;
-
   private static String permissionsURL;
   private static String userGroupURL;
   private static RequestSpecification requestSpecification;
@@ -162,6 +161,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   public void permittedGetViaPublicReadable() {
     var permissions = new PermissionsIO() {
       {
+        setOwner(user1.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(new long[] {});
@@ -180,7 +180,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   @Order(7)
   public void getRolesReader() {
     var actual = given()
-      .spec(requestSpecification1)
+      .spec(requestSpecification2)
       .when()
       .get(collectionsURL + "/" + collection1.getId() + "/" + Constants.ROLES)
       .as(RolesIO.class);
@@ -204,6 +204,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   public void permittedPutViaPublic() {
     var permissions = new PermissionsIO() {
       {
+        setOwner(user1.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(new long[] {});
@@ -213,7 +214,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       }
     };
     permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
-    given().spec(requestSpecification1).body(permissions).when().put(permissionsURL);
+    given().spec(requestSpecification1).body(permissions).when().put(permissionsURL).then().statusCode(200);
     var answer = given()
       .spec(requestSpecification2)
       .body(collection1)
@@ -239,7 +240,8 @@ public class PermissionsIT extends BaseTestCaseIT {
   public void permittedGetViaReadersList() {
     var permissions = new PermissionsIO() {
       {
-        setReader(new String[] { "user1" });
+        setOwner(user2.getUser().getUsername());
+        setReader(new String[] { user1.getUser().getUsername() });
         setWriter(new String[] {});
         setReaderGroupIds(new long[] {});
         setWriterGroupIds(new long[] {});
@@ -258,6 +260,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   public void permittedPutViaWritersList() {
     var permissions = new PermissionsIO() {
       {
+        setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] { "user1" });
         setReaderGroupIds(new long[] {});
@@ -298,6 +301,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     long[] readerGroupIds = { readersGroup.getId() };
     var permissions = new PermissionsIO() {
       {
+        setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(readerGroupIds);
@@ -343,6 +347,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     long[] readerGroupIds = { readersGroup.getId() };
     var permissions = new PermissionsIO() {
       {
+        setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(readerGroupIds);
@@ -380,6 +385,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     long[] writersGroupIds = { writersGroup.getId() };
     var permissions = new PermissionsIO() {
       {
+        setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(new long[] {});
@@ -421,6 +427,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     long[] writersGroupIds = { writersGroup.getId() };
     var permissions = new PermissionsIO() {
       {
+        setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
         setReaderGroupIds(new long[] {});

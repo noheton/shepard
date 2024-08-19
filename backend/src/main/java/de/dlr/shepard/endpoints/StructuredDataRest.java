@@ -13,6 +13,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -43,11 +44,26 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class StructuredDataRest {
 
-  private StructuredDataContainerService structuredDataContainerService = new StructuredDataContainerService();
-  private PermissionsService permissionsService = new PermissionsService();
+  private StructuredDataContainerService structuredDataContainerService;
+  private PermissionsService permissionsService;
+
+  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
+
+  StructuredDataRest() {}
+
+  @Inject
+  public StructuredDataRest(
+    StructuredDataContainerService structuredDataContainerService,
+    PermissionsService permissionsService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.structuredDataContainerService = structuredDataContainerService;
+    this.permissionsService = permissionsService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @GET
   @Tag(name = Constants.STRUCTUREDDATA)
@@ -255,7 +271,7 @@ public class StructuredDataRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   public Response getStructuredDataRoles(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
-    var roles = new PermissionsUtil().getRolesByNeo4jId(structuredDataId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsUtil.getRolesByNeo4jId(structuredDataId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

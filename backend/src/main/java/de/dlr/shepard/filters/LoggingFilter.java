@@ -1,5 +1,6 @@
 package de.dlr.shepard.filters;
 
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Provider
 @Slf4j
+@RequestScoped
 public class LoggingFilter implements ContainerRequestFilter {
 
   @Override

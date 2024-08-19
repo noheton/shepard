@@ -5,10 +5,20 @@ import de.dlr.shepard.neo4Core.io.UserIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.search.QueryValidator;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 
+@RequestScoped
 public class UserSearcher {
 
-  private SearchDAO searchDAO = new SearchDAO();
+  private SearchDAO searchDAO;
+
+  UserSearcher() {}
+
+  @Inject
+  public UserSearcher(SearchDAO searchDAO) {
+    this.searchDAO = searchDAO;
+  }
 
   public UserSearchResult search(UserSearchBody userSearchBody) {
     String selectionQuery = Neo4jEmitter.emitUserSelectionQuery(userSearchBody.getSearchParams().getQuery());

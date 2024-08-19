@@ -10,6 +10,8 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.MongoDBEmitter;
 import de.dlr.shepard.util.TraversalRules;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,10 +20,22 @@ import java.util.Map;
 import java.util.Set;
 import org.bson.Document;
 
+@RequestScoped
 public class StructuredDataSearcher implements ISearcher {
 
-  private StructuredDataReferenceDAO structuredDataReferenceDAO = new StructuredDataReferenceDAO();
-  private MongoDBConnector mongoDBConnector = MongoDBConnector.getInstance();
+  private StructuredDataReferenceDAO structuredDataReferenceDAO;
+  private MongoDBConnector mongoDBConnector;
+
+  StructuredDataSearcher() {}
+
+  @Inject
+  public StructuredDataSearcher(
+    StructuredDataReferenceDAO structuredDataReferenceDAO,
+    MongoDBConnector mongoDBConnector
+  ) {
+    this.structuredDataReferenceDAO = structuredDataReferenceDAO;
+    this.mongoDBConnector = mongoDBConnector;
+  }
 
   @Override
   public ResponseBody search(SearchBody searchBody, String userName) {
@@ -57,7 +71,7 @@ public class StructuredDataSearcher implements ISearcher {
     Map<StructuredDataReference, Long> matchingReferences = new HashMap<>();
     for (var reference : reachableReferences.entrySet()) {
       String mongoContainerId = reference.getKey().getStructuredDataContainer().getMongoId();
-      MongoCollection<Document> mongoContainer = mongoDBConnector.getDatabase().getCollection(mongoContainerId);
+      MongoCollection<Document> mongoContainer = mongoDBConnector.getCollection(mongoContainerId);
       List<String> mongoStructuredDataIds = new ArrayList<>();
       for (StructuredData structuredData : reference.getKey().getStructuredDatas()) {
         mongoStructuredDataIds.add(makeMongoQueryId(structuredData.getOid()));

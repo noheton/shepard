@@ -8,16 +8,32 @@ import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@RequestScoped
 public class ApiKeyService {
 
-  private ApiKeyDAO apiKeyDAO = new ApiKeyDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private PKIHelper pkiHelper = new PKIHelper();
+  private ApiKeyDAO apiKeyDAO;
+
+  private UserDAO userDAO;
+
+  private DateHelper dateHelper;
+
+  private PKIHelper pkiHelper;
+
+  ApiKeyService() {}
+
+  @Inject
+  ApiKeyService(ApiKeyDAO apiKeyDao, UserDAO userDao, DateHelper dateHelper, PKIHelper pkiHelper) {
+    this.apiKeyDAO = apiKeyDao;
+    this.userDAO = userDao;
+    this.dateHelper = dateHelper;
+    this.pkiHelper = pkiHelper;
+  }
 
   /**
    * Searches the neo4j database for all ApiKeys associated with a given user.

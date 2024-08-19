@@ -2,14 +2,13 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class TimeseriesContainerIOTest extends BaseTestCase {
+public class TimeseriesContainerIOTest {
 
   @Test
   public void equalsContract() {

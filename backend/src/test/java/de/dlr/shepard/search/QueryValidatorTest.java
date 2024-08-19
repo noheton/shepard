@@ -3,11 +3,10 @@ package de.dlr.shepard.search;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import org.junit.jupiter.api.Test;
 
-public class QueryValidatorTest extends BaseTestCase {
+public class QueryValidatorTest {
 
   String query = "{\"property\": \"name\",\"value\": \"MyName\",\"operator\": \"eq\"}";
 

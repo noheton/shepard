@@ -11,8 +11,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,17 +30,17 @@ import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.influxdb.dto.QueryResult.Result;
 import org.influxdb.dto.QueryResult.Series;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class InfluxDBConnectorTest extends BaseTestCase {
+@QuarkusComponentTest
+public class InfluxDBConnectorTest {
 
-  @Mock
-  private InfluxDB influxDB;
+  @InjectMock
+  InfluxDB influxDB;
 
-  @InjectMocks
-  private InfluxDBConnector connector;
+  @Inject
+  InfluxDBConnector connector;
 
   private final String database = "my_database";
   private final String measurement = "my_measurement";
@@ -57,13 +59,14 @@ public class InfluxDBConnectorTest extends BaseTestCase {
     new ArrayList<InfluxPoint>()
   );
 
-  @Test
-  public void testGetInstance() {
-    var actual = InfluxDBConnector.getInstance();
-    assertNotNull(actual);
+  @BeforeEach
+  void setUp() {
+    this.connector = new InfluxDBConnector(influxDB);
+  }
 
-    var second = InfluxDBConnector.getInstance();
-    assertEquals(actual, second);
+  @Test
+  public void createInstance_notNull() {
+    assertNotNull(connector);
   }
 
   @Test

@@ -12,6 +12,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -48,11 +49,25 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @RequestScoped
 public class FileRest {
 
-  private FileContainerService fileContainerService = new FileContainerService();
-  private PermissionsService permissionsService = new PermissionsService();
+  private FileContainerService fileContainerService;
+  private PermissionsService permissionsService;
+  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
+
+  FileRest() {}
+
+  @Inject
+  public FileRest(
+    FileContainerService fileContainerService,
+    PermissionsService permissionsService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.fileContainerService = fileContainerService;
+    this.permissionsService = permissionsService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @GET
   @Tag(name = Constants.FILE)
@@ -282,7 +297,7 @@ public class FileRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var roles = new PermissionsUtil().getRolesByNeo4jId(fileContainerId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsUtil.getRolesByNeo4jId(fileContainerId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

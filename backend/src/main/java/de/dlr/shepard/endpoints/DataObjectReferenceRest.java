@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.neo4Core.services.DataObjectReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -44,10 +45,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class DataObjectReferenceRest {
 
-  private DataObjectReferenceService dataObjectReferenceService = new DataObjectReferenceService();
+  private DataObjectReferenceService dataObjectReferenceService;
 
   @Context
   private SecurityContext securityContext;
+
+  DataObjectReferenceRest() {}
+
+  @Inject
+  public DataObjectReferenceRest(DataObjectReferenceService dataObjectReferenceService) {
+    this.dataObjectReferenceService = dataObjectReferenceService;
+  }
 
   @GET
   @Tag(name = Constants.DATAOBJECT_REFERENCE)

@@ -8,19 +8,36 @@ import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class SemanticRepositoryService {
 
-  private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory =
-    new SemanticRepositoryConnectorFactory();
+  private SemanticRepositoryDAO semanticRepositoryDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+
+  SemanticRepositoryService() {}
+
+  @Inject
+  public SemanticRepositoryService(
+    SemanticRepositoryDAO semanticRepositoryDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper,
+    SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory
+  ) {
+    this.semanticRepositoryDAO = semanticRepositoryDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+    this.semanticRepositoryConnectorFactory = semanticRepositoryConnectorFactory;
+  }
 
   public List<SemanticRepository> getAllRepositories(QueryParamHelper params) {
     var repositories = semanticRepositoryDAO.findAllSemanticRepositories(params);

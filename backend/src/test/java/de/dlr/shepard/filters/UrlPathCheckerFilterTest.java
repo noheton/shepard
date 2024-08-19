@@ -10,6 +10,9 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.services.UrlPathChecker;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
@@ -20,29 +23,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
+@QuarkusComponentTest
 public class UrlPathCheckerFilterTest extends BaseTestCase {
 
-  @Mock
-  private ContainerRequestContext request;
+  @InjectMock
+  ContainerRequestContext request;
 
-  @Mock
-  private UriInfo uriInfo;
+  @InjectMock
+  UriInfo uriInfo;
 
-  @Mock
-  private UrlPathChecker checker;
+  @InjectMock
+  UrlPathChecker checker;
 
-  @Spy
-  private UrlPathCheckerFilter filter;
+  @Inject
+  UrlPathCheckerFilter filter;
 
   @Captor
-  private ArgumentCaptor<Response> responseCaptor;
+  ArgumentCaptor<Response> responseCaptor;
 
   @BeforeEach
   public void prepareSpy() {
-    when(filter.getUrlPathChecker()).thenReturn(checker);
     when(request.getUriInfo()).thenReturn(uriInfo);
   }
 

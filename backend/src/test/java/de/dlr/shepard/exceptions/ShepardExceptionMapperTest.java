@@ -2,22 +2,23 @@ package de.dlr.shepard.exceptions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 
-public class ShepardExceptionMapperTest extends BaseTestCase {
+@QuarkusComponentTest
+public class ShepardExceptionMapperTest {
 
-  @InjectMocks
-  private ShepardExceptionMapper mapper;
+  @Inject
+  ShepardExceptionMapper exceptionMapper;
 
   @Test
   public void toResponseTest_different() {
     var ex = new ShepardException("test", Status.NOT_FOUND) {
       private static final long serialVersionUID = 1L;
     };
-    var response = mapper.toResponse(ex);
+    var response = exceptionMapper.toResponse(ex);
     var expected = new ApiError(404, "", "test");
 
     assertEquals(404, response.getStatus());
@@ -29,7 +30,7 @@ public class ShepardExceptionMapperTest extends BaseTestCase {
     var ex = new Exception("test") {
       private static final long serialVersionUID = 1L;
     };
-    var response = mapper.toResponse(ex);
+    var response = exceptionMapper.toResponse(ex);
     var expected = new ApiError(500, "", "test");
 
     assertEquals(500, response.getStatus());

@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -28,10 +29,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class UserRest {
 
-  private UserService userService = new UserService();
+  private UserService userService;
 
   @Context
   private SecurityContext securityContext;
+
+  UserRest() {}
+
+  @Inject
+  public UserRest(UserService userService) {
+    this.userService = userService;
+  }
 
   @GET
   @Tag(name = Constants.USER)

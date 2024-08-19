@@ -11,3 +11,4 @@ include::002-backend-technology.adoc[]
 
 include::003-all-in-one-image.adoc[]
 
+include::004-prefer-constructor-injection.adoc[]

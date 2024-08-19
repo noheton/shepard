@@ -12,43 +12,46 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import de.dlr.shepard.BaseTestCase;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import org.bson.Document;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class MongoDBConnectorTest extends BaseTestCase {
+@QuarkusComponentTest
+public class MongoDBConnectorTest {
 
-  @Mock
-  private MongoClient mongoClient;
+  @InjectMock
+  MongoClient mongoClient;
 
-  @Mock
-  private MongoDatabase database;
+  @InjectMock
+  MongoDatabase mongoDatabase;
 
-  @InjectMocks
-  private MongoDBConnector mongoDBConnector = MongoDBConnector.createInstance(mongoClient);
+  @Inject
+  MongoDBConnector mongoDBConnector;
+
+  @BeforeEach
+  void setUp() {
+    when(mongoClient.getDatabase("database")).thenReturn(mongoDatabase);
+  }
 
   @Test
-  public void testGetInstance() {
-    var actual = MongoDBConnector.getInstance();
-    assertNotNull(actual);
-
-    var second = MongoDBConnector.getInstance();
-    assertEquals(actual, second);
+  public void createInstance_notNull() {
+    assertNotNull(mongoClient);
   }
 
   @Test
   public void createCollectionTest() {
     mongoDBConnector.createCollection("Test");
-    verify(database).createCollection("Test");
+    verify(mongoDatabase).createCollection("Test");
   }
 
   @Test
   public void getCollectionTest() {
     @SuppressWarnings("unchecked")
     MongoCollection<Document> result = mock(MongoCollection.class);
-    when(database.getCollection("Test")).thenReturn(result);
+    when(mongoClient.getDatabase("database").getCollection("Test")).thenReturn(result);
     var actual = mongoDBConnector.getCollection("Test");
 
     assertEquals(result, actual);
@@ -56,7 +59,9 @@ public class MongoDBConnectorTest extends BaseTestCase {
 
   @Test
   public void aliveTest() {
-    when(database.runCommand(new Document("buildInfo", "1"))).thenReturn(new Document("ok", "1"));
+    when(mongoClient.getDatabase("database").runCommand(new Document("buildInfo", "1"))).thenReturn(
+      new Document("ok", "1")
+    );
     var actual = mongoDBConnector.alive();
 
     assertTrue(actual);
@@ -64,7 +69,9 @@ public class MongoDBConnectorTest extends BaseTestCase {
 
   @Test
   public void aliveTestException() {
-    when(database.runCommand(new Document("buildInfo", "1"))).thenThrow(new MongoException("Exception"));
+    when(mongoClient.getDatabase("database").runCommand(new Document("buildInfo", "1"))).thenThrow(
+      new MongoException("Exception")
+    );
     var actual = mongoDBConnector.alive();
 
     assertFalse(actual);
@@ -72,7 +79,9 @@ public class MongoDBConnectorTest extends BaseTestCase {
 
   @Test
   public void aliveTestNotOk() {
-    when(database.runCommand(new Document("buildInfo", "1"))).thenReturn(new Document("test", "123"));
+    when(mongoClient.getDatabase("database").runCommand(new Document("buildInfo", "1"))).thenReturn(
+      new Document("test", "123")
+    );
     var actual = mongoDBConnector.alive();
 
     assertFalse(actual);

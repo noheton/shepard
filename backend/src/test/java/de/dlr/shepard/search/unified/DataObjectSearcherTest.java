@@ -11,22 +11,24 @@ import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
+@QuarkusComponentTest
 public class DataObjectSearcherTest extends BaseTestCase {
 
-  @Mock
-  private SearchDAO searchDAO;
+  @InjectMock
+  SearchDAO searchDAO;
 
-  @InjectMocks
-  private DataObjectSearcher dataObjectSearcher;
+  @Inject
+  DataObjectSearcher dataObjectSearcher;
 
   private static String query = String.format(
     """

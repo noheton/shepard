@@ -5,10 +5,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.security.GracePeriodUtil;
+import de.dlr.shepard.security.PermissionGracePeriod;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.SecurityContext;
@@ -16,43 +18,41 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
 import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
-public class PermissionsFilterTest extends BaseTestCase {
+@QuarkusComponentTest
+public class PermissionsFilterTest {
 
-  @Mock
-  private PathSegment rootSeg;
+  @InjectMock
+  PathSegment rootSeg;
 
-  @Mock
-  private PathSegment idSeg;
+  @InjectMock
+  PathSegment idSeg;
 
-  @Mock
-  private PathSegment pathSeg;
+  @InjectMock
+  PathSegment pathSeg;
 
-  @Mock
-  private UriInfo uriInfo;
+  @InjectMock
+  UriInfo uriInfo;
 
-  @Mock
-  private UserPrincipal userPrincipal;
+  @InjectMock
+  UserPrincipal userPrincipal;
 
-  @Mock
-  private SecurityContext securityContext;
+  @InjectMock
+  SecurityContext securityContext;
 
-  @Mock
-  private ContainerRequestContext context;
+  @InjectMock
+  ContainerRequestContext context;
 
-  @Mock
-  private PermissionsUtil permissionsUtil;
+  @InjectMock
+  PermissionsUtil permissionsUtil;
 
-  @Mock
-  private GracePeriodUtil lastSeen;
+  @InjectMock
+  PermissionGracePeriod lastSeen;
 
-  @Spy
-  private PermissionsFilter filter;
+  @Inject
+  PermissionsFilter filter;
 
   @BeforeEach
   public void setUpRequestContext() throws URISyntaxException {
@@ -69,12 +69,6 @@ public class PermissionsFilterTest extends BaseTestCase {
     when(context.getSecurityContext()).thenReturn(securityContext);
 
     when(context.getMethod()).thenReturn("GET");
-  }
-
-  @BeforeEach
-  public void prepareSpy() throws IllegalAccessException {
-    when(filter.getPermissionsUtil()).thenReturn(permissionsUtil);
-    FieldUtils.writeField(filter, "lastSeen", lastSeen, true);
   }
 
   @Test

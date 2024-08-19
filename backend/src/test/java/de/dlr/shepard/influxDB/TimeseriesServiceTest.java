@@ -7,6 +7,9 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
@@ -15,19 +18,18 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
+@QuarkusComponentTest
 public class TimeseriesServiceTest extends BaseTestCase {
 
-  @Mock
+  @InjectMock
   private InfluxDBConnector connector;
 
-  @Mock
+  @InjectMock
   private CsvConverter converter;
 
-  @InjectMocks
-  private TimeseriesService service;
+  @Inject
+  TimeseriesService service;
 
   @Captor
   private ArgumentCaptor<String> databaseName;

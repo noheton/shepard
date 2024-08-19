@@ -12,19 +12,39 @@ import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class DataObjectService {
 
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private CollectionDAO collectionDAO = new CollectionDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private VersionDAO versionDAO = new VersionDAO();
+  private DataObjectDAO dataObjectDAO;
+  private CollectionDAO collectionDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+  private VersionDAO versionDAO;
+
+  DataObjectService() {}
+
+  @Inject
+  public DataObjectService(
+    DataObjectDAO dataObjectDAO,
+    CollectionDAO collectionDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper,
+    VersionDAO versionDAO
+  ) {
+    this.dataObjectDAO = dataObjectDAO;
+    this.collectionDAO = collectionDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+    this.versionDAO = versionDAO;
+  }
 
   /**
    * Creates a DataObject and stores it in Neo4J

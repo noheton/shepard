@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
@@ -12,7 +11,7 @@ import java.util.UUID;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class UserIOTest extends BaseTestCase {
+public class UserIOTest {
 
   @Test
   public void equalsContract() {

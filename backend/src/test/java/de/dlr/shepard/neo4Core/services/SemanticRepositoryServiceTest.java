@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.SemanticRepositoryDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -20,32 +19,34 @@ import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class SemanticRepositoryServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class SemanticRepositoryServiceTest {
 
-  @Mock
-  private SemanticRepositoryDAO semanticRepositoryDAO;
+  @InjectMock
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+  @InjectMock
+  SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
 
-  @Mock
-  private ISemanticRepositoryConnector semanticRepositoryConnector;
+  @InjectMock
+  ISemanticRepositoryConnector semanticRepositoryConnector;
 
-  @InjectMocks
-  private SemanticRepositoryService service;
+  @Inject
+  SemanticRepositoryService service;
 
   @BeforeEach
   public void setUpRepositories() {

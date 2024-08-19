@@ -103,4 +103,8 @@ public class NeoConnector implements IConnector {
     }
     return sessionFactory.openSession();
   }
+
+  public Session getNewSession() {
+    return sessionFactory.openSession();
+  }
 }

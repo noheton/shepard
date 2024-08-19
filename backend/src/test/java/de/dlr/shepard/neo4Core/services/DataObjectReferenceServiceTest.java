@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.DataObjectReferenceDAO;
@@ -19,32 +18,34 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class DataObjectReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class DataObjectReferenceServiceTest {
 
-  @Mock
-  private DataObjectReferenceDAO dao;
+  @InjectMock
+  DataObjectReferenceDAO dao;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @InjectMocks
-  private DataObjectReferenceService service;
+  @Inject
+  DataObjectReferenceService service;
 
   @Test
   public void getDataObjectReferenceByShepardIdTest_successful() {

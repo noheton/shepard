@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.services.BasicReferenceService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -44,10 +45,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class BasicReferenceRest {
 
-  private BasicReferenceService basicReferenceService = new BasicReferenceService();
+  private BasicReferenceService basicReferenceService;
 
   @Context
   private SecurityContext securityContext;
+
+  BasicReferenceRest() {}
+
+  @Inject
+  public BasicReferenceRest(BasicReferenceService basicReferenceService) {
+    this.basicReferenceService = basicReferenceService;
+  }
 
   @GET
   @Tag(name = Constants.BASIC_REFERENCE)

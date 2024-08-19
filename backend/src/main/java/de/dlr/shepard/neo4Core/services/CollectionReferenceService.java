@@ -13,18 +13,40 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class CollectionReferenceService implements IReferenceService<CollectionReference, CollectionReferenceIO> {
 
-  private CollectionReferenceDAO collectionReferenceDAO = new CollectionReferenceDAO();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private CollectionDAO collectionDAO = new CollectionDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private CollectionReferenceDAO collectionReferenceDAO;
+  private DataObjectDAO dataObjectDAO;
+  private CollectionDAO collectionDAO;
+  private VersionDAO versionDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+
+  CollectionReferenceService() {}
+
+  @Inject
+  public CollectionReferenceService(
+    CollectionReferenceDAO collectionReferenceDAO,
+    DataObjectDAO dataObjectDAO,
+    CollectionDAO collectionDAO,
+    VersionDAO versionDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper
+  ) {
+    this.collectionReferenceDAO = collectionReferenceDAO;
+    this.dataObjectDAO = dataObjectDAO;
+    this.collectionDAO = collectionDAO;
+    this.versionDAO = versionDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+  }
 
   @Override
   public List<CollectionReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {

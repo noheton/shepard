@@ -9,6 +9,8 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.HasId;
 import de.dlr.shepard.util.RequestMethod;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -18,40 +20,36 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 @Subscribable
 @Provider
 @Slf4j
+@RequestScoped
 public class SubscriptionFilter implements ContainerResponseFilter {
 
-  private Executor executor;
+  private ExecutorFactory executorFactory;
 
-  /**
-   * Default constructor
-   */
+  private PermissionsUtil permissionsUtil;
 
-  public SubscriptionFilter() {
-    this.executor = Executors.newCachedThreadPool();
-  }
+  private SubscriptionService subscriptionService;
 
-  /**
-   * Constructor to inject your own executor service
-   *
-   * @param executor Your own Executor Service
-   */
+  SubscriptionFilter() {}
 
-  public SubscriptionFilter(Executor executor) {
-    this.executor = executor;
+  @Inject
+  public SubscriptionFilter(
+    PermissionsUtil permissionsUtil,
+    SubscriptionService subscriptionService,
+    ExecutorFactory executorFactory
+  ) {
+    this.permissionsUtil = permissionsUtil;
+    this.subscriptionService = subscriptionService;
+    this.executorFactory = executorFactory;
   }
 
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-    SubscriptionService subscriptionService = getService();
-
     // request not successful
     var status = responseContext.getStatus();
     if (!(status >= 200 && status < 300)) {
@@ -70,7 +68,6 @@ public class SubscriptionFilter implements ContainerResponseFilter {
       event.setSubscribedObject(new HasIdIO(hasId));
     }
 
-    var permissionsUtil = getPermissionsUtil();
     List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
     for (Subscription sub : subs) {
       // TODO: This could develop into a bottleneck
@@ -86,7 +83,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
         EventIO e = new EventIO(event);
         e.setSubscription(new SubscriptionIO(sub));
         log.debug("{} was triggered with {}", sub, e);
-        executor.execute(() -> sendCallback(sub, e));
+        executorFactory.getInstance().execute(() -> sendCallback(sub, e));
       }
     }
   }
@@ -104,13 +101,5 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     } finally {
       client.close();
     }
-  }
-
-  protected SubscriptionService getService() {
-    return new SubscriptionService();
-  }
-
-  protected PermissionsUtil getPermissionsUtil() {
-    return new PermissionsUtil();
   }
 }

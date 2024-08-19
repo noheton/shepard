@@ -3,7 +3,6 @@ package de.dlr.shepard.search.container;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.FileContainerDAO;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataContainerDAO;
@@ -14,28 +13,30 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.BasicContainerIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class ContainerSearcherTest extends BaseTestCase {
+@QuarkusComponentTest
+public class ContainerSearcherTest {
 
-  @Mock
-  private TimeseriesContainerDAO timeseriesContainerDAO;
+  @InjectMock
+  TimeseriesContainerDAO timeseriesContainerDAO;
 
-  @Mock
-  private StructuredDataContainerDAO structuredDataContainerDAO;
+  @InjectMock
+  StructuredDataContainerDAO structuredDataContainerDAO;
 
-  @Mock
-  private FileContainerDAO fileContainerDAO;
+  @InjectMock
+  FileContainerDAO fileContainerDAO;
 
-  @Mock
-  private SearchDAO searchDAO;
+  @InjectMock
+  SearchDAO searchDAO;
 
-  @InjectMocks
-  private ContainerSearcher containerSearcher;
+  @Inject
+  ContainerSearcher containerSearcher;
 
   @Test
   public void searchFileContainerTest() {

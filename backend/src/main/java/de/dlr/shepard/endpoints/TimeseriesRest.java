@@ -16,6 +16,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -53,11 +54,26 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @RequestScoped
 public class TimeseriesRest {
 
-  private TimeseriesContainerService timeseriesContainerService = new TimeseriesContainerService();
-  private PermissionsService permissionsService = new PermissionsService();
+  private TimeseriesContainerService timeseriesContainerService;
+  private PermissionsService permissionsService;
+
+  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
+
+  TimeseriesRest() {}
+
+  @Inject
+  public TimeseriesRest(
+    TimeseriesContainerService timeseriesContainerService,
+    PermissionsService permissionsService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.timeseriesContainerService = timeseriesContainerService;
+    this.permissionsService = permissionsService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @GET
   @Tag(name = Constants.TIMESERIES)
@@ -340,8 +356,7 @@ public class TimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var roles = new PermissionsUtil()
-      .getRolesByNeo4jId(timeseriesContainerId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsUtil.getRolesByNeo4jId(timeseriesContainerId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 

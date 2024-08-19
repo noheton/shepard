@@ -10,12 +10,14 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 import org.neo4j.ogm.session.Session;
 
+@RequestScoped
 public class SearchDAO {
 
   protected Session session = null;

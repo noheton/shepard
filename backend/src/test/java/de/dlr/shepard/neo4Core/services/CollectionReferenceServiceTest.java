@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.CollectionReferenceDAO;
@@ -21,35 +20,37 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class CollectionReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class CollectionReferenceServiceTest {
 
-  @Mock
-  private CollectionReferenceDAO dao;
+  @InjectMock
+  CollectionReferenceDAO dao;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private CollectionDAO collectionDAO;
+  @InjectMock
+  CollectionDAO collectionDAO;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @InjectMocks
-  private CollectionReferenceService service;
+  @Inject
+  CollectionReferenceService service;
 
   @Test
   public void getCollectionReferenceByShepardIdTest_successful() {

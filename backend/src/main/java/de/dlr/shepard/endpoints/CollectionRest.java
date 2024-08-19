@@ -14,6 +14,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -46,12 +47,28 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class CollectionRest {
 
-  private CollectionService collectionService = new CollectionService();
-  private ExportService exportService = new ExportService();
-  private PermissionsService permissionsService = new PermissionsService();
+  private CollectionService collectionService;
+  private ExportService exportService;
+  private PermissionsService permissionsService;
+  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
+
+  CollectionRest() {}
+
+  @Inject
+  public CollectionRest(
+    CollectionService collectionService,
+    ExportService exportService,
+    PermissionsService permissionsService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.collectionService = collectionService;
+    this.exportService = exportService;
+    this.permissionsService = permissionsService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @GET
   @Tag(name = Constants.COLLECTION)
@@ -236,7 +253,7 @@ public class CollectionRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    var roles = new PermissionsUtil().getRolesByShepardId(collectionId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsUtil.getRolesByShepardId(collectionId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 

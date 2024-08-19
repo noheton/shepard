@@ -10,15 +10,33 @@ import de.dlr.shepard.neo4Core.io.UserGroupIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequestScoped
 public class UserGroupService {
 
-  private UserGroupDAO userGroupDAO = new UserGroupDAO();
-  private UserDAO userDAO = new UserDAO();
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private UserGroupDAO userGroupDAO;
+  private UserDAO userDAO;
+  private PermissionsDAO permissionsDAO;
+  private DateHelper dateHelper;
+
+  UserGroupService() {}
+
+  @Inject
+  public UserGroupService(
+    UserGroupDAO userGroupDAO,
+    UserDAO userDAO,
+    PermissionsDAO permissionsDAO,
+    DateHelper dateHelper
+  ) {
+    this.userGroupDAO = userGroupDAO;
+    this.userDAO = userDAO;
+    this.permissionsDAO = permissionsDAO;
+    this.dateHelper = dateHelper;
+  }
 
   public List<UserGroup> getAllUserGroups(QueryParamHelper params, String username) {
     return userGroupDAO.findAllUserGroups(params, username);

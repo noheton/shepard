@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.BaseTestCase;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import org.junit.jupiter.api.Test;
 
-public class JWTSecurityContextTest extends BaseTestCase {
+public class JWTSecurityContextTest {
 
   private String[] roles = { "role1", "role2" };
   private JWTPrincipal principal = new JWTPrincipal("MyAudience", "MyIssuedFor", "MyUsername", "MyKeyId", roles);

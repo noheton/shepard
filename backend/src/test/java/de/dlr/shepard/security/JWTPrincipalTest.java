@@ -2,11 +2,10 @@ package de.dlr.shepard.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class JWTPrincipalTest extends BaseTestCase {
+public class JWTPrincipalTest {
 
   @Test
   public void equalsContract() {

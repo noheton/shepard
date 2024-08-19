@@ -30,11 +30,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class FileIT extends BaseTestCaseIT {
 
   private static ShepardFile file;
-
   private static String containerURL;
   private static RequestSpecification containerRequestSpec;
   private static RequestSpecification fileRequestSpec;
-
   private static FileContainerIO container;
 
   @BeforeAll

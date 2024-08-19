@@ -2,19 +2,20 @@ package de.dlr.shepard.util;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.BaseTestCase;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class PKIHelperTest extends BaseTestCase {
+@QuarkusComponentTest
+public class PKIHelperTest {
 
-  @Mock
-  private Path keysDir;
+  @InjectMock
+  Path keysDir;
 
-  @InjectMocks
-  private PKIHelper pkiHelper;
+  @Inject
+  PKIHelper pkiHelper;
 
   @Test
   public void testInit() {

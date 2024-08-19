@@ -2,12 +2,11 @@ package de.dlr.shepard.mongoDB;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class ShepardFileTest extends BaseTestCase {
+public class ShepardFileTest {
 
   @Test
   public void equalsContract() {

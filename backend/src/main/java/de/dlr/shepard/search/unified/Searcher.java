@@ -1,13 +1,31 @@
 package de.dlr.shepard.search.unified;
 
 import de.dlr.shepard.search.QueryValidator;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 
+@RequestScoped
 public class Searcher {
 
-  private ISearcher structuredDataSearcher = new StructuredDataSearcher();
-  private ISearcher collectionSearcher = new CollectionSearcher();
-  private ISearcher dataObjectSearcher = new DataObjectSearcher();
-  private ISearcher referenceSearcher = new ReferenceSearcher();
+  private StructuredDataSearcher structuredDataSearcher;
+  private CollectionSearcher collectionSearcher;
+  private DataObjectSearcher dataObjectSearcher;
+  private ReferenceSearcher referenceSearcher;
+
+  Searcher() {}
+
+  @Inject
+  public Searcher(
+    StructuredDataSearcher structuredDataSearcher,
+    CollectionSearcher collectionSearcher,
+    DataObjectSearcher dataObjectSearcher,
+    ReferenceSearcher referenceSearcher
+  ) {
+    this.structuredDataSearcher = structuredDataSearcher;
+    this.collectionSearcher = collectionSearcher;
+    this.dataObjectSearcher = dataObjectSearcher;
+    this.referenceSearcher = referenceSearcher;
+  }
 
   public ResponseBody search(SearchBody searchBody, String userName) {
     QueryValidator.checkQuery(searchBody.getSearchParams().getQuery());

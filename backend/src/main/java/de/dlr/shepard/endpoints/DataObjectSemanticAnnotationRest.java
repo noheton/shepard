@@ -2,8 +2,10 @@ package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
+import de.dlr.shepard.neo4Core.services.SemanticAnnotationService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -39,6 +41,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 )
 @RequestScoped
 public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
+
+  DataObjectSemanticAnnotationRest() {}
+
+  @Inject
+  public DataObjectSemanticAnnotationRest(SemanticAnnotationService semanticAnnotationService) {
+    super(semanticAnnotationService);
+  }
 
   @GET
   @Tag(name = Constants.SEMANTIC_ANNOTATION)

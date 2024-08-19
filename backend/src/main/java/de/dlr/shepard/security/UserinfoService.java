@@ -3,6 +3,7 @@ package de.dlr.shepard.security;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -43,6 +44,7 @@ class OpenIdConfiguration {
 }
 
 @Slf4j
+@RequestScoped
 public class UserinfoService {
 
   private static final Logger LOG = Logger.getLogger(UserinfoService.class);
@@ -54,7 +56,6 @@ public class UserinfoService {
   private Client client = ClientBuilder.newClient();
 
   public UserinfoService() {
-    LOG.error("UserInfoService called.");
     String oidcAuthority = ConfigProvider.getConfig().getValue("oidc.authority", String.class);
     this.oidcConfidurationUrl = oidcAuthority + WELL_KNOWN_PATH;
   }

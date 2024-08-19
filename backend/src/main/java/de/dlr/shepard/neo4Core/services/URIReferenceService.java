@@ -8,17 +8,37 @@ import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
 
-  private URIReferenceDAO uRIReferenceDAO = new URIReferenceDAO();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private UserDAO userDAO = new UserDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private URIReferenceDAO uRIReferenceDAO;
+  private DataObjectDAO dataObjectDAO;
+  private UserDAO userDAO;
+  private VersionDAO versionDAO;
+  private DateHelper dateHelper;
+
+  URIReferenceService() {}
+
+  @Inject
+  public URIReferenceService(
+    URIReferenceDAO uRIReferenceDAO,
+    DataObjectDAO dataObjectDAO,
+    UserDAO userDAO,
+    VersionDAO versionDAO,
+    DateHelper dateHelper
+  ) {
+    this.uRIReferenceDAO = uRIReferenceDAO;
+    this.dataObjectDAO = dataObjectDAO;
+    this.userDAO = userDAO;
+    this.versionDAO = versionDAO;
+    this.dateHelper = dateHelper;
+  }
 
   @Override
   public List<URIReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {

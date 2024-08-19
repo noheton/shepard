@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -49,10 +50,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class TimeseriesReferenceRest {
 
-  private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();
+  private TimeseriesReferenceService timeseriesReferenceService;
 
   @Context
   private SecurityContext securityContext;
+
+  TimeseriesReferenceRest() {}
+
+  @Inject
+  public TimeseriesReferenceRest(TimeseriesReferenceService timeseriesReferenceService) {
+    this.timeseriesReferenceService = timeseriesReferenceService;
+  }
 
   @GET
   @Tag(name = Constants.TIMESERIES_REFERENCE)

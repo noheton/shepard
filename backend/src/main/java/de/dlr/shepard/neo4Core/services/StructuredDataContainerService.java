@@ -12,18 +12,38 @@ import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class StructuredDataContainerService
   implements IContainerService<StructuredDataContainer, StructuredDataContainerIO> {
 
-  private StructuredDataContainerDAO structuredDataContainerDAO = new StructuredDataContainerDAO();
-  private StructuredDataService structuredDataService = new StructuredDataService();
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private StructuredDataContainerDAO structuredDataContainerDAO;
+  private StructuredDataService structuredDataService;
+  private PermissionsDAO permissionsDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+
+  StructuredDataContainerService() {}
+
+  @Inject
+  public StructuredDataContainerService(
+    StructuredDataContainerDAO structuredDataContainerDAO,
+    StructuredDataService structuredDataService,
+    PermissionsDAO permissionsDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper
+  ) {
+    this.structuredDataContainerDAO = structuredDataContainerDAO;
+    this.structuredDataService = structuredDataService;
+    this.permissionsDAO = permissionsDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+  }
 
   /**
    * Creates a StructuredDataContainer and stores it in Neo4J

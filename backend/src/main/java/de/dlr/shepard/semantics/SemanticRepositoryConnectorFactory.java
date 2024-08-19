@@ -1,8 +1,10 @@
 package de.dlr.shepard.semantics;
 
+import jakarta.enterprise.context.RequestScoped;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class SemanticRepositoryConnectorFactory {
 
   public ISemanticRepositoryConnector getRepositoryService(SemanticRepositoryType type, String endpoint) {

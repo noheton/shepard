@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.dao.BasicEntityDAO;
 import de.dlr.shepard.neo4Core.dao.SemanticAnnotationDAO;
@@ -21,38 +20,40 @@ import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.semantics.ISemanticRepositoryConnector;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class SemanticAnnotationServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class SemanticAnnotationServiceTest {
 
-  @Mock
-  private SemanticAnnotationDAO semanticAnnotationDAO;
+  @InjectMock
+  SemanticAnnotationDAO semanticAnnotationDAO;
 
-  @Mock
-  private SemanticRepositoryDAO semanticRepositoryDAO;
+  @InjectMock
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
-  @Mock
-  private VersionableEntityConcreteDAO concreteDAO;
+  @InjectMock
+  VersionableEntityConcreteDAO concreteDAO;
 
-  @Mock
-  private BasicEntityDAO abstractEntityDAO;
+  @InjectMock
+  BasicEntityDAO abstractEntityDAO;
 
-  @Mock
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+  @InjectMock
+  SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
 
-  @Mock
-  private ISemanticRepositoryConnector propConnector;
+  @InjectMock
+  ISemanticRepositoryConnector propConnector;
 
-  @Mock
-  private ISemanticRepositoryConnector valConnector;
+  @InjectMock
+  ISemanticRepositoryConnector valConnector;
 
-  @InjectMocks
-  private SemanticAnnotationService service;
+  @Inject
+  SemanticAnnotationService service;
 
   private SemanticRepository propRepo = new SemanticRepository() {
     {

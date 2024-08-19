@@ -11,17 +11,37 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class DataObjectReferenceService implements IReferenceService<DataObjectReference, DataObjectReferenceIO> {
 
-  private DataObjectReferenceDAO dataObjectReferenceDAO = new DataObjectReferenceDAO();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private DataObjectReferenceDAO dataObjectReferenceDAO;
+  private DataObjectDAO dataObjectDAO;
+  private VersionDAO versionDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+
+  DataObjectReferenceService() {}
+
+  @Inject
+  public DataObjectReferenceService(
+    DataObjectReferenceDAO dataObjectReferenceDAO,
+    DataObjectDAO dataObjectDAO,
+    VersionDAO versionDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper
+  ) {
+    this.dataObjectReferenceDAO = dataObjectReferenceDAO;
+    this.dataObjectDAO = dataObjectDAO;
+    this.versionDAO = versionDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+  }
 
   @Override
   public List<DataObjectReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {

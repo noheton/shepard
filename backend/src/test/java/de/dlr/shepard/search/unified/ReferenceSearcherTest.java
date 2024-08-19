@@ -3,7 +3,6 @@ package de.dlr.shepard.search.unified;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
@@ -12,22 +11,24 @@ import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class ReferenceSearcherTest extends BaseTestCase {
+@QuarkusComponentTest
+public class ReferenceSearcherTest {
 
-  @Mock
-  private SearchDAO searchDAO;
+  @InjectMock
+  SearchDAO searchDAO;
 
-  @InjectMocks
-  private ReferenceSearcher referenceSearcher;
+  @Inject
+  ReferenceSearcher referenceSearcher;
 
   private static String query = String.format(
     """

@@ -16,6 +16,8 @@ import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -23,15 +25,37 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class ExportService {
 
-  private CollectionService collectionService = new CollectionService();
-  private DataObjectService dataObjectService = new DataObjectService();
-  private BasicReferenceService basicReferenceService = new BasicReferenceService();
-  private TimeseriesReferenceService timeseriesReferenceService = new TimeseriesReferenceService();
-  private FileReferenceService fileReferenceService = new FileReferenceService();
-  private StructuredDataReferenceService structuredDataReferenceService = new StructuredDataReferenceService();
-  private URIReferenceService uriReferenceService = new URIReferenceService();
+  private CollectionService collectionService;
+  private DataObjectService dataObjectService;
+  private BasicReferenceService basicReferenceService;
+  private TimeseriesReferenceService timeseriesReferenceService;
+  private FileReferenceService fileReferenceService;
+  private StructuredDataReferenceService structuredDataReferenceService;
+  private URIReferenceService uriReferenceService;
+
+  ExportService() {}
+
+  @Inject
+  public ExportService(
+    CollectionService collectionService,
+    DataObjectService dataObjectService,
+    BasicReferenceService basicReferenceService,
+    TimeseriesReferenceService timeseriesReferenceService,
+    FileReferenceService fileReferenceService,
+    StructuredDataReferenceService structuredDataReferenceService,
+    URIReferenceService uriReferenceService
+  ) {
+    this.collectionService = collectionService;
+    this.dataObjectService = dataObjectService;
+    this.basicReferenceService = basicReferenceService;
+    this.timeseriesReferenceService = timeseriesReferenceService;
+    this.fileReferenceService = fileReferenceService;
+    this.structuredDataReferenceService = structuredDataReferenceService;
+    this.uriReferenceService = uriReferenceService;
+  }
 
   public InputStream exportCollectionByShepardId(long collectionId, String username) throws IOException {
     var collection = collectionService.getCollectionByShepardId(collectionId);

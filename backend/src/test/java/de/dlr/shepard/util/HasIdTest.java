@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.BaseTestCase;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class HasIdTest extends BaseTestCase {
+public class HasIdTest {
 
   HasId a = new HasId() {
     @Override

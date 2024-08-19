@@ -3,7 +3,6 @@ package de.dlr.shepard.neo4Core.io;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.BasicEntity;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
@@ -15,7 +14,7 @@ import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class PermissionsIOTest extends BaseTestCase {
+public class PermissionsIOTest {
 
   @Test
   public void equalsContract() {

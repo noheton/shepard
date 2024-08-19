@@ -3,11 +3,13 @@ package de.dlr.shepard.neo4Core.dao;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@RequestScoped
 public class SemanticRepositoryDAO extends GenericDAO<SemanticRepository> {
 
   public List<SemanticRepository> findAllSemanticRepositories(QueryParamHelper params) {

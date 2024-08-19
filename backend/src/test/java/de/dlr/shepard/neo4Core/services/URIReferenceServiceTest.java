@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.URIReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -17,32 +16,34 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class URIReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class URIReferenceServiceTest {
 
-  @Mock
-  private URIReferenceDAO dao;
+  @InjectMock
+  URIReferenceDAO dao;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @InjectMocks
-  private URIReferenceService service;
+  @Inject
+  URIReferenceService service;
 
   @Test
   public void getURIReferenceByShepardIdTest_successful() {

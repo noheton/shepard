@@ -3,7 +3,6 @@ package de.dlr.shepard.neo4Core.io;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.DataObjectReference;
@@ -15,7 +14,7 @@ import java.util.Map;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class DataObjectIOTest extends BaseTestCase {
+public class DataObjectIOTest {
 
   @Test
   public void equalsContract() {

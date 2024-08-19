@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -44,10 +45,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class FileReferenceRest {
 
-  private FileReferenceService fileReferenceService = new FileReferenceService();
+  private FileReferenceService fileReferenceService;
 
   @Context
   private SecurityContext securityContext;
+
+  FileReferenceRest() {}
+
+  @Inject
+  public FileReferenceRest(FileReferenceService fileReferenceService) {
+    this.fileReferenceService = fileReferenceService;
+  }
 
   @GET
   @Tag(name = Constants.FILE_REFERENCE)

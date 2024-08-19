@@ -7,16 +7,28 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class PermissionsService {
 
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private UserDAO userDAO = new UserDAO();
-  private UserGroupDAO userGroupDAO = new UserGroupDAO();
+  private PermissionsDAO permissionsDAO;
+  private UserDAO userDAO;
+  private UserGroupDAO userGroupDAO;
+
+  PermissionsService() {}
+
+  @Inject
+  public PermissionsService(PermissionsDAO permissionsDAO, UserDAO userDAO, UserGroupDAO userGroupDAO) {
+    this.permissionsDAO = permissionsDAO;
+    this.userDAO = userDAO;
+    this.userGroupDAO = userGroupDAO;
+  }
 
   /**
    * Searches for permissions in Neo4j.

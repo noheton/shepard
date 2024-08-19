@@ -6,24 +6,25 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class UserServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class UserServiceTest {
 
-  @Mock
-  private UserDAO dao;
+  @InjectMock
+  UserDAO dao;
 
-  @InjectMocks
-  private UserService service;
+  @Inject
+  UserService service;
 
   @Test
   public void createUserTest() {

@@ -3,10 +3,12 @@ package de.dlr.shepard.neo4Core.dao;
 import de.dlr.shepard.neo4Core.entities.FileReference;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+@RequestScoped
 public class FileReferenceDAO extends VersionableEntityDAO<FileReference> {
 
   public List<FileReference> findByDataObjectNeo4jId(long dataObjectId) {

@@ -6,33 +6,34 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class SearcherTest extends BaseTestCase {
+@QuarkusComponentTest
+public class SearcherTest {
 
-  @Mock
+  @InjectMock
   StructuredDataSearcher structuredDataSearcher;
 
-  @Mock
+  @InjectMock
   CollectionSearcher collectionSearcher;
 
-  @Mock
+  @InjectMock
   DataObjectSearcher dataObjectSearcher;
 
-  @Mock
+  @InjectMock
   ReferenceSearcher referenceSearcher;
 
-  @InjectMocks
-  private Searcher searcher;
+  @Inject
+  Searcher searcher;
 
   @Test
   public void invalidQueryTest() {

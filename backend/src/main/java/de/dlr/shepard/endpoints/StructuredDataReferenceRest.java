@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -44,10 +45,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class StructuredDataReferenceRest {
 
-  private StructuredDataReferenceService structuredDataReferenceService = new StructuredDataReferenceService();
+  private StructuredDataReferenceService structuredDataReferenceService;
 
   @Context
   private SecurityContext securityContext;
+
+  StructuredDataReferenceRest() {}
+
+  @Inject
+  public StructuredDataReferenceRest(StructuredDataReferenceService structuredDataReferenceService) {
+    this.structuredDataReferenceService = structuredDataReferenceService;
+  }
 
   @GET
   @Tag(name = Constants.STRUCTUREDDATA_REFERENCE)

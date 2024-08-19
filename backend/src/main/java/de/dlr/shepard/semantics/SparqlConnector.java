@@ -8,8 +8,6 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.MediaType;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

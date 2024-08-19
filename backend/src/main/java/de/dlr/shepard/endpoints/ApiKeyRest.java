@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
 import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -38,10 +39,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class ApiKeyRest {
 
-  private ApiKeyService apiKeyService = new ApiKeyService();
+  private ApiKeyService apiKeyService;
 
   @Context
   private UriInfo uriInfo;
+
+  ApiKeyRest() {}
+
+  @Inject
+  public ApiKeyRest(ApiKeyService apiKeyService) {
+    this.apiKeyService = apiKeyService;
+  }
 
   @GET
   @Tag(name = Constants.APIKEY)

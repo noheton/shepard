@@ -4,11 +4,13 @@ import de.dlr.shepard.exceptions.ApiError;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
-import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
+import de.dlr.shepard.security.UserGracePeriod;
 import de.dlr.shepard.security.Userinfo;
 import de.dlr.shepard.security.UserinfoService;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -22,20 +24,24 @@ import lombok.extern.slf4j.Slf4j;
 @Provider
 @Slf4j
 @Priority(Priorities.AUTHENTICATION + 1)
+@ApplicationScoped
 public class UserFilter implements ContainerRequestFilter {
 
-  private static final int THIRTY_MINUTES_IN_MILLIS = 30 * 60 * 1000;
+  private UserGracePeriod lastSeen;
+  private UserService userService;
+  private UserinfoService userInfoService;
 
-  private final GracePeriodUtil lastSeen;
+  UserFilter() {}
 
-  public UserFilter() {
-    lastSeen = new GracePeriodUtil(THIRTY_MINUTES_IN_MILLIS);
+  @Inject
+  public UserFilter(UserGracePeriod lastSeen, UserService userService, UserinfoService userInfoService) {
+    this.lastSeen = lastSeen;
+    this.userService = userService;
+    this.userInfoService = userInfoService;
   }
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
-    UserService userService = getUserService();
-
     var principal = requestContext.getSecurityContext().getUserPrincipal();
     if (!(principal instanceof JWTPrincipal)) {
       log.warn("Unknown principal {}", principal);
@@ -48,7 +54,7 @@ public class UserFilter implements ContainerRequestFilter {
       User user;
       Userinfo userinfo;
       try {
-        userinfo = getUserinfoService().fetchUserinfo(header);
+        userinfo = userInfoService.fetchUserinfo(header);
       } catch (ShepardProcessingException e) {
         abort(requestContext, "User info could not be retrieved");
         return;
@@ -85,13 +91,5 @@ public class UserFilter implements ContainerRequestFilter {
 
     User user = new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
     return user;
-  }
-
-  protected UserService getUserService() {
-    return new UserService();
-  }
-
-  protected UserinfoService getUserinfoService() {
-    return new UserinfoService();
   }
 }

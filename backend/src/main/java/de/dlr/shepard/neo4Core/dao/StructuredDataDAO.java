@@ -2,8 +2,10 @@ package de.dlr.shepard.neo4Core.dao;
 
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.util.CypherQueryHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.Map;
 
+@RequestScoped
 public class StructuredDataDAO extends GenericDAO<StructuredData> {
 
   /**

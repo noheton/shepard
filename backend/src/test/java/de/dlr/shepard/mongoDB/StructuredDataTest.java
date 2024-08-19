@@ -2,14 +2,13 @@ package de.dlr.shepard.mongoDB;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import java.util.Date;
 import java.util.Map;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 
-public class StructuredDataTest extends BaseTestCase {
+public class StructuredDataTest {
 
   @Test
   public void equalsContract() {

@@ -2,6 +2,8 @@ package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,28 +25,19 @@ import org.influxdb.dto.QueryResult;
  * Influx database is accessed directly by using query strings.
  */
 @Slf4j
+@ApplicationScoped
 public class InfluxDBConnector implements IConnector {
 
   private InfluxDB influxDB;
-  private static InfluxDBConnector instance = null;
 
-  /**
-   * Private constructor
-   */
-  private InfluxDBConnector() {}
-
-  /**
-   * For development reasons, there should always be just one InfluxConnector
-   * instance.
-   *
-   * @return The one and only InfluxConnector instance.
-   */
-  public static InfluxDBConnector getInstance() {
-    if (instance == null) {
-      instance = new InfluxDBConnector();
-    }
-    return instance;
+  /* Use this constructor for testing purpose only.
+   *  As soon as influxDB is provided via dependency injection, this constructor can be used for that purpose. */
+  InfluxDBConnector(InfluxDB influxDb) {
+    this.influxDB = influxDb;
   }
+
+  @Inject
+  InfluxDBConnector() {}
 
   /**
    * Establishes a connection to the Influx server by using the URL saved in the
@@ -54,11 +47,14 @@ public class InfluxDBConnector implements IConnector {
    */
   @Override
   public boolean connect() {
-    String host = ConfigProvider.getConfig().getValue("influx.host", String.class);
-    String username = ConfigProvider.getConfig().getValue("influx.username", String.class);
-    String password = ConfigProvider.getConfig().getValue("influx.password", String.class);
+    if (this.influxDB == null) {
+      String host = ConfigProvider.getConfig().getValue("influx.host", String.class);
+      String username = ConfigProvider.getConfig().getValue("influx.username", String.class);
+      String password = ConfigProvider.getConfig().getValue("influx.password", String.class);
 
-    influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password);
+      influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password);
+    }
+
     influxDB.enableBatch(
       BatchOptions.DEFAULTS.exceptionHandler((failedPoints, throwable) ->
         log.error("Exception while writing the following points: {}, Exception: {}", failedPoints, throwable)

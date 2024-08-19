@@ -14,43 +14,45 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
+@QuarkusComponentTest
 public class VersionServiceTest extends BaseTestCase {
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private CollectionService collectionService;
+  @InjectMock
+  CollectionService collectionService;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private UUID uuid;
-
-  @Captor
-  private ArgumentCaptor<Version> newVersionCaptor;
+  @InjectMock
+  UUID uuid;
 
   @Captor
-  private ArgumentCaptor<Collection> collectionCaptor;
+  ArgumentCaptor<Version> newVersionCaptor;
 
-  @Mock
-  private CollectionDAO collectionDAO;
+  @Captor
+  ArgumentCaptor<Collection> collectionCaptor;
 
-  @InjectMocks
-  private VersionService service;
+  @InjectMock
+  CollectionDAO collectionDAO;
+
+  @Inject
+  VersionService service;
 
   @Test
   public void getVersionTest() {

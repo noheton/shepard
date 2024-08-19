@@ -4,10 +4,12 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.TraversalRules;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+@RequestScoped
 public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredDataReference> {
 
   /**

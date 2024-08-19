@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.FileService;
@@ -28,45 +27,47 @@ import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class FileReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class FileReferenceServiceTest {
 
-  @Mock
-  private FileReferenceDAO dao;
+  @InjectMock
+  FileReferenceDAO dao;
 
-  @Mock
-  private FileService fileService;
+  @InjectMock
+  FileService fileService;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private FileContainerDAO fileContainerDAO;
+  @InjectMock
+  FileContainerDAO fileContainerDAO;
 
-  @Mock
-  private ShepardFileDAO fileDAO;
+  @InjectMock
+  ShepardFileDAO fileDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private PermissionsUtil permissionsUtil;
+  @InjectMock
+  PermissionsUtil permissionsUtil;
 
-  @InjectMocks
-  private FileReferenceService service;
+  @Inject
+  FileReferenceService service;
 
   @Test
   public void getFileReferenceByShepardIdTest_successful() {

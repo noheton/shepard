@@ -2,14 +2,13 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.FileContainer;
 import de.dlr.shepard.neo4Core.entities.User;
 import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class FileContainerIOTest extends BaseTestCase {
+public class FileContainerIOTest {
 
   @Test
   public void equalsContract() {

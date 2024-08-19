@@ -16,23 +16,51 @@ import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class StructuredDataReferenceService
   implements IReferenceService<StructuredDataReference, StructuredDataReferenceIO> {
 
-  private StructuredDataReferenceDAO structuredDataReferenceDAO = new StructuredDataReferenceDAO();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private StructuredDataContainerDAO containerDAO = new StructuredDataContainerDAO();
-  private StructuredDataDAO structuredDataDAO = new StructuredDataDAO();
-  private UserDAO userDAO = new UserDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private StructuredDataService structuredDataService = new StructuredDataService();
-  private PermissionsUtil permissionsUtil = new PermissionsUtil();
+  private StructuredDataReferenceDAO structuredDataReferenceDAO;
+  private DataObjectDAO dataObjectDAO;
+  private StructuredDataContainerDAO containerDAO;
+  private StructuredDataDAO structuredDataDAO;
+  private UserDAO userDAO;
+  private VersionDAO versionDAO;
+  private DateHelper dateHelper;
+  private StructuredDataService structuredDataService;
+  private PermissionsUtil permissionsUtil;
+
+  StructuredDataReferenceService() {}
+
+  @Inject
+  public StructuredDataReferenceService(
+    StructuredDataReferenceDAO structuredDataReferenceDAO,
+    DataObjectDAO dataObjectDAO,
+    StructuredDataContainerDAO containerDAO,
+    StructuredDataDAO structuredDataDAO,
+    UserDAO userDAO,
+    VersionDAO versionDAO,
+    DateHelper dateHelper,
+    StructuredDataService structuredDataService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.structuredDataReferenceDAO = structuredDataReferenceDAO;
+    this.dataObjectDAO = dataObjectDAO;
+    this.containerDAO = containerDAO;
+    this.structuredDataDAO = structuredDataDAO;
+    this.userDAO = userDAO;
+    this.versionDAO = versionDAO;
+    this.dateHelper = dateHelper;
+    this.structuredDataService = structuredDataService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @Override
   public StructuredDataReference createReferenceByShepardId(

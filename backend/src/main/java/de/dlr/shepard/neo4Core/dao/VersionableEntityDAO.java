@@ -1,17 +1,13 @@
 package de.dlr.shepard.neo4Core.dao;
 
-import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.CypherQueryHelper;
 import java.util.HashMap;
 import java.util.Map;
-import org.neo4j.ogm.session.Session;
 
 public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
 
-  protected Session session = null;
-
   protected VersionableEntityDAO() {
-    session = NeoConnector.getInstance().getNeo4jSession();
+    super();
   }
 
   public T findByShepardId(Long shepardId) {

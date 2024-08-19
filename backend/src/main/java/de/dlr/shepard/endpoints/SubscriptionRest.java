@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -36,7 +37,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SubscriptionRest {
 
-  private SubscriptionService service = new SubscriptionService();
+  private SubscriptionService subscriptionService;
+
+  SubscriptionRest() {}
+
+  @Inject
+  public SubscriptionRest(SubscriptionService subscriptionService) {
+    this.subscriptionService = subscriptionService;
+  }
 
   @GET
   @Tag(name = Constants.SUBSCRIPTION)
@@ -47,7 +55,7 @@ public class SubscriptionRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SubscriptionIO.class))
   )
   public Response getAllSubscriptions(@PathParam(Constants.USERNAME) String username) {
-    var subscriptions = service.getAllSubscriptions(username);
+    var subscriptions = subscriptionService.getAllSubscriptions(username);
     var result = new ArrayList<SubscriptionIO>(subscriptions.size());
     for (var sub : subscriptions) {
       result.add(new SubscriptionIO(sub));
@@ -68,7 +76,7 @@ public class SubscriptionRest {
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
   ) {
-    Subscription subscription = service.getSubscription(subscriptionId);
+    Subscription subscription = subscriptionService.getSubscription(subscriptionId);
     return subscription != null
       ? Response.ok(new SubscriptionIO(subscription)).build()
       : Response.status(Status.NOT_FOUND).build();
@@ -108,7 +116,7 @@ public class SubscriptionRest {
       content = @Content(schema = @Schema(implementation = SubscriptionIO.class))
     ) @Valid SubscriptionIO subscription
   ) {
-    Subscription created = service.createSubscription(subscription, username);
+    Subscription created = subscriptionService.createSubscription(subscription, username);
     return created != null
       ? Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build()
       : Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -124,7 +132,7 @@ public class SubscriptionRest {
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
   ) {
-    return service.deleteSubscription(subscriptionId)
+    return subscriptionService.deleteSubscription(subscriptionId)
       ? Response.status(Status.NO_CONTENT).build()
       : Response.status(Status.NOT_FOUND).build();
   }

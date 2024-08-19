@@ -11,6 +11,7 @@ import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.search.user.UserSearcher;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -38,9 +39,18 @@ public class SearchRest {
   @Context
   private SecurityContext securityContext;
 
-  private Searcher searcher = new Searcher();
-  private UserSearcher userSearcher = new UserSearcher();
-  private ContainerSearcher containerSearcher = new ContainerSearcher();
+  private Searcher searcher;
+  private UserSearcher userSearcher;
+  private ContainerSearcher containerSearcher;
+
+  SearchRest() {}
+
+  @Inject
+  public SearchRest(Searcher searcher, UserSearcher userSearcher, ContainerSearcher containerSearcher) {
+    this.searcher = searcher;
+    this.userSearcher = userSearcher;
+    this.containerSearcher = containerSearcher;
+  }
 
   @POST
   @Tag(name = Constants.SEARCH)

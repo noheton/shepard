@@ -2,10 +2,9 @@ package de.dlr.shepard.exceptions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import org.junit.jupiter.api.Test;
 
-public class InvalidAuthExceptionTest extends BaseTestCase {
+public class InvalidAuthExceptionTest {
 
   @Test
   public void testDefaultConstructor() {

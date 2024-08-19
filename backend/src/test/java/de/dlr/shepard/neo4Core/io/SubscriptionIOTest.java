@@ -3,7 +3,6 @@ package de.dlr.shepard.neo4Core.io;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.RequestMethod;
@@ -11,7 +10,7 @@ import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class SubscriptionIOTest extends BaseTestCase {
+public class SubscriptionIOTest {
 
   @Test
   public void equalsContract() {

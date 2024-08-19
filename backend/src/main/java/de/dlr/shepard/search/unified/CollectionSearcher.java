@@ -4,10 +4,20 @@ import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 
+@RequestScoped
 public class CollectionSearcher implements ISearcher {
 
-  private SearchDAO searchDAO = new SearchDAO();
+  private SearchDAO searchDAO;
+
+  CollectionSearcher() {}
+
+  @Inject
+  public CollectionSearcher(SearchDAO searchDAO) {
+    this.searchDAO = searchDAO;
+  }
 
   @Override
   public ResponseBody search(SearchBody searchBody, String userName) {

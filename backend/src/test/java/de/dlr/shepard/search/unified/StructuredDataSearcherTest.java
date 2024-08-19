@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
@@ -19,45 +18,38 @@ import de.dlr.shepard.neo4Core.entities.StructuredDataContainer;
 import de.dlr.shepard.neo4Core.entities.StructuredDataReference;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.bson.Document;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
+@QuarkusComponentTest
 public class StructuredDataSearcherTest extends BaseTestCase {
 
-  @Mock
-  private StructuredDataReferenceDAO structuredDataReferenceDAO;
+  @InjectMock
+  StructuredDataReferenceDAO structuredDataReferenceDAO;
 
-  @Mock
-  private BasicReferenceDAO basicReferenceDAO;
+  @InjectMock
+  BasicReferenceDAO basicReferenceDAO;
 
-  @Mock
-  private MongoDBConnector mongoDBConnector;
+  @InjectMock
+  MongoDBConnector mongoDBConnector;
 
-  @Mock
-  private MongoDatabase mongoDatabase;
+  @InjectMock
+  MongoCollection<Document> mongoContainer;
 
-  @Mock
-  private MongoCollection<Document> mongoContainer;
+  @InjectMock
+  FindIterable<Document> mongoQueryResult;
 
-  @Mock
-  private FindIterable<Document> mongoQueryResult;
+  @InjectMock
+  Document firstDocument;
 
-  @Mock
-  private Document firstDocument;
-
-  @InjectMocks
-  private StructuredDataSearcher structuredDataSearcher;
-
-  @BeforeEach
-  public void setupConnector() {
-    when(mongoDBConnector.getDatabase()).thenReturn(mongoDatabase);
-  }
+  @Inject
+  StructuredDataSearcher structuredDataSearcher;
 
   @Test
   public void getStructuredDataResponseTest() {
@@ -98,7 +90,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -150,7 +142,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
         "user1"
       )
     ).thenReturn(List.of(sdReference));
-    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -204,7 +196,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -275,7 +267,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(null);
     // test
@@ -328,7 +320,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test

@@ -5,6 +5,7 @@ import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.JWTSecurityContext;
+import de.dlr.shepard.security.JwtFilterGracePeriod;
 import de.dlr.shepard.security.RolesList;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PKIHelper;
@@ -13,7 +14,10 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.jackson.io.JacksonDeserializer;
+import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -33,36 +37,55 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 @Slf4j
+@RequestScoped
 public class JWTFilter implements ContainerRequestFilter {
 
-  private static final int FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
+  private PublicKey jwtPublicKey;
 
-  private final PublicKey oidcPublicKey;
-  private final PublicKey jwtPublicKey;
-  private final String role;
-  private GracePeriodUtil lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
+  private PublicKey oidcPublicKey;
 
-  public JWTFilter() throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalArgumentException {
-    var kFactory = KeyFactory.getInstance("RSA");
-    byte[] kcDecoded;
+  private String role;
+
+  private GracePeriodUtil lastSeen;
+
+  private ApiKeyService apiKeyService;
+
+  JWTFilter() {}
+
+  @Inject
+  public JWTFilter(
+    PKIHelper pkiHelper,
+    ApiKeyService apiKeyService,
+    JwtFilterGracePeriod jwtFilterGracePeriod,
+    @ConfigProperty(name = "oidc.public") String oidcPublic,
+    @ConfigProperty(name = "oidc.role") Optional<String> oidcRole
+  ) throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalArgumentException {
     try {
-      kcDecoded = Base64.getDecoder().decode(ConfigProvider.getConfig().getValue("oidc.public", String.class));
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("The given oidc public key is invalid", e);
+      this.apiKeyService = apiKeyService;
+      this.lastSeen = jwtFilterGracePeriod;
+      this.role = oidcRole.orElse("");
+
+      var kFactory = KeyFactory.getInstance("RSA");
+      byte[] kcDecoded;
+      try {
+        kcDecoded = Base64.getDecoder().decode(oidcPublic);
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException("The given oidc public key is invalid", e);
+      }
+      var kcSpec = new X509EncodedKeySpec(kcDecoded);
+      oidcPublicKey = kFactory.generatePublic(kcSpec);
+
+      pkiHelper.init();
+      jwtPublicKey = pkiHelper.getPublicKey();
+    } catch (Exception ex) {
+      Log.fatal("Cannot create instance of JWTFilter: " + ex.getMessage());
+      throw ex;
     }
-    var kcSpec = new X509EncodedKeySpec(kcDecoded);
-    oidcPublicKey = kFactory.generatePublic(kcSpec);
-
-    var pkiHelper = new PKIHelper();
-    pkiHelper.init();
-    jwtPublicKey = pkiHelper.getPublicKey();
-
-    role = ConfigProvider.getConfig().getOptionalValue("oidc.role", String.class).orElse("");
   }
 
   @Override
@@ -195,7 +218,6 @@ public class JWTFilter implements ContainerRequestFilter {
   }
 
   private JWTPrincipal parseApiKey(String header) {
-    ApiKeyService apiKeyService = getApiKeyService();
     JWTPrincipal principal = null;
     Jws<Claims> jws = parseApiKeyFromHeader(header);
     if (jws != null) {
@@ -231,9 +253,5 @@ public class JWTFilter implements ContainerRequestFilter {
 
     var principal = new JWTPrincipal(subject, keyId);
     return principal;
-  }
-
-  protected ApiKeyService getApiKeyService() {
-    return new ApiKeyService();
   }
 }

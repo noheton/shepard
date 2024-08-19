@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.InfluxPoint;
@@ -24,34 +23,36 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class TimeseriesContainerServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class TimeseriesContainerServiceTest {
 
-  @Mock
-  private TimeseriesContainerDAO dao;
+  @InjectMock
+  TimeseriesContainerDAO dao;
 
-  @Mock
-  private PermissionsDAO permissionsDAO;
+  @InjectMock
+  PermissionsDAO permissionsDAO;
 
-  @Mock
-  private TimeseriesService timeseriesService;
+  @InjectMock
+  TimeseriesService timeseriesService;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @InjectMocks
-  private TimeseriesContainerService service;
+  @Inject
+  TimeseriesContainerService service;
 
   @Test
   public void getTimeseriesContainerTest_successful() {

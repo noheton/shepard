@@ -10,11 +10,16 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.ApiKeyService;
-import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.JWTSecurityContext;
+import de.dlr.shepard.security.JwtFilterGracePeriod;
 import de.dlr.shepard.security.RolesList;
+import de.dlr.shepard.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import io.quarkus.test.component.TestConfigProperty;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -31,41 +36,47 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
+@QuarkusComponentTest
+@TestConfigProperty(
+  key = "oidc.public",
+  value = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiAxFyffvM0oiga3h2E7XpHtJvu1vTodrn9Y426FOv80YJcMwPkaI5tXY5hnLjgOwsVNSBv9wAhLL4bUfP+TVhdg4dijD2H/3FamheQaPmduimytzQjlHIIfFuZidH12ZyUrOWfDxiHiRFQ3Dd8dlS7MbIsWt/qBIg16ZZazTJTiaSyP/qH305x9iRjrtGRmvE2VMOdc5EhujFMJnQWWgwOnv2C9U9KIchkPCz+TAL4kKJ79BUi4b0+jxL5Cbgyt0bMo27Zx0zQjU7f0ynFIllqZ6new3Q8HYbr4AIkca4pMjfKWrTHkrQBL2cEXHLIHt86C17goKteToqDjphkwImwIDAQAB"
+)
+@TestConfigProperty(key = "oidc.role", value = "test_role")
 public class JWTFilterTest extends BaseTestCase {
 
   private static PrivateKey privateKey;
   private static PublicKey publicKey;
 
-  @Mock
-  private ContainerRequestContext context;
+  @InjectMock
+  ContainerRequestContext context;
 
-  @Mock
-  private UriInfo uriInfo;
+  @InjectMock
+  UriInfo uriInfo;
 
-  @Mock
-  private ApiKeyService apiKeyService;
+  @InjectMock
+  PKIHelper pkiHelper;
 
-  @Mock
-  private GracePeriodUtil lastSeen;
+  @InjectMock
+  ApiKeyService apiKeyService;
 
-  @Spy
-  private JWTFilter filter;
+  @InjectMock
+  JwtFilterGracePeriod lastSeen;
+
+  @Inject
+  JWTFilter filter;
 
   @Captor
-  private ArgumentCaptor<Response> responseCaptor;
+  ArgumentCaptor<Response> responseCaptor;
 
   @Captor
-  private ArgumentCaptor<SecurityContext> scCaptor;
+  ArgumentCaptor<SecurityContext> scCaptor;
 
   @BeforeAll
   public static void createKeys() throws NoSuchAlgorithmException, InvalidKeySpecException {
@@ -80,15 +91,13 @@ public class JWTFilterTest extends BaseTestCase {
     privateKey = keyFactory.generatePrivate(privateSpec);
 
     byte[] publicDecoded = Base64.getDecoder().decode(publicString);
-    X509EncodedKeySpec pubilcSpec = new X509EncodedKeySpec(publicDecoded);
-    publicKey = keyFactory.generatePublic(pubilcSpec);
+    X509EncodedKeySpec publicSpec = new X509EncodedKeySpec(publicDecoded);
+    publicKey = keyFactory.generatePublic(publicSpec);
   }
 
   @BeforeEach
   public void setUpKeys() throws IllegalAccessException {
-    FieldUtils.writeField(filter, "oidcPublicKey", publicKey, true);
-    FieldUtils.writeField(filter, "jwtPublicKey", publicKey, true);
-    FieldUtils.writeField(filter, "role", "test_role", true);
+    when(pkiHelper.getPublicKey()).thenReturn(publicKey);
   }
 
   @BeforeEach
@@ -99,12 +108,6 @@ public class JWTFilterTest extends BaseTestCase {
     when(uriInfo.getBaseUri()).thenReturn(baseUri);
     when(context.getUriInfo()).thenReturn(uriInfo);
     when(context.getMethod()).thenReturn("GET");
-  }
-
-  @BeforeEach
-  public void prepareSpy() throws IllegalAccessException {
-    when(filter.getApiKeyService()).thenReturn(apiKeyService);
-    FieldUtils.writeField(filter, "lastSeen", lastSeen, true);
   }
 
   @Test
@@ -273,13 +276,12 @@ public class JWTFilterTest extends BaseTestCase {
   }
 
   @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
   public void testFilterNoRoleConfigured()
     throws InvalidKeySpecException, NoSuchAlgorithmException, IllegalAccessException {
     Date now = new Date();
     Date future = DateUtils.addMinutes(now, 5);
     UUID keyId = UUID.randomUUID();
-
-    FieldUtils.writeField(filter, "role", "", true);
 
     String jws = Jwts.builder()
       .setSubject("Bob")

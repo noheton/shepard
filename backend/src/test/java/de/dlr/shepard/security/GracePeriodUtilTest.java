@@ -3,10 +3,9 @@ package de.dlr.shepard.security;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.BaseTestCase;
 import org.junit.jupiter.api.Test;
 
-public class GracePeriodUtilTest extends BaseTestCase {
+public class GracePeriodUtilTest {
 
   @Test
   public void elementIsKnownTest_False() {

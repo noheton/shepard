@@ -9,16 +9,27 @@ import de.dlr.shepard.neo4Core.services.UserGroupService;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.PermissionType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@RequestScoped
 public class PermissionsUtil {
 
-  private PermissionsService permissionsService = new PermissionsService();
-  private UserGroupService userGroupService = new UserGroupService();
+  private PermissionsService permissionsService;
+  private UserGroupService userGroupService;
+
+  PermissionsUtil() {}
+
+  @Inject
+  public PermissionsUtil(PermissionsService permissionsService, UserGroupService userGroupService) {
+    this.permissionsService = permissionsService;
+    this.userGroupService = userGroupService;
+  }
 
   /**
    * Check whether a request is allowed or not

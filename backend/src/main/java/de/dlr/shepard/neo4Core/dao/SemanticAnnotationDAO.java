@@ -4,10 +4,12 @@ import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+@RequestScoped
 public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
 
   public List<SemanticAnnotation> findAllSemanticAnnotationsByNeo4jId(long entityId) {

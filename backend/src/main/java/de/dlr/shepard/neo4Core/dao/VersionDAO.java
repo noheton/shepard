@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.dao;
 
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.util.CypherQueryHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@RequestScoped
 public class VersionDAO extends GenericDAO<Version> {
 
   /**

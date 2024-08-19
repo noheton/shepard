@@ -12,19 +12,39 @@ import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class FileContainerService implements IContainerService<FileContainer, FileContainerIO> {
 
-  private FileContainerDAO fileContainerDAO = new FileContainerDAO();
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private FileService fileService = new FileService();
+  private FileContainerDAO fileContainerDAO;
+  private PermissionsDAO permissionsDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+  private FileService fileService;
+
+  FileContainerService() {}
+
+  @Inject
+  public FileContainerService(
+    FileContainerDAO fileContainerDAO,
+    PermissionsDAO permissionsDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper,
+    FileService fileService
+  ) {
+    this.fileContainerDAO = fileContainerDAO;
+    this.permissionsDAO = permissionsDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+    this.fileService = fileService;
+  }
 
   /**
    * Creates a FileContainer and stores it in Neo4J

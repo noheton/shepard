@@ -3,24 +3,25 @@ package de.dlr.shepard.search.unified;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.dao.SearchDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class CollectionSearcherTest extends BaseTestCase {
+@QuarkusComponentTest
+public class CollectionSearcherTest {
 
-  @Mock
-  private SearchDAO searchDAO;
+  @InjectMock
+  SearchDAO searchDAO;
 
-  @InjectMocks
-  private CollectionSearcher collectionSearcher;
+  @Inject
+  CollectionSearcher collectionSearcher;
 
   @Test
   public void test() {

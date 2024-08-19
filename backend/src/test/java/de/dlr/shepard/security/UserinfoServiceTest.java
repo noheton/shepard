@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
-import io.quarkus.test.junit.QuarkusTest;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;

@@ -4,6 +4,7 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@RequestScoped
 public class CollectionDAO extends VersionableEntityDAO<Collection> {
 
   @Override

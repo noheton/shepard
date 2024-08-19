@@ -10,7 +10,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
@@ -31,45 +30,47 @@ import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class StructuredDataReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class StructuredDataReferenceServiceTest {
 
-  @Mock
-  private StructuredDataReferenceDAO dao;
+  @InjectMock
+  StructuredDataReferenceDAO dao;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private StructuredDataService structuredDataService;
+  @InjectMock
+  StructuredDataService structuredDataService;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private StructuredDataContainerDAO structuredDataContainerDAO;
+  @InjectMock
+  StructuredDataContainerDAO structuredDataContainerDAO;
 
-  @Mock
-  private StructuredDataDAO structuredDataDAO;
+  @InjectMock
+  StructuredDataDAO structuredDataDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private PermissionsUtil permissionsUtil;
+  @InjectMock
+  PermissionsUtil permissionsUtil;
 
-  @InjectMocks
-  private StructuredDataReferenceService service;
+  @Inject
+  StructuredDataReferenceService service;
 
   @Test
   public void getStructuredDataReferenceByShepardIdTest_successful() {

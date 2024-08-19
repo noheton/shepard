@@ -7,6 +7,7 @@ import de.dlr.shepard.neo4Core.services.SemanticRepositoryService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -36,10 +37,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SemanticRepositoryRest {
 
-  private SemanticRepositoryService semanticRepositoryService = new SemanticRepositoryService();
+  private SemanticRepositoryService semanticRepositoryService;
 
   @Context
   private SecurityContext securityContext;
+
+  SemanticRepositoryRest() {}
+
+  @Inject
+  public SemanticRepositoryRest(SemanticRepositoryService semanticRepositoryService) {
+    this.semanticRepositoryService = semanticRepositoryService;
+  }
 
   @GET
   @Tag(name = Constants.SEMANTIC_REPOSITORY)

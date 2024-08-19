@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.dao;
 
 import de.dlr.shepard.neo4Core.entities.User;
+import jakarta.enterprise.context.RequestScoped;
 
+@RequestScoped
 public class UserDAO extends GenericDAO<User> {
 
   public User find(String username) {

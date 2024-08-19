@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.dao;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 
+@RequestScoped
 public class BasicReferenceDAO extends VersionableEntityDAO<BasicReference> {
 
   @Override

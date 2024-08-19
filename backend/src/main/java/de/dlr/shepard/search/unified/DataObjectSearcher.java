@@ -6,12 +6,22 @@ import de.dlr.shepard.neo4Core.io.BasicEntityIO;
 import de.dlr.shepard.search.Neo4jEmitter;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 
+@RequestScoped
 public class DataObjectSearcher implements ISearcher {
 
-  private SearchDAO searchDAO = new SearchDAO();
+  private SearchDAO searchDAO;
+
+  DataObjectSearcher() {}
+
+  @Inject
+  public DataObjectSearcher(SearchDAO searchDAO) {
+    this.searchDAO = searchDAO;
+  }
 
   @Override
   public ResponseBody search(SearchBody searchBody, String userName) {

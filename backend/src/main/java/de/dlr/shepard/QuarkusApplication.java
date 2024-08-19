@@ -1,6 +1,5 @@
-package de.dlr.shepard.endpoints;
+package de.dlr.shepard;
 
-import com.mongodb.client.MongoClient;
 import de.dlr.shepard.influxDB.InfluxDBConnector;
 import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.neo4j.MigrationsRunner;
@@ -15,21 +14,20 @@ import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
 @Slf4j
-public class ServletContextClass {
+public class QuarkusApplication {
 
   @Inject
-  MongoClient mongoClient;
+  InfluxDBConnector influxdb;
+
+  @Inject
+  MongoDBConnector mongodb;
 
   private static IConnector neo4j = NeoConnector.getInstance();
-  private static IConnector mongodb;
-  private static IConnector influxdb = InfluxDBConnector.getInstance();
 
   @Startup
   void init() {
     log.info("Starting shepard backend");
-    mongodb = MongoDBConnector.createInstance(mongoClient);
 
-    // TODO: fix initialization of databases
     var pkiHelper = new PKIHelper();
     var migrationRunner = new MigrationsRunner();
     pkiHelper.init();
@@ -51,7 +49,6 @@ public class ServletContextClass {
 
   @Shutdown
   void shutdown() {
-    // TODO: fix initialization of databases
     neo4j.disconnect();
     mongodb.disconnect();
     influxdb.disconnect();

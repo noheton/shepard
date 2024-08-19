@@ -14,6 +14,8 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -21,13 +23,31 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class TimeseriesContainerService implements IContainerService<TimeseriesContainer, TimeseriesContainerIO> {
 
-  private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
-  private TimeseriesService timeseriesService = new TimeseriesService();
-  private PermissionsDAO permissionsDAO = new PermissionsDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private TimeseriesContainerDAO timeseriesContainerDAO;
+  private TimeseriesService timeseriesService;
+  private PermissionsDAO permissionsDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+
+  TimeseriesContainerService() {}
+
+  @Inject
+  public TimeseriesContainerService(
+    TimeseriesContainerDAO timeseriesContainerDAO,
+    TimeseriesService timeseriesService,
+    PermissionsDAO permissionsDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper
+  ) {
+    this.timeseriesContainerDAO = timeseriesContainerDAO;
+    this.timeseriesService = timeseriesService;
+    this.permissionsDAO = permissionsDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+  }
 
   /**
    * Creates a TimeseriesContainer and stores it in Neo4J

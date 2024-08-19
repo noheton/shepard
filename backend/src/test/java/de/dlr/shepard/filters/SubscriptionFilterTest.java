@@ -3,11 +3,9 @@ package de.dlr.shepard.filters;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.BasicEntityIO;
@@ -15,6 +13,9 @@ import de.dlr.shepard.neo4Core.services.SubscriptionService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.RequestMethod;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.PathSegment;
@@ -22,34 +23,38 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.Mock;
 
-public class SubscriptionFilterTest extends BaseTestCase {
+@QuarkusComponentTest
+public class SubscriptionFilterTest {
 
-  @Mock
-  private UriInfo uriInfo;
+  @InjectMock
+  UriInfo uriInfo;
 
-  @Mock
-  private ContainerRequestContext request;
+  @InjectMock
+  ContainerRequestContext request;
 
-  @Mock
-  private ContainerResponseContext response;
+  @InjectMock
+  ContainerResponseContext response;
 
-  @Mock
-  private SubscriptionService service;
+  @InjectMock
+  SubscriptionService service;
 
-  @Mock
-  private PermissionsUtil permissionsUtil;
+  @InjectMock
+  PermissionsUtil permissionsUtil;
 
-  @Mock
-  private Executor executor;
+  @InjectMock
+  ExecutorFactory executorFactory;
 
-  private SubscriptionFilter filter;
+  @InjectMock
+  ExecutorService executorService;
+
+  @Inject
+  SubscriptionFilter filter;
 
   @BeforeEach
   public void setUpUriInfo() throws URISyntaxException {
@@ -69,9 +74,7 @@ public class SubscriptionFilterTest extends BaseTestCase {
 
   @BeforeEach
   public void prepareSpy() {
-    filter = spy(new SubscriptionFilter(executor));
-    when(filter.getService()).thenReturn(service);
-    when(filter.getPermissionsUtil()).thenReturn(permissionsUtil);
+    when(executorFactory.getInstance()).thenReturn(executorService);
   }
 
   @Test
@@ -97,7 +100,7 @@ public class SubscriptionFilterTest extends BaseTestCase {
     when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
-    verify(executor).execute(any());
+    verify(executorService).execute(any());
   }
 
   @Test
@@ -120,12 +123,12 @@ public class SubscriptionFilterTest extends BaseTestCase {
     when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
-    verify(executor).execute(any());
+    verify(executorService).execute(any());
   }
 
   @ParameterizedTest
   @CsvSource({ "http://my.url/test2,200", "http://my.url/test/200/sub,100", "http://my.url/test/200/sub,400" })
-  public void testFilterNoExecution(String subscribedUrl, int statusCode) {
+  public void testFilterNoExecution(String subscribedUrl, Integer statusCode) {
     Subscription sub = new Subscription();
     sub.setCallbackURL("http://callback.url/test");
     sub.setId(200L);
@@ -141,7 +144,7 @@ public class SubscriptionFilterTest extends BaseTestCase {
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
 
     filter.filter(request, response);
-    verify(executor, never()).execute(any());
+    verify(executorService, never()).execute(any());
   }
 
   @Test
@@ -167,6 +170,6 @@ public class SubscriptionFilterTest extends BaseTestCase {
     when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(false);
 
     filter.filter(request, response);
-    verify(executor, never()).execute(any());
+    verify(executorService, never()).execute(any());
   }
 }

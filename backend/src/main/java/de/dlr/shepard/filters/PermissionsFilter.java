@@ -1,11 +1,13 @@
 package de.dlr.shepard.filters;
 
 import de.dlr.shepard.exceptions.ApiError;
-import de.dlr.shepard.security.GracePeriodUtil;
+import de.dlr.shepard.security.PermissionGracePeriod;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -20,16 +22,22 @@ import lombok.extern.slf4j.Slf4j;
 @Provider
 @Slf4j
 @Priority(Priorities.AUTHORIZATION)
+@ApplicationScoped
 public class PermissionsFilter implements ContainerRequestFilter {
 
-  private static final int FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
   private static final List<String> writerMethods = List.of(HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE);
   private static final List<String> readerMethods = List.of(HttpMethod.GET);
 
-  private final GracePeriodUtil lastSeen;
+  private PermissionGracePeriod lastSeen;
 
-  public PermissionsFilter() {
-    lastSeen = new GracePeriodUtil(FIVE_MINUTES_IN_MILLIS);
+  private PermissionsUtil permissionsUtil;
+
+  PermissionsFilter() {}
+
+  @Inject
+  public PermissionsFilter(PermissionGracePeriod lastSeen, PermissionsUtil permissionsUtil) {
+    this.lastSeen = lastSeen;
+    this.permissionsUtil = permissionsUtil;
   }
 
   @Override
@@ -45,7 +53,6 @@ public class PermissionsFilter implements ContainerRequestFilter {
     if (lastSeen.elementIsKnown(lastSeenKey)) {
       return;
     }
-    var permissionsUtil = getPermissionsUtil();
     var accessType = getAccessType(requestContext.getUriInfo().getPathSegments(), requestContext.getMethod());
     if (permissionsUtil.isAllowed(requestContext.getUriInfo().getPathSegments(), accessType, principal.getName())) {
       lastSeen.elementSeen(lastSeenKey);
@@ -56,6 +63,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
   }
 
   private void abort(ContainerRequestContext requestContext, String reason) {
+    log.warn(reason);
     requestContext.abortWith(
       Response.status(Status.FORBIDDEN)
         .entity(new ApiError(Status.FORBIDDEN.getStatusCode(), "AuthenticationException", reason))
@@ -68,9 +76,5 @@ public class PermissionsFilter implements ContainerRequestFilter {
     if (readerMethods.contains(requestMethod)) return AccessType.Read;
     if (writerMethods.contains(requestMethod)) return AccessType.Write;
     return AccessType.None;
-  }
-
-  protected PermissionsUtil getPermissionsUtil() {
-    return new PermissionsUtil();
   }
 }

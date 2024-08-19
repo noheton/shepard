@@ -3,8 +3,10 @@ package de.dlr.shepard.neo4Core.dao;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
+import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 
+@RequestScoped
 public class PermissionsDAO extends GenericDAO<Permissions> {
 
   public Permissions findByEntityNeo4jId(long entityId) {

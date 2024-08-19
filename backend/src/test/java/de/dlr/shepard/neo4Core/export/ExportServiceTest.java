@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -30,43 +29,46 @@ import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
 import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class ExportServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class ExportServiceTest {
 
-  private DateHelper dateHelper = new DateHelper();
+  // Hint: DateHelper is used in constructor and therefore cannot be injected.
+  DateHelper dateHelper = new DateHelper();
 
-  @Mock
-  private UserService userService;
+  @InjectMock
+  UserService userService;
 
-  @Mock
-  private CollectionService collectionService;
+  @InjectMock
+  CollectionService collectionService;
 
-  @Mock
-  private DataObjectService dataObjectService;
+  @InjectMock
+  DataObjectService dataObjectService;
 
-  @Mock
-  private BasicReferenceService basicReferenceService;
+  @InjectMock
+  BasicReferenceService basicReferenceService;
 
-  @Mock
-  private TimeseriesReferenceService timeseriesReferenceService;
+  @InjectMock
+  TimeseriesReferenceService timeseriesReferenceService;
 
-  @Mock
-  private FileReferenceService fileReferenceService;
+  @InjectMock
+  FileReferenceService fileReferenceService;
 
-  @Mock
-  private StructuredDataReferenceService structuredDataReferenceService;
+  @InjectMock
+  StructuredDataReferenceService structuredDataReferenceService;
 
-  @Mock
-  private URIReferenceService uriReferenceService;
+  @InjectMock
+  URIReferenceService uriReferenceService;
 
-  @InjectMocks
-  private ExportService service;
+  @Inject
+  ExportService service;
 
   private final User user = new User("bob");
   private final DataObject dataObject = new DataObject() {
@@ -85,7 +87,7 @@ public class ExportServiceTest extends BaseTestCase {
   };
 
   @BeforeEach
-  private void initMocks() {
+  void initMocks() {
     collection.addDataObject(dataObject);
     dataObject.setCollection(collection);
 

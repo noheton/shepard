@@ -5,55 +5,52 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.UserService;
-import de.dlr.shepard.security.GracePeriodUtil;
 import de.dlr.shepard.security.JWTPrincipal;
+import de.dlr.shepard.security.UserGracePeriod;
 import de.dlr.shepard.security.Userinfo;
 import de.dlr.shepard.security.UserinfoService;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.security.Principal;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Spy;
 
-public class UserFilterTest extends BaseTestCase {
+@QuarkusComponentTest
+public class UserFilterTest {
 
-  @Mock
-  private ContainerRequestContext requestContext;
+  @InjectMock
+  ContainerRequestContext requestContext;
 
-  @Mock
-  private SecurityContext securityContext;
+  @InjectMock
+  SecurityContext securityContext;
 
-  @Mock
-  private UserService userService;
+  @InjectMock
+  UserService userService;
 
-  @Mock
-  private UserinfoService userinfoService;
+  @InjectMock
+  UserinfoService userinfoService;
 
-  @Mock
-  private GracePeriodUtil lastSeen;
+  @InjectMock
+  UserGracePeriod lastSeen;
 
-  @Spy
-  private UserFilter filter;
+  @Inject
+  UserFilter filter;
 
   @Captor
-  private ArgumentCaptor<JWTPrincipal> userCaptor;
+  ArgumentCaptor<JWTPrincipal> userCaptor;
 
   @BeforeEach
   public void prepareSpy() throws IllegalAccessException {
-    when(filter.getUserService()).thenReturn(userService);
-    when(filter.getUserinfoService()).thenReturn(userinfoService);
-    FieldUtils.writeField(filter, "lastSeen", lastSeen, true);
     when(requestContext.getSecurityContext()).thenReturn(securityContext);
   }
 

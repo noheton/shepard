@@ -2,12 +2,15 @@ package de.dlr.shepard.util;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import de.dlr.shepard.BaseTestCase;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-public class UUIDHelperTest extends BaseTestCase {
+@QuarkusComponentTest
+public class UUIDHelperTest {
 
-  private UUIDHelper helper = new UUIDHelper();
+  @Inject
+  UUIDHelper helper;
 
   @Test
   public void getUUIDTest() {

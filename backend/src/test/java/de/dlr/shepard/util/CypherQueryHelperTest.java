@@ -2,13 +2,12 @@ package de.dlr.shepard.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import org.junit.jupiter.api.Test;
 
-public class CypherQueryHelperTest extends BaseTestCase {
+public class CypherQueryHelperTest {
 
   @Test
   public void getReturnPartTest() {

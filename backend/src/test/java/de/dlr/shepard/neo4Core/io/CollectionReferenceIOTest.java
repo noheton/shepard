@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.CollectionReference;
 import de.dlr.shepard.neo4Core.entities.DataObject;
@@ -11,7 +10,7 @@ import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class CollectionReferenceIOTest extends BaseTestCase {
+public class CollectionReferenceIOTest {
 
   @Test
   public void equalsContract() {

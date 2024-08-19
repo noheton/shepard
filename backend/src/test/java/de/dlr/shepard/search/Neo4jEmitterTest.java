@@ -3,7 +3,6 @@ package de.dlr.shepard.search;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.ShepardParserException;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.util.TraversalRules;
@@ -13,7 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class Neo4jEmitterTest extends BaseTestCase {
+public class Neo4jEmitterTest {
 
   private static final String userName = "userName";
 

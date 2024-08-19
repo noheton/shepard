@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
@@ -14,7 +13,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
 
-public class TimeseriesReferenceIOTest extends BaseTestCase {
+public class TimeseriesReferenceIOTest {
 
   @Test
   public void equalsContract() {

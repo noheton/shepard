@@ -19,6 +19,8 @@ import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -28,17 +30,43 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
 
-  private TimeseriesReferenceDAO timeseriesReferenceDAO = new TimeseriesReferenceDAO();
-  private TimeseriesService timeseriesService = new TimeseriesService();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private TimeseriesContainerDAO timeseriesContainerDAO = new TimeseriesContainerDAO();
-  private TimeseriesDAO timeseriesDAO = new TimeseriesDAO();
-  private UserDAO userDAO = new UserDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private PermissionsUtil permissionsUtil = new PermissionsUtil();
+  private TimeseriesReferenceDAO timeseriesReferenceDAO;
+  private TimeseriesService timeseriesService;
+  private DataObjectDAO dataObjectDAO;
+  private TimeseriesContainerDAO timeseriesContainerDAO;
+  private TimeseriesDAO timeseriesDAO;
+  private UserDAO userDAO;
+  private VersionDAO versionDAO;
+  private DateHelper dateHelper;
+  private PermissionsUtil permissionsUtil;
+
+  TimeseriesReferenceService() {}
+
+  @Inject
+  public TimeseriesReferenceService(
+    TimeseriesReferenceDAO timeseriesReferenceDAO,
+    TimeseriesService timeseriesService,
+    DataObjectDAO dataObjectDAO,
+    TimeseriesContainerDAO timeseriesContainerDAO,
+    TimeseriesDAO timeseriesDAO,
+    UserDAO userDAO,
+    VersionDAO versionDAO,
+    DateHelper dateHelper,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.timeseriesReferenceDAO = timeseriesReferenceDAO;
+    this.timeseriesService = timeseriesService;
+    this.dataObjectDAO = dataObjectDAO;
+    this.timeseriesContainerDAO = timeseriesContainerDAO;
+    this.timeseriesDAO = timeseriesDAO;
+    this.userDAO = userDAO;
+    this.versionDAO = versionDAO;
+    this.dateHelper = dateHelper;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @Override
   public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {

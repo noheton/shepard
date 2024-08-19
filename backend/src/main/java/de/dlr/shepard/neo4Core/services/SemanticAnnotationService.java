@@ -9,17 +9,34 @@ import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class SemanticAnnotationService {
 
-  private SemanticAnnotationDAO semanticAnnotationDAO = new SemanticAnnotationDAO();
-  private SemanticRepositoryDAO semanticRepositoryDAO = new SemanticRepositoryDAO();
-  private VersionableEntityConcreteDAO versionableEntityConcreteDAO = new VersionableEntityConcreteDAO();
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory =
-    new SemanticRepositoryConnectorFactory();
+  private SemanticAnnotationDAO semanticAnnotationDAO;
+  private SemanticRepositoryDAO semanticRepositoryDAO;
+  private VersionableEntityConcreteDAO versionableEntityConcreteDAO;
+  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+
+  SemanticAnnotationService() {}
+
+  @Inject
+  public SemanticAnnotationService(
+    SemanticAnnotationDAO semanticAnnotationDAO,
+    SemanticRepositoryDAO semanticRepositoryDAO,
+    VersionableEntityConcreteDAO versionableEntityConcreteDAO,
+    SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory
+  ) {
+    this.semanticAnnotationDAO = semanticAnnotationDAO;
+    this.semanticRepositoryDAO = semanticRepositoryDAO;
+    this.versionableEntityConcreteDAO = versionableEntityConcreteDAO;
+    this.semanticRepositoryConnectorFactory = semanticRepositoryConnectorFactory;
+  }
 
   public List<SemanticAnnotation> getAllAnnotationsByNeo4jId(long entityId) {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(entityId);

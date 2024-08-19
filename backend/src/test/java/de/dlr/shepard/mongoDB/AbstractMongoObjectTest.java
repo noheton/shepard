@@ -2,12 +2,11 @@ package de.dlr.shepard.mongoDB;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import java.util.Date;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
 
-public class AbstractMongoObjectTest extends BaseTestCase {
+public class AbstractMongoObjectTest {
 
   @NoArgsConstructor
   class MongoObject extends AbstractMongoObject {

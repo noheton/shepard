@@ -5,11 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import org.junit.jupiter.api.Test;
 
-public class QueryParamHelperTest extends BaseTestCase {
+public class QueryParamHelperTest {
 
   @Test
   public void withName() {

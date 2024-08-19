@@ -8,7 +8,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.ShepardFile;
@@ -21,32 +20,34 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class FileContainerServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class FileContainerServiceTest {
 
-  @Mock
-  private FileContainerDAO dao;
+  @InjectMock
+  FileContainerDAO dao;
 
-  @Mock
-  private PermissionsDAO permissionsDAO;
+  @InjectMock
+  PermissionsDAO permissionsDAO;
 
-  @Mock
-  private FileService fileService;
+  @InjectMock
+  FileService fileService;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @InjectMocks
-  private FileContainerService service;
+  @Inject
+  FileContainerService service;
 
   @Test
   public void getFileContainerTest_successful() {

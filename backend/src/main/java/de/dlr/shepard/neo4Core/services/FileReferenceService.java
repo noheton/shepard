@@ -17,23 +17,51 @@ import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
 
-  private FileReferenceDAO fileReferenceDAO = new FileReferenceDAO();
-  private DataObjectDAO dataObjectDAO = new DataObjectDAO();
-  private FileContainerDAO containerDAO = new FileContainerDAO();
-  private ShepardFileDAO fileDAO = new ShepardFileDAO();
-  private UserDAO userDAO = new UserDAO();
-  private VersionDAO versionDAO = new VersionDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private FileService fileService = new FileService();
-  private PermissionsUtil permissionsUtil = new PermissionsUtil();
+  private FileReferenceDAO fileReferenceDAO;
+  private DataObjectDAO dataObjectDAO;
+  private FileContainerDAO containerDAO;
+  private ShepardFileDAO fileDAO;
+  private UserDAO userDAO;
+  private VersionDAO versionDAO;
+  private DateHelper dateHelper;
+  private FileService fileService;
+  private PermissionsUtil permissionsUtil;
+
+  FileReferenceService() {}
+
+  @Inject
+  public FileReferenceService(
+    FileReferenceDAO fileReferenceDAO,
+    DataObjectDAO dataObjectDAO,
+    FileContainerDAO containerDAO,
+    ShepardFileDAO fileDAO,
+    UserDAO userDAO,
+    VersionDAO versionDAO,
+    DateHelper dateHelper,
+    FileService fileService,
+    PermissionsUtil permissionsUtil
+  ) {
+    this.fileReferenceDAO = fileReferenceDAO;
+    this.dataObjectDAO = dataObjectDAO;
+    this.containerDAO = containerDAO;
+    this.fileDAO = fileDAO;
+    this.userDAO = userDAO;
+    this.versionDAO = versionDAO;
+    this.dateHelper = dateHelper;
+    this.fileService = fileService;
+    this.permissionsUtil = permissionsUtil;
+  }
 
   @Override
   public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {

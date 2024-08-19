@@ -5,15 +5,27 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequestScoped
 public class BasicReferenceService {
 
-  private BasicReferenceDAO basicReferenceDAO = new BasicReferenceDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
+  private BasicReferenceDAO basicReferenceDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+
+  BasicReferenceService() {}
+
+  @Inject
+  public BasicReferenceService(BasicReferenceDAO basicReferenceDAO, UserDAO userDAO, DateHelper dateHelper) {
+    this.basicReferenceDAO = basicReferenceDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+  }
 
   /**
    * Searches the neo4j database for a BasicReference

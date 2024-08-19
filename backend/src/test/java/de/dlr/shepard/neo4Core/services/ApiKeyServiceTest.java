@@ -13,6 +13,9 @@ import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -25,25 +28,24 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
+@QuarkusComponentTest
 public class ApiKeyServiceTest extends BaseTestCase {
 
-  @Mock
-  private ApiKeyDAO dao;
+  @InjectMock
+  ApiKeyDAO dao;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private PKIHelper pkiHelper;
+  @InjectMock
+  PKIHelper pkiHelper;
 
-  @InjectMocks
-  private ApiKeyService service;
+  @Inject
+  ApiKeyService service;
 
   private PrivateKey key;
 

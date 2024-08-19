@@ -1,6 +1,8 @@
 package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -9,10 +11,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@RequestScoped
 public class TimeseriesService {
 
-  private InfluxDBConnector influxConnector = InfluxDBConnector.getInstance();
-  private CsvConverter csvConverter = new CsvConverter();
+  private InfluxDBConnector influxConnector;
+  private CsvConverter csvConverter;
+
+  TimeseriesService() {}
+
+  @Inject
+  public TimeseriesService(InfluxDBConnector influxConnector, CsvConverter csvConverter) {
+    this.influxConnector = influxConnector;
+    this.csvConverter = csvConverter;
+  }
 
   /**
    * Creates timeseries and writes them to influxDB

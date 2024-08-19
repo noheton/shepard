@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.influxDB.FillOption;
@@ -31,6 +30,9 @@ import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.test.InjectMock;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
@@ -39,40 +41,39 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-public class TimeseriesReferenceServiceTest extends BaseTestCase {
+@QuarkusComponentTest
+public class TimeseriesReferenceServiceTest {
 
-  @Mock
-  private TimeseriesReferenceDAO dao;
+  @InjectMock
+  TimeseriesReferenceDAO dao;
 
-  @Mock
-  private VersionDAO versionDAO;
+  @InjectMock
+  VersionDAO versionDAO;
 
-  @Mock
-  private TimeseriesService timeseriesService;
+  @InjectMock
+  TimeseriesService timeseriesService;
 
-  @Mock
-  private DataObjectDAO dataObjectDAO;
+  @InjectMock
+  DataObjectDAO dataObjectDAO;
 
-  @Mock
-  private TimeseriesContainerDAO timeseriesContainerDAO;
+  @InjectMock
+  TimeseriesContainerDAO timeseriesContainerDAO;
 
-  @Mock
-  private TimeseriesDAO timeseriesDAO;
+  @InjectMock
+  TimeseriesDAO timeseriesDAO;
 
-  @Mock
-  private UserDAO userDAO;
+  @InjectMock
+  UserDAO userDAO;
 
-  @Mock
-  private DateHelper dateHelper;
+  @InjectMock
+  DateHelper dateHelper;
 
-  @Mock
-  private PermissionsUtil permissionsUtil;
+  @InjectMock
+  PermissionsUtil permissionsUtil;
 
-  @InjectMocks
-  private TimeseriesReferenceService service;
+  @Inject
+  TimeseriesReferenceService service;
 
   @Test
   public void getTimeseriesReferenceByShepardIdTest_successful() {

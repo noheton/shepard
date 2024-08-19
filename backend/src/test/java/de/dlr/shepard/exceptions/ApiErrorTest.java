@@ -1,10 +1,9 @@
 package de.dlr.shepard.exceptions;
 
-import de.dlr.shepard.BaseTestCase;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class ApiErrorTest extends BaseTestCase {
+public class ApiErrorTest {
 
   @Test
   public void equalsContract() {

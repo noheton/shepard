@@ -2,7 +2,6 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
@@ -10,7 +9,7 @@ import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class SemanticRepositoryIOTest extends BaseTestCase {
+public class SemanticRepositoryIOTest {
 
   @Test
   public void equalsContract() {

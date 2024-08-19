@@ -7,15 +7,35 @@ import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.util.DateHelper;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.List;
 
+@RequestScoped
 public class VersionService {
 
-  private VersionDAO versionDAO = new VersionDAO();
-  private CollectionDAO collectionDAO = new CollectionDAO();
-  private UserDAO userDAO = new UserDAO();
-  private DateHelper dateHelper = new DateHelper();
-  private CollectionService collectionService = new CollectionService();
+  private VersionDAO versionDAO;
+  private CollectionDAO collectionDAO;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+  private CollectionService collectionService;
+
+  VersionService() {}
+
+  @Inject
+  public VersionService(
+    VersionDAO versionDAO,
+    CollectionDAO collectionDAO,
+    UserDAO userDAO,
+    DateHelper dateHelper,
+    CollectionService collectionService
+  ) {
+    this.versionDAO = versionDAO;
+    this.collectionDAO = collectionDAO;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+    this.collectionService = collectionService;
+  }
 
   public List<Version> getAllVersions(long collectionId) {
     List<Version> versions = versionDAO.findAllVersions(collectionId);
