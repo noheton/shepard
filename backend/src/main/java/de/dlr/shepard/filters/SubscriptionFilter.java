@@ -9,6 +9,7 @@ import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.HasId;
 import de.dlr.shepard.util.RequestMethod;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ProcessingException;
@@ -21,11 +22,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.ext.Provider;
 import java.util.List;
 import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
 
 @Subscribable
 @Provider
-@Slf4j
 @RequestScoped
 public class SubscriptionFilter implements ContainerResponseFilter {
 
@@ -53,7 +52,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     // request not successful
     var status = responseContext.getStatus();
     if (!(status >= 200 && status < 300)) {
-      log.debug("Skip subscriptions since the http statuscode is not between 200 and 299");
+      Log.debug("Skip subscriptions since the http status code is not between 200 and 299");
       return;
     }
 
@@ -82,7 +81,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
       ) {
         EventIO e = new EventIO(event);
         e.setSubscription(new SubscriptionIO(sub));
-        log.debug("{} was triggered with {}", sub, e);
+        Log.debugf("%s was triggered with %s", sub, e);
         executorFactory.getInstance().execute(() -> sendCallback(sub, e));
       }
     }
@@ -95,9 +94,9 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     try {
       var entity = Entity.entity(event, MediaType.APPLICATION_JSON);
       var response = webTarget.request().buildPost(entity).invoke();
-      log.info("Notification has been send to {} with response code: {}", sub.getCallbackURL(), response.getStatus());
+      Log.infof("Notification has been send to %s with response code: %s", sub.getCallbackURL(), response.getStatus());
     } catch (ProcessingException e) {
-      log.error("Could not execute notification request");
+      Log.error("Could not execute notification request");
     } finally {
       client.close();
     }

@@ -2,11 +2,10 @@ package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.User;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class UserService {
 
@@ -26,7 +25,7 @@ public class UserService {
    * @return The created user
    */
   public User createUser(User user) {
-    log.info("Create user {}", user);
+    Log.infof("Create user %s", user);
     return userDAO.createOrUpdate(user);
   }
 
@@ -39,7 +38,7 @@ public class UserService {
   public User updateUser(User user) {
     User old = getUser(user.getUsername());
     if (old == null) {
-      log.info("The user {} does not exist, creating...", user.getUsername());
+      Log.infof("The user %s does not exist, creating...", user.getUsername());
       return userDAO.createOrUpdate(user);
     }
 
@@ -51,7 +50,7 @@ public class UserService {
       old.setFirstName(firstName);
       old.setLastName(lastName);
       old.setEmail(email);
-      log.info("Update user {}", old);
+      Log.infof("Update user %s", old);
       return userDAO.createOrUpdate(old);
     }
 

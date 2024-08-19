@@ -5,12 +5,11 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class BasicReferenceService {
 
@@ -37,7 +36,7 @@ public class BasicReferenceService {
   public BasicReference getReferenceByShepardId(long shepardId) {
     BasicReference basicReference = basicReferenceDAO.findByShepardId(shepardId);
     if (basicReference == null || basicReference.isDeleted()) {
-      log.error("Basic Reference with id {} is null or deleted", shepardId);
+      Log.errorf("Basic Reference with id %s is null or deleted", shepardId);
       return null;
     }
     return basicReference;

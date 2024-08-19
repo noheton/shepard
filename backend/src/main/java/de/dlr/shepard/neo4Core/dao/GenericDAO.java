@@ -6,15 +6,14 @@ import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.util.PaginationHelper;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.logging.Log;
 import java.util.Collection;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
-@Slf4j
 public abstract class GenericDAO<T> {
 
   protected static final int DEPTH_ENTITY = 1;
@@ -111,18 +110,18 @@ public abstract class GenericDAO<T> {
    * @return Iterable The result
    */
   protected Iterable<T> findByQuery(String query, Map<String, Object> paramsMap) {
-    log.debug("Run query: {}", query);
+    Log.debugf("Run query: %s", query);
     StringBuilder str = new StringBuilder();
     for (var entry : paramsMap.entrySet()) {
       str.append("(" + entry.getKey() + ", " + entry.getValue() + "), ");
     }
-    log.debug("queryParams: {}", str.toString());
+    Log.debugf("queryParams: %s", str.toString());
     Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
     return iter;
   }
 
   protected boolean runQuery(String query, Map<String, Object> paramsMap) {
-    log.debug("Run query: {}", query);
+    Log.debugf("Run query: %s", query);
     Result result = session.query(query, paramsMap);
     return result.queryStatistics().containsUpdates();
   }

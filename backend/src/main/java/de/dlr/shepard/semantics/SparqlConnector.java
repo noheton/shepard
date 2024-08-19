@@ -3,6 +3,7 @@ package de.dlr.shepard.semantics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.logging.Log;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -12,9 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class SparqlConnector implements ISemanticRepositoryConnector {
 
   private static final String SELECT_TEMPLATE =
@@ -53,7 +52,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
   public Map<String, String> getTerm(String termIri) {
     var requestResult = requestTerm(termIri);
     if (requestResult == null || requestResult.isBlank()) {
-      log.error("Could not retrieve request result");
+      Log.error("Could not retrieve request result");
       return Collections.emptyMap();
     }
 
@@ -105,7 +104,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
       var response = invocation.invoke();
       responseEntity = response.readEntity(String.class);
     } catch (ProcessingException e) {
-      log.error("Could not execute request");
+      Log.error("Could not execute request");
       return null;
     }
     return responseEntity;

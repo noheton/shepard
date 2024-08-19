@@ -6,15 +6,14 @@ import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.UUID;
-import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.bson.json.JsonParseException;
 import org.bson.types.ObjectId;
 
-@Slf4j
 @RequestScoped
 public class StructuredDataService {
 
@@ -42,14 +41,14 @@ public class StructuredDataService {
     try {
       collection = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", mongoid);
+      Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
     }
     Document toInsert;
     try {
       toInsert = Document.parse(payload.getPayload());
     } catch (JsonParseException e) {
-      log.error("Could not parse json: {}", payload.getPayload());
+      Log.errorf("Could not parse json: %s", payload.getPayload());
       throw new InvalidBodyException("The specified payload is not json parsable");
     }
 
@@ -64,7 +63,7 @@ public class StructuredDataService {
     try {
       collection.insertOne(toInsert);
     } catch (MongoException e) {
-      log.error("Could not write to mongodb: {}", e.toString());
+      Log.errorf("Could not write to mongodb: %s", e.toString());
       return null;
     }
     structuredData.setOid(toInsert.getObjectId(ID_ATTR).toHexString());
@@ -76,7 +75,7 @@ public class StructuredDataService {
     try {
       toDelete = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not delete container with mongoid: {}", mongoid);
+      Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
     }
     toDelete.drop();
@@ -88,12 +87,12 @@ public class StructuredDataService {
     try {
       collection = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", mongoid);
+      Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
     }
     var payloadDocument = collection.find(eq(ID_ATTR, new ObjectId(oid))).first();
     if (payloadDocument == null) {
-      log.error("Could not find document with oid: {}", oid);
+      Log.errorf("Could not find document with oid: %s", oid);
       return null;
     }
     var structuredDataDocument = payloadDocument.get(META_OBJECT, Document.class);
@@ -110,12 +109,12 @@ public class StructuredDataService {
     try {
       collection = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", mongoid);
+      Log.errorf("Could not find container with mongoid: %s", mongoid);
       return false;
     }
     var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(oid)));
     if (doc == null) {
-      log.warn("Could not find and delete document with oid: {}", oid);
+      Log.warnf("Could not find and delete document with oid: %s", oid);
       return true;
     }
     return true;

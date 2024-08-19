@@ -17,14 +17,13 @@ import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
 
@@ -73,7 +72,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   public FileReference getReferenceByShepardId(long shepardId) {
     FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId);
     if (fileReference == null || fileReference.isDeleted()) {
-      log.error("File Reference with id {} is null or deleted", shepardId);
+      Log.errorf("File Reference with id %s is null or deleted", shepardId);
       return null;
     }
     return fileReference;
@@ -102,7 +101,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
       if (file != null) {
         toCreate.addFile(file);
       } else {
-        log.warn("Could not find file with oid: {}", oid);
+        Log.warnf("Could not find file with oid: %s", oid);
       }
     }
 

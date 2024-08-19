@@ -5,6 +5,7 @@ import de.dlr.shepard.security.PermissionGracePeriod;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,10 +18,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
 @Provider
-@Slf4j
 @Priority(Priorities.AUTHORIZATION)
 @ApplicationScoped
 public class PermissionsFilter implements ContainerRequestFilter {
@@ -44,7 +43,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) {
     var principal = requestContext.getSecurityContext().getUserPrincipal();
     if (principal == null || principal.getName() == null) {
-      log.warn("Unknown principal {}", principal);
+      Log.warnf("Unknown principal %s", principal);
       abort(requestContext, "User could not be read from the request context");
       return;
     }
@@ -63,7 +62,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
   }
 
   private void abort(ContainerRequestContext requestContext, String reason) {
-    log.warn(reason);
+    Log.warn(reason);
     requestContext.abortWith(
       Response.status(Status.FORBIDDEN)
         .entity(new ApiError(Status.FORBIDDEN.getStatusCode(), "AuthenticationException", reason))

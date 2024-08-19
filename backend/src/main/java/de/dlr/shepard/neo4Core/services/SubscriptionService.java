@@ -6,16 +6,15 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.io.SubscriptionIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.RequestMethod;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
-@Slf4j
 @RequestScoped
 public class SubscriptionService {
 
@@ -61,7 +60,7 @@ public class SubscriptionService {
   public Subscription getSubscription(long id) {
     Subscription subscription = subscriptionDAO.findByNeo4jId(id);
     if (subscription == null) {
-      log.error("Subscription with id {} is null", id);
+      Log.errorf("Subscription with id %s is null", id);
       return null;
     }
     return subscription;

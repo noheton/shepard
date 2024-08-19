@@ -12,14 +12,13 @@ import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class FileContainerService implements IContainerService<FileContainer, FileContainerIO> {
 
@@ -77,7 +76,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   public FileContainer getContainer(long id) {
     FileContainer fileContainer = fileContainerDAO.findByNeo4jId(id);
     if (fileContainer == null || fileContainer.isDeleted()) {
-      log.error("File Container with id {} is null or deleted", id);
+      Log.errorf("File Container with id %s is null or deleted", id);
       return null;
     }
     return fileContainer;
@@ -128,7 +127,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   public NamedInputStream getFile(long fileContainerId, String oid) {
     var container = fileContainerDAO.findLightByNeo4jId(fileContainerId);
     if (container == null || container.isDeleted()) {
-      log.error("File Container with id {} is null or deleted", fileContainerId);
+      Log.errorf("File Container with id %s is null or deleted", fileContainerId);
       return null;
     }
     var result = fileService.getPayload(container.getMongoId(), oid);
@@ -146,7 +145,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
     var fileContainer = fileContainerDAO.findByNeo4jId(fileContainerId);
     if (fileContainer == null || fileContainer.isDeleted()) {
-      log.error("File Container with id {} is null or deleted", fileContainerId);
+      Log.errorf("File Container with id %s is null or deleted", fileContainerId);
       return null;
     }
     if (fileName == null || fileName.isBlank()) {
@@ -156,7 +155,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
     }
     var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
     if (result == null) {
-      log.error("Failed to create shepard file");
+      Log.error("Failed to create shepard file");
       return null;
     }
     fileContainer.addFile(result);

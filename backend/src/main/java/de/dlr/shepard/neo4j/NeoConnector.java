@@ -1,8 +1,8 @@
 package de.dlr.shepard.neo4j;
 
 import de.dlr.shepard.util.IConnector;
+import io.quarkus.logging.Log;
 import java.util.Collections;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.exception.ConnectionException;
@@ -15,7 +15,6 @@ import org.neo4j.ogm.session.SessionFactory;
  * represents the lowest level of data access to the Neo4J database.
  *
  */
-@Slf4j
 public class NeoConnector implements IConnector {
 
   private SessionFactory sessionFactory = null;
@@ -64,12 +63,12 @@ public class NeoConnector implements IConnector {
         );
         return true;
       } catch (ConnectionException ex) {
-        log.warn("Cannot connect to neo4j database. Retrying...");
+        Log.warn("Cannot connect to neo4j database. Retrying...");
       }
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
-        log.error("Cannot sleep while waiting for neo4j Connection");
+        Log.error("Cannot sleep while waiting for neo4j Connection");
         Thread.currentThread().interrupt();
       }
     }
@@ -101,10 +100,6 @@ public class NeoConnector implements IConnector {
     if (sessionFactory == null) {
       return null;
     }
-    return sessionFactory.openSession();
-  }
-
-  public Session getNewSession() {
     return sessionFactory.openSession();
   }
 }

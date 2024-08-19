@@ -6,16 +6,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
+import io.quarkus.logging.Log;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Session;
 
-@Slf4j
 public class V2__Extract_json implements JavaBasedMigration {
 
   @AllArgsConstructor
@@ -53,18 +52,18 @@ public class V2__Extract_json implements JavaBasedMigration {
   @Override
   public void apply(MigrationContext context) {
     try (Session session = context.getSession()) {
-      log.info("Running migration (1/5)");
+      Log.info("Running migration (1/5)");
       migrateFileContainer(session);
-      log.info("Running migration (2/5)");
+      Log.info("Running migration (2/5)");
       migrateFileReferences(session);
-      log.info("Running migration (3/5)");
+      Log.info("Running migration (3/5)");
       migrateStructuredDataContainer(session);
-      log.info("Running migration (4/5)");
+      Log.info("Running migration (4/5)");
       migrateStructuredDataReferences(session);
-      log.info("Running migration (5/5)");
+      Log.info("Running migration (5/5)");
       migrateTimeseriesReferences(session);
     } catch (Exception e) {
-      log.error("Error while running migration: ", e);
+      Log.error("Error while running migration: ", e);
     }
   }
 
@@ -84,7 +83,7 @@ public class V2__Extract_json implements JavaBasedMigration {
         if (fileObj instanceof String fileStr) {
           var fileNode = parseJson(fileStr);
           if (fileNode.isEmpty()) {
-            log.error("NodeID {}: File cannot be parsed and will be skipped: {}", cId, fileStr);
+            Log.errorf("NodeID %s: File cannot be parsed and will be skipped: %s", cId, fileStr);
             continue;
           }
           var file = parseShepardFile(fileNode.get());
@@ -122,7 +121,7 @@ public class V2__Extract_json implements JavaBasedMigration {
         if (fileObj instanceof String fileStr) {
           var fileNode = parseJson(fileStr);
           if (fileNode.isEmpty()) {
-            log.error("NodeID {}: File cannot be parsed and will be skipped: {}", rId, fileStr);
+            Log.errorf("NodeID %s: File cannot be parsed and will be skipped: %s", rId, fileStr);
             continue;
           }
           var file = parseShepardFile(fileNode.get());
@@ -160,7 +159,7 @@ public class V2__Extract_json implements JavaBasedMigration {
         if (structuredDataObj instanceof String structuredDataStr) {
           var structuredDataNode = parseJson(structuredDataStr);
           if (structuredDataNode.isEmpty()) {
-            log.error("NodeID {}: StructuredData cannot be parsed and will be skipped: {}", cId, structuredDataStr);
+            Log.errorf("NodeID %s: StructuredData cannot be parsed and will be skipped: %s", cId, structuredDataStr);
             continue;
           }
           var sd = parseStructuredData(structuredDataNode.get());
@@ -195,7 +194,7 @@ public class V2__Extract_json implements JavaBasedMigration {
         if (structuredDataObj instanceof String structuredDataStr) {
           var structuredDataNode = parseJson(structuredDataStr);
           if (structuredDataNode.isEmpty()) {
-            log.error("NodeID {}: StructuredData cannot be parsed and will be skipped: {}", rId, structuredDataStr);
+            Log.errorf("NodeID %s: StructuredData cannot be parsed and will be skipped: %s", rId, structuredDataStr);
             continue;
           }
           var sd = parseStructuredData(structuredDataNode.get());
@@ -233,7 +232,7 @@ public class V2__Extract_json implements JavaBasedMigration {
         if (timeseriesObj instanceof String timeseriesStr) {
           var timeseriesNode = parseJson(timeseriesStr);
           if (timeseriesNode.isEmpty()) {
-            log.error("NodeID {}: Timeseries cannot be parsed and will be skipped: {}", rId, timeseriesStr);
+            Log.errorf("NodeID %s: Timeseries cannot be parsed and will be skipped: %s", rId, timeseriesStr);
             continue;
           }
           var ts = parseTimeseries(timeseriesNode.get());
@@ -270,7 +269,7 @@ public class V2__Extract_json implements JavaBasedMigration {
       node = mapper.readTree(str);
     } catch (JsonProcessingException e) {
       // This should not be possible
-      log.error(e.toString());
+      Log.error(e.toString());
       return Optional.empty();
     }
     return Optional.of(node);
@@ -283,7 +282,7 @@ public class V2__Extract_json implements JavaBasedMigration {
       parsed = new StdDateFormat().parse(date);
     } catch (ParseException e) {
       // This should not be possible
-      log.warn("{}, using 0 instead", e.getMessage());
+      Log.warnf("%s, using 0 instead", e.getMessage());
       return 0L;
     }
     return parsed.getTime();
@@ -317,7 +316,7 @@ public class V2__Extract_json implements JavaBasedMigration {
     int curPercent = (int) ((100f / size) * i);
     int prePercent = (int) ((100f / size) * (i - 1));
     if (prePercent < curPercent) {
-      log.info("... {} %", curPercent);
+      Log.infof("... %d %", curPercent);
     }
   }
 }

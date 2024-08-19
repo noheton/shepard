@@ -11,12 +11,11 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class DataObjectReferenceService implements IReferenceService<DataObjectReference, DataObjectReferenceIO> {
 
@@ -53,7 +52,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
   public DataObjectReference getReferenceByShepardId(long dataObjectReferenceShepardId) {
     var reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId);
     if (reference == null || reference.isDeleted()) {
-      log.error("Data Object Reference with id {} is null or deleted", dataObjectReferenceShepardId);
+      Log.errorf("Data Object Reference with id %s is null or deleted", dataObjectReferenceShepardId);
       return null;
     }
     return reference;
@@ -106,7 +105,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId);
     DataObject dataObject = dataObjectDAO.findByShepardId(reference.getReferencedDataObject().getShepardId());
     if (dataObject.isDeleted()) {
-      log.error("Data Object with id {} is deleted", reference.getReferencedDataObject().getId());
+      Log.errorf("Data Object with id %s is deleted", reference.getReferencedDataObject().getId());
       return null;
     }
     return dataObject;

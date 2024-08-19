@@ -3,15 +3,14 @@ package de.dlr.shepard.neo4j;
 import ac.simons.neo4j.migrations.core.Migrations;
 import ac.simons.neo4j.migrations.core.MigrationsConfig;
 import ac.simons.neo4j.migrations.core.MigrationsException;
+import io.quarkus.logging.Log;
 import java.nio.file.Paths;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 
-@Slf4j
 public class MigrationsRunner {
 
   private Migrations migrations;
@@ -45,12 +44,12 @@ public class MigrationsRunner {
         driver.verifyConnectivity();
         break;
       } catch (Exception e) {
-        log.warn("Cannot connect to neo4j database. Retrying...");
+        Log.warn("Cannot connect to neo4j database. Retrying...");
       }
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
-        log.error("Cannot sleep while waiting for neo4j Connection");
+        Log.error("Cannot sleep while waiting for neo4j Connection");
         Thread.currentThread().interrupt();
       }
     }
@@ -60,9 +59,9 @@ public class MigrationsRunner {
     try {
       migrations.apply();
     } catch (ServiceUnavailableException e) {
-      log.error("Migrations cannot be executed because the neo4j database is not available");
+      Log.error("Migrations cannot be executed because the neo4j database is not available");
     } catch (MigrationsException e) {
-      log.error("An error occurred during the execution of the migrations: ", e);
+      Log.error("An error occurred during the execution of the migrations: ", e);
     }
   }
 }

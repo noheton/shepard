@@ -13,12 +13,11 @@ import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.CollectionReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class CollectionReferenceService implements IReferenceService<CollectionReference, CollectionReferenceIO> {
 
@@ -58,7 +57,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
   public CollectionReference getReferenceByShepardId(long collectionReferenceShepardId) {
     var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
     if (reference == null || reference.isDeleted()) {
-      log.error("Collection Reference with id {} is null or deleted", collectionReferenceShepardId);
+      Log.errorf("Collection Reference with id %s is null or deleted", collectionReferenceShepardId);
       return null;
     }
     return reference;
@@ -113,7 +112,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
     var collection = collectionDAO.findByShepardId(reference.getReferencedCollection().getShepardId());
     if (collection.isDeleted()) {
-      log.error("Collection with id {} is deleted", reference.getReferencedCollection().getId());
+      Log.errorf("Collection with id %s is deleted", reference.getReferencedCollection().getId());
       return null;
     }
     return collection;

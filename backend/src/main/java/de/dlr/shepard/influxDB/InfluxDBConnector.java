@@ -2,6 +2,7 @@ package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -9,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -24,7 +24,6 @@ import org.influxdb.dto.QueryResult;
  * class represents the lowest level of data access to the Influx database. The
  * Influx database is accessed directly by using query strings.
  */
-@Slf4j
 @ApplicationScoped
 public class InfluxDBConnector implements IConnector {
 
@@ -57,7 +56,7 @@ public class InfluxDBConnector implements IConnector {
 
     influxDB.enableBatch(
       BatchOptions.DEFAULTS.exceptionHandler((failedPoints, throwable) ->
-        log.error("Exception while writing the following points: {}, Exception: {}", failedPoints, throwable)
+        Log.errorf("Exception while writing the following points: %s, Exception: %s", failedPoints, throwable)
       )
     );
     return true;
@@ -126,7 +125,7 @@ public class InfluxDBConnector implements IConnector {
     try {
       influxDB.write(batchPoints);
     } catch (InfluxDBException e) {
-      log.error("InfluxdbException while writing payload {}: {}", payload.getTimeseries(), e.getMessage());
+      Log.errorf("InfluxdbException while writing payload %s: %s", payload.getTimeseries(), e.getMessage());
       return e.getMessage();
     }
     return "";
@@ -168,14 +167,14 @@ public class InfluxDBConnector implements IConnector {
       groupBy,
       fillOption
     );
-    log.debug("Influx Query: {}", query.getCommand());
+    Log.debugf("Influx Query: %s", query.getCommand());
     QueryResult queryResult;
 
     try {
       queryResult = influxDB.query(query);
     } catch (InfluxDBException e) {
       queryResult = null;
-      log.error("Could not parse query: {}", query.getCommand());
+      Log.errorf("Could not parse query: %s", query.getCommand());
     }
     if (InfluxUtil.isQueryResultValid(queryResult)) {
       return InfluxUtil.extractPayload(queryResult, timeseries);
@@ -193,7 +192,7 @@ public class InfluxDBConnector implements IConnector {
     Query query = new Query(String.format("SHOW SERIES ON \"%s\"", database));
     QueryResult queryResult = influxDB.query(query);
     if (!InfluxUtil.isQueryResultValid(queryResult)) {
-      log.warn("There was an error while querying the Influxdb for available timeseries");
+      Log.warn("There was an error while querying the Influxdb for available timeseries");
       return Collections.emptyList();
     }
     var values = queryResult.getResults().get(0).getSeries().get(0).getValues();
@@ -231,7 +230,7 @@ public class InfluxDBConnector implements IConnector {
     Query query = new Query(String.format("SHOW FIELD KEYS ON \"%s\"", database));
     QueryResult queryResult = influxDB.query(query);
     if (!InfluxUtil.isQueryResultValid(queryResult)) {
-      log.warn("There was an error while querying the Influxdb for available fields");
+      Log.warn("There was an error while querying the Influxdb for available fields");
       return Collections.emptyMap();
     }
     var series = queryResult.getResults().get(0).getSeries();
@@ -249,7 +248,7 @@ public class InfluxDBConnector implements IConnector {
   public boolean databaseExist(String database) {
     QueryResult queryResult = influxDB.query(new Query("SHOW DATABASES"));
     if (!InfluxUtil.isQueryResultValid(queryResult)) {
-      log.warn("There was an error while querying the Influxdb for databases");
+      Log.warn("There was an error while querying the Influxdb for databases");
       return false;
     }
 
@@ -271,7 +270,7 @@ public class InfluxDBConnector implements IConnector {
     String queryString = String.format("SHOW FIELD KEYS ON \"%s\" FROM %s", database, measurement);
     QueryResult result = influxDB.query(new Query(queryString));
     if (!InfluxUtil.isQueryResultValid(result)) {
-      log.info("Could not get expected datatype query string \"{}\"", queryString);
+      Log.infof("Could not get expected datatype query string \"%s\"", queryString);
       return "";
     }
 

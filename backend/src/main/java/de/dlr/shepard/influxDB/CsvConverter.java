@@ -4,6 +4,7 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 
-@Slf4j
 @RequestScoped
 public class CsvConverter {
 
@@ -30,13 +29,13 @@ public class CsvConverter {
     var stream = Files.newOutputStream(tmpfile);
     var streamWriter = new OutputStreamWriter(stream);
     var writer = new StatefulBeanToCsvBuilder<TimeseriesCsv>(streamWriter).withApplyQuotesToAll(false).build();
-    log.debug("Write temp file to: {}", tmpfile.toAbsolutePath().toString());
+    Log.debugf("Write temp file to: %s", tmpfile.toAbsolutePath().toString());
 
     for (var payload : payloads) {
       try {
         writer.write(convertPayloadToCsv(payload));
       } catch (CsvException e) {
-        log.error("CsvException while writing stream");
+        Log.error("CsvException while writing stream");
       }
     }
 
@@ -53,7 +52,7 @@ public class CsvConverter {
       .withExceptionHandler(e -> {
         var encoder = StandardCharsets.ISO_8859_1.newEncoder();
         var message = encoder.canEncode(e.getMessage()) ? e.getMessage() : "Invalid CSV";
-        log.error("CsvException while reading stream: {}", message);
+        Log.errorf("CsvException while reading stream: %s", message);
         throw new InvalidBodyException(message);
       })
       .build();

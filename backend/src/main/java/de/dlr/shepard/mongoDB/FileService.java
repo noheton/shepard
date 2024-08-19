@@ -6,6 +6,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.gridfs.GridFSBucket;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.DatatypeConverter;
@@ -13,11 +14,9 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-@Slf4j
 @RequestScoped
 public class FileService {
 
@@ -52,7 +51,7 @@ public class FileService {
     try {
       collection = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", mongoid);
+      Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
     }
 
@@ -60,7 +59,7 @@ public class FileService {
     try {
       md = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
-      log.error("No Such Algorithm while uploading file");
+      Log.error("No Such Algorithm while uploading file");
       return null;
     }
     DigestInputStream dis = new DigestInputStream(inputStream, md);
@@ -81,13 +80,13 @@ public class FileService {
     try {
       collection = mongoDBConnector.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", containerId);
+      Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
     }
     var oid = new ObjectId(fileoid);
     var payloadDocument = collection.find(eq(ID_ATTR, oid)).first();
     if (payloadDocument == null) {
-      log.error("Could not find document with oid: {}", fileoid);
+      Log.errorf("Could not find document with oid: %s", fileoid);
       return null;
     }
     var fileId = new ObjectId(payloadDocument.getString(FILEID_ATTR));
@@ -104,12 +103,12 @@ public class FileService {
     try {
       collection = mongoDBConnector.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", containerId);
+      Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
     }
     var doc = collection.find(eq(ID_ATTR, new ObjectId(fileoid))).first();
     if (doc == null) {
-      log.error("Could not find file with oid: {}", fileoid);
+      Log.errorf("Could not find file with oid: %s", fileoid);
       return null;
     }
     return toShepardFile(doc);
@@ -120,7 +119,7 @@ public class FileService {
     try {
       toDelete = mongoDBConnector.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
-      log.error("Could not delete container with mongoid: {}", mongoid);
+      Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
     }
     GridFSBucket gridBucket = mongoDBConnector.createBucket();
@@ -136,12 +135,12 @@ public class FileService {
     try {
       collection = mongoDBConnector.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      log.error("Could not find container with mongoid: {}", mongoId);
+      Log.errorf("Could not find container with mongoid: %s", mongoId);
       return false;
     }
     var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(fileoid)));
     if (doc == null) {
-      log.warn("Could not find and delete file with oid: {}", fileoid);
+      Log.warnf("Could not find and delete file with oid: %s", fileoid);
       return true;
     }
     var gridBucket = mongoDBConnector.createBucket();

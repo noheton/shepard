@@ -10,6 +10,7 @@ import de.dlr.shepard.search.user.UserSearchBody;
 import de.dlr.shepard.search.user.UserSearchResult;
 import de.dlr.shepard.search.user.UserSearcher;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -21,7 +22,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -29,7 +29,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-@Slf4j
 @Path(Constants.SEARCH)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -67,7 +66,7 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = SearchBody.class))
     ) @Valid SearchBody body
   ) {
-    log.info("Search for {} with query: {}", body.getSearchParams().getQueryType(), body.getSearchParams().getQuery());
+    Log.infof("Search for %s with query: %s", body.getSearchParams().getQueryType(), body.getSearchParams().getQuery());
     ResponseBody ret = searcher.search(body, securityContext.getUserPrincipal().getName());
     return Response.ok(ret).build();
   }
@@ -88,8 +87,8 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))
     ) @Valid ContainerSearchBody containerSearchBody
   ) {
-    log.info(
-      "Search for containers of type {} with query: {}",
+    Log.infof(
+      "Search for containers of type %s with query: %s",
       containerSearchBody.getSearchParams().getQueryType(),
       containerSearchBody.getSearchParams().getQuery()
     );
@@ -116,7 +115,7 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = UserSearchBody.class))
     ) @Valid UserSearchBody userSearchBody
   ) {
-    log.info("Search for users with query: {}", userSearchBody.getSearchParams().getQuery());
+    Log.infof("Search for users with query: %s", userSearchBody.getSearchParams().getQuery());
     UserSearchResult ret = userSearcher.search(userSearchBody);
     return Response.ok(ret).build();
   }

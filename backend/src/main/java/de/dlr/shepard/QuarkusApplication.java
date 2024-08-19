@@ -6,14 +6,13 @@ import de.dlr.shepard.neo4j.MigrationsRunner;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.IConnector;
 import de.dlr.shepard.util.PKIHelper;
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.Shutdown;
 import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
-@Slf4j
 public class QuarkusApplication {
 
   @Inject
@@ -26,25 +25,25 @@ public class QuarkusApplication {
 
   @Startup
   void init() {
-    log.info("Starting shepard backend");
+    Log.info("Starting shepard backend");
 
     var pkiHelper = new PKIHelper();
     var migrationRunner = new MigrationsRunner();
     pkiHelper.init();
 
-    log.info("Waiting for databases");
+    Log.info("Waiting for databases");
     migrationRunner.waitForConnection();
 
-    log.info("Run database migrations");
+    Log.info("Run database migrations");
     migrationRunner.apply();
 
-    log.info("Initialize databases");
+    Log.info("Initialize databases");
     neo4j.connect();
-    log.info("Connection established to neo4j database.");
+    Log.info("Connection established to neo4j database.");
     mongodb.connect();
-    log.info("Connection established to mongodb database.");
+    Log.info("Connection established to mongodb database.");
     influxdb.connect();
-    log.info(("Connection established to influx database."));
+    Log.info(("Connection established to influx database."));
   }
 
   @Shutdown

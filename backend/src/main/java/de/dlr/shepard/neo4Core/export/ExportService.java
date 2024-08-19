@@ -16,15 +16,14 @@ import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.neo4Core.services.TimeseriesReferenceService;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class ExportService {
 
@@ -97,7 +96,7 @@ public class ExportService {
     try {
       timeseriesPayload = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(referenceId, username);
     } catch (InvalidAuthException e) {
-      log.warn("Cannot access timeseries payload during export due to invalid permissions");
+      Log.warn("Cannot access timeseries payload during export due to invalid permissions");
     }
     if (timeseriesPayload != null) {
       writeTimeseriesPayload(builder, timeseriesPayload, reference);
@@ -113,7 +112,7 @@ public class ExportService {
     try {
       payloads = fileReferenceService.getAllPayloadsByShepardId(referenceId, username);
     } catch (InvalidAuthException e) {
-      log.warn("Cannot access file payload during export due to invalid permissions");
+      Log.warn("Cannot access file payload during export due to invalid permissions");
     }
 
     for (var nis : payloads) {
@@ -136,7 +135,7 @@ public class ExportService {
         .filter(p -> p.getPayload() != null)
         .toList();
     } catch (InvalidAuthException e) {
-      log.warn("Cannot access structured data payload during export due to invalid permissions");
+      Log.warn("Cannot access structured data payload during export due to invalid permissions");
     }
 
     for (var sdp : payloads) {

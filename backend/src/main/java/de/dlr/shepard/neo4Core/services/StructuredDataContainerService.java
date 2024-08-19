@@ -12,12 +12,11 @@ import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class StructuredDataContainerService
   implements IContainerService<StructuredDataContainer, StructuredDataContainerIO> {
@@ -77,7 +76,7 @@ public class StructuredDataContainerService
   public StructuredDataContainer getContainer(long id) {
     StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(id);
     if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      log.error("Structured Data Container with id {} is null or deleted", id);
+      Log.errorf("Structured Data Container with id %s is null or deleted", id);
       return null;
     }
     return structuredDataContainer;
@@ -129,12 +128,12 @@ public class StructuredDataContainerService
   public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
     var structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataContainerID);
     if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
+      Log.errorf("Structured Data Container with id %s is null or deleted", structuredDataContainerID);
       return null;
     }
     var result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
     if (result == null) {
-      log.error("Failed to create structured data");
+      Log.error("Failed to create structured data");
       return null;
     }
     structuredDataContainer.addStructuredData(result);
@@ -153,7 +152,7 @@ public class StructuredDataContainerService
   public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
     var structuredDataContainer = structuredDataContainerDAO.findLightByNeo4jId(structuredDataContainerID);
     if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      log.error("Structured Data Container with id {} is null or deleted", structuredDataContainerID);
+      Log.errorf("Structured Data Container with id %s is null or deleted", structuredDataContainerID);
       return null;
     }
     var result = structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);

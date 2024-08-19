@@ -8,14 +8,13 @@ import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class SemanticRepositoryService {
 
@@ -47,7 +46,7 @@ public class SemanticRepositoryService {
   public SemanticRepository getRepository(long id) {
     var repository = semanticRepositoryDAO.findByNeo4jId(id);
     if (repository == null || repository.isDeleted()) {
-      log.error("Semantic Repository with id {} is null or deleted", id);
+      Log.errorf("Semantic Repository with id %s is null or deleted", id);
       return null;
     }
     return repository;
@@ -86,14 +85,14 @@ public class SemanticRepositoryService {
     try {
       new URL(repository.getEndpoint());
     } catch (MalformedURLException e) {
-      log.error("Malformed URL: {}", repository.getEndpoint());
+      Log.errorf("Malformed URL: %s", repository.getEndpoint());
       throw new InvalidBodyException("Invalid endpoint");
     }
 
     var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(), repository.getEndpoint());
     var alive = src.healthCheck();
     if (!alive) {
-      log.error("Endpoint not alive: {}", repository.getEndpoint());
+      Log.errorf("Endpoint not alive: %s", repository.getEndpoint());
       throw new InvalidBodyException("Invalid endpoint");
     }
   }

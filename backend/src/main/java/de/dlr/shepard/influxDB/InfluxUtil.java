@@ -1,13 +1,13 @@
 package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.util.Constants;
+import io.quarkus.logging.Log;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.BoundParameterQuery;
 import org.influxdb.dto.BoundParameterQuery.QueryBuilder;
@@ -15,7 +15,6 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Point.Builder;
 import org.influxdb.dto.QueryResult;
 
-@Slf4j
 public final class InfluxUtil {
 
   private InfluxUtil() {
@@ -73,8 +72,8 @@ public final class InfluxUtil {
       .bind("location", timeseries.getLocation())
       .bind("symbolic_name", timeseries.getSymbolicName())
       .create();
-    log.debug(
-      "Query influxdb {}: {} with params {}",
+    Log.debugf(
+      "Query influxdb %s: %s with params %s",
       database,
       parameterizedQuery.getCommand(),
       URLDecoder.decode(parameterizedQuery.getParameterJsonWithUrlEncoded(), StandardCharsets.UTF_8)
@@ -155,7 +154,7 @@ public final class InfluxUtil {
       }
       if (pointBuilder.hasFields()) batchPoints.point(pointBuilder.build());
     }
-    if (!error.isBlank()) log.error(error);
+    if (!error.isBlank()) Log.error(error);
 
     return batchPoints;
   }
@@ -172,11 +171,11 @@ public final class InfluxUtil {
    */
   public static boolean isQueryResultValid(QueryResult queryResult) {
     if (queryResult == null) {
-      log.warn("Query Result is null");
+      Log.warn("Query Result is null");
       return false;
     }
     if (queryResult.getError() != null) {
-      log.warn("There was an error while querying the Influxdb: {}", queryResult.getError());
+      Log.warnf("There was an error while querying the Influxdb: %s", queryResult.getError());
       return false;
     }
 
@@ -185,7 +184,7 @@ public final class InfluxUtil {
 
     var result = resultList.get(0);
     if (result.hasError()) {
-      log.warn("There was an error while querying the Influxdb: {}", result.getError());
+      Log.warnf("There was an error while querying the Influxdb: %s", result.getError());
       return false;
     }
 

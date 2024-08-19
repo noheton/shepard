@@ -8,6 +8,7 @@ import de.dlr.shepard.security.JWTPrincipal;
 import de.dlr.shepard.security.UserGracePeriod;
 import de.dlr.shepard.security.Userinfo;
 import de.dlr.shepard.security.UserinfoService;
+import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,10 +20,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import lombok.extern.slf4j.Slf4j;
 
 @Provider
-@Slf4j
 @Priority(Priorities.AUTHENTICATION + 1)
 @ApplicationScoped
 public class UserFilter implements ContainerRequestFilter {
@@ -44,7 +43,7 @@ public class UserFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) throws IOException {
     var principal = requestContext.getSecurityContext().getUserPrincipal();
     if (!(principal instanceof JWTPrincipal)) {
-      log.warn("Unknown principal {}", principal);
+      Log.warnf("Unknown principal %s", principal);
       abort(requestContext, "User could not be read from the request context");
       return;
     }
@@ -61,13 +60,13 @@ public class UserFilter implements ContainerRequestFilter {
       }
       user = parseUserFromUserinfo(userinfo);
       if (!jwtPrincipal.getUsername().equals(user.getUsername())) {
-        log.warn("The usernames from the access token and the userinfo response do not match");
+        Log.warn("The usernames from the access token and the userinfo response do not match");
         abort(requestContext, "The usernames from the access token and the userinfo response do not match");
         return;
       }
       var created = userService.updateUser(user);
       if (created == null) {
-        log.warn("The user could not be updated or created");
+        Log.warn("The user could not be updated or created");
         abort(requestContext, "The user could not be updated or created");
         return;
       }

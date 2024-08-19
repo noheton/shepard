@@ -12,13 +12,12 @@ import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class CollectionService {
 
@@ -93,13 +92,13 @@ public class CollectionService {
     String errorMsg;
     if (versionUID == null) {
       ret = collectionDAO.findByShepardId(shepardId);
-      errorMsg = String.format("Collection with id {} is null or deleted", shepardId);
+      errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
     } else {
       ret = collectionDAO.findByShepardId(shepardId, versionUID);
-      errorMsg = String.format("Collection with id {} and versionUID {} is null or deleted", shepardId, versionUID);
+      errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
-      log.error(errorMsg);
+      Log.error(errorMsg);
       return null;
     }
     cutDeleted(ret);

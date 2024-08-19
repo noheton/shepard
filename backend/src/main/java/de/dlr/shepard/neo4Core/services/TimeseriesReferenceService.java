@@ -19,6 +19,7 @@ import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -27,9 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
 
@@ -78,7 +77,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   public TimeseriesReference getReferenceByShepardId(long shepardId) {
     var reference = timeseriesReferenceDAO.findByShepardId(shepardId);
     if (reference == null || reference.isDeleted()) {
-      log.error("Timeseries Reference with id {} is null or deleted", shepardId);
+      Log.errorf("Timeseries Reference with id %s is null or deleted", shepardId);
       return null;
     }
     return reference;

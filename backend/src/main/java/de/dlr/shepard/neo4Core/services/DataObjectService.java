@@ -12,14 +12,13 @@ import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class DataObjectService {
 
@@ -93,7 +92,7 @@ public class DataObjectService {
   public DataObject getDataObjectByShepardId(long shepardId) {
     DataObject dataObject = dataObjectDAO.findByShepardId(shepardId);
     if (dataObject == null || dataObject.isDeleted()) {
-      log.error("Data Object with id {} is null or deleted", shepardId);
+      Log.errorf("Data Object with id %s is null or deleted", shepardId);
       return null;
     }
     cutDeleted(dataObject);

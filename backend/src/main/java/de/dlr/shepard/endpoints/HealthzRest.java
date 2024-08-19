@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.HealthzIO;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.IConnector;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -15,14 +16,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-@Slf4j
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Path(Constants.HEALTHZ)
@@ -61,7 +60,7 @@ public class HealthzRest {
     var influxdbAlive = influxdb.alive();
     var result = new HealthzIO(neo4jAlive, mongodbAlive, influxdbAlive);
     if (neo4jAlive && mongodbAlive && influxdbAlive) return Response.ok(result).build();
-    log.error("UNHEALTY: {}", result);
+    Log.errorf("UNHEALTHY: %s", result);
     return Response.status(Status.SERVICE_UNAVAILABLE).entity(result).build();
   }
 }

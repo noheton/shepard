@@ -13,6 +13,7 @@ import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
+import io.quarkus.logging.Log;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -28,9 +29,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class ExportBuilder {
 
   private ObjectMapper objectMapper = new ObjectMapper();
@@ -171,7 +170,7 @@ public class ExportBuilder {
 
   private void addToZip(String filename, byte[] bytes) throws IOException {
     if (entries.contains(filename)) {
-      log.warn("{} already in zip file, skipping", filename);
+      Log.warnf("%s already in zip file, skipping", filename);
       return;
     }
 

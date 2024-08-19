@@ -3,6 +3,7 @@ package de.dlr.shepard.security;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.exceptions.ShepardProcessingException;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
@@ -12,7 +13,6 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
@@ -43,7 +43,6 @@ class OpenIdConfiguration {
   private String[] idTokenSigningAlgValuesSupported;
 }
 
-@Slf4j
 @RequestScoped
 public class UserinfoService {
 
@@ -87,7 +86,7 @@ public class UserinfoService {
     try {
       response = request.invoke(OpenIdConfiguration.class);
     } catch (ProcessingException e) {
-      log.error("Request was unsuccessful: {}", e.getMessage());
+      Log.errorf("Request was unsuccessful: %s", e.getMessage());
       return null;
     }
     return response;
@@ -104,7 +103,7 @@ public class UserinfoService {
     try {
       response = request.invoke(Userinfo.class);
     } catch (ProcessingException e) {
-      log.error("Request was unsuccessful: {}", e.getMessage());
+      Log.errorf("Request was unsuccessful: %s", e.getMessage());
       return null;
     }
     return response;

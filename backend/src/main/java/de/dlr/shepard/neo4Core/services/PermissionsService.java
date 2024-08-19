@@ -7,13 +7,12 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class PermissionsService {
 
@@ -39,7 +38,7 @@ public class PermissionsService {
   public Permissions getPermissionsByNeo4jId(long id) {
     var permissions = permissionsDAO.findByEntityNeo4jId(id);
     if (permissions == null) {
-      log.error("Permissions with entity id {} is null", id);
+      Log.errorf("Permissions with entity id %s is null", id);
       return null;
     }
     return permissions;
@@ -54,7 +53,7 @@ public class PermissionsService {
   public Permissions getPermissionsByShepardId(long shepardId) {
     var permissions = permissionsDAO.findByEntityShepardId(shepardId);
     if (permissions == null) {
-      log.error("Permissions with shepardId {} is null", shepardId);
+      Log.errorf("Permissions with shepardId %s is null", shepardId);
       return null;
     }
     return permissions;
@@ -69,7 +68,7 @@ public class PermissionsService {
   public Permissions getPermissionsByCollectionShepardId(long shepardId) {
     var permissions = permissionsDAO.findByCollectionShepardId(shepardId);
     if (permissions == null) {
-      log.error("Permissions with shepardId {} is null", shepardId);
+      Log.errorf("Permissions with shepardId %s is null", shepardId);
       return null;
     }
     return permissions;

@@ -1,9 +1,8 @@
 package de.dlr.shepard.semantics;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class SemanticRepositoryConnectorFactory {
 
@@ -11,7 +10,7 @@ public class SemanticRepositoryConnectorFactory {
     return switch (type) {
       case SPARQL -> new SparqlConnector(endpoint);
       default -> {
-        log.error("Missing implementation of type: {}", type);
+        Log.errorf("Missing implementation of type: %s", type);
         throw new UnsupportedOperationException("Repository Type " + type + "is not yet implemented");
       }
     };

@@ -36,12 +36,10 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Provider
 @Priority(Priorities.AUTHENTICATION)
-@Slf4j
 @RequestScoped
 public class JWTFilter implements ContainerRequestFilter {
 
@@ -83,7 +81,7 @@ public class JWTFilter implements ContainerRequestFilter {
       pkiHelper.init();
       jwtPublicKey = pkiHelper.getPublicKey();
     } catch (Exception ex) {
-      Log.fatal("Cannot create instance of JWTFilter: " + ex.getMessage());
+      Log.fatalf("Cannot create instance of JWTFilter: %s", ex.getMessage());
       throw ex;
     }
   }
@@ -106,8 +104,8 @@ public class JWTFilter implements ContainerRequestFilter {
     } else if (apiKeyHeader != null) {
       principal = parseApiKey(apiKeyHeader);
     } else {
-      log.warn(
-        "Invalid/missing authorization header (Authorization: {}, X-API-KEY: {}) on endpoint {}",
+      Log.warnf(
+        "Invalid/missing authorization header (Authorization: %s, X-API-KEY: %s) on endpoint %s",
         authorizationHeader,
         apiKeyHeader,
         requestContext.getUriInfo().getAbsolutePath()
@@ -162,9 +160,9 @@ public class JWTFilter implements ContainerRequestFilter {
 
     try {
       jws = parser.parseClaimsJws(token);
-      log.debug("Valid token: {}", jws.getBody().getId());
+      Log.debugf("Valid token: %s", jws.getBody().getId());
     } catch (JwtException ex) {
-      log.warn("Invalid token: {}", ex.getMessage());
+      Log.warnf("Invalid token: %s", ex.getMessage());
       return null;
     }
     return jws;
@@ -179,7 +177,7 @@ public class JWTFilter implements ContainerRequestFilter {
     Optional<RolesList> realmAccess = Optional.ofNullable(body.get("realm_access", RolesList.class));
 
     if (subject == null || subject.isEmpty()) {
-      log.warn("Token is missing a subject");
+      Log.warn("Token is missing a subject");
       return null;
     }
 
@@ -188,7 +186,7 @@ public class JWTFilter implements ContainerRequestFilter {
       var realmRoles = realmAccess.map(RolesList::getRoles).orElse(new String[0]);
       var hasRole = Arrays.stream(realmRoles).anyMatch(r -> r.equals(role));
       if (!hasRole) {
-        log.warn("User is missing required role: {}", role);
+        Log.warnf("User is missing required role: %s", role);
         return null;
       }
     }
@@ -209,9 +207,9 @@ public class JWTFilter implements ContainerRequestFilter {
 
     try {
       jws = Jwts.parserBuilder().setSigningKey(jwtPublicKey).build().parseClaimsJws(token);
-      log.debug("Valid token: {}", jws.getBody().getId());
+      Log.debugf("Valid token: %s", jws.getBody().getId());
     } catch (JwtException ex) {
-      log.warn("Invalid token: {}", ex.getMessage());
+      Log.warnf("Invalid token: %s", ex.getMessage());
       return null;
     }
     return jws;
@@ -231,10 +229,10 @@ public class JWTFilter implements ContainerRequestFilter {
 
       var storedKey = apiKeyService.getApiKey(tokenId);
       if (storedKey == null) {
-        log.warn("Token was not found in database");
+        Log.warn("Token was not found in database");
         return null;
       } else if (!storedKey.getJws().equals(header)) {
-        log.warn("Token from header is not equal to the token from database");
+        Log.warn("Token from header is not equal to the token from database");
         return null;
       }
       lastSeen.elementSeen(tokenId.toString());
@@ -247,7 +245,7 @@ public class JWTFilter implements ContainerRequestFilter {
     String subject = body.getSubject();
     String keyId = body.getId();
     if (subject == null || subject.isEmpty()) {
-      log.warn("Token is missing a subject");
+      Log.warn("Token is missing a subject");
       return null;
     }
 

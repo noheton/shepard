@@ -1,5 +1,6 @@
 package de.dlr.shepard.util;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,10 +15,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 @RequestScoped
-@Slf4j
 public class PKIHelper {
 
   private static final String RSA = "RSA";
@@ -38,44 +37,44 @@ public class PKIHelper {
     try {
       publicKey = importPublicKey();
     } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-      log.error("Exception while reading public key specification: {}", e);
+      Log.errorf("Exception while reading public key specification: %s", e);
     }
 
     try {
       privateKey = importPrivateKey();
     } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-      log.error("Exception while reading private key specification: {}", e);
+      Log.errorf("Exception while reading private key specification: %s", e);
     }
   }
 
   private void generateKeyPairIfNecessary() {
     if (Files.isRegularFile(keysDir)) {
-      log.error("keys directory is a file, cannot create keys");
+      Log.error("keys directory is a file, cannot create keys");
       return;
     }
     if (Files.notExists(keysDir)) {
-      log.info("keys directory does not exist, creating...");
+      Log.info("keys directory does not exist, creating...");
       try {
         Files.createDirectories(keysDir);
       } catch (IOException e) {
-        log.error("Error while generating keys directory: {}", e.toString());
+        Log.errorf("Error while generating keys directory: %s", e.toString());
         return;
       }
     }
     if (!Files.isReadable(keysDir) || !Files.isWritable(keysDir)) {
-      log.error("insufficient permissions for the keys directory");
+      Log.error("insufficient permissions for the keys directory");
       return;
     }
 
     if (Files.exists(pubKey) && Files.isRegularFile(pubKey) && Files.exists(privKey) && Files.isRegularFile(privKey)) {
-      log.info("keys found, importing...");
+      Log.info("keys found, importing...");
       return;
     }
-    log.info("No keys available. Generating...");
+    Log.info("No keys available. Generating...");
     try {
       generateKeyPair();
     } catch (NoSuchAlgorithmException | IOException e) {
-      log.error("Error while generating keys: {}", e.toString());
+      Log.errorf("Error while generating keys: %s", e.toString());
     }
   }
 

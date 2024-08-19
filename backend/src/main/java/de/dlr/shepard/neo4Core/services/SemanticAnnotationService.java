@@ -9,12 +9,11 @@ import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.VersionableEntity;
 import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.semantics.SemanticRepositoryConnectorFactory;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class SemanticAnnotationService {
 
@@ -49,7 +48,7 @@ public class SemanticAnnotationService {
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
     if (annotation == null) {
-      log.error("Semantic Annotation with id {} is null or deleted", id);
+      Log.errorf("Semantic Annotation with id %s is null or deleted", id);
       return null;
     }
     return annotation;

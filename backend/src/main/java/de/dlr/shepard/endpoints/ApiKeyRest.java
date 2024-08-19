@@ -6,6 +6,7 @@ import de.dlr.shepard.neo4Core.io.ApiKeyIO;
 import de.dlr.shepard.neo4Core.io.ApiKeyWithJWTIO;
 import de.dlr.shepard.neo4Core.services.ApiKeyService;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -23,7 +24,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.UUID;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -35,7 +35,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Path(Constants.USERS + "/{" + Constants.USERNAME + "}/" + Constants.APIKEYS)
-@Slf4j
 @RequestScoped
 public class ApiKeyRest {
 
@@ -90,7 +89,6 @@ public class ApiKeyRest {
     try {
       uid = UUID.fromString(apiKeyUid);
     } catch (IllegalArgumentException e) {
-      log.error("The given api key uid has an invalid format: {}", apiKeyUid);
       throw new InvalidRequestException("The given api key uid has an invalid format");
     }
     ApiKey apiKey = apiKeyService.getApiKey(uid);
@@ -131,7 +129,7 @@ public class ApiKeyRest {
     try {
       uid = UUID.fromString(apiKeyUid);
     } catch (IllegalArgumentException e) {
-      log.error("The given api key uid has an invalid format: {}", apiKeyUid);
+      Log.errorf("The given api key uid has an invalid format: %s", apiKeyUid);
       throw new InvalidRequestException("The given api key uid has an invalid format");
     }
     return apiKeyService.deleteApiKey(uid)

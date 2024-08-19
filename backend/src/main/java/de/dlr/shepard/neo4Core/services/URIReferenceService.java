@@ -8,12 +8,11 @@ import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.URIReferenceIO;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
 
@@ -50,7 +49,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
   public URIReference getReferenceByShepardId(long uriReferenceShepardId) {
     var reference = uRIReferenceDAO.findByShepardId(uriReferenceShepardId);
     if (reference == null || reference.isDeleted()) {
-      log.error("URI Reference with id {} is null or deleted", uriReferenceShepardId);
+      Log.errorf("URI Reference with id %s is null or deleted", uriReferenceShepardId);
       return null;
     }
     return reference;

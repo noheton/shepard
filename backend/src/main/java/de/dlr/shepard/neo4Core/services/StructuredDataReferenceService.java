@@ -16,13 +16,12 @@ import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RequestScoped
 public class StructuredDataReferenceService
   implements IReferenceService<StructuredDataReference, StructuredDataReferenceIO> {
@@ -85,7 +84,7 @@ public class StructuredDataReferenceService
       if (structuredData != null) {
         toCreate.addStructuredData(structuredData);
       } else {
-        log.warn("Could not find structured data with oid: {}", oid);
+        Log.warnf("Could not find structured data with oid: %s", oid);
       }
     }
 
@@ -114,7 +113,7 @@ public class StructuredDataReferenceService
   public StructuredDataReference getReferenceByShepardId(long shepardId) {
     StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId);
     if (structuredDataReference == null || structuredDataReference.isDeleted()) {
-      log.error("Structured Data Reference with id {} is null or deleted", shepardId);
+      Log.errorf("Structured Data Reference with id %s is null or deleted", shepardId);
       return null;
     }
     return structuredDataReference;
