@@ -1,0 +1,19 @@
+get-version:
+  stage: check
+  image:
+    name: curlimages/curl:8.9.1
+  script:
+    - export LATEST_TAG=$(curl -s ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases | grep -oP -m 1 '"tag_name":.*?[^\\]",' | head -n 1 | sed 's/.*"tag_name":"\([^"]*\)".*/\1/')
+    # version number is the latest tag if there is no pushed tag (for the release)
+    - export VERSION_NUMBER=${CI_COMMIT_TAG:-${LATEST_TAG}}
+    - export VERSION_NUMBER_DEV=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}
+
+    - echo "LATEST_TAG=$LATEST_TAG" >> versions.env
+    - echo "VERSION_NUMBER=$VERSION_NUMBER" >> versions.env
+    - echo "VERSION_NUMBER_DEV=$VERSION_NUMBER_DEV" >> versions.env
+  artifacts:
+    when: always
+    expire_in: 2 days
+    reports:
+      dotenv: versions.env
+  allow_failure: false
