@@ -96,7 +96,6 @@ def _create_next_tag(latest_release_tag) -> str:
         minor = int(match.group("minor"))
         patch = int(match.group("patch"))
     else:
-        # could be removed after the first iteration
         click.echo(
             "The last version is not SEMVER, switching to SEMVER starting at 1.0.0"
         )
