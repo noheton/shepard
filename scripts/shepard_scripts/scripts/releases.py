@@ -106,7 +106,8 @@ def _create_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
     release_type = "patch"
     if has_breaking_changes:
         click.echo(
-            "The release contains breaking changes! Automatically increasing 'major' version."
+            "The release contains breaking changes!"
+            + " Automatically increasing 'major' version."
         )
         release_type = "major"
     else:
