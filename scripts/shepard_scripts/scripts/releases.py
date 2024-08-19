@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 
 import click
 import jinja2
@@ -15,7 +16,7 @@ DEV_BRANCH = "develop"
 SEMVER_PATTERN = r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$"
 
 
-def _get_changes(
+def get_changes(
     project: Project, merged_after: str
 ) -> tuple[list[MergeRequest], list[MergeRequest], list[MergeRequest]]:
     breaking_changes: list[MergeRequest] = []
@@ -89,46 +90,53 @@ def _get_latest_release(project: Project) -> tuple[str, str]:
         return (releases[0].released_at, releases[0].tag_name)
 
 
-def _create_next_tag(latest_release_tag) -> str:
+def _create_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
     match = re.match(SEMVER_PATTERN, latest_release_tag)
+    version_dict = defaultdict(int)
     if match:
-        major = int(match.group("major"))
-        minor = int(match.group("minor"))
-        patch = int(match.group("patch"))
+        version_dict["major"] = int(match.group("major"))
+        version_dict["minor"] = int(match.group("minor"))
+        version_dict["patch"] = int(match.group("patch"))
     else:
         click.echo(
             "The last version is not SEMVER, switching to SEMVER starting at 1.0.0"
         )
         return "1.0.0"
 
-    click.echo(f"The current version tag is {latest_release_tag}.")
-    release_type = click.prompt(
-        "What is the next release type?",
-        type=click.Choice(["patch", "minor", "major"]),
-        default="patch",
-    )
+    release_type = "patch"
+    if has_breaking_changes:
+        click.echo(
+            "The release contains breaking changes! Automatically increasing 'major' version."
+        )
+        release_type = "major"
+    else:
+        click.echo(f"The current version tag is {latest_release_tag}.")
+        release_type = click.prompt(
+            "What is the next release type?",
+            type=click.Choice(["patch", "minor", "major"]),
+            default="patch",
+        )
 
-    increment_actions = {
-        "major": lambda: (major + 1, 0, 0),
-        "minor": lambda: (major, minor + 1, 0),
-        "patch": lambda: (major, minor, patch + 1),
-    }
-
-    major, minor, patch = increment_actions[release_type]()
-
-    return f"{major}.{minor}.{patch}"
+    # increase release number according to release type
+    version_dict[release_type] += 1
+    return f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
 
 
-def _create_release_notes(project: Project, last_release_date, next_tag) -> str:
-    breaking, _dependencies, others = _get_changes(project, last_release_date)
-
+def _create_release_notes(
+    project: Project,
+    breaking_changes: list[MergeRequest],
+    other_changes: list[MergeRequest],
+) -> str:
     click.echo({project.name_with_namespace})
     click.echo("Merge Requests:")
-    click.echo("\n".join([mr.title for mr in breaking + others]))
+    click.echo("\n".join([mr.title for mr in breaking_changes + other_changes]))
     click.echo()
 
     release_notes = (
-        click.edit(_get_release_notes(breaking, others), require_save=False) or ""
+        click.edit(
+            _get_release_notes(breaking_changes, other_changes), require_save=False
+        )
+        or ""
     )
 
     return release_notes
@@ -136,8 +144,15 @@ def _create_release_notes(project: Project, last_release_date, next_tag) -> str:
 
 def create_release_details(project: Project) -> tuple[str, str]:
     latest_release_date, latest_release_tag = _get_latest_release(project)
-    next_tag = _create_next_tag(latest_release_tag)
-    release_notes = _create_release_notes(project, latest_release_date, next_tag)
+
+    breaking_changes, _dependencies, other_changes = get_changes(
+        project, latest_release_date
+    )
+    release_notes = _create_release_notes(project, breaking_changes, other_changes)
+    next_tag = _create_next_tag(
+        latest_release_tag, has_breaking_changes=bool(breaking_changes)
+    )
+
     return (next_tag, release_notes)
 
 
