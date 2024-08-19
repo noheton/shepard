@@ -157,21 +157,6 @@ def prompt_confirm(title: str, tag: str, notes: str):
         raise click.Abort("Not confirmed")
 
 
-def create_release_mr(project: Project, title: str):
-    mr = project.mergerequests.create(
-        {
-            "source_branch": DEV_BRANCH,
-            "target_branch": MAIN_BRANCH,
-            "title": title,
-            "description": f"This is the Merge Request for {title}",
-            "remove_source_branch": False,
-            "squash": False,
-        }
-    )
-    mr.merge()
-    click.echo("Merge Request created and merged")
-
-
 def create_release(project: Project, title: str, tag: str, notes: str):
     project.releases.create(
         {

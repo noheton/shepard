@@ -15,7 +15,6 @@ from shepard_scripts.scripts.packages import cleanup_packages
 from shepard_scripts.scripts.releases import (
     create_release,
     create_release_details,
-    create_release_mr,
     get_project,
     prompt_confirm,
     prompt_title,
@@ -39,7 +38,6 @@ def release(token_file):
     tag, notes = create_release_details(project)
     title = prompt_title(tag)
     prompt_confirm(title, tag, notes)
-    create_release_mr(project, f"Release {title}")
     create_release(project, title, tag, notes)
 
 
