@@ -78,4 +78,11 @@ ifndef::imagesdir[:imagesdir: ../../images]
 |Shepard
 |Acronym for: Storage for HEterogeneous Product And Research Data
 |
+
+|Organizational Element
+|Organisationselement
+| Describe a group of elements that help organizing and structuring the uploaded data.
+These elements are Collections, Data Objects and References.
+|
+
 |===

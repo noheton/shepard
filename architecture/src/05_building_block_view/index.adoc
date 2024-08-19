@@ -54,7 +54,8 @@ Allows these actors to upload, search and retrieve different kinds of data.
 | Allows users to interact (upload, search, retrieve) with the stored data via a webapp.
 
 | shepard Timeseries Collector (sTC)
-| The shepard timeseries collector aims to collect data from different sources and stores them as timeseries data to shepard.
+| The shepard timeseries collector is one of many tools in the shepard ecosystem.
+It aims to collect data from different sources and stores them as timeseries data to shepard.
 
 |===
 
@@ -77,7 +78,8 @@ In addition, the corresponding REST endpoints and the respective references must
 |Building Block | Responsibility
 
 | Neo4j
-| Manages metadata and references of uploaded data in `DataObjects`, `Collections` and `Containers`. Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
+| Manages metadata and references of organizational elements like `DataObjects`, `Collections` and `Containers`.
+Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
 
 | InfluxDB
 | Manages timeseries data. Consists of a connector to handle the database and a service to provide a higher level view on the database operations.
