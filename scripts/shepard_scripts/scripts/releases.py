@@ -76,14 +76,17 @@ def get_project(gitlab_instance: str, token: str, project_id: int) -> Project:
         raise click.Abort(f"Project {ex} could not be found") from ex
 
 
-# gets latests release date and tag (date,tag)
 def _get_latest_release(project: Project) -> tuple[str, str]:
+    """Get latests release date and tag.
+    ---
+    Returns:
+    Tuple[str, str] : date, tag
+    """
     releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
-    return (
-        (releases[0].released_at, releases[0].tag_name)
-        if len(releases) > 0
-        else ("2001-01-01T00:00:00.000Z", "0.0.0")
-    )
+    if not releases:
+        return ("2001-01-01T00:00:00.000Z", "0.0.0")
+    else:
+        return (releases[0].released_at, releases[0].tag_name)
 
 
 def _create_next_tag(latest_release_tag) -> str:
