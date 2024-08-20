@@ -20,3 +20,5 @@ include::search.adoc[]
 include::release.adoc[]
 
 include::configuration.adoc[]
+
+include::versioning.adoc[]

@@ -1,0 +1,376 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Versioning
+
+==== Introduction
+
+As a shepard user I want to be able to use different versions of data sets to facilitate collaboration in a research project and lay the groundwork for future features like branching, visualization of differences or restore functionality.
+
+I can define a version of a collections to mark a milestone in the project in order to freeze the status that the data set has right now via the API.
+There is always the one active version called `HEAD` which is the working copy that can be edited on shepard and there can be _n_ versions on shepard that are then read-only.
+If I never define a version as a user then there is no change in functionality for me.
+Versions are identified by a UUID.
+Version should be applied for organizational elements, not for payload data.
+A version is always for a whole collection.
+Data objects and references inherit the version from their enclosing collection.
+Versioning is explicit, users have to create versions actively.
+
+==== Behavior
+
+The following image displays a collection with references with no manually created versions.
+
+image::versioning-concept/base-case.png[]
+
+After the creation of a new version, the data will look like this:
+
+image::versioning-concept/create-version.png[]
+
+Semantic Annotations are copied when creating a version, just like the collection, data objects and references.
+
+Permissions are collection-wide and across all versions.
+
+==== Endpoints
+
+[cols="1a,1a,1a,1a"]
+|===
+|Endpoint|Description|Request Body|Response
+
+|POST /collections
+|create first collection
+|
+```json
+{
+  "name": "collection1",
+  "description": "first collection"
+}
+```
+|
+```json
+{
+  "id": "cid1",
+  "createdAt": "date1",
+  "createdBy": "user1",
+  "updatedAt": "date1",
+  "updatedBy": "user1",
+  "name": "collection1",
+  "description": "first collection",
+  "dataObjectIds": [],
+  "incomingIds":[]
+}
+```
+
+|POST /collections
+|create second collection
+|
+```json
+{
+  "name": "collection2",
+  "description": "second collection"
+}
+```
+|
+```json
+{
+  "id": "cid2",
+  "createdAt": "date2",
+  "createdBy": "user1",
+  "updatedAt": "date2",
+  "updatedBy": "user1",
+  "name": "collection2",
+  "description": "second collection",
+  "dataObjectIds": [],
+  "incomingIds":[]
+}
+```
+
+|POST /collections/cid1/versions
+|create first version of first collection
+|
+```json
+{
+  "name": "collection1version1",
+  "description": "first version of collection1"
+}
+```
+|
+```json
+{
+  "uid": "collection1version1uid",
+  "name": "collection1version1",
+  "description": "first version of collection1",
+  "createdAt": "date3",
+  "createdBy": "user1",
+  "predecessorUUID": null
+}
+```
+
+|GET /collection/cid1/versions
+|get versions of first collection
+|
+|
+```json
+[
+  {
+    "uid": "collection1version1uid",
+    "name": "collection1version1",
+    "description": "first version of collection1",
+    "createdAt": "date3",
+    "createdBy": "user1",
+    "predecessorUUID": null
+  },
+  {
+    "uid": "collection1HEADVersionuid",
+    "name": "HEAD",
+    "description": "HEAD",
+    "createdAt": "date1",
+    "createdBy": "user1",
+    "predecessorUUID": "collection1version1uid"
+  }
+]
+```
+
+|POST /collections/cid1/dataObjects
+|create first dataObject in first collection
+|
+```json
+{
+  "name": "collection1DataObject1",
+  "description": "first dataObject of collection 1"
+}
+```
+|
+```json
+{
+  "id": c1did1,
+  "createdAt": "date4",
+  "createdBy": "user1",
+  "updatedAt": "date4",
+  "updatedBy": "user1",
+  "name": "collection1DataObject1",
+  "description": "first dataObject of collection 1",
+  "collectionId": cid1,
+  "referenceIds":[],
+  "successorIds": [],
+  "predecessorIds": [],
+  "childrenIds": [],
+  "parentId": null,
+  "incomingIds": []
+}
+```
+
+|POST /collections/cid1/dataObjects
+|create second dataObject in first collection with first dataObject in first collection as parent
+|
+```json
+{
+  "name": "collection1DataObject2",
+  "description": "second dataObject of collection 1",
+  "parentId": c1did1
+}
+```
+|
+```json
+{
+  "id": c1did2,
+  "createdAt": "date5",
+  "createdBy": "user1",
+  "updatedAt": "date4",
+  "updatedBy": "user1",
+  "name": "collection1DataObject2",
+  "description": "second dataObject of collection 1",
+  "collectionId": cid1,
+  "referenceIds":[],
+  "successorIds": [],
+  "predecessorIds": [],
+  "childrenIds": [],
+  "parentId": c1did1,
+  "incomingIds": []
+}
+```
+
+|GET /collections/cid1/dataObjects?versionUID=collection1version1uid
+|there are no dataobjects in the first version of collection1
+|
+|
+```json
+[]
+```
+|===
+
+==== Edge Case: CollectionReferences and DataObjectReferences
+
+When we create a new version of a referenced collection, the reference will move with the `HEAD` and the old collection will not be referenced anymore:
+
+image::versioning-concept/new-version-of-referenced.png[]
+
+When we referenced an old version of a collection and a new version is created, the reference stays unchanged:
+
+image::versioning-concept/old-version-referenced.png[]
+
+[cols="1a,1a,1a,1a"]
+|===
+|POST /collections/cid2/dataObjects
+|create first dataObject in collection 2
+|
+```json
+{
+  "name": "collection2DataObject1",
+  "description": "first dataObject of collection 2"
+}
+```
+|
+```json
+{
+  "id": c2did1,
+  "createdAt": "date6",
+  "createdBy": "user1",
+  "updatedAt": "date6",
+  "updatedBy": "user1",
+  "name": "collection2DataObject1",
+  "description": "first dataObject of collection 2",
+  "collectionId": cid2,
+  "referenceIds":[],
+  "successorIds": [],
+  "predecessorIds": [],
+  "childrenIds": [],
+  "parentId": null,
+  "incomingIds": []
+}
+```
+
+|POST /collections/cid1/versions
+|create first version of collection 2
+|
+```json
+{
+  "name": "collection2version1",
+  "description": "first version of collection2"
+}
+```
+|
+```json
+{
+  "uid": "collection2version1uid",
+  "name": "collection2version1",
+  "description": "first version of collection2",
+  "createdAt": "date7",
+  "createdBy": "user1",
+  "predecessorUUID": null
+}
+```
+
+|POST /collections/cid1/dataObjects/c1did1/dataObjectReferences
+|create dataObjectReference from first dataObject in collection1 to first dataObject in collection2 without version
+|
+```json
+{
+  "name": "refToc2do1HEAD",
+  "referencedDataObjectId": c2did1,
+  "relationship": "divorced"
+}
+```
+|
+```json
+{
+  "id": refToc2do1HEADId,
+  [...]
+  "name": "refToc2do1HEAD",
+  "dataObjectId": c1did1,
+  "type": "DataObjectReference",
+  "referencedDataObjectId": c2did1,
+  "referencedVersionUid": null,
+  "relationship": "divorced"
+}
+```
+
+|POST /collections/cid1/dataObjects/c1did1/dataObjectReferences
+|create dataObjectReference from first dataObject in collection1 to first dataObject in collection2 with version
+|
+```json
+{
+  "name": "refToc2do1Version",
+  "referencedDataObjectId": c2did1,
+  "referencedVersionUid": "collection2version1",
+  "relationship": "married"
+}
+```
+|
+```json
+{
+  "id": refToc2do1VersionId,
+  [...]
+  "name": "refToc2do1Version",
+  "dataObjectId": c1did1,
+  "type": "DataObjectReference",
+  "referencedDataObjectId": c2did1,
+  "referencedVersionUid": "collection2version1",
+  "relationship": "married"
+}
+```
+
+|GET /collections/cid2/dataObjects/c2did1
+|fetch referenced dataObject with incoming counter
+|
+|
+```json
+{
+  "id": c2did1,
+  [...]
+  "name": "collection2DataObject1",
+  "description": "first dataObject of collection 2",
+  "collectionId": cid2,
+  "incomingIds": [refToc2do1VersionId]
+}
+```
+
+|POST /collections/cid1/versions
+|create second version of collection 2
+|
+```json
+{
+  "name": "collection2version2",
+  "description": "second version of collection2"
+}
+```
+|
+```json
+{
+  "uid": "collection2version2uid",
+  "name": "collection2version2",
+  "description": "second version of collection2",
+  [...]
+  "predecessorUUID": "collection2version1uid"
+}
+```
+
+|GET /collections/cid2/dataObjects/c2did1
+|fetch referenced dataObject from HEAD, incoming is still the same
+|
+|
+```json
+{
+  "id": c2did1,
+  [...]
+  "name": "collection2DataObject1",
+  "description": "first dataObject of collection 2",
+  "collectionId": cid2,
+  "incomingIds": [refToc2do1VersionId]
+}
+```
+
+|GET /collections/cid2/dataObjects/c2did1?versionUID=collection2version2uid
+|fetch referenced dataObject from version 2, incoming is now empty
+|
+|
+```json
+{
+  "id": c2did1,
+  [...]
+  "name": "collection2DataObject1",
+  "description": "first dataObject of collection 2",
+  "collectionId": cid2,
+  "incomingIds": []
+}
+```
+
+|===
