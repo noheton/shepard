@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/dlr-shepard/backend:latest
+    image: registry.gitlab.com/dlr-shepard/shepard/backend:latest
     restart: unless-stopped
     environment:
       JAVA_OPTS: "-Xms2G -Xmx2G"
@@ -26,7 +26,7 @@ services:
       - shepard
 
   frontend:
-    image: registry.gitlab.com/dlr-shepard/frontend:latest
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:latest
     environment:
       VUE_APP_BACKEND: ${BACKEND_URL}shepard/api
       VUE_APP_OIDC_AUTHORITY: ${OIDC_AUTHORITY}
