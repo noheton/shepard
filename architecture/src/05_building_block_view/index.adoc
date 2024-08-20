@@ -16,7 +16,7 @@ This chapter is still under construction
 
 :User: as user
 [Webfrontend (UI)] as frontend
-[shepard Timeseries Collector (sTC)] as stc #ffffff
+[External Services & Scripts] as stc #ffffff
 
 [Backend] as backend
 database "Neo4j" as neo4j #DAE8FC
@@ -53,9 +53,10 @@ Allows these actors to upload, search and retrieve different kinds of data.
 | Webfrontend (UI)
 | Allows users to interact (upload, search, retrieve) with the stored data via a webapp.
 
-| shepard Timeseries Collector (sTC)
-| The shepard timeseries collector is one of many tools in the shepard ecosystem.
-It aims to collect data from different sources and stores them as timeseries data to shepard.
+| External Services & Scripts
+| External services that interact with a shepard instance.
+For example the shepard Timeseries Collector (sTC).
+It is one of many tools in the shepard ecosystem and aims to collect data from different sources and stores them as timeseries data to shepard.
 
 |===
 
