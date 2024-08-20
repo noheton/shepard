@@ -90,4 +90,8 @@ Afterwards the merge request can be closed.
 
 |openapi-generator-cli<7 (for python-legacy client)
 |the python-legacy client was removed afterwards
+
+|junit5<v5.11.0
+|After this update job test_backend fails.
+ParameterizedTest in combination with CsvSource fails with a ConversionException.
 |===
