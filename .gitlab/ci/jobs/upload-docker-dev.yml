@@ -11,7 +11,7 @@ spec:
   needs:
     - "build_$[[ inputs.image_name ]]"
   before_script:
-    - export DOCKER_IMAGE_NAME=${CI_REGISTRY}/${CI_PROJECT_ROOT_NAMESPACE}/$[[ inputs.image_name ]]
+    - export DOCKER_IMAGE_NAME=${CI_REGISTRY_IMAGE}/$[[ inputs.image_name ]]
     - echo building docker image $DOCKER_IMAGE_NAME
   script:
     - cd $[[ inputs.image_name ]]
