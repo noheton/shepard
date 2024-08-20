@@ -22,9 +22,11 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -88,6 +90,21 @@ public class CollectionReferenceRest {
     content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_REFERENCE_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
   public Response getCollectionReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -130,6 +147,21 @@ public class CollectionReferenceRest {
   @Operation(description = "Delete collection reference")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_REFERENCE_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
   public Response deleteCollectionReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -152,6 +184,21 @@ public class CollectionReferenceRest {
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.DATAOBJECT_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.COLLECTION_REFERENCE_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
   public Response getCollectionReferencePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

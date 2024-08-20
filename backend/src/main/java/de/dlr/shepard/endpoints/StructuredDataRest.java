@@ -31,9 +31,11 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -199,6 +201,12 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.STRUCTUREDDATA_CONTAINER_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(in = ParameterIn.PATH, name = Constants.OID, schema = @Schema(type = SchemaType.STRING))
   public Response getStructuredData(
     @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
@@ -214,6 +222,12 @@ public class StructuredDataRest {
   @Operation(description = "Delete structured data")
   @APIResponse(description = "ok", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.STRUCTUREDDATA_CONTAINER_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
+  @Parameter(in = ParameterIn.PATH, name = Constants.OID, schema = @Schema(type = SchemaType.STRING))
   public Response deleteStructuredData(
     @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid

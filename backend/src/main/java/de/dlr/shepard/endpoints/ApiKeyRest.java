@@ -25,9 +25,11 @@ import jakarta.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -81,6 +83,8 @@ public class ApiKeyRest {
     content = @Content(schema = @Schema(implementation = ApiKeyIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
+  @Parameter(in = ParameterIn.PATH, name = Constants.APIKEY_UID, schema = @Schema(type = SchemaType.STRING))
   public Response getApiKey(
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.APIKEY_UID) String apiKeyUid
@@ -121,6 +125,8 @@ public class ApiKeyRest {
   @Operation(description = "Delete api key")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
+  @Parameter(in = ParameterIn.PATH, name = Constants.APIKEY_UID, schema = @Schema(type = SchemaType.STRING))
   public Response deleteApiKey(
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.APIKEY_UID) String apiKeyUid

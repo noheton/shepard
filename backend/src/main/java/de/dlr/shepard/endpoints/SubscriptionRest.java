@@ -22,11 +22,13 @@ import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.callbacks.Callback;
 import org.eclipse.microprofile.openapi.annotations.callbacks.CallbackOperation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.links.Link;
 import org.eclipse.microprofile.openapi.annotations.links.LinkParameter;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -71,6 +73,12 @@ public class SubscriptionRest {
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SubscriptionIO.class))
+  )
+  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.SUBSCRIPTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   public Response getSubscription(
     @PathParam(Constants.USERNAME) String username,
@@ -128,6 +136,12 @@ public class SubscriptionRest {
   @Operation(description = "Delete subscription")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
+  @Parameter(
+    in = ParameterIn.PATH,
+    name = Constants.SUBSCRIPTION_ID,
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
+  )
   public Response deleteSubscription(
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
