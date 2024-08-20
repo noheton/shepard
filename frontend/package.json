@@ -20,7 +20,7 @@
     "@tiptap/pm": "2.5.9",
     "@tiptap/starter-kit": "2.5.9",
     "@tiptap/vue-2": "2.5.9",
-    "@vueuse/core": "10.11.0",
+    "@vueuse/core": "10.11.1",
     "bootstrap": "4.6.2",
     "bootstrap-vue": "2.23.1",
     "chart.js": "4.4.3",
