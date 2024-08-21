@@ -1,7 +1,7 @@
 .build_java: &build_java
   stage: build
   image:
-    name: openapitools/openapi-generator-cli:v7.7.0
+    name: openapitools/openapi-generator-cli:v7.8.0
     entrypoint: [""]
   needs: [build_backend]
   script:
