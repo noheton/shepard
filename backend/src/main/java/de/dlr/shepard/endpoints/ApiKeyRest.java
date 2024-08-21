@@ -93,6 +93,7 @@ public class ApiKeyRest {
     try {
       uid = UUID.fromString(apiKeyUid);
     } catch (IllegalArgumentException e) {
+      Log.errorf("The given api key uid has an invalid format: %s", apiKeyUid);
       throw new InvalidRequestException("The given api key uid has an invalid format");
     }
     ApiKey apiKey = apiKeyService.getApiKey(uid);
