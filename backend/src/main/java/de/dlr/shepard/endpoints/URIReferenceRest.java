@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -65,6 +66,8 @@ public class URIReferenceRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = URIReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response getAllUriReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
@@ -87,6 +90,9 @@ public class URIReferenceRest {
     content = @Content(schema = @Schema(implementation = URIReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.URI_REFERENCE_ID)
   public Response getUriReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -106,6 +112,8 @@ public class URIReferenceRest {
     content = @Content(schema = @Schema(implementation = URIReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response createUriReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -130,6 +138,9 @@ public class URIReferenceRest {
   @Operation(description = "Delete uri reference")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.URI_REFERENCE_ID)
   public Response deleteUriReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

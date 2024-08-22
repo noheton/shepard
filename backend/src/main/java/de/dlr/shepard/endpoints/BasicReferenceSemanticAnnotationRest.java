@@ -72,6 +72,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     name = Constants.DATAOBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response getAllAnnotations(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
     return getAllByShepardId(basicReferenceId);
   }
@@ -89,13 +90,15 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @Parameter(
     in = ParameterIn.PATH,
     name = Constants.COLLECTION_ID,
-    schema = @Schema(type = SchemaType.STRING, format = "int64")
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(
     in = ParameterIn.PATH,
     name = Constants.DATAOBJECT_ID,
-    schema = @Schema(type = SchemaType.STRING, format = "int64")
+    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.BASIC_REFERENCE_ID)
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
@@ -123,6 +126,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     name = Constants.DATAOBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response createAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @RequestBody(
@@ -150,6 +154,8 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     name = Constants.DATAOBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.BASIC_REFERENCE_ID)
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response deleteAnnotation(
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId

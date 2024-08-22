@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -46,6 +47,7 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Operation(operationId = "getAllCollectionAnnotations", description = "Get all semantic annotations")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response getAllAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     return getAllByShepardId(collectionId);
   }
@@ -60,6 +62,8 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
   @Operation(operationId = "getCollectionAnnotation", description = "Get semantic annotation")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotation(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
@@ -77,6 +81,7 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
   @Operation(operationId = "createCollectionAnnotation", description = "Create a new semantic annotation")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response createAnnotation(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(
@@ -94,6 +99,8 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
   @Subscribable
   @Operation(operationId = "deleteCollectionAnnotation", description = "Delete semantic annotation")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response deleteAnnotation(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId

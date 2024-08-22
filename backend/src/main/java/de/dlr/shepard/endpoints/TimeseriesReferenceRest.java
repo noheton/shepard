@@ -30,6 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -71,6 +72,8 @@ public class TimeseriesReferenceRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response getAllTimeseriesReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
@@ -94,6 +97,9 @@ public class TimeseriesReferenceRest {
     content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   public Response getTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -114,6 +120,8 @@ public class TimeseriesReferenceRest {
     content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response createTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -138,6 +146,9 @@ public class TimeseriesReferenceRest {
   @Operation(description = "Delete timeseries reference")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   public Response deleteTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -161,6 +172,15 @@ public class TimeseriesReferenceRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesPayload.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  @Parameter(name = Constants.DEVICE)
+  @Parameter(name = Constants.LOCATION)
+  @Parameter(name = Constants.SYMBOLICNAME)
   public Response getTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -199,6 +219,15 @@ public class TimeseriesReferenceRest {
     )
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  @Parameter(name = Constants.DEVICE)
+  @Parameter(name = Constants.LOCATION)
+  @Parameter(name = Constants.SYMBOLICNAME)
   public Response exportTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

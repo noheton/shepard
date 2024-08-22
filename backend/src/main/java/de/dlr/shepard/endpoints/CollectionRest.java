@@ -37,6 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -79,6 +80,12 @@ public class CollectionRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllCollections(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam(Constants.QP_PAGE) Integer page,
@@ -112,6 +119,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = VersionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     throw new NotImplementedException();
     //		List<Version> versions = versionService.getAllVersions(collectionId);
@@ -120,6 +128,27 @@ public class CollectionRest {
     //			result.add(new VersionIO(version));
     //		}
     //		return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS + "/{" + Constants.VERSION_UID + "}")
+  @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Get version")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = VersionIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.VERSION_UID)
+  public Response getVersion(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.VERSION_UID) String versionUID
+  ) {
+    throw new NotImplementedException();
+    //		Version version = versionService.getVersion(collectionId, versionUID);
+    //		return Response.ok(new VersionIO(version)).build();
   }
 
   @POST
@@ -131,6 +160,7 @@ public class CollectionRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = VersionIO.class))
   )
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response createVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(
@@ -154,6 +184,8 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getCollection(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @QueryParam(Constants.VERSION_UID) String versionUID
@@ -172,6 +204,7 @@ public class CollectionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
+  @Parameter(name = Constants.COLLECTION_ID)
   @APIResponse(description = "not found", responseCode = "404")
   public Response updateCollection(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
@@ -195,6 +228,7 @@ public class CollectionRest {
   @Operation(description = "Delete collection")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     return collectionService.deleteCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName())
       ? Response.status(Status.NO_CONTENT).build()
@@ -211,6 +245,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     var perms = permissionsService.getPermissionsByCollectionShepardId(collectionId);
     PermissionsIO permsIO = null;
@@ -231,6 +266,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response editCollectionPermissions(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(
@@ -252,6 +288,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     var roles = permissionsUtil.getRolesByShepardId(collectionId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
@@ -279,25 +316,6 @@ public class CollectionRest {
   }
 
   @GET
-  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS + "/{" + Constants.VERSION_UID + "}")
-  @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Get version")
-  @APIResponse(
-    description = "ok",
-    responseCode = "200",
-    content = @Content(schema = @Schema(implementation = VersionIO.class))
-  )
-  @APIResponse(description = "not found", responseCode = "404")
-  public Response getVersion(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.VERSION_UID) String versionUID
-  ) {
-    throw new NotImplementedException();
-    //		Version version = versionService.getVersion(collectionId, versionUID);
-    //		return Response.ok(new VersionIO(version)).build();
-  }
-
-  @GET
   @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.EXPORT)
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
   @Tag(name = Constants.COLLECTION)
@@ -311,6 +329,7 @@ public class CollectionRest {
     )
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response exportCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) throws IOException {
     var is = exportService.exportCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName());
     return is != null

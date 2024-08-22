@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -58,6 +59,11 @@ public class SemanticRepositoryRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticRepositoryIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllSemanticRepositories(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam(Constants.QP_PAGE) Integer page,
@@ -88,6 +94,7 @@ public class SemanticRepositoryRest {
     content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.SEMANTIC_REPOSITORY_ID)
   public Response getSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
     var result = semanticRepositoryService.getRepository(semanticRepositoryId);
     return Response.ok(new SemanticRepositoryIO(result)).build();
@@ -122,6 +129,7 @@ public class SemanticRepositoryRest {
   @Operation(description = "Delete semantic repository")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.SEMANTIC_REPOSITORY_ID)
   public Response deleteSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
     var result = semanticRepositoryService.deleteRepository(
       semanticRepositoryId,

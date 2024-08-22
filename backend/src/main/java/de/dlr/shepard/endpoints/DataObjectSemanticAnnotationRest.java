@@ -63,6 +63,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.COLLECTION_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
     return getAllByShepardId(dataObjectId);
   }
@@ -87,6 +88,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.DATAOBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
     return get(semanticAnnotationId);
   }
@@ -106,6 +108,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.COLLECTION_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response createAnnotation(
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
     @RequestBody(
@@ -133,6 +136,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.DATAOBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
+  @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response deleteAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
     return delete(semanticAnnotationId);
   }

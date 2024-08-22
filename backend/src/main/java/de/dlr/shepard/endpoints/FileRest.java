@@ -37,6 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -78,6 +79,11 @@ public class FileRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllFileContainers(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam(Constants.QP_PAGE) Integer page,
@@ -107,6 +113,7 @@ public class FileRest {
     content = @Content(schema = @Schema(implementation = FileContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
     var result = fileContainerService.getContainer(fileContainerId);
     return Response.ok(new FileContainerIO(result)).build();
@@ -138,6 +145,7 @@ public class FileRest {
   @Operation(description = "Delete file container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
     var result = fileContainerService.deleteContainer(fileContainerId, securityContext.getUserPrincipal().getName());
     return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -153,6 +161,7 @@ public class FileRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardFile.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
     var payload = fileContainerService.getContainer(fileContainerId).getFiles();
     return Response.ok(payload).build();
@@ -172,6 +181,8 @@ public class FileRest {
     )
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
+  @Parameter(name = Constants.OID)
   public Response getFile(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
     @PathParam(Constants.OID) String oid
@@ -192,6 +203,8 @@ public class FileRest {
   @Operation(description = "Delete file")
   @APIResponse(description = "ok", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
+  @Parameter(name = Constants.OID)
   public Response deleteFile(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
     @PathParam(Constants.OID) String oid
@@ -212,6 +225,7 @@ public class FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
   @Subscribable
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response createFile(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
     MultipartBodyFileUpload body
@@ -260,6 +274,7 @@ public class FileRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
     var perms = permissionsService.getPermissionsByNeo4jId(fileContainerId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
@@ -275,6 +290,7 @@ public class FileRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response editFilePermissions(
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
     @RequestBody(
@@ -296,6 +312,7 @@ public class FileRest {
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
     var roles = permissionsUtil.getRolesByNeo4jId(fileContainerId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();

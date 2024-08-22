@@ -25,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -66,6 +67,8 @@ public class FileReferenceRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response getAllFileReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
@@ -88,6 +91,9 @@ public class FileReferenceRest {
     content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response getFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -107,6 +113,8 @@ public class FileReferenceRest {
     content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response createFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -130,6 +138,9 @@ public class FileReferenceRest {
   @Operation(description = "Delete file reference")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response deleteFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -156,6 +167,10 @@ public class FileReferenceRest {
     )
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.FILE_REFERENCE_ID)
+  @Parameter(name = Constants.OID)
   public Response getFilePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -185,6 +200,9 @@ public class FileReferenceRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardFile.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response getFiles(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,

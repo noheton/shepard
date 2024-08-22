@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.callbacks.Callback;
 import org.eclipse.microprofile.openapi.annotations.callbacks.CallbackOperation;
-import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.links.Link;
 import org.eclipse.microprofile.openapi.annotations.links.LinkParameter;
@@ -56,6 +55,7 @@ public class SubscriptionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SubscriptionIO.class))
   )
+  @Parameter(name = Constants.USERNAME)
   public Response getAllSubscriptions(@PathParam(Constants.USERNAME) String username) {
     var subscriptions = subscriptionService.getAllSubscriptions(username);
     var result = new ArrayList<SubscriptionIO>(subscriptions.size());
@@ -74,12 +74,8 @@ public class SubscriptionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SubscriptionIO.class))
   )
-  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
-  @Parameter(
-    in = ParameterIn.PATH,
-    name = Constants.SUBSCRIPTION_ID,
-    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-  )
+  @Parameter(name = Constants.USERNAME)
+  @Parameter(name = Constants.SUBSCRIPTION_ID)
   public Response getSubscription(
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
@@ -117,6 +113,7 @@ public class SubscriptionRest {
     ),
     callbackUrlExpression = "{$request.body#/callbackUrl}"
   )
+  @Parameter(name = Constants.USERNAME)
   public Response createSubscription(
     @PathParam(Constants.USERNAME) String username,
     @RequestBody(
@@ -136,12 +133,8 @@ public class SubscriptionRest {
   @Operation(description = "Delete subscription")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(in = ParameterIn.PATH, name = Constants.USERNAME, schema = @Schema(type = SchemaType.STRING))
-  @Parameter(
-    in = ParameterIn.PATH,
-    name = Constants.SUBSCRIPTION_ID,
-    schema = @Schema(type = SchemaType.INTEGER, format = "int64")
-  )
+  @Parameter(name = Constants.USERNAME)
+  @Parameter(name = Constants.SUBSCRIPTION_ID)
   public Response deleteSubscription(
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId

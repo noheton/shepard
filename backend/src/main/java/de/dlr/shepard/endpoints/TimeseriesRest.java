@@ -84,6 +84,11 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllTimeseriesContainers(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam(Constants.QP_PAGE) Integer page,
@@ -113,6 +118,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var result = timeseriesContainerService.getContainer(timeseriesContainerId);
     return Response.ok(new TimeseriesContainerIO(result)).build();
@@ -148,6 +154,7 @@ public class TimeseriesRest {
   @Operation(description = "Delete timeseries container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var result = timeseriesContainerService.deleteContainer(
       timeseriesContainerId,
@@ -168,6 +175,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = Timeseries.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
     @RequestBody(
@@ -190,6 +198,7 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
   )
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId)).build();
   }
@@ -204,15 +213,26 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
   public Response getTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
-    @QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
-    @QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
-    @QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
-    @QueryParam(Constants.SYMBOLICNAME) @Parameter(required = true) String symbolicName,
-    @QueryParam(Constants.FIELD) @Parameter(required = true) String field,
-    @QueryParam(Constants.START) @Parameter(required = true) long start,
-    @QueryParam(Constants.END) @Parameter(required = true) long end,
+    @QueryParam(Constants.MEASUREMENT) String measurement,
+    @QueryParam(Constants.LOCATION) String location,
+    @QueryParam(Constants.DEVICE) String device,
+    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
+    @QueryParam(Constants.FIELD) String field,
+    @QueryParam(Constants.START) long start,
+    @QueryParam(Constants.END) long end,
     @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
@@ -249,15 +269,26 @@ public class TimeseriesRest {
     )
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
   public Response exportTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
-    @QueryParam(Constants.MEASUREMENT) @Parameter(required = true) String measurement,
-    @QueryParam(Constants.LOCATION) @Parameter(required = true) String location,
-    @QueryParam(Constants.DEVICE) @Parameter(required = true) String device,
-    @QueryParam(Constants.SYMBOLICNAME) @Parameter(required = true) String symbolicName,
-    @QueryParam(Constants.FIELD) @Parameter(required = true) String field,
-    @QueryParam(Constants.START) @Parameter(required = true) long start,
-    @QueryParam(Constants.END) @Parameter(required = true) long end,
+    @QueryParam(Constants.MEASUREMENT) String measurement,
+    @QueryParam(Constants.LOCATION) String location,
+    @QueryParam(Constants.DEVICE) String device,
+    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
+    @QueryParam(Constants.FIELD) String field,
+    @QueryParam(Constants.START) long start,
+    @QueryParam(Constants.END) long end,
     @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
@@ -291,6 +322,7 @@ public class TimeseriesRest {
   @APIResponse(description = "ok", responseCode = "200")
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     MultipartBodyFileUpload body
@@ -319,6 +351,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var perms = permissionsService.getPermissionsByNeo4jId(timeseriesContainerId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
@@ -334,6 +367,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response editTimeseriesPermissions(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     @RequestBody(
@@ -355,6 +389,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var roles = permissionsUtil.getRolesByNeo4jId(timeseriesContainerId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();

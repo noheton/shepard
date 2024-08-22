@@ -29,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -60,6 +61,15 @@ public class DataObjectRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_PARENT_ID)
+  @Parameter(name = Constants.QP_PREDECESSOR_ID)
+  @Parameter(name = Constants.QP_SUCCESSOR_ID)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllDataObjects(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @QueryParam(Constants.QP_NAME) String name,
@@ -98,6 +108,8 @@ public class DataObjectRest {
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response getDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
@@ -116,6 +128,7 @@ public class DataObjectRest {
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
   public Response createDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(
@@ -142,6 +155,8 @@ public class DataObjectRest {
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response updateDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
@@ -168,6 +183,8 @@ public class DataObjectRest {
   @Operation(description = "Delete dataObject")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATAOBJECT_ID)
   public Response deleteDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId

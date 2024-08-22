@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -93,6 +94,7 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(implementation = UserGroupIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response updateUserGroup(
     @PathParam(Constants.USERGROUP_ID) Long id,
     @RequestBody(
@@ -114,6 +116,7 @@ public class UserGroupRest {
   @Operation(description = "Delete usergroup")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
     return userGroupService.deleteUserGroup(id)
       ? Response.status(Status.NO_CONTENT).build()
@@ -130,6 +133,7 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(implementation = UserGroupIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
     UserGroup ret = userGroupService.getUserGroup(id);
     if (ret == null) return Response.status(Status.NOT_FOUND).build();
@@ -145,6 +149,10 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllUserGroups(
     @QueryParam(Constants.QP_PAGE) Integer page,
     @QueryParam(Constants.QP_SIZE) Integer size,
@@ -175,6 +183,7 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
     var perms = permissionsService.getPermissionsByNeo4jId(userGroupId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
@@ -190,6 +199,7 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response editUserGroupPermissions(
     @PathParam(Constants.USERGROUP_ID) long userGroupId,
     @RequestBody(
@@ -211,6 +221,7 @@ public class UserGroupRest {
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
     var roles = permissionsUtil.getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
