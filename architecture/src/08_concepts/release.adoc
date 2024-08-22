@@ -8,50 +8,88 @@ A shepard release consists of a new version number, build artifacts (container, 
 
 Usually a new shepard version is released on the first Monday of the month.
 However, this date is not fixed and can be postponed by a few days if necessary.
+This monthly release increases the release version number.
 
-==== Performing the release
+We use semantic versioning, meaning that the version number consists of a major, minor and patch number in the following format:
+`MAJOR.MINOR.PATCH`.
+Minor is the default version increase for a release.
+Breaking changes imply a Major release.
+And hotfixes or patches are performed as a Patch release (see Hotfix process below).
 
-.The following steps are necessary to provide a new release of shepard:
+Currently there are two workflows for releases, one minor/ major release and a patch release.
+Both release types are explained step by step below.
+
+==== Performing releases
+
+These steps describe a regular (monthly) release for shepard but can also be used to release an unplanned patch release.
+
+Furthermore, there are two ways to create an unplanned patch/ hotfix release.
+
+The first option is the more classical hotfix approach, meaning that it only brings the changes from merge requests containing hotfixes from the `develop` branch to the main branch.
+The steps needed for this option are explained below in the section: <<Performing a hotfix release>>.
+
+The second option includes creating an MR containing the needed patch changes on `develop` branch, then merge the `develop` branch on `main` and create a new minor release. 
+This would create a new out-of-cycle release containing the patch and all changes from develop since the last release.
+This option is the same procedure as a regular release, which is described right below. 
+
+.The following steps are necessary to provide a new minor or major release of shepard:
 1. Finish development and make sure the develop branch is stable, the pipeline is successful and no code reviews are open
-2. Merge the `main` branch into `develop` in order to reapply any cherry-picked commits
-3. Follow the setup steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts#preparation-only-when-you-want-to-interact-with-the-gitlab-repository[Scripts README.md]
-4. Run the following command:
+2. Optional: Merge the `main` branch into `develop` in order to reapply any cherry-picked commits
+3. Merge the `develop` branch into the `main` branch
+4. Prepare an official release by using the shepard release script
+5. To setup the release script, follow the steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts#preparation-only-when-you-want-to-interact-with-the-gitlab-repository[Scripts README.md]
+6. Run the following command:
 +
 ```sh
 poetry run cli release ./token.txt
 ```
-5. Verify merged merge requests
-6. Think of a name for the upcoming release
-7. Complete the release notes template (editor opens automatically)
-8. Verify the release and confirm with `y`
-9. Verify that everything was successfully created (GitLab Release Notes, Pipelines, etc.)
+7. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly. The script automatically uses Major if the previous changes contain breaking changes.
+8. Verify the listed merged merge requests
+9. Verify the release notes created by the script. (editor opens automatically)
+10. Suggest a release title that will be appended to the version number.
+11. Confirm the generated details.
+12. Verify that everything was successfully created. (GitLab Release, Release Notes, etc.)
 
-===== Actions done by the release script in the background
 
-.The following steps are carried out by the release script:
-* A Merge Request is created to merge the `develop` branch into `main`
-** The title is the new version number
-** Without squashing the commits
-** Without deleting the source branch
-* That Merge Request is merged right away
-* A https://gitlab.com/dlr-shepard/shepard/-/releases[Gitlab Release] including release notes directed at administrators and users is created
-** The title is the new version number
-** A short paragraph describes the most important changes
-** Breaking changes are listed in a prominent way
-** Other changes besides dependency updates are listed below
-* A release tag `<version number>-release` on `main` is created
-
-==== Hotfixes
+==== Performing a hotfix release
 
 Hotfixes are changes to the `main` branch outside the regular releases to fix urgent bugs or make small changes that need to be applied to the default branch of the project.
+The steps below describe how one can release a single hotfix MR without having to merge the `develop` branch on main.
+This means that the other changes on `develop` branch are only merged when a new regular release is created.
 
 .Hotfix process
 1. As usual, a merge request with the hotfix must be created, reviewed, and merged to `develop`
-2. The resulting commit must be cherry-picked from `develop` to `main`
+2. The resulting MR commit must be cherry-picked from `develop` to `main`
 +
 ```sh
 git checkout main
 git cherry-pick <commit-hash>
 git push
 ```
-3. This starts a release pipeline on `main` that creates publishing artifacts with the current date tag
+3. The shepard release script needs to be run, in order to create a new hotfix release.
+4. To setup the release script, follow the steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts#preparation-only-when-you-want-to-interact-with-the-gitlab-repository[Scripts README.md]
+5. Run the following command:
++
+```sh
+poetry run cli release ./token.txt
+```
+6. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly. Here you should select a Patch version, since you only want to release a hotfix/ patch.
+7. Verify the listed merged merge request
+8. Verify the release notes created by the script. (editor opens automatically)
+9. Suggest a release title that will be appended to the version number.
+10. Confirm the generated details.
+11. Verify that everything was successfully created. (GitLab Release, Release Notes, etc.)
+
+==== Actions done by the release script in the background
+
+.The following steps are carried out by the release script:
+* Collecting all previous merge requests from the last version until now.
+** Analyze if previous changes contain breaking changes.
+* A https://gitlab.com/dlr-shepard/shepard/-/releases[Gitlab Release] including release notes directed at administrators and users is created
+** The title is the title given by the user concatenated with the version tag
+** A short paragraph describes the most important changes
+** Breaking changes are listed in a prominent way
+** Other changes besides dependency updates are listed below
+* A release tag `<version number>` on `main` is created
+** The script automatically uses a Major version increase if the previous changes contain breaking changes.
+

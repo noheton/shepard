@@ -14,7 +14,7 @@
 .upload_typescript: &upload_typescript
   stage: upload
   image: node:21-slim
-  needs: [build_typescript_client]
+  needs: [build_typescript_client, get_version]
   before_script:
     - cd clients/typescript
     - touch .npmrc
@@ -28,7 +28,6 @@
 .build_typescript_client_dev:
   <<: *build_typescript
   before_script:
-    - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
@@ -40,7 +39,6 @@
 .build_typescript_client:
   <<: *build_typescript
   before_script:
-    - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}
 
 .upload_typescript_client:

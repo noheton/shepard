@@ -5,7 +5,7 @@ integration_test:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .m2/repository
-  needs: [build_backend]
+  needs: [build_backend, get_version]
   variables:
     OIDC_PUBLIC: MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB0Y8ymfJXn19M1zPkIkNj4xlvgRQmq0jcdvklpYhuoCVWl339+fW7a2ibhBx/9FDlCPUuJeTqW03KDI+SCmsSF/uATcDgZdJwaxcxpX8jDXXUrAeU3LglcfYUaqe2um7osuEP5R5urjaNl4CJUJlWAptlxKhMb5SVZ7gyZBTab0j9qXxY7BT/+nAdbRsXc9RnIayUmCSVPS/XWiNwefQ+6J2aDqvLyZI104vTG04Y5HS1YjmybfSQjJP+QEWUkYE34/3l0+qkxqpezP4MkXFGw49sq219vp9JmL8T+lZc0jDmui2yA7yo5tuFV7wvUjLT2KJCeKOT8yZ84yayRDgtNAgMBAAE=
     OIDC_AUTHORITY: https://example.com/
@@ -32,7 +32,6 @@ integration_test:
     - name: influxdb:1.8
       alias: influxdb
   before_script:
-    - !reference [.version_number, script]
     - cd backend
   script:
     - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} failsafe:integration-test failsafe:verify -P integration

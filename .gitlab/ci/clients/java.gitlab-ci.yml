@@ -14,7 +14,7 @@
 .upload_java_client:
   stage: upload
   image: maven:3-eclipse-temurin-17
-  needs: [build_java_client]
+  needs: [build_java_client, get_version]
   script:
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
@@ -22,12 +22,10 @@
 .build_java_client_dev:
   <<: *build_java
   before_script:
-    - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
     - echo ${VERSION_NUMBER}
 
 .build_java_client:
   <<: *build_java
   before_script:
-    - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}

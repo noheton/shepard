@@ -10,8 +10,8 @@ spec:
     - name: docker:dind
   needs:
     - "build_$[[ inputs.image_name ]]"
+    - get_version
   before_script:
-    - !reference [.version_number, script]
     - export DOCKER_IMAGE_NAME=${CI_REGISTRY_IMAGE}/$[[ inputs.image_name ]]
     - echo building docker image $DOCKER_IMAGE_NAME
   script:

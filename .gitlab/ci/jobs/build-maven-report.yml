@@ -1,13 +1,12 @@
 build_maven_report:
   image: maven:3-eclipse-temurin-17
   stage: test
-  needs: [test_backend]
+  needs: [test_backend, get_version]
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .m2/repository
   before_script:
-    - !reference [.version_number, script]
     - cd backend
   script:
     - ls -hal target

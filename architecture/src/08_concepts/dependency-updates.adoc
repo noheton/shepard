@@ -34,7 +34,6 @@ This can be done by excluding the library or specific version in the link:https:
 ```sh
 git checkout main
 git cherry-pick <commit-hash>
-git push -o ci.skip
 ```
 
 Afterwards the merge request can be closed.

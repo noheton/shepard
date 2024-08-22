@@ -13,7 +13,7 @@
 
 .upload_cpp: &upload_cpp
   stage: upload
-  needs: [build_cpp_client]
+  needs: [build_cpp_client, get_version]
   script:
     - cd clients/cpp
     - tar cvfz cpp-client.tgz client/
@@ -22,12 +22,10 @@
 .upload_cpp_client_dev:
   <<: *upload_cpp
   before_script:
-    - !reference [.version_number, script]
     - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
     - echo ${VERSION_NUMBER}
 
 .upload_cpp_client:
   <<: *upload_cpp
   before_script:
-    - !reference [.version_number, script]
     - echo ${VERSION_NUMBER}

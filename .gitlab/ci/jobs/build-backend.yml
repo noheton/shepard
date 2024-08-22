@@ -1,9 +1,8 @@
 build_backend:
   image: maven:3-eclipse-temurin-17
   stage: build
-  needs: []
+  needs: [get_version]
   before_script:
-    - !reference [.version_number, script]
     - echo building Quarkus Backend jar
   script:
     - cd backend
