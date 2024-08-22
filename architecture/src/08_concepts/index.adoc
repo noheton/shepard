@@ -22,3 +22,5 @@ include::release.adoc[]
 include::configuration.adoc[]
 
 include::versioning.adoc[]
+
+include::openapi-specification.adoc[]

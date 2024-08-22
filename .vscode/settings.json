@@ -17,6 +17,7 @@
     "oidc",
     "Oids",
     "openapi",
+    "Quarkus",
     "registerables",
     "structureddata",
     "Timeseries",

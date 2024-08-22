@@ -1,0 +1,225 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== OpenAPI Specification
+
+Quarkus provides the link:https://github.com/smallrye/smallrye-open-api/[Smallrye OpenAPI extension].
+Documentation on OpenAPI and swagger can be found link:https://quarkus.io/guides/openapi-swaggerui[here].
+The generated OpenAPI spec is available at `/shepard/doc/swagger-ui` of a running shepard backend.
+
+==== Enhancing the Schema with Filters
+
+The generated schemas can be adapted using filters.
+For example, we use this to adapt the paths to match the root path of our api.
+
+More information on this can be found link:https://quarkus.io/guides/openapi-swaggerui#enhancing-the-openapi-schema-with-filters[here].
+
+==== Path Parameter Order
+
+Quarkus sorts the list of path parameters in the OpenAPI spec alphabetically instead of by occurrence in the path.
+
+For example, the following endpoint:
+
+```java
+  @DELETE
+  @Path("/{" + Constants.APIKEY_UID + "}")
+  @Tag(name = Constants.APIKEY)
+  @Operation(description = "Delete api key")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response deleteApiKey(
+    @PathParam(Constants.USERNAME) String username,
+    @PathParam(Constants.APIKEY_UID) String apiKeyUid
+  ) {
+    // Some code
+  }
+```
+
+will lead to the following OpenAPI spec:
+
+```yaml
+    delete:
+      tags:
+      - apikey
+      description: Delete api key
+      operationId: deleteApiKey
+      parameters:
+      - name: apikeyUid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: deleted
+        "404":
+          description: not found
+```
+
+As we want the parameters to be sorted by occurrence in the path, this is not intended and can lead to issues in generated clients.
+
+To fix this, we define the order of path and query params in the OpenAPI spec manually using `@Parameter` annotations.
+We do this for all path and query parameters.
+
+For the above example, the result would look like this:
+
+```java
+  @DELETE
+  @Path("/{" + Constants.APIKEY_UID + "}")
+  @Tag(name = Constants.APIKEY)
+  @Operation(description = "Delete api key")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.USERNAME)
+  @Parameter(name = Constants.APIKEY_UID)
+  public Response deleteApiKey(
+    @PathParam(Constants.USERNAME) String username,
+    @PathParam(Constants.APIKEY_UID) String apiKeyUid
+  ) {
+    // Some code
+  }
+```
+
+==== Format specifier for Datetime
+
+When using Java's old date API, the generated openapi specification interprets the `Date` object as a date-only field.
+
+The code snippet below:
+```java
+import java.util.Date;
+
+public class SomeClass {
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  private Date createdAt;
+}
+```
+generates the following openapi yaml snippet:
+```yaml
+SomeClass:
+  type: object
+  properties:
+    createdAt:
+      format: date
+      type: string
+      example: 2024-08-15
+```
+
+However, the `Date` object stores date and time, and should be treated by the openapi specification as an object that handles both date and time.
+
+In the example, a modification on the `createdAt` field is needed to explicitly specify that the generated format should be in datetime format.
+The code snippet below adds a `@Schema` annotation, which specifies the `format` field:
+
+```java
+import java.util.Date;
+
+public class SomeClass {
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  @Schema(format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
+  private Date createdAt;
+}
+```
+
+This annotation then results in the following openapi specification containing a `date-time` format:
+
+```yaml
+SomeClass:
+  type: object
+  properties:
+    createdAt:
+      format: date-time
+      type: string
+      example: 2024-08-15T11:18:44.632+00:00
+```
+
+So, when using Java's `Date` object of the old `java.util.Date` API, we need to explicitly specify the format in schema annotation, to generate a datetime object in the openapi specification.
+
+==== Correct multipart file upload for Swagger UI
+
+To enable multipart file uploads in Swagger, the following schema is expected
+https://swagger.io/docs/specification/describing-request-body/file-upload/[(Source)]:
+```yaml
+requestBody:
+  content:
+    multipart/form-data:
+      schema:
+        type: object
+        properties:
+          filename:
+            type: array
+            items:
+              type: string
+              format: binary
+```
+
+Until now we weren't able to reproduce this exact schema together with a proper file upload in the Swagger ui.
+Especially since we have requirements on the `filename` property to be not-null and required.
+So with annotations-only we could not reproduce this schema in Quarkus.
+
+However, the following code snippet construct of interfaces/ classes and using the `implementation` field in the `@Schema` annotation, we were able to reproduce functionality for a file upload in the Swagger UI and a proper openapi schema.
+
+
+```java
+@POST
+@Consumes(MediaType.MULTIPART_FORM_DATA)
+public Response createFile(
+  MultipartBodyFileUpload body
+) {
+  // ... file handling code ...
+}
+
+@Schema(implementation = UploadFormSchema.class)
+public static class MultipartBodyFileUpload {
+  @RestForm(Constants.FILE)
+  public FileUpload fileUpload;
+}
+
+public class UploadFormSchema {
+  @Schema(required = true)
+  public UploadItemSchema file;
+}
+
+@Schema(type = SchemaType.STRING, format = "binary")
+public interface UploadItemSchema {}
+```
+
+This generates the following openapi specification:
+
+```yaml
+paths:
+  /examplepath:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MultipartBodyFileUpload"
+
+components:
+  schemas:
+    MultipartBodyFileUpload:
+      $ref: "#/components/schemas/UploadFormSchema"
+    UploadFormSchema:
+      required:
+      - file
+      type: object
+      properties:
+        file:
+          $ref: "#/components/schemas/UploadItemSchema"
+    UploadItemSchema:
+      format: binary
+      type: string
+
+```
+
+This specification is rather complex and nested, but allows i.e., to add a `required` field to the `UploadItemSchema` schema, which is then generated as a required field in the Swagger UI.
+
+One problem of this approach is that this construct of `MultipartBodyFileUpload`, `UploadFormSchema` and `UploadItemSchema` is needed for every REST endpoint that utilizes a multipart fileupload.
+
+The solution is a combination of these two resources:
+
+- https://www.ccw.sk/en/blog/java-class-fileupload-to-work-properly-in-openapi-swagger-ui-in-quarkus-.html
+- https://dev.to/felipewind/uploading-a-file-through-swagger-in-quarkus-3l8l
