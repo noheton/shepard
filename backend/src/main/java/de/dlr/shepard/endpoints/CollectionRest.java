@@ -80,7 +80,6 @@ public class CollectionRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)

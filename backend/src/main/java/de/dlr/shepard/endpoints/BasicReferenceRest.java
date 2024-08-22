@@ -69,6 +69,11 @@ public class BasicReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
