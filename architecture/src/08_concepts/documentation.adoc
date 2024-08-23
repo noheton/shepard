@@ -91,6 +91,6 @@ The following artifacts are provided as documentation of shepard:
 |https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md
 
 |GitLab Issues
-|GitLab issues are sued to track bugs, feature requests and todos for developers, including relevant discussions.
+|GitLab issues are used to track bugs, feature requests and todos for developers, including relevant discussions.
 |https://gitlab.com/dlr-shepard/shepard/-/issues
 |===
