@@ -55,7 +55,6 @@ public class SemanticRepositoryService {
   public SemanticRepository createRepository(SemanticRepositoryIO repositoryIO, String username) {
     var user = userDAO.find(username);
     var toCreate = new SemanticRepository();
-
     validateRepository(repositoryIO);
 
     toCreate.setCreatedAt(dateHelper.getDate());
@@ -88,7 +87,6 @@ public class SemanticRepositoryService {
       Log.errorf("Malformed URL: %s", repository.getEndpoint());
       throw new InvalidBodyException("Invalid endpoint");
     }
-
     var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(), repository.getEndpoint());
     var alive = src.healthCheck();
     if (!alive) {

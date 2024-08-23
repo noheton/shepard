@@ -17,6 +17,7 @@ import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @QuarkusIntegrationTest
+@WithTestResource(WireMockResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CollectionSearcherIT extends BaseTestCaseIT {
 
@@ -105,7 +107,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     var repositoryToCreate = new SemanticRepositoryIO();
     repositoryToCreate.setName("SemanticRepository");
     repositoryToCreate.setType(SemanticRepositoryType.SPARQL);
-    repositoryToCreate.setEndpoint("https://dbpedia.org/sparql/");
+    repositoryToCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
     repository = given()
       .spec(repositoryRequestSpec)
       .body(repositoryToCreate)
@@ -115,6 +117,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .statusCode(201)
       .extract()
       .as(SemanticRepositoryIO.class);
+
     var annotationToCreate = new SemanticAnnotationIO();
     annotationToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
     annotationToCreate.setPropertyRepositoryId(repository.getId());

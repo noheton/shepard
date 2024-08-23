@@ -44,7 +44,6 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
       .buildGet();
     String requestResult = request(invocation);
     client.close();
-
     return parseJson(requestResult).map(t -> t.get("boolean")).map(JsonNode::asBoolean).orElse(false);
   }
 

@@ -8,6 +8,7 @@ import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
 import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
 import de.dlr.shepard.semantics.SemanticRepositoryType;
 import de.dlr.shepard.util.Constants;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @QuarkusIntegrationTest
+@WithTestResource(WireMockResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SemanticRepositoryIT extends BaseTestCaseIT {
 
@@ -53,7 +55,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     var toCreate = new SemanticRepositoryIO();
     toCreate.setName("SemanticRepository");
     toCreate.setType(SemanticRepositoryType.SPARQL);
-    toCreate.setEndpoint("https://dbpedia.org/sparql/");
+    toCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
 
     var actual = given()
       .spec(repositoryRequestSpec)
@@ -70,7 +72,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     assertThat(actual.getCreatedAt()).isNotNull();
     assertThat(actual.getCreatedBy()).isEqualTo(username);
     assertThat(actual.getType()).isEqualTo(SemanticRepositoryType.SPARQL);
-    assertThat(actual.getEndpoint()).isEqualTo("https://dbpedia.org/sparql/");
+    assertThat(actual.getEndpoint()).isEqualTo(WireMockResource.getWireMockServerURlWithPath("/sparql"));
     assertThat(actual.getName()).isEqualTo("SemanticRepository");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
