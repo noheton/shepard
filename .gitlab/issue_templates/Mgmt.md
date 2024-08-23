@@ -1,4 +1,4 @@
-# Non Technical Task
+# Project Management Task
 
 ## :goal_net: Goal
 
@@ -6,4 +6,4 @@
 
 ## :thinking_face: Risks & Open Questions
 
-/label ~"issue::nontech"
+/label ~"issue::mgmt"

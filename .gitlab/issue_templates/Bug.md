@@ -6,7 +6,7 @@ Before creating a bug report, please read this first:
 
 - Use the template below
 - Check if there are related issues
-- Determine where the request should be reported:
+- Determine where the issue should be reported:
   https://gitlab.com/dlr-shepard/shepard/-/blob/main/CONTRIBUTING.md#how-can-i-contribute
 - Use a clear and descriptive title for the issue to identify the bug report
 - If you encounter a security issue, please mark this bug report as confidential
