@@ -45,7 +45,7 @@
       "groupName": "infrastructure dependencies"
     },
     {
-      "matchPackagePatterns": ["(@dlr-shepard/)?shepard-client"],
+      "matchPackageNames": ["/(@dlr-shepard/)?shepard-client/"],
       "groupName": "shepard client"
     },
     {
@@ -119,7 +119,7 @@
       "allowedVersions": "<9"
     },
     {
-      "matchPackagePrefixes": ["org.neo4j:neo4j-ogm"],
+      "matchPackageNames": ["org.neo4j:neo4j-ogm{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
     },
