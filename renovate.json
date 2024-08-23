@@ -58,6 +58,11 @@
       "allowedVersions": "<2"
     },
     {
+      "matchPackageNames": ["chronograf"],
+      "matchManagers": ["docker-compose"],
+      "allowedVersions": "<1.10"
+    },
+    {
       "matchPackageNames": ["neo4j"],
       "matchManagers": ["docker-compose", "gitlabci"],
       "allowedVersions": "<5"
@@ -122,6 +127,16 @@
       "matchPackageNames": ["org.neo4j:neo4j-ogm{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
+    },
+    {
+      "matchPackageNames": ["io.jsonwebtoken:jjwt{/,}**"],
+      "matchManagers": ["maven"],
+      "allowedVersions": "<0.12"
+    },
+    {
+      "matchPackageNames": ["org.junit.jupiter:junit-jupiter{/,}**"],
+      "matchManagers": ["maven"],
+      "allowedVersions": "<5.11"
     },
     {
       "matchPackageNames": ["openapitools/openapi-generator-cli"],
