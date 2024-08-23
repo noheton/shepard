@@ -1,20 +1,43 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "configMigration": true,
   "baseBranches": ["develop"],
   "osvVulnerabilityAlerts": true,
   "labels": ["dependencies"],
   "dependencyDashboard": true,
+  "dependencyDashboardLabels": ["dependencies"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "packageRules": [
     {
-      "matchCategories": ["ci"],
-      "groupName": "ci dependencies"
+      "matchFileNames": ["package.json"],
+      "groupName": "develop dependencies"
     },
     {
-      "matchManagers": ["docker-compose"],
+      "matchFileNames": [".gitlab-ci.yml", ".gitlab/ci/**"],
+      "groupName": "develop dependencies"
+    },
+    {
+      "matchFileNames": ["backend/**"],
+      "groupName": "backend dependencies"
+    },
+    {
+      "matchFileNames": ["frontend/**"],
+      "groupName": "frontend dependencies"
+    },
+    {
+      "matchFileNames": ["infrastructure/**"],
       "groupName": "infrastructure dependencies"
+    },
+    {
+      "matchFileNames": ["scripts/**"],
+      "groupName": "scripts dependencies"
+    },
+    {
+      "matchFileNames": ["backend/**", "frontend/**"],
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "groupName": "develop dependencies"
     },
     {
       "matchPackageNames": ["influxdb", "neo4j", "mongo"],
@@ -22,38 +45,12 @@
       "groupName": "infrastructure dependencies"
     },
     {
-      "matchFileNames": ["backend/**"],
-      "matchManagers": ["dockerfile"],
-      "groupName": "quarkus docker"
-    },
-    {
-      "matchPackageNames": ["node", "@types/node"],
-      "groupName": "Node.js",
-      "versioning": "node"
-    },
-    {
-      "matchPackagePrefixes": ["io.swagger.core.v3"],
-      "groupName": "swagger"
+      "matchPackagePatterns": ["(@dlr-shepard/)?shepard-client"],
+      "groupName": "shepard client"
     },
     {
       "matchPackageNames": ["openapitools/openapi-generator-cli"],
-      "groupName": "openapi-generator"
-    },
-    {
-      "matchSourceUrls": ["https://github.com/vuejs/language-tools"],
-      "groupName": "language-tools monorepo"
-    },
-    {
-      "matchSourceUrlPrefixes": ["https://github.com/retejs"],
-      "groupName": "retejs organization"
-    },
-    {
-      "matchSourceUrls": ["https://github.com/ueberdosis/tiptap"],
-      "groupName": "tiptap monorepo"
-    },
-    {
-      "matchPackagePatterns": ["(@dlr-shepard/)?shepard-client"],
-      "groupName": "shepard client"
+      "groupName": "openapi generator"
     },
     {
       "matchPackageNames": ["influxdb"],
