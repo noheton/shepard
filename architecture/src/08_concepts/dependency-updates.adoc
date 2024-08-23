@@ -23,12 +23,6 @@ Also, the dependencies in package-lock.json should be updated. This is done by r
 
 In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>. The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
 
-===== Suspending a Single Version
-
-Close the renovate merge request (renovate will not open the same request for the same version) in case we don’t want to do the update. For subsequent versions renovate will open merge requests again.
-
-===== Pinning the Version in Renovate Config
-
 This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config]. Afterwards the config needs to be merged to main with the following commands:
 
 ```sh
@@ -50,6 +44,9 @@ Afterwards the merge request can be closed.
 
 |influxdb<2
 |V2 introduces major breaking changes
+
+|chronograf<1.10
+|The container cannot be started with v1.10. We expect to move away from influxdb in the future, so we will stick with v1.9 for the time being.
 
 |neo4j<5
 |V5 introduces major breaking changes
@@ -86,6 +83,12 @@ Afterwards the merge request can be closed.
 
 |neo4j-ogm<4
 |v5 is not compatible with neo4j v4
+
+|jjwt<0.12
+|v0.12.x introduces a series of breaking changes in preparation for v1.0. It is recommended to stay on v0.11 until v1.0 is finished to fix all changes at once.
+
+|junit-jupiter<5.11
+|Not possible atm because parametrized tests in combination with CsvSource do not work any longer. We will wait for the next version.
 
 |openapi-generator-cli<7 (for python-legacy client)
 |the python-legacy client was removed afterwards
