@@ -6,7 +6,7 @@ import { logError } from "@/utils/error-handling";
 import { permissionOptions as pOptions } from "@/utils/helpers";
 import type {
   Permissions,
-  PermissionsPermissionTypeEnum,
+  PermissionType,
   ResponseError,
   User,
   UserGroup,
@@ -56,7 +56,7 @@ const formData = reactive<{
   writer: User[];
   writerGroup: UserGroup[];
   manager: User[];
-  permissionType?: PermissionsPermissionTypeEnum;
+  permissionType?: PermissionType;
 }>(getInitialFormData());
 const validUser = ref<boolean>();
 const validUserGroup = ref<boolean>();
@@ -215,7 +215,7 @@ function fetchUserGroups(id: number) {
     return;
   }
   UserGroupService.getUserGroup({
-    usergroupId: id,
+    userGroupId: id,
   })
     .then(userGroup => {
       currentUserGroup.value = userGroup;
@@ -245,7 +245,7 @@ function parseOldPermissions() {
     );
   });
   perms.readerGroupIds?.forEach(groupId => {
-    UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
+    UserGroupService.getUserGroup({ userGroupId: groupId }).then(usergroup =>
       formData.readerGroup.push(usergroup),
     );
   });
@@ -255,7 +255,7 @@ function parseOldPermissions() {
     );
   });
   perms.writerGroupIds?.forEach(groupId => {
-    UserGroupService.getUserGroup({ usergroupId: groupId }).then(usergroup =>
+    UserGroupService.getUserGroup({ userGroupId: groupId }).then(usergroup =>
       formData.writerGroup.push(usergroup),
     );
   });

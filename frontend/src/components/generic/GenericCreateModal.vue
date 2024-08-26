@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { permissionOptions as pOptions } from "@/utils/helpers";
-import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+import { PermissionType } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -16,13 +16,13 @@ const props = defineProps({
 const permissionOptions = pOptions;
 
 const emit = defineEmits(["create"]);
-const newObject = ref<{ name: string; perms: PermissionsPermissionTypeEnum }>({
+const newObject = ref<{ name: string; perms: PermissionType }>({
   name: "",
-  perms: PermissionsPermissionTypeEnum.Private,
+  perms: PermissionType.Private,
 });
 
 function handlePrepare() {
-  newObject.value = { name: "", perms: PermissionsPermissionTypeEnum.Private };
+  newObject.value = { name: "", perms: PermissionType.Private };
 }
 
 function handleOK() {

@@ -11,9 +11,9 @@ import {
   type FilterOptions,
 } from "@/utils/helpers";
 import type {
+  DataObjectAttributes,
   FileContainer,
-  GetAllFileContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
+  PermissionType,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
@@ -51,7 +51,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveContainers(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllFileContainersOrderByEnum as GetAllFileContainersOrderByEnum;
+    .orderBy as keyof typeof DataObjectAttributes as DataObjectAttributes;
   FileService.getAllFileContainers({
     size: filterOptions.value.perPage,
     page: nextPage - 1,
@@ -66,10 +66,7 @@ function retrieveContainers(page?: number) {
     });
 }
 
-function createContainer(options: {
-  name: string;
-  perms: PermissionsPermissionTypeEnum;
-}) {
+function createContainer(options: { name: string; perms: PermissionType }) {
   FileService.createFileContainer({
     fileContainer: { name: options.name },
   })

@@ -11,10 +11,10 @@ import {
   type FilterOptions,
 } from "@/utils/helpers";
 import type {
-  GetAllUserGroupsOrderByEnum,
-  PermissionsPermissionTypeEnum,
+  PermissionType,
   ResponseError,
   UserGroup,
+  UserGroupAttributes,
 } from "@dlr-shepard/shepard-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
@@ -50,7 +50,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveUserGroups(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllUserGroupsOrderByEnum as GetAllUserGroupsOrderByEnum;
+    .orderBy as keyof typeof UserGroupAttributes as UserGroupAttributes;
   UserGroupService.getAllUserGroups({
     size: filterOptions.value.perPage,
     page: nextPage - 1,
@@ -65,21 +65,18 @@ function retrieveUserGroups(page?: number) {
     });
 }
 
-function createUserGroup(options: {
-  name: string;
-  perms: PermissionsPermissionTypeEnum;
-}) {
+function createUserGroup(options: { name: string; perms: PermissionType }) {
   UserGroupService.createUserGroup({
     userGroup: { name: options.name, usernames: [] },
   })
     .then(async response => {
       if (response.id) {
         const perms = await UserGroupService.getUserGroupPermissions({
-          usergroupId: response.id,
+          userGroupId: response.id,
         });
         perms.permissionType = options.perms;
         await UserGroupService.editUserGroupPermissions({
-          usergroupId: response.id,
+          userGroupId: response.id,
           permissions: perms,
         });
 

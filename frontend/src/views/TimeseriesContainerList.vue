@@ -11,8 +11,8 @@ import {
   type FilterOptions,
 } from "@/utils/helpers";
 import type {
-  GetAllTimeseriesContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
+  ContainerAttributes,
+  PermissionType,
   ResponseError,
   TimeseriesContainer,
 } from "@dlr-shepard/shepard-client";
@@ -50,7 +50,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveContainers(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllTimeseriesContainersOrderByEnum as GetAllTimeseriesContainersOrderByEnum;
+    .orderBy as keyof typeof ContainerAttributes as ContainerAttributes;
   TimeseriesService.getAllTimeseriesContainers({
     size: filterOptions.value.perPage,
     page: nextPage - 1,
@@ -65,10 +65,7 @@ function retrieveContainers(page?: number) {
     });
 }
 
-function createContainer(options: {
-  name: string;
-  perms: PermissionsPermissionTypeEnum;
-}) {
+function createContainer(options: { name: string; perms: PermissionType }) {
   TimeseriesService.createTimeseriesContainer({
     timeseriesContainer: { name: options.name },
   })

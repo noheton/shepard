@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import {
-  SubscriptionRequestMethodEnum,
-  type Subscription,
-} from "@dlr-shepard/shepard-client";
+import { RequestMethod, type Subscription } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const subscriptionToCreate = ref<Subscription>({
   name: "",
   subscribedURL: "",
-  requestMethod: SubscriptionRequestMethodEnum.Get,
+  requestMethod: RequestMethod.Get,
 });
-const requestMethods = Object.values(SubscriptionRequestMethodEnum);
+const requestMethods = Object.values(RequestMethod);
 
 function initSubscription() {
   subscriptionToCreate.value = {
     name: "",
     subscribedURL: "",
-    requestMethod: SubscriptionRequestMethodEnum.Get,
+    requestMethod: RequestMethod.Get,
   };
 }
 </script>

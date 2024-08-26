@@ -10,10 +10,10 @@ import {
   type FilterOptions,
 } from "@/utils/helpers";
 import type {
-  GetAllSemanticRepositoriesOrderByEnum,
+  DataObjectAttributes,
   ResponseError,
   SemanticRepository,
-  SemanticRepositoryTypeEnum,
+  SemanticRepositoryType,
 } from "@dlr-shepard/shepard-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
@@ -47,7 +47,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveRepositories(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllSemanticRepositoriesOrderByEnum as GetAllSemanticRepositoriesOrderByEnum;
+    .orderBy as keyof typeof DataObjectAttributes as DataObjectAttributes;
   SemanticRepositoryService.getAllSemanticRepositories({
     size: filterOptions.value.perPage,
     page: nextPage - 1,
@@ -64,7 +64,7 @@ function retrieveRepositories(page?: number) {
 
 function createRepository(options: {
   name: string | null;
-  type: SemanticRepositoryTypeEnum;
+  type: SemanticRepositoryType;
   endpoint: string;
 }) {
   SemanticRepositoryService.createSemanticRepository({

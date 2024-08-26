@@ -11,7 +11,7 @@ import {
 } from "@/utils/helpers";
 import type {
   DataObject,
-  GetAllDataObjectsOrderByEnum,
+  DataObjectAttributes,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { useStorage } from "@vueuse/core";
@@ -71,7 +71,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveDataObjects(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllDataObjectsOrderByEnum as GetAllDataObjectsOrderByEnum;
+    .orderBy as keyof typeof DataObjectAttributes as DataObjectAttributes;
   DataObjectService?.getAllDataObjects({
     collectionId: props.currentCollectionId,
     parentId: props.parentId,

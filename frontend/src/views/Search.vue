@@ -12,7 +12,7 @@ import {
   removeQueryParam,
   setQueryParam,
 } from "@/utils/helpers";
-import { SearchScopeTraversalRulesEnum } from "@dlr-shepard/shepard-client";
+import { TraversalRules } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 
@@ -49,8 +49,8 @@ const queryTypeContainerSearch = [
 ];
 const currentCollectionId = ref<number>();
 const currentDataObjectId = ref<number>();
-const traversalRuleOptions = Object.values(SearchScopeTraversalRulesEnum);
-const selectedTraversalRules = ref<SearchScopeTraversalRulesEnum[]>([]);
+const traversalRuleOptions = Object.values(TraversalRules);
+const selectedTraversalRules = ref<TraversalRules[]>([]);
 const traversalRulesDisabled = computed(() => {
   return scopeDisabled.value || !currentDataObjectId.value;
 });
@@ -65,7 +65,7 @@ const searchParam = ref<{
   searchQuery?: string;
   collectionId?: number;
   dataObjectId?: number;
-  traversalRules?: SearchScopeTraversalRulesEnum[];
+  traversalRules?: TraversalRules[];
 }>({ selectedQueryType: "" });
 const collectionResults = useCollectionSearch(searchParam);
 const dataObjectResults = useDataObjectSearch(searchParam);

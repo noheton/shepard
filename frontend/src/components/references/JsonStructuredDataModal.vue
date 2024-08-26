@@ -28,7 +28,7 @@ const props = defineProps({
 const payload = ref<string>();
 function retrievePayload() {
   StructuredDataService.getStructuredData({
-    structureddataContainerId: props.containerId,
+    structuredDataContainerId: props.containerId,
     oid: props.oid,
   })
     .then(response => {

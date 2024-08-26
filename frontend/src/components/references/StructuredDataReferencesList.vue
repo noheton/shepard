@@ -80,7 +80,7 @@ function deleteReference() {
   StructuredDataReferenceService.deleteStructuredDataReference({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
-    structureddataReferenceId: currentStructuredDataReference.value.id,
+    structuredDataReferenceId: currentStructuredDataReference.value.id,
   })
     .then(() => {
       const temp = structuredDataList.value || [];

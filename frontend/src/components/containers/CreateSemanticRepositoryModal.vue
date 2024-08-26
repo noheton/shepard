@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { semanticRepositoryOptions as sRepoOptions } from "@/utils/helpers";
-import type { SemanticRepositoryTypeEnum } from "@dlr-shepard/shepard-client";
+import type { SemanticRepositoryType } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -18,7 +18,7 @@ const semanticRepositoryOptions = sRepoOptions;
 const emit = defineEmits(["create"]);
 const newObject = ref<{
   name: string;
-  type: SemanticRepositoryTypeEnum;
+  type: SemanticRepositoryType;
   endpoint: string;
 }>({
   name: "",

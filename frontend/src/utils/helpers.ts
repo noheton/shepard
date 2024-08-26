@@ -45,45 +45,45 @@ export function removeQueryParam(key: string) {
   history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
 }
 
-import { PermissionsPermissionTypeEnum } from "@dlr-shepard/shepard-client";
+import { PermissionType } from "@dlr-shepard/shepard-client";
 export interface PermissionOption {
-  value: PermissionsPermissionTypeEnum;
+  value: PermissionType;
   text: string;
 }
 export const permissionOptions: PermissionOption[] = [
   {
-    value: PermissionsPermissionTypeEnum.Private,
+    value: PermissionType.Private,
     text: "Private",
   },
   {
-    value: PermissionsPermissionTypeEnum.PublicReadable,
+    value: PermissionType.PublicReadable,
     text: "Public Readable",
   },
   {
-    value: PermissionsPermissionTypeEnum.Public,
+    value: PermissionType.Public,
     text: "Public",
   },
 ];
 
-import { SemanticRepositoryTypeEnum } from "@dlr-shepard/shepard-client";
+import { SemanticRepositoryType } from "@dlr-shepard/shepard-client";
 
 export interface SemanticRepositoryOption {
-  value: SemanticRepositoryTypeEnum;
+  value: SemanticRepositoryType;
   text: string;
   disabled?: boolean;
 }
 export const semanticRepositoryOptions: SemanticRepositoryOption[] = [
   {
-    value: SemanticRepositoryTypeEnum.Sparql,
+    value: SemanticRepositoryType.Sparql,
     text: "SPARQL",
   },
   {
-    value: SemanticRepositoryTypeEnum.Jskos,
+    value: SemanticRepositoryType.Jskos,
     text: "JSKOS",
     disabled: true,
   },
   {
-    value: SemanticRepositoryTypeEnum.Skosmos,
+    value: SemanticRepositoryType.Skosmos,
     text: "SKOSMOS",
     disabled: true,
   },

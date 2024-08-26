@@ -51,7 +51,7 @@ function retrieveUser() {
 
 function retrieveUserGroup() {
   UserGroupService.getUserGroup({
-    usergroupId: currentUserGroupId.value,
+    userGroupId: currentUserGroupId.value,
   })
     .then(response => {
       currentUserGroup.value = response;
@@ -64,7 +64,7 @@ function retrieveUserGroup() {
 function updateUserGroup() {
   if (currentUserGroup.value)
     UserGroupService.updateUserGroup({
-      usergroupId: currentUserGroupId.value,
+      userGroupId: currentUserGroupId.value,
       userGroup: currentUserGroup.value,
     })
       .then(() => {
@@ -77,7 +77,7 @@ function updateUserGroup() {
 
 function handleDeleteUserGroup() {
   UserGroupService.deleteUserGroup({
-    usergroupId: currentUserGroupId.value,
+    userGroupId: currentUserGroupId.value,
   })
     .then(() => {
       router.push({
@@ -109,7 +109,7 @@ function handleDeleteUser(delUser: string | undefined) {
 
 function retrievePermissions() {
   UserGroupService.getUserGroupPermissions({
-    usergroupId: currentUserGroupId.value,
+    userGroupId: currentUserGroupId.value,
   })
     .then(response => {
       permissions.value = response;
@@ -121,7 +121,7 @@ function retrievePermissions() {
 
 function updatePermissions(perms: Permissions) {
   UserGroupService.editUserGroupPermissions({
-    usergroupId: currentUserGroupId.value,
+    userGroupId: currentUserGroupId.value,
     permissions: perms,
   })
     .then(response => {
@@ -135,7 +135,7 @@ function updatePermissions(perms: Permissions) {
 const roles = ref<Roles | undefined>();
 function retrieveRoles() {
   UserGroupService.getUserGroupRoles({
-    usergroupId: +currentUserGroupId.value,
+    userGroupId: +currentUserGroupId.value,
   })
     .then(response => {
       roles.value = response;

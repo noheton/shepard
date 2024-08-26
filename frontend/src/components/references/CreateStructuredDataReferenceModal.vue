@@ -80,7 +80,7 @@ function chooseContainer(container: StructuredDataContainer) {
 
 function fetchContainer(id: number) {
   StructuredDataService.getStructuredDataContainer({
-    structureddataContainerId: id,
+    structuredDataContainerId: id,
   })
     .then(container => {
       currentContainer.value = container;
@@ -98,7 +98,7 @@ function fetchContainer(id: number) {
 function fetchStructuredData(id: number) {
   possibleOids.value = [];
   StructuredDataService.getAllStructuredDatas({
-    structureddataContainerId: id,
+    structuredDataContainerId: id,
   })
     .then(response => {
       response.forEach(structuredData => {
@@ -183,7 +183,7 @@ async function createStructuredData(
   let response: StructuredData | undefined;
   try {
     response = await StructuredDataService.createStructuredData({
-      structureddataContainerId: currentContainerId,
+      structuredDataContainerId: currentContainerId,
       structuredDataPayload: newStructuredDataPayload,
     });
   } catch (e: any) {

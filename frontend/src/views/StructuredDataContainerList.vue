@@ -11,8 +11,8 @@ import {
   type FilterOptions,
 } from "@/utils/helpers";
 import type {
-  GetAllStructuredDataContainersOrderByEnum,
-  PermissionsPermissionTypeEnum,
+  ContainerAttributes,
+  PermissionType,
   ResponseError,
   StructuredDataContainer,
 } from "@dlr-shepard/shepard-client";
@@ -50,7 +50,7 @@ function filterChanged(options: FilterChangedData) {
 function retrieveContainers(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllStructuredDataContainersOrderByEnum as GetAllStructuredDataContainersOrderByEnum;
+    .orderBy as keyof typeof ContainerAttributes as ContainerAttributes;
   StructuredDataService.getAllStructuredDataContainers({
     size: filterOptions.value.perPage,
     page: nextPage - 1,
@@ -64,10 +64,7 @@ function retrieveContainers(page?: number) {
       handleError(e as ResponseError, "fetching structured data containers");
     });
 }
-function createContainer(options: {
-  name: string;
-  perms: PermissionsPermissionTypeEnum;
-}) {
+function createContainer(options: { name: string; perms: PermissionType }) {
   StructuredDataService.createStructuredDataContainer({
     structuredDataContainer: {
       name: options.name,
@@ -76,11 +73,11 @@ function createContainer(options: {
     .then(async response => {
       if (response.id) {
         const perms = await StructuredDataService.getStructuredDataPermissions({
-          structureddataContainerId: response.id,
+          structuredDataContainerId: response.id,
         });
         perms.permissionType = options.perms;
         await StructuredDataService.editStructuredDataPermissions({
-          structureddataContainerId: response.id,
+          structuredDataContainerId: response.id,
           permissions: perms,
         });
         router.push({

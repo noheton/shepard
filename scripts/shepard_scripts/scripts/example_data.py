@@ -6,11 +6,11 @@ from shepard_client.api.collection_api import CollectionApi
 from shepard_client.api.collection_reference_api import CollectionReferenceApi
 from shepard_client.api.data_object_api import DataObjectApi
 from shepard_client.api.data_object_reference_api import DataObjectReferenceApi
-from shepard_client.api.file_api import FileApi
+from shepard_client.api.file_container_api import FileContainerApi
 from shepard_client.api.file_reference_api import FileReferenceApi
-from shepard_client.api.structureddata_api import StructureddataApi
-from shepard_client.api.structureddata_reference_api import StructureddataReferenceApi
-from shepard_client.api.timeseries_api import TimeseriesApi
+from shepard_client.api.structured_data_container_api import StructuredDataContainerApi
+from shepard_client.api.structured_data_reference_api import StructuredDataReferenceApi
+from shepard_client.api.timeseries_container_api import TimeseriesContainerApi
 from shepard_client.api.timeseries_reference_api import TimeseriesReferenceApi
 from shepard_client.api.uri_reference_api import UriReferenceApi
 from shepard_client.models.collection import Collection
@@ -75,15 +75,15 @@ def create_data_objects(
 
 
 def create_file(client, collection_id, data_object_id) -> FileReference:
-    file_api = FileApi(client)
+    file_container_api = FileContainerApi(client)
     container = FileContainer(name="A File Container")
-    container = file_api.create_file_container(container)
+    container = file_container_api.create_file_container(container)
 
     if not container.id:
         raise RuntimeError("No file container")
 
-    file1 = file_api.create_file(container.id, "files/hello-world.txt")
-    file2 = file_api.create_file(container.id, "files/augsburg.jpg")
+    file1 = file_container_api.create_file(container.id, "files/hello-world.txt")
+    file2 = file_container_api.create_file(container.id, "files/augsburg.jpg")
 
     if not (file1.oid and file2.oid):
         raise RuntimeError("No file oids")
@@ -103,9 +103,9 @@ def create_file(client, collection_id, data_object_id) -> FileReference:
 def create_structured_data(
     client, collection_id, data_object_id
 ) -> StructuredDataReference:
-    structureddata_api = StructureddataApi(client)
+    structured_data_container_api = StructuredDataContainerApi(client)
     container = StructuredDataContainer(name="A SD Container")
-    container = structureddata_api.create_structured_data_container(container)
+    container = structured_data_container_api.create_structured_data_container(container)
 
     if not container.id:
         raise RuntimeError("No sd container")
@@ -130,34 +130,34 @@ def create_structured_data(
             }
         ),
     )
-    structured_data1 = structureddata_api.create_structured_data(
-        structureddata_container_id=container.id,
+    structured_data1 = structured_data_container_api.create_structured_data(
+        structured_data_container_id=container.id,
         structured_data_payload=payload1,
     )
-    structured_data2 = structureddata_api.create_structured_data(
-        structureddata_container_id=container.id,
+    structured_data2 = structured_data_container_api.create_structured_data(
+        structured_data_container_id=container.id,
         structured_data_payload=payload2,
     )
 
     if not (structured_data1.oid and structured_data2.oid):
         raise RuntimeError("No sd oids")
 
-    structureddata_reference_api = StructureddataReferenceApi(client)
+    structured_data_reference_api = StructuredDataReferenceApi(client)
     reference = StructuredDataReference(
         name="A SD Reference",
         structuredDataContainerId=container.id,
         structuredDataOids=[structured_data1.oid, structured_data2.oid],
     )
-    reference = structureddata_reference_api.create_structured_data_reference(
+    reference = structured_data_reference_api.create_structured_data_reference(
         collection_id, data_object_id, reference
     )
     return reference
 
 
 def create_timeseries(client, collection_id, data_object_id) -> TimeseriesReference:
-    timeseries_api = TimeseriesApi(client)
+    timeseries_container_api = TimeseriesContainerApi(client)
     container = TimeseriesContainer(name="A Timeseries Container")
-    container = timeseries_api.create_timeseries_container(container)
+    container = timeseries_container_api.create_timeseries_container(container)
 
     if not container.id:
         raise RuntimeError("No timeseries container")
@@ -189,8 +189,8 @@ def create_timeseries(client, collection_id, data_object_id) -> TimeseriesRefere
         ),
         points=[InfluxPoint(value=123, timestamp=nanos)],
     )
-    timeseries1 = timeseries_api.create_timeseries(container.id, payload1)
-    timeseries2 = timeseries_api.create_timeseries(container.id, payload2)
+    timeseries1 = timeseries_container_api.create_timeseries(container.id, payload1)
+    timeseries2 = timeseries_container_api.create_timeseries(container.id, payload2)
     timeseries_reference_api = TimeseriesReferenceApi(client)
     reference = TimeseriesReference(
         name="My Timeseries",

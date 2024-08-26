@@ -3,7 +3,7 @@ import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import type {
   ResponseError,
-  SearchScopeTraversalRulesEnum,
+  TraversalRules,
 } from "@dlr-shepard/shepard-client";
 import { ref, watch, type Ref } from "vue";
 
@@ -13,7 +13,7 @@ export function useReferenceSearch(
     searchQuery?: string;
     collectionId?: number;
     dataObjectId?: number;
-    traversalRules?: SearchScopeTraversalRulesEnum[];
+    traversalRules?: TraversalRules[];
   }>,
 ) {
   const results = ref<{ id: number; name: string; link: string }[]>([]);

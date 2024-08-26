@@ -12,7 +12,7 @@ import {
 } from "@/utils/helpers";
 import type {
   Collection,
-  GetAllCollectionsOrderByEnum,
+  DataObjectAttributes,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
@@ -26,7 +26,7 @@ const collections = ref<Collection[]>();
 function retrieveCollections(page?: number) {
   const nextPage = page || currentPage.value;
   const nextOrderBy = filterOptions.value
-    .orderBy as keyof typeof GetAllCollectionsOrderByEnum as GetAllCollectionsOrderByEnum;
+    .orderBy as keyof typeof DataObjectAttributes as DataObjectAttributes;
   CollectionService.getAllCollections({
     size: filterOptions.value.perPage,
     page: nextPage - 1,

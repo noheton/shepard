@@ -3,14 +3,14 @@ import { handleError } from "@/utils/error-handling";
 import { isNumeric } from "@/utils/helpers";
 import type {
   BasicContainer,
-  ContainerSearchParamsQueryTypeEnum,
+  ContainerQueryType,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchContainers(
   text: Ref<string>,
-  queryType: ContainerSearchParamsQueryTypeEnum,
+  queryType: ContainerQueryType,
 ) {
   const results = ref<BasicContainer[]>([]);
   const totalResults = ref(0);

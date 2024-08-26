@@ -36,7 +36,7 @@ const currentStructuredDataContainerId = computed<string>(
 
 function retrieveStructuredDataContainer() {
   StructuredDataService.getStructuredDataContainer({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(response => {
       currentStructuredDataContainer.value = response;
@@ -48,7 +48,7 @@ function retrieveStructuredDataContainer() {
 
 function retrieveStructuredDataList() {
   StructuredDataService.getAllStructuredDatas({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(response => {
       // it was possible to create structured data that is null
@@ -62,7 +62,7 @@ function retrieveStructuredDataList() {
 function createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
   if (currentStructuredDataContainer.value?.id)
     StructuredDataService.createStructuredData({
-      structureddataContainerId: currentStructuredDataContainer.value.id,
+      structuredDataContainerId: currentStructuredDataContainer.value.id,
       structuredDataPayload: newStructuredDataPayload,
     })
       .then(() => {
@@ -75,7 +75,7 @@ function createStructuredData(newStructuredDataPayload: StructuredDataPayload) {
 
 function handleDeleteStructuredDataContainer() {
   StructuredDataService.deleteStructuredDataContainer({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(() => {
       router.push({ name: "StructuredDatasList" });
@@ -92,7 +92,7 @@ function handleDeleteStructuredData() {
   )
     return;
   StructuredDataService.deleteStructuredData({
-    structureddataContainerId: +currentStructuredDataContainer.value.id,
+    structuredDataContainerId: +currentStructuredDataContainer.value.id,
     oid: currentStructuredData.value.oid,
   })
     .then(() => {
@@ -106,7 +106,7 @@ function handleDeleteStructuredData() {
 
 function retrievePermissions() {
   StructuredDataService.getStructuredDataPermissions({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(response => {
       permissions.value = response;
@@ -118,7 +118,7 @@ function retrievePermissions() {
 
 function updatePermissions(perms: Permissions) {
   StructuredDataService.editStructuredDataPermissions({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
     permissions: perms,
   })
     .then(response => {
@@ -132,7 +132,7 @@ function updatePermissions(perms: Permissions) {
 const roles = ref<Roles | undefined>();
 function retrieveRoles() {
   StructuredDataService.getStructuredDataRoles({
-    structureddataContainerId: +currentStructuredDataContainerId.value,
+    structuredDataContainerId: +currentStructuredDataContainerId.value,
   })
     .then(response => {
       roles.value = response;

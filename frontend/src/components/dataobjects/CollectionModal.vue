@@ -4,7 +4,7 @@ import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
 import { permissionOptions as pOptions } from "@/utils/helpers";
 import {
-  PermissionsPermissionTypeEnum,
+  PermissionType,
   ResponseError,
   type Collection,
 } from "@dlr-shepard/shepard-client";
@@ -35,9 +35,7 @@ const description = ref<string>("");
 const possibleAttributes = ref<{ key: string; value: string }[]>([]);
 const validationError = ref(false);
 
-const newPermissionType = ref<PermissionsPermissionTypeEnum>(
-  PermissionsPermissionTypeEnum.Private,
-);
+const newPermissionType = ref<PermissionType>(PermissionType.Private);
 
 function prepare() {
   name.value = props.currentCollection?.name || "";

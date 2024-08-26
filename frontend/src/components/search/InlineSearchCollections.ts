@@ -2,7 +2,7 @@ import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import { isNumeric } from "@/utils/helpers";
 import {
-  SearchParamsQueryTypeEnum,
+  QueryType,
   type BasicEntity,
   type ResponseError,
 } from "@dlr-shepard/shepard-client";
@@ -48,7 +48,7 @@ export function useSearchCollections(text: Ref<string>) {
         ],
         searchParams: {
           query: searchQuery.value,
-          queryType: SearchParamsQueryTypeEnum.Collection,
+          queryType: QueryType.Collection,
         },
       },
     })

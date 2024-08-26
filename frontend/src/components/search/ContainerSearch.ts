@@ -2,7 +2,7 @@ import router from "@/router";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
 import type {
-  ContainerSearchParamsQueryTypeEnum,
+  ContainerQueryType,
   ResponseError,
 } from "@dlr-shepard/shepard-client";
 import { ref, watch, type Ref } from "vue";
@@ -47,7 +47,7 @@ export function useContainerSearch(
         searchParams: {
           query: searchParam.value.searchQuery,
           queryType: searchParam.value
-            .selectedQueryType as keyof typeof ContainerSearchParamsQueryTypeEnum as ContainerSearchParamsQueryTypeEnum,
+            .selectedQueryType as keyof typeof ContainerQueryType as ContainerQueryType,
         },
       },
     })

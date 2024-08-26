@@ -34,7 +34,7 @@ function getStructuredDataPayload() {
   StructuredDataReferenceService.getStructuredDataPayload({
     collectionId: props.currentCollectionId,
     dataObjectId: props.currentDataObjectId,
-    structureddataReferenceId: props.structuredDataReference.id,
+    structuredDataReferenceId: props.structuredDataReference.id,
   })
     .then(response => {
       response.forEach(payload => {
