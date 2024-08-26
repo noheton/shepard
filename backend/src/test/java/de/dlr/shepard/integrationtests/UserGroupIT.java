@@ -30,7 +30,7 @@ public class UserGroupIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    userGroupURL = "/" + Constants.USERGROUP;
+    userGroupURL = "/" + Constants.USERGROUPS;
     user = getNewUserWithApiKey("user");
     user1 = getNewUserWithApiKey("user1");
     jws = user.getApiKey().getJws();

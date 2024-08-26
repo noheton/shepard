@@ -142,14 +142,14 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(apiKeysSeg.getPath()).thenReturn(Constants.APIKEYS);
     when(subscriptionsSeg.getPath()).thenReturn(Constants.SUBSCRIPTIONS);
 
-    when(timeseriesSeg.getPath()).thenReturn(Constants.TIMESERIES);
+    when(timeseriesSeg.getPath()).thenReturn(Constants.TIMESERIES_CONTAINERS);
     when(timeseriesReferencesSeg.getPath()).thenReturn(Constants.TIMESERIES_REFERENCES);
 
-    when(filesSeg.getPath()).thenReturn(Constants.FILES);
+    when(filesSeg.getPath()).thenReturn(Constants.FILE_CONTAINERS);
     when(fileReferencesSeg.getPath()).thenReturn(Constants.FILE_REFERENCES);
 
-    when(structuredDatasSeg.getPath()).thenReturn(Constants.STRUCTUREDDATAS);
-    when(structuredDataReferencesSeg.getPath()).thenReturn(Constants.STRUCTUREDDATA_REFERENCES);
+    when(structuredDatasSeg.getPath()).thenReturn(Constants.STRUCTURED_DATA_CONTAINERS);
+    when(structuredDataReferencesSeg.getPath()).thenReturn(Constants.STRUCTURED_DATA_REFERENCES);
 
     when(uriReferencesSeg.getPath()).thenReturn(Constants.URI_REFERENCES);
 
@@ -157,7 +157,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
     when(collectionReferencesSeg.getPath()).thenReturn(Constants.COLLECTION_REFERENCES);
 
-    when(userGroupsSeg.getPath()).thenReturn(Constants.USERGROUP);
+    when(userGroupsSeg.getPath()).thenReturn(Constants.USERGROUPS);
 
     when(semanticRepositoriesSeg.getPath()).thenReturn(Constants.SEMANTIC_REPOSITORIES);
     when(semanticAnnotationsSeg.getPath()).thenReturn(Constants.SEMANTIC_ANNOTATIONS);

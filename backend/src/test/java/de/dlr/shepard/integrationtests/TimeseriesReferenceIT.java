@@ -59,7 +59,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .addHeader("X-API-KEY", jws)
       .build();
 
-    containerURL = "/" + Constants.TIMESERIES;
+    containerURL = "/" + Constants.TIMESERIES_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

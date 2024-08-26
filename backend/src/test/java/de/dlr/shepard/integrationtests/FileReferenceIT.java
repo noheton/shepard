@@ -58,7 +58,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
       .addHeader("X-API-KEY", jws)
       .build();
 
-    containerURL = "/" + Constants.FILES;
+    containerURL = "/" + Constants.FILE_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

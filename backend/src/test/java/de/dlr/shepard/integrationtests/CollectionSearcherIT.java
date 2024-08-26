@@ -454,7 +454,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void collectionsSearchTestReaderGroup() {
-    String userGroupURL = "/" + Constants.USERGROUP;
+    String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
@@ -540,7 +540,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void inTest() {
-    String userGroupURL = "/" + Constants.USERGROUP;
+    String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user1.getUser().getUsername() });

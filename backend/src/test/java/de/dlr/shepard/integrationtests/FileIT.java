@@ -37,7 +37,7 @@ public class FileIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    containerURL = "/" + Constants.FILES;
+    containerURL = "/" + Constants.FILE_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

@@ -53,14 +53,14 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       collection.getId(),
       Constants.DATAOBJECTS,
       dataObject.getId(),
-      Constants.STRUCTUREDDATA_REFERENCES
+      Constants.STRUCTURED_DATA_REFERENCES
     );
     referencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    containerURL = "/" + Constants.STRUCTUREDDATAS;
+    containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

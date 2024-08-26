@@ -190,7 +190,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
-    fileContainerURL = "/files";
+    fileContainerURL = "/" + Constants.FILE_CONTAINERS;
     fileContainerRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -556,13 +556,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       sDataCollection.getId(),
       Constants.DATAOBJECTS,
       sDataObject.getId(),
-      Constants.STRUCTUREDDATA_REFERENCES
+      Constants.STRUCTURED_DATA_REFERENCES
     );
     sDataReferencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
-    sDataContainerURL = "/structureddatas";
+    sDataContainerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     sDataContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -656,7 +656,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
-    tSerContainerURL = "/timeseries";
+    tSerContainerURL = "/" + Constants.TIMESERIES_CONTAINERS;
     tSerContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

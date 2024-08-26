@@ -41,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.STRUCTUREDDATAS)
+@Path(Constants.STRUCTURED_DATA_CONTAINERS)
 @RequestScoped
 public class StructuredDataRest {
 
@@ -67,7 +67,7 @@ public class StructuredDataRest {
   }
 
   @GET
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Get all structured data containers")
   @APIResponse(
     description = "ok",
@@ -103,8 +103,8 @@ public class StructuredDataRest {
   }
 
   @GET
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}")
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Get structured data container")
   @APIResponse(
     description = "ok",
@@ -112,22 +112,22 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
-  public Response getStructuredDataContainer(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
+  public Response getStructuredDataContainer(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
     var result = structuredDataContainerService.getContainer(structuredDataId);
     return Response.ok(new StructuredDataContainerIO(result)).build();
   }
 
   @DELETE
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}")
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}")
   @Subscribable
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Delete structured data container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response deleteStructuredDataContainer(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
   ) {
     var result = structuredDataContainerService.deleteContainer(
       structuredDataId,
@@ -137,7 +137,7 @@ public class StructuredDataRest {
   }
 
   @POST
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Create a new structured data container")
   @APIResponse(
     description = "created",
@@ -159,9 +159,9 @@ public class StructuredDataRest {
   }
 
   @POST
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/payload")
   @Subscribable
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Upload a new structured data object")
   @APIResponse(
     description = "created",
@@ -169,9 +169,9 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = StructuredData.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response createStructuredData(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
@@ -184,8 +184,8 @@ public class StructuredDataRest {
   }
 
   @GET
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload")
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/payload")
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Get structured data objects")
   @APIResponse(
     description = "ok",
@@ -193,15 +193,15 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredData.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
-  public Response getAllStructuredDatas(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
+  public Response getAllStructuredDatas(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
     var result = structuredDataContainerService.getContainer(structuredDataId).getStructuredDatas();
     return Response.ok(result).build();
   }
 
   @GET
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Download structured data")
   @APIResponse(
     description = "ok",
@@ -209,10 +209,10 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response getStructuredData(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
   ) {
     var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
@@ -220,16 +220,16 @@ public class StructuredDataRest {
   }
 
   @DELETE
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
   @Subscribable
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Delete structured data")
   @APIResponse(description = "ok", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response deleteStructuredData(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
   ) {
     var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
@@ -237,8 +237,8 @@ public class StructuredDataRest {
   }
 
   @GET
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Get permissions")
   @APIResponse(
     description = "ok",
@@ -246,17 +246,17 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response getStructuredDataPermissions(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
   ) {
     var perms = permissionsService.getPermissionsByNeo4jId(structuredDataId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
   }
 
   @PUT
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Edit permissions")
   @APIResponse(
     description = "ok",
@@ -264,9 +264,9 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response editStructuredDataPermissions(
-    @PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -277,8 +277,8 @@ public class StructuredDataRest {
   }
 
   @GET
-  @Path("/{" + Constants.STRUCTUREDDATA_CONTAINER_ID + "}/" + Constants.ROLES)
-  @Tag(name = Constants.STRUCTUREDDATA)
+  @Path("/{" + Constants.STRUCTURED_DATA_CONTAINER_ID + "}/" + Constants.ROLES)
+  @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Get roles")
   @APIResponse(
     description = "ok",
@@ -286,8 +286,8 @@ public class StructuredDataRest {
     content = @Content(schema = @Schema(implementation = RolesIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.STRUCTUREDDATA_CONTAINER_ID)
-  public Response getStructuredDataRoles(@PathParam(Constants.STRUCTUREDDATA_CONTAINER_ID) long structuredDataId) {
+  @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
+  public Response getStructuredDataRoles(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
     var roles = permissionsUtil.getRolesByNeo4jId(structuredDataId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }

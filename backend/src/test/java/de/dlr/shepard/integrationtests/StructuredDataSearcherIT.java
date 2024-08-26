@@ -659,7 +659,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   @Test
   @Order(16)
   public void testFindViaPredecessorCycleReaderGroup() {
-    String userGroupURL = "/usergroup";
+    String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user2.getUser().getUsername() });
@@ -800,7 +800,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static StructuredDataContainerIO createDataContainer(String name) {
-    containerURL = "/" + Constants.STRUCTUREDDATAS;
+    containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -823,7 +823,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     long containerID,
     StructuredDataPayload payload
   ) {
-    containerURL = "/" + Constants.STRUCTUREDDATAS;
+    containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     return given()
       .spec(containerRequestSpec)
       .body(payload)
@@ -851,7 +851,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       collection.getId(),
       Constants.DATAOBJECTS,
       dataObject.getId(),
-      Constants.STRUCTUREDDATA_REFERENCES
+      Constants.STRUCTURED_DATA_REFERENCES
     );
     RequestSpecification referencesRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)

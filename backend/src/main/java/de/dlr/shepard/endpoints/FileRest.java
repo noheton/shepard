@@ -46,7 +46,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.FILES)
+@Path(Constants.FILE_CONTAINERS)
 @RequestScoped
 public class FileRest {
 
@@ -71,7 +71,7 @@ public class FileRest {
   }
 
   @GET
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get all file containers")
   @APIResponse(
     description = "ok",
@@ -105,7 +105,7 @@ public class FileRest {
 
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}")
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get file container")
   @APIResponse(
     description = "ok",
@@ -120,7 +120,7 @@ public class FileRest {
   }
 
   @POST
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Create a new file container")
   @APIResponse(
     description = "created",
@@ -141,7 +141,7 @@ public class FileRest {
   @DELETE
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}")
   @Subscribable
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Delete file container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
@@ -153,7 +153,7 @@ public class FileRest {
 
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get files")
   @APIResponse(
     description = "ok",
@@ -170,7 +170,7 @@ public class FileRest {
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get file")
   @APIResponse(
     description = "ok",
@@ -199,7 +199,7 @@ public class FileRest {
   @DELETE
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload/{" + Constants.OID + "}")
   @Subscribable
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Delete file")
   @APIResponse(description = "ok", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
@@ -215,7 +215,7 @@ public class FileRest {
 
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Upload a new file")
   @APIResponse(
     description = "created",
@@ -266,7 +266,7 @@ public class FileRest {
 
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get permissions")
   @APIResponse(
     description = "ok",
@@ -282,7 +282,7 @@ public class FileRest {
 
   @PUT
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Edit permissions")
   @APIResponse(
     description = "ok",
@@ -304,7 +304,7 @@ public class FileRest {
 
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/" + Constants.ROLES)
-  @Tag(name = Constants.FILE)
+  @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Get roles")
   @APIResponse(
     description = "ok",

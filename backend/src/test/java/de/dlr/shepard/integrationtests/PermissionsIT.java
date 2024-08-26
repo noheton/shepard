@@ -73,7 +73,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .build();
     collection1 = createCollection("PermissionsTestCollection1", user1.getApiKey());
     collection2 = createCollection("PermissionsTestCollection2", user2.getApiKey());
-    userGroupURL = "/" + Constants.USERGROUP;
+    userGroupURL = "/" + Constants.USERGROUPS;
   }
 
   @Test

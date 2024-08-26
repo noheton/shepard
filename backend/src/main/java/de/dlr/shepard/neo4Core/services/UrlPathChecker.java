@@ -143,8 +143,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.TIMESERIES)) {
-      long id = Long.parseLong(pathElems.get(Constants.TIMESERIES));
+    if (pathElems.containsKey(Constants.TIMESERIES_CONTAINERS)) {
+      long id = Long.parseLong(pathElems.get(Constants.TIMESERIES_CONTAINERS));
       var timeseriesContainer = timeseriesContainerService.getContainer(id);
       String error = checkContainer(timeseriesContainer);
       if (error != null) {
@@ -152,8 +152,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.STRUCTUREDDATA_REFERENCES)) {
-      long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATA_REFERENCES));
+    if (pathElems.containsKey(Constants.STRUCTURED_DATA_REFERENCES)) {
+      long id = Long.parseLong(pathElems.get(Constants.STRUCTURED_DATA_REFERENCES));
       var structuredDataReference = structuredDataReferenceService.getReferenceByShepardId(id);
       String error = checkReference(structuredDataReference, dataObject);
       if (error != null) {
@@ -161,8 +161,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.STRUCTUREDDATAS)) {
-      long id = Long.parseLong(pathElems.get(Constants.STRUCTUREDDATAS));
+    if (pathElems.containsKey(Constants.STRUCTURED_DATA_CONTAINERS)) {
+      long id = Long.parseLong(pathElems.get(Constants.STRUCTURED_DATA_CONTAINERS));
       var structuredDataContainer = structuredDataContainerService.getContainer(id);
       String error = checkContainer(structuredDataContainer);
       if (error != null) {
@@ -179,8 +179,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.FILES)) {
-      long id = Long.parseLong(pathElems.get(Constants.FILES));
+    if (pathElems.containsKey(Constants.FILE_CONTAINERS)) {
+      long id = Long.parseLong(pathElems.get(Constants.FILE_CONTAINERS));
       var fileContainer = fileContainerService.getContainer(id);
       String error = checkContainer(fileContainer);
       if (error != null) {
@@ -250,8 +250,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.USERGROUP)) {
-      long id = Long.parseLong(pathElems.get(Constants.USERGROUP));
+    if (pathElems.containsKey(Constants.USERGROUPS)) {
+      long id = Long.parseLong(pathElems.get(Constants.USERGROUPS));
       var usergroup = userGroupService.getUserGroup(id);
       String error = checkUserGroup(usergroup);
       if (error != null) {

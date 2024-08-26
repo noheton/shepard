@@ -13,8 +13,9 @@ public class Constants {
   public static final String USER = "user";
   public static final String USERS = "users";
   public static final String USERNAME = "username";
-  public static final String USERGROUP = "usergroup";
-  public static final String USERGROUP_ID = "usergroupId";
+  public static final String USERGROUP = "userGroup";
+  public static final String USERGROUPS = "userGroups";
+  public static final String USERGROUP_ID = "userGroupId";
   public static final String FIRSTNAME = "firstName";
   public static final String LASTNAME = "lastName";
   public static final String EMAIL = "email";
@@ -41,15 +42,16 @@ public class Constants {
   public static final String BASIC_REFERENCES = "references";
   public static final String BASIC_REFERENCE_ID = "referenceId";
 
-  public static final String STRUCTUREDDATA = "structureddata";
-  public static final String STRUCTUREDDATAS = "structureddatas";
-  public static final String STRUCTUREDDATA_CONTAINER_ID = "structureddataContainerId";
-  public static final String STRUCTUREDDATA_REFERENCE = "structureddataReference";
-  public static final String STRUCTUREDDATA_REFERENCES = "structureddataReferences";
-  public static final String STRUCTUREDDATA_REFERENCE_ID = "structureddataReferenceId";
+  public static final String STRUCTURED_DATA_CONTAINER = "structuredDataContainer";
+  public static final String STRUCTURED_DATA_CONTAINERS = "structuredDataContainers";
+  public static final String STRUCTURED_DATA_CONTAINER_ID = "structuredDataContainerId";
+  public static final String STRUCTURED_DATA_REFERENCE = "structuredDataReference";
+  public static final String STRUCTURED_DATA_REFERENCES = "structuredDataReferences";
+  public static final String STRUCTURED_DATA_REFERENCE_ID = "structuredDataReferenceId";
 
   public static final String FILE = "file";
-  public static final String FILES = "files";
+  public static final String FILE_CONTAINER = "fileContainer";
+  public static final String FILE_CONTAINERS = "fileContainers";
   public static final String FILE_CONTAINER_ID = "fileContainerId";
   public static final String FILE_REFERENCE = "fileReference";
   public static final String FILE_REFERENCES = "fileReferences";
@@ -70,7 +72,9 @@ public class Constants {
 
   public static final String CONTAINERS = "containers";
 
-  public static final String TIMESERIES = "timeseries";
+  public static final String TIMESERIES_CONTAINER = "timeseriesContainer";
+  public static final String TIMESERIES_CONTAINERS = "timeseriesContainers";
+
   public static final String TIMESERIES_CONTAINER_ID = "timeseriesContainerId";
   public static final String TIMESERIES_REFERENCE = "timeseriesReference";
   public static final String TIMESERIES_REFERENCES = "timeseriesReferences";

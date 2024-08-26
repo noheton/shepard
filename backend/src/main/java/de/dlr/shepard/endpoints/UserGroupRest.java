@@ -40,7 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path(Constants.USERGROUP)
+@Path(Constants.USERGROUPS)
 @RequestScoped
 public class UserGroupRest {
 

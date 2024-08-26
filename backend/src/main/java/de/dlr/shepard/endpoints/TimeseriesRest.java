@@ -50,7 +50,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.TIMESERIES)
+@Path(Constants.TIMESERIES_CONTAINERS)
 @RequestScoped
 public class TimeseriesRest {
 
@@ -76,7 +76,7 @@ public class TimeseriesRest {
   }
 
   @GET
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get all timeseries containers")
   @APIResponse(
     description = "ok",
@@ -110,7 +110,7 @@ public class TimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries container")
   @APIResponse(
     description = "ok",
@@ -125,7 +125,7 @@ public class TimeseriesRest {
   }
 
   @POST
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Create a new timeseries container")
   @APIResponse(
     description = "created",
@@ -150,7 +150,7 @@ public class TimeseriesRest {
   @DELETE
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
   @Subscribable
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Delete timeseries container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
@@ -167,7 +167,7 @@ public class TimeseriesRest {
   @POST
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Subscribable
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Upload timeseries to container")
   @APIResponse(
     description = "created",
@@ -191,7 +191,7 @@ public class TimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries available")
   @APIResponse(
     description = "ok",
@@ -205,7 +205,7 @@ public class TimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries payload")
   @APIResponse(
     description = "ok",
@@ -258,7 +258,7 @@ public class TimeseriesRest {
   @GET
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Export timeseries payload")
   @APIResponse(
     description = "ok",
@@ -317,7 +317,7 @@ public class TimeseriesRest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Import timeseries payload")
   @APIResponse(description = "ok", responseCode = "200")
   @APIResponse(description = "not found", responseCode = "404")
@@ -343,7 +343,7 @@ public class TimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get permissions")
   @APIResponse(
     description = "ok",
@@ -359,7 +359,7 @@ public class TimeseriesRest {
 
   @PUT
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Edit permissions")
   @APIResponse(
     description = "ok",
@@ -381,7 +381,7 @@ public class TimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
-  @Tag(name = Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Get roles")
   @APIResponse(
     description = "ok",

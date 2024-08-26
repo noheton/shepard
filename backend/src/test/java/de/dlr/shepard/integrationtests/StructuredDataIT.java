@@ -36,7 +36,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    containerURL = "/" + Constants.STRUCTUREDDATAS;
+    containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     containerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

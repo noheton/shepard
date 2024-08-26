@@ -45,19 +45,19 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    fileContainerURL = "/" + Constants.FILES;
+    fileContainerURL = "/" + Constants.FILE_CONTAINERS;
     fileContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    timeseriesContainerURL = "/" + Constants.TIMESERIES;
+    timeseriesContainerURL = "/" + Constants.TIMESERIES_CONTAINERS;
     timeseriesContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
 
-    dataContainerURL = "/" + Constants.STRUCTUREDDATAS;
+    dataContainerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     dataContainerRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
