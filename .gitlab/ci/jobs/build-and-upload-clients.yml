@@ -1,15 +1,8 @@
 include:
-  - local: .gitlab/ci/clients/cpp.gitlab-ci.yml
   - local: .gitlab/ci/clients/java.gitlab-ci.yml
   - local: .gitlab/ci/clients/python-legacy.gitlab-ci.yml
   - local: .gitlab/ci/clients/python.gitlab-ci.yml
   - local: .gitlab/ci/clients/typescript.gitlab-ci.yml
-
-build_cpp_client:
-  extends: .build_cpp_client
-
-upload_cpp_client:
-  extends: .upload_cpp_client
 
 build_java_client:
   extends: .build_java_client
