@@ -2,6 +2,11 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === ADR-000 API V2
 
+[CAUTION]
+====
+26.08.2024: With changes implemented in link:https://gitlab.com/dlr-shepard/shepard/-/merge_requests/233[this MR], some of the endpoints definitions went through minor changes.
+====
+
 [%autowidth.stretch]
 [cols="h,1a"]
 |===
@@ -64,13 +69,13 @@ The following endpoints exist optionally for each kind of data:
 
 ====== Structured Data Container
 
-- `/structuredData` - create structured data container
-- `/structuredData/<id>` - get/update/delete a specific structured data container
-- `/structuredData/<id>/search` - backend search service for structured data container
-- `/structuredData/<id>/payload` - upload a new structured data object
-- `/collections/<id>/dataObjects/<id>/structuredDataReferences` - get all references of the given DataObject, create a new structured data reference
-- `/collections/<id>/dataObjects/<id>/structuredDataReferences/<id>` - get/update/delete a specific structured data reference
-- `/collections/<id>/dataObjects/<id>/structuredDataReferences/<id>/payload` - get the payload of a specific structured data reference
+- `/structureddata` - create structured data container
+- `/structureddata/<id>` - get/update/delete a specific structured data container
+- `/structureddata/<id>/search` - backend search service for structured data container
+- `/structureddata/<id>/payload` - upload a new structured data object
+- `/collections/<id>/dataObjects/<id>/structureddataReferences` - get all references of the given DataObject, create a new structured data reference
+- `/collections/<id>/dataObjects/<id>/structureddataReferences/<id>` - get/update/delete a specific structured data reference
+- `/collections/<id>/dataObjects/<id>/structureddataReferences/<id>/payload` - get the payload of a specific structured data reference
 
 ====== File Container
 
@@ -94,7 +99,7 @@ The following endpoints exist optionally for each kind of data:
 
 Some filter option can be implemented:
 
-- `/collections/<id>/dataObjects/<id>/structuredDataReferences?fileName=MyFile`
+- `/collections/<id>/dataObjects/<id>/structureddataReferences?fileName=MyFile`
 - `/collections/<id>/dataObjects/<id>/fileReferences?fileName=MyFile&recursive=true` - also searches for references of its sub-entities
 - `/collections/<id>/dataObjects/<id>/timeseriesReferences/<id>/attachment?field=value&symbolicName=temperature_A1` - filter timeseries by attributes
 - `...`
