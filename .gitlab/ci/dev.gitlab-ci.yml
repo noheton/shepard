@@ -19,7 +19,9 @@ include:
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: main
-  - local: .gitlab/ci/jobs/build-and-upload-clients-dev.yml
+  - local: .gitlab/ci/jobs/build-clients-dev.yml
+  - local: .gitlab/ci/jobs/clients-diff.yml
+  - local: .gitlab/ci/jobs/upload-clients-dev.yml
   - local: .gitlab/ci/jobs/upload-docker-dev.yml
     inputs:
       image_name: frontend

@@ -81,3 +81,7 @@ cypress/screenshots/
 
 # NPM
 node_modules
+
+# Ignore generated client
+clients/typescript
+clients/python

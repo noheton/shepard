@@ -7,23 +7,11 @@ include:
 build_java_client:
   extends: .build_java_client_dev
 
-upload_java_client:
-  extends: .upload_java_client
-
 build_python_legacy_client:
   extends: .build_python_legacy_client_dev
-
-upload_python_legacy:
-  extends: .upload_python_legacy_client
 
 build_python_client:
   extends: .build_python_client_dev
 
-upload_python_client:
-  extends: .upload_python_client
-
 build_typescript_client:
   extends: .build_typescript_client_dev
-
-upload_typescript_client:
-  extends: .upload_typescript_client_dev
