@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.InfluxUtil;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -162,21 +163,19 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> symbolicNameFilterSet,
     String username
   ) {
-    var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
+    var reference = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
     if (
-      ref.getTimeseriesContainer() == null || ref.getTimeseriesContainer().isDeleted()
-    ) return Collections.emptyList();
+      reference.getTimeseriesContainer() == null ||
+      reference.getTimeseriesContainer().isDeleted() ||
+      !permissionsUtil.isAllowed(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
+    ) return reference.getTimeseries().stream().map(ts -> new TimeseriesPayload(ts, Collections.emptyList())).toList();
 
-    if (
-      !permissionsUtil.isAllowed(ref.getTimeseriesContainer().getId(), AccessType.Read, username)
-    ) throw new InvalidAuthException("You are not authorized to access this timeseries");
-
-    var database = ref.getTimeseriesContainer().getDatabase();
+    var database = reference.getTimeseriesContainer().getDatabase();
     return timeseriesService.getTimeseriesPayloadList(
-      ref.getStart(),
-      ref.getEnd(),
+      reference.getStart(),
+      reference.getEnd(),
       database,
-      ref.getTimeseries(),
+      reference.getTimeseries(),
       function,
       groupBy,
       fillOption,
@@ -196,19 +195,21 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> symbolicNameFilterSet,
     String username
   ) throws IOException {
-    var ref = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-    if (ref.getTimeseriesContainer() == null || ref.getTimeseriesContainer().isDeleted()) return null;
-
+    var reference = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
     if (
-      !permissionsUtil.isAllowed(ref.getTimeseriesContainer().getId(), AccessType.Read, username)
+      reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()
+    ) throw new InvalidRequestException("The timeseries container in question is not accessible");
+    if (
+      !permissionsUtil.isAllowed(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this timeseries");
 
-    var database = ref.getTimeseriesContainer().getDatabase();
+    var database = reference.getTimeseriesContainer().getDatabase();
+
     return timeseriesService.exportTimeseriesPayload(
-      ref.getStart(),
-      ref.getEnd(),
+      reference.getStart(),
+      reference.getEnd(),
       database,
-      ref.getTimeseries(),
+      reference.getTimeseries(),
       function,
       groupBy,
       fillOption,

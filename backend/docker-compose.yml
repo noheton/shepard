@@ -2,7 +2,7 @@ version: "3"
 
 services:
   frontend:
-    image: registry.gitlab.com/dlr-shepard/frontend:dev
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:dev
     environment:
       - VUE_APP_BACKEND=${VUE_APP_BACKEND}
       - VUE_APP_OIDC_AUTHORITY=${VUE_APP_OIDC_AUTHORITY}

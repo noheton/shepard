@@ -179,7 +179,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <b-alert :show="fileNotFound" variant="danger"> File not found </b-alert>
+    <b-alert :show="fileNotFound" variant="danger">File not available</b-alert>
     <b-alert
       :show="parsingWentWrong"
       variant="danger"

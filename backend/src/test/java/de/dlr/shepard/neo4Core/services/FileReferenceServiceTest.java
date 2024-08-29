@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.ShepardFile;
@@ -316,6 +317,30 @@ public class FileReferenceServiceTest {
   }
 
   @Test
+  public void getPayloadByShepardIdTest_ContainerIsNull() {
+    String username = "Murat";
+    FileReference ref = new FileReference(1L);
+    ref.setShepardId(15l);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    );
+  }
+
+  @Test
+  public void getPayloadByShepardIdTest_ContainerIsDeleted() {
+    String username = "Murat";
+    FileContainer container = new FileContainer(20L);
+    container.setMongoId("mongoId");
+    container.setDeleted(true);
+    FileReference ref = new FileReference(1L);
+    ref.setShepardId(15l);
+    ref.setFileContainer(container);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    );
+  }
+
+  @Test
   public void getPayloadByShepardIdTest_NotAllowed() {
     String username = "Xrj§84eEi6fY?";
     FileContainer container = new FileContainer(20L);
@@ -357,16 +382,21 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
-    ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
-    var nis1 = new NamedInputStream("oid1", null, "myInputStream", 123L);
+    ref.setFiles(
+      List.of(new ShepardFile("oid1", null, "file123", "md5"), new ShepardFile("oid2", null, "file456", "md5"))
+    );
+    var nis = List.of(
+      new NamedInputStream("oid1", null, "file123", 123L),
+      new NamedInputStream("oid2", null, "file456", 0L)
+    );
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
-    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
+    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.get(0));
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(null);
     var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
 
-    assertEquals(List.of(nis1), actual);
+    assertEquals(nis, actual);
   }
 
   @Test
@@ -382,9 +412,7 @@ public class FileReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
-
-    assertEquals(Collections.EMPTY_LIST, actual);
+    assertThrows(InvalidRequestException.class, () -> service.getAllPayloadsByShepardId(ref.getShepardId(), username));
   }
 
   @Test
@@ -395,9 +423,7 @@ public class FileReferenceServiceTest {
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
-
-    assertEquals(Collections.EMPTY_LIST, actual);
+    assertThrows(InvalidRequestException.class, () -> service.getAllPayloadsByShepardId(ref.getShepardId(), username));
   }
 
   @Test

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.InfluxPoint;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -447,7 +448,8 @@ public class TimeseriesReferenceServiceTest {
       Set.of("name"),
       username
     );
-    assertEquals(Collections.EMPTY_LIST, actual);
+    var expected = List.of(new TimeseriesPayload(ts, Collections.emptyList()));
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -474,7 +476,8 @@ public class TimeseriesReferenceServiceTest {
       Set.of("name"),
       username
     );
-    assertEquals(Collections.EMPTY_LIST, actual);
+    var expected = List.of(new TimeseriesPayload(ts, Collections.emptyList()));
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -495,18 +498,19 @@ public class TimeseriesReferenceServiceTest {
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
-    assertThrows(InvalidAuthException.class, () ->
-      service.getTimeseriesPayloadByShepardId(
-        15L,
-        SingleValuedUnaryFunction.MEAN,
-        10L,
-        FillOption.LINEAR,
-        Set.of("dev"),
-        Set.of("loc"),
-        Set.of("name"),
-        username
-      )
+
+    var actual = service.getTimeseriesPayloadByShepardId(
+      15L,
+      SingleValuedUnaryFunction.MEAN,
+      10L,
+      FillOption.LINEAR,
+      Set.of("dev"),
+      Set.of("loc"),
+      Set.of("name"),
+      username
     );
+    var expected = List.of(new TimeseriesPayload(ts, Collections.emptyList()));
+    assertEquals(expected, actual);
   }
 
   @Test
@@ -643,17 +647,18 @@ public class TimeseriesReferenceServiceTest {
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
-    var actual = service.exportTimeseriesPayloadByShepardId(
-      ref.getShepardId(),
-      SingleValuedUnaryFunction.MEAN,
-      10L,
-      FillOption.LINEAR,
-      Set.of("dev"),
-      Set.of("loc"),
-      Set.of("name"),
-      username
+    assertThrows(InvalidRequestException.class, () ->
+      service.exportTimeseriesPayloadByShepardId(
+        ref.getShepardId(),
+        SingleValuedUnaryFunction.MEAN,
+        10L,
+        FillOption.LINEAR,
+        Set.of("dev"),
+        Set.of("loc"),
+        Set.of("name"),
+        username
+      )
     );
-    assertNull(actual);
   }
 
   @Test
@@ -670,16 +675,17 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    var actual = service.exportTimeseriesPayloadByShepardId(
-      ref.getShepardId(),
-      SingleValuedUnaryFunction.MEAN,
-      10L,
-      FillOption.LINEAR,
-      Set.of("dev"),
-      Set.of("loc"),
-      Set.of("name"),
-      username
+    assertThrows(InvalidRequestException.class, () ->
+      service.exportTimeseriesPayloadByShepardId(
+        ref.getShepardId(),
+        SingleValuedUnaryFunction.MEAN,
+        10L,
+        FillOption.LINEAR,
+        Set.of("dev"),
+        Set.of("loc"),
+        Set.of("name"),
+        username
+      )
     );
-    assertNull(actual);
   }
 }

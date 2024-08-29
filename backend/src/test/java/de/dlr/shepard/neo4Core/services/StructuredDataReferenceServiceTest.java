@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.mongoDB.StructuredDataService;
@@ -551,6 +552,30 @@ public class StructuredDataReferenceServiceTest {
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     var actual = service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username);
     assertEquals(payloadA, actual);
+  }
+
+  @Test
+  public void getPayloadByShepardIdTest_ContainerIsNull() {
+    String username = "Murat";
+    StructuredDataReference ref = new StructuredDataReference(1L);
+    ref.setShepardId(15l);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    );
+  }
+
+  @Test
+  public void getPayloadByShepardIdTest_ContainerIsDeleted() {
+    String username = "Murat";
+    StructuredDataContainer container = new StructuredDataContainer(20L);
+    container.setMongoId("mongoId");
+    container.setDeleted(true);
+    StructuredDataReference ref = new StructuredDataReference(1L);
+    ref.setShepardId(15l);
+    ref.setStructuredDataContainer(container);
+    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    );
   }
 
   @Test

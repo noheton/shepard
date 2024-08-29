@@ -91,7 +91,7 @@ onMounted(() => {
               !structuredDatas.get(oid)?.payload
             "
           >
-            | <span class="text-danger"> Deleted </span>
+            | <span class="text-danger"> Unavailable </span>
           </span>
 
           <!-- Container deleted -->

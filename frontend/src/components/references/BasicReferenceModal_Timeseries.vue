@@ -54,6 +54,9 @@ const fields = [
   { key: "symbolicName", label: "Symbolic Name", sortable: true },
   { key: "field", label: "Field", sortable: true },
 ];
+const dataAvailable = ref(
+  props.timeseriesReference.timeseriesContainerId != -1,
+);
 
 function fetchTimeseriesPayload(selectedTimeseries: Timeseries) {
   if (
@@ -150,6 +153,7 @@ const totalRows = computed(() => {
 });
 
 function onRowClicked(selectedTimeseries: TimeseriesSelectable) {
+  if (!dataAvailable.value) return;
   // to remember which timeseries is selected we need an additional boolean.
   // this functionality is not supported by bootstrap tables
   Vue.set(selectedTimeseries, "isSelected", !selectedTimeseries.isSelected);
@@ -267,9 +271,9 @@ onMounted(() => {
       <b-table
         class="mt-1"
         select-mode="multi"
-        selectable
-        hover
         small
+        :selectable="dataAvailable"
+        :hover="dataAvailable"
         :fields="fields"
         :items="props.timeseriesReference.timeseries"
         :per-page="perPage"

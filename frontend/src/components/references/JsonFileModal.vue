@@ -53,7 +53,7 @@ function retrievePayload() {
 
 <template>
   <div>
-    <b-alert :show="error" variant="danger">File not found</b-alert>
+    <b-alert :show="error" variant="danger">File not available</b-alert>
     <b-modal
       :id="modalId"
       ref="modal"

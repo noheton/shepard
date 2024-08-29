@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.mongoDB.FileService;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.ShepardFile;
@@ -21,7 +22,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @RequestScoped
@@ -124,37 +124,71 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     return true;
   }
 
-  public NamedInputStream getPayloadByShepardId(long fileReferenceShepardId, String oid, String username) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
-    // TODO: Handle missing container
-    long containerId = reference.getFileContainer().getId();
-    String mongoId = reference.getFileContainer().getMongoId();
-    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
-      "You are not authorized to access this file"
-    );
-    return fileService.getPayload(mongoId, oid);
-  }
-
+  /**
+   * Returns list of ShepardFile. This works even when the container in question is not accessible.
+   *
+   * @param fileReferenceShepardId identifies the file reference
+   * @return list of shepard files
+   */
   public List<ShepardFile> getFilesByShepardId(long fileReferenceShepardId) {
     FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
     return reference.getFiles();
   }
 
-  public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
+  /**
+   * Returns a NamedInputStream of the specified file
+   *
+   * @param fileReferenceShepardId identifies the file reference
+   * @param oid identifies the actual file
+   * @param username the current user
+   * @return NamedInputStream
+   * @throws InvalidRequestException when container is not accessible
+   * @throws InvalidAuthException when the user is not authorized to access the container
+   */
+  public NamedInputStream getPayloadByShepardId(long fileReferenceShepardId, String oid, String username) {
     FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
     if (
       reference.getFileContainer() == null || reference.getFileContainer().isDeleted()
-    ) return Collections.emptyList();
+    ) throw new InvalidRequestException("The file container in question is not accessible");
 
-    if (
-      !permissionsUtil.isAllowed(reference.getFileContainer().getId(), AccessType.Read, username)
-    ) throw new InvalidAuthException();
+    long containerId = reference.getFileContainer().getId();
+    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
+      "You are not authorized to access this file"
+    );
 
+    String mongoId = reference.getFileContainer().getMongoId();
+    return fileService.getPayload(mongoId, oid);
+  }
+
+  /**
+   * Returns a list of NamedInputStreams of all files in that reference
+   *
+   * @param fileReferenceShepardId identifies the file reference
+   * @param username the current user
+   * @return list of NamedInputStreams
+   * @throws InvalidRequestException when container is not accessible
+   * @throws InvalidAuthException when the user is not authorized to access the container
+   */
+  public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
+    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
     var files = reference.getFiles();
+
+    // Return empty named input streams when the container is not accessible
+    if (
+      reference.getFileContainer() == null || reference.getFileContainer().isDeleted()
+    ) throw new InvalidRequestException("The file container in question is not accessible");
+
+    // Throw exception when not isAllowed
+    var containerId = reference.getFileContainer().getId();
+    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
+      "You are not authorized to access this file container"
+    );
+
     var result = new ArrayList<NamedInputStream>(files.size());
     for (var file : files) {
       var nis = fileService.getPayload(reference.getFileContainer().getMongoId(), file.getOid());
       if (nis != null) result.add(nis);
+      else result.add(new NamedInputStream(file.getOid(), null, file.getFilename(), 0L));
     }
     return result;
   }

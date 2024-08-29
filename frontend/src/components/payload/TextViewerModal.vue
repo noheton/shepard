@@ -63,7 +63,7 @@ function retrievePayload() {
       ok-only
       @show="retrievePayload()"
     >
-      <b-alert :show="error" variant="danger">File not found</b-alert>
+      <b-alert :show="error" variant="danger">File not available</b-alert>
       <TextEditor v-model="text" read-only></TextEditor>
     </b-modal>
   </div>

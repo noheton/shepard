@@ -1,6 +1,6 @@
 package de.dlr.shepard.neo4Core.export;
 
-import de.dlr.shepard.exceptions.InvalidAuthException;
+import de.dlr.shepard.exceptions.ShepardException;
 import de.dlr.shepard.mongoDB.NamedInputStream;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
 import de.dlr.shepard.neo4Core.entities.TimeseriesReference;
@@ -95,8 +95,8 @@ public class ExportService {
     InputStream timeseriesPayload = null;
     try {
       timeseriesPayload = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(referenceId, username);
-    } catch (InvalidAuthException e) {
-      Log.warn("Cannot access timeseries payload during export due to invalid permissions");
+    } catch (ShepardException e) {
+      Log.warn("Cannot access timeseries payload during export");
     }
     if (timeseriesPayload != null) {
       writeTimeseriesPayload(builder, timeseriesPayload, reference);
@@ -111,12 +111,12 @@ public class ExportService {
     List<NamedInputStream> payloads = Collections.emptyList();
     try {
       payloads = fileReferenceService.getAllPayloadsByShepardId(referenceId, username);
-    } catch (InvalidAuthException e) {
-      Log.warn("Cannot access file payload during export due to invalid permissions");
+    } catch (ShepardException e) {
+      Log.warn("Cannot access file payload during export");
     }
 
     for (var nis : payloads) {
-      writeFilePayload(builder, nis);
+      if (nis.getInputStream() != null) writeFilePayload(builder, nis);
     }
   }
 
@@ -128,18 +128,13 @@ public class ExportService {
 
     List<StructuredDataPayload> payloads = Collections.emptyList();
     try {
-      // filter empty payloads (due to invalid permissions)
-      payloads = structuredDataReferenceService
-        .getAllPayloadsByShepardId(referenceId, username)
-        .stream()
-        .filter(p -> p.getPayload() != null)
-        .toList();
-    } catch (InvalidAuthException e) {
-      Log.warn("Cannot access structured data payload during export due to invalid permissions");
+      payloads = structuredDataReferenceService.getAllPayloadsByShepardId(referenceId, username);
+    } catch (ShepardException e) {
+      Log.warn("Cannot access structured data payload during export");
     }
 
     for (var sdp : payloads) {
-      writeStructuredDataPayload(builder, sdp);
+      if (sdp.getPayload() != null) writeStructuredDataPayload(builder, sdp);
     }
   }
 

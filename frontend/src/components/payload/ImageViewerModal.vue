@@ -64,7 +64,7 @@ function showFile(response: Blob | null) {
       ok-only
       @show="retrievePayload()"
     >
-      <b-alert :show="error" variant="danger">File not found</b-alert>
+      <b-alert :show="error" variant="danger">File not available</b-alert>
       <div>
         <b-img id="image" fluid />
       </div>
