@@ -10,7 +10,7 @@ build_maven_report:
     - cd backend
   script:
     - ls -hal target
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} site -P test
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} site -P test
     - ls -hal target/site
   artifacts:
     when: always

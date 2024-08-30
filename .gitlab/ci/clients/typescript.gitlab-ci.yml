@@ -25,21 +25,18 @@
     - npm run build
     - npm publish --tag ${NPM_TAG}
 
-.build_typescript_client_dev:
-  <<: *build_typescript
-  before_script:
-    - export VERSION_NUMBER=${VERSION_NUMBER}-dev.${CI_PIPELINE_IID}
-    - echo ${VERSION_NUMBER}
-
-.upload_typescript_client_dev:
-  <<: *upload_typescript
-  variables:
-    NPM_TAG: dev
-
 .build_typescript_client:
   <<: *build_typescript
   before_script:
+    # overwrite version number format if it is a dev job, to match typescript naming conventions
+    - if [ $IS_DEV_JOB -eq 1 ]; then
+      export VERSION_NUMBER=${LATEST_TAG}-dev.${CI_PIPELINE_IID};
+      export NPM_TAG=dev;
+      else
+      NPM_TAG=latest;
+      fi
     - echo ${VERSION_NUMBER}
+    - echo ${NPM_TAG}
 
 .upload_typescript_client:
   <<: *upload_typescript

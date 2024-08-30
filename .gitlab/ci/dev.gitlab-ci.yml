@@ -6,7 +6,8 @@ stages:
 
 include:
   - local: .gitlab/ci/jobs/secret-detection.yml
-  - local: .gitlab/ci/jobs/get-version.yml
+  # use VERSION_NUMBER as a dev version number
+  - local: .gitlab/ci/jobs/get-version-dev.yml
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
@@ -19,12 +20,12 @@ include:
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: main
-  - local: .gitlab/ci/jobs/build-clients-dev.yml
+  - local: .gitlab/ci/jobs/build-clients.yml
+  - local: .gitlab/ci/jobs/upload-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml
-  - local: .gitlab/ci/jobs/upload-clients-dev.yml
-  - local: .gitlab/ci/jobs/upload-docker-dev.yml
+  - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: frontend
-  - local: .gitlab/ci/jobs/upload-docker-dev.yml
+  - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: backend

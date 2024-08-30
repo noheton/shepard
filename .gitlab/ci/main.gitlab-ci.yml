@@ -6,6 +6,7 @@ stages:
 
 include:
   - local: .gitlab/ci/jobs/secret-detection.yml
+  # use regular VERSION_NUMBER
   - local: .gitlab/ci/jobs/get-version.yml
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml

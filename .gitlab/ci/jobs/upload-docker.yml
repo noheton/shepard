@@ -17,6 +17,11 @@ spec:
   script:
     - cd $[[ inputs.image_name ]]
     - echo "${CI_DEPLOY_PASSWORD}" | docker login ${CI_REGISTRY} -u ${CI_DEPLOY_USER} --password-stdin
-    - docker build -t $DOCKER_IMAGE_NAME:${VERSION_NUMBER} -t $DOCKER_IMAGE_NAME:latest .
-    - docker push $DOCKER_IMAGE_NAME:${VERSION_NUMBER}
-    - docker push $DOCKER_IMAGE_NAME:latest
+    - if [ $IS_DEV_JOB -eq 1 ]; then
+      docker build -t $DOCKER_IMAGE_NAME:dev .;
+      docker push $DOCKER_IMAGE_NAME:dev;
+      else
+      docker build -t $DOCKER_IMAGE_NAME:${VERSION_NUMBER} -t $DOCKER_IMAGE_NAME:latest .;
+      docker push $DOCKER_IMAGE_NAME:${VERSION_NUMBER};
+      docker push $DOCKER_IMAGE_NAME:latest;
+      fi

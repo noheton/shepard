@@ -19,13 +19,11 @@
     - cd clients/java
     - mvn ${MAVEN_CLI_OPTS} deploy -s ci_settings.xml
 
-.build_java_client_dev:
-  <<: *build_java
-  before_script:
-    - export VERSION_NUMBER=${VERSION_NUMBER}-dev-${CI_PIPELINE_IID}-SNAPSHOT
-    - echo ${VERSION_NUMBER}
-
 .build_java_client:
   <<: *build_java
   before_script:
+    # add a '-SNAPSHOT' to dev builds
+    - if [ $IS_DEV_JOB -eq 1 ]; then
+      export VERSION_NUMBER=${VERSION_NUMBER}-SNAPSHOT;
+      fi
     - echo ${VERSION_NUMBER}

@@ -34,7 +34,7 @@ integration_test:
   before_script:
     - cd backend
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER_DEV} failsafe:integration-test failsafe:verify -P integration
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} failsafe:integration-test failsafe:verify -P integration
   artifacts:
     when: always
     expire_in: 2 days

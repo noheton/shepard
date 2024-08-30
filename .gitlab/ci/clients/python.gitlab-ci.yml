@@ -22,13 +22,11 @@
     - python3 setup.py sdist bdist_wheel
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi --disable-progress-bar dist/*
 
-.build_python_client_dev:
-  <<: *build_python
-  before_script:
-    - export VERSION_NUMBER=${VERSION_NUMBER}.dev${CI_PIPELINE_IID}
-    - echo ${VERSION_NUMBER}
-
 .build_python_client:
   <<: *build_python
   before_script:
+    # overwrite version number format if it is a dev job, to match python naming conventions
+    - if [ $IS_DEV_JOB -eq 1 ]; then
+      export VERSION_NUMBER=${LATEST_TAG}.dev${CI_PIPELINE_IID};
+      fi
     - echo ${VERSION_NUMBER}

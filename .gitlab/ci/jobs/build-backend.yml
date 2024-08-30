@@ -7,7 +7,7 @@ build_backend:
   script:
     - cd backend
     - mvn ${MAVEN_CLI_OPTS} -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
-    - mvn ${MAVEN_CLI_OPTS} package -P prod -Drevision=${VERSION_NUMBER_DEV}
+    - mvn ${MAVEN_CLI_OPTS} package -P prod -Drevision=${VERSION_NUMBER}
 
   artifacts:
     when: always
