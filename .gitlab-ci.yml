@@ -22,7 +22,7 @@ workflow:
     # Run branch pipelines when no merge request exists
     - if: $CI_COMMIT_BRANCH
     # Run Release tag pipeline on main
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG
+    - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
 
 include:
   # Minimal default pipeline for all non-protected branches
@@ -47,4 +47,4 @@ include:
   # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TAG
+      - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
