@@ -13,4 +13,6 @@ include::003-all-in-one-image.adoc[]
 
 include::004-prefer-constructor-injection.adoc[]
 
+include::005-frontend-tech-stack.adoc[]
+
 include::006-remove-cpp-client.adoc[]
