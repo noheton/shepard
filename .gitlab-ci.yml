@@ -9,20 +9,15 @@ variables:
 
 workflow:
   rules:
-    # Skip Merge Request Pipelines on protected branches
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_PROTECTED == "true"
-      when: never
-    # Run Merge Request Pipelines for all remaining merge requests
+    # Run Merge Request Pipelines for all merge requests
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    # Run branch pipelines for develop branch
-    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_REF_NAME == "develop"
     # Skip all remaining branch pipelines for merge requests
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     # Run branch pipelines when no merge request exists
     - if: $CI_COMMIT_BRANCH
-    # Run Release tag pipeline on main
-    - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
+    # Run release tag pipeline on special tags
+    - if: $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-release$/
 
 include:
   # Minimal default pipeline for all non-protected branches
@@ -47,4 +42,4 @@ include:
   # Special pipeline for main branch
   - local: .gitlab/ci/main.gitlab-ci.yml
     rules:
-      - if: $CI_COMMIT_REF_NAME == "main" && $CI_COMMIT_TAG
+      - if: $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-release$/
