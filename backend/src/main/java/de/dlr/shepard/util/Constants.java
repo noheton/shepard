@@ -102,6 +102,8 @@ public class Constants {
   public static final String VERSION = "version";
   public static final String VERSIONS = "versions";
   public static final String INITIAL_VERSION = "initial version";
+  public static final String HEAD = "HEAD";
+  public static final String HEAD_VERSION = "HEAD version";
   public static final String VERSION_UID = "versionUid";
 
   public static final String OWNED_BY = "owned_by";

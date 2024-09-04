@@ -135,8 +135,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = timeseriesReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid().toString());
+    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
+    versionDAO.createLink(created.getId(), version.getUid());
     return created;
   }
 

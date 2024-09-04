@@ -14,7 +14,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger;
 
 @Data
 @AllArgsConstructor
@@ -46,7 +45,6 @@ class OpenIdConfiguration {
 @RequestScoped
 public class UserinfoService {
 
-  private static final Logger LOG = Logger.getLogger(UserinfoService.class);
   private static final String WELL_KNOWN_PATH = ".well-known/openid-configuration";
 
   private final String oidcConfidurationUrl;

@@ -2,9 +2,13 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
+import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -23,8 +27,13 @@ public class CollectionIT extends BaseTestCaseIT {
 
   private static String collectionsURL;
   private static CollectionIO collection;
+  private static VersionIO firstVersion;
+  private static VersionIO secondVersion;
   private static RequestSpecification requestSpecification;
   private static String name;
+  private static long VersionizedCollectionShepardId;
+  private static String VersionizedCollectionName;
+  private static String newVersionizedCollectionName;
 
   @BeforeAll
   public static void setUp() {
@@ -198,5 +207,164 @@ public class CollectionIT extends BaseTestCaseIT {
   public void deleteCollectionTest_Successful() {
     given().spec(requestSpecification).when().delete(collectionsURL + "/" + collection.getId()).then().statusCode(204);
     given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
+  }
+
+  //@Test
+  //@Order(12)
+  public void getinitialHEADVersion() {
+    var payload = new CollectionIO();
+    VersionizedCollectionName = "VersionizedCollection";
+    payload.setName(VersionizedCollectionName);
+    payload.setDescription(VersionizedCollectionName);
+    CollectionIO actual = given()
+      .spec(requestSpecification)
+      .body(payload)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+    VersionizedCollectionShepardId = actual.getId();
+    VersionIO[] versions = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(VersionIO[].class);
+    assertEquals(versions.length, 1);
+    VersionIO HEADVersion = versions[0];
+    assertEquals(HEADVersion.getName(), "HEAD");
+    assertEquals(HEADVersion.getDescription(), "HEAD version");
+  }
+
+  //@Test
+  //@Order(13)
+  public void createNewVersion() {
+    VersionIO newVersion = new VersionIO();
+    newVersion.setName("first version");
+    newVersion.setDescription("first version of versionized collection");
+    firstVersion = given()
+      .spec(requestSpecification)
+      .body(newVersion)
+      .when()
+      .post(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(VersionIO.class);
+    assertEquals(firstVersion.getName(), newVersion.getName());
+    assertEquals(firstVersion.getDescription(), newVersion.getDescription());
+  }
+
+  //@Test
+  //@Order(14)
+  public void createSecondVersion() {
+    VersionIO newVersion = new VersionIO();
+    newVersion.setName("second version");
+    newVersion.setDescription("second version of versionized collection");
+    secondVersion = given()
+      .spec(requestSpecification)
+      .body(newVersion)
+      .when()
+      .post(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(VersionIO.class);
+    assertEquals(secondVersion.getName(), newVersion.getName());
+    assertEquals(secondVersion.getDescription(), newVersion.getDescription());
+  }
+
+  //@Test
+  //@Order(15)
+  public void getAllVersions() {
+    VersionIO[] versions = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(VersionIO[].class);
+    assertEquals(versions.length, 3);
+    VersionIO HEADVersionCandidate = null;
+    VersionIO firstVersionCandidate = null;
+    VersionIO secondVersionCandidate = null;
+    for (int i = 0; i < 3; i++) {
+      if (versions[i].getName().equals("HEAD")) HEADVersionCandidate = versions[i];
+      if (versions[i].getUid().equals(firstVersion.getUid())) firstVersionCandidate = versions[i];
+      if (versions[i].getUid().equals(secondVersion.getUid())) secondVersionCandidate = versions[i];
+    }
+    assertNotNull(HEADVersionCandidate);
+    assertNotNull(firstVersionCandidate);
+    assertNotNull(secondVersionCandidate);
+    assertEquals(HEADVersionCandidate.getPredecessorUUID(), secondVersionCandidate.getUid());
+    assertEquals(secondVersionCandidate.getPredecessorUUID(), firstVersionCandidate.getUid());
+    assertNull(firstVersionCandidate.getPredecessorUUID());
+  }
+
+  //@Test
+  //@Order(16)
+  public void modifyHEADCollection() {
+    CollectionIO newVersionizedCollection = new CollectionIO();
+    newVersionizedCollectionName = "updated versionized collection";
+    newVersionizedCollection.setName(newVersionizedCollectionName);
+    CollectionIO actual = given()
+      .spec(requestSpecification)
+      .body(newVersionizedCollection)
+      .when()
+      .put(collectionsURL + "/" + VersionizedCollectionShepardId)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+    assertEquals(actual.getName(), newVersionizedCollectionName);
+    assertEquals(actual.getId(), VersionizedCollectionShepardId);
+  }
+
+  //@Test
+  //@Order(17)
+  public void retrieveModifiedHEADCollection() {
+    CollectionIO actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/" + VersionizedCollectionShepardId)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+    assertEquals(actual.getName(), newVersionizedCollectionName);
+  }
+
+  //@Test
+  //@Order(18)
+  public void retrieveSecondVersion() {
+    VersionIO actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions/" + secondVersion.getUid().toString())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(VersionIO.class);
+    assertEquals(actual, secondVersion);
+  }
+
+  //@Test
+  //@Order(19)
+  public void retrieveSecondVersionOfCollection() {
+    CollectionIO actual = given()
+      .spec(requestSpecification)
+      .queryParam("versionUid", secondVersion.getUid().toString())
+      .when()
+      .get(collectionsURL + "/" + VersionizedCollectionShepardId)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+    assertEquals(actual.getName(), VersionizedCollectionName);
   }
 }

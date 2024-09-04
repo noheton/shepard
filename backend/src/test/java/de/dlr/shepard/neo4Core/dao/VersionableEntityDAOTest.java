@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -52,7 +53,7 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     TestObject ent = new TestObject();
     ent.setId(1L);
     ent.setShepardId(11L);
-    String versionUID = "123";
+    UUID versionUID = new UUID(1L, 2L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
       "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = " +

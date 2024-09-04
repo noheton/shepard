@@ -10,6 +10,7 @@ import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
 import de.dlr.shepard.neo4Core.services.CollectionService;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
+import de.dlr.shepard.neo4Core.services.VersionService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -32,6 +33,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -52,6 +54,7 @@ public class CollectionRest {
   private ExportService exportService;
   private PermissionsService permissionsService;
   private PermissionsUtil permissionsUtil;
+  private VersionService versionService;
 
   @Context
   private SecurityContext securityContext;
@@ -63,12 +66,14 @@ public class CollectionRest {
     CollectionService collectionService,
     ExportService exportService,
     PermissionsService permissionsService,
-    PermissionsUtil permissionsUtil
+    PermissionsUtil permissionsUtil,
+    VersionService versionService
   ) {
     this.collectionService = collectionService;
     this.exportService = exportService;
     this.permissionsService = permissionsService;
     this.permissionsUtil = permissionsUtil;
+    this.versionService = versionService;
   }
 
   @GET
@@ -121,12 +126,12 @@ public class CollectionRest {
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     throw new NotImplementedException();
-    //		List<Version> versions = versionService.getAllVersions(collectionId);
-    //		var result = new ArrayList<VersionIO>(versions.size());
-    //		for (var version : versions) {
-    //			result.add(new VersionIO(version));
-    //		}
-    //		return Response.ok(result).build();
+    /*List<Version> versions = versionService.getAllVersions(collectionId);
+    var result = new ArrayList<VersionIO>(versions.size());
+    for (var version : versions) {
+      result.add(new VersionIO(version));
+    }
+    return Response.ok(result).build();*/
   }
 
   @GET
@@ -143,11 +148,11 @@ public class CollectionRest {
   @Parameter(name = Constants.VERSION_UID)
   public Response getVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.VERSION_UID) String versionUID
+    @PathParam(Constants.VERSION_UID) UUID versionUID
   ) {
     throw new NotImplementedException();
-    //		Version version = versionService.getVersion(collectionId, versionUID);
-    //		return Response.ok(new VersionIO(version)).build();
+    /*Version version = versionService.getVersion(versionUID);
+    return Response.ok(new VersionIO(version)).build();*/
   }
 
   @POST
@@ -168,9 +173,12 @@ public class CollectionRest {
     ) @Valid VersionIO version
   ) {
     throw new NotImplementedException();
-    //		Version newVersion = versionService.createVersion(collectionId, version,
-    //				securityContext.getUserPrincipal().getName());
-    //		return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();
+    /*Version newVersion = versionService.createVersion(
+      collectionId,
+      version,
+      securityContext.getUserPrincipal().getName()
+    );
+    return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();*/
   }
 
   @GET
@@ -187,7 +195,7 @@ public class CollectionRest {
   @Parameter(name = Constants.VERSION_UID)
   public Response getCollection(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @QueryParam(Constants.VERSION_UID) String versionUID
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     Collection collection = collectionService.getCollectionByShepardId(collectionId, versionUID);
     return Response.ok(new CollectionIO(collection)).build();

@@ -234,7 +234,7 @@ public class CollectionServiceTest {
   @Test
   public void getCollectionByShepardId() {
     Collection ret = new Collection(1L);
-    String versionUID = "3";
+    UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
     var result = service.getCollectionByShepardId(shepardId, versionUID);
@@ -243,7 +243,7 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionByShepardIdNotFound() {
-    String versionUID = "3";
+    UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(null);
     var result = service.getCollectionByShepardId(shepardId, versionUID);
@@ -254,7 +254,7 @@ public class CollectionServiceTest {
   public void getCollectionByShepardIdDeleted() {
     Collection ret = new Collection(1L);
     ret.setDeleted(true);
-    String versionUID = "3";
+    UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
     var result = service.getCollectionByShepardId(shepardId, versionUID);

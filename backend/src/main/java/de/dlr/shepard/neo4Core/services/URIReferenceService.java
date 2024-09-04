@@ -74,8 +74,8 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     var created = uRIReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = uRIReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid().toString());
+    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
+    versionDAO.createLink(created.getId(), version.getUid());
     return created;
   }
 

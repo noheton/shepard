@@ -10,6 +10,7 @@ import de.dlr.shepard.util.DateHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class VersionService {
@@ -42,8 +43,8 @@ public class VersionService {
     return versions;
   }
 
-  public Version getVersion(long collectionId, String versionUID) {
-    return versionDAO.find(collectionId, versionUID);
+  public Version getVersion(UUID versionUID) {
+    return versionDAO.find(versionUID);
   }
 
   public Version createVersion(long collectionId, VersionIO version, String username) {
@@ -59,9 +60,13 @@ public class VersionService {
     newVersion.setCreatedBy(user);
     newVersion.setDescription(version.getDescription());
     newVersion.setName(version.getName());
-    newVersion.setPredecessor(HEADVersion);
+    if (HEADVersion.getPredecessor() != null) {
+      newVersion.setPredecessor(HEADVersion.getPredecessor());
+    }
 
     Version createdVersion = versionDAO.createOrUpdate(newVersion);
+    HEADVersion.setPredecessor(createdVersion);
+    versionDAO.createOrUpdate(HEADVersion);
 
     collectionCopy.setVersion(newVersion);
     collectionDAO.createOrUpdate(collectionCopy);

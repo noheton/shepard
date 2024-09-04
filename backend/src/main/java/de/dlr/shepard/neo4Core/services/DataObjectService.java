@@ -79,7 +79,7 @@ public class DataObjectService {
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
     Version version = collection.getVersion();
-    versionDAO.createLink(created.getId(), version.getUid().toString());
+    versionDAO.createLink(created.getId(), version.getUid());
     return created;
   }
 

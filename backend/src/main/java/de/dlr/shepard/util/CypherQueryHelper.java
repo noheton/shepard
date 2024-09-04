@@ -1,6 +1,7 @@
 package de.dlr.shepard.util;
 
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
+import java.util.UUID;
 
 public class CypherQueryHelper {
 
@@ -98,7 +99,7 @@ public class CypherQueryHelper {
     return "(NOT exists ((" + variable + ")<-[:has_predecessor]-(:Version)))";
   }
 
-  public static String getVersionPart(String variable, String versionUID) {
+  public static String getVersionPart(String variable, UUID versionUID) {
     return variable + ".uid = '" + versionUID + "'";
   }
 }
