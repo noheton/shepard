@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useSearchUsers } from "@/components/search/InlineSearchUsers";
 import UserSelectionPopover from "@/components/user/UserSelectionPopover.vue";
+import type { ResponseError, User } from "@/generated/openapi";
 import UserService from "@/services/userService";
 import { logError } from "@/utils/error-handling";
-import type { ResponseError, User } from "@dlr-shepard/shepard-client";
 import { refDebounced } from "@vueuse/core";
 import { ref } from "vue";
 

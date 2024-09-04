@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { SemanticRepositoryType } from "@/generated/openapi";
 import { semanticRepositoryOptions as sRepoOptions } from "@/utils/helpers";
-import type { SemanticRepositoryType } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const props = defineProps({

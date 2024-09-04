@@ -5,7 +5,7 @@ import {
   type GetAllDataObjectsRequest,
   type GetDataObjectRequest,
   type UpdateDataObjectRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class DataObjectService {

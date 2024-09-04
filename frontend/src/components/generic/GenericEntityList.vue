@@ -8,7 +8,7 @@ import type {
   SemanticRepository,
   StructuredDataContainer,
   TimeseriesContainer,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import type { PropType } from "vue";
 
 const props = defineProps({

@@ -10,6 +10,13 @@ import GenericDescription from "@/components/generic/GenericDescription.vue";
 import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import type {
+  Collection,
+  Permissions,
+  ResponseError,
+  Roles,
+  SemanticAnnotation,
+} from "@/generated/openapi";
 import CollectionService from "@/services/collectionService";
 import {
   default as semanticAnnotationService,
@@ -17,13 +24,6 @@ import {
 } from "@/services/semanticAnnotationService";
 import { downloadFile } from "@/utils/download";
 import { handleError, logError } from "@/utils/error-handling";
-import type {
-  Collection,
-  Permissions,
-  ResponseError,
-  Roles,
-  SemanticAnnotation,
-} from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@dlr-shepard/shepard-client";
+import type { User } from "@/generated/openapi";
 import { onMounted, onUpdated, ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 

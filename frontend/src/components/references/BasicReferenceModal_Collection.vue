@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  Collection,
-  CollectionReference,
-} from "@dlr-shepard/shepard-client";
+import type { Collection, CollectionReference } from "@/generated/openapi";
 import type { PropType } from "vue";
 
 defineProps({

@@ -6,15 +6,15 @@ import ImageViewerModal from "@/components/payload/ImageViewerModal.vue";
 import TextViewerModal from "@/components/payload/TextViewerModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import JsonFileModal from "@/components/references/JsonFileModal.vue";
-import FileReferenceService from "@/services/fileReferenceService";
-import { downloadFile } from "@/utils/download";
-import { logError } from "@/utils/error-handling";
-import { convertDate } from "@/utils/helpers";
 import type {
   FileReference,
   ResponseError,
   ShepardFile,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import FileReferenceService from "@/services/fileReferenceService";
+import { downloadFile } from "@/utils/download";
+import { logError } from "@/utils/error-handling";
+import { convertDate } from "@/utils/helpers";
 import { onMounted, reactive, ref, type PropType } from "vue";
 
 const props = defineProps({

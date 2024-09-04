@@ -1,0 +1,45 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Generated Backend Clients
+
+In order to ease the usage of the backend API, we maintain and publish generated backend clients.
+They are generated using the link:https://github.com/OpenAPITools/openapi-generator[OpenAPI Generator].
+
+We currently build and publish clients for Java, Python and TypeScript as part of our release process.
+In addition to the OpenAPI diff job there are jobs to check if there are changes in the generated clients for the TypeScript and Python client.
+
+In the past there was a python-legacy client and a Cpp client published.
+They have been discontinued.
+
+==== Backend Client for shepard Frontend
+
+In order to support concurrent development of frontend and backend we decided to put the generated client for the frontend under version control (<<adr007>>).
+The client can be found under `frontend/src/generated/openapi`.
+It's exported members can be imported in frontend files like this:
+
+```javascript
+import { SemanticRepositoryApi } from "@/generated/openapi";
+import { getConfiguration } from "./serviceHelper";
+
+export default class SemanticRepositoryService {
+  static createSemanticRepository(params: CreateSemanticRepositoryRequest) {
+    const api = new SemanticRepositoryApi(getConfiguration());
+    return api.createSemanticRepository(params);
+  }
+}
+```
+
+===== (Re)generating the Client
+
+In case the API changed or a new version of the OpenAPI generator shall be used, the client has to be regenerated.
+This can be done by running the following command in the frontend directory.
+Be aware that a local Java installation is required for the command to run successfully.
+
+```bash
+npm run client-codegen
+```
+
+The script will also persist the OpenAPI specification used for generation.
+Afterwards, the frontend code may have to be adjusted.
+
+In order to check if the client is up to date, the generator version as well as the current OpenAPI specification is compared with the ones used for generation in a pipeline job.

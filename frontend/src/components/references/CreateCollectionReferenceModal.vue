@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import CollectionService from "@/services/collectionService";
-import { logError } from "@/utils/error-handling";
 import type {
   Collection,
   CollectionReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import CollectionService from "@/services/collectionService";
+import { logError } from "@/utils/error-handling";
 import { reactive } from "vue";
 
 defineProps({

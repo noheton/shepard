@@ -1,0 +1,38 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+[[adr007]]
+=== ADR-007 Client Generation for Frontend
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|30.08.2024
+|Status|Done
+
+|Context|
+Until now, the frontend used the published typescript client to interact with the backend.
+With the change to the monorepo, we could make atomic changes to the backend and frontend in one commit.
+This behaviour is not possible though, because the frontend needs the updated client package.
+
+In order to mitigate this, we want to make the typescript client used by the frontend more dynamic.
+
+For the generation of the client either Docker, Podman or Java is required.
+|Possible Alternatives|
+Provide a script to (re)generate the client based on a local or remote backend instance and
+
+1. do not put it under version control.
+  * everybody would need to be able to generate the clients (that means either docker, podman or Java needs to be installed)
+  * we have no way to make sure everybody is synchronized with the the backend
+  * the frontend built in the pipeline will always use the correct client but may throw errors if it was not adapted properly
+2. put it under version control.
+  * the client would need to be regenerated in case the backend changes
+  * pure frontend developers do not need to have Java or Docker installed
+  * we can add a pipeline job checking if the generated client and the backend are in sync
+
+|Decision|
+We decide to to with option 2 and put the generated client under version control.
+
+|Consequences|
+* The client needs to be added to the repo and the imports in the frontend need to be adapted
+* a pipeline job to check if the generated client and the backend are in sync needs to be added
+|===

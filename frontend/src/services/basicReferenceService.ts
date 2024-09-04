@@ -2,7 +2,7 @@ import {
   ReferenceApi,
   type DeleteBasicReferenceRequest,
   type GetBasicReferenceRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class BasicReferenceService {

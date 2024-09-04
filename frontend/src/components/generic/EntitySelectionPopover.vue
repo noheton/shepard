@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BasicEntity } from "@dlr-shepard/shepard-client";
+import type { BasicEntity } from "@/generated/openapi";
 import type { BPopover } from "bootstrap-vue";
 import { ref, type PropType } from "vue";
 

@@ -3,14 +3,14 @@
 import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
 import { useSearchContainers } from "@/components/search/InlineSearchContainers";
-import FileService from "@/services/fileService";
-import { handleError, logError } from "@/utils/error-handling";
-import { isNumeric } from "@/utils/helpers";
 import type {
   FileContainer,
   FileReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import FileService from "@/services/fileService";
+import { handleError, logError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import { refDebounced } from "@vueuse/core";
 import { computed, reactive, ref } from "vue";
 

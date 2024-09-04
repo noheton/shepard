@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import TextEditor from "@/components/generic/TextEditor.vue";
-import CollectionService from "@/services/collectionService";
-import { handleError } from "@/utils/error-handling";
-import { permissionOptions as pOptions } from "@/utils/helpers";
 import {
   PermissionType,
   ResponseError,
   type Collection,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import CollectionService from "@/services/collectionService";
+import { handleError } from "@/utils/error-handling";
+import { permissionOptions as pOptions } from "@/utils/helpers";
 import { ref, type PropType } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 

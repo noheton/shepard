@@ -3,15 +3,15 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import UserModal from "@/components/user/UserModal.vue";
-import UserGroupService from "@/services/userGroupService";
-import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
   Roles,
   User,
   UserGroup,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import UserGroupService from "@/services/userGroupService";
+import { handleError, logError } from "@/utils/error-handling";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, onUpdated, ref, type Ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";

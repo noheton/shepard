@@ -5,10 +5,10 @@ import FileReferencesList from "@/components/references/FileReferencesList.vue";
 import StructuredDataReferencesList from "@/components/references/StructuredDataReferencesList.vue";
 import TimeseriesReferencesList from "@/components/references/TimeseriesReferencesList.vue";
 import UriReferencesList from "@/components/references/UriReferencesList.vue";
+import type { DataObject, ResponseError } from "@/generated/openapi";
 import ReferenceService from "@/services/referenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam, setQueryParam } from "@/utils/helpers";
-import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { onMounted, ref, watch, type PropType } from "vue";
 
 const props = defineProps({

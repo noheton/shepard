@@ -3,6 +3,12 @@ import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import Loading from "@/components/generic/Loading.vue";
+import type {
+  PermissionType,
+  ResponseError,
+  UserGroup,
+  UserGroupAttributes,
+} from "@/generated/openapi";
 import UserGroupService from "@/services/userGroupService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -10,12 +16,6 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  PermissionType,
-  ResponseError,
-  UserGroup,
-  UserGroupAttributes,
-} from "@dlr-shepard/shepard-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

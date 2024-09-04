@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import GenericName from "@/components/generic/GenericName.vue";
 import JsonStructuredDataModal from "@/components/references/JsonStructuredDataModal.vue";
-import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
-import { logError } from "@/utils/error-handling";
-import { convertDate } from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredDataPayload,
   StructuredDataReference,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
+import { logError } from "@/utils/error-handling";
+import { convertDate } from "@/utils/helpers";
 import { onMounted, ref, type PropType } from "vue";
 
 const props = defineProps({

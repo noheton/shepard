@@ -24,3 +24,5 @@ include::configuration.adoc[]
 include::versioning.adoc[]
 
 include::openapi-specification.adoc[]
+
+include::backend-clients.adoc[]

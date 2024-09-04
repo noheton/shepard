@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
-import TimeseriesService from "@/services/timeseriesService";
-import { handleError, logError } from "@/utils/error-handling";
 import type {
   ResponseError,
   Timeseries,
   TimeseriesContainer,
   TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import TimeseriesService from "@/services/timeseriesService";
+import { handleError, logError } from "@/utils/error-handling";
 import { refDebounced } from "@vueuse/core";
 import { reactive, ref } from "vue";
 import { useSearchContainers } from "../search/InlineSearchContainers";

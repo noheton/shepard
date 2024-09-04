@@ -11,7 +11,7 @@ import {
   type GetTimeseriesRequest,
   type GetTimeseriesRolesRequest,
   type ImportTimeseriesRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class TimeseriesService {

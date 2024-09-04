@@ -2,6 +2,11 @@
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import Loading from "@/components/generic/Loading.vue";
+import type {
+  DataObject,
+  DataObjectAttributes,
+  ResponseError,
+} from "@/generated/openapi";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -9,11 +14,6 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  DataObject,
-  DataObjectAttributes,
-  ResponseError,
-} from "@dlr-shepard/shepard-client";
 import { useStorage } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

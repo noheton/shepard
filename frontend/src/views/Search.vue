@@ -7,12 +7,12 @@ import { useDataObjectSearch } from "@/components/search/DataObjectSearch";
 import { useReferenceSearch } from "@/components/search/ReferenceSearch";
 import ReteModal from "@/components/search/rete/ReteModal.vue";
 import { useStructuredDataSearch } from "@/components/search/StructuredDataSearch";
+import { TraversalRules } from "@/generated/openapi";
 import {
   getQueryParam,
   removeQueryParam,
   setQueryParam,
 } from "@/utils/helpers";
-import { TraversalRules } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

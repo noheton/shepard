@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import TextEditor from "@/components/generic/TextEditor.vue";
+import type { ResponseError } from "@/generated/openapi";
 import FileService from "@/services/fileService";
 import { logError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
 import { ref } from "vue";
 
 const props = defineProps({

@@ -16,3 +16,5 @@ include::004-prefer-constructor-injection.adoc[]
 include::005-frontend-tech-stack.adoc[]
 
 include::006-remove-cpp-client.adoc[]
+
+include::007-client-generation-for-frontend.adoc[]

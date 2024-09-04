@@ -5,13 +5,13 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_StructuredData from "@/components/references/BasicReferenceModal_StructuredData.vue";
 import CreateStructuredDataReferenceModal from "@/components/references/CreateStructuredDataReferenceModal.vue";
-import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
-import { handleError } from "@/utils/error-handling";
-import { getQueryParam } from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredDataReference,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import StructuredDataReferenceService from "@/services/structuredDataReferenceService";
+import { handleError } from "@/utils/error-handling";
+import { getQueryParam } from "@/utils/helpers";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

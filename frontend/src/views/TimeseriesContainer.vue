@@ -3,15 +3,15 @@ import UploadTimeseriesModal from "@/components/containers/UploadTimeseriesModal
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
-import TimeseriesService from "@/services/timeseriesService";
-import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
   Roles,
   Timeseries,
   TimeseriesContainer,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import TimeseriesService from "@/services/timeseriesService";
+import { handleError, logError } from "@/utils/error-handling";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";

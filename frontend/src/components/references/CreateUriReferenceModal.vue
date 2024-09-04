@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { URIReference } from "@dlr-shepard/shepard-client";
+import type { URIReference } from "@/generated/openapi";
 import { ref } from "vue";
 
 defineProps({

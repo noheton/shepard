@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import Loading from "@/components/generic/Loading.vue";
+import type { Healthz, ResponseError } from "@/generated/openapi";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
-import type { Healthz, ResponseError } from "@dlr-shepard/shepard-client";
-import { version as clientVersion } from "@dlr-shepard/shepard-client/package.json";
 import { useTitle } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 
@@ -57,7 +56,8 @@ onMounted(() => {
       </b-list-group-item>
       <b-list-group-item>
         <strong>Client Version:</strong>
-        <code> {{ clientVersion }} </code>
+        <!-- TODO: What to show here? -->
+        <code> TBD </code>
       </b-list-group-item>
       <b-list-group-item>
         <strong>Backend Version:</strong>

@@ -1,4 +1,4 @@
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@/generated/openapi";
 import { useEventBus } from "@vueuse/core";
 import log from "loglevel";
 import { errorKey, type ErrorType } from "./event-bus";

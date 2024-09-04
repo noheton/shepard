@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RequestMethod, type Subscription } from "@dlr-shepard/shepard-client";
+import { RequestMethod, type Subscription } from "@/generated/openapi";
 import { ref } from "vue";
 
 const subscriptionToCreate = ref<Subscription>({

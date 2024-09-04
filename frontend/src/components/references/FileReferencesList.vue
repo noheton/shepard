@@ -5,10 +5,10 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_File from "@/components/references/BasicReferenceModal_File.vue";
 import CreateFileReferenceModal from "@/components/references/CreateFileReferenceModal.vue";
+import type { FileReference, ResponseError } from "@/generated/openapi";
 import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
-import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

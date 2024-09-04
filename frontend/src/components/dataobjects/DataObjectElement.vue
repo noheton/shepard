@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
+import type { DataObject, ResponseError } from "@/generated/openapi";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
-import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({

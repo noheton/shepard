@@ -2,6 +2,12 @@
 import CreateSemanticRepositoryModal from "@/components/containers/CreateSemanticRepositoryModal.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
+import type {
+  DataObjectAttributes,
+  ResponseError,
+  SemanticRepository,
+  SemanticRepositoryType,
+} from "@/generated/openapi";
 import SemanticRepositoryService from "@/services/semanticRepositoriesService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -9,12 +15,6 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  DataObjectAttributes,
-  ResponseError,
-  SemanticRepository,
-  SemanticRepositoryType,
-} from "@dlr-shepard/shepard-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

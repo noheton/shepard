@@ -1,5 +1,5 @@
+import { Configuration, UserApi, type User } from "@/generated/openapi";
 import getEnv from "@/utils/env";
-import { Configuration, UserApi, type User } from "@dlr-shepard/shepard-client";
 import type { ActionContext } from "vuex";
 import type { RootState } from ".";
 

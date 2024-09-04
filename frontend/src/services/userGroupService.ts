@@ -8,7 +8,7 @@ import {
   type GetUserGroupRequest,
   type GetUserGroupRolesRequest,
   type UpdateUserGroupRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class UserGroupService {

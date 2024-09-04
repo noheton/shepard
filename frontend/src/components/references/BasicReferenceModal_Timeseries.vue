@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import VisualizationModal from "@/components/payload/VisualizationModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import type {
+  ResponseError,
+  Timeseries,
+  TimeseriesPayload,
+  TimeseriesReference,
+} from "@/generated/openapi";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import TimeseriesService from "@/services/timeseriesService";
 import { downloadFile } from "@/utils/download";
 import { logError } from "@/utils/error-handling";
 import { convertDate } from "@/utils/helpers";
 import type { PlottingData } from "@/utils/plotting";
-import type {
-  ResponseError,
-  Timeseries,
-  TimeseriesPayload,
-  TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
 import { Chart, registerables } from "chart.js";
 import Vue, { computed, onMounted, reactive, ref, type PropType } from "vue";
 

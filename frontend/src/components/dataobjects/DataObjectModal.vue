@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import TextEditor from "@/components/generic/TextEditor.vue";
+import type { DataObject, ResponseError } from "@/generated/openapi";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
-import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
 import { ref, type PropType } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 

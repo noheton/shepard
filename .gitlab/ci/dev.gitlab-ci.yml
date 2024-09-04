@@ -23,6 +23,7 @@ include:
   - local: .gitlab/ci/jobs/build-clients.yml
   - local: .gitlab/ci/jobs/upload-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml
+  - local: .gitlab/ci/jobs/diff-frontend-client.yml
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: frontend

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import CollectionService from "@/services/collectionService";
-import DataObjectService from "@/services/dataObjectService";
-import ReferenceService from "@/services/referenceService";
-import { handleError } from "@/utils/error-handling";
 import type {
   BasicReference,
   Collection,
   DataObject,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import CollectionService from "@/services/collectionService";
+import DataObjectService from "@/services/dataObjectService";
+import ReferenceService from "@/services/referenceService";
+import { handleError } from "@/utils/error-handling";
 import { DataSet } from "vis-data";
 import { Network, type Edge, type IdType, type Node } from "vis-network";
 import { computed, onMounted, ref } from "vue";

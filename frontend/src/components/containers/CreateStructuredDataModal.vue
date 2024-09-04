@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import JsonEditor from "@/components/generic/JsonEditor.vue";
-import type { StructuredDataPayload } from "@dlr-shepard/shepard-client";
+import type { StructuredDataPayload } from "@/generated/openapi";
 import { ref } from "vue";
 
 defineProps({

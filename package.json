@@ -5,10 +5,14 @@
     "frontend"
   ],
   "scripts": {
+    "start:dev": "concurrently -n backend,frontend --handle-input \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "npm run dev --workspace=frontend",
+    "start:backend": "cd backend && ./mvnw quarkus:dev",
     "format": "prettier . --write",
     "check-format": "prettier . --check"
   },
   "devDependencies": {
+    "concurrently": "8.2.2",
     "prettier": "3.3.3",
     "prettier-plugin-java": "2.6.4",
     "prettier-plugin-organize-imports": "3.2.4"

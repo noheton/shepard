@@ -45,7 +45,15 @@ shepard uses three types of branches to organize development:
 
 ## Setting up a Developing Environment
 
-### Frontend
+### Fullstack Development Environment
+
+- Follow the installation and configuration instructions for both front- and backend
+- Make sure the `.env` files for front- and backend are available with correct values
+- install Docker and Docker Compose (alternatively Podman and Podman Compose)
+- Run `docker compose -f backend/docker-compose.headless.yml up` (alternatively `podman compose ...`)
+- Run backend & frontend using `npm run start:dev`
+
+### Frontend Development Environment
 
 #### Downloads
 
@@ -71,10 +79,10 @@ If you don't have a working backend available, you can find a description of how
 
 #### First run
 
-- fill in the variables in your environment file [/frontend/.env.development](/frontend/.env.development)
+- in the frontend folder, copy `env.example` to `.env` and fill in the variables
 - start the project: `npm run serve`
 
-### Backend
+### Backend Development Environment
 
 #### Downloads
 

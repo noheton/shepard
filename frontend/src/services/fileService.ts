@@ -11,7 +11,7 @@ import {
   type GetFilePermissionsRequest,
   type GetFileRequest,
   type GetFileRolesRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class FileService {

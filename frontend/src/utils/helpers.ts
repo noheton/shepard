@@ -45,7 +45,7 @@ export function removeQueryParam(key: string) {
   history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
 }
 
-import { PermissionType } from "@dlr-shepard/shepard-client";
+import { PermissionType } from "@/generated/openapi";
 export interface PermissionOption {
   value: PermissionType;
   text: string;
@@ -65,7 +65,7 @@ export const permissionOptions: PermissionOption[] = [
   },
 ];
 
-import { SemanticRepositoryType } from "@dlr-shepard/shepard-client";
+import { SemanticRepositoryType } from "@/generated/openapi";
 
 export interface SemanticRepositoryOption {
   value: SemanticRepositoryType;

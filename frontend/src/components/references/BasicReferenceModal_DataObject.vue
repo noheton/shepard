@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import type {
-  DataObject,
-  DataObjectReference,
-} from "@dlr-shepard/shepard-client";
+import type { DataObject, DataObjectReference } from "@/generated/openapi";
 import type { PropType } from "vue";
 
 defineProps({

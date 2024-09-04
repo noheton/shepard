@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SemanticAnnotation } from "@dlr-shepard/shepard-client";
+import type { SemanticAnnotation } from "@/generated/openapi";
 import { onMounted, ref, watch } from "vue";
 
 const props = defineProps({

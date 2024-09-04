@@ -6,7 +6,7 @@ import {
   type GetAllTimeseriesReferencesRequest,
   type GetTimeseriesPayloadRequest,
   type GetTimeseriesReferenceRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
 import { getConfiguration } from "./serviceHelper";
 
 export default class TimeseriesReferenceService {

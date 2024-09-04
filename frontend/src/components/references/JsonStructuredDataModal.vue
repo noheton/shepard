@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import JsonEditor from "@/components/generic/JsonEditor.vue";
+import type { ResponseError } from "@/generated/openapi";
 import StructuredDataService from "@/services/structuredDataService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
 
 import { ref } from "vue";
 

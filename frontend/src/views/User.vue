@@ -2,9 +2,9 @@
 import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
+import type { ResponseError, User } from "@/generated/openapi";
 import UserService from "@/services/userService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError, User } from "@dlr-shepard/shepard-client";
 import { useTitle } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 

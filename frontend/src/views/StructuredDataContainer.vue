@@ -5,8 +5,6 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import JsonStructuredDataModal from "@/components/references/JsonStructuredDataModal.vue";
-import StructuredDataService from "@/services/structuredDataService";
-import { handleError, logError } from "@/utils/error-handling";
 import type {
   Permissions,
   ResponseError,
@@ -14,7 +12,9 @@ import type {
   StructuredData,
   StructuredDataContainer,
   StructuredDataPayload,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import StructuredDataService from "@/services/structuredDataService";
+import { handleError, logError } from "@/utils/error-handling";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";

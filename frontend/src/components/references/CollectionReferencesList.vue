@@ -5,14 +5,14 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_Collection from "@/components/references/BasicReferenceModal_Collection.vue";
 import CreateCollectionReferenceModal from "@/components/references/CreateCollectionReferenceModal.vue";
-import CollectionReferenceService from "@/services/collectionReferenceService";
-import { handleError, logError } from "@/utils/error-handling";
-import { getQueryParam } from "@/utils/helpers";
 import type {
   Collection,
   CollectionReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import CollectionReferenceService from "@/services/collectionReferenceService";
+import { handleError, logError } from "@/utils/error-handling";
+import { getQueryParam } from "@/utils/helpers";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

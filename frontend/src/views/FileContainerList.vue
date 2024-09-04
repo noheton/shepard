@@ -3,6 +3,12 @@ import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { useSearchContainers } from "@/components/search/InlineSearchContainers";
+import type {
+  DataObjectAttributes,
+  FileContainer,
+  PermissionType,
+  ResponseError,
+} from "@/generated/openapi";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -10,12 +16,6 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
-import type {
-  DataObjectAttributes,
-  FileContainer,
-  PermissionType,
-  ResponseError,
-} from "@dlr-shepard/shepard-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

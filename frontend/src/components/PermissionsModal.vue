@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import UserSelectionPopover from "@/components/user/UserSelectionPopover.vue";
-import UserGroupService from "@/services/userGroupService";
-import UserService from "@/services/userService";
-import { logError } from "@/utils/error-handling";
-import { permissionOptions as pOptions } from "@/utils/helpers";
 import type {
   Permissions,
   PermissionType,
   ResponseError,
   User,
   UserGroup,
-} from "@dlr-shepard/shepard-client";
+} from "@/generated/openapi";
+import UserGroupService from "@/services/userGroupService";
+import UserService from "@/services/userService";
+import { logError } from "@/utils/error-handling";
+import { permissionOptions as pOptions } from "@/utils/helpers";
 import { refDebounced } from "@vueuse/core";
 import { reactive, ref, watch, type PropType } from "vue";
 import { useSearchUsers } from "./search/InlineSearchUsers";
