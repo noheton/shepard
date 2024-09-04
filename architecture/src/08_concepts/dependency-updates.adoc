@@ -89,7 +89,4 @@ Afterwards the merge request can be closed.
 
 |junit-jupiter<5.11
 |Not possible atm because parametrized tests in combination with CsvSource do not work any longer. We will wait for the next version.
-
-|openapi-generator-cli<7 (for python-legacy client)
-|the python-legacy client was removed afterwards
 |===

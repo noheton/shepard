@@ -1,14 +1,10 @@
 include:
   - local: .gitlab/ci/clients/java.gitlab-ci.yml
-  - local: .gitlab/ci/clients/python-legacy.gitlab-ci.yml
   - local: .gitlab/ci/clients/python.gitlab-ci.yml
   - local: .gitlab/ci/clients/typescript.gitlab-ci.yml
 
 upload_java_client:
   extends: .upload_java_client
-
-upload_python_legacy_client:
-  extends: .upload_python_legacy_client
 
 upload_python_client:
   extends: .upload_python_client

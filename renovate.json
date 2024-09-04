@@ -137,11 +137,6 @@
       "matchPackageNames": ["org.junit.jupiter:junit-jupiter{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<5.11"
-    },
-    {
-      "matchPackageNames": ["openapitools/openapi-generator-cli"],
-      "matchFileNames": [".gitlab/ci/clients/python-legacy.gitlab-ci.yml"],
-      "allowedVersions": "<7"
     }
   ]
 }
