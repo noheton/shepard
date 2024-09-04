@@ -120,7 +120,10 @@ def _create_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
 
     # increase release number according to release type
     version_dict[release_type] += 1
-    return f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
+    return (
+        f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
+        + "-release"
+    )
 
 
 def _create_release_notes(

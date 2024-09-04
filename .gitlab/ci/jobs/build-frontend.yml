@@ -23,7 +23,7 @@ build_frontend:
   needs: [get_version]
   script:
     - cd frontend
-    - npm version --no-git-tag-version ${VERSION_NUMBER}
+    - npm version --no-git-tag-version --allow-same-version ${VERSION_NUMBER}
     - npm run type-check
     - npm run build-only
   artifacts:
