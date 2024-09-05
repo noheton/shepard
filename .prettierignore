@@ -8,3 +8,7 @@
 
 # Generated frontend code
 frontend/src/generated/*
+
+# Generated nuxtend code
+nuxtend/.nuxt/*
+nuxtend/.output/*

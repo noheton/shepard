@@ -1,4 +1,4 @@
-.prepare_npm:
+.prepare_npm_for_nuxt:
   image: node:20
   cache:
     key:
@@ -8,24 +8,24 @@
       - .npm/
   before_script:
     - echo //gitlab.com/api/v4/packages/npm/:_authToken=${CI_JOB_TOKEN} >> .npmrc
-    - npm ci --cache .npm --prefer-offline --workspace=frontend
+    - npm ci --cache .npm --prefer-offline --workspace=nuxtend
 
-lint_frontend:
-  extends: .prepare_npm
+lint_nuxtend:
+  extends: .prepare_npm_for_nuxt
   stage: test
   needs: []
   script:
-    - npm run lint --workspace=frontend
+    - npm run lint --workspace=nuxtend
 
-build_frontend:
-  extends: .prepare_npm
+build_nuxtend:
+  extends: .prepare_npm_for_nuxt
   stage: build
   needs: [get_version]
   script:
-    - cd frontend
+    - cd nuxtend
     - npm version --no-git-tag-version --allow-same-version ${VERSION_NUMBER}
-    - npm run type-check
-    - npm run build-only
+    - npm run typecheck
+    - npm run build
   artifacts:
     paths:
-      - frontend/dist/
+      - nuxtend/.output/

@@ -2,7 +2,8 @@
   "name": "shepard",
   "private": true,
   "workspaces": [
-    "frontend"
+    "frontend",
+    "nuxtend"
   ],
   "scripts": {
     "start:dev": "concurrently -n backend,frontend --handle-input \"npm run start:backend\" \"npm run start:frontend\"",

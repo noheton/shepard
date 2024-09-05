@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "nuxtend",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,10 +7,16 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "nuxt": "^3.13.1",
-    "vue": "latest"
+    "nuxt": "3.13.1",
+    "vue": "3.5.2"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "0.5.5",
+    "vue-tsc": "2.0.22"
   }
 }
