@@ -1,7 +1,7 @@
 {
   "openapi" : "3.0.1",
   "info" : {
-    "title" : "backend API",
+    "title" : "shepard backend",
     "version" : "1.0.0-SNAPSHOT"
   },
   "servers" : [ {
@@ -157,7 +157,7 @@
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -2925,7 +2925,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
