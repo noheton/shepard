@@ -1,5 +1,5 @@
-.prepare_npm_for_nuxt:
-  image: node:20
+.prepare_nuxtend:
+  image: node:20-slim
   cache:
     key:
       files:
@@ -11,14 +11,14 @@
     - npm ci --cache .npm --prefer-offline --workspace=nuxtend
 
 lint_nuxtend:
-  extends: .prepare_npm_for_nuxt
+  extends: .prepare_nuxtend
   stage: test
   needs: []
   script:
     - npm run lint --workspace=nuxtend
 
 build_nuxtend:
-  extends: .prepare_npm_for_nuxt
+  extends: .prepare_nuxtend
   stage: build
   needs: [get_version]
   script:

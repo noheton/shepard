@@ -108,6 +108,12 @@
       "allowedVersions": "<5"
     },
     {
+      "matchPackageNames": ["node"],
+      "matchManagers": ["gitlabci", "dockerfile"],
+      "versionCompatibility": "^(?<version>[^-]+)(?<compatibility>-.*)?$",
+      "versioning": "node"
+    },
+    {
       "matchPackageNames": ["@vue/tsconfig"],
       "matchManagers": ["npm"],
       "allowedVersions": "<0.2"

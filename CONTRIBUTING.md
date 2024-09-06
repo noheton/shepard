@@ -87,7 +87,7 @@ If you don't have a working backend available, you can find a description of how
 #### Downloads
 
 - OpenJDK 17 (LTS): <https://adoptium.net/index.html?variant=openjdk17&jvmVariant=hotspot>
-- Node.js v20.17.0 or later and NPM: <https://nodejs.org/en/>
+- Node.js v20.17.0 (LTS) and NPM: <https://nodejs.org/en/>
 - One of the following IDEs:
   - VSCode: <https://code.visualstudio.com/download>
   - IntelliJ: <https://www.jetbrains.com/idea/download/>
