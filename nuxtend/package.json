@@ -12,11 +12,15 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@mdi/font": "7.4.47",
+    "consola": "3.2.3",
     "nuxt": "3.13.1",
     "vue": "3.5.2"
   },
   "devDependencies": {
     "@nuxt/eslint": "0.5.5",
-    "vue-tsc": "2.0.22"
+    "vite-plugin-vuetify": "2.0.4",
+    "vue-tsc": "2.0.22",
+    "vuetify": "3.7.1"
   }
 }
