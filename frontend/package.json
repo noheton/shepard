@@ -11,14 +11,13 @@
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
     "fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write .",
     "client-codegen": "rimraf src/generated/openapi && npm run update-openapi-spec && openapi-generator-cli generate -g typescript-fetch -o src/generated/openapi -p=supportsES6=true,typescriptThreePlus=true -i src/generated/openapi-source/openapi.json",
     "update-openapi-spec": "curl --output-dir src/generated/openapi-source -o openapi.json $(grep OPENAPI_URL .env | cut -d '=' -f2)"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "2.6.4",
     "@tiptap/extension-underline": "2.6.4",
-    "@tiptap/pm": "2.6.4",
+    "@tiptap/pm": "2.6.6",
     "@tiptap/starter-kit": "2.6.4",
     "@tiptap/vue-2": "2.6.4",
     "@vueuse/core": "11.0.1",
@@ -64,7 +63,6 @@
     "eslint": "8.57.0",
     "eslint-plugin-vue": "9.27.0",
     "npm-run-all2": "6.2.2",
-    "prettier": "3.3.3",
     "prettier-plugin-organize-imports": "3.2.4",
     "rimraf": "6.0.1",
     "sass": "1.77.8",

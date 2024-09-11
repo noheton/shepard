@@ -1,5 +1,6 @@
 {
   "name": "nuxtend",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +16,7 @@
     "@mdi/font": "7.4.47",
     "consola": "3.2.3",
     "nuxt": "3.13.1",
-    "vue": "3.5.2"
+    "vue": "3.5.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "0.5.5",

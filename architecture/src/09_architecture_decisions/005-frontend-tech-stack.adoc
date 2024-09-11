@@ -54,6 +54,7 @@ As a UI library we choose Vuetify based on it's versatility and broad use.
 |Consequences|
 * Because of the number of updated or replaced dependencies, we will setup a fresh frontend with the desired tech stack and migrate the components step by step
 * The migration of the current frontend functionality has to be planned
+* Current and new frontends have different Vue versions but npm workspaces are not able to properly handle different versions of the same dependency in two workspaces.To overcome this issue, we exclude the frontend from the workspaces and adjust the pipelines. This will cause the least effort and does not hinder active development.
 * We need to make sure to distribute Nuxt knowledge in the team
 |===
 

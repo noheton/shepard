@@ -2,12 +2,11 @@
   "name": "shepard",
   "private": true,
   "workspaces": [
-    "frontend",
     "nuxtend"
   ],
   "scripts": {
     "start:dev": "concurrently -n backend,frontend --handle-input \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:frontend": "npm run dev --workspace=frontend",
+    "start:frontend": "npm run dev --workspace=nuxtend",
     "start:backend": "cd backend && ./mvnw quarkus:dev",
     "format": "prettier . --write",
     "check-format": "prettier . --check"
