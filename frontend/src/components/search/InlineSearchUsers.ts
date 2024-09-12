@@ -1,6 +1,6 @@
-import type { ResponseError, User } from "@/generated/openapi";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
+import type { ResponseError, User } from "@dlr-shepard/backend-client";
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchUsers(text: Ref<string>) {

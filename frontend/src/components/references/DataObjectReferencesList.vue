@@ -5,14 +5,14 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_DataObject from "@/components/references/BasicReferenceModal_DataObject.vue";
 import CreateDataObjectReferenceModal from "@/components/references/CreateDataObjectReferenceModal.vue";
+import DataObjectReferenceService from "@/services/dataObjectReferenceService";
+import { handleError, logError } from "@/utils/error-handling";
+import { getQueryParam } from "@/utils/helpers";
 import type {
   DataObject,
   DataObjectReference,
   ResponseError,
-} from "@/generated/openapi";
-import DataObjectReferenceService from "@/services/dataObjectReferenceService";
-import { handleError, logError } from "@/utils/error-handling";
-import { getQueryParam } from "@/utils/helpers";
+} from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

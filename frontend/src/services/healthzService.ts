@@ -1,4 +1,4 @@
-import { HealthzApi } from "@/generated/openapi";
+import { HealthzApi } from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class HealthzService {

@@ -4,7 +4,7 @@ import {
   type DeleteSemanticRepositoryRequest,
   type GetAllSemanticRepositoriesRequest,
   type GetSemanticRepositoryRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SemanticRepositoryService {

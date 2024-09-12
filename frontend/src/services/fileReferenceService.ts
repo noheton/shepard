@@ -6,7 +6,7 @@ import {
   type GetFilePayloadRequest,
   type GetFileReferenceRequest,
   type GetFilesRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class FileReferenceService {

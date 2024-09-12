@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Loading from "@/components/generic/Loading.vue";
-import type { Healthz, ResponseError } from "@/generated/openapi";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
+import type { Healthz, ResponseError } from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 

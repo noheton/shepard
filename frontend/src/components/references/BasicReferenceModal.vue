@@ -3,14 +3,14 @@ import SemanticAnnotationModal from "@/components/dataobjects/SemanticAnnotation
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import SemanticBadge from "@/components/generic/SemanticBadge.vue";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
+import { handleError } from "@/utils/error-handling";
+import { removeQueryParam, setQueryParam } from "@/utils/helpers";
 import type {
   BasicReference,
   ResponseError,
   SemanticAnnotation,
-} from "@/generated/openapi";
-import SemanticAnnotationService from "@/services/semanticAnnotationService";
-import { handleError } from "@/utils/error-handling";
-import { removeQueryParam, setQueryParam } from "@/utils/helpers";
+} from "@dlr-shepard/backend-client";
 import { getCurrentInstance, onMounted, ref, type PropType } from "vue";
 
 const props = defineProps({

@@ -5,10 +5,10 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_URI from "@/components/references/BasicReferenceModal_URI.vue";
 import CreateUriReferenceModal from "@/components/references/CreateUriReferenceModal.vue";
-import type { ResponseError, URIReference } from "@/generated/openapi";
 import UriReferenceService from "@/services/uriReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
+import type { ResponseError, URIReference } from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@/generated/openapi";
+import type { User } from "@dlr-shepard/backend-client";
 import { onMounted, onUpdated, ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";
 

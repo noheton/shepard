@@ -35,4 +35,11 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  // Environment variables
+  runtimeConfig: {
+    public: {
+      backendApiUrl: "",
+    },
+  },
 });

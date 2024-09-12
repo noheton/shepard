@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
-import type { ResponseError, SemanticRepository } from "@/generated/openapi";
 import SemanticRepositoryService from "@/services/semanticRepositoriesService";
 import { handleError } from "@/utils/error-handling";
+import type {
+  ResponseError,
+  SemanticRepository,
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";

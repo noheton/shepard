@@ -5,10 +5,13 @@ import Loading from "@/components/generic/Loading.vue";
 import BasicReferenceModal from "@/components/references/BasicReferenceModal.vue";
 import BasicReferenceModal_Timeseries from "@/components/references/BasicReferenceModal_Timeseries.vue";
 import CreateTimeseriesReferenceModal from "@/components/references/CreateTimeseriesReferenceModal.vue";
-import type { ResponseError, TimeseriesReference } from "@/generated/openapi";
 import TimeseriesReferenceService from "@/services/timeseriesReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { convertDate, getQueryParam } from "@/utils/helpers";
+import type {
+  ResponseError,
+  TimeseriesReference,
+} from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

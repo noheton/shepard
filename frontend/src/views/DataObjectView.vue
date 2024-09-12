@@ -9,16 +9,16 @@ import GenericCollapse from "@/components/generic/GenericCollapse.vue";
 import GenericDescription from "@/components/generic/GenericDescription.vue";
 import SemanticBadge from "@/components/generic/SemanticBadge.vue";
 import ReferencesTable from "@/components/references/ReferencesTable.vue";
+import CollectionService from "@/services/collectionService";
+import DataObjectService from "@/services/dataObjectService";
+import SemanticAnnotationService from "@/services/semanticAnnotationService";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   DataObject,
   ResponseError,
   Roles,
   SemanticAnnotation,
-} from "@/generated/openapi";
-import CollectionService from "@/services/collectionService";
-import DataObjectService from "@/services/dataObjectService";
-import SemanticAnnotationService from "@/services/semanticAnnotationService";
-import { handleError, logError } from "@/utils/error-handling";
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";

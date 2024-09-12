@@ -38,6 +38,28 @@ This chapter is still under construction
 |
 |===
 
+=== Frontend (Nuxt)
+
+==== Structure
+
+Each route is defined in **pages/**.
+The root file of a route itself should not contain a lot of logic, instead it should invoke one or more components.
+
+In **components/** all components are stored.
+These are grouped in folders by domain, e.g. `components/collections`.
+
+Stateful logic can be extracted into link:https://vuejs.org/guide/reusability/composables[composables] and are stored in **composables/**.
+
+Stateless utility functions should be stored under **utils/**.
+
+==== Backend Interaction
+
+For the interaction with the backend we check a generated openapi client into the repository, see <<backend-client-for-frontend, here>> for more information.
+
+In order to directly instantiate the API clients with our default configuration, we use the `createApiInstance` utility.
+
 === Technology Choices
+
 ==== Using Node LTS
+
 The current LTS version of Node.js should be used in all of the project (Gitlab jobs, docker images, local development, etc.) to maintain reliability and performance.

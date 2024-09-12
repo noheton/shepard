@@ -2,7 +2,7 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === Configuration
 
-==== Quarkus
+==== Backend (Quarkus)
 
 This section is a short summary of link:https://quarkus.io/guides/config[this page].
 
@@ -20,3 +20,36 @@ To support administrators, relevant configuration options are documented in link
 ===== Reading Properties
 
 Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
+
+==== Frontend (Nuxt)
+
+This section is a short summary of link:https://nuxt.com/docs/getting-started/configuration[this page].
+
+===== Setting properties
+
+We define environment variables in the Nuxt config like this:
+
+```typescript
+export default defineNuxtConfig({  runtimeConfig: {
+  // A value that should only be available on server-side
+  apiSecret: '123',
+  // Values that should be available also on client side
+  public: {
+    apiBase: '/api'
+  }
+}})
+```
+
+These values can be overridden by a `.env` file like this:
+
+```
+NUXT_API_SECRET=api_secret_token
+NUXT_PUBLIC_API_BASE=https://nuxtjs.org
+```
+
+In order to ease the configuration we provide a `env.example` file with all relevant variables.
+That file can be copied to `.env` and filled with the appropriate values.
+
+===== Reading Properties
+
+Properties can be accessed using `useRuntimeConfig()`.

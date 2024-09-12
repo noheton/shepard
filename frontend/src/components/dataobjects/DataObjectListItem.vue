@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
-import type { DataObject } from "@/generated/openapi";
+import type { DataObject } from "@dlr-shepard/backend-client";
 import type { PropType } from "vue";
 
 defineProps({

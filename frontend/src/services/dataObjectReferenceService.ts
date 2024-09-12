@@ -5,7 +5,7 @@ import {
   type GetAllDataObjectReferencesRequest,
   type GetDataObjectReferencePayloadRequest,
   type GetDataObjectReferenceRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class DataObjectReferenceService {

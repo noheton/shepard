@@ -5,16 +5,16 @@ import CreatedByLine from "@/components/generic/CreatedByLine.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import PermissionsModal from "@/components/PermissionsModal.vue";
 import ProcessAlert from "@/components/ProcessAlert.vue";
+import FileService from "@/services/fileService";
+import { downloadFile } from "@/utils/download";
+import { handleError, logError } from "@/utils/error-handling";
 import type {
   FileContainer,
   Permissions,
   ResponseError,
   Roles,
   ShepardFile,
-} from "@/generated/openapi";
-import FileService from "@/services/fileService";
-import { downloadFile } from "@/utils/download";
-import { handleError, logError } from "@/utils/error-handling";
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue2-helpers/vue-router";

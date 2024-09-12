@@ -1,11 +1,11 @@
+import SearchService from "@/services/searchService";
+import { handleError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import type {
   BasicContainer,
   ContainerQueryType,
   ResponseError,
-} from "@/generated/openapi";
-import SearchService from "@/services/searchService";
-import { handleError } from "@/utils/error-handling";
-import { isNumeric } from "@/utils/helpers";
+} from "@dlr-shepard/backend-client";
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchContainers(

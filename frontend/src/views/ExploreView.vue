@@ -3,11 +3,6 @@ import CollectionModal from "@/components/dataobjects/CollectionModal.vue";
 import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { useSearchCollections } from "@/components/search/InlineSearchCollections";
-import type {
-  Collection,
-  DataObjectAttributes,
-  ResponseError,
-} from "@/generated/openapi";
 import CollectionService from "@/services/collectionService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -15,6 +10,11 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
+import type {
+  Collection,
+  DataObjectAttributes,
+  ResponseError,
+} from "@dlr-shepard/backend-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

@@ -11,14 +11,15 @@ In addition to the OpenAPI diff job there are jobs to check if there are changes
 In the past there was a python-legacy client and a Cpp client published.
 They have been discontinued.
 
+[[backend-client-for-frontend]]
 ==== Backend Client for shepard Frontend
 
 In order to support concurrent development of frontend and backend we decided to put the generated client for the frontend under version control (<<adr007>>).
-The client can be found under `frontend/src/generated/openapi`.
+The client can be found under `backend-client`.
 It's exported members can be imported in frontend files like this:
 
 ```javascript
-import { SemanticRepositoryApi } from "@/generated/openapi";
+import { SemanticRepositoryApi } from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SemanticRepositoryService {
@@ -32,7 +33,7 @@ export default class SemanticRepositoryService {
 ===== (Re)generating the Client
 
 In case the API changed or a new version of the OpenAPI generator shall be used, the client has to be regenerated.
-This can be done by running the following command in the frontend directory.
+This can be done by running the following command in the top level directory.
 Be aware that a local Java installation is required for the command to run successfully.
 
 ```bash

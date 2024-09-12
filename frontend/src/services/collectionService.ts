@@ -9,7 +9,7 @@ import {
   type GetCollectionRequest,
   type GetCollectionRolesRequest,
   type UpdateCollectionRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class CollectionService {

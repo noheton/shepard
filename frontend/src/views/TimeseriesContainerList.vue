@@ -3,12 +3,6 @@ import FilterListLine from "@/components/generic/FilterListLine.vue";
 import GenericCreateModal from "@/components/generic/GenericCreateModal.vue";
 import GenericEntityList from "@/components/generic/GenericEntityList.vue";
 import { useSearchContainers } from "@/components/search/InlineSearchContainers";
-import type {
-  ContainerAttributes,
-  PermissionType,
-  ResponseError,
-  TimeseriesContainer,
-} from "@/generated/openapi";
 import TimeseriesService from "@/services/timeseriesService";
 import { handleError } from "@/utils/error-handling";
 import {
@@ -16,6 +10,12 @@ import {
   type FilterChangedData,
   type FilterOptions,
 } from "@/utils/helpers";
+import type {
+  ContainerAttributes,
+  PermissionType,
+  ResponseError,
+  TimeseriesContainer,
+} from "@dlr-shepard/backend-client";
 import { refDebounced, useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

@@ -2,9 +2,9 @@
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal.vue";
 import GenericName from "@/components/generic/GenericName.vue";
 import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
-import type { ApiKey, ResponseError } from "@/generated/openapi";
 import ApiKeyService from "@/services/apiKeyService";
 import { handleError } from "@/utils/error-handling";
+import type { ApiKey, ResponseError } from "@dlr-shepard/backend-client";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({

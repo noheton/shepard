@@ -13,3 +13,6 @@ frontend/dist/*
 # Generated nuxtend code
 nuxtend/.nuxt/*
 nuxtend/.output/*
+
+# Generated backend-client
+backend-client/*

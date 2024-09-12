@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Roles } from "@/generated/openapi";
+import type { Roles } from "@dlr-shepard/backend-client";
 import type { PropType } from "vue";
 
 const props = defineProps({

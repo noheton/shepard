@@ -2,16 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import EntitySelectionPopover from "@/components/generic/EntitySelectionPopover.vue";
 import JsonEditor from "@/components/generic/JsonEditor.vue";
+import StructuredDataService from "@/services/structuredDataService";
+import { handleError, logError } from "@/utils/error-handling";
+import { isNumeric } from "@/utils/helpers";
 import type {
   ResponseError,
   StructuredData,
   StructuredDataContainer,
   StructuredDataPayload,
   StructuredDataReference,
-} from "@/generated/openapi";
-import StructuredDataService from "@/services/structuredDataService";
-import { handleError, logError } from "@/utils/error-handling";
-import { isNumeric } from "@/utils/helpers";
+} from "@dlr-shepard/backend-client";
 import { refDebounced } from "@vueuse/core";
 import { reactive, ref } from "vue";
 import { useSearchContainers } from "../search/InlineSearchContainers";

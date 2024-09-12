@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ApiKeyWithJWT } from "@/generated/openapi";
 import getEnv from "@/utils/env";
+import type { ApiKeyWithJWT } from "@dlr-shepard/backend-client";
 import { useClipboard } from "@vueuse/core";
 import { getCurrentInstance, ref, watch, type PropType } from "vue";
 

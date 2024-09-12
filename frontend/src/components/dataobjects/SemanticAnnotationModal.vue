@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import SemanticRepositoryService from "@/services/semanticRepositoriesService";
+import { logError } from "@/utils/error-handling";
 import type {
   ResponseError,
   SemanticAnnotation,
   SemanticRepository,
-} from "@/generated/openapi";
-import SemanticRepositoryService from "@/services/semanticRepositoriesService";
-import { logError } from "@/utils/error-handling";
+} from "@dlr-shepard/backend-client";
 import { reactive, ref, type PropType } from "vue";
 
 const props = defineProps({

@@ -13,6 +13,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@dlr-shepard/backend-client": "file:../backend-client",
     "@mdi/font": "7.4.47",
     "consola": "3.2.3",
     "nuxt": "3.13.1",

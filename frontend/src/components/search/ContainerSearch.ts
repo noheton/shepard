@@ -1,7 +1,10 @@
-import type { ContainerQueryType, ResponseError } from "@/generated/openapi";
 import router from "@/router";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
+import type {
+  ContainerQueryType,
+  ResponseError,
+} from "@dlr-shepard/backend-client";
 import { ref, watch, type Ref } from "vue";
 
 const routerMap: { [key: string]: string } = {

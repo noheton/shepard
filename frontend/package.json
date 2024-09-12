@@ -12,9 +12,10 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
     "fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "client-codegen": "rimraf src/generated/openapi && npm run update-openapi-spec && openapi-generator-cli generate -g typescript-fetch -o src/generated/openapi -p=supportsES6=true,typescriptThreePlus=true -i src/generated/openapi-source/openapi.json",
-    "update-openapi-spec": "curl --output-dir src/generated/openapi-source -o openapi.json $(grep OPENAPI_URL .env | cut -d '=' -f2)"
+    "update-openapi-spec": "curl --output-dir src/generated/openapi-source -o openapi.json http://localhost:8080/shepard/doc/openapi.json"
   },
   "dependencies": {
+    "@dlr-shepard/backend-client": "file:../backend-client",
     "@tiptap/extension-text-align": "2.6.6",
     "@tiptap/extension-underline": "2.6.6",
     "@tiptap/pm": "2.6.6",

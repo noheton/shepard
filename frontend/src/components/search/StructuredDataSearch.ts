@@ -1,7 +1,10 @@
-import type { ResponseError, TraversalRules } from "@/generated/openapi";
 import router from "@/router";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
+import type {
+  ResponseError,
+  TraversalRules,
+} from "@dlr-shepard/backend-client";
 import { ref, watch, type Ref } from "vue";
 
 export function useStructuredDataSearch(

@@ -12,7 +12,7 @@ import {
   type GetCollectionAnnotationRequest,
   type GetDataObjectAnnotationRequest,
   type GetReferenceAnnotationRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SemanticAnnotationService {

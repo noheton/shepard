@@ -3,7 +3,7 @@ import {
   type SearchContainersRequest,
   type SearchRequest,
   type SearchUsersRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SearchService {

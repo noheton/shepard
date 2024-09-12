@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import CollectionService from "@/services/collectionService";
+import DataObjectService from "@/services/dataObjectService";
+import { logError } from "@/utils/error-handling";
 import type {
   Collection,
   DataObject,
   DataObjectReference,
   ResponseError,
-} from "@/generated/openapi";
-import CollectionService from "@/services/collectionService";
-import DataObjectService from "@/services/dataObjectService";
-import { logError } from "@/utils/error-handling";
+} from "@dlr-shepard/backend-client";
 import { reactive } from "vue";
 
 interface Option {

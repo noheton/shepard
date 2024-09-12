@@ -9,12 +9,16 @@
     "start:frontend": "npm run dev --workspace=nuxtend",
     "start:backend": "cd backend && ./mvnw quarkus:dev",
     "format": "prettier . --write",
-    "check-format": "prettier . --check"
+    "check-format": "prettier . --check",
+    "client-codegen": "rimraf ./backend-client/**/* --glob && npm run update-openapi-spec && openapi-generator-cli generate -g typescript-fetch -o ./backend-client -p=npmName=@dlr-shepard/backend-client,npmVersion=1.0,supportsES6=true,typescriptThreePlus=true -i ./backend-client/.openapi-source/openapi.json && cd backend-client && npm install",
+    "update-openapi-spec": "curl --output-dir ./backend-client/.openapi-source -o openapi.json http://localhost:8080/shepard/doc/openapi.json"
   },
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.13.5",
     "concurrently": "9.0.1",
     "prettier": "3.3.3",
     "prettier-plugin-java": "2.6.4",
-    "prettier-plugin-organize-imports": "3.2.4"
+    "prettier-plugin-organize-imports": "3.2.4",
+    "rimraf": "6.0.1"
   }
 }

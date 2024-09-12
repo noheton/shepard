@@ -11,7 +11,7 @@ import {
   type GetStructuredDataPermissionsRequest,
   type GetStructuredDataRequest,
   type GetStructuredDataRolesRequest,
-} from "@/generated/openapi";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class StructuredDataService {
