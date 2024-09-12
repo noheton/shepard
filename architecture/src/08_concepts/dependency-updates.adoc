@@ -32,6 +32,12 @@ git cherry-pick <commit-hash>
 
 Afterwards the merge request can be closed.
 
+==== Abandoned dependency updates
+
+Sometimes, when the configuration changes or dependency updates were done without renovate, the bot might abandon a merge request.
+In this case the merge request is not automatically closed and has to be closed manually.
+The corresponding branch must also be deleted manually to keep things clean.
+
 [[suspended-updates]]
 ===== Suspended Updates
 
