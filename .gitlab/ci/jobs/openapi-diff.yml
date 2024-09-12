@@ -8,9 +8,10 @@ openapi-diff:
   image:
     name: openapitools/openapi-diff:2.0.1
     entrypoint: [""]
-  needs: [build_backend]
+  needs: [build_backend, get_version]
   script:
-    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$[[ inputs.target_branch ]]/raw/backend/target/openapi/openapi.yaml?job=build_backend backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
+    - if [ "$[[inputs.target_branch]]" == "develop" ]; then export SPEC_LOCATION=develop; else export SPEC_LOCATION="$LATEST_TAG"-release; fi
+    - java -jar /app/openapi-diff.jar https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/$SPEC_LOCATION/raw/backend/target/openapi/openapi.yaml?job=build_backend backend/target/openapi/openapi.yaml --fail-on-changed --text backend/target/openapi/diff.txt --markdown backend/target/openapi/diff.md
   artifacts:
     when: always
     expire_in: 2 days
