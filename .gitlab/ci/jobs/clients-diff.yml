@@ -15,7 +15,7 @@ diff_typescript_client:
   allow_failure: true
 
 diff_python_client:
-  image: python:3.12.5-alpine3.19
+  image: python:3.12.6-alpine3.19
   cache:
     key:
       files:
