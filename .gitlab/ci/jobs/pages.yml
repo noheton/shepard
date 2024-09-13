@@ -1,4 +1,5 @@
-publish_maven_report:
+# A specific job called pages in the configuration file makes GitLab aware that you’re deploying a GitLab Pages website.
+pages:
   stage: upload
   needs: [build_maven_report]
   script:
