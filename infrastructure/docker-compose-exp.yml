@@ -1,0 +1,56 @@
+services:
+  backend:
+    extends:
+      file: docker-compose.yml
+      service: backend
+
+  frontend:
+    extends:
+      file: docker-compose.yml
+      service: frontend
+
+  neo4j:
+    extends:
+      file: docker-compose.yml
+      service: neo4j
+
+  mongodb:
+    extends:
+      file: docker-compose.yml
+      service: mongodb
+
+  mongoexpress:
+    extends:
+      file: docker-compose.yml
+      service: mongoexpress
+
+  influxdb:
+    extends:
+      file: docker-compose.yml
+      service: influxdb
+
+  chronograf:
+    extends:
+      file: docker-compose.yml
+      service: chronograf
+
+  caddy:
+    extends:
+      file: docker-compose.yml
+      service: caddy
+
+  nuxtend:
+    image: registry.gitlab.com/dlr-shepard/shepard/nuxtend:dev
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api
+    depends_on:
+      - backend
+    networks:
+      - frontend
+
+networks:
+  shepard:
+  mongo:
+  influxdata:
+  frontend:

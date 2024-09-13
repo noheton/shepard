@@ -151,6 +151,35 @@ docker compose up -d
 
 You can find the backend logs in `/opt/shepard/backend/logs`.
 
+## Experimental features
+
+There is a `docker-compose-exp.yml` file that holds a deployment setup with experimental extensions.
+To be able to try those extensions, the deployment should be run using this file instead.
+
+### Standalone Nuxt frontend (v2.0.0)
+
+- Adapt the proxy config by adding the subdomain mapping the the Caddy file.
+
+```
+https://nuxtend.hostname_placeholder_do_not_change {
+	reverse_proxy nuxtend:3000
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+```
+
+- Add the new link the index page
+
+```html
+<a href="https://nuxtend.hostname_placeholder_do_not_change/"> https://nuxtend.hostname_placeholder_do_not_change/ </a>
+```
+
+- Run the experimental docker compose file
+
+```bash
+docker compose -f .\docker-compose-exp.yml up -d
+```
+
 ## Update
 
 Always check [recently merged Merge Requests](https://gitlab.com/dlr-shepard/shepard/-/merge_requests?label_name%5B%5D=Breaking+Change&scope=all&sort=merged_at_desc&state=merged) with the `Breaking Change` label before updating the system, as some changes may require manual intervention.
