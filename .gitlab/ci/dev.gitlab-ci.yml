@@ -14,9 +14,9 @@ include:
   - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
+  - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/integration-test.yml
   - local: .gitlab/ci/jobs/build-maven-report.yml
-  - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: main
