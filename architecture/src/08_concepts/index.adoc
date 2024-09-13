@@ -26,3 +26,5 @@ include::versioning.adoc[]
 include::openapi-specification.adoc[]
 
 include::backend-clients.adoc[]
+
+include::testing-strategy.adoc[]

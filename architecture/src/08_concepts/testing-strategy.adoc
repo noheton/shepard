@@ -1,0 +1,41 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Testing Strategy
+
+==== Integration Tests utilizing External REST APIs
+
+Some of the integration tests in the backend rely on an external REST API.
+One example are the integration tests that utilize semantic annotations like the `CollectionSearcherIT`.
+This test includes creating a semantic repository with an external ontology service and executing requests against this endpoint.
+
+This introduces an external dependency to our integration tests, which we cannot control.
+If the external service is not available, the HTTP connection results in a timeout and the whole integration test fails, even though this is not related to our backend code.
+Since we want to test if the health check to the external service works, we cannot replace the health check function with a mocked version of this function.
+By introducing https://wiremock.org/[WireMock], it is possible to mock the HTTP response itself.
+
+WireMock is a testing framework to map HTTP responses to specific HTTP requests.
+WireMock acts as a simple HTTP server in the background that allows defining rules to match on HTTP requests with pre-defined HTTP responses.
+For example, this code snippet in the `WireMockResource.java` mocks the behavior for the health check against an external ontology service:
+```Java
+wireMockServer.stubFor(
+      // stub for health check on: https://dbpedia.org/sparql/
+      get(urlPathEqualTo("/sparql"))
+        .withQueryParam("query", equalTo("ASK { ?x ?y ?z }"))
+        .willReturn(aResponse().withStatus(200).withBody("{ \"head\": {\"link\": []  }, \"boolean\": true }"))
+    );
+```
+The rules in this snippet are defined as the following: 
+for every GET request to `localhost:PORT/sparql` with the query parameter `query=ASK { ?x ?y ?z }`, the WireMock HTTP server will return a HTTP response with code 200, containing this JSON string in its body `"{ \"head\": {\"link\": []  }, \"boolean\": true }"`.
+
+Since we are using Quarkus as our backend framework, we utilize the https://docs.quarkiverse.io/quarkus-wiremock/0.x/index.html[Quarkus WireMock Extension].
+This extensions allows an easier integration into an existing Quarkus application.
+It directly supports injection, to inject a WireMock server in an integration test.
+Generally, injection is our preferred way to initialize objects.
+
+However, injection is not used in our current implementation of WireMock mocking due to limitations of our concrete scenario, i.e. usage in static functions, where injection is not possible.
+Therefore, we utilize WireMock in a static approach.
+
+A proper way to integrate WireMock into a Quarkus integration test is described in the https://docs.quarkiverse.io/quarkus-wiremock/0.x/index.html[extension's introduction page] and also by the official https://quarkus.io/guides/getting-started-testing#quarkus-test-resource[Quarkus guide for test resources].
+
+WireMock is a strong tool and provides many options to mock complex web services.
+To name only a few possibilities with WireMock, you are able to use https://wiremock.org/docs/response-templating/[response templates], it provides https://wiremock.org/docs/proxying[proxying] to forward specific requests, and it supports multiple protocols like gRPC,GraphQL, HTTPS and JWT.
