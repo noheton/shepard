@@ -1,0 +1,138 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-008 Database Target Architecture
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|17.09.2024
+|Status|Done
+
+|Context|
+*Current state*
+
+At the moment shepard uses three different databases:
+
+* Neo4j (graph db)
+* MongoDB (document db)
+* InfluxDB (timeseries db)
+
+*What was the reason for choosing different databases?*
+
+* In the very beginning the data was directly stored into the databases (influxdb, neo4j and mongodb), no domain model, just the data
+* In the second step the backend was created, the REST api was created and also the domain model
+* Special features of timeseries database are already in use (min, max, sum, etc.)
+* From a user perspective it feels easier to navigate through a graph database instead of a relational database
+
+*Known issues*
+
+* We have to use three different database query languages
+* Maintenance of three different databases and their libraries
+* For backup you have to consider all three databases
+* Issues with Neo4j
+** When to load relationships with data objects and how many and how does it influence performance.
+You have to know how the ogm works.
+** We had some issues with caching that we do not fully understand.
+** Lack of a large ecosystem (e.g. only one migration library available (private one))
+* Issues with InfluxDb
+** We are using influxdb v1.8 atm.
+** New versions of influxdb are completely different (completely new query language, etc.)
+** Bad feeling about a shift to paid services.
+** The library that we use to communicate with influxdb lacks some important features like query injection prevention.
+* Issues with MongoDB
+** The update process needs manual steps
+
+|Possible Solutions|
+
+1. We leave it as it is
+2. Neo4j + MongoDB
+3. Postgres only (Replace all database technologies with postgres)
+4. Neo4j + MongoDB + Postgres (replace influxdb with postgres timescaledb)
+5. Postgres + MongoDB (Replace influxdb and neo4j)
+6. Neo4j + Postgres (Replace influxdb and mongodb with postgres)
+
+image::adr/possible-database-architectures.png[]
+
+|Decisions|
+*Decision 1: Leave it as it is*
+This is not an option because of known issues with InfluxDB.
+We have to find a solution at least for that database.
+
+*Decision 2: Meta Data in Neo4j or Postgres*
+[cols="1,2,2"]
+!===
+!!Neo4j!Postgres
+!Migration effort!None!Big
+!Onboarding of new developers!Rather big!Rather small
+!Familiarity in the team!The team is familiar with Neo4j!The team is not familiar with Postgres
+!Ecosystem!Not big!Huge ecosystem, frequently used for a long time
+!Maintenance effort!
+Big, as we will have additional databases for data storage!Small to medium, if we use Postgres for all data persistence!
+Performance!Comparable if properly used!Comparable if properly used
+!===
+
+On the green field Postgres might be the better option with less maintenance effort and it’s big ecosystem.
+In the context of shepard we already have Neo4j, we would need to migrate data, the experience in the team is bigger for Neo4j.
+_All in all we decide to continue with Neo4j._
+
+*Decision 3: Database for Timeseries & Spatial Data*
+[cols="1,2,2"]
+!===
+!!MongoDB!Postgres
+!Migration Complexity!
+Rather easy, MongoDB is already there and we only have to migrate timeseries data!
+Medium migration effort
+
+!Performance!Performance is probably worse than Postgres for timeseries and spatial data!
+!Support for spatial data!Only supports 2D spatial data, no trivial and performant way to support 3D!
+
+!Summary!Not an option due to performance and spatial data!
+!===
+
+_As MongoDB does not seem to perform well for timeseries and spatial data we decide to store timeseries (and in the future spatial data) in postgres with timescaledb and PostGIS._
+
+*Decision 4: Database for Files & Structured Data*
+[cols="1,2,2,2"]
+!===
+!!Postgres for structured data + Blob storage (MinIO)(option 5)!
+Keep MongoDB(option 4)!
+Postgres(option 6)
+
+!Migration Complexity!All structured data and files have to be migrated!No migration effort!
+All structured data and files have to be migrated
+
+!Onboarding new Developers!!!
+New developers only have to know how to interact with two databases
+
+!Maintenance effort (updates of databases & clients)!
+We still have three databases to maintain!
+We still have three databases to maintain!
+We only have to maintain one database in addition to Neo4j
+
+!Reliability!
+Probably also very stable!
+MongoDB hasn’t been touched in months, so it reliably does it’s job!
+Probably also very stable
+
+!Performance (file size around 5-8 GB)!Good!Good!Unknown
+
+!Summary!
+This solution is not better than MongoDB, so it’s not feasible given the migration effort!!
+!===
+
+Postgres supports two ways for storing binary data link (https://www.postgresql.org/docs/7.4/jdbc-binary-data.html[bytea column and LargeObject API]).
+
+For large files we have to use the LargeObject API.
+But in both cases the data is stored in a single table.
+For tables we have a limitation of 32 TB (per-table size limitation).
+If we want to store multiple projects in one shepard instance, we might exceed this limit.
+So we are not able to store large objects in postgres.
+_The decision is to stay with MongoDB for files and structured data._
+
+|Consequences|
+
+* We still have to support three different databases.
+* Complexity and maintenance effort is higher.
+* Backup is more complex.
+
+|===
