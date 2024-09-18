@@ -11,7 +11,7 @@
             height="200px"
             class="white--text"
             gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
-          ></v-img>
+          />
           <v-card-title>Beautiful Scenery</v-card-title>
           <v-card-subtitle class="pb-0">Nature & Serenity</v-card-subtitle>
 
@@ -32,8 +32,8 @@
           <v-card-title>Contact Us</v-card-title>
           <v-card-text>
             <v-form>
-              <v-text-field label="Full Name" outlined></v-text-field>
-              <v-text-field label="Email" outlined></v-text-field>
+              <v-text-field label="Full Name" outlined />
+              <v-text-field label="Email" outlined />
               <v-textarea label="Message" rows="4" outlined />
             </v-form>
           </v-card-text>
