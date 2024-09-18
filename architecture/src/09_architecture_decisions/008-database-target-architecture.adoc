@@ -132,7 +132,7 @@ _The decision is to stay with MongoDB for files and structured data._
 |Consequences|
 
 * We still have to support three different databases.
-* Complexity and maintenance effort is higher.
-* Backup is more complex.
+* Complexity and maintenance costs are higher than with a single database, but just as high as now.
+* Same applies to the backup up of three databases.
 
 |===
