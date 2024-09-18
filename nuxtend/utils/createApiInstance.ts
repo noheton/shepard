@@ -1,9 +1,8 @@
 import type { BaseAPI } from "@dlr-shepard/backend-client";
 import { Configuration } from "@dlr-shepard/backend-client";
 
-const runtimeConfig = useRuntimeConfig();
-
 function getConfiguration(): Configuration {
+  const runtimeConfig = useRuntimeConfig();
   const config = new Configuration({
     basePath: runtimeConfig.public.backendApiUrl,
   });
