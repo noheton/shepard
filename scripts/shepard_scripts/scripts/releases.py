@@ -1,19 +1,34 @@
 import re
 from collections import defaultdict
+from typing import Any
 
 import click
 import jinja2
+from gitlab import GitlabHttpError, GitlabParsingError
 from gitlab.client import Gitlab
-from gitlab.v4.objects.merge_requests import MergeRequest
-from gitlab.v4.objects.projects import Project
-from gitlab.v4.objects.releases import ProjectRelease
+from gitlab.v4.objects import (
+    Issue,
+    MergeRequest,
+    Project,
+    ProjectMilestone,
+    ProjectRelease,
+)
 
 BREAKING_CHANGE_LABEL = "Breaking Change"
+REFACTORING_LABEL = "issue::refactoring"
 DEPENDENCY_BUMP_LABEL = "dependencies"
 TEMPLATE_FILE = "templates/release_notes.md"
 MAIN_BRANCH = "main"
 DEV_BRANCH = "develop"
 SEMVER_PATTERN = r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$"
+
+DEPENDENCY_ISSUE_DESCRIPTION = (
+    "After performing the release we need to update all dependencies. "
+    "The person that performed the release should also perform the dependency updates. "
+    "You can read more about dependency updates in our "
+    "[documentation](https://gitlab.com/dlr-shepard/shepard/-/blob/main/architecture/shepard-architectural-documentation.adoc?ref_type=heads#dependency-updates)"
+    "."
+)
 
 
 def _get_changes(
@@ -77,6 +92,18 @@ def get_project(gitlab_instance: str, token: str, project_id: int) -> Project:
         raise click.Abort(f"Project {ex} could not be found") from ex
 
 
+def get_user_id(gitlab_instance: str, token: str) -> int:
+    instance = Gitlab(gitlab_instance, token)
+    try:
+        # instance.user is None, so we have to fall back to the low-level api
+        current_user: dict[str, Any] = instance.http_get("/user")  # type: ignore
+        if "id" in current_user:
+            return current_user["id"]
+        raise click.Abort("Current user has no id")
+    except (GitlabHttpError, GitlabParsingError) as ex:
+        raise click.Abort("Could not fetch current user") from ex
+
+
 def _get_latest_release(project: Project) -> tuple[str, str]:
     """Get latests release date and tag.
     ---
@@ -90,7 +117,33 @@ def _get_latest_release(project: Project) -> tuple[str, str]:
         return (releases[0].released_at, releases[0].tag_name)
 
 
-def _create_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
+def _get_current_milestone(project: Project) -> ProjectMilestone:
+    # Find current active milestone
+    milestones: list[ProjectMilestone] = project.milestones.list(
+        all=True, state="active"
+    )  # type: ignore
+
+    # Filter expired milestones
+    milestones = [ms for ms in milestones if ms.expired is False]
+
+    if not milestones:
+        raise click.Abort("Could not fetch milestones from gitlab")
+
+    return milestones[0]
+
+
+def _get_dependency_dashboard(project: Project) -> Issue:
+    issues: list[Issue] = project.issues.list(
+        all=True, state="opened", search="Dependency Dashboard"
+    )  # type: ignore
+
+    if not issues:
+        raise click.Abort("Could not fetch issues from gitlab")
+
+    return issues[0]
+
+
+def _generate_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
     match = re.match(SEMVER_PATTERN, latest_release_tag)
     version_dict = defaultdict(int)
     if match:
@@ -126,7 +179,7 @@ def _create_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
     )
 
 
-def _create_release_notes(
+def _generate_release_notes(
     project: Project,
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
@@ -146,14 +199,14 @@ def _create_release_notes(
     return release_notes
 
 
-def create_release_details(project: Project) -> tuple[str, str]:
+def get_release_details(project: Project) -> tuple[str, str]:
     latest_release_date, latest_release_tag = _get_latest_release(project)
 
     breaking_changes, _dependencies, other_changes = _get_changes(
         project, latest_release_date
     )
-    release_notes = _create_release_notes(project, breaking_changes, other_changes)
-    next_tag = _create_next_tag(
+    release_notes = _generate_release_notes(project, breaking_changes, other_changes)
+    next_tag = _generate_next_tag(
         latest_release_tag, has_breaking_changes=bool(breaking_changes)
     )
 
@@ -172,8 +225,7 @@ def prompt_confirm(title: str, tag: str, notes: str):
     click.echo("Release notes:")
     click.echo(notes)
     click.echo()
-    if not click.confirm("OK?", abort=True):
-        raise click.Abort("Not confirmed")
+    click.confirm("OK?", abort=True)
 
 
 def create_release(project: Project, title: str, tag: str, notes: str):
@@ -186,3 +238,29 @@ def create_release(project: Project, title: str, tag: str, notes: str):
         }
     )
     click.echo("Successfully released")
+
+
+def create_dependency_issue(project: Project, user_id: int):
+    if not click.confirm(
+        "Do you want to automatically create a 'Update Dependencies' GitLab issue?"
+    ):
+        return
+
+    milestone = _get_current_milestone(project)
+    dashboard = _get_dependency_dashboard(project)
+    description = (
+        f"{DEPENDENCY_ISSUE_DESCRIPTION}\n\n"
+        f"For more information see the Dependency Dashboard: #{dashboard.get_id()}\n\n"
+        f"/relate #{dashboard.get_id()}\n"
+    )
+
+    project.issues.create(
+        {
+            "title": "Dependency Updates",
+            "description": description,
+            "labels": REFACTORING_LABEL,
+            "milestone_id": milestone.get_id(),
+            "assignee_ids": [user_id],
+        }
+    )
+    click.echo("Successfully created 'Update Dependencies' issue.")

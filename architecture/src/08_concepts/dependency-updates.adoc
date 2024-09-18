@@ -3,9 +3,15 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [[dependency-updates,Dependency Updates]]
 === Dependency Updates
 
-Dependencies of shepard are updated regularly. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
+Dependencies of shepard are updated regularly.
+To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab.
+The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json].
+In order for the config to be active, it has to be present at the default branch of the repository (main).
+The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
 
-The developer team is responsible of regularly handling the pull requests opened by renovate. This should happen once a week, except for weeks where new versions are released. As a weekly reminder, weekly update tickets are part of the sprints.
+The developer team is responsible of regularly handling the pull requests opened by renovate.
+This should happen once a month directly after creating a monthly release.
+As a reminder, monthly update tickets are part of the sprints.
 
 ==== Performing Updates
 
@@ -16,14 +22,17 @@ We handle the merge requests opened by renovate by performing the following step
 3. applying necessary changes if they are not too much effort
 4. merging the branch *or* <<suspending-an-update, suspending the update>>.
 
-Also, the dependencies in package-lock.json should be updated. This is done by running `npm update` in the top level directory.
+Also, the dependencies in package-lock.json should be updated.
+This is done by running `npm update` in the top level directory.
 
 [[suspending-an-update]]
 ==== Suspending an Update
 
-In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>. The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
+In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>.
+The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
 
-This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config]. Afterwards the config needs to be merged to main with the following commands:
+This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config].
+Afterwards the config needs to be merged to main with the following commands:
 
 ```sh
 git checkout main
