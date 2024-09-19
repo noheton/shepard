@@ -1,1 +1,5 @@
-<template><div>Collections</div></template>
+<template>
+  <div :style="{ display: 'flex', justifyContent: 'center' }">
+    <CollectionCollectionsPage />
+  </div>
+</template>
