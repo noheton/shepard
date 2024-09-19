@@ -1,10 +1,23 @@
-# Nuxt 3 Minimal Starter
+# Nuxt Frontend
 
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
+#### Downloads
+
+- Node JS and NPM: <https://nodejs.org/en/>
+- Vue CLI: <https://cli.vuejs.org/>
+- Visual Studio Code: <https://code.visualstudio.com/>
+- Vue Devtools for Firefox: <https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/>
+- Vue Devtools for Chrome: <https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd>
+
+#### Installation
+
+- install Node JS and NPM
+- install Visual Studio Code and the recommended plugins
+
 ## Setup
 
-Make sure to install the dependencies:
+- Make sure to install the dependencies:
 
 ```bash
 # npm
@@ -19,6 +32,22 @@ yarn install
 # bun
 bun install
 ```
+
+- Add the needed environment variables by copying `env.example` into `.env` and adapting the values:
+
+```bash
+NUXT_PUBLIC_BACKEND_API_URL='Backend API URL' # (should end with '/')
+AUTH_ORIGIN='Frontend URL' # (should end with '/')
+AUTH_SECRET='Frontend auth secret'
+OIDC_CLIENT_ID='oidc-client-id'
+OIDC_ISSUER='oidc-issuer-url'
+```
+
+> **_NOTE:_** The `AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`.
+>
+> ```bash
+> $ openssl rand -base64 32
+> ```
 
 ## Development Server
 
