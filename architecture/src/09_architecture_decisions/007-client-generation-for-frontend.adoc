@@ -30,7 +30,7 @@ Provide a script to (re)generate the client based on a local or remote backend i
   * we can add a pipeline job checking if the generated client and the backend are in sync
 
 |Decision|
-We decide to to with option 2 and put the generated client under version control.
+We decide to go with option 2 and put the generated client under version control.
 
 |Consequences|
 * The client needs to be added to the repo and the imports in the frontend need to be adapted

@@ -174,6 +174,19 @@ https://nuxtend.hostname_placeholder_do_not_change {
 <a href="https://nuxtend.hostname_placeholder_do_not_change/"> https://nuxtend.hostname_placeholder_do_not_change/ </a>
 ```
 
+- Add the experimental environment variables in `.env`
+
+```
+FRONTEND_URL='Frontend URL' # (should end with '/')
+FRONTEND_AUTH_SECRET='Frontend auth secret'
+```
+
+> **_NOTE:_** The `FRONTEND_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`
+>
+> ```bash
+> $ openssl rand -base64 32
+> ```
+
 - Run the experimental docker compose file
 
 ```bash

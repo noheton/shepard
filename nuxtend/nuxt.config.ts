@@ -12,14 +12,29 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    "@nuxt/eslint",
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", config => {
         // @ts-expect-error - This is set by the official Vuetify documentation
         config.plugins.push(vuetify({ autoImport: true }));
       });
     },
+    "@nuxt/eslint",
+    "@sidebase/nuxt-auth",
   ],
+
+  auth: {
+    isEnabled: true,
+    baseURL: `${process.env.AUTH_ORIGIN}api/auth/`,
+    provider: {
+      type: "authjs",
+      trustHost: false,
+      defaultProvider: "oidc",
+      addDefaultCallbackUrl: true,
+    },
+    sessionRefresh: {
+      enablePeriodically: 10000,
+    },
+  },
 
   // This reverts the new srcDir default from `app` back to your root directory
   srcDir: ".",

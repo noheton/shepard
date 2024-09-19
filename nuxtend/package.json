@@ -15,6 +15,7 @@
   "dependencies": {
     "@dlr-shepard/backend-client": "file:../backend-client",
     "@mdi/font": "7.4.47",
+    "@sidebase/nuxt-auth": "^0.9.2",
     "consola": "3.2.3",
     "nuxt": "3.13.1",
     "vue": "3.5.3"

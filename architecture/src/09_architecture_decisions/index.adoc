@@ -20,3 +20,5 @@ include::006-remove-cpp-client.adoc[]
 include::007-client-generation-for-frontend.adoc[]
 
 include::008-database-target-architecture.adoc[]
+
+include::009-nuxt-oidc-library.adoc[]
