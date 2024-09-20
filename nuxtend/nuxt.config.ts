@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   compatibilityDate: "2024-09-06",
   devtools: { enabled: true },
 
+  typescript: {
+    typeCheck: true,
+  },
+
   build: {
     transpile: ["vuetify"],
   },
