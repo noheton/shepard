@@ -37,13 +37,13 @@ bun install
 
 ```bash
 NUXT_PUBLIC_BACKEND_API_URL='Backend API URL' # (should end with '/')
-AUTH_ORIGIN='Frontend URL' # (should end with '/')
-AUTH_SECRET='Frontend auth secret'
-OIDC_CLIENT_ID='oidc-client-id'
-OIDC_ISSUER='oidc-issuer-url'
+NUXT_AUTH_ORIGIN='Frontend URL' # (should end with '/')
+NUXT_AUTH_SECRET='Frontend auth secret'
+NUXT_OIDC_CLIENT_ID='oidc-client-id'
+NUXT_OIDC_ISSUER='oidc-issuer-url'
 ```
 
-> **_NOTE:_** The `AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`.
+> **_NOTE:_** The `NUXT_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`.
 >
 > ```bash
 > $ openssl rand -base64 32

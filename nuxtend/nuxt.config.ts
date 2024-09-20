@@ -24,10 +24,10 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
-    baseURL: `${process.env.AUTH_ORIGIN}api/auth/`,
+    originEnvKey: "NUXT_AUTH_ORIGIN",
     provider: {
       type: "authjs",
-      trustHost: false,
+      trustHost: true,
       defaultProvider: "oidc",
       addDefaultCallbackUrl: true,
     },
@@ -53,6 +53,10 @@ export default defineNuxtConfig({
 
   // Environment variables
   runtimeConfig: {
+    auhtOrigin: "",
+    authSecret: "",
+    oidcClientId: "",
+    oidcIssuer: "",
     public: {
       backendApiUrl: "",
     },
