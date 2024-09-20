@@ -1,8 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar>
-      <HeaderBar />
-    </v-app-bar>
+    <HeaderBar />
     <v-main>
       <slot />
     </v-main>

@@ -1,15 +1,15 @@
 <template>
-  <v-toolbar>
-    <v-toolbar-title>
+  <v-app-bar>
+    <v-app-bar-title>
       <v-btn to="/">
         <v-img src="../assets/Shepard_Logo.svg" height="25" width="125" />
       </v-btn>
       <v-btn to="/collections">Collections</v-btn>
-    </v-toolbar-title>
+    </v-app-bar-title>
     <v-btn prepend-icon="mdi-account" @click="handleAuth()">
       {{ isSignedIn ? "Sign Out" : "Sign In" }}
     </v-btn>
-  </v-toolbar>
+  </v-app-bar>
 </template>
 
 <script setup>
