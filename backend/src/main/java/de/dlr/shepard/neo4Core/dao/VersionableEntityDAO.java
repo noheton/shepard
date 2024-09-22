@@ -46,6 +46,7 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
       CypherQueryHelper.getVersionPart("v", versionUID)
     );
     query += returnPart;
+
     Iterable<T> result = findByQuery(query, paramsMap);
     if (!result.iterator().hasNext()) return null;
     return result.iterator().next();

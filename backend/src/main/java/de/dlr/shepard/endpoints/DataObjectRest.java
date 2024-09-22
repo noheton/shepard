@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -70,6 +71,7 @@ public class DataObjectRest {
   @Parameter(name = Constants.QP_SUCCESSOR_ID)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
   @Parameter(name = Constants.QP_ORDER_DESC)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllDataObjects(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @QueryParam(Constants.QP_NAME) String name,
@@ -79,7 +81,8 @@ public class DataObjectRest {
     @QueryParam(Constants.QP_PREDECESSOR_ID) Long predecessorId,
     @QueryParam(Constants.QP_SUCCESSOR_ID) Long successorId,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
-    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     var paramsWithShepardIds = new QueryParamHelper();
     if (name != null) paramsWithShepardIds = paramsWithShepardIds.withName(name);
@@ -89,7 +92,7 @@ public class DataObjectRest {
     if (successorId != null) paramsWithShepardIds = paramsWithShepardIds.withSuccessorId(successorId);
     if (orderBy != null) paramsWithShepardIds = paramsWithShepardIds.withOrderByAttribute(orderBy, orderDesc);
 
-    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionId, paramsWithShepardIds);
+    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionId, paramsWithShepardIds, versionUID);
     var result = new ArrayList<DataObjectIO>(dataObjects.size());
 
     for (var dataObject : dataObjects) {
@@ -110,11 +113,13 @@ public class DataObjectRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
+    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId, versionUID);
     return Response.ok(new DataObjectIO(dataObject)).build();
   }
 

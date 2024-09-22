@@ -32,6 +32,15 @@ public class VersionDAOTest extends BaseTestCase {
   private Result result;
 
   @Mock
+  private Result successorResult;
+
+  @Mock
+  private Result dataObjectResult;
+
+  @Mock
+  private Result childResult;
+
+  @Mock
   private QueryStatistics queryStatistics;
 
   @InjectMocks
@@ -129,5 +138,71 @@ public class VersionDAOTest extends BaseTestCase {
     when(queryStatistics.containsUpdates()).thenReturn(true);
     dao.createLink(versionableEntityId, versionUID);
     verify(session).query(query, paramsMap);
+  }
+
+  @Test
+  public void copyDataObjectTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(2L, 3L);
+    Map<String, Object> paramsMap = new HashMap<>();
+    String query =
+      "MATCH (do_source:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(col_target:Collection) WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  CREATE (col_target)-[:has_dataobject]->(do_target:DataObject)-[:has_version]->(v_target)  SET do_target = do_source";
+    when(session.query(query, paramsMap)).thenReturn(result);
+    when(result.queryStatistics()).thenReturn(queryStatistics);
+    when(queryStatistics.containsUpdates()).thenReturn(true);
+    dao.copyDataObjects(sourceVersionUID, targetVersionUID);
+    verify(session).query(query, paramsMap);
+  }
+
+  @Test
+  public void copyChildRelationsTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(2L, 3L);
+    Map<String, Object> paramsMap = new HashMap<>();
+    String query =
+      "MATCH (do_source_parent:DataObject)-[:has_child]->(do_source_child:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_parent:DataObject), (v_target)<-[:has_version]-(do_target_child:DataObject)  WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  AND do_source_parent.shepardId=do_target_parent.shepardId AND do_source_child.shepardId=do_target_child.shepardId  CREATE (do_target_parent)-[:has_child]->(do_target_child)";
+    when(session.query(query, paramsMap)).thenReturn(result);
+    when(result.queryStatistics()).thenReturn(queryStatistics);
+    when(queryStatistics.containsUpdates()).thenReturn(true);
+    dao.copyChildRelations(sourceVersionUID, targetVersionUID);
+    verify(session).query(query, paramsMap);
+  }
+
+  @Test
+  public void copySuccessorRelationsTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(2L, 3L);
+    Map<String, Object> paramsMap = new HashMap<>();
+    String query =
+      "MATCH (do_source_predecessor:DataObject)-[:has_successor]->(do_source_successor:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_predecessor:DataObject), (v_target)<-[:has_version]-(do_target_successor:DataObject)  WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  AND do_source_predecessor.shepardId=do_target_predecessor.shepardId AND do_source_successor.shepardId=do_target_successor.shepardId  CREATE (do_target_predecessor)-[:has_successor]->(do_target_successor)";
+    when(session.query(query, paramsMap)).thenReturn(result);
+    when(result.queryStatistics()).thenReturn(queryStatistics);
+    when(queryStatistics.containsUpdates()).thenReturn(true);
+    dao.copySuccessorRelations(sourceVersionUID, targetVersionUID);
+    verify(session).query(query, paramsMap);
+  }
+
+  @Test
+  public void copyDataObjectsWithParentsAndPredecessorsTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(2L, 3L);
+    String successorsQuery =
+      "MATCH (do_source_predecessor:DataObject)-[:has_successor]->(do_source_successor:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_predecessor:DataObject), (v_target)<-[:has_version]-(do_target_successor:DataObject)  WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  AND do_source_predecessor.shepardId=do_target_predecessor.shepardId AND do_source_successor.shepardId=do_target_successor.shepardId  CREATE (do_target_predecessor)-[:has_successor]->(do_target_successor)";
+    Map<String, Object> paramsMap = new HashMap<>();
+    when(session.query(successorsQuery, paramsMap)).thenReturn(successorResult);
+    when(successorResult.queryStatistics()).thenReturn(queryStatistics);
+    String childQuery =
+      "MATCH (do_source_parent:DataObject)-[:has_child]->(do_source_child:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_parent:DataObject), (v_target)<-[:has_version]-(do_target_child:DataObject)  WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  AND do_source_parent.shepardId=do_target_parent.shepardId AND do_source_child.shepardId=do_target_child.shepardId  CREATE (do_target_parent)-[:has_child]->(do_target_child)";
+    when(session.query(childQuery, paramsMap)).thenReturn(childResult);
+    when(childResult.queryStatistics()).thenReturn(queryStatistics);
+    String dataObjectQuery =
+      "MATCH (do_source:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(col_target:Collection) WHERE v_source.uid = '00000000-0000-0000-0000-000000000001' AND v_target.uid = '00000000-0000-0002-0000-000000000003'  CREATE (col_target)-[:has_dataobject]->(do_target:DataObject)-[:has_version]->(v_target)  SET do_target = do_source";
+    when(session.query(dataObjectQuery, paramsMap)).thenReturn(dataObjectResult);
+    when(dataObjectResult.queryStatistics()).thenReturn(queryStatistics);
+    when(queryStatistics.containsUpdates()).thenReturn(true);
+    dao.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID);
+    verify(session).query(dataObjectQuery, paramsMap);
+    verify(session).query(successorsQuery, paramsMap);
+    verify(session).query(childQuery, paramsMap);
   }
 }

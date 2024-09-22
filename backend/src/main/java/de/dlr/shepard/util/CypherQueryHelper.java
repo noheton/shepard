@@ -100,6 +100,6 @@ public class CypherQueryHelper {
   }
 
   public static String getVersionPart(String variable, UUID versionUID) {
-    return variable + ".uid = '" + versionUID + "'";
+    return "(" + variable + ".uid = '" + versionUID + "')";
   }
 }

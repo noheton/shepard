@@ -209,7 +209,7 @@ public class CollectionServiceTest {
     Collection ret = new Collection(1L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId)).thenReturn(ret);
-    var result = service.getCollectionByShepardId(shepardId, null);
+    var result = service.getCollectionByShepardId(shepardId);
     assertEquals(ret, result);
   }
 

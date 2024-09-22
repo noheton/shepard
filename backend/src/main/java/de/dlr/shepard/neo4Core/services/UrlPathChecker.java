@@ -290,7 +290,7 @@ public class UrlPathChecker {
   private String checkDataObject(DataObject dataObject, Collection collection) {
     if (dataObject == null) {
       return "DataObject does not exist";
-    } else if (!dataObject.getCollection().getId().equals(collection.getId())) {
+    } else if (!dataObject.getCollection().getShepardId().equals(collection.getShepardId())) {
       return "There is no association between collection and dataObject";
     }
     return null;
@@ -299,7 +299,7 @@ public class UrlPathChecker {
   private String checkReference(BasicReference reference, DataObject dataObject) {
     if (reference == null) {
       return "Reference does not exist";
-    } else if (!reference.getDataObject().getId().equals(dataObject.getId())) {
+    } else if (!reference.getDataObject().getShepardId().equals(dataObject.getShepardId())) {
       return "There is no association between dataObject and reference";
     }
     return null;

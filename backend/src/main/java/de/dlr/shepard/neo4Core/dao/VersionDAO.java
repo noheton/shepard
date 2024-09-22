@@ -89,4 +89,70 @@ public class VersionDAO extends GenericDAO<Version> {
     Map<String, Object> paramsMap = new HashMap<>();
     runQuery(query, paramsMap);
   }
+
+  public boolean copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
+    copyDataObjects(sourceVersionUID, targetVersionUID);
+    copyChildRelations(sourceVersionUID, targetVersionUID);
+    copySuccessorRelations(sourceVersionUID, targetVersionUID);
+    return true;
+  }
+
+  public void removeSuperflousHasDataObjects(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (v_target:Version)<-[:has_version]-(col_target:Collection)-[hd:has_dataobject]->(do_source:DataObject)-[:has_version]->(v_source:Version)"
+    );
+    queryBuffer.append(
+      "WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(" DELETE hd");
+  }
+
+  public void copyDataObjects(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(col_target:Collection)"
+    );
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(" CREATE (col_target)-[:has_dataobject]->(do_target:DataObject)-[:has_version]->(v_target) ");
+    queryBuffer.append(" SET do_target = do_source");
+    Map<String, Object> paramsMap = new HashMap<>();
+    runQuery(queryBuffer.toString(), paramsMap);
+  }
+
+  public void copyChildRelations(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source_parent:DataObject)-[:has_child]->(do_source_child:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_parent:DataObject), "
+    );
+    queryBuffer.append("(v_target)<-[:has_version]-(do_target_child:DataObject) ");
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(
+      " AND do_source_parent.shepardId=do_target_parent.shepardId AND do_source_child.shepardId=do_target_child.shepardId "
+    );
+    queryBuffer.append(" CREATE (do_target_parent)-[:has_child]->(do_target_child)");
+    Map<String, Object> paramsMap = new HashMap<>();
+    runQuery(queryBuffer.toString(), paramsMap);
+  }
+
+  public void copySuccessorRelations(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source_predecessor:DataObject)-[:has_successor]->(do_source_successor:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_predecessor:DataObject), "
+    );
+    queryBuffer.append("(v_target)<-[:has_version]-(do_target_successor:DataObject) ");
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(
+      " AND do_source_predecessor.shepardId=do_target_predecessor.shepardId AND do_source_successor.shepardId=do_target_successor.shepardId "
+    );
+    queryBuffer.append(" CREATE (do_target_predecessor)-[:has_successor]->(do_target_successor)");
+    Map<String, Object> paramsMap = new HashMap<>();
+    runQuery(queryBuffer.toString(), paramsMap);
+  }
 }

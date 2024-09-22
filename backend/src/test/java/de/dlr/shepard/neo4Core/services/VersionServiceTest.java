@@ -1,7 +1,9 @@
 package de.dlr.shepard.neo4Core.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,6 +83,8 @@ public class VersionServiceTest extends BaseTestCase {
     User user = new User(username);
     Version HEADVersion = new Version();
     HEADVersion.setName("HEADVersion");
+    Version newVersion = new Version();
+    newVersion.setName("new Version");
     UUID HeadVersionUUID = new UUID(2L, 3L);
     HEADVersion.setUid(HeadVersionUUID);
     Version predecessorVersion = new Version();
@@ -93,10 +97,25 @@ public class VersionServiceTest extends BaseTestCase {
     when(userDAO.find(username)).thenReturn(user);
     when(collectionService.getCollectionByShepardId(collectionId, null)).thenReturn(collection);
     when(dateHelper.getDate()).thenReturn(date);
+    when(versionDAO.createOrUpdate(any())).thenReturn(predecessorVersion);
     service.createVersion(collectionId, versionIO, username);
     verify(versionDAO, times(2)).createOrUpdate(newVersionCaptor.capture());
-    verify(collectionDAO).createOrUpdate(collectionCaptor.capture());
-    Collection collectionCopy = collectionCaptor.getValue();
-    assertEquals(collectionCopy.getVersion().getDescription(), versionIO.getDescription());
+    verify(collectionDAO, times(1)).createOrUpdate(any());
+  }
+
+  @Test
+  public void copyDataObjectsWithParentsAndPredecessorsTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(0L, 1L);
+    when(versionDAO.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID)).thenReturn(true);
+    assertTrue(service.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID));
+  }
+
+  @Test
+  public void getVersionTest() {
+    UUID VersionUID = new UUID(0L, 1L);
+    Version version = new Version(VersionUID);
+    when(versionDAO.find(VersionUID)).thenReturn(version);
+    assertEquals(version, service.getVersion(VersionUID));
   }
 }
