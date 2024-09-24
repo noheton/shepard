@@ -1,0 +1,37 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Shepard Exceptions
+
+[plantuml, "{plantUMLDir}exceptions", png]
+----
+@startuml Shepard Exceptions
+
+[RuntimeException] as re
+[WebApplicationException] as wae
+[ShepardException] as se
+[InvalidAuthException] as iae
+[InvalidRequestException] as ire
+[ShepardParserException] as parser
+[ShepardProcessingException] as processing
+
+
+wae -u-> re
+
+se -u-> wae
+
+iae -u-> se
+ire -u-> se
+parser -u-> se
+processing -u-> se
+@enduml
+----
+
+When an exception is to be thrown than in most cases it should be of the abstract type `ShepardException`.
+The `ShepardExceptionMapper` is able to handle such exceptions and in turn informs the user in a human readable way about that exception.
+
+Currently, there are four different sub-types of the `ShepardException`:
+
+- **InvalidAuthException:** The `InvalidAuthException` is to be thrown when a resource is accessed without sufficient permissions.
+- **InvalidRequestException:** The `InvalidRequestException` is used when the request misses required information or is otherwise invalid.
+- **ShepardParserException:** The `ShepardParserException` is used by the search package to indicate that the search query could not be parsed.
+- **ShepardProcessingException:** The `ShepardProcessingException` indicates an arbitrary issue while processing the request.

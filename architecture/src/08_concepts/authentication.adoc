@@ -1,0 +1,26 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Authentication
+
+We decided to rely on external identity providers with shepard.
+This allows us to use existing user databases such as Active Directories.
+In addition, we do not have to implement our own user database.
+Most shepard instances use keycloak as their identity provider.
+However, we want to be compatible with the OIDC specification so that other OIDC identity providers could work with shepard.
+
+The `JWTFilter`, which filters every incoming request, implements authentication by validating the submitted JWT.
+For this purpose, the JWT is decoded with a statically configured public key.
+OIDC allows the key to be obtained dynamically from the identity provider.
+However, we decided that a static configuration is more secure and has practically no disadvantages.
+The attack vector we are trying to mitigate here is that an attacker gains access to the infrastructure and somehow injects their own public key, which shepard would accept from that point on.
+
+If configured, the system also checks whether certain roles are present among the JWT's `realm_access.roles` attribute.
+This can be done by configuring the variable `OIDC_ROLES` for the backend.
+The backend then only accepts JWTs with the specified role.
+This enables the reuse of existing identity providers for different shepard instances, each of which can be accessed by different user groups.
+For example, if someone uses an Active Directory for Keycloak to fetch users from, then Keycloak could add specific roles to people based on AD groups they belong to.
+
+In addition to OIDC, we also allow authentication via API keys.
+Shepard generates these keys itself and stores them in our internal database.
+Although the API keys are also JWTs, we have to check whether the specified key can be found in our database.
+Otherwise, we would continue to accept keys that have already been deleted, which is not the intended behavior.
