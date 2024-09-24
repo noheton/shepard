@@ -35,7 +35,7 @@ export default defineNuxtConfig({
       addDefaultCallbackUrl: true,
     },
     sessionRefresh: {
-      enablePeriodically: 10000,
+      enablePeriodically: 60000,
     },
   },
 

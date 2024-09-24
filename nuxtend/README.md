@@ -43,7 +43,7 @@ NUXT_OIDC_CLIENT_ID='oidc-client-id'
 NUXT_OIDC_ISSUER='oidc-issuer-url'
 ```
 
-> **_NOTE:_** The `NUXT_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`.
+> **_NOTE:_** The `NUXT_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. You can quickly create a good value on the command line using `openssl`.
 >
 > ```bash
 > $ openssl rand -base64 32

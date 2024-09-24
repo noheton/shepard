@@ -2,7 +2,7 @@
   <v-app-bar>
     <v-app-bar-title>
       <v-btn to="/">
-        <v-img src="../assets/Shepard_Logo.svg" height="25" width="125" />
+        <v-img src="../assets/shepard_logo.svg" height="25" width="125" />
       </v-btn>
       <v-btn to="/collections">Collections</v-btn>
     </v-app-bar-title>
