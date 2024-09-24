@@ -28,10 +28,9 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
-    originEnvKey: "NUXT_AUTH_ORIGIN",
     provider: {
       type: "authjs",
-      trustHost: true,
+      trustHost: false,
       defaultProvider: "oidc",
       addDefaultCallbackUrl: true,
     },
@@ -57,7 +56,6 @@ export default defineNuxtConfig({
 
   // Environment variables
   runtimeConfig: {
-    auhtOrigin: "",
     authSecret: "",
     oidcClientId: "",
     oidcIssuer: "",
