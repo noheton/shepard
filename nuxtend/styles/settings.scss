@@ -1,0 +1,51 @@
+@use "vuetify/settings" with (
+  // global overrides
+  $body-font-family: "Work Sans",
+  $heading-font-family: "Work Sans",
+  $font-size-root: 1rem,
+  $typography: (
+    "h1": (
+      "size": 3rem,
+      "weight": 300,
+      "line-height": 3.75rem,
+    ),
+    "h2": (
+      "size": 2.25rem,
+      "weight": 300,
+      "line-height": 3rem,
+    ),
+    "h3": (
+      "size": 1.875rem,
+      "weight": 400,
+      "line-height": 2.625rem,
+    ),
+    "h4": (
+      "size": 1.5rem,
+      "weight": 400,
+      "line-height": 2.25rem,
+    ),
+    "body-1": (
+      "size": 1rem,
+      "weight": 400,
+      "line-height": 1.5,
+      "text-transform": none,
+    ),
+    "body-2": (
+      "size": 0.875rem,
+      "weight": 400,
+      "line-height": 1.425,
+      "text-transform": none,
+    ),
+    "button": (
+      "size": 0.875rem,
+      "weight": 500,
+      "line-height": 2.6,
+      "text-transform": uppercase,
+    )
+  ),
+
+  // app-bar overrides
+  $app-bar-border-style: solid,
+  $app-bar-elevation: 0,
+  $app-bar-prominent-height: 64px
+);

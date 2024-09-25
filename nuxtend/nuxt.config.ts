@@ -1,4 +1,5 @@
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-09-06",
   devtools: { enabled: true },
@@ -19,7 +20,12 @@ export default defineNuxtConfig({
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", config => {
         // @ts-expect-error - This is set by the official Vuetify documentation
-        config.plugins.push(vuetify({ autoImport: true }));
+        config.plugins.push(
+          vuetify({
+            autoImport: true,
+            styles: { configFile: "./styles/settings.scss" },
+          }),
+        );
       });
     },
     "@nuxt/eslint",
@@ -47,6 +53,13 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    css: {
+      preprocessorOptions: {
+        sass: {
+          api: "modern-compiler",
+        },
+      },
+    },
     vue: {
       template: {
         transformAssetUrls,
