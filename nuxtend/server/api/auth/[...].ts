@@ -1,5 +1,8 @@
 import { NuxtAuthHandler } from "#auth";
 const runtimeConfig = useRuntimeConfig();
+const OIDC_CONFIGURATION_URL = new URL(
+  `${runtimeConfig.oidcIssuer}.well-known/openid-configuration`,
+);
 export default NuxtAuthHandler({
   secret: runtimeConfig.authSecret,
   providers: [
@@ -20,33 +23,27 @@ export default NuxtAuthHandler({
   ],
   callbacks: {
     async jwt({ token, account }) {
-      if (
-        account?.id_token &&
-        account?.access_token &&
-        account?.refresh_token &&
-        account?.expires_at
-      ) {
-        token.accessToken = account.access_token;
-        token.idToken = account.id_token;
-        token.expiresAt = account.expires_at;
-        token.refreshToken = account.refresh_token;
-        return token;
+      if (account) {
+        return {
+          accessToken: account.access_token,
+          idToken: account.id_token,
+          expiresAt: account.expires_at,
+          refreshToken: account.refresh_token,
+        } as typeof token;
       } else if (Date.now() < token.expiresAt * 1000) {
         return token;
       } else {
         if (!token.refreshToken) throw new TypeError("Missing refresh_token");
         try {
-          const response = await fetch(
-            `${runtimeConfig.oidcIssuer}protocol/openid-connect/token`,
-            {
-              method: "POST",
-              body: new URLSearchParams({
-                client_id: runtimeConfig.oidcClientId,
-                grant_type: "refresh_token",
-                refresh_token: token.refreshToken,
-              }),
-            },
-          );
+          const tokenUrl = await getTokenUrl(OIDC_CONFIGURATION_URL);
+          const response = await fetch(tokenUrl, {
+            method: "POST",
+            body: new URLSearchParams({
+              client_id: runtimeConfig.oidcClientId,
+              grant_type: "refresh_token",
+              refresh_token: token.refreshToken,
+            }),
+          });
 
           const tokensOrError = await response.json();
 
@@ -84,9 +81,7 @@ export default NuxtAuthHandler({
   },
   events: {
     async signOut({ token }: { token: { idToken: string } }) {
-      const logOutUrl = new URL(
-        `${runtimeConfig.oidcIssuer}protocol/openid-connect/logout`,
-      );
+      const logOutUrl = await getLogoutUrl(OIDC_CONFIGURATION_URL);
       logOutUrl.searchParams.set("id_token_hint", token.idToken);
       fetch(logOutUrl);
     },
