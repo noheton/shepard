@@ -40,9 +40,6 @@ export default defineNuxtConfig({
       defaultProvider: "oidc",
       addDefaultCallbackUrl: true,
     },
-    sessionRefresh: {
-      enablePeriodically: 60000,
-    },
   },
 
   // This reverts the new srcDir default from `app` back to your root directory

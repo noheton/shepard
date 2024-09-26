@@ -3,8 +3,10 @@ import { Configuration } from "@dlr-shepard/backend-client";
 
 function getConfiguration(): Configuration {
   const runtimeConfig = useRuntimeConfig();
+  const { data } = useAuth();
   const config = new Configuration({
     basePath: runtimeConfig.public.backendApiUrl,
+    accessToken: data.value?.accessToken,
   });
   return config;
 }

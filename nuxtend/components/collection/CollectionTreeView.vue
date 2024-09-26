@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
 import {
-  getFakeDataObjectById,
-  getFakeDataObjectsOfCollection,
-  pause,
-} from "./collectionFakeData";
-import { isTreeViewItem, type TreeViewItem } from "./collectionUtils";
+  isTreeViewItem,
+  mapToTreeViewItems,
+  type TreeViewItem,
+} from "./collectionUtils";
 
 interface CollectionTreeViewProps {
   collectionId: number;
@@ -18,42 +18,41 @@ const emit = defineEmits<{
 const collectionId = props.collectionId;
 const items = ref<TreeViewItem[]>([]);
 
-async function loadDataObjectsOfCollection() {
-  const dataObjects = await getFakeDataObjectsOfCollection(collectionId);
-  items.value = dataObjects.map(dataObject => {
-    return {
-      id: dataObject.id ?? 1,
-      title: dataObject.name ?? "",
-      children: [] as TreeViewItem[],
-      childrenIds: dataObject.childrenIds,
-    };
-  });
+async function fetchRootDataObjectsOfCollection() {
+  createApiInstance(DataObjectApi)
+    .getAllDataObjects({ collectionId, parentId: -1 })
+    .then(response => {
+      items.value = mapToTreeViewItems(response);
+    })
+    .catch(error => {
+      handleError(error, "getAllDataObjects");
+    });
 }
 
-async function loadChildren(item: unknown) {
+async function fetchChildren(item: unknown) {
   if (!isTreeViewItem(item)) return;
   // Do not load if no childrenIds or children already loaded
   if (!item.childrenIds?.length || item.children?.length) return;
 
-  await pause(1500);
-
   if (Array.isArray(item?.childrenIds)) {
     const dataObjectsToAdd = await Promise.all(
       item.childrenIds.map(async (childId: number) => {
-        return getFakeDataObjectById(collectionId, childId);
+        return fetchDataObject(collectionId, childId);
       }),
     );
 
-    const childsToAdd = dataObjectsToAdd.map(dataObject => {
-      return {
-        id: dataObject.id,
-        title: dataObject.name,
-        childrenIds: dataObject.childrenIds,
-        children: dataObject.childrenIds?.length ? [] : undefined,
-      } as TreeViewItem;
-    });
-    item.children.push(...childsToAdd);
+    item.children?.push(...mapToTreeViewItems(dataObjectsToAdd));
   }
+}
+
+function fetchDataObject(
+  collectionId: number,
+  dataObjectId: number,
+): Promise<DataObject> {
+  return createApiInstance(DataObjectApi).getDataObject({
+    collectionId,
+    dataObjectId,
+  });
 }
 
 function onActivated(activeItems: unknown) {
@@ -63,7 +62,7 @@ function onActivated(activeItems: unknown) {
   }
 }
 
-loadDataObjectsOfCollection();
+fetchRootDataObjectsOfCollection();
 </script>
 
 <template>
@@ -72,7 +71,7 @@ loadDataObjectsOfCollection();
       :items="items"
       item-title="title"
       item-value="id"
-      :load-children="loadChildren"
+      :load-children="fetchChildren"
       activatable
       active-strategy="single-independent"
       color="warning"
