@@ -40,6 +40,9 @@ export default defineNuxtConfig({
       defaultProvider: "oidc",
       addDefaultCallbackUrl: true,
     },
+    sessionRefresh: {
+      enablePeriodically: 60000 * 5 + 50, // 5 minutes + 50ms debounce (so that the token is actually not valid)
+    },
   },
 
   // This reverts the new srcDir default from `app` back to your root directory
