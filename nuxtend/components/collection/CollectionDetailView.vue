@@ -46,10 +46,12 @@ watchEffect(() => {
     <v-row>
       <v-col cols="4">Collection ID: {{ dataObject.collectionId }}</v-col>
       <v-col cols="4">
-        Created at: {{ dataObject.createdAt?.toDateString() }}
+        Created at: {{ dataObject.createdAt?.toDateString() }} by
+        {{ dataObject.createdBy }}
       </v-col>
       <v-col v-if="dataObject.updatedAt" cols="4">
-        Updated at: {{ dataObject.updatedAt?.toDateString() }}
+        Updated at: {{ dataObject.updatedAt?.toDateString() }} by
+        {{ dataObject.updatedBy }}
       </v-col>
     </v-row>
     <v-row>
