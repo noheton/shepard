@@ -45,5 +45,5 @@ We decide to go with link:https://github.com/sidebase/nuxt-auth[@sidebase/nuxt-a
 
 |Consequences|
 * We have to gain knowledge about this module and how to efficiently use it.
-* We have to add two additional environment variables(`AUTH_ORIGIN` and `AUTH_SECRET`), introducing a breaking change.
+* We have to add two additional environment variables(`AUTH_ORIGIN` and `NUXT_AUTH_SECRET`), introducing a breaking change.
 |===
