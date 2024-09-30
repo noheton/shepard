@@ -1,4 +1,8 @@
 @use "vuetify/settings" with (
+  // Disabling color packs
+  // https://vuetifyjs.com/en/features/sass-variables/#disabling-color-packs
+  $color-pack: false,
+
   // global overrides
   $body-font-family: "Work Sans",
   $heading-font-family: "Work Sans",
@@ -24,18 +28,34 @@
       "weight": 400,
       "line-height": 2.25rem,
     ),
-    "body-1": (
-      "size": 1rem,
-      "weight": 400,
-      "line-height": 1.5,
-      "text-transform": none,
-    ),
-    "body-2": (
-      "size": 0.875rem,
-      "weight": 400,
-      "line-height": 1.425,
-      "text-transform": none,
-    ),
+    //Text 2
+    "subtitle-1":
+      (
+        "size": 1.25,
+        "line-height": 2rem,
+      ),
+    // Text 3
+    "subtitle-2":
+      (
+        "size": 1.125rem,
+        "line-height": 1.875rem,
+      ),
+    // Text 4
+    "body-1":
+      (
+        "size": 1rem,
+        "weight": 400,
+        "line-height": 1.5,
+        "text-transform": none,
+      ),
+    // Text 5
+    "body-2":
+      (
+        "size": 0.875rem,
+        "weight": 400,
+        "line-height": 1.425,
+        "text-transform": none,
+      ),
     "button": (
       "size": 0.875rem,
       "weight": 500,

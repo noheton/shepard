@@ -66,18 +66,29 @@ fetchRootDataObjectsOfCollection();
 </script>
 
 <template>
-  <div>
+  <div class="bg-blue-grey-50" style="height: 100%">
+    <div class="px-6 py-9">
+      <div class="text-body-2 text-uppercase">Collection</div>
+    </div>
+    <v-divider />
+    <div class="pa-6">
+      <div class="text-body-2 text-uppercase">Contents</div>
+    </div>
     <v-treeview
+      class="bg-blue-grey-50"
       :items="items"
-      item-title="title"
       item-value="id"
       :load-children="fetchChildren"
       activatable
       active-strategy="single-independent"
-      color="warning"
+      color="blue-500"
       density="compact"
       mandatory
       @update:activated="onActivated"
-    />
+    >
+      <template #title="{ title }">
+        {{ title }}
+      </template>
+    </v-treeview>
   </div>
 </template>

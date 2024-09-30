@@ -5,15 +5,15 @@ const selectedDataObjectId = ref<number | undefined>(undefined);
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="3">
+  <v-container fluid class="pa-0 fill-height align-start">
+    <v-row no-gutters class="fill-height">
+      <v-col cols="4">
         <CollectionTreeView
           :collection-id="collectionId"
           @data-object-selected="id => (selectedDataObjectId = id)"
         />
       </v-col>
-      <v-col cols="9">
+      <v-col cols="8">
         <CollectionDetailView
           :collection-id="collectionId"
           :data-object-id="selectedDataObjectId"
