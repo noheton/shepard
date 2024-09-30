@@ -12,7 +12,7 @@ import CollectionList from "./CollectionList.vue";
 
 const router = useRouter();
 
-const userInput = ref("");
+const filterInput = ref("");
 const collections = ref<Collection[]>([]);
 const page = ref(1);
 
@@ -35,7 +35,6 @@ function fetchCollections(page?: number) {
     })
     .then(response => {
       collections.value = response;
-      console.log("response", response);
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching collections");
@@ -60,9 +59,9 @@ function filterChanged(options: FilterChangedData) {
   fetchCollections();
 }
 
-const userInputDebounced = refDebounced(userInput, 700);
+const filterInputDebounced = refDebounced(filterInput, 700);
 
-const { results, totalResults } = useSearchCollections(userInputDebounced);
+const { results, totalResults } = useSearchCollections(filterInputDebounced);
 
 onMounted(() => {
   fetchCollections();
@@ -93,7 +92,7 @@ onMounted(() => {
       <template #activator="{ props }">
         <v-text-field
           id="userFormInput"
-          v-model="userInput"
+          v-model="filterInput"
           placeholder="Name, Username, ID or Description"
           :style="{ width: '100%', marginTop: '5px' }"
           v-bind="props"

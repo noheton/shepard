@@ -52,7 +52,7 @@ watch(
   },
 );
 
-function update() {
+function updateSortingOptions() {
   const options: FilterChangedData = {
     currentPage: curPage.value,
     perPage: perPage.value,
@@ -64,15 +64,15 @@ function update() {
 
 function updateSize(nextSize: number) {
   perPage.value = nextSize;
-  update();
+  updateSortingOptions();
 }
 function updateOrderBy(nextOrderBy: string) {
   orderBy.value = nextOrderBy;
-  update();
+  updateSortingOptions();
 }
 function updateDescending(nextDescending: boolean) {
   descending.value = nextDescending;
-  update();
+  updateSortingOptions();
 }
 </script>
 <template>

@@ -25,7 +25,7 @@ const paginationLength =
         v-for="(item, i) in items"
         :key="i"
         :style="{ padding: '5px' }"
-        @click="router.push('/collections/' + item.raw.id)"
+        @click="router.push(collectionsPath + item.raw.id)"
       >
         <v-card-title>
           <b>{{ item.raw.name }}</b>
