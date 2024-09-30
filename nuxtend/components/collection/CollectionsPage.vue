@@ -16,11 +16,14 @@ const filterInput = ref("");
 const collections = ref<Collection[]>([]);
 const page = ref(1);
 
-const filterOptions = useStorage<FilterOptions>("explore-filter-options", {
-  perPage: 10,
-  orderBy: "createdAt",
-  descending: false,
-});
+const filterOptions = useStorage<FilterOptions>(
+  "collection-list-filter-options",
+  {
+    perPage: 10,
+    orderBy: "createdAt",
+    descending: false,
+  },
+);
 
 function fetchCollections(page?: number) {
   const nextPage = page || currentPage.value;
