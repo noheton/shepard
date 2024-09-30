@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { FilterChangedData, FilterOptions } from "~/utils/helpers";
 
-const emit = defineEmits(["filter-changed"]);
+const emit = defineEmits<{
+  filterChanged: [FilterOptions: FilterChangedData];
+}>();
 
 const props = defineProps({
   maxObjects: {
@@ -59,7 +61,7 @@ function updateSortingOptions() {
     orderBy: orderBy.value,
     descending: descending.value,
   };
-  emit("filter-changed", options);
+  emit("filterChanged", options);
 }
 
 function updateSize(nextSize: number) {

@@ -118,7 +118,7 @@ onMounted(() => {
       :max-objects="totalRows"
       :current-page="currentPage"
       :filter-options="filterOptions"
-      @filter-changed="filterChanged($event)"
+      @filter-changed="options => filterChanged(options)"
     />
     <div :style="{ marginTop: '10px', width: '100%' }">
       <CollectionList
