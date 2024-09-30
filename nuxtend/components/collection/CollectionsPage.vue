@@ -108,17 +108,7 @@ onMounted(() => {
         </v-card-title>
         <template v-for="result in results" :key="result.id">
           <v-card @click="router.push('/collections/' + result.id)">
-            <v-card-item>
-              <v-card-title>
-                <h4>{{ result.name }}</h4>
-                ID: {{ result.id }}
-              </v-card-title>
-              <v-card-subtitle>
-                {{
-                  "created at " + result.createdAt + " by " + result.createdBy
-                }}
-              </v-card-subtitle>
-            </v-card-item>
+            <CollectionListItemContent :collection="result" />
           </v-card>
         </template>
       </v-card>

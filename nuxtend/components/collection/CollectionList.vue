@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Collection } from "@dlr-shepard/backend-client";
+import CollectionListItemContent from "./CollectionListItemContent.vue";
 
 const router = useRouter();
 
@@ -27,13 +28,7 @@ const paginationLength =
         :style="{ padding: '5px' }"
         @click="router.push(collectionsPath + item.raw.id)"
       >
-        <v-card-title>
-          <b>{{ item.raw.name }}</b>
-          ID: {{ item.raw.id }}
-        </v-card-title>
-        <v-card-subtitle>
-          {{ "created at " + item.raw.createdAt + " by " + item.raw.createdBy }}
-        </v-card-subtitle>
+        <CollectionListItemContent :collection="item.raw" />
       </v-card>
       <v-pagination v-model="page" :length="paginationLength" />
     </template>
