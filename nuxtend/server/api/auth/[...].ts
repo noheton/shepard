@@ -30,7 +30,7 @@ export default NuxtAuthHandler({
           expiresAt: account.expires_at,
           refreshToken: account.refresh_token,
         } as typeof token;
-      } else if (Date.now() < token.expiresAt * 1000) {
+      } else if (Date.now() < token.expiresAt * 1000 - 10000) {
         return token;
       } else {
         if (!token.refreshToken) throw new TypeError("Missing refresh_token");

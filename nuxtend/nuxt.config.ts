@@ -41,7 +41,7 @@ export default defineNuxtConfig({
       addDefaultCallbackUrl: true,
     },
     sessionRefresh: {
-      enablePeriodically: 60000 * 5 + 50, // 5 minutes + 50ms debounce (so that the token is actually not valid)
+      enablePeriodically: 60000 * 5,
     },
   },
 
