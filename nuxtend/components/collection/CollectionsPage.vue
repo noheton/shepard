@@ -80,6 +80,7 @@ onMounted(() => {
       width: '60%',
     }"
   >
+    <ErrorAlert />
     <div
       :style="{
         display: 'flex',
