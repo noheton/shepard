@@ -3,14 +3,14 @@ ifndef::imagesdir[:imagesdir: ../../images]
 === useStorage
 
 ==== Local storage
-link:https://vuejs.org/[VueUse] has an method called link:https://vueuse.org/core/useStorage/[useStorage] which gives us access to the local storage. With a key we can access the storage and fetch already stored data. If no data has been found it will fallback to the default value which can be provided in the function parameters.
+link:https://vuejs.org/[VueUse] has a method called link:https://vueuse.org/core/useStorage/[useStorage] which gives us access to the local storage. With a key we can access the storage and fetch already stored data. If no data has been found it will fallback to the default value which can be provided in the function parameters.
 
 ```ts
 const state = useStorage('my-store', {hello: 'hi', greeting: 'Hello' })
 ```
 
 ==== Session storage
-To use sessions storage you can simply add "sessionStorage" as a third parameter.
+To use session storage you can simply add "sessionStorage" as a third parameter.
 
 ```ts
 const state = useStorage('my-store', {hello: 'hi', greeting: 'Hello' }, sessionStorage)
