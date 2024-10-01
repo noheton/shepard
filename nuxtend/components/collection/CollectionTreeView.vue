@@ -66,12 +66,12 @@ fetchRootDataObjectsOfCollection();
 </script>
 
 <template>
-  <div class="bg-blue-grey-50" style="height: 100%">
-    <div class="px-6 py-9">
+  <div class="bg-blue-grey-50 elevation-4" style="height: 100%">
+    <div class="px-6 py-6">
       <div class="text-body-2 text-uppercase">Collection</div>
     </div>
     <v-divider />
-    <div class="pa-6">
+    <div class="px-6 pt-6">
       <div class="text-body-2 text-uppercase">Contents</div>
     </div>
     <v-treeview
@@ -85,6 +85,8 @@ fetchRootDataObjectsOfCollection();
       density="compact"
       mandatory
       @update:activated="onActivated"
+      expand-icon="mdi-chevron-right"
+      collapse-icon="mdi-chevron-down"
     >
       <template #title="{ title }">
         {{ title }}
@@ -92,3 +94,9 @@ fetchRootDataObjectsOfCollection();
     </v-treeview>
   </div>
 </template>
+
+<style>
+.v-list-item--density-compact.v-list-item--one-line {
+  min-height: unset;
+}
+</style>
