@@ -17,9 +17,9 @@
         Collections
       </v-btn>
     </v-app-bar-title>
-    <template v-slot:append>
+    <template #append>
       <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
-      <v-btn prepend-icon="mdi-account" @click="handleAuth()">
+      <v-btn :prepend-icon="authIcon" @click="handleAuth()">
         {{ isSignedIn ? "Sign Out" : "Sign In" }}
       </v-btn>
     </template>
@@ -33,6 +33,7 @@ const { status, signOut, signIn, data } = useAuth();
 const theme = useTheme();
 
 const isSignedIn = computed(() => status.value === "authenticated").value;
+const authIcon = isSignedIn ? "mdi-logout" : "mdi-account";
 
 const handleAuth = () => (isSignedIn ? signOut(data.value) : signIn());
 const toggleTheme = () => {
