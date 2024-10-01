@@ -12,6 +12,11 @@ defineProps<{
     ID: {{ collection.id }}
   </v-card-title>
   <v-card-subtitle>
-    {{ "created at " + collection.createdAt + " by " + collection.createdBy }}
+    {{
+      "created at " +
+      collection.createdAt?.toDateString() +
+      " by " +
+      collection.createdBy
+    }}
   </v-card-subtitle>
 </template>

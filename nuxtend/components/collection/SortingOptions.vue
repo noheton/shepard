@@ -90,21 +90,21 @@ function updateDescending(nextDescending: boolean) {
       v-model="perPage"
       :items="sizeOptions"
       item-title="text"
-      @change="updateSize($event)"
+      @update:model-value="updateSize($event)"
     />
     <v-select
       v-model="orderBy"
       class="ml-3 float-right w-auto"
       :items="orderByOptions"
       item-title="text"
-      @change="updateOrderBy($event)"
+      @update:model-value="updateOrderBy($event)"
     />
     <v-select
       v-model="descending"
       class="ml-3 float-right w-auto"
       :items="descendingOptions"
       item-title="text"
-      @change="updateDescending($event)"
+      @update:model-value="updateDescending($event)"
     />
   </div>
 </template>
