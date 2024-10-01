@@ -8,8 +8,7 @@
     timeout="-1"
     max-height="80px"
   >
-    Error while {{ errorSituation }}: {{ errorException }} and come other text
-    to make it long
+    Error while {{ errorSituation }}: {{ errorException }}
     <br />
     <small>
       <i>{{ errorMessage }}</i>
