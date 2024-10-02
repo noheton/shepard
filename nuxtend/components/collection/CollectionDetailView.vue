@@ -53,6 +53,7 @@ watchEffect(() => {
         Updated at: {{ dataObject.updatedAt?.toDateString() }} by
         {{ dataObject.updatedBy }}
       </v-col>
+      <v-spacer v-else />
     </v-row>
     <v-row>
       <v-col cols="12">Description:</v-col>
