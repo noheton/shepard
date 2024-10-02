@@ -67,5 +67,10 @@
   // app-bar overrides
   $app-bar-border-style: solid,
   $app-bar-elevation: 0,
-  $app-bar-prominent-height: 64px
+  $app-bar-prominent-height: 64px,
+
+  // snackbar overrides
+  $snackbar-background: #f4c2c7,
+  $snackbar-color: #a52834,
+  $snackbar-elevation: 0
 );
