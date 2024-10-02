@@ -1,0 +1,27 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Session Management
+
+As soon as a user authenticates himself, a session is created.
+We use the session mainly to store the tokens ans some user information.
+We DO NOT persist the session anywhere on the server.
+As soon as the server restarts or the session ends, the information is lost.
+
+In order to store user specific data like favorites or user selection we make use of the browser storage.
+
+==== Local storage
+In order to access the browsers local storage we make use of link:https://vueuse.org/[VueUse].
+It has a method called link:https://vueuse.org/core/useStorage/[useStorage] which gives us access to the local storage.
+With a key we can access the storage and fetch already stored data.
+If no data has been found it will fallback to the default value which can be provided in the function parameters.
+
+```ts
+const state = useStorage('my-store', {hello: 'hi', greeting: 'Hello' })
+```
+
+==== Session storage
+To use session storage you can simply add "sessionStorage" as a third parameter.
+
+```ts
+const state = useStorage('my-store', {hello: 'hi', greeting: 'Hello' }, sessionStorage)
+```

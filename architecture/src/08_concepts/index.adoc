@@ -36,3 +36,7 @@ include::testing-strategy.adoc[]
 include::exceptions.adoc[]
 
 include::subscriptions.adoc[]
+
+include::theming.adoc[]
+
+include::session-management.adoc[]
