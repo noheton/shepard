@@ -1,26 +1,3 @@
-<template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
-  <v-snackbar
-    v-model="errorAlert"
-    location="right"
-    timeout="-1"
-    max-height="80px"
-  >
-    Error while {{ errorSituation }}: {{ errorException }}
-    <br />
-    <small>
-      <i>{{ errorMessage }}</i>
-    </small>
-    <template #actions>
-      <v-btn color="pink" variant="text" @click="errorAlert = false">
-        Close
-      </v-btn>
-    </template>
-  </v-snackbar>
-</template>
-
 <script setup>
 import { useEventBus } from "@vueuse/core";
 const errorSituation = ref("");
@@ -35,3 +12,21 @@ bus.on(e => {
   errorAlert.value = true;
 });
 </script>
+
+<template>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
+  <v-snackbar v-model="errorAlert" timeout="-1" max-height="80px">
+    Error while {{ errorSituation }}: {{ errorException }}
+    <br />
+    <small>
+      <i>{{ errorMessage }}</i>
+    </small>
+    <template #actions>
+      <v-btn color="pink" variant="text" @click="errorAlert = false">
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
+</template>
