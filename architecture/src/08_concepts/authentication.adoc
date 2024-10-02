@@ -24,3 +24,83 @@ In addition to OIDC, we also allow authentication via API keys.
 Shepard generates these keys itself and stores them in our internal database.
 Although the API keys are also JWTs, we have to check whether the specified key can be found in our database.
 Otherwise, we would continue to accept keys that have already been deleted, which is not the intended behavior.
+
+==== Using Nuxt-Auth
+
+To be able to authenticate in the frontend and acquire a JWT token, we use link:https://auth.sidebase.io/[@sidebase/nuxt-auth] as our authentication module in the frontend.
+
+===== Adjust Nuxt config
+
+The file `nuxt.config.ts` holds configuration for the application.
+
+That is where we need to add the `@sidebase/nuxt-auth` module to the modules array.
+
+Then, in the same config object, populate the `auth` configuration.
+
+The `auth` config holds details about our authentication provider and session refresh management.
+
+Add the `@sidebase/nuxt-auth` module to the modules array and enable the `auth` configuration in `nuxt.config.ts`
+
+```typescript
+export default defineNuxtConfig({
+  modules: [
+    "@sidebase/nuxt-auth",
+    ...,
+  ],
+
+  auth: {
+    isEnabled: true,
+    provider: {
+      type: "authjs",
+      ...,
+    },
+    sessionRefresh: {...},
+  },
+  ...,
+})
+```
+
+Details about the auth config attributes could be found in the link:https://auth.sidebase.io/guide/application-side/configuration[docs]
+
+===== Add environment variables
+
+A couple of env variables are needed for this to work.
+These variables are documented in the setup of the frontend.
+
+To be able to make use of them we should list them in the `runtimeConfig`.
+
+```typescript
+export default defineNuxtConfig({  runtimeConfig: {
+  authSecret: "",
+  oidcClientId: "",
+  oidcIssuer: "",
+  }
+})
+```
+
+===== Configure the authentication provider
+
+After the configuration adjustment mentioned previously, an automatically generated auth path is created `/api/auth`.
+
+Which is where we should create our OIDC provider config under `/src/server/api/auth/[...].ts`.
+
+```typescript
+export default NuxtAuthHandler({
+  secret: runtimeConfig.authSecret,
+  providers: [
+    {
+      id: "oidc",
+      name: "OIDC",
+      type: "oauth",
+      ...,
+    },
+  ],
+})
+```
+
+Details about the provider config can be found in the link:https://next-auth.js.org/configuration/providers/oauth#using-a-custom-provider[NextAuth docs]
+
+After this setup we should be able to authenticate using the specified OIDC provider.
+
+To handle token and session refresh we can use the `jwt()` and `session()` callbacks to control the behavior in the same `NuxtAuthHandler`.
+
