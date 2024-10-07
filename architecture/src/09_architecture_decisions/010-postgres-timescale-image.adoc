@@ -1,0 +1,29 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-010 Postgres/Timescaledb Image
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|07.10.2024
+|Status|Done
+
+|Context|
+We need to deploy a postgres image with the timescaledb plugin.
+
+|Possible Alternatives|
+* Deploy postgres and install timescaledb manually following link:https://www.knyl.me/blog/install-timescaledb-on-an-existing-postgresql-container#install-missing-packages-for-docker-container[this guide]
+** the manual effort is not feasible for administrators
+* Deploy postgres and add a script installing timescaledb automatically following the steps from the guide above
+** feels like a rather hacky and experimental solution
+** we are not sure if we ever need to adapt the script
+* Deploy the image provided by timescale (link:https://docs.timescale.com/self-hosted/latest/install/installation-docker/[see here])
+** the image is bound to timescale
+** we need to think about migration in case we need to add additional plugins to postgres
+
+|Decision|
+We decide to use the timescale docker image due to simplicity.
+
+|Consequences|
+We may need to adapt the setup in the future in case we need additional plugins.
+|===
