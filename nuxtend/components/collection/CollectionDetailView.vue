@@ -24,13 +24,16 @@ async function fetchDataObjectDetails() {
       });
 }
 
-watchEffect(() => {
-  if (props.dataObjectId) {
-    fetchDataObjectDetails();
-  } else {
-    dataObject.value = undefined;
-  }
-});
+watch(
+  () => props.dataObjectId,
+  () => {
+    if (props.dataObjectId) {
+      fetchDataObjectDetails();
+    } else {
+      dataObject.value = undefined;
+    }
+  },
+);
 </script>
 
 <template>
