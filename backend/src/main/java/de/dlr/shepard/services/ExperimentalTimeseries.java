@@ -28,6 +28,10 @@ public class ExperimentalTimeseries {
   @JsonManagedReference // Prevents recursion in JSON serialization
   private List<ExperimentalTimeseriesPayload> payload;
 
+  public Long getId() {
+    return id;
+  }
+
   public String getMeasurement() {
     return measurement;
   }
