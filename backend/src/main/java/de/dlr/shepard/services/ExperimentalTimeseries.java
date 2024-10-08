@@ -1,9 +1,6 @@
 package de.dlr.shepard.services;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
 
 @Entity
 @Table(name = "timeseries")
@@ -19,6 +17,7 @@ public class ExperimentalTimeseries {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
   private String measurement;
   private String device;
   private String location;
@@ -26,7 +25,7 @@ public class ExperimentalTimeseries {
   private String field;
 
   @OneToMany(mappedBy = "timeseries", cascade = CascadeType.ALL, orphanRemoval = true)
-	@JsonManagedReference // Prevents recursion in JSON serialization
+  @JsonManagedReference // Prevents recursion in JSON serialization
   private List<ExperimentalTimeseriesPayload> payload;
 
   public String getMeasurement() {

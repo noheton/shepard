@@ -1,9 +1,6 @@
 package de.dlr.shepard.services;
 
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,25 +10,26 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "timeseries_payload")
 public class ExperimentalTimeseriesPayload {
 
   @Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "timeseries_id", nullable = false)
-	@JsonBackReference // Prevents recursion in JSON serialization
-	private ExperimentalTimeseries timeseries;
+  @JoinColumn(name = "timeseries_id", nullable = false)
+  @JsonBackReference // Prevents recursion in JSON serialization
+  private ExperimentalTimeseries timeseries;
 
   @Column(name = "time", nullable = false)
-	private LocalDateTime time;
+  private LocalDateTime time;
 
   @Column(name = "value")
-	private Double value;
+  private Double value;
 
   public Long getId() {
     return id;
@@ -49,7 +47,7 @@ public class ExperimentalTimeseriesPayload {
     this.timeseries = timeseries;
   }
 
-    public LocalDateTime getTime() {
+  public LocalDateTime getTime() {
     return time;
   }
 
@@ -57,12 +55,11 @@ public class ExperimentalTimeseriesPayload {
     this.time = time;
   }
 
-    public Double getValue() {
+  public Double getValue() {
     return value;
   }
 
   public void setValue(Double value) {
     this.value = value;
   }
-
 }

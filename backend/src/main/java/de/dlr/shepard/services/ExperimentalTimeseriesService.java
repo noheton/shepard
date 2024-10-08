@@ -1,9 +1,8 @@
 package de.dlr.shepard.services;
 
-import java.util.List;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class ExperimentalTimeseriesService {

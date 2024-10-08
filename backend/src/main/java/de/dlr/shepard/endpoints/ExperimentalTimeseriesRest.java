@@ -26,8 +26,5 @@ public class ExperimentalTimeseriesRest {
 
   @POST
   @Path("/generate/{count}")
-  public void generateTestData(
-    @PathParam("count") int count
-  ) {
-  }
+  public void generateTestData(@PathParam("count") int count) {}
 }
