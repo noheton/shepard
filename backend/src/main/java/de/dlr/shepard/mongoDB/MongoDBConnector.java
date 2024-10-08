@@ -1,5 +1,6 @@
 package de.dlr.shepard.mongoDB;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -10,6 +11,7 @@ import de.dlr.shepard.util.IConnector;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.bson.Document;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Connector for read and write access to the Mongo database. The class
@@ -23,6 +25,11 @@ public class MongoDBConnector implements IConnector {
 
   MongoDBConnector() {}
 
+  @ConfigProperty(name = "quarkus.mongodb.connection_string")
+  private String connectionStringProperty;
+
+  private ConnectionString connectionString;
+
   @Inject
   public MongoDBConnector(MongoClient client) {
     this.mongoClient = client;
@@ -30,7 +37,7 @@ public class MongoDBConnector implements IConnector {
 
   @Override
   public boolean connect() {
-    // Nothing to do here
+    this.connectionString = new ConnectionString(connectionStringProperty);
     return true;
   }
 
@@ -66,6 +73,10 @@ public class MongoDBConnector implements IConnector {
   }
 
   private MongoDatabase getDatabase() {
-    return mongoClient.getDatabase("database");
+    String databaseName = connectionString.getDatabase();
+    if (databaseName == null) {
+      databaseName = "database";
+    }
+    return mongoClient.getDatabase(databaseName);
   }
 }
