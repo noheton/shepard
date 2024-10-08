@@ -58,13 +58,14 @@ sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/shepard/index.html
 - Prepare needed directories for volume mounts:
 
 ```bash
-mkdir /opt/shepard/backend/logs/ /opt/shepard/backend/config
+mkdir /opt/shepard/backend/logs/ /opt/shepard/backend/config /opt/shepard/timescaledb/
 ```
 
 - Adapt user permissions
 
 ```bash
 sudo chown 185:185 /opt/shepard/backend/logs/ /opt/shepard/backend/config
+sudo chown 1000:1000 /opt/shepard/timescaledb/
 ```
 
 ### 5. Check configuration in `docker-compose.yml` and especially check available memory
@@ -114,6 +115,7 @@ cp env.example .env
 | NEO4J_PW       | initial Neo4j password                                                                                    |                                                                                                   |
 | MONGO_PW       | initial MongoDB password                                                                                  |                                                                                                   |
 | INFLUX_PW      | initial InfluxDB password                                                                                 |                                                                                                   |
+| POSTGRES_PW    | postgres user password                                                                                    |                                                                                                   |
 | OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
 | OIDC_PUBLIC    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
 | OIDC_ROLE      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
@@ -191,7 +193,13 @@ FRONTEND_AUTH_SECRET='Frontend auth secret'
 > $ openssl rand -base64 32
 > ```
 
-- Run the experimental docker compose file
+### TimescaleDB
+
+There is an experimental database to store the timeseries data used as replacement for InfluxDB.
+This database will be experimental until the migration from InfluxDB is completely layed down.
+Running this database requires changes to directory permissions like mentioned in [here](#4-create-necessary-directories)
+
+### Run the experimental docker compose file
 
 ```bash
 docker compose -f .\docker-compose-exp.yml up -d
@@ -286,3 +294,11 @@ access user (UID=185).
 > LogManager error of type OPEN_FAILURE: Failed to set log file
 
 To keep the backend docker image secure and clean we can keep relying on the same user and make sure to [set the right directory permissions](#4-create-necessary-directories).
+
+### Permission issue for TimescaleDB
+
+The following error indicates that the mounted volume requires different access permission to be able to store data in the hosting system.
+
+> initdb: error: could not change permissions of directory "/var/lib/postgres/data": Operation not permitted
+
+To solve it make sure to [set the right directory permissions](#4-create-necessary-directories).
