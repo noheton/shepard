@@ -1,21 +1,25 @@
 package de.dlr.shepard.mongoDB;
 
-import static com.mongodb.client.model.Filters.eq;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.gridfs.GridFSBucket;
+import com.mongodb.client.gridfs.GridFSBuckets;
+import static com.mongodb.client.model.Filters.eq;
+
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.DatatypeConverter;
-import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import org.bson.Document;
-import org.bson.types.ObjectId;
 
 @RequestScoped
 public class FileService {
@@ -27,29 +31,33 @@ public class FileService {
   private static final String CREATEDAT_ATTR = "createdAt";
   private static final String MD5_ATTR = "md5";
 
-  private MongoDBConnector mongoDBConnector;
+  @Inject
+  MongoClient mongoClient;
+
+  @Inject
+  MongoDBDatabaseNameService mongoDBNameService;
+
   private UUIDHelper uuidHelper;
   private DateHelper dateHelper;
 
   FileService() {}
 
   @Inject
-  public FileService(MongoDBConnector mongoDBConnector, UUIDHelper uuidHelper, DateHelper dateHelper) {
-    this.mongoDBConnector = mongoDBConnector;
+  public FileService(UUIDHelper uuidHelper, DateHelper dateHelper) {
     this.uuidHelper = uuidHelper;
     this.dateHelper = dateHelper;
   }
 
   public String createFileContainer() {
     String oid = "FileContainer" + uuidHelper.getUUID().toString();
-    mongoDBConnector.createCollection(oid);
+    mongoClient.getDatabase(mongoDBNameService.getName()).createCollection(oid);
     return oid;
   }
 
   public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getCollection(mongoid);
+      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
@@ -63,8 +71,7 @@ public class FileService {
       return null;
     }
     DigestInputStream dis = new DigestInputStream(inputStream, md);
-    String fileMongoId = mongoDBConnector
-      .createBucket()
+    String fileMongoId = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()))
       .withChunkSizeBytes(CHUNK_SIZE_BYTES)
       .uploadFromStream(fileName, dis)
       .toHexString();
@@ -78,7 +85,7 @@ public class FileService {
   public NamedInputStream getPayload(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getCollection(containerId);
+      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(containerId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
@@ -91,7 +98,7 @@ public class FileService {
     }
     var fileId = new ObjectId(payloadDocument.getString(FILEID_ATTR));
     var filename = payloadDocument.getString(FILENAME_ATTR);
-    var gridBucket = mongoDBConnector.createBucket();
+    var gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
     var gridFsFile = gridBucket.find(eq(ID_ATTR, fileId)).first();
     var inputStream = gridBucket.openDownloadStream(fileId);
 
@@ -101,7 +108,7 @@ public class FileService {
   public ShepardFile getFile(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getCollection(containerId);
+      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(containerId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
@@ -117,12 +124,12 @@ public class FileService {
   public boolean deleteFileContainer(String mongoid) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoDBConnector.getCollection(mongoid);
+      toDelete = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
     }
-    GridFSBucket gridBucket = mongoDBConnector.createBucket();
+    GridFSBucket gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
     for (Document doc : toDelete.find()) {
       gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
     }
@@ -133,7 +140,7 @@ public class FileService {
   public boolean deleteFile(String mongoId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDBConnector.getCollection(mongoId);
+      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoId);
       return false;
@@ -143,7 +150,7 @@ public class FileService {
       Log.warnf("Could not find and delete file with oid: %s", fileoid);
       return true;
     }
-    var gridBucket = mongoDBConnector.createBucket();
+    var gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
     gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
     return true;
   }
