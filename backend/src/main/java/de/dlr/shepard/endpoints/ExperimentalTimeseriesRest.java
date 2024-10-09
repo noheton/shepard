@@ -1,5 +1,8 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.filters.Subscribable;
+import de.dlr.shepard.influxDB.Timeseries;
+import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.services.ExperimentalTimeseriesContainerService;
@@ -8,8 +11,11 @@ import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -23,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -95,5 +102,68 @@ public class ExperimentalTimeseriesRest {
   ) {
     var container = timeseriesContainerService.getContainer(timeseriesContainerId);
     return TimeseriesContainerIOMapper.map(container);
+  }
+
+  @POST
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Create a new timeseries container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public TimeseriesContainerIO createTimeseriesContainer(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+    ) @Valid TimeseriesContainerIO timeseriesContainer
+  ) {
+    var container = timeseriesContainerService.createContainer(
+      timeseriesContainer,
+      securityContext.getUserPrincipal().getName()
+    );
+
+    return TimeseriesContainerIOMapper.map(container);
+  }
+
+  @DELETE
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Delete timeseries container")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public boolean deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+    var result = timeseriesContainerService.deleteContainer(
+      timeseriesContainerId,
+      securityContext.getUserPrincipal().getName()
+    );
+
+    return result;
+  }
+
+  @POST
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Upload timeseries to container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = Timeseries.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Timeseries createTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))
+    ) @Valid TimeseriesPayload payload
+  ) {
+    var timeseries = timeseriesContainerService.createTimeseries(timeseriesId, payload);
+    return timeseries;
   }
 }
