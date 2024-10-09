@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -76,5 +77,23 @@ public class ExperimentalTimeseriesRest {
     var result = TimeseriesContainerIOMapper.map(containers);
 
     return result;
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries container")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public TimeseriesContainerIO getTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
+  ) {
+    var container = timeseriesContainerService.getContainer(timeseriesContainerId);
+    return TimeseriesContainerIOMapper.map(container);
   }
 }

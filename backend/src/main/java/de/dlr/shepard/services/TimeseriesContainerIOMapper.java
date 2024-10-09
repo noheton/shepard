@@ -7,7 +7,7 @@ import java.util.List;
 
 public class TimeseriesContainerIOMapper {
 
-  public static TimeseriesContainerIO mapTo(TimeseriesContainer entity) {
+  public static TimeseriesContainerIO map(TimeseriesContainer entity) {
     return new TimeseriesContainerIO(entity);
   }
 
