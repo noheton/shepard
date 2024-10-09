@@ -30,6 +30,9 @@ public class MongoDBDatabaseNameService {
     }
   }
 
+  /**
+   * Return the name of MongoDB's database name.
+   */
   public String getName() {
     return this.databaseName;
   }
