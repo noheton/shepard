@@ -71,7 +71,7 @@ public class FileService {
       return null;
     }
     DigestInputStream dis = new DigestInputStream(inputStream, md);
-    String fileMongoId = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()))
+    String fileMongoId = createBucket()
       .withChunkSizeBytes(CHUNK_SIZE_BYTES)
       .uploadFromStream(fileName, dis)
       .toHexString();
@@ -98,7 +98,7 @@ public class FileService {
     }
     var fileId = new ObjectId(payloadDocument.getString(FILEID_ATTR));
     var filename = payloadDocument.getString(FILENAME_ATTR);
-    var gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
+    var gridBucket = createBucket();
     var gridFsFile = gridBucket.find(eq(ID_ATTR, fileId)).first();
     var inputStream = gridBucket.openDownloadStream(fileId);
 
@@ -129,7 +129,7 @@ public class FileService {
       Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
     }
-    GridFSBucket gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
+    GridFSBucket gridBucket = createBucket();
     for (Document doc : toDelete.find()) {
       gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
     }
@@ -150,7 +150,7 @@ public class FileService {
       Log.warnf("Could not find and delete file with oid: %s", fileoid);
       return true;
     }
-    var gridBucket = GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
+    var gridBucket = createBucket();
     gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
     return true;
   }
@@ -172,5 +172,9 @@ public class FileService {
       .append(MD5_ATTR, file.getMd5());
     if (file.getOid() != null) doc.append(ID_ATTR, new ObjectId(file.getOid()));
     return doc;
+  }
+
+  public GridFSBucket createBucket() {
+    return GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
   }
 }
