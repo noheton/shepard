@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS timeseries_payload CASCADE;
 -- Create timeseries table
 CREATE TABLE timeseries
 (
-    id          UUID PRIMARY KEY,
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     measurement TEXT NOT NULL,
     device      TEXT NULL,
     location    TEXT NULL,

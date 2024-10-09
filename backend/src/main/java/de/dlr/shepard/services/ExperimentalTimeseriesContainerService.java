@@ -4,9 +4,14 @@ import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.influxDB.Timeseries;
 import de.dlr.shepard.influxDB.TimeseriesPayload;
+import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
+import de.dlr.shepard.neo4Core.dao.UserDAO;
+import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.util.DateHelper;
+import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -20,12 +25,26 @@ import org.apache.commons.lang3.NotImplementedException;
 public class ExperimentalTimeseriesContainerService {
 
   private TimeseriesContainerDAO timeseriesContainerDAO;
+  private ExperimentalTimeseriesService experimentalTimeseriesService;
+  private UserDAO userDAO;
+  private DateHelper dateHelper;
+  private PermissionsDAO permissionsDAO;
 
   ExperimentalTimeseriesContainerService() {}
 
   @Inject
-  public ExperimentalTimeseriesContainerService(TimeseriesContainerDAO timeseriesContainerDAO) {
+  public ExperimentalTimeseriesContainerService(
+    TimeseriesContainerDAO timeseriesContainerDAO,
+    ExperimentalTimeseriesService experimentalTimeseriesService,
+    UserDAO userDAO,
+    DateHelper dateHelper,
+    PermissionsDAO permissionsDAO
+  ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
+    this.experimentalTimeseriesService = experimentalTimeseriesService;
+    this.userDAO = userDAO;
+    this.dateHelper = dateHelper;
+    this.permissionsDAO = permissionsDAO;
   }
 
   public List<TimeseriesContainer> getAllContainers(QueryParamHelper params, String username) {
@@ -50,18 +69,15 @@ public class ExperimentalTimeseriesContainerService {
    * @return the created timeseriesContainer
    */
   public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainer, String username) {
-    throw new NotImplementedException();
-    // var user = userDAO.find(username);
-
-    // var toCreate = new TimeseriesContainer();
-    // toCreate.setCreatedAt(dateHelper.getDate());
-    // toCreate.setCreatedBy(user);
-    // toCreate.setDatabase(timeseriesService.createDatabase());
-    // toCreate.setName(timeseriesContainer.getName());
-
-    // var created = timeseriesContainerDAO.createOrUpdate(toCreate);
-    // permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
-    // return created;
+    var user = userDAO.find(username);
+    var toCreate = new TimeseriesContainer();
+    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedBy(user);
+    toCreate.setDatabase(null); // This is not needed anymore after the migration to TSDB
+    toCreate.setName(timeseriesContainer.getName());
+    var created = timeseriesContainerDAO.createOrUpdate(toCreate);
+    permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    return created;
   }
 
   /**
