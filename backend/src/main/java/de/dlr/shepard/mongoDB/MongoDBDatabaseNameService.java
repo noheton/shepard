@@ -19,13 +19,10 @@ public class MongoDBDatabaseNameService {
 
   @PostConstruct
   public void init() {
-    if (connectionStringProperty != null) {
-      String dbName = new ConnectionString(connectionStringProperty).getDatabase();
-      if (dbName != null && !dbName.isBlank()) {
-        this.databaseName = dbName;
-      }
-    }
-    if (this.databaseName == null) {
+    String dbName = new ConnectionString(connectionStringProperty).getDatabase();
+    if (dbName != null && !dbName.isBlank()) {
+      this.databaseName = dbName;
+    } else {
       Log.warn(
         "Could not retrieve a MongoDB database name from the connection string. Using fallback default database name: 'database'."
       );
