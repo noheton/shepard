@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS timeseries_payload CASCADE;
 -- Create timeseries table
 CREATE TABLE timeseries
 (
-    id          SERIAL PRIMARY KEY,
+    id          UUID PRIMARY KEY,
     measurement TEXT NOT NULL,
     device      TEXT NULL,
     location    TEXT NULL,
@@ -18,8 +18,8 @@ CREATE TABLE timeseries
 -- Create timeseries_payload table
 CREATE TABLE timeseries_payload
 (
-    id            SERIAL,
-    timeseries_id INTEGER REFERENCES timeseries (id),
+    id            UUID DEFAULT gen_random_uuid(),
+    timeseries_id UUID REFERENCES timeseries (id),
     time          TIMESTAMPTZ NOT NULL,
     value         DOUBLE PRECISION
 );
@@ -28,14 +28,14 @@ CREATE TABLE timeseries_payload
 SELECT create_hypertable('timeseries_payload', 'time');
 
 -- Insert initial data into timeseries table
-INSERT INTO timeseries (measurement, device, location)
-VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1'),
-       ('Measurement 1', 'Robot 2', 'Factory Hall 1'),
-       ('Measurement 2', 'Robot 2', 'Factory Hall 1');
+INSERT INTO timeseries ( measurement, device, location, id)
+VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1', 'befd90a8-293a-49ab-81cb-23be2a9d8207'),
+       ('Measurement 1', 'Robot 2', 'Factory Hall 1', gen_random_uuid()),
+       ('Measurement 2', 'Robot 2', 'Factory Hall 1', gen_random_uuid());
 
 -- Insert initial data into timeseries_payload table with random values
 INSERT INTO timeseries_payload (time, timeseries_id, value)
 SELECT generate_series(now() - INTERVAL '24 hours', now(), INTERVAL '5 minutes'),
-       floor(random() * 3 + 1)::INTEGER,
+       'befd90a8-293a-49ab-81cb-23be2a9d8207',
        random() * 100
 FROM generate_series(1, 100);
