@@ -108,16 +108,20 @@ cp env.example .env
 - URLs have to end with a trailing slash
 - The database passwords can be changed arbitrarily at the beginning
 
-| Variable       | Description                                                                                               | Example                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| BACKEND_URL    | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
-| NEO4J_PW       | initial Neo4j password                                                                                    |                                                                                                   |
-| MONGO_PW       | initial MongoDB password                                                                                  |                                                                                                   |
-| INFLUX_PW      | initial InfluxDB password                                                                                 |                                                                                                   |
-| OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
-| OIDC_PUBLIC    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
-| OIDC_ROLE      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID      | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| Variable            | Description                                                                                               | Example                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL         | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW            | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_ROOT_USERNAME | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
+| MONGO_ROOT_PASSWORD | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
+| MONGO_DATABASE      | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
+| MONGO_USERNAME      | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
+| MONGO_PW            | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |
+| INFLUX_PW           | initial InfluxDB password                                                                                 |                                                                                                   |
+| OIDC_AUTHORITY      | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC         | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE           | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID           | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
 
 ## Restrict access to users with specific roles
 
