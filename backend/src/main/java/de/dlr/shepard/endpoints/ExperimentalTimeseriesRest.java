@@ -12,6 +12,7 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
+import de.dlr.shepard.services.ExperimentalTimeseries;
 import de.dlr.shepard.services.ExperimentalTimeseriesContainerService;
 import de.dlr.shepard.services.TimeseriesContainerIOMapper;
 import de.dlr.shepard.util.Constants;
@@ -137,7 +138,7 @@ public class ExperimentalTimeseriesRest {
     content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  public TimeseriesContainerIO createTimeseriesContainer(
+  public Response createTimeseriesContainer(
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
@@ -148,7 +149,9 @@ public class ExperimentalTimeseriesRest {
       securityContext.getUserPrincipal().getName()
     );
 
-    return TimeseriesContainerIOMapper.map(container);
+    // Todo: Created should return url to get the newly created object --> breaking change
+    //return Response.created(URI.create(String.format("/experimental-timeseriesContainers/%s", container.getId()))).build();
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).status(Status.CREATED).build();
   }
 
   @DELETE
@@ -159,14 +162,15 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public boolean deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var result = timeseriesContainerService.deleteContainer(
       timeseriesContainerId,
       securityContext.getUserPrincipal().getName()
     );
 
     if (result == false) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
-    return result;
+
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @POST
@@ -181,7 +185,7 @@ public class ExperimentalTimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Timeseries createTimeseries(
+  public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
     @RequestBody(
       required = true,
@@ -191,7 +195,9 @@ public class ExperimentalTimeseriesRest {
     var timeseries = timeseriesContainerService.createTimeseries(timeseriesId, payload);
 
     if (timeseries == null) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
-    return timeseries;
+
+    // Todo: created should return url of newly created resource
+    return Response.ok(timeseries).build();
   }
 
   @GET
@@ -201,10 +207,10 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ExperimentalTimeseries.class))
   )
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public List<Timeseries> getTimeseriesAvailable(
+  public List<ExperimentalTimeseries> getTimeseriesAvailable(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
   ) {
     var timeserieses = timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId);

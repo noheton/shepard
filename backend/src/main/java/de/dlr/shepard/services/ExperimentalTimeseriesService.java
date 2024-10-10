@@ -19,6 +19,10 @@ public class ExperimentalTimeseriesService {
     return timeseriesRepository.listAll();
   }
 
+  public List<ExperimentalTimeseries> getAllByContainerId(long containerId) {
+    return timeseriesRepository.list("containerId", containerId);
+  }
+
   public ExperimentalTimeseries getById(UUID id) {
     return timeseriesRepository.findById(id);
   }
@@ -30,13 +34,13 @@ public class ExperimentalTimeseriesService {
 
   @Transactional
   public void update(ExperimentalTimeseries entity) {
-    var entityToUpdate = timeseriesRepository.findById(entity.getId());
-    entityToUpdate.setDevice(entity.getDevice());
-    entityToUpdate.setField(entity.getField());
-    entityToUpdate.setLocation(entity.getLocation());
-    entityToUpdate.setMeasurement(entity.getMeasurement());
-    entityToUpdate.setSymbolicName(entity.getSymbolicName());
-    timeseriesRepository.persist(entityToUpdate);
+    // var entityToUpdate = timeseriesRepository.findById(entity.getId());
+    // entityToUpdate.setDevice(entity.getDevice());
+    // entityToUpdate.setField(entity.getField());
+    // entityToUpdate.setLocation(entity.getLocation());
+    // entityToUpdate.setMeasurement(entity.getMeasurement());
+    // entityToUpdate.setSymbolicName(entity.getSymbolicName());
+    // timeseriesRepository.persist(entityToUpdate);
   }
 
   public void deleteById(UUID id) {

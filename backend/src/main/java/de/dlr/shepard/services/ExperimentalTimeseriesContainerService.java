@@ -18,6 +18,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -89,19 +90,17 @@ public class ExperimentalTimeseriesContainerService {
    *         deleted
    */
   public boolean deleteContainer(long timeSeriesContainerId, String username) {
-    throw new NotImplementedException();
-    // var user = userDAO.find(username);
-    // TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
-    // if (timeseriesContainer == null) {
-    //   return false;
-    // }
+    var user = userDAO.find(username);
+    TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
+    if (timeseriesContainer == null) {
+      return false;
+    }
 
-    // timeseriesContainer.setDeleted(true);
-    // timeseriesContainer.setUpdatedAt(dateHelper.getDate());
-    // timeseriesContainer.setUpdatedBy(user);
-    // timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-    // timeseriesService.deleteDatabase(timeseriesContainer.getDatabase());
-    // return true;
+    timeseriesContainer.setDeleted(true);
+    timeseriesContainer.setUpdatedAt(dateHelper.getDate());
+    timeseriesContainer.setUpdatedBy(user);
+    timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
+    return true;
   }
 
   /**
@@ -132,14 +131,13 @@ public class ExperimentalTimeseriesContainerService {
    * @param timeseriesContainerId the given timeseries container
    * @return a list of timeseries objects
    */
-  public List<Timeseries> getTimeseriesAvailable(long timeseriesContainerId) {
-    throw new NotImplementedException();
-    // var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
-    // if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-    //   Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-    //   return Collections.emptyList();
-    // }
-    // return timeseriesService.getTimeseriesAvailable(timeseriesContainer.getDatabase());
+  public List<ExperimentalTimeseries> getTimeseriesAvailable(long timeseriesContainerId) {
+    var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
+    if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
+      return Collections.emptyList();
+    }
+    return experimentalTimeseriesService.getAllByContainerId(timeseriesContainer.getId());
   }
 
   /**
