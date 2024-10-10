@@ -22,12 +22,14 @@ import jakarta.inject.Named;
 public class MongoClientWrapper {
 
   @ConfigProperty(name = "quarkus.mongodb.connection-string")
-  private String connectionStringProperty;
+  String connectionStringProperty;
 
   @Inject
-  private MongoClient mongoClient;
+  MongoClient mongoClient;
 
   private MongoDatabase mongoDatabase;
+
+  private static final String DEFAULT_DATABASE_NAME = "database";
 
   /**
    * Retrieve MongoDB database name from connection string and initialize a MongoDatabase object after injection.
@@ -36,22 +38,24 @@ public class MongoClientWrapper {
    */
   @PostConstruct
   public void init() {
-    String databaseName;
-    String dbName = new ConnectionString(connectionStringProperty).getDatabase();
-    if (dbName != null && !dbName.isBlank()) {
-      databaseName = dbName;
-    } else {
-      Log.warn(
-        "Could not retrieve a MongoDB database name from the connection string. Using fallback default database name: 'database'."
-      );
-      databaseName = "database";
-    }
+    String databaseName = determineDatabaseName(connectionStringProperty);
     try {
       this.mongoDatabase = mongoClient.getDatabase(databaseName);
     } catch (IllegalArgumentException e) {
       Log.error("Could not get MongoDB database because of invalid database name: " + databaseName);
       throw e;
     }
+  }
+
+  protected String determineDatabaseName(String connectionString) {
+    String dbName = new ConnectionString(connectionString).getDatabase();
+    if (dbName == null || dbName.isBlank()) {
+      Log.warn(
+        "Could not retrieve a MongoDB database name from the connection string. Using fallback default database name: 'database'."
+      );
+      return DEFAULT_DATABASE_NAME;
+    }
+    return dbName;
   }
 
   /**
