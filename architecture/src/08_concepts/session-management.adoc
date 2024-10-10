@@ -3,7 +3,7 @@ ifndef::imagesdir[:imagesdir: ../../images]
 === Session Management
 
 As soon as a user authenticates himself, a session is created.
-We use the session mainly to store the tokens ans some user information.
+We use the session mainly to store the tokens and some user information.
 We DO NOT persist the session anywhere on the server.
 As soon as the server restarts or the session ends, the information is lost.
 

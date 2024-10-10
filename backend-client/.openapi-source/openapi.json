@@ -304,6 +304,12 @@
           "schema" : {
             "type" : "boolean"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -384,6 +390,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {

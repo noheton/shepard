@@ -45,11 +45,13 @@ export interface GetAllDataObjectsRequest {
     successorId?: number;
     orderBy?: DataObjectAttributes;
     orderDesc?: boolean;
+    versionUid?: string;
 }
 
 export interface GetDataObjectRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface UpdateDataObjectRequest {
@@ -214,6 +216,10 @@ export class DataObjectApi extends runtime.BaseAPI {
             queryParameters['orderDesc'] = requestParameters['orderDesc'];
         }
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -265,6 +271,10 @@ export class DataObjectApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
