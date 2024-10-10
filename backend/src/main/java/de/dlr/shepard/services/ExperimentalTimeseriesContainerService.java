@@ -132,12 +132,15 @@ public class ExperimentalTimeseriesContainerService {
    * @return a list of timeseries objects
    */
   public List<ExperimentalTimeseries> getTimeseriesAvailable(long timeseriesContainerId) {
+    Log.infof("getTimeseriesAvailable(%s) called", timeseriesContainerId);
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
       Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
       return Collections.emptyList();
     }
-    return experimentalTimeseriesService.getAllByContainerId(timeseriesContainer.getId());
+    var timeseriesList = experimentalTimeseriesService.getAllByContainerId(timeseriesContainer.getId());
+    Log.infof("getTimeseriesAvailable(%s) returns %s records", timeseriesContainerId, timeseriesList.size());
+    return timeseriesList;
   }
 
   /**
