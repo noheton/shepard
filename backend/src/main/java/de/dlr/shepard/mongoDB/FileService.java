@@ -1,19 +1,11 @@
 package de.dlr.shepard.mongoDB;
 
-import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import org.bson.Document;
-import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.eq;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
-import static com.mongodb.client.model.Filters.eq;
-
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
 import io.quarkus.logging.Log;
@@ -21,6 +13,12 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.xml.bind.DatatypeConverter;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 
 @RequestScoped
 public class FileService {

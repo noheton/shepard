@@ -1,17 +1,7 @@
 package de.dlr.shepard.search.unified;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.bson.Document;
-
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
@@ -23,6 +13,13 @@ import de.dlr.shepard.util.TraversalRules;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.bson.Document;
 
 @RequestScoped
 public class StructuredDataSearcher implements ISearcher {

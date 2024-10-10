@@ -1,10 +1,10 @@
 package de.dlr.shepard.mongoDB;
 
 import static org.junit.Assert.assertEquals;
-import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
 public class MongoClientWrapperTest {

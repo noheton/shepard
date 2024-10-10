@@ -1,20 +1,13 @@
 package de.dlr.shepard.search.unified;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
-import org.bson.Document;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.mongoDB.StructuredData;
@@ -29,6 +22,11 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import org.bson.Document;
+import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
 public class StructuredDataSearcherTest extends BaseTestCase {

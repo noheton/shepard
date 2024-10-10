@@ -1,22 +1,20 @@
 package de.dlr.shepard.mongoDB;
 
-import java.util.UUID;
-
-import org.bson.Document;
-import org.bson.json.JsonParseException;
-import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.eq;
 
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import static com.mongodb.client.model.Filters.eq;
-
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.util.DateHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.util.UUID;
+import org.bson.Document;
+import org.bson.json.JsonParseException;
+import org.bson.types.ObjectId;
 
 @RequestScoped
 public class StructuredDataService {

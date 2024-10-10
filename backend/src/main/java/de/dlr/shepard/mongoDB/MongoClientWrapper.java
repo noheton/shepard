@@ -1,17 +1,15 @@
 package de.dlr.shepard.mongoDB;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
-
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Wrapper for Quarkus MongoDB client.
