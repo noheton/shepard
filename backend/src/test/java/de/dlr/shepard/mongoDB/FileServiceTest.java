@@ -1,11 +1,24 @@
 package de.dlr.shepard.mongoDB;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.UUID;
+
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -13,9 +26,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -25,36 +39,21 @@ import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSFindIterable;
 import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.model.Filters;
+
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.UUIDHelper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.xml.bind.DatatypeConverter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.UUID;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 @QuarkusComponentTest
 public class FileServiceTest {
 
   @InjectMock
-  MongoClient mongoClient;
-
-  @InjectMock
-  MongoDBDatabaseNameService mongoDBNameService;
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @InjectMock
   private DateHelper dateHelper;
@@ -69,16 +68,11 @@ public class FileServiceTest {
   private MongoCollection<Document> collection;
 
   @InjectMock
-  private MongoDatabase database;
-
-  @InjectMock
   private GridFSBucket gridBucket;
 
   @BeforeEach
   public void setupMongoDBClient() {
-    when(mongoDBNameService.getName()).thenReturn("database");
-    when(mongoClient.getDatabase(anyString())).thenReturn(database);
-    when(GridFSBuckets.create(database)).thenReturn(gridBucket);
+    when(GridFSBuckets.create(mongoDatabase)).thenReturn(gridBucket);
   }
 
   @BeforeAll
@@ -93,7 +87,7 @@ public class FileServiceTest {
     var result = fileService.createFileContainer();
     var expectedUUID = "FileContainer" + uuid.toString();
     assertEquals(expectedUUID, result);
-    verify(database).createCollection(expectedUUID);
+    verify(mongoDatabase).createCollection(expectedUUID);
   }
 
   @Test
@@ -107,7 +101,7 @@ public class FileServiceTest {
     @SuppressWarnings("unchecked")
     FindIterable<Document> collectionReturn = mock(FindIterable.class);
 
-    when(database.getCollection(containerId)).thenReturn(collection);
+    when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
     when(collection.find(Filters.eq("_id", fileoid))).thenReturn(collectionReturn);
     when(collectionReturn.first()).thenReturn(file);
     when(file.getObjectId("_id")).thenReturn(fileoid);
@@ -125,7 +119,7 @@ public class FileServiceTest {
     String nonExistingContainerId = "FileContainer123";
     String fileoid = "60b73212cfa45d2d5baa795d";
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingContainerId);
 
     var result = fileService.getFile(nonExistingContainerId, fileoid);
     assertNull(result);
@@ -138,7 +132,7 @@ public class FileServiceTest {
     @SuppressWarnings("unchecked")
     FindIterable<Document> collectionReturn = mock(FindIterable.class);
 
-    when(database.getCollection(containerId)).thenReturn(collection);
+    when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
     when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
     when(collectionReturn.first()).thenReturn(null);
     var result = fileService.getFile(containerId, nonExistingFileoid);
@@ -156,7 +150,7 @@ public class FileServiceTest {
     Date date = new Date();
 
     when(dateHelper.getDate()).thenReturn(date);
-    when(database.getCollection(mongoid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(mongoid)).thenReturn(collection);
 
     when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
     when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
@@ -190,7 +184,7 @@ public class FileServiceTest {
     InputStream inputStream = mock(InputStream.class);
     String nonExistingMongoid = "mongoid";
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoid);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingMongoid);
 
     var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
     assertNull(result);
@@ -205,7 +199,7 @@ public class FileServiceTest {
     Document doc = mock(Document.class);
     mockIterable(collectionReturn, doc);
 
-    when(database.getCollection(existingMongoOid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(existingMongoOid)).thenReturn(collection);
     when(collection.find()).thenReturn(collectionReturn);
     when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 
@@ -218,7 +212,7 @@ public class FileServiceTest {
   public void deleteNonExistingFileContainerTest() {
     String nonExistingMongoOid = "60b73212cfa45d2d5baa795d";
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingMongoOid);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingMongoOid);
 
     var result = fileService.deleteFileContainer(nonExistingMongoOid);
     assertFalse(result);
@@ -238,7 +232,7 @@ public class FileServiceTest {
     GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
     GridFSFile gridFsFile = mock(GridFSFile.class);
 
-    when(database.getCollection(containerId)).thenReturn(collection);
+    when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
     when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(collectionReturn);
     when(collectionReturn.first()).thenReturn(doc);
     when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
@@ -258,7 +252,7 @@ public class FileServiceTest {
     String nonExistingContainerId = "4";
     String fileoid = "60b73212cfa45d2d5baa795d";
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(nonExistingContainerId);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingContainerId);
 
     var result = fileService.getPayload(nonExistingContainerId, fileoid);
     assertNull(result);
@@ -269,7 +263,7 @@ public class FileServiceTest {
     String containerId = "4";
     String fileoid = "60b73212cfa45d2d5baa795d";
 
-    when(database.getCollection(containerId)).thenReturn(collection);
+    when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
     @SuppressWarnings("unchecked")
     FindIterable<Document> emptyCollectionReturn = mock(FindIterable.class);
     when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
@@ -286,7 +280,7 @@ public class FileServiceTest {
     Document doc = mock(Document.class);
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
     when(doc.getString("FileMongoId")).thenReturn(fileOid);
 
@@ -300,7 +294,7 @@ public class FileServiceTest {
     String mongoOid = "60b73212cfa45d2d5baa795b";
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoOid);
 
     var result = fileService.deleteFile(mongoOid, oid.toHexString());
     assertFalse(result);
@@ -311,7 +305,7 @@ public class FileServiceTest {
     String mongoOid = "60b73212cfa45d2d5baa795b";
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
     var result = fileService.deleteFile(mongoOid, oid.toHexString());

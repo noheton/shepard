@@ -7,8 +7,8 @@ import org.bson.json.JsonParseException;
 import org.bson.types.ObjectId;
 
 import com.mongodb.MongoException;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.eq;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -16,6 +16,7 @@ import de.dlr.shepard.util.DateHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 @RequestScoped
 public class StructuredDataService {
@@ -27,10 +28,8 @@ public class StructuredDataService {
   StructuredDataService() {}
 
   @Inject
-  MongoClient mongoClient;
-
-  @Inject
-  MongoDBDatabaseNameService mongoDBNameService;
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @Inject
   public StructuredDataService(DateHelper dateHelper) {
@@ -39,14 +38,14 @@ public class StructuredDataService {
 
   public String createStructuredDataContainer() {
     String mongoid = "StructuredDataContainer" + UUID.randomUUID().toString();
-    mongoClient.getDatabase(mongoDBNameService.getName()).createCollection(mongoid);
+    mongoDatabase.createCollection(mongoid);
     return mongoid;
   }
 
   public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
@@ -80,7 +79,7 @@ public class StructuredDataService {
   public boolean deleteStructuredDataContainer(String mongoid) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      toDelete = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
@@ -92,7 +91,7 @@ public class StructuredDataService {
   public StructuredDataPayload getPayload(String mongoid, String oid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
@@ -114,7 +113,7 @@ public class StructuredDataService {
   public boolean deletePayload(String mongoid, String oid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoid);
       return false;

@@ -1,40 +1,40 @@
 package de.dlr.shepard.mongoDB;
 
-import static com.mongodb.client.model.Filters.eq;
+import java.util.Date;
+
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.Captor;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import static com.mongodb.client.model.Filters.eq;
+
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.util.DateHelper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
-import java.util.Date;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import jakarta.inject.Named;
 
 @QuarkusComponentTest
 public class StructuredDataServiceTest extends BaseTestCase {
@@ -55,24 +55,13 @@ public class StructuredDataServiceTest extends BaseTestCase {
   private ArgumentCaptor<String> collectionName;
 
   @InjectMock
-  MongoClient mongoClient;
-
-  @InjectMock
-  MongoDBDatabaseNameService mongoDBNameService;
-
-  @InjectMock
-  private MongoDatabase database;
-
-  @BeforeEach
-  public void setupMongoDBClient() {
-    when(mongoDBNameService.getName()).thenReturn("database");
-    when(mongoClient.getDatabase(anyString())).thenReturn(database);
-  }
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @Test
   public void createStructuredDataContainerTest() {
     var actual = service.createStructuredDataContainer();
-    verify(database).createCollection(collectionName.capture());
+    verify(mongoDatabase).createCollection(collectionName.capture());
     assertEquals(collectionName.getValue(), actual);
   }
 
@@ -86,7 +75,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     toInsert.append("_meta", data);
 
     when(dateHelper.getDate()).thenReturn(date);
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {
         @Override
@@ -117,7 +106,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     toInsert.append("_meta", data);
 
     when(dateHelper.getDate()).thenReturn(date);
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {
         @Override
@@ -147,7 +136,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     toInsert.append("_meta", data);
 
     when(dateHelper.getDate()).thenReturn(date);
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     doAnswer(
       new Answer<Void>() {
         @Override
@@ -169,7 +158,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
   public void createStructuredDataTest_mongoError() {
     String payload = "{\"a\":\"b\", \"c\":\"d\"}";
 
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     doThrow(new MongoException("message")).when(collection).insertOne(any(Document.class));
 
     var expectedData = new StructuredData();
@@ -186,7 +175,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     var expectedData = new StructuredData();
     expectedData.setName("name");
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(mongoId);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoId);
 
     var actual = service.createStructuredData(mongoId, new StructuredDataPayload(expectedData, payload));
     assertNull(actual);
@@ -197,7 +186,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
   public void createStructuredDataTest_invalidJson() {
     String payload = "invalid";
 
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
 
     var expectedData = new StructuredData();
     expectedData.setName("name");
@@ -208,7 +197,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
   @Test
   public void deleteStructuredDataTest() {
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
 
     var actual = service.deleteStructuredDataContainer("collection");
     assertTrue(actual);
@@ -217,7 +206,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
   @Test
   public void deleteStructuredDataTest_collectionIsNull() {
-    doThrow(new IllegalArgumentException()).when(database).getCollection("collection");
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection("collection");
 
     var actual = service.deleteStructuredDataContainer("collection");
     assertFalse(actual);
@@ -235,7 +224,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     sd.append("createdAt", data.getCreatedAt());
     doc.append("_meta", sd);
 
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     when(collection.find(eq("_id", oid))).thenReturn(result);
     when(result.first()).thenReturn(doc);
 
@@ -249,7 +238,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     Document doc = new Document("_id", oid);
     doc.append("a", "b");
 
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     when(collection.find(eq("_id", oid))).thenReturn(result);
     when(result.first()).thenReturn(doc);
 
@@ -261,7 +250,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
   public void getPayloadTest_collectionIsNull() {
     ObjectId oid = new ObjectId();
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection("collection");
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection("collection");
 
     var actual = service.getPayload("collection", oid.toHexString());
     assertNull(actual);
@@ -271,7 +260,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
   public void getPayloadTest_payloadIsNull() {
     ObjectId oid = new ObjectId();
 
-    when(database.getCollection("collection")).thenReturn(collection);
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
     when(collection.find(eq("_id", oid))).thenReturn(result);
     when(result.first()).thenReturn(null);
 
@@ -284,7 +273,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     String mongoOid = "60b73212cfa45d2d5baa795b";
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(new Document());
 
     var result = service.deletePayload(mongoOid, oid.toHexString());
@@ -296,7 +285,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     String mongoOid = "60b73212cfa45d2d5baa795b";
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    doThrow(new IllegalArgumentException()).when(database).getCollection(mongoOid);
+    doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoOid);
 
     var result = service.deletePayload(mongoOid, oid.toHexString());
     assertFalse(result);
@@ -307,7 +296,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     String mongoOid = "60b73212cfa45d2d5baa795b";
     ObjectId oid = new ObjectId("60b73212cfa45d2d5baa795c");
 
-    when(database.getCollection(mongoOid)).thenReturn(collection);
+    when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
     var result = service.deletePayload(mongoOid, oid.toHexString());

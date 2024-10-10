@@ -1,15 +1,22 @@
 package de.dlr.shepard.search.unified;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import org.bson.Document;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.BasicReferenceDAO;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
@@ -21,11 +28,7 @@ import de.dlr.shepard.util.TraversalRules;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import org.bson.Document;
-import org.junit.jupiter.api.Test;
+import jakarta.inject.Named;
 
 @QuarkusComponentTest
 public class StructuredDataSearcherTest extends BaseTestCase {
@@ -37,7 +40,8 @@ public class StructuredDataSearcherTest extends BaseTestCase {
   BasicReferenceDAO basicReferenceDAO;
 
   @InjectMock
-  MongoDBConnector mongoDBConnector;
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @InjectMock
   MongoCollection<Document> mongoContainer;
@@ -90,7 +94,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -142,7 +146,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
         "user1"
       )
     ).thenReturn(List.of(sdReference));
-    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -196,7 +200,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
@@ -267,7 +271,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(null);
     // test
@@ -320,7 +324,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
     when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, "user1")).thenReturn(
       List.of(sdReference)
     );
-    when(mongoDBConnector.getCollection(mongoID)).thenReturn(mongoContainer);
+    when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test

@@ -8,8 +8,8 @@ import java.security.NoSuchAlgorithmException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import static com.mongodb.client.model.Filters.eq;
@@ -19,6 +19,7 @@ import de.dlr.shepard.util.UUIDHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.xml.bind.DatatypeConverter;
 
 @RequestScoped
@@ -32,10 +33,8 @@ public class FileService {
   private static final String MD5_ATTR = "md5";
 
   @Inject
-  MongoClient mongoClient;
-
-  @Inject
-  MongoDBDatabaseNameService mongoDBNameService;
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   private UUIDHelper uuidHelper;
   private DateHelper dateHelper;
@@ -50,14 +49,14 @@ public class FileService {
 
   public String createFileContainer() {
     String oid = "FileContainer" + uuidHelper.getUUID().toString();
-    mongoClient.getDatabase(mongoDBNameService.getName()).createCollection(oid);
+    mongoDatabase.createCollection(oid);
     return oid;
   }
 
   public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoid);
       return null;
@@ -85,7 +84,7 @@ public class FileService {
   public NamedInputStream getPayload(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(containerId);
+      collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
@@ -108,7 +107,7 @@ public class FileService {
   public ShepardFile getFile(String containerId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(containerId);
+      collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", containerId);
       return null;
@@ -124,7 +123,7 @@ public class FileService {
   public boolean deleteFileContainer(String mongoid) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoid);
+      toDelete = mongoDatabase.getCollection(mongoid);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not delete container with mongoid: %s", mongoid);
       return false;
@@ -140,7 +139,7 @@ public class FileService {
   public boolean deleteFile(String mongoId, String fileoid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoClient.getDatabase(mongoDBNameService.getName()).getCollection(mongoId);
+      collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
       Log.errorf("Could not find container with mongoid: %s", mongoId);
       return false;
@@ -174,7 +173,7 @@ public class FileService {
     return doc;
   }
 
-  public GridFSBucket createBucket() {
-    return GridFSBuckets.create(mongoClient.getDatabase(mongoDBNameService.getName()));
+  private GridFSBucket createBucket() {
+    return GridFSBuckets.create(mongoDatabase);
   }
 }

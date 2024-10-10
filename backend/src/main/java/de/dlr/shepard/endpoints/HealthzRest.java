@@ -8,10 +8,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import com.mongodb.MongoException;
-import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 
 import de.dlr.shepard.influxDB.InfluxDBConnector;
-import de.dlr.shepard.mongoDB.MongoDBDatabaseNameService;
 import de.dlr.shepard.neo4Core.io.HealthzIO;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.Constants;
@@ -19,6 +18,7 @@ import de.dlr.shepard.util.IConnector;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -37,10 +37,8 @@ public class HealthzRest {
   private InfluxDBConnector influxdb;
 
   @Inject
-  MongoClient mongoClient;
-
-  @Inject
-  MongoDBDatabaseNameService mongoDBNameService;
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @Inject
   public HealthzRest(InfluxDBConnector influxdb) {
@@ -50,7 +48,7 @@ public class HealthzRest {
   private boolean getMongoDBHealth() {
     Document result;
     try {
-      result = mongoClient.getDatabase(mongoDBNameService.getName()).runCommand(new Document("buildInfo", "1"));
+      result = mongoDatabase.runCommand(new Document("buildInfo", "1"));
     } catch (MongoException ex) {
       return false;
     }
