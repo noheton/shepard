@@ -1,6 +1,6 @@
 package de.dlr.shepard.services;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,9 +21,9 @@ public class ExperimentalTimeseriesPayload {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
+  @JsonIgnore
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "timeseries_id", nullable = false)
-  @JsonBackReference // Prevents recursion in JSON serialization
   private ExperimentalTimeseries timeseries;
 
   @Column(name = "time", nullable = false)

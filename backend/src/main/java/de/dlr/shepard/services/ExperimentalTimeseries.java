@@ -1,10 +1,10 @@
 package de.dlr.shepard.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -47,8 +47,8 @@ public class ExperimentalTimeseries {
   @Schema(nullable = true)
   private String field;
 
-  @OneToMany(mappedBy = "timeseries", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonManagedReference // Prevents recursion in JSON serialization
+  @JsonIgnore
+  @OneToMany(mappedBy = "timeseries", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ExperimentalTimeseriesPayload> payload;
 
   public UUID getId() {
