@@ -25,7 +25,7 @@ integration_test:
     INFLUXDB_ADMIN_USER: influx
     INFLUXDB_ADMIN_PASSWORD: shepard
   services:
-    - name: neo4j:4.4
+    - name: neo4j:4.4.37
       alias: neo4j
     - name: mongo:4.4
       alias: mongodb
