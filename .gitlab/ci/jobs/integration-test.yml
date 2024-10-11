@@ -27,7 +27,7 @@ integration_test:
   services:
     - name: neo4j:4.4.37
       alias: neo4j
-    - name: mongo:4.4
+    - name: mongo:8.0
       alias: mongodb
     - name: influxdb:1.8
       alias: influxdb

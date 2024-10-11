@@ -55,7 +55,8 @@ services:
       - shepard
 
   mongodb:
-    image: mongo:4.4
+    # Please only update the MongoDB incrementally, follow this guide if you need help: https://gitlab.com/dlr-shepard/shepard/-/merge_requests/306
+    image: mongo:8.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PW}
