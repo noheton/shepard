@@ -9,3 +9,6 @@ include:
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
+  # use VERSION_NUMBER as a dev version number
+  - local: .gitlab/ci/jobs/get-version-dev.yml
+  - local: .gitlab/ci/jobs/test-backend.yml
