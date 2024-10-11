@@ -10,7 +10,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
-import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Entity
@@ -21,14 +20,17 @@ public class ExperimentalTimeseries {
 
   @Id
   @JsonIgnore
-  private UUID id;
+  private Integer id;
 
   @Column(name = "container_id")
   @JsonIgnore
-  private Long containerId;
+  private Integer containerId;
 
   @NotBlank
   private String measurement;
+
+  @NotBlank
+  private String field;
 
   @NotBlank
   @Schema(nullable = true)
@@ -43,15 +45,11 @@ public class ExperimentalTimeseries {
   @Column(name = "symbolic_name")
   private String symbolicName;
 
-  @NotBlank
-  @Schema(nullable = true)
-  private String field;
-
   @JsonIgnore
   @OneToMany(mappedBy = "timeseries", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ExperimentalTimeseriesPayload> payload;
 
-  public UUID getId() {
+  public Integer getId() {
     return id;
   }
 

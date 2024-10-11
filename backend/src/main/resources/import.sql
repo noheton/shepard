@@ -19,7 +19,7 @@ CREATE TABLE timeseries
 -- Create timeseries_payload table
 CREATE TABLE timeseries_payload
 (
-    -- id            UUID DEFAULT gen_random_uuid(),
+    id            bigserial,
     timeseries_id INTEGER REFERENCES timeseries (id),
     time          TIMESTAMPTZ NOT NULL,
     float_value         DOUBLE PRECISION NULL,

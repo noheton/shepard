@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.UUID;
 
 @ApplicationScoped
 public class ExperimentalTimeseriesService {
@@ -23,7 +22,7 @@ public class ExperimentalTimeseriesService {
     return timeseriesRepository.list("containerId", containerId);
   }
 
-  public ExperimentalTimeseries getById(UUID id) {
+  public ExperimentalTimeseries getById(Integer id) {
     return timeseriesRepository.findById(id);
   }
 
@@ -43,7 +42,7 @@ public class ExperimentalTimeseriesService {
     // timeseriesRepository.persist(entityToUpdate);
   }
 
-  public void deleteById(UUID id) {
+  public void deleteById(Integer id) {
     timeseriesRepository.deleteById(id);
   }
 }
