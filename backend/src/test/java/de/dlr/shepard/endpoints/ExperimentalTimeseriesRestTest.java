@@ -3,7 +3,7 @@ package de.dlr.shepard.endpoints;
 import static io.restassured.RestAssured.given;
 
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class ExperimentalTimeseriesRestTest {
