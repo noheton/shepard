@@ -1,4 +1,4 @@
-package de.dlr.shepard.services;
+package de.dlr.shepard.timeseries;
 
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -100,6 +100,7 @@ public class ExperimentalTimeseriesContainerService {
     timeseriesContainer.setUpdatedAt(dateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
+    // experimentalTimeseriesService.deleteContainerTimeseries(timeSeriesContainerId)
     return true;
   }
 

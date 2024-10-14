@@ -1,5 +1,8 @@
-package de.dlr.shepard.services;
+package de.dlr.shepard.timeseries.services;
 
+import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesPayloadRepository;
+import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -45,4 +48,7 @@ public class ExperimentalTimeseriesService {
   public void deleteById(Integer id) {
     timeseriesRepository.deleteById(id);
   }
+  // public void deleteContainerTimeseries(long timeSeriesContainerId) {
+  //   timeseriesPayloadRepository.
+  // }
 }
