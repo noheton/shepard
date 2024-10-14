@@ -19,10 +19,9 @@ CREATE TABLE timeseries
 -- Create timeseries_payload table
 CREATE TABLE timeseries_payload
 (
-    id            bigserial,
     timeseries_id INTEGER REFERENCES timeseries (id),
     time          TIMESTAMPTZ NOT NULL,
-    float_value         DOUBLE PRECISION NULL,
+    double_value         DOUBLE PRECISION NULL,
     int_value         INTEGER NULL,
     string_value         TEXT NULL,
     boolean_value         boolean NULL
@@ -38,7 +37,7 @@ VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1', 'value', 11),
        ('Measurement 2', 'Robot 2', 'Factory Hall 1', 'value', 11);
 
 -- Insert initial data into timeseries_payload table with random values
-INSERT INTO timeseries_payload (time, timeseries_id, float_value)
+INSERT INTO timeseries_payload (time, timeseries_id, double_value)
 SELECT generate_series(now() - INTERVAL '24 hours', now(), INTERVAL '5 minutes'),
        1,
        random() * 100

@@ -1,15 +1,11 @@
 package de.dlr.shepard.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Entity
@@ -20,11 +16,11 @@ public class ExperimentalTimeseries {
 
   @Id
   @JsonIgnore
-  private Integer id;
+  private int id;
 
   @Column(name = "container_id")
   @JsonIgnore
-  private Integer containerId;
+  private int containerId;
 
   @NotBlank
   private String measurement;
@@ -45,11 +41,7 @@ public class ExperimentalTimeseries {
   @Column(name = "symbolic_name")
   private String symbolicName;
 
-  @JsonIgnore
-  @OneToMany(mappedBy = "timeseries", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<ExperimentalTimeseriesPayload> payload;
-
-  public Integer getId() {
+  public int getId() {
     return id;
   }
 
