@@ -101,7 +101,7 @@ public class ExperimentalTimeseriesContainerService {
     timeseriesContainer.setUpdatedAt(dateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-    experimentalTimeseriesService.deleteContainerTimeseries(timeSeriesContainerId);
+    experimentalTimeseriesService.deleteByContainerId(timeSeriesContainerId);
     return true;
   }
 

@@ -50,7 +50,7 @@ public class ExperimentalTimeseriesService {
   }
 
   @Transactional
-  public void deleteContainerTimeseries(long timeSeriesContainerId) {
+  public void deleteByContainerId(long timeSeriesContainerId) {
     timeseriesRepository.delete("containerId", timeSeriesContainerId);
   }
 }
