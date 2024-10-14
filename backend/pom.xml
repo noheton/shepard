@@ -25,7 +25,6 @@
     <system>GitLab CI/CD</system>
     <url>https://gitlab.com/dlr-shepard/shepard/-/pipelines</url>
   </ciManagement>
-
   <properties>
     <finalName>shepard</finalName>
     <revision>1.0.0-SNAPSHOT</revision>
@@ -54,7 +53,6 @@
     <opencsv.version>5.9</opencsv.version>
     <restassured.version>5.5.0</restassured.version>
   </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -66,7 +64,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -193,16 +190,26 @@
       <artifactId>jjwt-jackson</artifactId>
       <version>${jjwt.version}</version>
     </dependency>
-    <dependency>
+    <!--<dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
       <version>${neo4j.version}</version>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-bolt-native-types</artifactId>
       <version>${neo4j.version}</version>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>4.0.11</version>
+    </dependency>
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-bolt-driver</artifactId>
+      <version>4.0.11</version>
     </dependency>
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
@@ -243,18 +250,14 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  
-
   <build>
     <finalName>${finalName}</finalName>
-
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
     </resources>
-
     <plugins>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
@@ -374,7 +377,6 @@
       </plugin>
     </plugins>
   </build>
-
   <profiles>
     <profile>
       <id>dev</id>

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -19,7 +20,7 @@ public class Collection extends AbstractDataObject {
   @Relationship(type = Constants.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();
 
-  @Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.POINTS_TO, direction = Direction.INCOMING)
   private List<CollectionReference> incoming = new ArrayList<>();
 
   @Relationship(type = Constants.HAS_PERMISSIONS)

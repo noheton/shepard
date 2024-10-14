@@ -11,6 +11,7 @@ import lombok.ToString;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -27,11 +28,11 @@ public class User implements HasId {
   private String email;
 
   @ToString.Exclude
-  @Relationship(type = Constants.SUBSCRIBED_BY, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.BELONGS_TO, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.BELONGS_TO, direction = Direction.INCOMING)
   private List<ApiKey> apiKeys = new ArrayList<>();
 
   /**

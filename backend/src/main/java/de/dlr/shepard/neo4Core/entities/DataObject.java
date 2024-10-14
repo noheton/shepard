@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -16,7 +17,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NoArgsConstructor
 public class DataObject extends AbstractDataObject {
 
-  @Relationship(type = Constants.HAS_DATAOBJECT, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.HAS_DATAOBJECT, direction = Direction.INCOMING)
   private Collection collection;
 
   @Relationship(type = Constants.HAS_REFERENCE)
@@ -25,16 +26,16 @@ public class DataObject extends AbstractDataObject {
   @Relationship(type = Constants.HAS_SUCCESSOR)
   private List<DataObject> successors = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_SUCCESSOR, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.INCOMING)
   private List<DataObject> predecessors = new ArrayList<>();
 
   @Relationship(type = Constants.HAS_CHILD)
   private List<DataObject> children = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_CHILD, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.HAS_CHILD, direction = Direction.INCOMING)
   private DataObject parent;
 
-  @Relationship(type = Constants.POINTS_TO, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.POINTS_TO, direction = Direction.INCOMING)
   private List<DataObjectReference> incoming = new ArrayList<>();
 
   /**

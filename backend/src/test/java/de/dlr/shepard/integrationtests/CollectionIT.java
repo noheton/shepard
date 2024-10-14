@@ -2,9 +2,9 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
