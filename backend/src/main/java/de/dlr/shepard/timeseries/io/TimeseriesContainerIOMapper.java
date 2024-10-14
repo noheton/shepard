@@ -1,4 +1,4 @@
-package de.dlr.shepard.timeseries;
+package de.dlr.shepard.timeseries.io;
 
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;

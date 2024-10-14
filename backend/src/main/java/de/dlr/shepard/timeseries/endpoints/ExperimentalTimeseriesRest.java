@@ -1,4 +1,4 @@
-package de.dlr.shepard.endpoints;
+package de.dlr.shepard.timeseries.endpoints;
 
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
@@ -12,9 +12,9 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
-import de.dlr.shepard.services.ExperimentalTimeseries;
-import de.dlr.shepard.services.ExperimentalTimeseriesContainerService;
-import de.dlr.shepard.services.TimeseriesContainerIOMapper;
+import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
+import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;

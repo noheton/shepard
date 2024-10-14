@@ -1,4 +1,4 @@
-package de.dlr.shepard.timeseries;
+package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -10,6 +10,7 @@ import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;

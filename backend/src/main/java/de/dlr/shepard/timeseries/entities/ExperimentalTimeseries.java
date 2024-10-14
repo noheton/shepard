@@ -1,4 +1,4 @@
-package de.dlr.shepard.services;
+package de.dlr.shepard.timeseries.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
