@@ -1,8 +1,8 @@
 package de.dlr.shepard.search.unified;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.neo4Core.dao.StructuredDataReferenceDAO;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
@@ -12,6 +12,7 @@ import de.dlr.shepard.search.MongoDBEmitter;
 import de.dlr.shepard.util.TraversalRules;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,17 +25,16 @@ import org.bson.Document;
 public class StructuredDataSearcher implements ISearcher {
 
   private StructuredDataReferenceDAO structuredDataReferenceDAO;
-  private MongoDBConnector mongoDBConnector;
 
-  StructuredDataSearcher() {}
+  public StructuredDataSearcher() {}
 
   @Inject
-  public StructuredDataSearcher(
-    StructuredDataReferenceDAO structuredDataReferenceDAO,
-    MongoDBConnector mongoDBConnector
-  ) {
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
+
+  @Inject
+  public StructuredDataSearcher(StructuredDataReferenceDAO structuredDataReferenceDAO) {
     this.structuredDataReferenceDAO = structuredDataReferenceDAO;
-    this.mongoDBConnector = mongoDBConnector;
   }
 
   @Override
@@ -71,7 +71,7 @@ public class StructuredDataSearcher implements ISearcher {
     Map<StructuredDataReference, Long> matchingReferences = new HashMap<>();
     for (var reference : reachableReferences.entrySet()) {
       String mongoContainerId = reference.getKey().getStructuredDataContainer().getMongoId();
-      MongoCollection<Document> mongoContainer = mongoDBConnector.getCollection(mongoContainerId);
+      MongoCollection<Document> mongoContainer = mongoDatabase.getCollection(mongoContainerId);
       List<String> mongoStructuredDataIds = new ArrayList<>();
       for (StructuredData structuredData : reference.getKey().getStructuredDatas()) {
         mongoStructuredDataIds.add(makeMongoQueryId(structuredData.getOid()));

@@ -1,7 +1,8 @@
 package de.dlr.shepard.endpoints;
 
+import com.mongodb.MongoException;
+import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.influxDB.InfluxDBConnector;
-import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.neo4Core.io.HealthzIO;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.Constants;
@@ -9,6 +10,7 @@ import de.dlr.shepard.util.IConnector;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -16,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.bson.Document;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -31,14 +34,23 @@ public class HealthzRest {
   private static IConnector neo4j = NeoConnector.getInstance();
   private InfluxDBConnector influxdb;
 
-  private MongoDBConnector mongodb;
-
-  HealthzRest() {}
+  @Inject
+  @Named("mongoDatabase")
+  MongoDatabase mongoDatabase;
 
   @Inject
-  public HealthzRest(InfluxDBConnector influxdb, MongoDBConnector mongodb) {
+  public HealthzRest(InfluxDBConnector influxdb) {
     this.influxdb = influxdb;
-    this.mongodb = mongodb;
+  }
+
+  private boolean getMongoDBHealth() {
+    Document result;
+    try {
+      result = mongoDatabase.runCommand(new Document("buildInfo", "1"));
+    } catch (MongoException ex) {
+      return false;
+    }
+    return result.containsKey("ok");
   }
 
   @GET
@@ -56,10 +68,12 @@ public class HealthzRest {
   )
   public Response getServerHealth() {
     var neo4jAlive = neo4j.alive();
-    var mongodbAlive = mongodb.alive();
+
+    boolean isMongoDBHealthy = getMongoDBHealth();
+
     var influxdbAlive = influxdb.alive();
-    var result = new HealthzIO(neo4jAlive, mongodbAlive, influxdbAlive);
-    if (neo4jAlive && mongodbAlive && influxdbAlive) return Response.ok(result).build();
+    var result = new HealthzIO(neo4jAlive, isMongoDBHealthy, influxdbAlive);
+    if (neo4jAlive && isMongoDBHealthy && influxdbAlive) return Response.ok(result).build();
     Log.errorf("UNHEALTHY: %s", result);
     return Response.status(Status.SERVICE_UNAVAILABLE).entity(result).build();
   }
