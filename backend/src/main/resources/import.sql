@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS timeseries_payload CASCADE;
 CREATE TABLE timeseries
 (
     id          serial PRIMARY KEY,
-    container_id INTEGER NOT NULL,
+    container_id BIGINT NOT NULL,
     measurement TEXT NOT NULL,
     field       TEXT NOT NULL,
     symbolic_name TEXT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE timeseries
 -- Create timeseries_payload table
 CREATE TABLE timeseries_payload
 (
-    timeseries_id INTEGER REFERENCES timeseries (id),
+    timeseries_id INTEGER REFERENCES timeseries (id) ON DELETE CASCADE,
     time          TIMESTAMPTZ NOT NULL,
     double_value         DOUBLE PRECISION NULL,
     int_value         INTEGER NULL,

@@ -48,7 +48,9 @@ public class ExperimentalTimeseriesService {
   public void deleteById(Integer id) {
     timeseriesRepository.deleteById(id);
   }
-  // public void deleteContainerTimeseries(long timeSeriesContainerId) {
-  //   timeseriesPayloadRepository.
-  // }
+
+  @Transactional
+  public void deleteContainerTimeseries(long timeSeriesContainerId) {
+    timeseriesRepository.delete("containerId", timeSeriesContainerId);
+  }
 }

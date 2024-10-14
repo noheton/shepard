@@ -20,7 +20,7 @@ public class ExperimentalTimeseries {
 
   @Column(name = "container_id")
   @JsonIgnore
-  private int containerId;
+  private long containerId;
 
   @NotBlank
   private String measurement;
@@ -51,6 +51,14 @@ public class ExperimentalTimeseries {
 
   public void setMeasurement(String measurement) {
     this.measurement = measurement;
+  }
+
+  public long getContainerId() {
+    return containerId;
+  }
+
+  public void setContainerId(long containerId) {
+    this.containerId = containerId;
   }
 
   public String getDevice() {
