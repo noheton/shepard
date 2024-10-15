@@ -1,0 +1,4 @@
+DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
+temp-sensor,temperature,living-room,apartment,my-favorite,1708339761809582900,21.200000762939453
+temp-sensor,temperature,living-room,apartment,my-favorite,1708339821809582900,21.017452406437283
+temp-sensor,temperature,living-room,apartment,my-favorite,1708339881809582900,22.0348994967025
