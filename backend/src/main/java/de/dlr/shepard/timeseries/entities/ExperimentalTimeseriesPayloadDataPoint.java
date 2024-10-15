@@ -3,7 +3,7 @@ package de.dlr.shepard.timeseries.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
-public class ExperimentalTimeseriesPayload {
+public class ExperimentalTimeseriesPayloadDataPoint {
 
   @JsonIgnore
   private long timeseriesId;

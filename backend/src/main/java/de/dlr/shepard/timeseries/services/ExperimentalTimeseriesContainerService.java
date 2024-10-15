@@ -11,6 +11,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -112,19 +113,13 @@ public class ExperimentalTimeseriesContainerService {
    * @param payload               TimeseriesPayload to be created
    * @return created timeseries
    */
-  public Timeseries createTimeseries(long timeseriesContainerId, TimeseriesPayload payload) {
-    throw new NotImplementedException();
-    // var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
-    // if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-    //   Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-    //   return null;
-    // }
-    // var result = timeseriesService.createTimeseries(timeseriesContainer.getDatabase(), payload);
-    // if (!result.isBlank()) {
-    //   Log.errorf("Failed to create timeseries with error: %s", result);
-    //   return null;
-    // }
-    // return payload.getTimeseries();
+  public ExperimentalTimeseries createTimeseries(long timeseriesContainerId, TimeseriesPayloadIO payload) {
+    var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
+    if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
+      return null;
+    }
+    return experimentalTimeseriesService.createTimeseriesPayload(timeseriesContainer.getId(), payload);
   }
 
   /**

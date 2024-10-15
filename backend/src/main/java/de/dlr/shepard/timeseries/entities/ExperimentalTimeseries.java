@@ -93,6 +93,7 @@ public class ExperimentalTimeseries {
     this.field = field;
   }
 
+  @JsonIgnore
   public String getUniqueId() {
     return String.join("-", measurement, device, location, symbolicName, field);
   }

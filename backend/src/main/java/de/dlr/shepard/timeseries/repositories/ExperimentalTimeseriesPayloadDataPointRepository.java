@@ -6,7 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
 @ApplicationScoped
-public class ExperimentalTimeseriesPayloadRepository {
+public class ExperimentalTimeseriesPayloadDataPointRepository {
 
   @Inject
   EntityManager entityManager;

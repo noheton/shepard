@@ -14,6 +14,7 @@ import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
+import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -189,8 +190,8 @@ public class ExperimentalTimeseriesRest {
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))
-    ) @Valid TimeseriesPayload payload
+      content = @Content(schema = @Schema(implementation = TimeseriesPayloadIO.class))
+    ) @Valid TimeseriesPayloadIO payload
   ) {
     var timeseries = timeseriesContainerService.createTimeseries(timeseriesId, payload);
 
