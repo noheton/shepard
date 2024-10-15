@@ -2,6 +2,7 @@ package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
+import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesPayloadDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -55,15 +56,28 @@ public class ExperimentalTimeseriesService {
     timeseriesRepository.delete("containerId", timeSeriesContainerId);
   }
 
+  @Transactional
   public ExperimentalTimeseries createTimeseriesPayload(long timeseriesContainerId, TimeseriesPayloadIO payload) {
-    // String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());
-    // if (!sanityCheck.isBlank()) throw new InvalidBodyException(sanityCheck);
-    // var timeseries = payload.getTimeseries();
-    // // get type of payload points
-    // var firstPointValue = payload.getPoints().get(0).getValue();
+    // timeseries sanity check
+    // TimeseriesSanitizer.sanitizeMetadata(payload);
+    // points sanity check
 
+    // get type of payload points
+    var expectedType = "double";
     // parse points to correct model ExperimentalTimeseriesPayload
+    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(payload.getPoints(), expectedType);
     // Persist points in database
+    // todo: finish the query params
+    var timeseriesId = 0;
+    var givenTimeseries = payload.getTimeseries();
+    var existingTimeseries = timeseriesRepository.find("measurment", payload.getTimeseries().getMeasurement());
+    if (existingTimeseries.count() == 0) {
+      timeseriesRepository.persist(givenTimeseries);
+      timeseriesId = givenTimeseries.getId();
+    } else {
+      timeseriesId = existingTimeseries.firstResult().getId();
+    }
+    timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints, timeseriesId);
     return payload.getTimeseries();
   }
 }
