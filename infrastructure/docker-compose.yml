@@ -13,7 +13,7 @@ services:
       NEO4J_HOST: neo4j:7687
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: ${NEO4J_PW}
-      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:${MONGO_PW}@mongodb:27017
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PW}@mongodb:27017/${MONGO_DATABASE}
 
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
@@ -59,12 +59,15 @@ services:
     # Please only update the MongoDB incrementally, follow this guide if you need help: https://gitlab.com/dlr-shepard/shepard/-/merge_requests/306
     image: mongo:8.0
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PW}
-      MONGO_INITDB_DATABASE: database
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PW}
     volumes:
       - /opt/shepard/mongodb/db:/data/db
       - /opt/shepard/mongodb/configdb:/data/configdb
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     restart: unless-stopped
     networks:
       - shepard
@@ -75,11 +78,11 @@ services:
     image: mongo-express:latest
     environment:
       ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_BASICAUTH_USERNAME: mongo
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_PW}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_ROOT_PASSWORD}
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PW}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
     restart: unless-stopped
     depends_on:
       - mongodb

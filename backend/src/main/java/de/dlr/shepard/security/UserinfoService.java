@@ -54,7 +54,7 @@ public class UserinfoService {
 
   public UserinfoService() {
     String oidcAuthority = ConfigProvider.getConfig().getValue("oidc.authority", String.class);
-    this.oidcConfidurationUrl = oidcAuthority + WELL_KNOWN_PATH;
+    this.oidcConfidurationUrl = String.format("%s/%s", oidcAuthority, WELL_KNOWN_PATH);
   }
 
   protected void init() {
