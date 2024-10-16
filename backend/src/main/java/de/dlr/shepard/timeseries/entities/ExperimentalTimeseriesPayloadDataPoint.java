@@ -1,14 +1,13 @@
 package de.dlr.shepard.timeseries.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.LocalDateTime;
 
 public class ExperimentalTimeseriesPayloadDataPoint {
 
   @JsonIgnore
-  private long timeseriesId;
+  private int timeseriesId;
 
-  private LocalDateTime time;
+  private long timestamp;
 
   private double doubleValue;
 
@@ -50,19 +49,19 @@ public class ExperimentalTimeseriesPayloadDataPoint {
     this.booleanValue = booleanValue;
   }
 
-  public long getTimeseriesId() {
+  public int getTimeseriesId() {
     return timeseriesId;
   }
 
-  public void setTimeseriesId(Long timeseriesId) {
+  public void setTimeseriesId(int timeseriesId) {
     this.timeseriesId = timeseriesId;
   }
 
-  public LocalDateTime getTime() {
-    return time;
+  public long getTimestamp() {
+    return timestamp;
   }
 
-  public void setTime(LocalDateTime time) {
-    this.time = time;
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
   }
 }

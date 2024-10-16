@@ -6,10 +6,25 @@ import java.util.List;
 public class TimeseriesPayloadIOMapper {
 
   public static List<ExperimentalTimeseriesPayloadDataPoint> map(
-    List<TimeseriesPayloadDataPointIO> points,
-    String dataPointType
+    int timeseriesId,
+    String dataPointType,
+    List<TimeseriesPayloadDataPointIO> points
   ) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'map'");
+    return points
+      .stream()
+      .map(dataPoint -> {
+        var newDataPoint = new ExperimentalTimeseriesPayloadDataPoint();
+        newDataPoint.setTimestamp(dataPoint.getTimestamp());
+        newDataPoint.setTimeseriesId(timeseriesId);
+        switch (dataPointType) {
+          case "double":
+            newDataPoint.setDoubleValue(Double.parseDouble(dataPoint.getValue().toString()));
+            break;
+          default:
+        }
+
+        return newDataPoint;
+      })
+      .toList();
   }
 }

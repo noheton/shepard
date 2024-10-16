@@ -11,6 +11,6 @@ public class ExperimentalTimeseriesRestTest {
   @Test
   public void testGetAllTimeseriesesContainersEndpoint() {
     // Todo: Solve authentication problem
-    given().when().get("/experimental-timeseriesContainers").then().statusCode(404);
+    given().when().get("/experimental-timeseriesContainers").then().statusCode(401);
   }
 }

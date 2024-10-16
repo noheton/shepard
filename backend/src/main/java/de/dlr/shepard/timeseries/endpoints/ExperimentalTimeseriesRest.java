@@ -146,7 +146,7 @@ public class ExperimentalTimeseriesRest {
     ) @Valid TimeseriesContainerIO timeseriesContainer
   ) {
     var container = timeseriesContainerService.createContainer(
-      timeseriesContainer,
+      timeseriesContainer.getName(),
       securityContext.getUserPrincipal().getName()
     );
 
@@ -182,18 +182,18 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(
     description = "created",
     responseCode = "201",
-    content = @Content(schema = @Schema(implementation = Timeseries.class))
+    content = @Content(schema = @Schema(implementation = TimeseriesPayloadIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response createTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesPayloadIO.class))
     ) @Valid TimeseriesPayloadIO payload
   ) {
-    var timeseries = timeseriesContainerService.createTimeseries(timeseriesId, payload);
+    var timeseries = timeseriesContainerService.addPayload(containerId, payload);
 
     if (timeseries == null) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
 

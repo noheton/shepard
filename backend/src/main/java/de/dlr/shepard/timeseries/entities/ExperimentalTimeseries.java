@@ -12,8 +12,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Table(name = "timeseries")
 public class ExperimentalTimeseries {
 
-  ExperimentalTimeseries() {}
-
   @Id
   @JsonIgnore
   private int id;
@@ -41,8 +39,14 @@ public class ExperimentalTimeseries {
   @Column(name = "symbolic_name")
   private String symbolicName;
 
+  public ExperimentalTimeseries() {}
+
   public int getId() {
     return id;
+  }
+
+  public void setId(int id) {
+    this.id = id;
   }
 
   public String getMeasurement() {

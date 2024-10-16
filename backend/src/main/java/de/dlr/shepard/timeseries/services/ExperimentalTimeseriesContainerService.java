@@ -9,15 +9,18 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
+import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
+import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesPayloadDataPointRepository;
+import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -28,26 +31,29 @@ import org.apache.commons.lang3.NotImplementedException;
 public class ExperimentalTimeseriesContainerService {
 
   private TimeseriesContainerDAO timeseriesContainerDAO;
-  private ExperimentalTimeseriesService experimentalTimeseriesService;
   private UserDAO userDAO;
   private DateHelper dateHelper;
   private PermissionsDAO permissionsDAO;
+  private ExperimentalTimeseriesRepository timeseriesRepository;
+  private ExperimentalTimeseriesPayloadDataPointRepository timeseriesPayloadRepository;
 
   ExperimentalTimeseriesContainerService() {}
 
   @Inject
   public ExperimentalTimeseriesContainerService(
     TimeseriesContainerDAO timeseriesContainerDAO,
-    ExperimentalTimeseriesService experimentalTimeseriesService,
     UserDAO userDAO,
     DateHelper dateHelper,
-    PermissionsDAO permissionsDAO
+    PermissionsDAO permissionsDAO,
+    ExperimentalTimeseriesRepository timeseriesRepository,
+    ExperimentalTimeseriesPayloadDataPointRepository timeseriesPayloadRepository
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
-    this.experimentalTimeseriesService = experimentalTimeseriesService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
     this.permissionsDAO = permissionsDAO;
+    this.timeseriesRepository = timeseriesRepository;
+    this.timeseriesPayloadRepository = timeseriesPayloadRepository;
   }
 
   public List<TimeseriesContainer> getAllContainers(QueryParamHelper params, String username) {
@@ -67,17 +73,18 @@ public class ExperimentalTimeseriesContainerService {
   /**
    * Creates a TimeseriesContainer and stores it in Neo4J
    *
-   * @param timeseriesContainer to be stored
-   * @param username            of the related user
+   * @param name name of the container
+   * @param username of the related user
    * @return the created timeseriesContainer
    */
-  public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainer, String username) {
+  @Transactional
+  public TimeseriesContainer createContainer(String name, String username) {
     var user = userDAO.find(username);
     var toCreate = new TimeseriesContainer();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDatabase(null); // This is not needed anymore after the migration to TSDB
-    toCreate.setName(timeseriesContainer.getName());
+    toCreate.setName(name);
     var created = timeseriesContainerDAO.createOrUpdate(toCreate);
     permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
     return created;
@@ -91,6 +98,7 @@ public class ExperimentalTimeseriesContainerService {
    * @return a boolean to determine if TimeseriesContainer was successfully
    *         deleted
    */
+  @Transactional
   public boolean deleteContainer(long timeSeriesContainerId, String username) {
     var user = userDAO.find(username);
     TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
@@ -102,24 +110,54 @@ public class ExperimentalTimeseriesContainerService {
     timeseriesContainer.setUpdatedAt(dateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-    experimentalTimeseriesService.deleteByContainerId(timeSeriesContainerId);
+    timeseriesRepository.delete("containerId", timeSeriesContainerId);
     return true;
   }
 
   /**
-   * Saves timeseries payload in a timeseries container.
+   * Adds payload to a timeseries.
    *
    * @param timeseriesContainerId identifies the TimeseriesContainer
-   * @param payload               TimeseriesPayload to be created
+   * @param payload               payload to be added
    * @return created timeseries
    */
-  public ExperimentalTimeseries createTimeseries(long timeseriesContainerId, TimeseriesPayloadIO payload) {
-    var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
+  @Transactional
+  public ExperimentalTimeseries addPayload(long containerId, TimeseriesPayloadIO payload) {
+    var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
+      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
+      // Todo: throw an error instead
       return null;
     }
-    return experimentalTimeseriesService.createTimeseriesPayload(timeseriesContainer.getId(), payload);
+
+    // timeseries sanity check
+    // TimeseriesSanitizer.sanitizeMetadata(payload);
+    // points sanity check
+
+    // try to find timeseries in db
+    var list = timeseriesRepository.find("measurement", payload.getTimeseries().getMeasurement()).list(); // Todo: finish that query
+    ExperimentalTimeseries timeseries = null;
+
+    if (list.isEmpty()) {
+      // create new timeseries because it does not exist
+      timeseries = payload.getTimeseries();
+      this.timeseriesRepository.persist(timeseries);
+    } else {
+      timeseries = list.get(0);
+    }
+
+    // timeseries is persisted, now we persist the payload
+    // get type of payload points
+    var expectedType = "double";
+    // parse points to correct model ExperimentalTimeseriesPayload
+    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(
+      timeseries.getId(),
+      expectedType,
+      payload.getPoints()
+    );
+
+    timeseriesPayloadRepository.insert(timeseries.getId(), timeseriesPayloadDataPoints);
+    return timeseries;
   }
 
   /**
@@ -135,7 +173,7 @@ public class ExperimentalTimeseriesContainerService {
       Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
       return Collections.emptyList();
     }
-    var timeseriesList = experimentalTimeseriesService.getAllByContainerId(timeseriesContainer.getId());
+    var timeseriesList = timeseriesRepository.list("containerId", timeseriesContainer.getId());
     Log.infof("getTimeseriesAvailable(%s) returns %s records", timeseriesContainerId, timeseriesList.size());
     return timeseriesList;
   }
@@ -152,31 +190,15 @@ public class ExperimentalTimeseriesContainerService {
    * @param fillOption            The fill option for missing values
    * @return TimeseriesPayload
    */
-  public TimeseriesPayload getTimeseriesPayload(
+  public TimeseriesPayload getPayload(
     long timeseriesContainerId,
     Timeseries timeseries,
     long start,
     long end,
-    SingleValuedUnaryFunction function,
-    Long groupBy,
+    long groupBy,
     FillOption fillOption
   ) {
     throw new NotImplementedException();
-    // var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
-    // if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-    //   Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-    //   return null;
-    // }
-    // var result = timeseriesService.getTimeseriesPayload(
-    //   start,
-    //   end,
-    //   timeseriesContainer.getDatabase(),
-    //   timeseries,
-    //   function,
-    //   groupBy,
-    //   fillOption
-    // );
-    // return result;
   }
 
   public InputStream exportTimeseriesPayload(
