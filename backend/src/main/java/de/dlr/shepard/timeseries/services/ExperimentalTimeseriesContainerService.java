@@ -12,7 +12,7 @@ import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
-import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesPayloadDataPointRepository;
+import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
@@ -35,7 +35,7 @@ public class ExperimentalTimeseriesContainerService {
   private DateHelper dateHelper;
   private PermissionsDAO permissionsDAO;
   private ExperimentalTimeseriesRepository timeseriesRepository;
-  private ExperimentalTimeseriesPayloadDataPointRepository timeseriesPayloadRepository;
+  private ExperimentalTimeseriesDataPointRepository timeseriesPayloadRepository;
 
   ExperimentalTimeseriesContainerService() {}
 
@@ -46,7 +46,7 @@ public class ExperimentalTimeseriesContainerService {
     DateHelper dateHelper,
     PermissionsDAO permissionsDAO,
     ExperimentalTimeseriesRepository timeseriesRepository,
-    ExperimentalTimeseriesPayloadDataPointRepository timeseriesPayloadRepository
+    ExperimentalTimeseriesDataPointRepository timeseriesPayloadRepository
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.userDAO = userDAO;
@@ -195,8 +195,7 @@ public class ExperimentalTimeseriesContainerService {
     Timeseries timeseries,
     long start,
     long end,
-    long groupBy,
-    FillOption fillOption
+    long groupBy
   ) {
     throw new NotImplementedException();
   }

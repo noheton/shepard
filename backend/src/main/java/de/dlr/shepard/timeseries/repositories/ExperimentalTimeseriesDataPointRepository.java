@@ -1,6 +1,6 @@
 package de.dlr.shepard.timeseries.repositories;
 
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesPayloadDataPoint;
+import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -11,12 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
-public class ExperimentalTimeseriesPayloadDataPointRepository {
+public class ExperimentalTimeseriesDataPointRepository {
 
   @Inject
   AgroalDataSource dataSource;
 
-  public void insert(int timeseriesId, List<ExperimentalTimeseriesPayloadDataPoint> payload) {
+  public void insert(int timeseriesId, List<ExperimentalTimeseriesDataPoint> payload) {
     try (
       var connection = dataSource.getConnection();
       var statement = connection.prepareStatement(
@@ -37,16 +37,16 @@ public class ExperimentalTimeseriesPayloadDataPointRepository {
     }
   }
 
-  public List<ExperimentalTimeseriesPayloadDataPoint> getPayload(int timeseriesId) {
+  public List<ExperimentalTimeseriesDataPoint> getPayload(int timeseriesId) {
     try (
       var connection = dataSource.getConnection();
       var statement = connection.prepareStatement("SELECT * FROM timeseries_payload WHERE timeseries_id = ?");
     ) {
-      var payload = new ArrayList<ExperimentalTimeseriesPayloadDataPoint>();
+      var payload = new ArrayList<ExperimentalTimeseriesDataPoint>();
       statement.setInt(1, timeseriesId);
       var rs = statement.executeQuery();
       while (rs.next()) {
-        var dataPoint = new ExperimentalTimeseriesPayloadDataPoint();
+        var dataPoint = new ExperimentalTimeseriesDataPoint();
         dataPoint.setBooleanValue(rs.getBoolean("boolean_value"));
         dataPoint.setDoubleValue(rs.getDouble("double_value"));
         dataPoint.setIntValue(rs.getInt("int_value"));

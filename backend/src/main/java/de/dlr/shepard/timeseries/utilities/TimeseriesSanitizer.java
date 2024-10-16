@@ -1,4 +1,4 @@
-package de.dlr.shepard.timeseries.sanitizers;
+package de.dlr.shepard.timeseries.utilities;
 
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
 import org.apache.commons.lang3.NotImplementedException;

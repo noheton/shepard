@@ -257,14 +257,14 @@ public class ExperimentalTimeseriesRest {
     }
 
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-    var payload = timeseriesContainerService.getTimeseriesPayload(
+    var payload = timeseriesContainerService.getPayload(
       timeseriesContainerId,
       timeseries,
       start,
       end,
-      function,
-      groupBy,
-      fillOption
+      //function,
+      groupBy
+      //fillOption
     );
 
     if (payload == null) throw new NotFoundException();

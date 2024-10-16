@@ -2,7 +2,7 @@ package de.dlr.shepard.timeseries.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class ExperimentalTimeseriesPayloadDataPoint {
+public class ExperimentalTimeseriesDataPoint {
 
   @JsonIgnore
   private int timeseriesId;
