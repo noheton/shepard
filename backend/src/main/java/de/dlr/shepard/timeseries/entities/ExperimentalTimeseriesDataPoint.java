@@ -1,21 +1,48 @@
 package de.dlr.shepard.timeseries.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "timeseries_payload")
 public class ExperimentalTimeseriesDataPoint {
 
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private long id;
+
   @JsonIgnore
+  @Column(name = "timeseries_id", nullable = false)
   private int timeseriesId;
 
-  private long timestamp;
+  @Column(name = "time", nullable = false)
+  private LocalDateTime time;
 
+  @Column(name = "double_value", nullable = true)
   private double doubleValue;
 
+  @Column(name = "int_value", nullable = true)
   private int intValue;
 
+  @Column(name = "string_value", nullable = true)
   private String stringValue;
 
+  @Column(name = "boolean_value", nullable = true)
   private boolean booleanValue;
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
+  }
 
   public double getDoubleValue() {
     return doubleValue;
@@ -57,11 +84,24 @@ public class ExperimentalTimeseriesDataPoint {
     this.timeseriesId = timeseriesId;
   }
 
-  public long getTimestamp() {
-    return timestamp;
+  public LocalDateTime getTime() {
+    return time;
   }
 
-  public void setTimestamp(long timestamp) {
-    this.timestamp = timestamp;
+  public void setTime(LocalDateTime time) {
+    this.time = time;
+  }
+
+  public String toString() {
+    return String.format(
+      "id=%s timeseriesId=%s time=%s doubleValue=%f intValue=%d stringValue=%s booleanValue=%b",
+      id,
+      timeseriesId,
+      time,
+      doubleValue,
+      intValue,
+      stringValue,
+      booleanValue
+    );
   }
 }

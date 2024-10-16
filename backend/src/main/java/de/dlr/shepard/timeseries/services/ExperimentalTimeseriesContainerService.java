@@ -2,14 +2,13 @@ package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
@@ -156,7 +155,7 @@ public class ExperimentalTimeseriesContainerService {
       payload.getPoints()
     );
 
-    timeseriesPayloadRepository.insert(timeseries.getId(), timeseriesPayloadDataPoints);
+    timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints);
     return timeseries;
   }
 
@@ -190,19 +189,28 @@ public class ExperimentalTimeseriesContainerService {
    * @param fillOption            The fill option for missing values
    * @return TimeseriesPayload
    */
-  public TimeseriesPayload getPayload(
+  public List<ExperimentalTimeseriesDataPoint> getDataPoints(
     long timeseriesContainerId,
-    Timeseries timeseries,
+    ExperimentalTimeseries timeseries,
     long start,
     long end,
     long groupBy
   ) {
-    throw new NotImplementedException();
+    var result = this.timeseriesRepository.find("containerId", timeseriesContainerId).firstResultOptional();
+    if (result.isPresent()) {
+      var timeseriesId = result.get().getId();
+      var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
+      Log.info(String.format("getDataPoints returns: %s", retVal.get(0)));
+      return retVal;
+    }
+
+    // Todo: Nothing found, throw an exception
+    return null;
   }
 
   public InputStream exportTimeseriesPayload(
     long timeseriesContainerId,
-    Timeseries timeseries,
+    ExperimentalTimeseries timeseries,
     long start,
     long end,
     SingleValuedUnaryFunction function,

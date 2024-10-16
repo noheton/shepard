@@ -19,6 +19,7 @@ CREATE TABLE timeseries
 -- Create timeseries_payload table
 CREATE TABLE timeseries_payload
 (
+    id            BIGSERIAL,
     timeseries_id INTEGER REFERENCES timeseries (id) ON DELETE CASCADE,
     time          TIMESTAMPTZ NOT NULL,
     double_value         DOUBLE PRECISION NULL,

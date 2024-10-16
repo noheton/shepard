@@ -17,7 +17,7 @@ public class ExperimentalTimeseriesDataPointRepositoryTest {
   private int timeseriesId = 1;
 
   @Inject
-  ExperimentalTimeseriesDataPointRepository repository;
+  ExperimentalTimeseriesDataPointRepositoryPlain repository;
 
   @BeforeAll
   public void init() {

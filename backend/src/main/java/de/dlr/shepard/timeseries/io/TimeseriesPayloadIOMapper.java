@@ -1,6 +1,7 @@
 package de.dlr.shepard.timeseries.io;
 
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
+import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import java.util.List;
 
 public class TimeseriesPayloadIOMapper {
@@ -14,7 +15,7 @@ public class TimeseriesPayloadIOMapper {
       .stream()
       .map(dataPoint -> {
         var newDataPoint = new ExperimentalTimeseriesDataPoint();
-        newDataPoint.setTimestamp(dataPoint.getTimestamp());
+        newDataPoint.setTime(LocalDateTimeHelper.fromMilliseconds(dataPoint.getTimestamp()));
         newDataPoint.setTimeseriesId(timeseriesId);
         switch (dataPointType) {
           case "double":

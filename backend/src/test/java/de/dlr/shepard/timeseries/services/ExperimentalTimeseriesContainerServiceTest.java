@@ -3,11 +3,13 @@ package de.dlr.shepard.timeseries.services;
 import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
+import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +31,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
   }
 
   @Test
-  public void addPayload_firstPayloadOfTimeseries_payloadIsAddedToDb() {
+  public void addPayload_addDoubleValue_success() {
     var containerName = "AnotherContainer";
     var userName = "Testuser";
 
@@ -47,7 +49,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     TimeseriesPayloadDataPointIO point1 = new TimeseriesPayloadDataPointIO();
 
     point1.setTimestamp(Instant.now().toEpochMilli());
-    point1.setValue(123);
+    point1.setValue(123.0);
     dataPoints.add(point1);
 
     TimeseriesPayloadIO payload = new TimeseriesPayloadIO();
@@ -56,5 +58,22 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     var created = this.timeseriesService.addPayload(container.getId(), payload);
     Assertions.assertNotNull(created);
+
+    var actual =
+      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    Assert.assertNotNull(actual);
+    Assert.assertEquals(1, actual.size());
+    var actualPoint = actual.get(0);
+    Assert.assertEquals("DoubleValue must be taken over.", point1.getValue(), actualPoint.getDoubleValue());
+    Assert.assertTrue("Id must be set.", actualPoint.getId() > 0);
+    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
+    // Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
+    // Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
+    Assert.assertEquals(
+      "Timestamp must be taken over.",
+      LocalDateTimeHelper.fromMilliseconds(point1.getTimestamp()),
+      actualPoint.getTime()
+    );
+    Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0);
   }
 }
