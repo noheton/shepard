@@ -22,6 +22,8 @@ public class TimeseriesPayloadIOMapper {
           case Double:
             newDataPoint.setDoubleValue(Double.parseDouble(dataPoint.getValue().toString()));
             break;
+          case Boolean:
+            newDataPoint.setBooleanValue(Boolean.parseBoolean(dataPoint.getValue().toString()));
           // Todo: add other types here
           default:
         }
