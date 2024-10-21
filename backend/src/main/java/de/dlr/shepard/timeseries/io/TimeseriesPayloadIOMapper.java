@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.io;
 
+import de.dlr.shepard.timeseries.model.ExperimentalDataPointValueTypes;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import java.util.List;
@@ -8,7 +9,7 @@ public class TimeseriesPayloadIOMapper {
 
   public static List<ExperimentalTimeseriesDataPointEntity> map(
     int timeseriesId,
-    String dataPointType,
+    ExperimentalDataPointValueTypes dataPointType,
     List<ExperimentalTimeseriesPayloadDataPointIO> points
   ) {
     return points
@@ -18,9 +19,10 @@ public class TimeseriesPayloadIOMapper {
         newDataPoint.setTime(LocalDateTimeHelper.fromMilliseconds(dataPoint.getTimestamp()));
         newDataPoint.setTimeseriesId(timeseriesId);
         switch (dataPointType) {
-          case "double":
+          case Double:
             newDataPoint.setDoubleValue(Double.parseDouble(dataPoint.getValue().toString()));
             break;
+          // Todo: add other types here
           default:
         }
 

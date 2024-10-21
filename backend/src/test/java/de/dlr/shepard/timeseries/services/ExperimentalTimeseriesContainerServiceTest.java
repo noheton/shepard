@@ -1,11 +1,10 @@
 package de.dlr.shepard.timeseries.services;
 
+import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
@@ -18,11 +17,11 @@ public class ExperimentalTimeseriesContainerServiceTest {
   @Inject
   ExperimentalTimeseriesContainerService timeseriesService;
 
+  private final String containerName = "AnotherContainer";
+  private final String userName = "Testuser";
+
   @Test
   public void createContainer_containerDoesNotExist_containerIsCreated() {
-    var containerName = "Testcontainer";
-    var userName = "Testuser";
-
     var created = timeseriesService.createContainer(containerName, userName);
 
     Assertions.assertEquals(created.getName(), containerName);
@@ -30,49 +29,51 @@ public class ExperimentalTimeseriesContainerServiceTest {
   }
 
   @Test
-  public void addPayload_addDoubleValue_success() {
-    var containerName = "AnotherContainer";
-    var userName = "Testuser";
-
+  public void addPayload_addDoubleValue_success() throws Exception {
     var container = timeseriesService.createContainer(containerName, userName);
-
-    ExperimentalTimeseries timeseries = new ExperimentalTimeseries(
-      container.getId(),
-      "device",
-      "field",
-      "location",
-      "measurement",
-      "symbolicName"
-    );
-
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "measurement");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
-    ExperimentalTimeseriesPayloadDataPointIO point1 = new ExperimentalTimeseriesPayloadDataPointIO();
+    var point = TimeseriesTestDataGenerator.generateDataPointDouble(123.456);
+    dataPoints.add(point);
 
-    point1.setTimestamp(Instant.now().toEpochMilli());
-    point1.setValue(123.0);
-    dataPoints.add(point1);
-
-    try {
-      var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
-      Assertions.assertNotNull(created);
-    } catch (Exception ex) {
-      Assert.fail("Unexpected exception occured. " + ex.getMessage());
-    }
+    var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+    Assertions.assertNotNull(created);
 
     var actual = this.timeseriesService.getDataPoints(timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
     Assert.assertNotNull(actual);
     Assert.assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
-    Assert.assertEquals("DoubleValue must be taken over.", point1.getValue(), actualPoint.getDoubleValue());
+    Assert.assertEquals("DoubleValue must be taken over.", point.getValue(), actualPoint.getDoubleValue());
     Assert.assertTrue("Id must be set.", actualPoint.getId() > 0);
     Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
     Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
     Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
     Assert.assertEquals(
       "Timestamp must be taken over.",
-      LocalDateTimeHelper.fromMilliseconds(point1.getTimestamp()),
+      LocalDateTimeHelper.fromMilliseconds(point.getTimestamp()),
       actualPoint.getTime()
     );
     // Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0); // Todo: id is 0
+  }
+
+  @Test
+  public void addPayload_addBooleanValue_success() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "measurement");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+    var point = TimeseriesTestDataGenerator.generateDataPointBoolean(true);
+    dataPoints.add(point);
+
+    var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+    Assertions.assertNotNull(created);
+
+    var actual = this.timeseriesService.getDataPoints(timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    Assert.assertNotNull(actual);
+    Assert.assertEquals(1, actual.size());
+    var actualPoint = actual.get(0);
+    Assert.assertEquals("BooleanValue must be taken over.", point.getValue(), actualPoint.getBooleanValue());
+    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
+    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
+    Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
   }
 }

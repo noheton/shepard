@@ -14,6 +14,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
+import de.dlr.shepard.timeseries.utilities.DataPointTypeEvaluator;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -129,9 +130,9 @@ public class ExperimentalTimeseriesContainerService {
   ) throws Exception {
     var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
-      // Todo: throw an error instead
-      return null;
+      String errorMessage = String.format("Timeseries Container with id %s is null or deleted", containerId);
+      Log.errorf(errorMessage);
+      throw new Exception(errorMessage);
     }
 
     // timeseries sanity check
@@ -161,7 +162,7 @@ public class ExperimentalTimeseriesContainerService {
 
     // timeseries is persisted, now we persist the payload
     // get type of payload points
-    var expectedType = "double";
+    var expectedType = DataPointTypeEvaluator.evaluate(dataPoints.get(0));
     // parse points to correct model ExperimentalTimeseriesPayload
     var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), expectedType, dataPoints);
 

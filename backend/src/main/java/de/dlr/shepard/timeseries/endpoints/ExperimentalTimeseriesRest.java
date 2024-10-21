@@ -284,9 +284,11 @@ public class ExperimentalTimeseriesRest {
     var dataPointsIo = payload
       .stream()
       .map(point -> {
-        var io = new ExperimentalTimeseriesPayloadDataPointIO();
-        io.setTimestamp(LocalDateTimeHelper.fromLocalDateTime(point.getTime()));
-        io.setValue(point.getDoubleValue()); // Todo: get correct value
+        // Todo: get correct value
+        var io = new ExperimentalTimeseriesPayloadDataPointIO(
+          LocalDateTimeHelper.fromLocalDateTime(point.getTime()),
+          point.getDoubleValue()
+        );
         return io;
       })
       .toList();
