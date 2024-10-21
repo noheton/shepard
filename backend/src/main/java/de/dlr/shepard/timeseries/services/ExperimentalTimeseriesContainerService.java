@@ -14,7 +14,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
-import de.dlr.shepard.timeseries.utilities.DataPointTypeEvaluator;
+import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -162,7 +162,7 @@ public class ExperimentalTimeseriesContainerService {
 
     // timeseries is persisted, now we persist the payload
     // get type of payload points
-    var expectedType = DataPointTypeEvaluator.evaluate(dataPoints.get(0));
+    var expectedType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
     // parse points to correct model ExperimentalTimeseriesPayload
     var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), expectedType, dataPoints);
 
