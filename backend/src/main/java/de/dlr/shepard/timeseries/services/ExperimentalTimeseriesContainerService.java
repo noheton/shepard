@@ -141,7 +141,18 @@ public class ExperimentalTimeseriesContainerService {
     // points sanity check
 
     // try to find timeseries in db
-    var matchingTimeseries = timeseriesRepository.find("measurement", timeseries.getMeasurement()).list(); // Todo: finish that query
+    var matchingTimeseries = timeseriesRepository
+      .find(
+        "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",
+        containerId,
+        timeseries.getMeasurement(),
+        timeseries.getField(),
+        timeseries.getSymbolicName(),
+        timeseries.getDevice(),
+        timeseries.getLocation()
+      )
+      .list();
+
     if (matchingTimeseries.size() > 1) throw new Exception("found more than one timeseries for parameters");
 
     ExperimentalTimeseriesEntity timeseriesEntity = null;
@@ -209,6 +220,9 @@ public class ExperimentalTimeseriesContainerService {
   ) {
     var result =
       this.timeseriesRepository.find("containerId", timeseries.getTimeseriesContainerId()).firstResultOptional();
+
+    Log.warn("Robin: " + result.isPresent());
+
     if (result.isPresent()) {
       var timeseriesId = result.get().getId();
       var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
@@ -216,7 +230,7 @@ public class ExperimentalTimeseriesContainerService {
       return retVal;
     }
 
-    throw new InvalidRequestException();
+    throw new InvalidRequestException("Timeseries not found.");
   }
 
   public InputStream exportTimeseriesPayload(
