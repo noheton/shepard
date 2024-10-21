@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.io;
 
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.timeseries.model.ExperimentalDataPointValueTypes;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
@@ -24,8 +25,15 @@ public class TimeseriesPayloadIOMapper {
             break;
           case Boolean:
             newDataPoint.setBooleanValue(Boolean.parseBoolean(dataPoint.getValue().toString()));
-          // Todo: add other types here
+            break;
+          case Integer:
+            newDataPoint.setIntValue(Integer.parseInt(dataPoint.getValue().toString()));
+            break;
+          case String:
+            newDataPoint.setStringValue(dataPoint.getValue().toString());
+            break;
           default:
+            throw new InvalidRequestException("DataPoint has an unsupported data type.");
         }
 
         return newDataPoint;

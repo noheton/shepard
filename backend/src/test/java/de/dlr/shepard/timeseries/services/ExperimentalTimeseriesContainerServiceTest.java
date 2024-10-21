@@ -10,13 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 @QuarkusTest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ExperimentalTimeseriesContainerServiceTest {
 
   @Inject
@@ -26,7 +22,6 @@ public class ExperimentalTimeseriesContainerServiceTest {
   private final String userName = "Testuser";
 
   @Test
-  @Order(1)
   public void createContainer_containerDoesNotExist_containerIsCreated() {
     var created = timeseriesService.createContainer(containerName, userName);
 
@@ -35,7 +30,6 @@ public class ExperimentalTimeseriesContainerServiceTest {
   }
 
   @Test
-  @Order(2)
   public void addPayload_addDoubleValue_success() throws Exception {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "measurement");
@@ -61,11 +55,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
       LocalDateTimeHelper.fromMilliseconds(point.getTimestamp()),
       actualPoint.getTime()
     );
-    // Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0); // Todo: id is 0
+    Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0);
   }
 
   @Test
-  @Order(3)
   public void addPayload_addBooleanValue_success() throws Exception {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "measurement");
@@ -84,5 +77,47 @@ public class ExperimentalTimeseriesContainerServiceTest {
     Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
     Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
     Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
+  }
+
+  @Test
+  public void addPayload_addStringValue_success() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "status");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+    var point = TimeseriesTestDataGenerator.generateDataPointString("ready");
+    dataPoints.add(point);
+
+    var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+    Assertions.assertNotNull(created);
+
+    var actual = this.timeseriesService.getDataPoints(timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    Assert.assertNotNull(actual);
+    Assert.assertEquals(1, actual.size());
+    var actualPoint = actual.get(0);
+    Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
+    Assert.assertEquals("StringValue must be taken over.", point.getValue(), actualPoint.getStringValue());
+    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
+    Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
+  }
+
+  @Test
+  public void addPayload_addIntegerValue_success() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries(container.getId(), "numberOfDays");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+    var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
+    dataPoints.add(point);
+
+    var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+    Assertions.assertNotNull(created);
+
+    var actual = this.timeseriesService.getDataPoints(timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    Assert.assertNotNull(actual);
+    Assert.assertEquals(1, actual.size());
+    var actualPoint = actual.get(0);
+    Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
+    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
+    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
+    Assert.assertEquals("IntValue must be taken over.", point.getValue(), actualPoint.getIntValue());
   }
 }
