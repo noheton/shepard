@@ -1,6 +1,6 @@
 package de.dlr.shepard.timeseries.repositories;
 
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class ExperimentalTimeseriesDataPointRepositoryTest {
   @Disabled
   @Test
   public void insert_addDoublePayload_success() {
-    var dataPoints = new ArrayList<ExperimentalTimeseriesDataPoint>();
+    var dataPoints = new ArrayList<ExperimentalTimeseriesDataPointEntity>();
 
     repository.insert(timeseriesId, dataPoints);
     var actual = repository.getByTimeseries(timeseriesId);

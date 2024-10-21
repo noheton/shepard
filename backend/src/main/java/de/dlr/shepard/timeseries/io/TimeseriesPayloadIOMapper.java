@@ -1,20 +1,20 @@
 package de.dlr.shepard.timeseries.io;
 
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import java.util.List;
 
 public class TimeseriesPayloadIOMapper {
 
-  public static List<ExperimentalTimeseriesDataPoint> map(
+  public static List<ExperimentalTimeseriesDataPointEntity> map(
     int timeseriesId,
     String dataPointType,
-    List<TimeseriesPayloadDataPointIO> points
+    List<ExperimentalTimeseriesPayloadDataPointIO> points
   ) {
     return points
       .stream()
       .map(dataPoint -> {
-        var newDataPoint = new ExperimentalTimeseriesDataPoint();
+        var newDataPoint = new ExperimentalTimeseriesDataPointEntity();
         newDataPoint.setTime(LocalDateTimeHelper.fromMilliseconds(dataPoint.getTimestamp()));
         newDataPoint.setTimeseriesId(timeseriesId);
         switch (dataPointType) {

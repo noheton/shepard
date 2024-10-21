@@ -9,7 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * nanoseconds and the actual point value.
  */
 @Data
-public class TimeseriesPayloadDataPointIO {
+public class ExperimentalTimeseriesPayloadDataPointIO {
 
   @JsonProperty("timestamp")
   @Schema(description = "Time in nanoseconds since epoch")

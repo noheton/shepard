@@ -1,9 +1,8 @@
 package de.dlr.shepard.timeseries.io;
 
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 
@@ -12,11 +11,11 @@ import lombok.Data;
  * the list of payload points
  */
 @Data
-public class TimeseriesPayloadIO {
+public class ExperimentalTimeseriesPayloadIO {
 
   @NotNull
-  private ExperimentalTimeseries timeseries;
+  private final ExperimentalTimeseries timeseries;
 
   @NotEmpty
-  private List<TimeseriesPayloadDataPointIO> points = new ArrayList<>();
+  private final List<ExperimentalTimeseriesPayloadDataPointIO> points;
 }

@@ -4,20 +4,22 @@ import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
 import de.dlr.shepard.neo4Core.io.RolesIO;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
+import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
-import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
+import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -182,7 +184,7 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(
     description = "created",
     responseCode = "201",
-    content = @Content(schema = @Schema(implementation = TimeseriesPayloadIO.class))
+    content = @Content(schema = @Schema(implementation = ExperimentalTimeseriesPayloadIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
@@ -190,15 +192,18 @@ public class ExperimentalTimeseriesRest {
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = TimeseriesPayloadIO.class))
-    ) @Valid TimeseriesPayloadIO payload
+      content = @Content(schema = @Schema(implementation = ExperimentalTimeseriesPayloadIO.class))
+    ) @Valid ExperimentalTimeseriesPayloadIO payload
   ) {
-    var timeseries = timeseriesContainerService.addPayload(containerId, payload);
+    try {
+      var timeseries = timeseriesContainerService.addPayload(containerId, payload.getTimeseries(), payload.getPoints());
 
-    if (timeseries == null) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
-
-    // Todo: created should return url of newly created resource
-    return Response.ok(timeseries).build();
+      // Todo: created should return url of newly created resource
+      return Response.ok(timeseries).build();
+    } catch (Exception ex) {
+      Log.error(ex);
+      throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @GET
@@ -208,10 +213,10 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ExperimentalTimeseries.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ExperimentalTimeseriesEntity.class))
   )
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public List<ExperimentalTimeseries> getTimeseriesAvailable(
+  public List<ExperimentalTimeseriesEntity> getTimeseriesAvailable(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
   ) {
     var timeserieses = timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId);
@@ -225,7 +230,7 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = TimeseriesPayload.class))
+    content = @Content(schema = @Schema(implementation = ExperimentalTimeseriesPayloadIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
@@ -239,7 +244,7 @@ public class ExperimentalTimeseriesRest {
   @Parameter(name = Constants.FUNCTION)
   @Parameter(name = Constants.GROUP_BY)
   @Parameter(name = Constants.FILLOPTION)
-  public TimeseriesPayload getTimeseries(
+  public ExperimentalTimeseriesPayloadIO getTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.LOCATION) String location,
@@ -256,10 +261,17 @@ public class ExperimentalTimeseriesRest {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-    var payload = timeseriesContainerService.getPayload(
+    var timeseriesInputParams = new ExperimentalTimeseries(
       timeseriesContainerId,
-      timeseries,
+      measurement,
+      device,
+      location,
+      symbolicName,
+      field
+    );
+
+    var payload = timeseriesContainerService.getDataPoints(
+      timeseriesInputParams,
       start,
       end,
       //function,
@@ -268,7 +280,18 @@ public class ExperimentalTimeseriesRest {
     );
 
     if (payload == null) throw new NotFoundException();
-    return payload;
+
+    var dataPointsIo = payload
+      .stream()
+      .map(point -> {
+        var io = new ExperimentalTimeseriesPayloadDataPointIO();
+        io.setTimestamp(LocalDateTimeHelper.fromLocalDateTime(point.getTime()));
+        io.setValue(point.getDoubleValue()); // Todo: get correct value
+        return io;
+      })
+      .toList();
+
+    return new ExperimentalTimeseriesPayloadIO(timeseriesInputParams, dataPointsIo);
   }
 
   @GET
@@ -313,9 +336,15 @@ public class ExperimentalTimeseriesRest {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-    var inputStream = timeseriesContainerService.exportTimeseriesPayload(
+    var timeseries = new ExperimentalTimeseries(
       timeseriesContainerId,
+      measurement,
+      device,
+      location,
+      symbolicName,
+      field
+    );
+    var inputStream = timeseriesContainerService.exportTimeseriesPayload(
       timeseries,
       start,
       end,

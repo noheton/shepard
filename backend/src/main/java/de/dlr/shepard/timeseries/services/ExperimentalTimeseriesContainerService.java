@@ -7,10 +7,11 @@ import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.entities.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.io.TimeseriesPayloadIO;
+import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.util.DateHelper;
@@ -121,7 +122,11 @@ public class ExperimentalTimeseriesContainerService {
    * @return created timeseries
    */
   @Transactional
-  public ExperimentalTimeseries addPayload(long containerId, TimeseriesPayloadIO payload) {
+  public ExperimentalTimeseriesEntity addPayload(
+    long containerId,
+    ExperimentalTimeseries timeseries,
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
+  ) throws Exception {
     var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
       Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
@@ -134,29 +139,34 @@ public class ExperimentalTimeseriesContainerService {
     // points sanity check
 
     // try to find timeseries in db
-    var list = timeseriesRepository.find("measurement", payload.getTimeseries().getMeasurement()).list(); // Todo: finish that query
-    ExperimentalTimeseries timeseries = null;
+    var matchingTimeseries = timeseriesRepository.find("measurement", timeseries.getMeasurement()).list(); // Todo: finish that query
+    if (matchingTimeseries.size() > 1) throw new Exception("found more than one timeseries for parameters");
 
-    if (list.isEmpty()) {
+    ExperimentalTimeseriesEntity timeseriesEntity = null;
+
+    if (matchingTimeseries.isEmpty()) {
       // create new timeseries because it does not exist
-      timeseries = payload.getTimeseries();
-      this.timeseriesRepository.persist(timeseries);
+      timeseriesEntity = new ExperimentalTimeseriesEntity(
+        containerId,
+        timeseries.getMeasurement(),
+        timeseries.getField(),
+        timeseries.getDevice(),
+        timeseries.getLocation(),
+        timeseries.getSymbolicName()
+      );
+      this.timeseriesRepository.persist(timeseriesEntity);
     } else {
-      timeseries = list.get(0);
+      timeseriesEntity = matchingTimeseries.get(0);
     }
 
     // timeseries is persisted, now we persist the payload
     // get type of payload points
     var expectedType = "double";
     // parse points to correct model ExperimentalTimeseriesPayload
-    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(
-      timeseries.getId(),
-      expectedType,
-      payload.getPoints()
-    );
+    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), expectedType, dataPoints);
 
     timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints);
-    return timeseries;
+    return timeseriesEntity;
   }
 
   /**
@@ -165,7 +175,7 @@ public class ExperimentalTimeseriesContainerService {
    * @param timeseriesContainerId the given timeseries container
    * @return a list of timeseries objects
    */
-  public List<ExperimentalTimeseries> getTimeseriesAvailable(long timeseriesContainerId) {
+  public List<ExperimentalTimeseriesEntity> getTimeseriesAvailable(long timeseriesContainerId) {
     Log.infof("getTimeseriesAvailable(%s) called", timeseriesContainerId);
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
@@ -189,14 +199,14 @@ public class ExperimentalTimeseriesContainerService {
    * @param fillOption            The fill option for missing values
    * @return TimeseriesPayload
    */
-  public List<ExperimentalTimeseriesDataPoint> getDataPoints(
-    long timeseriesContainerId,
+  public List<ExperimentalTimeseriesDataPointEntity> getDataPoints(
     ExperimentalTimeseries timeseries,
     long start,
     long end,
     long groupBy
   ) {
-    var result = this.timeseriesRepository.find("containerId", timeseriesContainerId).firstResultOptional();
+    var result =
+      this.timeseriesRepository.find("containerId", timeseries.getTimeseriesContainerId()).firstResultOptional();
     if (result.isPresent()) {
       var timeseriesId = result.get().getId();
       var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
@@ -209,7 +219,6 @@ public class ExperimentalTimeseriesContainerService {
   }
 
   public InputStream exportTimeseriesPayload(
-    long timeseriesContainerId,
     ExperimentalTimeseries timeseries,
     long start,
     long end,

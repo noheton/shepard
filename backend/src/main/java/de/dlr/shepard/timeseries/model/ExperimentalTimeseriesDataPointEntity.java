@@ -1,4 +1,4 @@
-package de.dlr.shepard.timeseries.entities;
+package de.dlr.shepard.timeseries.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "timeseries_payload")
-public class ExperimentalTimeseriesDataPoint {
+public class ExperimentalTimeseriesDataPointEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,16 +25,16 @@ public class ExperimentalTimeseriesDataPoint {
   private LocalDateTime time;
 
   @Column(name = "double_value", nullable = true)
-  private double doubleValue;
+  private Double doubleValue;
 
   @Column(name = "int_value", nullable = true)
-  private int intValue;
+  private Integer intValue;
 
   @Column(name = "string_value", nullable = true)
   private String stringValue;
 
   @Column(name = "boolean_value", nullable = true)
-  private boolean booleanValue;
+  private Boolean booleanValue;
 
   public long getId() {
     return id;
@@ -44,7 +44,7 @@ public class ExperimentalTimeseriesDataPoint {
     this.id = id;
   }
 
-  public double getDoubleValue() {
+  public Double getDoubleValue() {
     return doubleValue;
   }
 
@@ -52,7 +52,7 @@ public class ExperimentalTimeseriesDataPoint {
     this.doubleValue = floatValue;
   }
 
-  public int getIntValue() {
+  public Integer getIntValue() {
     return intValue;
   }
 
@@ -68,7 +68,7 @@ public class ExperimentalTimeseriesDataPoint {
     this.stringValue = stringValue;
   }
 
-  public boolean getBooleanValue() {
+  public Boolean getBooleanValue() {
     return booleanValue;
   }
 
