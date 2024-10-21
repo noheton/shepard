@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.utilities;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.model.ExperimentalDataPointValueTypes;
 
 public class ObjectTypeEvaluator {
@@ -10,11 +11,11 @@ public class ObjectTypeEvaluator {
    * @throws Exception if the object cannot be parsed to the above types
    * @return ExperimentalDataPointValueTypes representing the evaluated type
    */
-  public static ExperimentalDataPointValueTypes evaluate(Object value) throws Exception {
+  public static ExperimentalDataPointValueTypes evaluate(Object value) {
     if (value instanceof Boolean) return ExperimentalDataPointValueTypes.Boolean;
     if (value instanceof Double) return ExperimentalDataPointValueTypes.Double;
     if (value instanceof String) return ExperimentalDataPointValueTypes.String;
     if (value instanceof Integer) return ExperimentalDataPointValueTypes.Integer;
-    throw new Exception();
+    throw new InvalidBodyException();
   }
 }

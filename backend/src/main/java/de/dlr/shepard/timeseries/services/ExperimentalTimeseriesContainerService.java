@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.services;
 
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
@@ -215,8 +216,7 @@ public class ExperimentalTimeseriesContainerService {
       return retVal;
     }
 
-    // Todo: Nothing found, throw an exception
-    return null;
+    throw new InvalidRequestException();
   }
 
   public InputStream exportTimeseriesPayload(
