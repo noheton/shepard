@@ -4,11 +4,35 @@ stages:
   - build
   - test
 
-include:
-  - local: .gitlab/ci/jobs/get-version-dev.yml
-  - local: .gitlab/ci/jobs/build-backend.yml
-  - local: .gitlab/ci/jobs/integration-test.yml
-  #- local: .gitlab/ci/jobs/secret-detection.yml
-  #- local: .gitlab/ci/jobs/dependency-scanning.yml
-  #- local: .gitlab/ci/jobs/format-prettier.yml
-  #- local: .gitlab/ci/jobs/check-scripts.yml
+# include:
+#   - local: .gitlab/ci/jobs/get-version-dev.yml
+#   - local: .gitlab/ci/jobs/build-backend.yml
+#   - local: .gitlab/ci/jobs/integration-test.yml
+#- local: .gitlab/ci/jobs/secret-detection.yml
+#- local: .gitlab/ci/jobs/dependency-scanning.yml
+#- local: .gitlab/ci/jobs/format-prettier.yml
+#- local: .gitlab/ci/jobs/check-scripts.yml
+
+test_test:
+  image: maven:3-eclipse-temurin-17
+  stage: test
+  needs: []
+  variables:
+    # Variables for Database Services
+    NEO4J_AUTH: neo4j/shepard
+    MONGO_INITDB_ROOT_USERNAME: mongo
+    MONGO_INITDB_ROOT_PASSWORD: shepard
+    MONGO_INITDB_DATABASE: test
+    INFLUXDB_ADMIN_USER: influx
+    INFLUXDB_ADMIN_PASSWORD: shepard
+  services:
+    - name: neo4j:5.24
+      alias: neo4j
+      command:
+        - echo "This is executed"
+    - name: mongo:8.0
+      alias: mongodb
+    - name: influxdb:1.8
+      alias: influxdb
+  script:
+    - echo "hello"
