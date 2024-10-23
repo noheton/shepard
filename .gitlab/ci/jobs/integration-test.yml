@@ -27,17 +27,15 @@ integration_test:
   services:
     - name: neo4j:5.24
       alias: neo4j
-      command:
-        - /bin/sh
-        - -c
-        - awk 'BEGIN {c=0;} /BEGIN CERT/{c++} { print > "/usr/local/share/ca-certificates/cert" c ".crt"}' /etc/gitlab-runner/certs/ca.crt;
-          update-ca-certificates --fresh;
-          dockerd-entrypoint.sh
-
+      secrets:
+        - neo4j_secret
     - name: mongo:8.0
       alias: mongodb
     - name: influxdb:1.8
       alias: influxdb
+  secrets:
+    neo4j_secret:
+      file: $CI_SERVER_TLS_CA_FILE
   before_script:
     - cd backend
   script:
