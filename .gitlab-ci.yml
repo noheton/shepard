@@ -6,7 +6,7 @@ variables:
   SECRET_DETECTION_EXCLUDED_PATHS: "node_modules"
   DS_EXCLUDED_PATHS: "node_modules"
   FRONTEND_IMAGE_NAME: "frontend"
-  GIT_SSL_NO_VERIFY: true
+  CA_SERVER_TLS_CA_FILE: ""
 
 workflow:
   rules:
