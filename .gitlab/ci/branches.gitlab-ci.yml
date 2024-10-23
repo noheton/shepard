@@ -37,3 +37,4 @@ test_test:
   script:
     - echo "hello"
     - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
+    - env
