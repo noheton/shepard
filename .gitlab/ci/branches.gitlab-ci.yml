@@ -36,3 +36,4 @@ test_test:
       alias: influxdb
   script:
     - echo "hello"
+    - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
