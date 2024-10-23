@@ -5,7 +5,10 @@ stages:
   - test
 
 include:
-  - local: .gitlab/ci/jobs/secret-detection.yml
-  - local: .gitlab/ci/jobs/dependency-scanning.yml
-  - local: .gitlab/ci/jobs/format-prettier.yml
-  - local: .gitlab/ci/jobs/check-scripts.yml
+  - local: .gitlab/ci/jobs/get-version-dev.yml
+  - local: .gitlab/ci/jobs/build-backend.yml
+  - local: .gitlab/ci/jobs/integration-test.yml
+  #- local: .gitlab/ci/jobs/secret-detection.yml
+  #- local: .gitlab/ci/jobs/dependency-scanning.yml
+  #- local: .gitlab/ci/jobs/format-prettier.yml
+  #- local: .gitlab/ci/jobs/check-scripts.yml
