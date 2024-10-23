@@ -27,6 +27,9 @@ integration_test:
   services:
     - name: neo4j:5.24
       alias: neo4j
+      variables:
+        NEO4J_ENV_CI_SERVER_TLS_CA_FILE: ""
+        CI_SERVER_TLS_CA_FILE: ""
     - name: mongo:8.0
       alias: mongodb
     - name: influxdb:1.8
