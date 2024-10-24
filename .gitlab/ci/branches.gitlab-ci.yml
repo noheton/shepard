@@ -27,7 +27,7 @@ test_test:
     INFLUXDB_ADMIN_PASSWORD: shepard
 
   services:
-    - name: neo4j:4.4.37
+    - name: neo4j:5.24
       alias: neo4j
   script:
     - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
