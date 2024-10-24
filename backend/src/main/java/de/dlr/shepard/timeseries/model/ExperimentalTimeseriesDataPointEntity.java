@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "timeseries_payload")
@@ -22,7 +21,7 @@ public class ExperimentalTimeseriesDataPointEntity {
   private int timeseriesId;
 
   @Column(name = "time", nullable = false)
-  private LocalDateTime time;
+  private long time;
 
   @Column(name = "double_value", nullable = true)
   private Double doubleValue;
@@ -84,11 +83,11 @@ public class ExperimentalTimeseriesDataPointEntity {
     this.timeseriesId = timeseriesId;
   }
 
-  public LocalDateTime getTime() {
+  public long getTime() {
     return time;
   }
 
-  public void setTime(LocalDateTime time) {
+  public void setTime(long time) {
     this.time = time;
   }
 

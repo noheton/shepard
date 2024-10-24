@@ -16,7 +16,6 @@ import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
-import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import io.quarkus.logging.Log;
@@ -279,10 +278,7 @@ public class ExperimentalTimeseriesRest {
       .stream()
       .map(point -> {
         // Todo: get correct value
-        var io = new ExperimentalTimeseriesPayloadDataPointIO(
-          LocalDateTimeHelper.fromLocalDateTime(point.getTime()),
-          point.getDoubleValue()
-        );
+        var io = new ExperimentalTimeseriesPayloadDataPointIO(point.getTime(), point.getDoubleValue());
         return io;
       })
       .toList();

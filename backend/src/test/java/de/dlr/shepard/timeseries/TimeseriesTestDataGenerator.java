@@ -11,18 +11,18 @@ public final class TimeseriesTestDataGenerator {
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(Double value) {
-    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli(), value);
+    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointInteger(Integer value) {
-    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli(), value);
+    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointString(String value) {
-    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli(), value);
+    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointBoolean(Boolean value) {
-    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli(), value);
+    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 }

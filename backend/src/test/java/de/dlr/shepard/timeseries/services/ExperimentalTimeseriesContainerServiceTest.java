@@ -4,7 +4,6 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -53,11 +52,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
     Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
     Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
-    Assert.assertEquals(
-      "Timestamp must be taken over.",
-      LocalDateTimeHelper.fromMilliseconds(point.getTimestamp()),
-      actualPoint.getTime()
-    );
+    Assert.assertEquals("Timestamp must be taken over.", point.getTimestamp(), actualPoint.getTime());
     Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0);
   }
 

@@ -3,7 +3,6 @@ package de.dlr.shepard.timeseries.io;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.timeseries.model.ExperimentalDataPointValueTypes;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
-import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import java.util.List;
 
 public class TimeseriesPayloadIOMapper {
@@ -17,7 +16,7 @@ public class TimeseriesPayloadIOMapper {
       .stream()
       .map(dataPoint -> {
         var newDataPoint = new ExperimentalTimeseriesDataPointEntity();
-        newDataPoint.setTime(LocalDateTimeHelper.fromMilliseconds(dataPoint.getTimestamp()));
+        newDataPoint.setTime(dataPoint.getTimestamp());
         newDataPoint.setTimeseriesId(timeseriesId);
         switch (dataPointType) {
           case Double:

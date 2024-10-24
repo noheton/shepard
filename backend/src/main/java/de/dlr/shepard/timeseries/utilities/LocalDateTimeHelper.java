@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import lombok.val;
 
+// TODO: let go of this class
 public class LocalDateTimeHelper {
 
   public static LocalDateTime fromMilliseconds(long milliseconds) {

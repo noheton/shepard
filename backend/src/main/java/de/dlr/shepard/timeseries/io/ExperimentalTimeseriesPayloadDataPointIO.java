@@ -14,7 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class ExperimentalTimeseriesPayloadDataPointIO {
 
   @JsonProperty("timestamp")
-  @Schema(description = "Time in nanoseconds since epoch")
+  @Schema(description = "Time in nanoseconds since unix epoch")
   private long timestamp;
 
   @Schema(description = "A string, a number or a boolean")

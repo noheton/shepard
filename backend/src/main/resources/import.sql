@@ -21,7 +21,7 @@ CREATE TABLE timeseries_payload
 (
     id            BIGSERIAL,
     timeseries_id INTEGER REFERENCES timeseries (id) ON DELETE CASCADE,
-    time          TIMESTAMPTZ NOT NULL,
+    time          BIGINT NOT NULL,
     double_value         DOUBLE PRECISION NULL,
     int_value         INTEGER NULL,
     string_value         TEXT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE timeseries_payload
 );
 
 -- Create hypertable for timeseries_payload on time
-SELECT create_hypertable('timeseries_payload', 'time');
+SELECT create_hypertable('timeseries_payload', by_range('time', 864 * 1e11)); -- Chunk size of one day in nanoseconds
 
 -- Insert initial data into timeseries table
 INSERT INTO timeseries ( measurement, device, location, field, container_id )
@@ -39,7 +39,7 @@ VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1', 'value', 11),
 
 -- Insert initial data into timeseries_payload table with random values
 INSERT INTO timeseries_payload (time, timeseries_id, double_value)
-SELECT generate_series(now() - INTERVAL '24 hours', now(), INTERVAL '5 minutes'),
+SELECT (random() * 1e18),
        1,
        random() * 100
 FROM generate_series(1, 100);
