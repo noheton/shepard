@@ -31,15 +31,17 @@ test_test:
     - name: neo4j:5.24
       alias: neo4j
       entrypoint:
-        - bash
+        - /bin/bash
         - -c
         - |
-          env
-          echo "-------------"
+          echo "1 -------------"
+          echo $CI_SERVER_TLS_CA_FILE
+          echo "2 -------------"
           unset CI_SERVER_TLS_CA_FILE
-          env
-          echo "-------------"
-          tini -g -- /startup/docker-entrypoint.sh
+          echo "3 -------------"
+          echo $CI_SERVER_TLS_CA_FILE
+          echo "4 -------------"
+          exec tini -g -- /startup/docker-entrypoint.sh
 
   script:
     - echo "hello world"
