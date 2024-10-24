@@ -25,6 +25,8 @@ test_test:
     MONGO_INITDB_DATABASE: test
     INFLUXDB_ADMIN_USER: influx
     INFLUXDB_ADMIN_PASSWORD: shepard
+    GIT_SSL_NO_VERIFY: "true"
+
   services:
     - name: neo4j:5.24
       alias: neo4j
