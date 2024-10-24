@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.services;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
@@ -128,12 +129,12 @@ public class ExperimentalTimeseriesContainerService {
     long containerId,
     ExperimentalTimeseries timeseries,
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
-  ) throws Exception {
+  ) {
     var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      String errorMessage = String.format("Timeseries Container with id %s is null or deleted", containerId);
+      String errorMessage = String.format("Timeseries container with id %s is null or deleted.", containerId);
       Log.errorf(errorMessage);
-      throw new Exception(errorMessage);
+      throw new InvalidBodyException(errorMessage);
     }
 
     // timeseries sanity check
@@ -152,8 +153,6 @@ public class ExperimentalTimeseriesContainerService {
         timeseries.getLocation()
       )
       .list();
-
-    if (matchingTimeseries.size() > 1) throw new Exception("found more than one timeseries for parameters");
 
     ExperimentalTimeseriesEntity timeseriesEntity = null;
 
@@ -213,13 +212,13 @@ public class ExperimentalTimeseriesContainerService {
    * @return TimeseriesPayload
    */
   public List<ExperimentalTimeseriesDataPointEntity> getDataPoints(
+    long containerId,
     ExperimentalTimeseries timeseries,
     long start,
     long end,
     long groupBy
   ) {
-    var result =
-      this.timeseriesRepository.find("containerId", timeseries.getTimeseriesContainerId()).firstResultOptional();
+    var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
 
     Log.warn("Robin: " + result.isPresent());
 
@@ -234,6 +233,7 @@ public class ExperimentalTimeseriesContainerService {
   }
 
   public InputStream exportTimeseriesPayload(
+    long containerId,
     ExperimentalTimeseries timeseries,
     long start,
     long end,

@@ -6,8 +6,8 @@ import java.time.Instant;
 
 public final class TimeseriesTestDataGenerator {
 
-  public static ExperimentalTimeseries generateTimeseries(long containerId, String measurement) {
-    return new ExperimentalTimeseries(containerId, "device", "field", "location", measurement, "symbolicName");
+  public static ExperimentalTimeseries generateTimeseries(String measurement) {
+    return new ExperimentalTimeseries("device", "field", "location", measurement, "symbolicName");
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(Double value) {

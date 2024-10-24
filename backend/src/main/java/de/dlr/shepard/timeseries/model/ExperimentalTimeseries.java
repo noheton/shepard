@@ -7,7 +7,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 public class ExperimentalTimeseries {
 
-  private final long timeseriesContainerId;
+  // private final long timeseriesContainerId;
 
   @NotBlank
   private final String measurement;

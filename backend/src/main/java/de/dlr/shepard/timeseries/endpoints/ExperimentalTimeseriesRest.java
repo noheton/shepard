@@ -261,16 +261,10 @@ public class ExperimentalTimeseriesRest {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseriesInputParams = new ExperimentalTimeseries(
-      timeseriesContainerId,
-      measurement,
-      device,
-      location,
-      symbolicName,
-      field
-    );
+    var timeseriesInputParams = new ExperimentalTimeseries(measurement, device, location, symbolicName, field);
 
     var payload = timeseriesContainerService.getDataPoints(
+      timeseriesContainerId,
       timeseriesInputParams,
       start,
       end,
@@ -338,15 +332,9 @@ public class ExperimentalTimeseriesRest {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseries = new ExperimentalTimeseries(
-      timeseriesContainerId,
-      measurement,
-      device,
-      location,
-      symbolicName,
-      field
-    );
+    var timeseries = new ExperimentalTimeseries(measurement, device, location, symbolicName, field);
     var inputStream = timeseriesContainerService.exportTimeseriesPayload(
+      timeseriesContainerId,
       timeseries,
       start,
       end,
