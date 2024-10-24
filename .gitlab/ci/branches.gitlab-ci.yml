@@ -25,6 +25,7 @@ test_test:
     MONGO_INITDB_DATABASE: test
     INFLUXDB_ADMIN_USER: influx
     INFLUXDB_ADMIN_PASSWORD: shepard
+    CI_DEBUG_SERVICES: "true"
 
   services:
     - name: neo4j:5.24
@@ -33,6 +34,7 @@ test_test:
         - bash
         - -c
         - |
+          echo "Hello World"
           ls -laF /builds/
           cp /builds/dlr-shepard/neo4j-docker-entrypoint.sh /usr/local/bin/neo4j-docker-entrypoint.sh
           chmod +x /usr/local/bin/neo4j-docker-entrypoint.sh
