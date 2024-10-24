@@ -161,18 +161,16 @@ public class ExperimentalTimeseriesContainerService {
   /**
    * Returns a list of timeseries objects that are in the given database.
    *
-   * @param timeseriesContainerId the given timeseries container
+   * @param containerId the given timeseries container
    * @return a list of timeseries objects
    */
-  public List<ExperimentalTimeseriesEntity> getTimeseriesAvailable(long timeseriesContainerId) {
-    Log.infof("getTimeseriesAvailable(%s) called", timeseriesContainerId);
-    var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
-    if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
+  public List<ExperimentalTimeseriesEntity> getTimeseriesAvailable(long containerId) {
+    var container = timeseriesContainerDAO.findLightByNeo4jId(containerId);
+    if (container == null || container.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
       return Collections.emptyList();
     }
-    var timeseriesList = timeseriesRepository.list("containerId", timeseriesContainer.getId());
-    Log.infof("getTimeseriesAvailable(%s) returns %s records", timeseriesContainerId, timeseriesList.size());
+    var timeseriesList = timeseriesRepository.list("containerId", container.getId());
     return timeseriesList;
   }
 

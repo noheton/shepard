@@ -177,4 +177,29 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
+
+  /*************************
+   * getTimeseriesAvailable
+   *************************/
+  @Test
+  public void getTimeseriesAvailable_timeseriesExists_returnsTimeseries() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
+    Assert.assertEquals(1, actual.size());
+    Assert.assertEquals("temperature", actual.get(0).getMeasurement());
+  }
+
+  @Test
+  public void getTimeseriesAvailable_containerDoesNotExist_returnsEmptyList() {
+    int nonExistingContainerId = -1;
+    var actual = this.timeseriesService.getTimeseriesAvailable(nonExistingContainerId);
+    Assert.assertEquals(0, actual.size());
+  }
 }
