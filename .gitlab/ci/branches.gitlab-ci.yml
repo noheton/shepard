@@ -29,6 +29,7 @@ test_test:
   services:
     - name: neo4j:5.24
       alias: neo4j
+      command: ["cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE && env"]
   script:
     - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
     - env
