@@ -128,6 +128,27 @@ public class ExperimentalTimeseriesContainerServiceTest {
   }
 
   @Test
+  public void addPayload_toExistingTimeseries_success() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    List<ExperimentalTimeseriesPayloadDataPointIO> morePoints = new ArrayList<>(
+      List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.2))
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, morePoints);
+
+    var actual =
+      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    Assert.assertEquals(2, actual.size());
+  }
+
+  @Test
   public void addPayload_containerDoesNotExist_throwsException() throws Exception {
     int nonExistingContainerId = -1;
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("test");
