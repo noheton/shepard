@@ -34,15 +34,17 @@ test_test:
         - bash
         - -c
         - |
-          echo "Hello World"
-          ls -laF .
-          cd /
-          ls -laF .
-          ls -laF /data/
-          ls -laF /builds/
-          cp /builds/dlr-shepard/neo4j-docker-entrypoint.sh /usr/local/bin/neo4j-docker-entrypoint.sh
-          chmod +x /usr/local/bin/neo4j-docker-entrypoint.sh
-          /usr/local/bin/neo4j-docker-entrypoint.sh
+          env
+          ls -laF bin
+          echo "-------------"
+          ls -laF import
+          echo "-------------"
+          ls -laF run
+          echo "-------------"
+          ls -laF /startup
+          echo "-------------"
+          "tini", "-g", "--", "/startup/docker-entrypoint.sh"
+
   script:
     - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
     - env
