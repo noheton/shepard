@@ -32,6 +32,8 @@ test_test:
       alias: neo4j
       command:
         - echo "This is executed"
+      entrypoint:
+        - statx /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
     - name: mongo:8.0
       alias: mongodb
     - name: influxdb:1.8
