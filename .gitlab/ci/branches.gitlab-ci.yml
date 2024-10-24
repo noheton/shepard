@@ -35,21 +35,11 @@ test_test:
         - -c
         - |
           env
-          ls -laF bin
           echo "-------------"
-          ls -laF import
+          unset CI_SERVER_TLS_CA_FILE
+          env
           echo "-------------"
-          ls -laF run
-          echo "-------------"
-          ls -laF /startup
-          echo "-------------"
-          "tini", "-g", "--", "/startup/docker-entrypoint.sh"
+          tini -g -- /startup/docker-entrypoint.sh
 
   script:
-    - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
-    - env
-
-  artifacts:
-    paths:
-      - neo4j-docker-entrypoint.sh
-    expire_in: 1 hour
+    - echo "hello world"
