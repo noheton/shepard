@@ -34,7 +34,6 @@ test_test:
         - /bin/bash
         - -c
         - |
-          unset CI_SERVER_TLS_CA_FILE
           exec tini -g -- /startup/docker-entrypoint.sh
       command: ["neo4j"]
 
