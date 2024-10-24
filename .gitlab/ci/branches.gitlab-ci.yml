@@ -34,14 +34,9 @@ test_test:
         - /bin/bash
         - -c
         - |
-          echo "1 -------------"
-          echo $CI_SERVER_TLS_CA_FILE
-          echo "2 -------------"
           unset CI_SERVER_TLS_CA_FILE
-          echo "3 -------------"
-          echo $CI_SERVER_TLS_CA_FILE
-          echo "4 -------------"
           exec tini -g -- /startup/docker-entrypoint.sh
+      command: ["neo4j"]
 
   script:
     - echo "hello world"
