@@ -150,7 +150,6 @@ public class ExperimentalTimeseriesContainerService {
     }
 
     // timeseries is persisted, now we persist the payload
-    // get type of payload points
     var expectedType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
     // parse points to correct model ExperimentalTimeseriesPayload
     var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), expectedType, dataPoints);

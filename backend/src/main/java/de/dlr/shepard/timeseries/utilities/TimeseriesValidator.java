@@ -18,7 +18,7 @@ public class TimeseriesValidator {
   }
 
   private static void validateString(String input, String fieldName) {
-    if (input == null || input.matches(forbiddenCharsRegEx)) throw new InvalidBodyException(
+    if (input == null || input.isEmpty() || input.matches(forbiddenCharsRegEx)) throw new InvalidBodyException(
       errorStringFormat,
       fieldName
     );

@@ -67,4 +67,13 @@ public class TimeseriesValidatorTest {
       TimeseriesValidator.validate(timeseries);
     });
   }
+
+  @Test
+  public void validate_emptyString_throwsException() {
+    ExperimentalTimeseries timeseries = new ExperimentalTimeseries("", "a", "b", "c", "d");
+
+    Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+      TimeseriesValidator.validate(timeseries);
+    });
+  }
 }
