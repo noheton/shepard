@@ -34,8 +34,7 @@ test_test:
         - /bin/bash
         - -c
         - |
-          exec tini -g -- /startup/docker-entrypoint.sh
-      command: ["neo4j"]
+          exec tini -g -- /startup/docker-entrypoint.sh neo4j
 
   script:
     - echo "hello world"
