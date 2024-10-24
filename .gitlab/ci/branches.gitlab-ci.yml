@@ -28,7 +28,7 @@ test_test:
 
   services:
     - name: neo4j:5.24
-      alias: neo4j
+      alias: graphdb
   script:
     - cat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE
     - env
