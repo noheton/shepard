@@ -33,7 +33,7 @@ test_test:
       command:
         - echo "This is executed"
       entrypoint:
-        - /bin/sh -c "stat /builds/dlr-shepard/shepard.tmp/CI_SERVER_TLS_CA_FILE"
+        - ls .
     - name: mongo:8.0
       alias: mongodb
     - name: influxdb:1.8
