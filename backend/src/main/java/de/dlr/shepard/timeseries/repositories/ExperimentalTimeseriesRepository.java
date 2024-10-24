@@ -9,7 +9,7 @@ import java.util.List;
 @ApplicationScoped
 public class ExperimentalTimeseriesRepository implements PanacheRepositoryBase<ExperimentalTimeseriesEntity, Integer> {
 
-  public List<ExperimentalTimeseriesEntity> findTimeseries(long containerId, ExperimentalTimeseries timeseries) {
+  public List<ExperimentalTimeseriesEntity> findByTimeseries(long containerId, ExperimentalTimeseries timeseries) {
     return this.find(
         "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",
         containerId,

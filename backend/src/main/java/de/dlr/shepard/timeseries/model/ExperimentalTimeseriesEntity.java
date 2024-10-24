@@ -58,6 +58,17 @@ public class ExperimentalTimeseriesEntity {
     this.symbolicName = symbolicName;
   }
 
+  public ExperimentalTimeseriesEntity(long containerId, ExperimentalTimeseries timeseries) {
+    this(
+      containerId,
+      timeseries.getMeasurement(),
+      timeseries.getField(),
+      timeseries.getDevice(),
+      timeseries.getLocation(),
+      timeseries.getSymbolicName()
+    );
+  }
+
   public int getId() {
     return id;
   }

@@ -3,6 +3,7 @@ package de.dlr.shepard.timeseries.services;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.utilities.LocalDateTimeHelper;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -136,6 +137,21 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       this.timeseriesService.addPayload(nonExistingContainerId, timeseries, dataPoints);
+    });
+
+    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+  }
+
+  @Test
+  public void addPayload_requiredFieldsMissing_throwsException() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = new ExperimentalTimeseries("", "", "", "", "");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+    var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
+    dataPoints.add(point);
+
+    InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+      this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     });
 
     Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());

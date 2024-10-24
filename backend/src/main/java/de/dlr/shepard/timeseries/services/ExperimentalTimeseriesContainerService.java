@@ -17,6 +17,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
+import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -132,40 +133,17 @@ public class ExperimentalTimeseriesContainerService {
   ) {
     var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      String errorMessage = String.format("Timeseries container with id %s is null or deleted.", containerId);
-      Log.errorf(errorMessage);
-      throw new InvalidBodyException(errorMessage);
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
     }
 
-    // timeseries sanity check
-    // TimeseriesSanitizer.sanitizeMetadata(payload);
-    // points sanity check
+    TimeseriesValidator.validate(timeseries);
 
     // try to find timeseries in db
-    var matchingTimeseries = timeseriesRepository
-      .find(
-        "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",
-        containerId,
-        timeseries.getMeasurement(),
-        timeseries.getField(),
-        timeseries.getSymbolicName(),
-        timeseries.getDevice(),
-        timeseries.getLocation()
-      )
-      .list();
-
+    var matchingTimeseries = timeseriesRepository.findByTimeseries(containerId, timeseries);
     ExperimentalTimeseriesEntity timeseriesEntity = null;
-
     if (matchingTimeseries.isEmpty()) {
       // create new timeseries because it does not exist
-      timeseriesEntity = new ExperimentalTimeseriesEntity(
-        containerId,
-        timeseries.getMeasurement(),
-        timeseries.getField(),
-        timeseries.getDevice(),
-        timeseries.getLocation(),
-        timeseries.getSymbolicName()
-      );
+      timeseriesEntity = new ExperimentalTimeseriesEntity(containerId, timeseries);
       this.timeseriesRepository.persist(timeseriesEntity);
     } else {
       timeseriesEntity = matchingTimeseries.get(0);

@@ -12,12 +12,17 @@ import jakarta.ws.rs.core.Response.Status;
 public class InvalidBodyException extends ShepardException {
 
   private static final long serialVersionUID = 8918170154141864994L;
+  private static final Status status = Status.BAD_REQUEST;
 
   public InvalidBodyException() {
-    super("Some of the values provided in the JSON Body are incorrect", Status.BAD_REQUEST);
+    super("Some of the values provided in the JSON Body are incorrect", status);
   }
 
   public InvalidBodyException(String message) {
-    super(message, Status.BAD_REQUEST);
+    super(message, status);
+  }
+
+  public InvalidBodyException(String format, Object... args) {
+    super(String.format(format, args), status);
   }
 }
