@@ -5,6 +5,7 @@ import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.utilities.InstantHelper;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -201,13 +202,17 @@ public class ExperimentalTimeseriesContainerServiceTest {
   public void getDataPoints_getMax_returnsMax() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    var InstantHelper = new InstantHelper();
+    var timestamp = InstantHelper.toNanoseconds();
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(22.3)
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.addSeconds(-2).toNanoseconds(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.addSeconds(-1).toNanoseconds(), 22.2),
+        TimeseriesTestDataGenerator.generateDataPointDouble(timestamp, 22.3)
       )
     );
+
+    Log.info("DataPoint: " + dataPoints.get(2).getTimestamp() + " " + dataPoints.get(2).getValue());
 
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
@@ -217,10 +222,12 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           0L,
           1_000_000_000_000_000_000L,
-          1_000_000_000L,
+          1_000_000L,
           AggregateFunctions.MAX
         );
 
     Assert.assertEquals(1, actual.size());
+    Assert.assertEquals(timestamp, actual.get(0).getTimestamp());
+    Assert.assertEquals(22.3, actual.get(0).getValue());
   }
 }

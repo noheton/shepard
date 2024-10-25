@@ -29,7 +29,7 @@ CREATE TABLE timeseries_payload
 );
 
 -- Create hypertable for timeseries_payload on time
-SELECT create_hypertable('timeseries_payload', by_range('time', 864 * 1e11)); -- Chunk size of one day in nanoseconds
+SELECT create_hypertable('timeseries_payload', by_range('time', 86400000000000)); -- Chunk size of one day in nanoseconds
 
 -- Insert initial data into timeseries table
 INSERT INTO timeseries ( measurement, device, location, field, container_id )

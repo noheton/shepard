@@ -14,6 +14,10 @@ public final class TimeseriesTestDataGenerator {
     return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
+  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(long timestamp, Double value) {
+    return new ExperimentalTimeseriesPayloadDataPointIO(timestamp, value);
+  }
+
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointInteger(Integer value) {
     return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }

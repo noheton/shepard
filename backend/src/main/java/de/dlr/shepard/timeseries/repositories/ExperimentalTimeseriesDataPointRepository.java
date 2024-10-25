@@ -27,29 +27,23 @@ public class ExperimentalTimeseriesDataPointRepository
     int timeseriesId,
     long start,
     long end,
-    long timeInMicroseconds,
+    long timeInNanoseconds,
     AggregateFunctions function
   ) {
-    var queryString =
-      "SELECT time_bucket('? microseconds', time), ?(double_value) from timeseries_payload WHERE timeseries_id = ? GROUP BY time_bucket('? microseconds', time)";
+    var queryString = buildQuery(timeseriesId, timeInNanoseconds, function);
     var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesPayloadDataPointIO.class);
-    query.setParameter(1, timeInMicroseconds);
-    query.setParameter(2, function.toString());
-    query.setParameter(3, timeseriesId);
-    query.setParameter(4, timeInMicroseconds);
 
     @SuppressWarnings("unchecked")
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = query.getResultList();
     return dataPoints;
   }
 
-  public static String buildQuery(int timeseriesId, long timeInMicroseconds, AggregateFunctions function) {
+  public static String buildQuery(int timeseriesId, long timeInNanoseconds, AggregateFunctions function) {
     var query = String.format(
-      "SELECT time_bucket('%d microseconds', time), %s(double_value) from timeseries_payload WHERE timeseries_id = %d GROUP BY time_bucket('%d microseconds', time)",
-      timeInMicroseconds,
+      "SELECT time_bucket(%d, time) as timestamp, %s(double_value) as value from timeseries_payload WHERE timeseries_id = %d GROUP BY timestamp",
+      timeInNanoseconds,
       function.toString(),
-      timeseriesId,
-      timeInMicroseconds
+      timeseriesId
     );
     Log.debugf("SQL Query: %s", query);
     return query;
