@@ -3,6 +3,8 @@ package de.dlr.shepard.timeseries.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,13 +44,18 @@ public class ExperimentalTimeseriesEntity {
   @Column(name = "symbolic_name")
   private String symbolicName;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "value_type")
+  private ExperimentalDataPointValueTypes valueType;
+
   public ExperimentalTimeseriesEntity(
     long containerId,
     @NotBlank String measurement,
     @NotBlank String field,
     @NotBlank String device,
     @NotBlank String location,
-    @NotBlank String symbolicName
+    @NotBlank String symbolicName,
+    @NotBlank ExperimentalDataPointValueTypes valueType
   ) {
     this.containerId = containerId;
     this.measurement = measurement;
@@ -56,16 +63,22 @@ public class ExperimentalTimeseriesEntity {
     this.device = device;
     this.location = location;
     this.symbolicName = symbolicName;
+    this.valueType = valueType;
   }
 
-  public ExperimentalTimeseriesEntity(long containerId, ExperimentalTimeseries timeseries) {
+  public ExperimentalTimeseriesEntity(
+    long containerId,
+    ExperimentalTimeseries timeseries,
+    ExperimentalDataPointValueTypes valueType
+  ) {
     this(
       containerId,
       timeseries.getMeasurement(),
       timeseries.getField(),
       timeseries.getDevice(),
       timeseries.getLocation(),
-      timeseries.getSymbolicName()
+      timeseries.getSymbolicName(),
+      valueType
     );
   }
 
@@ -97,8 +110,16 @@ public class ExperimentalTimeseriesEntity {
     return field;
   }
 
+  public ExperimentalDataPointValueTypes getValueType() {
+    return valueType;
+  }
+
+  public void setValueType(ExperimentalDataPointValueTypes valueType) {
+    this.valueType = valueType;
+  }
+
   @JsonIgnore
   public String getUniqueId() {
-    return String.join("-", measurement, device, location, symbolicName, field);
+    return String.join("-", measurement, device, location, symbolicName, field, valueType.toString());
   }
 }

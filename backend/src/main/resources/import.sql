@@ -13,7 +13,8 @@ CREATE TABLE timeseries
     field       TEXT NOT NULL,
     symbolic_name TEXT NULL,
     device      TEXT NULL,
-    location    TEXT NULL
+    location    TEXT NULL,
+    value_type  TEXT NOT NULL
 );
 
 -- Create timeseries_payload table
@@ -32,10 +33,10 @@ CREATE TABLE timeseries_payload
 SELECT create_hypertable('timeseries_payload', by_range('time', 86400000000000)); -- Chunk size of one day in nanoseconds
 
 -- Insert initial data into timeseries table
-INSERT INTO timeseries ( measurement, device, location, field, container_id )
-VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1', 'value', 11),
-       ('Measurement 1', 'Robot 2', 'Factory Hall 1', 'value', 11),
-       ('Measurement 2', 'Robot 2', 'Factory Hall 1', 'value', 11);
+INSERT INTO timeseries ( measurement, device, location, field, container_id, value_type )
+VALUES ('Measurement 1', 'Robot 1', 'Factory Hall 1', 'value', 11, 'Double'),
+       ('Measurement 1', 'Robot 2', 'Factory Hall 1', 'value', 11, 'Double'),
+       ('Measurement 2', 'Robot 2', 'Factory Hall 1', 'value', 11, 'Double');
 
 -- Insert initial data into timeseries_payload table with random values
 INSERT INTO timeseries_payload (time, timeseries_id, double_value)

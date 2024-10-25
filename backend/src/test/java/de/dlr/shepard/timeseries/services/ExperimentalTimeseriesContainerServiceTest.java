@@ -170,6 +170,27 @@ public class ExperimentalTimeseriesContainerServiceTest {
     Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
+  @Test
+  public void addPayload_addDataPointToExistingTimeseriesWithDifferentType_throwsException() throws Exception {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+    var point = TimeseriesTestDataGenerator.generateDataPointDouble(22.3);
+    dataPoints.add(point);
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    List<ExperimentalTimeseriesPayloadDataPointIO> otherDataPoints = new ArrayList<>();
+    var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
+    otherDataPoints.add(pointWithDifferentType);
+
+    InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+      this.timeseriesService.addPayload(container.getId(), timeseries, otherDataPoints);
+    });
+
+    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+  }
+
   /*************************
    * getTimeseriesAvailable
    *************************/

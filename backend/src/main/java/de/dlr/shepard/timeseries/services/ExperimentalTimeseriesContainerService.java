@@ -138,22 +138,22 @@ public class ExperimentalTimeseriesContainerService {
     }
 
     TimeseriesValidator.validate(timeseries);
+    var valueType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
 
     // try to find timeseries in db
     var matchingTimeseries = timeseriesRepository.findByTimeseries(containerId, timeseries);
     ExperimentalTimeseriesEntity timeseriesEntity = null;
     if (matchingTimeseries.isEmpty()) {
       // create new timeseries because it does not exist
-      timeseriesEntity = new ExperimentalTimeseriesEntity(containerId, timeseries);
+      timeseriesEntity = new ExperimentalTimeseriesEntity(containerId, timeseries, valueType);
       this.timeseriesRepository.persist(timeseriesEntity);
     } else {
       timeseriesEntity = matchingTimeseries.get(0);
+      throwIfDataTypesAreDifferent(timeseriesEntity, dataPoints);
     }
 
-    // timeseries is persisted, now we persist the payload
-    var expectedType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
     // parse points to correct model ExperimentalTimeseriesPayload
-    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), expectedType, dataPoints);
+    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), valueType, dataPoints);
 
     timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints);
     return timeseriesEntity;
@@ -271,5 +271,21 @@ public class ExperimentalTimeseriesContainerService {
     //   return false;
     // }
     // return true;
+  }
+
+  private static void throwIfDataTypesAreDifferent(
+    ExperimentalTimeseriesEntity timeseriesEntity,
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
+  ) {
+    for (var dataPoint : dataPoints) {
+      var expectedType = ObjectTypeEvaluator.evaluate(dataPoint.getValue());
+      if (timeseriesEntity.getValueType() != expectedType) {
+        throw new InvalidBodyException(
+          "Timeseries already exists for data type %s but new data points are of type %s",
+          timeseriesEntity.getValueType(),
+          expectedType
+        );
+      }
+    }
   }
 }
