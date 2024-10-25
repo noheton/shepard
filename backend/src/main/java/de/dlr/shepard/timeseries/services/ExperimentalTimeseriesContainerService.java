@@ -11,6 +11,7 @@ import de.dlr.shepard.neo4Core.entities.Permissions;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
+import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
@@ -188,23 +189,43 @@ public class ExperimentalTimeseriesContainerService {
    */
   public List<ExperimentalTimeseriesDataPointEntity> getDataPoints(
     long containerId,
-    ExperimentalTimeseries timeseries,
-    long start,
-    long end,
-    long groupBy
+    ExperimentalTimeseries timeseries
   ) {
     var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
 
-    Log.warn("Robin: " + result.isPresent());
+    if (!result.isPresent()) throw new InvalidRequestException("Timeseries not found.");
 
-    if (result.isPresent()) {
-      var timeseriesId = result.get().getId();
-      var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
-      Log.info(String.format("getDataPoints returns: %s", retVal.get(0)));
-      return retVal;
-    }
+    var timeseriesId = result.get().getId();
 
-    throw new InvalidRequestException("Timeseries not found.");
+    var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
+    return retVal;
+  }
+
+  public List<ExperimentalTimeseriesPayloadDataPointIO> getDataPointsAggregated(
+    long containerId,
+    ExperimentalTimeseries timeseries,
+    long startNanoseconds,
+    long endNanoseconds,
+    long timeIntervalMicroseconds,
+    AggregateFunctions aggregateFunction
+  ) {
+    var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
+
+    if (!result.isPresent()) throw new InvalidRequestException("Timeseries not found.");
+
+    var timeseriesId = result.get().getId();
+
+    // var query = TimescaleQueryBuilder.buildQuery(timeseriesId, startNanoseconds, endNanoseconds, timeIntervalMicroseconds, aggregateFunction);
+    var retVal =
+      this.timeseriesPayloadRepository.getDataPoints(
+          timeseriesId,
+          startNanoseconds,
+          endNanoseconds,
+          timeIntervalMicroseconds,
+          aggregateFunction
+        );
+    //var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
+    return retVal;
   }
 
   public InputStream exportTimeseriesPayload(

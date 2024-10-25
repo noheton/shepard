@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.endpoints;
 
+import com.arjuna.ats.jta.exceptions.NotImplementedException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.influxDB.FillOption;
@@ -10,7 +11,6 @@ import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
-import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
@@ -255,35 +255,39 @@ public class ExperimentalTimeseriesRest {
     @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption // Todo: how to replace filloption?
-  ) {
+  ) throws Exception {
     if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseriesInputParams = new ExperimentalTimeseries(measurement, device, location, symbolicName, field);
+    throw new NotImplementedException("not implemented");
+    // var timeseriesInputParams = new ExperimentalTimeseries(measurement, device, location, symbolicName, field);
 
-    var payload = timeseriesContainerService.getDataPoints(
-      timeseriesContainerId,
-      timeseriesInputParams,
-      start,
-      end,
-      //function,
-      groupBy
-      //fillOption
-    );
+    // var payload = timeseriesContainerService.getDataPoints(
+    //   timeseriesContainerId,
+    //   timeseriesInputParams,
+    //   start,
+    //   end,
+    //   //function,
+    //   groupBy
+    //   //fillOption
+    // );
 
-    if (payload == null) throw new NotFoundException();
+    // if (payload == null) throw new NotFoundException();
 
-    var dataPointsIo = payload
-      .stream()
-      .map(point -> {
-        // Todo: get correct value
-        var io = new ExperimentalTimeseriesPayloadDataPointIO(point.getTime(), point.getDoubleValue());
-        return io;
-      })
-      .toList();
+    // var dataPointsIo = payload
+    //   .stream()
+    //   .map(point -> {
+    //     // Todo: get correct value
+    //     var io = new ExperimentalTimeseriesPayloadDataPointIO(
+    //       LocalDateTimeHelper.fromLocalDateTime(point.getTime()),
+    //       point.getDoubleValue()
+    //     );
+    //     return io;
+    //   })
+    //   .toList();
 
-    return new ExperimentalTimeseriesPayloadIO(timeseriesInputParams, dataPointsIo);
+    // return new ExperimentalTimeseriesPayloadIO(timeseriesInputParams, dataPointsIo);
   }
 
   @GET

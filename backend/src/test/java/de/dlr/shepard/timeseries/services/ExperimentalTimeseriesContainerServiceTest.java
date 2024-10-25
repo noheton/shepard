@@ -3,6 +3,7 @@ package de.dlr.shepard.timeseries.services;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
+import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -42,8 +43,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     Log.infof("Timeseries: containerId: %d, timeseriesId: %d", container.getId(), created.getId());
     Assertions.assertNotNull(created);
-    var actual =
-      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries);
     Assert.assertNotNull(actual);
     Assert.assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
@@ -67,8 +67,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     Assertions.assertNotNull(created);
 
-    var actual =
-      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries);
     Assert.assertNotNull(actual);
     Assert.assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
@@ -89,8 +88,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     Assertions.assertNotNull(created);
 
-    var actual =
-      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries);
     Assert.assertNotNull(actual);
     Assert.assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
@@ -111,8 +109,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     Assertions.assertNotNull(created);
 
-    var actual =
-      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries);
     Assert.assertNotNull(actual);
     Assert.assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
@@ -138,8 +135,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     this.timeseriesService.addPayload(container.getId(), timeseries, morePoints);
 
-    var actual =
-      this.timeseriesService.getDataPoints(container.getId(), timeseries, 0L, 1_000_000_000_000_000_000L, 0L);
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries);
     Assert.assertEquals(2, actual.size());
   }
 
@@ -196,5 +192,35 @@ public class ExperimentalTimeseriesContainerServiceTest {
     int nonExistingContainerId = -1;
     var actual = this.timeseriesService.getTimeseriesAvailable(nonExistingContainerId);
     Assert.assertEquals(0, actual.size());
+  }
+
+  /**************
+   * getDataPoints
+   ****************/
+  @Test
+  public void getDataPoints_getMax_returnsMax() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(22.2),
+        TimeseriesTestDataGenerator.generateDataPointDouble(22.3)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          0L,
+          1_000_000_000_000_000_000L,
+          1_000_000_000L,
+          AggregateFunctions.MAX
+        );
+
+    Assert.assertEquals(1, actual.size());
   }
 }
