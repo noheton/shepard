@@ -3,7 +3,6 @@ package de.dlr.shepard.timeseries.services;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.influxDB.FillOption;
-import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -17,6 +16,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
+import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import de.dlr.shepard.util.DateHelper;
@@ -41,6 +41,7 @@ public class ExperimentalTimeseriesContainerService {
   private PermissionsDAO permissionsDAO;
   private ExperimentalTimeseriesRepository timeseriesRepository;
   private ExperimentalTimeseriesDataPointRepository timeseriesPayloadRepository;
+  private CsvConverter csvConverter;
 
   ExperimentalTimeseriesContainerService() {}
 
@@ -51,7 +52,8 @@ public class ExperimentalTimeseriesContainerService {
     DateHelper dateHelper,
     PermissionsDAO permissionsDAO,
     ExperimentalTimeseriesRepository timeseriesRepository,
-    ExperimentalTimeseriesDataPointRepository timeseriesPayloadRepository
+    ExperimentalTimeseriesDataPointRepository timeseriesPayloadRepository,
+    CsvConverter csvConverter
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.userDAO = userDAO;
@@ -59,6 +61,7 @@ public class ExperimentalTimeseriesContainerService {
     this.permissionsDAO = permissionsDAO;
     this.timeseriesRepository = timeseriesRepository;
     this.timeseriesPayloadRepository = timeseriesPayloadRepository;
+    this.csvConverter = csvConverter;
   }
 
   public List<TimeseriesContainer> getAllContainers(QueryParamHelper params, String username) {
@@ -202,6 +205,7 @@ public class ExperimentalTimeseriesContainerService {
   }
 
   public List<ExperimentalTimeseriesPayloadDataPointIO> getDataPointsAggregated(
+    // TODO:change return type
     long containerId,
     ExperimentalTimeseries timeseries,
     long startNanoseconds,
@@ -209,11 +213,12 @@ public class ExperimentalTimeseriesContainerService {
     long timeIntervalMicroseconds,
     AggregateFunctions aggregateFunction
   ) {
-    var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
+    // var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
+    var result = this.timeseriesRepository.findByTimeseries(containerId, timeseries);
 
-    if (!result.isPresent()) throw new InvalidRequestException("Timeseries not found.");
+    if (result.isEmpty()) throw new InvalidRequestException("Timeseries not found.");
 
-    var timeseriesId = result.get().getId();
+    var timeseriesId = result.get(0).getId();
 
     // var query = TimescaleQueryBuilder.buildQuery(timeseriesId, startNanoseconds, endNanoseconds, timeIntervalMicroseconds, aggregateFunction);
     var retVal =
@@ -233,29 +238,19 @@ public class ExperimentalTimeseriesContainerService {
     ExperimentalTimeseries timeseries,
     long start,
     long end,
-    SingleValuedUnaryFunction function,
+    AggregateFunctions function,
     Long groupBy,
     FillOption fillOption
   ) throws IOException {
-    throw new NotImplementedException();
-    // var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
-    // if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-    //   Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-    //   return null;
-    // }
-    // var result = timeseriesService.exportTimeseriesPayload(
-    //   start,
-    //   end,
-    //   timeseriesContainer.getDatabase(),
-    //   List.of(timeseries),
-    //   function,
-    //   groupBy,
-    //   fillOption,
-    //   Collections.emptySet(),
-    //   Collections.emptySet(),
-    //   Collections.emptySet()
-    // );
-    // return result;
+    var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
+    if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
+      return null;
+    }
+    var dataPoints = getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function); //check time interval
+
+    var stream = csvConverter.convertToCsv(timeseries, dataPoints);
+    return stream;
   }
 
   public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {

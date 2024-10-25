@@ -13,6 +13,7 @@ import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadIO;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
+import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
@@ -324,7 +325,7 @@ public class ExperimentalTimeseriesRest {
     @QueryParam(Constants.FIELD) String field,
     @QueryParam(Constants.START) long start,
     @QueryParam(Constants.END) long end,
-    @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
+    @QueryParam(Constants.FUNCTION) AggregateFunctions function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
   ) throws IOException {
