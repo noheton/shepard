@@ -11,7 +11,7 @@ CREATE TABLE timeseries
     container_id BIGINT NOT NULL,
     measurement TEXT NOT NULL,
     field       TEXT NOT NULL,
-    symbolic_name TEXT NULL,
+    symbolic_name TEXT NOT NULL,
     device      TEXT NULL,
     location    TEXT NULL,
     value_type  TEXT NOT NULL
