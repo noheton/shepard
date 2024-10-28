@@ -27,6 +27,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -279,7 +280,7 @@ public class ExperimentalTimeseriesContainerService {
   ) throws IOException {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
+      throw new NotFoundException();
     }
 
     var timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);

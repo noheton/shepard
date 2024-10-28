@@ -344,8 +344,6 @@ public class ExperimentalTimeseriesRest {
       fillOption
     );
 
-    if (inputStream == null) throw new NotFoundException();
-
     return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
       .build();
