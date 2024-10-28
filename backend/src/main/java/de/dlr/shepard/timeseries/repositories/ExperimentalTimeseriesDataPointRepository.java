@@ -8,15 +8,9 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NamedNativeQuery;
 import java.util.List;
 
 @ApplicationScoped
-@NamedNativeQuery(
-  name = "getDataPoints",
-  query = "SELECT time_bucket(':timeInterval microseconds', time), :aggregateFunction(double_value) from timeseries_payload WHERE timeseries_id = :timeseriesId GROUP BY time_bucket(':timeInterval microseconds', time)",
-  resultClass = ExperimentalTimeseriesPayloadDataPointIO.class
-)
 public class ExperimentalTimeseriesDataPointRepository
   implements PanacheRepositoryBase<ExperimentalTimeseriesDataPointEntity, Long> {
 

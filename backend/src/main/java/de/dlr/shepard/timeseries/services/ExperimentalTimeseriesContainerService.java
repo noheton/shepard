@@ -198,12 +198,16 @@ public class ExperimentalTimeseriesContainerService {
     long end
   ) {
     var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
-
     if (!result.isPresent()) throw new InvalidRequestException("Timeseries not found.");
 
     var timeseriesId = result.get().getId();
-
-    var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
+    var retVal =
+      this.timeseriesPayloadRepository.find(
+          "timeseriesId = ?1 AND time >= ?2 AND time <= ?3",
+          timeseriesId,
+          start,
+          end
+        ).list();
     return retVal;
   }
 

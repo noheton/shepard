@@ -10,11 +10,15 @@ public final class TimeseriesTestDataGenerator {
     return new ExperimentalTimeseries("device", "field", "location", measurement, "symbolicName");
   }
 
-  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(Double value) {
-    return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
+  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(long timestamp, Double value) {
+    return new ExperimentalTimeseriesPayloadDataPointIO(timestamp, value);
   }
 
-  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(long timestamp, Double value) {
+  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(Double value) {
+    return generateDataPointDouble(Instant.now().toEpochMilli() * 1_000_000, value);
+  }
+
+  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointInteger(long timestamp, Integer value) {
     return new ExperimentalTimeseriesPayloadDataPointIO(timestamp, value);
   }
 

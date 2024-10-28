@@ -223,19 +223,42 @@ public class ExperimentalTimeseriesContainerServiceTest {
    * getDataPoints
    ****************/
   @Test
+  public void getDataPoints_forGivenDuration_returnsThreeOutOfFive() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
+    var start = InstantHelper.now().addDays(-4).toNano();
+    var end = InstantHelper.now().addDays(-2).toNano();
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointInteger(InstantHelper.now().addDays(-5).toNano(), 70),
+        TimeseriesTestDataGenerator.generateDataPointInteger(start, 80),
+        TimeseriesTestDataGenerator.generateDataPointInteger(InstantHelper.now().addDays(-3).toNano(), 65),
+        TimeseriesTestDataGenerator.generateDataPointInteger(end, 72),
+        TimeseriesTestDataGenerator.generateDataPointInteger(InstantHelper.now().addDays(-1).toNano(), 88)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, start, end);
+
+    Assert.assertEquals(3, actual.size());
+  }
+
+  /************************
+   * getDataPointsAggregated
+   **************************/
+  @Test
   public void getDataPoints_getMax_returnsMax() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    var timestamp = InstantHelper.now().toNano();
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(timestamp, 22.3)
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 22.3)
       )
     );
-
-    Log.info("DataPoint: " + dataPoints.get(2).getTimestamp() + " " + dataPoints.get(2).getValue());
 
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
