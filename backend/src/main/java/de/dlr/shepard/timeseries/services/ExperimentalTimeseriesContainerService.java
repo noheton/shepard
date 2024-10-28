@@ -19,6 +19,7 @@ import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRep
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
+import de.dlr.shepard.timeseries.utilities.TimeseriesMatchFilter;
 import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
@@ -280,6 +281,7 @@ public class ExperimentalTimeseriesContainerService {
   ) throws IOException {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
       throw new NotFoundException();
     }
 
@@ -366,7 +368,9 @@ public class ExperimentalTimeseriesContainerService {
       .parallelStream()
       .forEach(timeseries -> {
         ExperimentalTimeseriesData timeseriesData = null;
-        if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
+        if (
+          TimeseriesMatchFilter.matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)
+        ) {
           timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);
         }
         if (timeseriesData != null) {
