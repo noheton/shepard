@@ -179,20 +179,19 @@ public class ExperimentalTimeseriesContainerService {
   }
 
   /**
-   * Loads timeseries payload from a timeseries container.
+   * Loads timeseries data points of a timeseries.
    *
-   * @param timeseriesContainerId identifies the TimeseriesContainer
+   * @param containerId           identifies the TimeseriesContainer
    * @param timeseries            The timeseries to load
    * @param start                 The beginning of the timeseries
    * @param end                   The end of the timeseries
-   * @param function              The aggregate function
-   * @param groupBy               The time interval measurements get grouped by
-   * @param fillOption            The fill option for missing values
-   * @return TimeseriesPayload
+   * @return ExperimentalTimeseriesDataPointEntity
    */
   public List<ExperimentalTimeseriesDataPointEntity> getDataPoints(
     long containerId,
-    ExperimentalTimeseries timeseries
+    ExperimentalTimeseries timeseries,
+    long start,
+    long end
   ) {
     var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
 
