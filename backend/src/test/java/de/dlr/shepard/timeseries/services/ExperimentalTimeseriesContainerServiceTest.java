@@ -26,7 +26,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
   private final String containerName = "AnotherContainer";
   private final String userName = "Testuser";
   private final long startDate = InstantHelper.fromGermanDate("01.01.2024").toNano();
-  private final long endDate = InstantHelper.now().toNano();
+  private final long endDate = InstantHelper.now().addHours(1).toNano();
 
   @Test
   public void createContainer_containerDoesNotExist_containerIsCreated() {
@@ -46,6 +46,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     Log.infof("Timeseries: containerId: %d, timeseriesId: %d", container.getId(), created.getId());
+    Log.warn(startDate);
+    Log.warn(endDate);
     Assertions.assertNotNull(created);
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
     Assert.assertNotNull(actual);
