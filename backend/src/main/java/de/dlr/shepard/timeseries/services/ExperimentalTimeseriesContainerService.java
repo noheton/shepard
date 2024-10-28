@@ -12,6 +12,7 @@ import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesData;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
@@ -28,8 +29,11 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.lang3.NotImplementedException;
 
 @RequestScoped
@@ -232,7 +236,35 @@ public class ExperimentalTimeseriesContainerService {
     return retVal;
   }
 
-  public InputStream exportTimeseriesPayload(
+  private ExperimentalTimeseriesData getTimeseriesData(
+    long containerId,
+    ExperimentalTimeseries timeseries,
+    AggregateFunctions function,
+    Long groupBy,
+    FillOption fillOption,
+    long start,
+    long end
+  ) {
+    var timeseriesData = new ExperimentalTimeseriesData();
+    timeseriesData.setTimeseries(timeseries);
+    timeseriesData.setDataPoints(getDataPointsAggregated(containerId, timeseries, start, end, end, function));
+    return timeseriesData;
+  }
+
+  /**
+   * Export one timeseries as CSV File if found.
+   *
+   * @param containerId           Id of the container in Neo4j
+   * @param timeseriesList        The list of timeseries whose points are queried
+   * @param function              The aggregate function
+   * @param groupBy               The time interval measurements get grouped by
+   * @param fillOption            The fill option for missing values
+   * @param start                 The beginning of the timeseries
+   * @param end                   The end of the timeseries
+   * @return InputStream containing the CSV file
+   * @throws IOException When the CSV file could not be written
+   */
+  public InputStream exportTimeseriesData(
     long containerId,
     ExperimentalTimeseries timeseries,
     long start,
@@ -243,13 +275,100 @@ public class ExperimentalTimeseriesContainerService {
   ) throws IOException {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
-      return null;
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
     }
-    var dataPoints = getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function); //check time interval
 
-    var stream = csvConverter.convertToCsv(timeseries, dataPoints);
+    var timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);
+    var stream = csvConverter.convertToCsv(List.of(timeseriesData));
     return stream;
+  }
+
+  /**
+   * Export list of timeseries as CSV File. If the filter sets are empty, no filtering
+   * takes place.
+   *
+   * @param containerId           Id of the container in Neo4j
+   * @param timeseriesList        The list of timeseries whose points are queried
+   * @param function              The aggregate function
+   * @param groupBy               The time interval measurements get grouped by
+   * @param fillOption            The fill option for missing values
+   * @param start                 The beginning of the timeseries
+   * @param end                   The end of the timeseries
+   * @param devicesFilterSet      A set of allowed devices or an empty set
+   * @param locationsFilterSet    A set of allowed locations or an empty set
+   * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
+   * @return InputStream containing the CSV file
+   * @throws IOException When the CSV file could not be written
+   */
+  public InputStream exportTimeseriesPayload(
+    long containerId,
+    List<ExperimentalTimeseries> timeseriesList,
+    AggregateFunctions function,
+    Long groupBy,
+    long start,
+    long end,
+    FillOption fillOption,
+    Set<String> devicesFilterSet,
+    Set<String> locationsFilterSet,
+    Set<String> symbolicNameFilterSet
+  ) throws IOException {
+    var timeseriesDataList = getTimeseriesDataList(
+      containerId,
+      timeseriesList,
+      function,
+      groupBy,
+      fillOption,
+      start,
+      end,
+      devicesFilterSet,
+      locationsFilterSet,
+      symbolicNameFilterSet
+    );
+    var stream = csvConverter.convertToCsv(timeseriesDataList);
+    return stream;
+  }
+
+  /**
+   * Queries the database for many timeseries in parallel. Returns a list of
+   * timeseries. If the filter sets are empty, no filtering takes place.
+   *
+   * @param containerId           Id of the container in Neo4j
+   * @param timeseriesList        The list of timeseries whose points are queried
+   * @param function              The aggregate function
+   * @param groupBy               The time interval measurements get grouped by
+   * @param fillOption            The fill option for missing values
+   * @param start                 The beginning of the timeseries
+   * @param end                   The end of the timeseries
+   * @param devicesFilterSet      A set of allowed devices or an empty set
+   * @param locationsFilterSet    A set of allowed locations or an empty set
+   * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
+   * @return a list of timeseries with influx points
+   */
+  public List<ExperimentalTimeseriesData> getTimeseriesDataList(
+    long containerId,
+    List<ExperimentalTimeseries> timeseriesList,
+    AggregateFunctions function,
+    Long groupBy,
+    FillOption fillOption,
+    long start,
+    long end,
+    Set<String> devicesFilterSet,
+    Set<String> locationsFilterSet,
+    Set<String> symbolicNameFilterSet
+  ) {
+    var timeseriesDataQueue = new ConcurrentLinkedQueue<ExperimentalTimeseriesData>();
+    timeseriesList
+      .parallelStream()
+      .forEach(timeseries -> {
+        ExperimentalTimeseriesData timeseriesData = null;
+        if (matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)) {
+          timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);
+        }
+        if (timeseriesData != null) {
+          timeseriesDataQueue.add(timeseriesData);
+        }
+      });
+    return new ArrayList<>(timeseriesDataQueue);
   }
 
   public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
@@ -265,6 +384,27 @@ public class ExperimentalTimeseriesContainerService {
     //   return false;
     // }
     // return true;
+  }
+
+  private boolean matchFilter(
+    ExperimentalTimeseries timeseries,
+    Set<String> device,
+    Set<String> location,
+    Set<String> symName
+  ) {
+    var deviceMatches = true;
+    var locatioMatches = true;
+    var symbolicNameMatches = true;
+    if (!device.isEmpty()) {
+      deviceMatches = device.contains(timeseries.getDevice());
+    }
+    if (!location.isEmpty()) {
+      locatioMatches = location.contains(timeseries.getLocation());
+    }
+    if (!symName.isEmpty()) {
+      symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
+    }
+    return deviceMatches && locatioMatches && symbolicNameMatches;
   }
 
   private static void throwIfDataTypesAreDifferent(

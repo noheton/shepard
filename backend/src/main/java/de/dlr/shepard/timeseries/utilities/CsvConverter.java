@@ -3,8 +3,7 @@ package de.dlr.shepard.timeseries.utilities;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import de.dlr.shepard.influxDB.TimeseriesCsv;
-import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesData;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
@@ -17,20 +16,19 @@ import java.util.List;
 @RequestScoped
 public class CsvConverter {
 
-  public InputStream convertToCsv(
-    ExperimentalTimeseries timeseries,
-    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
-  ) throws IOException {
+  public InputStream convertToCsv(List<ExperimentalTimeseriesData> timeseriesDataList) throws IOException {
     var tmpfile = Files.createTempFile("shepard", ".csv");
     var stream = Files.newOutputStream(tmpfile);
     var streamWriter = new OutputStreamWriter(stream);
     var writer = new StatefulBeanToCsvBuilder<TimeseriesCsv>(streamWriter).withApplyQuotesToAll(false).build();
     Log.debugf("Write temp file to: %s", tmpfile.toAbsolutePath().toString());
 
-    try {
-      writer.write(convertPayloadToCsv(timeseries, dataPoints));
-    } catch (CsvException e) {
-      Log.error("CsvException while writing stream");
+    for (var timeseriesData : timeseriesDataList) {
+      try {
+        writer.write(convertPayloadToCsv(timeseriesData));
+      } catch (CsvException e) {
+        Log.error("CsvException while writing stream");
+      }
     }
 
     streamWriter.close();
@@ -38,12 +36,10 @@ public class CsvConverter {
     return result;
   }
 
-  private List<TimeseriesCsv> convertPayloadToCsv(
-    ExperimentalTimeseries timeseries,
-    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
-  ) {
-    var result = new ArrayList<TimeseriesCsv>(dataPoints.size());
-    for (var dataPoint : dataPoints) {
+  private List<TimeseriesCsv> convertPayloadToCsv(ExperimentalTimeseriesData timeseriesData) {
+    var timeseries = timeseriesData.getTimeseries();
+    var result = new ArrayList<TimeseriesCsv>(timeseriesData.getDataPoints().size());
+    for (var dataPoint : timeseriesData.getDataPoints()) {
       var tsc = new TimeseriesCsv(
         dataPoint.getTimestamp(),
         timeseries.getMeasurement(),

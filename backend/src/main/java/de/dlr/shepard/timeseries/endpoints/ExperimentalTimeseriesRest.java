@@ -334,7 +334,7 @@ public class ExperimentalTimeseriesRest {
     }
 
     var timeseries = new ExperimentalTimeseries(measurement, device, location, symbolicName, field);
-    var inputStream = timeseriesContainerService.exportTimeseriesPayload(
+    var inputStream = timeseriesContainerService.exportTimeseriesData(
       timeseriesContainerId,
       timeseries,
       start,
