@@ -1,9 +1,8 @@
 package de.dlr.shepard.timeseries;
 
-import java.time.Instant;
-
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import java.time.Instant;
 
 public final class TimeseriesTestDataGenerator {
 

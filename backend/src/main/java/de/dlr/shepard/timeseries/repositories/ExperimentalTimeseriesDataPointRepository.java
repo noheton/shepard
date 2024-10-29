@@ -1,7 +1,5 @@
 package de.dlr.shepard.timeseries.repositories;
 
-import java.util.List;
-
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
@@ -10,6 +8,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import java.util.List;
 
 @ApplicationScoped
 public class ExperimentalTimeseriesDataPointRepository
