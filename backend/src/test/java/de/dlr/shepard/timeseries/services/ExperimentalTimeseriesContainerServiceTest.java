@@ -35,7 +35,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
   public void createContainer_containerDoesNotExist_containerIsCreated() {
     var created = timeseriesService.createContainer(containerName, userName);
 
-    Assertions.assertEquals(created.getName(), containerName);
+    Assertions.assertEquals(containerName, created.getName());
     Assertions.assertTrue(created.getId() > 0);
   }
 
@@ -278,7 +278,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.3, actual.get(0).getValue());
+    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -308,7 +308,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.1, actual.get(0).getValue());
+    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -398,7 +398,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals((long) 5, actual.get(0).getValue());
+    Assert.assertEquals((long) 5, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -458,7 +458,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(90.0, actual.get(0).getValue());
+    Assert.assertEquals(90.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -488,7 +488,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(134.0, actual.get(0).getValue());
+    Assert.assertEquals(134.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
