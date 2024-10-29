@@ -227,6 +227,7 @@ public class ExperimentalTimeseriesContainerService {
     if (result.isEmpty()) throw new InvalidRequestException("Timeseries not found.");
 
     var timeseriesId = result.get(0).getId();
+    var valueType = result.get(0).getValueType();
 
     // var query = TimescaleQueryBuilder.buildQuery(timeseriesId, startNanoseconds, endNanoseconds, timeIntervalMicroseconds, aggregateFunction);
     var retVal =
@@ -234,6 +235,7 @@ public class ExperimentalTimeseriesContainerService {
           timeseriesId,
           startNanoseconds,
           endNanoseconds,
+          valueType,
           timeIntervalNanoseconds,
           aggregateFunction
         );

@@ -1,6 +1,7 @@
 package de.dlr.shepard.timeseries.repositories;
 
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
+import de.dlr.shepard.timeseries.model.ExperimentalDataPointValueTypes;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
@@ -8,6 +9,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import java.util.List;
 
 @ApplicationScoped
@@ -21,15 +23,32 @@ public class ExperimentalTimeseriesDataPointRepository
     int timeseriesId,
     long start,
     long end,
+    ExperimentalDataPointValueTypes valueType,
     long timeInNanoseconds,
     AggregateFunctions function
   ) {
-    var queryString = buildQuery(timeseriesId, timeInNanoseconds, function);
-    var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
+    // var queryString = buildQuery(timeseriesId, timeInNanoseconds, function);
+    // var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
+
+    var query = buildQueryObject(timeseriesId, timeInNanoseconds, function);
 
     @SuppressWarnings("unchecked")
     List<ExperimentalTimeseriesDataPoint> dataPoints = query.getResultList();
     return dataPoints;
+  }
+
+  public Query buildQueryObject(int timeseriesId, long timeInNanoseconds, AggregateFunctions function) {
+    var columnName = "double_value";
+    var queryString = String.format(
+      "SELECT time_bucket(:timeInNanoseconds, time) as timestamp, %s(%s) as value from timeseries_payload WHERE timeseries_id = :timeseriesId GROUP BY timestamp",
+      function.name(),
+      columnName
+    );
+    var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
+    query.setParameter("timeInNanoseconds", timeInNanoseconds);
+    query.setParameter("timeseriesId", timeseriesId);
+
+    return query;
   }
 
   public static String buildQuery(int timeseriesId, long timeInNanoseconds, AggregateFunctions function) {
@@ -73,6 +92,12 @@ public class ExperimentalTimeseriesDataPointRepository
         timeseriesId
       );
       default -> {}
+    }
+    else {
+      query = String.format(
+        "SELECT time as timestamp, double_value as value from timeseries_payload WHERE timeseries_id = %d",
+        timeseriesId
+      );
     }
 
     Log.debugf("SQL Query: %s", query);
