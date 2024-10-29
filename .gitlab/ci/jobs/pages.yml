@@ -1,11 +1,13 @@
 # A specific job called pages in the configuration file makes GitLab aware that you’re deploying a GitLab Pages website.
 pages:
   stage: upload
-  needs: [build_maven_report]
+  needs: [build_maven_report, build_documentation]
   script:
     - ls -hal backend/target/site
     - mkdir public
     - mv backend/target/site/* public/
+    # TODO: Link to these docs in the Maven report menu
+    - mv build/html5/* public/architecture-docs/
     - echo ${CI_PAGES_DOMAIN}
   artifacts:
     expire_in: 2 days

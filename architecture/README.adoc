@@ -1,0 +1,25 @@
+# Architecture
+
+See link:https://dlr-shepard.gitlab.io/shepard/architecture-docs[here] for the current architectural documentation of the latest release.
+
+See link:src/08_concepts/documentation.adoc[here] for an introduction to the documentation approach of shepard.
+
+## Architectural Docs on develop
+
+// TODO: Check link to the job output on develop
+You can find the *rendered view* of the current architectural documentation on the develop branch link:https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/develop/file/build/html5/index.html?job=build_documentation[here].
+
+You can find the *GitLab view* of each chapter at the following locations:
+
+1. xref:src/01_introduction_and_goals/index.adoc[Introduction and Goals]
+2. xref:src/02_architecture_constraints/index.adoc[Architecture Constraints]
+3. xref:src/03_system_scope_and_context/index.adoc[System Scope and Context]
+4. xref:src/04_solution_strategy/index.adoc[Solution Strategy]
+5. xref:src/05_building_block_view/index.adoc[Building Block View]
+6. xref:src/06_runtime_view/index.adoc[Runtime View]
+7. xref:src/07_deployment_view/index.adoc[Deployment View]
+8. xref:src/08_concepts/index.adoc[Crosscutting Concepts]
+9. xref:src/09_architecture_decisions/index.adoc[Architecture Decisions]
+10. xref:src/10_quality_requirements/index.adoc[Quality Requirements]
+11. xref:src/11_technical_risks/index.adoc[Risks and Technical Debt]
+12. xref:src/12_glossary/index.adoc[Glossary]

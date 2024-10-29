@@ -16,6 +16,7 @@ include:
   - local: .gitlab/ci/jobs/test-backend.yml
   - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/integration-test.yml
+  - local: .gitlab/ci/jobs/build-documentation.yml
   - local: .gitlab/ci/jobs/build-maven-report.yml
   - local: .gitlab/ci/jobs/pages.yml
   - local: .gitlab/ci/jobs/build-clients.yml
