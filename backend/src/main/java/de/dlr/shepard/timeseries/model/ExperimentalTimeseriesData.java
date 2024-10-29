@@ -1,6 +1,5 @@
 package de.dlr.shepard.timeseries.model;
 
-import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -14,5 +13,5 @@ public class ExperimentalTimeseriesData {
   private ExperimentalTimeseries timeseries;
 
   @NotEmpty
-  private List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>();
+  private List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
 }

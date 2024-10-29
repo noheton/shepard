@@ -1,7 +1,7 @@
 package de.dlr.shepard.timeseries.repositories;
 
-import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.logging.Log;
@@ -17,7 +17,7 @@ public class ExperimentalTimeseriesDataPointRepository
   @Inject
   EntityManager entityManager;
 
-  public List<ExperimentalTimeseriesPayloadDataPointIO> getDataPoints(
+  public List<ExperimentalTimeseriesDataPoint> getDataPoints(
     int timeseriesId,
     long start,
     long end,
@@ -25,10 +25,10 @@ public class ExperimentalTimeseriesDataPointRepository
     AggregateFunctions function
   ) {
     var queryString = buildQuery(timeseriesId, timeInNanoseconds, function);
-    var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesPayloadDataPointIO.class);
+    var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
 
     @SuppressWarnings("unchecked")
-    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = query.getResultList();
+    List<ExperimentalTimeseriesDataPoint> dataPoints = query.getResultList();
     return dataPoints;
   }
 

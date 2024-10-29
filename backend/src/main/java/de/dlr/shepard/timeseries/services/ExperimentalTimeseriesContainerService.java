@@ -13,6 +13,7 @@ import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesData;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
@@ -213,8 +214,7 @@ public class ExperimentalTimeseriesContainerService {
     return retVal;
   }
 
-  public List<ExperimentalTimeseriesPayloadDataPointIO> getDataPointsAggregated(
-    // TODO:change return type
+  public List<ExperimentalTimeseriesDataPoint> getDataPointsAggregated(
     long containerId,
     ExperimentalTimeseries timeseries,
     long startNanoseconds,
