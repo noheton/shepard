@@ -1,0 +1,10 @@
+build_documentation:
+  image: doctoolchain/doctoolchain:v3.4.1
+  stage: build
+  needs: []
+  script:
+    - ./dtcw generateHTML
+    - mv build/html5/shepard-architectural-documentation.html build/html5/index.html
+  artifacts:
+    paths:
+      - build/html5
