@@ -358,7 +358,7 @@ public class ExperimentalTimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public void importTimeseries(
+  public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     MultipartBodyFileUpload body
   ) throws IOException {
@@ -373,6 +373,7 @@ public class ExperimentalTimeseriesRest {
       var result = timeseriesContainerService.importTimeseries(timeseriesContainerId, fileInputStream);
 
       if (result == false) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+      return Response.ok().build();
     }
   }
 

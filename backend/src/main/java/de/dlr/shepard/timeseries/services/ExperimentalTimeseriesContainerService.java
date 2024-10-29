@@ -12,7 +12,6 @@ import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.io.TimeseriesPayloadIOMapper;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesData;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
@@ -32,12 +31,12 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.lang3.NotImplementedException;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RequestScoped
 public class ExperimentalTimeseriesContainerService {
@@ -242,21 +241,6 @@ public class ExperimentalTimeseriesContainerService {
     return retVal;
   }
 
-  private ExperimentalTimeseriesData getTimeseriesData(
-    long containerId,
-    ExperimentalTimeseries timeseries,
-    AggregateFunctions function,
-    Long groupBy,
-    FillOption fillOption,
-    long start,
-    long end
-  ) {
-    var timeseriesData = new ExperimentalTimeseriesData();
-    timeseriesData.setTimeseries(timeseries);
-    timeseriesData.setDataPoints(getDataPointsAggregated(containerId, timeseries, start, end, end, function));
-    return timeseriesData;
-  }
-
   /**
    * Export one timeseries as CSV File if found.
    *
@@ -284,9 +268,10 @@ public class ExperimentalTimeseriesContainerService {
       Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
       throw new NotFoundException();
     }
-
-    var timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);
-    var stream = csvConverter.convertToCsv(List.of(timeseriesData));
+    var stream = csvConverter.convertToCsv(
+      timeseries,
+      getDataPointsAggregated(containerId, timeseries, start, end, end, function)
+    );
     return stream;
   }
 
@@ -319,7 +304,7 @@ public class ExperimentalTimeseriesContainerService {
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet
   ) throws IOException {
-    var timeseriesDataList = getTimeseriesDataList(
+    var timeseriesDataMap = getTimeseriesDataList(
       containerId,
       timeseriesList,
       function,
@@ -331,7 +316,7 @@ public class ExperimentalTimeseriesContainerService {
       locationsFilterSet,
       symbolicNameFilterSet
     );
-    var stream = csvConverter.convertToCsv(timeseriesDataList);
+    var stream = csvConverter.convertToCsv(timeseriesDataMap);
     return stream;
   }
 
@@ -349,9 +334,9 @@ public class ExperimentalTimeseriesContainerService {
    * @param devicesFilterSet      A set of allowed devices or an empty set
    * @param locationsFilterSet    A set of allowed locations or an empty set
    * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
-   * @return a list of timeseries with influx points
+   * @return a Map of timeseries to data points
    */
-  public List<ExperimentalTimeseriesData> getTimeseriesDataList(
+  public HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> getTimeseriesDataList(
     long containerId,
     List<ExperimentalTimeseries> timeseriesList,
     AggregateFunctions function,
@@ -363,21 +348,20 @@ public class ExperimentalTimeseriesContainerService {
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet
   ) {
-    var timeseriesDataQueue = new ConcurrentLinkedQueue<ExperimentalTimeseriesData>();
+    var timeseriesDataQueue = new ConcurrentHashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>();
     timeseriesList
       .parallelStream()
       .forEach(timeseries -> {
-        ExperimentalTimeseriesData timeseriesData = null;
         if (
           TimeseriesMatchFilter.matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet)
         ) {
-          timeseriesData = getTimeseriesData(containerId, timeseries, function, groupBy, fillOption, start, end);
-        }
-        if (timeseriesData != null) {
-          timeseriesDataQueue.add(timeseriesData);
+          timeseriesDataQueue.put(
+            timeseries,
+            getDataPointsAggregated(containerId, timeseries, start, end, end, function)
+          );
         }
       });
-    return new ArrayList<>(timeseriesDataQueue);
+    return new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>(timeseriesDataQueue);
   }
 
   public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
