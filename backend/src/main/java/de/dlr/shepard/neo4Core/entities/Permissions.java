@@ -13,6 +13,7 @@ import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -23,32 +24,32 @@ public class Permissions implements HasId {
   @GeneratedValue
   private Long id;
 
-  @Relationship(type = Constants.HAS_PERMISSIONS, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.HAS_PERMISSIONS, direction = Direction.INCOMING)
   private List<BasicEntity> entities;
 
-  @Relationship(type = Constants.OWNED_BY, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.OWNED_BY, direction = Direction.OUTGOING)
   private User owner;
 
   private PermissionType permissionType;
 
   @ToString.Exclude
-  @Relationship(type = Constants.READABLE_BY, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.READABLE_BY, direction = Direction.OUTGOING)
   private List<User> reader = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.WRITEABLE_BY, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.WRITEABLE_BY, direction = Direction.OUTGOING)
   private List<User> writer = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.READABLE_BY_GROUP, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.READABLE_BY_GROUP, direction = Direction.OUTGOING)
   private List<UserGroup> readerGroups = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.WRITEABLE_BY_GROUP, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.WRITEABLE_BY_GROUP, direction = Direction.OUTGOING)
   private List<UserGroup> writerGroups = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.MANAGEABLE_BY, direction = Relationship.OUTGOING)
+  @Relationship(type = Constants.MANAGEABLE_BY, direction = Direction.OUTGOING)
   private List<User> manager = new ArrayList<>();
 
   /**

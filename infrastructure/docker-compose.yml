@@ -38,12 +38,13 @@ services:
       - frontend
 
   neo4j:
-    image: neo4j:4.4
+    # For instructions on how to update Neo4j from version 4.4 to 5.24, please read the migration guide at: https://gitlab.com/dlr-shepard/shepard/-/merge_requests/315#goal_net-description
+    image: neo4j:5.24
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PW}
-      NEO4J_dbms_memory_heap_initial__size: 2G
-      NEO4J_dbms_memory_heap_max__size: 2G
-      NEO4J_dbms_memory_pagecache_size: 3G
+      NEO4J_server_memory_heap_initial__size: 2G
+      NEO4J_server_memory_heap_max__size: 2G
+      NEO4J_server_memory_pagecache_size: 3G
     ports:
       - "7687:7687"
     volumes:

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -14,7 +15,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NoArgsConstructor
 public class BasicReference extends VersionableEntity {
 
-  @Relationship(type = Constants.HAS_REFERENCE, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.HAS_REFERENCE, direction = Direction.INCOMING)
   private DataObject dataObject;
 
   /**

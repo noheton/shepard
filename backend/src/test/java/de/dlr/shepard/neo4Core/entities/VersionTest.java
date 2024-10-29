@@ -1,7 +1,7 @@
 package de.dlr.shepard.neo4Core.entities;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import de.dlr.shepard.BaseTestCase;
 import java.util.Date;

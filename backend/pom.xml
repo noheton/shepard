@@ -25,7 +25,6 @@
     <system>GitLab CI/CD</system>
     <url>https://gitlab.com/dlr-shepard/shepard/-/pipelines</url>
   </ciManagement>
-
   <properties>
     <finalName>shepard</finalName>
     <revision>1.0.0-SNAPSHOT</revision>
@@ -50,11 +49,10 @@
     <lombok.version>1.18.34</lombok.version>
     <mockito.version>5.13.0</mockito.version>
     <mongodb.version>5.1.1</mongodb.version>
-    <neo4j.version>3.3.4</neo4j.version>
+    <neo4j-ogm.version>4.0.11</neo4j-ogm.version>
     <opencsv.version>5.9</opencsv.version>
     <restassured.version>5.5.0</restassured.version>
   </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -66,7 +64,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -196,13 +193,12 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
-      <version>${neo4j.version}</version>
+      <version>${neo4j-ogm.version}</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-ogm-bolt-native-types</artifactId>
-      <version>${neo4j.version}</version>
-      <scope>runtime</scope>
+      <artifactId>neo4j-ogm-bolt-driver</artifactId>
+      <version>${neo4j-ogm.version}</version>
     </dependency>
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
@@ -243,18 +239,14 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  
-
   <build>
     <finalName>${finalName}</finalName>
-
     <resources>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
     </resources>
-
     <plugins>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
@@ -374,7 +366,6 @@
       </plugin>
     </plugins>
   </build>
-
   <profiles>
     <profile>
       <id>dev</id>
