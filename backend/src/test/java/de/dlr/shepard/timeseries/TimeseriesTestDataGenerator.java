@@ -1,13 +1,14 @@
 package de.dlr.shepard.timeseries;
 
+import java.time.Instant;
+
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import java.time.Instant;
 
 public final class TimeseriesTestDataGenerator {
 
   public static ExperimentalTimeseries generateTimeseries(String measurement) {
-    return new ExperimentalTimeseries("device", "field", "location", measurement, "symbolicName");
+    return new ExperimentalTimeseries(measurement, "field", "device", "location", "symbolicName");
   }
 
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointDouble(long timestamp, Double value) {

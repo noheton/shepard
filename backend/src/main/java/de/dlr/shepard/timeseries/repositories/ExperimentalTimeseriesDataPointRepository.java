@@ -36,7 +36,7 @@ public class ExperimentalTimeseriesDataPointRepository
   public static String buildQuery(int timeseriesId, long timeInNanoseconds, AggregateFunctions function) {
     String query = "";
 
-    switch (function) {
+    if (null != function) switch (function) {
       case MAX, MIN, COUNT, SUM, STDDEV -> query = String.format(
         "SELECT time_bucket(%d, time) as timestamp, %s(double_value) as value from timeseries_payload WHERE timeseries_id = %d GROUP BY timestamp",
         timeInNanoseconds,
@@ -59,7 +59,6 @@ public class ExperimentalTimeseriesDataPointRepository
         timeseriesId
       );
       case MEDIAN -> query = String.format(
-        //TODO: check this query again -> does it really does what it should do?
         "SELECT time_bucket(%d, time) as timestamp, percentile_cont(0.5) WITHIN GROUP (ORDER BY double_value) as value FROM timeseries_payload WHERE timeseries_id = %d GROUP BY timestamp",
         timeInNanoseconds,
         timeseriesId

@@ -273,7 +273,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MAX
         );
 
@@ -303,7 +303,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MIN
         );
 
@@ -333,7 +333,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MEAN
         );
 
@@ -348,10 +348,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(2).toNano(), 120.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(3).toNano(), 121.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
       )
     );
 
@@ -363,7 +363,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MEDIAN
         );
 
@@ -393,7 +393,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.COUNT
         );
 
@@ -423,7 +423,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.SUM
         );
 
@@ -453,7 +453,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.LAST
         );
 
@@ -483,7 +483,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.FIRST
         );
 
@@ -516,7 +516,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MODE
         );
 
@@ -546,7 +546,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.SPREAD
         );
 
@@ -576,7 +576,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
-          Duration.ofMinutes(1).toNanos(),
+          Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.STDDEV
         );
 

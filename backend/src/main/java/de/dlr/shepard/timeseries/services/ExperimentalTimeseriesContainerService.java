@@ -219,7 +219,7 @@ public class ExperimentalTimeseriesContainerService {
     ExperimentalTimeseries timeseries,
     long startNanoseconds,
     long endNanoseconds,
-    long timeIntervalMicroseconds,
+    long timeIntervalNanoseconds,
     AggregateFunctions aggregateFunction
   ) {
     // var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
@@ -235,7 +235,7 @@ public class ExperimentalTimeseriesContainerService {
           timeseriesId,
           startNanoseconds,
           endNanoseconds,
-          timeIntervalMicroseconds,
+          timeIntervalNanoseconds,
           aggregateFunction
         );
     //var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
@@ -394,7 +394,6 @@ public class ExperimentalTimeseriesContainerService {
     // }
     // return true;
   }
-
 
   private static void throwIfDataTypesAreDifferent(
     ExperimentalTimeseriesEntity timeseriesEntity,

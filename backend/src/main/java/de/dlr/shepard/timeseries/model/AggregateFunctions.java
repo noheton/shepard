@@ -9,7 +9,7 @@ public enum AggregateFunctions {
   MAX,
   LAST,
   FIRST,
-  //  INTEGRAL, TODO: postbone implementation for now until since this function requires the timescaledb toolkit
+  // INTEGRAL, TODO: align implementation of this
   MODE,
   SPREAD,
   STDDEV,
