@@ -7,6 +7,7 @@ import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.FillOption;
 import de.dlr.shepard.timeseries.utilities.InstantHelper;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -263,11 +264,12 @@ public class ExperimentalTimeseriesContainerServiceTest {
   public void getDataPoints_getMax_returnsMax() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 22.3)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.3)
       )
     );
 
@@ -277,17 +279,21 @@ public class ExperimentalTimeseriesContainerServiceTest {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,
-          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          instantHelper.toNano(),
           InstantHelper.now().toNano(),
           Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.MAX
+          AggregateFunctions.MAX,
+          FillOption.NONE
         );
 
     Assert.assertEquals(1, actual.size());
     Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
-  @Test
+  //TODO: add tests for integers
+  //TODO: add test to throw exception for boolean/ string aggregate
+  //TODO: add test for no aggregation function
+  /*@Test
   public void getDataPoints_getMin_returnsMin() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");

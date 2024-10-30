@@ -2,7 +2,6 @@ package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
-import de.dlr.shepard.influxDB.FillOption;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
 import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
@@ -15,6 +14,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.FillOption;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
 import de.dlr.shepard.timeseries.utilities.CsvConverter;
@@ -199,8 +199,9 @@ public class ExperimentalTimeseriesContainerService {
     ExperimentalTimeseries timeseries,
     long startNanoseconds,
     long endNanoseconds,
-    long timeIntervalNanoseconds,
-    AggregateFunctions aggregateFunction
+    Long timeIntervalNanoseconds,
+    AggregateFunctions aggregateFunction,
+    FillOption fillOption
   ) {
     // var result = this.timeseriesRepository.find("containerId", containerId).firstResultOptional();
     var result = this.timeseriesRepository.findByTimeseries(containerId, timeseries);
@@ -216,9 +217,10 @@ public class ExperimentalTimeseriesContainerService {
           timeseriesId,
           startNanoseconds,
           endNanoseconds,
-          valueType,
           timeIntervalNanoseconds,
-          aggregateFunction
+          valueType,
+          aggregateFunction,
+          fillOption
         );
     //var retVal = this.timeseriesPayloadRepository.find("timeseriesId", timeseriesId).list();
     return retVal;
@@ -253,7 +255,7 @@ public class ExperimentalTimeseriesContainerService {
     }
     var stream = csvConverter.convertToCsv(
       timeseries,
-      getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function)
+      getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function, fillOption)
     );
     return stream;
   }
@@ -340,7 +342,7 @@ public class ExperimentalTimeseriesContainerService {
         ) {
           timeseriesDataQueue.put(
             timeseries,
-            getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function)
+            getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function, fillOption)
           );
         }
       });

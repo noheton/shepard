@@ -9,7 +9,7 @@ public enum AggregateFunctions {
   MAX,
   LAST,
   FIRST,
-  // INTEGRAL, TODO: align implementation of this
+  INTEGRAL, //TODO: this function needs to be properly implemented
   MODE,
   SPREAD,
   STDDEV,
