@@ -1,5 +1,7 @@
 package de.dlr.shepard.timeseries.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
@@ -10,6 +12,12 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response.Status;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -580,5 +588,52 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     Assert.assertEquals(1, actual.size());
     Assert.assertEquals(17.745245842197, (Double) actual.get(0).getValue(), doubleEpsilon);
+  }
+
+  /**********************
+   * exportTimeseriesData
+   * @throws java.io.IOException
+   * @throws URISyntaxException
+   ***********************/
+
+  @Test
+  public void exportTimeseriesData_success() throws IOException, URISyntaxException {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("water_level");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 120.57),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 127.25),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 129.25),
+        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.exportTimeseriesData(
+          container.getId(),
+          timeseries,
+          null,
+          Duration.ofMinutes(2).toNanos(),
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.now().toNano(),
+          null
+        );
+
+    StringBuilder actualCsvContent = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        actualCsvContent.append(line).append("\n");
+      }
+    }
+
+    var expectedCsvFile = new File(getClass().getClassLoader().getResource("timeseries_export.csv").toURI());
+    var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
+
+    assertEquals(actualCsvContent.toString(), expectedCsvContent); //TODO check again after finished implementation of getDataPointsAggregated()
   }
 }

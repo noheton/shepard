@@ -250,19 +250,19 @@ public class ExperimentalTimeseriesContainerService {
    * @param timeseriesList        The list of timeseries whose points are queried
    * @param function              The aggregate function
    * @param groupBy               The time interval measurements get grouped by
-   * @param fillOption            The fill option for missing values
    * @param start                 The beginning of the timeseries
    * @param end                   The end of the timeseries
+   * @param fillOption            The fill option for missing values
    * @return InputStream containing the CSV file
    * @throws IOException When the CSV file could not be written
    */
   public InputStream exportTimeseriesData(
     long containerId,
     ExperimentalTimeseries timeseries,
-    long start,
-    long end,
     AggregateFunctions function,
     long groupBy,
+    long start,
+    long end,
     FillOption fillOption
   ) {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
