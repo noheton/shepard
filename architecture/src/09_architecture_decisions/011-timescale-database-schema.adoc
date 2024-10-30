@@ -1,0 +1,86 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-011 Timescale database schema
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|30.10.2024
+|Status|Done
+
+|Context|
+[descrete]
+==== 1. API Design
+
+The current API was designed with InfluxDB in mind and some technical aspects like InfluxPoint and SingleValuedUnaryFunction made it into data types.
+
+*Choices*
+
+We have to decide if we want to create a stable replacement for the existing API or if we create a second one that might differ.
+
+[descrete]
+==== 2. How to persist metadata (location, device, symbolic name, etc.)
+
+InfluxDB stores metadata as tags with every timeseries in one column.
+We have to store those metadata in timescale as well.
+
+*Choices*
+
+* Store metadata in a separate table along with the containerId and field
+** When adding data it could get complex to identify if the desired timeseries does already exist as the api does not contain an id for timeseries.
+We would have to look through the timeseries table and check if this combination of measurement, device, location, symbolicName and field is already present.
+
+* Store metadata in one table with the timeseries payload entries.
+** This leads to redundant data as every measuring point value in a timeseries shares the same metadata.
+
+* Use one column and store metadata in a JSONB format.
+
+[descrete]
+==== 3. How to store the measuring point value (data type)
+
+InfluxDB could store an Object as a field that could contain multiple types (Boolean, String, Integer, Double).
+TimescaleDB can only support types known to Postgres, therefore no Object type support.
+In InfluxDB, the field type per field and measurement is fixed and stored internally.
+
+*Choices*
+
+* Have a dedicated column for the value and a seperate column holding the type of the data point.
+* Use JSONB for the value which will be type aware.
+* Use different columns for different types (one column per type).
+* Use different tables for each type and link it to the value table (one table per type).
+* Use one column for the value without persisting information about the type
+
+[descrete]
+==== 4. OR Mapper or Handwritten Queries
+
+We need to decide if we want to use an OR mapper or if we have to handwrite our queries.
+
+*Choices*
+
+* OR Mapper (Panache, Hibernate)
+** How does it work with timescaledb?
+** Entities do need a primary key column which is not necessary for data points because they are not an entity.
+
+* Handwritten Queries
+** Since we need to reproduce the old API and the functions previously offered by InfluxDB, we may need to manually write some of the queries anyway.
+
+|Decisions|
+
+. We try to keep the API as stable as possible to minimize the effort of adaptions for the end users.
+Nevertheless, some changes are expected because we agreed on removing InfluxDb specific things like data types.
+We have to communicate those changes to the community.
+
+. We use two tables to persist the data, timeseries table and timeseries_payload.
+** timeseries contains the Tags metadata, containerId and measurement.
+** timeseries_payload contains the timeseries data with their timestamps and the value itself.
+** This approach will gain writing performance since there will be no metadata duplication.
+** When fetching the data, we gain performance by using only one index in the timeseries_payload table
+
+. We use a seperate column for each type of data in the timeseries_payload table
+** The possible types are String, Integer, Double and Boolean.
+** This is decided to be able to use the aggregate functions (MAX, MIN, COUNT, …) for Integer and Double
+
+. We use the ORM when possible and handwritten queries if not
+** When fetching the payload, we need to handwrite the query to be able to easily execute the aggregate functions.
+
+|===
