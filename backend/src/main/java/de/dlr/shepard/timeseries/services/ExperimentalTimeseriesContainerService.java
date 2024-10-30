@@ -35,8 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.lang3.NotImplementedException;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang3.NotImplementedException;
 
 @RequestScoped
 public class ExperimentalTimeseriesContainerService {
@@ -262,9 +262,9 @@ public class ExperimentalTimeseriesContainerService {
     long start,
     long end,
     AggregateFunctions function,
-    Long groupBy,
+    long groupBy,
     FillOption fillOption
-  ) throws IOException {
+  ) {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(containerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
       Log.errorf("Timeseries Container with id %s is null or deleted", containerId);
@@ -272,7 +272,7 @@ public class ExperimentalTimeseriesContainerService {
     }
     var stream = csvConverter.convertToCsv(
       timeseries,
-      getDataPointsAggregated(containerId, timeseries, start, end, end, function)
+      getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function)
     );
     return stream;
   }
@@ -342,7 +342,7 @@ public class ExperimentalTimeseriesContainerService {
     long containerId,
     List<ExperimentalTimeseries> timeseriesList,
     AggregateFunctions function,
-    Long groupBy,
+    long groupBy,
     FillOption fillOption,
     long start,
     long end,
@@ -359,7 +359,7 @@ public class ExperimentalTimeseriesContainerService {
         ) {
           timeseriesDataQueue.put(
             timeseries,
-            getDataPointsAggregated(containerId, timeseries, start, end, end, function)
+            getDataPointsAggregated(containerId, timeseries, start, end, groupBy, function)
           );
         }
       });
