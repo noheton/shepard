@@ -1,22 +1,29 @@
 package de.dlr.shepard.timeseries.utilities;
 
+import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
-import de.dlr.shepard.influxDB.TimeseriesCsv;
+import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
+import de.dlr.shepard.timeseries.model.CsvTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import org.apache.commons.lang3.math.NumberUtils;
 
 @RequestScoped
 public class CsvConverter {
@@ -34,7 +41,9 @@ public class CsvConverter {
     try {
       tmpfile = Files.createTempFile("shepard", ".csv");
       try (var stream = Files.newOutputStream(tmpfile); var streamWriter = new OutputStreamWriter(stream)) {
-        StatefulBeanToCsv<TimeseriesCsv> writer = new StatefulBeanToCsvBuilder<TimeseriesCsv>(streamWriter)
+        StatefulBeanToCsv<CsvTimeseriesDataPoint> writer = new StatefulBeanToCsvBuilder<CsvTimeseriesDataPoint>(
+          streamWriter
+        )
           .withApplyQuotesToAll(false)
           .build();
 
@@ -64,13 +73,37 @@ public class CsvConverter {
     return result;
   }
 
-  private List<TimeseriesCsv> convertPayloadToCsv(
+  public HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesPayloadDataPointIO>> convertToPayload(
+    InputStream stream
+  ) {
+    try (var reader = new InputStreamReader(stream)) {
+      var timeseriesDataBuilder = new CsvToBeanBuilder<CsvTimeseriesDataPoint>(reader)
+        .withType(CsvTimeseriesDataPoint.class)
+        .withErrorLocale(Locale.forLanguageTag("en"))
+        .withExceptionHandler(e -> {
+          var encoder = StandardCharsets.ISO_8859_1.newEncoder();
+          var message = encoder.canEncode(e.getMessage()) ? e.getMessage() : "Invalid CSV";
+          Log.errorf("CsvException while reading stream: %s", message);
+          throw new InvalidBodyException(message);
+        })
+        .build();
+
+      List<CsvTimeseriesDataPoint> result = timeseriesDataBuilder.parse();
+
+      return convertCsvToPayload(result);
+    } catch (IOException e) {
+      Log.error("IOException while reading the provided InputStream", e);
+      throw new InvalidRequestException();
+    }
+  }
+
+  private List<CsvTimeseriesDataPoint> convertPayloadToCsv(
     ExperimentalTimeseries timeseries,
     List<ExperimentalTimeseriesDataPoint> dataPoints
   ) {
-    var result = new ArrayList<TimeseriesCsv>(dataPoints.size());
+    var result = new ArrayList<CsvTimeseriesDataPoint>(dataPoints.size());
     for (var dataPoint : dataPoints) {
-      var tsc = new TimeseriesCsv(
+      var tsc = new CsvTimeseriesDataPoint(
         dataPoint.getTimestamp(),
         timeseries.getMeasurement(),
         timeseries.getDevice(),
@@ -82,5 +115,45 @@ public class CsvConverter {
       result.add(tsc);
     }
     return result;
+  }
+
+  private HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesPayloadDataPointIO>> convertCsvToPayload(
+    List<CsvTimeseriesDataPoint> csvInputList
+  ) {
+    var result = new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesPayloadDataPointIO>>();
+
+    for (var csvInputLine : csvInputList) {
+      var timeseries = new ExperimentalTimeseries(
+        csvInputLine.getMeasurement(),
+        csvInputLine.getField(),
+        csvInputLine.getDevice(),
+        csvInputLine.getLocation(),
+        csvInputLine.getSymbolicName()
+      );
+      var dataPoint = new ExperimentalTimeseriesPayloadDataPointIO(
+        csvInputLine.getTimestamp(),
+        parseValue(csvInputLine.getValue())
+      );
+      if (result.containsKey(timeseries)) {
+        result.get(timeseries).add(dataPoint);
+      } else {
+        var dataPoints = List.of(dataPoint);
+        result.put(timeseries, dataPoints);
+      }
+    }
+    return result;
+  }
+
+  private Object parseValue(Object input) {
+    List<String> boolString = List.of("true", "false");
+
+    if (input instanceof String sInput) {
+      if (NumberUtils.isCreatable(sInput)) {
+        return NumberUtils.createNumber(sInput);
+      } else if (boolString.contains(sInput.toLowerCase())) {
+        return sInput.equalsIgnoreCase("true");
+      }
+    }
+    return input;
   }
 }

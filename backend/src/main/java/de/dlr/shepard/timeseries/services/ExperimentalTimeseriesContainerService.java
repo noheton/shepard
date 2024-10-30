@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang3.NotImplementedException;
 
 @RequestScoped
 public class ExperimentalTimeseriesContainerService {
@@ -131,41 +130,23 @@ public class ExperimentalTimeseriesContainerService {
   /**
    * Adds payload to a timeseries.
    *
-   * @param timeseriesContainerId identifies the TimeseriesContainer
-   * @param payload               payload to be added
+   * @param timeseriesContainerId    Identifies the TimeseriesContainer
+   * @param timeseries               The timeseries identifiers
+   * @param dataPoints               Data points to be added to the timeseries
    * @return created timeseries
    */
   @Transactional
   public ExperimentalTimeseriesEntity addPayload(
-    long containerId,
+    long timeseriesContainerId,
     ExperimentalTimeseries timeseries,
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
   ) {
-    var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(containerId);
+    var timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", timeseriesContainerId);
     }
 
-    TimeseriesValidator.validate(timeseries);
-    var valueType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
-
-    // try to find timeseries in db
-    var matchingTimeseries = timeseriesRepository.findByTimeseries(containerId, timeseries);
-    ExperimentalTimeseriesEntity timeseriesEntity = null;
-    if (matchingTimeseries.isEmpty()) {
-      // create new timeseries because it does not exist
-      timeseriesEntity = new ExperimentalTimeseriesEntity(containerId, timeseries, valueType);
-      this.timeseriesRepository.persist(timeseriesEntity);
-    } else {
-      timeseriesEntity = matchingTimeseries.get(0);
-      throwIfDataTypesAreDifferent(timeseriesEntity, dataPoints);
-    }
-
-    // parse points to correct model ExperimentalTimeseriesPayload
-    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), valueType, dataPoints);
-
-    timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints);
-    return timeseriesEntity;
+    return createTimeseries(timeseriesContainerId, timeseries, dataPoints);
   }
 
   /**
@@ -366,19 +347,52 @@ public class ExperimentalTimeseriesContainerService {
     return new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>(timeseriesDataQueue);
   }
 
-  public boolean importTimeseries(long timeseriesContainerId, InputStream stream) throws IOException {
-    throw new NotImplementedException();
-    // var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
-    // if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
-    //   Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-    //   return false;
-    // }
-    // var result = timeseriesService.importTimeseries(timeseriesContainer.getDatabase(), stream);
-    // if (!result.isBlank()) {
-    //   Log.errorf("Failed to import timeseries with error: %s", result);
-    //   return false;
-    // }
-    // return true;
+  public void importTimeseries(long timeseriesContainerId, InputStream stream) {
+    var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
+    if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
+      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
+      throw new NotFoundException();
+    }
+    HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesPayloadDataPointIO>> timeseriesList =
+      csvConverter.convertToPayload(stream);
+    for (var timeseries : timeseriesList.entrySet()) {
+      createTimeseries(timeseriesContainerId, timeseries.getKey(), timeseries.getValue());
+    }
+  }
+
+  /**
+   * Creates timeseries and its dataPoints, then writes them to TimescaleDB
+   *
+   * @param containerId The Id of the timeseries container in Neo4j
+   * @param timeseries  the Timeseries be created
+   * @param dataPoints  the data points belonging to the timeseries
+   * @return The created timeseries entity
+   */
+  public ExperimentalTimeseriesEntity createTimeseries(
+    long containerId,
+    ExperimentalTimeseries timeseries,
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints
+  ) {
+    TimeseriesValidator.validate(timeseries);
+    var valueType = ObjectTypeEvaluator.evaluate(dataPoints.get(0).getValue());
+
+    // try to find timeseries in db
+    var matchingTimeseries = timeseriesRepository.findByTimeseries(containerId, timeseries);
+    ExperimentalTimeseriesEntity timeseriesEntity = null;
+    if (matchingTimeseries.isEmpty()) {
+      // create new timeseries because it does not exist
+      timeseriesEntity = new ExperimentalTimeseriesEntity(containerId, timeseries, valueType);
+      this.timeseriesRepository.persist(timeseriesEntity);
+    } else {
+      timeseriesEntity = matchingTimeseries.get(0);
+      throwIfDataTypesAreDifferent(timeseriesEntity, dataPoints);
+    }
+
+    // parse points to correct model ExperimentalTimeseriesPayload
+    var timeseriesPayloadDataPoints = TimeseriesPayloadIOMapper.map(timeseriesEntity.getId(), valueType, dataPoints);
+
+    timeseriesPayloadRepository.persist(timeseriesPayloadDataPoints);
+    return timeseriesEntity;
   }
 
   private static void throwIfDataTypesAreDifferent(

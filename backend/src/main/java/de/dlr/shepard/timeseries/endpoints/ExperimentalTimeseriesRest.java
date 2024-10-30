@@ -337,9 +337,9 @@ public class ExperimentalTimeseriesRest {
     var inputStream = timeseriesContainerService.exportTimeseriesData(
       timeseriesContainerId,
       timeseries,
+      function,
       start,
       end,
-      function,
       groupBy,
       fillOption
     );
@@ -367,12 +367,10 @@ public class ExperimentalTimeseriesRest {
     if (filePath == null) {
       throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
     }
-
+    //TODO should this logic move inside the service ?
     File file = new File(filePath);
     try (InputStream fileInputStream = new FileInputStream(file)) {
-      var result = timeseriesContainerService.importTimeseries(timeseriesContainerId, fileInputStream);
-
-      if (result == false) throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+      timeseriesContainerService.importTimeseries(timeseriesContainerId, fileInputStream);
       return Response.ok().build();
     }
   }

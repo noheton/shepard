@@ -2,9 +2,11 @@ package de.dlr.shepard.timeseries.model;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
+@EqualsAndHashCode
 public class ExperimentalTimeseries {
 
   @NotBlank
