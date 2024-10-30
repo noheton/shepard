@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.services;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -598,12 +599,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
   /**********************
    * exportTimeseriesData
-   * @throws java.io.IOException
-   * @throws URISyntaxException
    ***********************/
 
   @Test
-  public void exportTimeseriesData_success() throws IOException, URISyntaxException {
+  public void exportTimeseriesData_oneTimeseriesWithDoubleValues_success() throws IOException, URISyntaxException {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("water_level");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
@@ -641,5 +640,37 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
 
     assertEquals(actualCsvContent.toString(), expectedCsvContent); //TODO check again after finished implementation of getDataPointsAggregated()
+  }
+
+  @Test
+  public void exportTimeseriesData_oneTimeseriesWithStringValues_success() throws IOException, URISyntaxException {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("status");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(TimeseriesTestDataGenerator.generateDataPointString("running"))
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.exportTimeseriesData(
+          container.getId(),
+          timeseries,
+          null,
+          Duration.ofMinutes(2).toNanos(),
+          InstantHelper.now().addHours(-1).toNano(),
+          InstantHelper.now().addHours(1).toNano(),
+          null
+        );
+
+    StringBuilder actualCsvContent = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        actualCsvContent.append(line).append("\n");
+      }
+    }
+
+    assertTrue(actualCsvContent.toString().endsWith("\"running\""));
   }
 }
