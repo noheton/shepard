@@ -19,11 +19,11 @@ include:
   - local: .gitlab/ci/jobs/build-documentation.yml
   - local: .gitlab/ci/jobs/build-maven-report.yml
   - local: .gitlab/ci/jobs/pages.yml
-  # - local: .gitlab/ci/jobs/build-clients.yml
-  # - local: .gitlab/ci/jobs/upload-clients.yml
-  # - local: .gitlab/ci/jobs/upload-docker.yml
-  #   inputs:
-  #     image_name: frontend
-  # - local: .gitlab/ci/jobs/upload-docker.yml
-  #   inputs:
-  #     image_name: backend
+  - local: .gitlab/ci/jobs/build-clients.yml
+  - local: .gitlab/ci/jobs/upload-clients.yml
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image_name: frontend
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image_name: backend
