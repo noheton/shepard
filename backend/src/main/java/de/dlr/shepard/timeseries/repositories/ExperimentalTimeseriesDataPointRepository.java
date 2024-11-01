@@ -7,6 +7,7 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.FillOption;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -52,6 +53,22 @@ public class ExperimentalTimeseriesDataPointRepository
       throw new InvalidRequestException("Cannot use gap filling options on data points of type boolean or string.");
     }
 
+    if (timeIntervalNanoseconds == null && fillOption != null) {
+      throw new InvalidRequestException("Cannot use gap filling option when no grouping interval is specified.");
+    }
+
+    if (function == null && (fillOption != null || timeIntervalNanoseconds != null)) {
+      throw new InvalidRequestException(
+        "Cannot use gap filling option or grouping of data when no aggregation function is specified."
+      );
+    }
+
+    Log.warn("startNano: " + startNanoseconds);
+    Log.warn("endNano: " + endNanoseconds);
+    Log.warn("valueType: " + valueType);
+    Log.warn("function: " + function);
+    Log.warn("fill: " + fillOption);
+
     var query = buildQueryObject(
       timeseriesId,
       startNanoseconds,
@@ -77,39 +94,6 @@ public class ExperimentalTimeseriesDataPointRepository
     FillOption fillOption
   ) {
     // TODO: query location, device, symbolic_name, ...
-    // TODO: re-integrate the other more complex functions (spread, FIRST, LAST, MEAN, MEDIAN, MODE)
-    // TODO: handle case for NONE fill function but no aggregate function
-
-    // states that influence the query:
-    // fillOption null/ not null -> depending on timeInterval we have to manually sort out NULL values
-    // fillOption "NONE" -> use time_bucket (skips NULL values)
-    // fillOption is "NULL" -> use time_bucket_gapfill
-    // fillOption one of "PREVIOUS, LINEAR" -> use time_bucket_gapfill + loc()/interpolate()
-    // timeInterval null -> dont use buckets
-    // timeInterval not null -> use buckets
-    // function either null -> create simple query
-    // function one of (MAX, MIN, COUNT, SUM, STDDEV) -> build query where we can replace function names in query building
-    // function one of (spread, FIRST, LAST, MEAN, MEDIAN, MODE) -> individually build queries for each aggregate function
-
-    // ----------------
-    // SELECT
-    //  time_bucket|time_bucket_gapfill|nothing
-    //  LOCF/INTERPOLATE(|FUNCTION(COLUMNAME)|COLUMNAME|)
-    // FROM timeseries_payload
-    // WHERE timeseries_id = :timeseriesId
-    //  AND time >=
-    //  AND time <=
-    // (GROUP BY timestamp)
-
-    String queryString = "SELECT ";
-
-    if (timeIntervalNanoseconds != null && fillOption != null) {
-      queryString +=
-      switch (fillOption) {
-        case NONE -> "time_bucket(:timeInNanoseconds, time) as timestamp,";
-        case NULL, LINEAR, PREVIOUS -> "time_bucket_gapfill(:timeInNanoseconds, time) as timestamp,";
-      };
-    }
 
     String columnName =
       switch (valueType) {
@@ -119,73 +103,57 @@ public class ExperimentalTimeseriesDataPointRepository
         case Boolean -> "boolean_value";
       };
 
-    String aggregationString = "";
-    if (null != function) switch (function) {
-      case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = String.format("%s(%s)", function.name(), columnName);
-      default -> {}
-    }
-    else {
-      aggregationString = columnName;
+    if (fillOption == null) {
+      fillOption = FillOption.NONE;
     }
 
-    // build filling - by default bucket_gapfill uses NULL filloption
-    if (fillOption == FillOption.LINEAR) {
-      aggregationString = String.format("interpolate(%s) as value", aggregationString);
-    } else if (fillOption == FillOption.PREVIOUS) {
-      aggregationString = String.format("locf(%s) as value", aggregationString);
-    }
+    String queryString = "";
+    if (function != null) {
+      if (timeIntervalNanoseconds == null) {
+        timeIntervalNanoseconds = endNanoseconds - startNanoseconds;
+      }
 
-    queryString += " " + aggregationString;
-    queryString += " FROM timeseries_payload";
-    queryString += " WHERE timeseries_id = :timeseriesId";
-    queryString += " AND time >= :startTimeNano AND time <= :endTimeNano";
+      queryString = "SELECT ";
 
-    if (timeIntervalNanoseconds != null) {
-      queryString += " GROUP BY timestamp";
-    }
+      queryString +=
+      switch (fillOption) {
+        case NONE -> "time_bucket(:timeInNanoseconds, time) as timestamp, ";
+        case NULL, LINEAR, PREVIOUS -> "time_bucket_gapfill(:timeInNanoseconds, time) as timestamp, ";
+      };
 
-    /*if (null != function) switch (function) {
-      case MAX, MIN, COUNT, SUM, STDDEV -> queryString = String.format("%s(%s) as value", function.name(), columnName);
-      case LAST -> queryString = String.format(
-        """
-        SELECT
-          time_bucket(:timeInNanoseconds, time) as timestamp,
-          last(%s, time) as value
-        From timeseries_payload
-        WHERE timeseries_id = :timeseriesId
-          AND time >= :startTimeNano
-          AND time <= :endTimeNano
-        GROUP BY timestamp
-        """,
-        columnName
-      );
-      case FIRST -> queryString = String.format(
-        "SELECT time_bucket(:timeInNanoseconds, time) as timestamp, first(%s, time) as value from timeseries_payload WHERE timeseries_id = :timeseriesId AND time >= :startTimeNano AND time <= :endTimeNano GROUP BY timestamp",
-        columnName
-      );
-      case MEAN -> queryString = String.format(
-        "SELECT time_bucket(:timeInNanoseconds, time) as timestamp, AVG(%s) as value from timeseries_payload WHERE timeseries_id = :timeseriesId AND time >= :startTimeNano AND time <= :endTimeNano GROUP BY timestamp",
-        columnName
-      );
-      case MEDIAN -> queryString = String.format(
-        "SELECT time_bucket(:timeInNanoseconds, time) as timestamp, percentile_cont(0.5) WITHIN GROUP (ORDER BY %s) as value FROM timeseries_payload WHERE timeseries_id = :timeseriesId AND time >= :startTimeNano AND time <= :endTimeNano GROUP BY timestamp",
-        columnName
-      );
-      case MODE -> queryString = String.format(
-        "SELECT time_bucket(:timeInNanoseconds, time) as timestamp, mode() WITHIN GROUP (ORDER BY %s) as value FROM timeseries_payload WHERE timeseries_id = :timeseriesId AND time >= :startTimeNano AND time <= :endTimeNano GROUP BY timestamp",
-        columnName
-      );
-      case SPREAD -> queryString = String.format(
-        "SELECT time_bucket(:timeInNanoseconds, time) as timestamp,  MAX(%s) - MIN(%s) as value FROM timeseries_payload WHERE timeseries_id = :timeseriesId AND time >= :startTimeNano AND time <= :endTimeNano GROUP BY timestamp",
-        columnName
-      );
-    }
-    else {
+      String aggregationString = "";
+      switch (function) {
+        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = String.format("%s(%s)", function.name(), columnName);
+        case MEAN -> aggregationString = String.format("AVG(%s)", columnName);
+        case LAST, FIRST -> aggregationString = String.format("%s(%s, time)", function.name(), columnName);
+        case SPREAD -> aggregationString = String.format("MAX(%s) - MIN(%s)", columnName, columnName);
+        case MEDIAN -> aggregationString = String.format("percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)", columnName);
+        case MODE -> aggregationString = String.format("mode() WITHIN GROUP (ORDER BY %s)", columnName);
+        case INTEGRAL -> {} //TODO: has to be implemented in #284
+      }
+
+      // handle filling - by default bucket_gapfill uses NULL filloption
+      if (fillOption == FillOption.LINEAR) {
+        aggregationString = String.format("interpolate(%s) as value", aggregationString);
+      } else if (fillOption == FillOption.PREVIOUS) {
+        aggregationString = String.format("locf(%s) as value", aggregationString);
+      } else {
+        aggregationString += " as value ";
+      }
+
+      queryString += aggregationString;
+      queryString +=
+      """
+      FROM timeseries_payload
+      WHERE timeseries_id = :timeseriesId
+        AND time >= :startTimeNano
+        AND time <= :endTimeNano
+      GROUP BY timestamp
+      """;
+    } else {
       queryString = String.format(
         """
-        SELECT
-          time,
-          %s
+        SELECT time, %s
         FROM timeseries_payload
         WHERE timeseries_id = :timeseriesId
           AND time >= :startTimeNano
@@ -193,11 +161,13 @@ public class ExperimentalTimeseriesDataPointRepository
         """,
         columnName
       );
-    }*/
+    }
+    Log.warn("intervalNano: " + timeIntervalNanoseconds);
+    Log.warn("query: " + queryString);
 
     var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
 
-    if (fillOption != null) {
+    if (timeIntervalNanoseconds != null) {
       query.setParameter("timeInNanoseconds", timeIntervalNanoseconds);
     }
     query.setParameter("timeseriesId", timeseriesId);

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
@@ -262,7 +263,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
    * getDataPointsAggregated
    **************************/
   @Test
-  public void getDataPoints_getMax_returnsMax() {
+  public void getDataPoints_getMax_returnsMax_noFill_groupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
@@ -280,33 +281,29 @@ public class ExperimentalTimeseriesContainerServiceTest {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,
-          instantHelper.toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
           InstantHelper.now().toNano(),
           Duration.ofMinutes(2).toNanos(),
           AggregateFunctions.MAX,
-          FillOption.NONE
+          null
         );
 
     Assert.assertEquals(1, actual.size());
     Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
-  //TODO: add tests for integers
-  //TODO: add test to throw exception for boolean/ string aggregate
-  //TODO: add test for no aggregation function
-  /*@Test
-  public void getDataPoints_getMin_returnsMin() {
+  @Test
+  public void getDataPoints_getMax_returnMax_prevFill_groupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 22.3)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.2)
       )
     );
-
-    Log.info("DataPoint: " + dataPoints.get(2).getTimestamp() + " " + dataPoints.get(2).getValue());
 
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
@@ -315,9 +312,188 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.MIN
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
+          Duration.ofSeconds(4).toNanos(),
+          AggregateFunctions.MAX,
+          FillOption.PREVIOUS
+        );
+
+    Assert.assertEquals(2, actual.size());
+    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+  }
+
+  @Test
+  public void getDataPoints_noFunc_prevFill_groupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(6).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(9).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
+          Duration.ofSeconds(3).toNanos(),
+          null,
+          FillOption.PREVIOUS
+        );
+    });
+  }
+
+  @Test
+  public void getDataPoints_getMax_returnMax_noFill_noGroupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          instantHelper.addSeconds(1).toNano(),
+          null,
+          AggregateFunctions.MAX,
+          null
+        );
+
+    Assert.assertEquals(1, actual.size());
+    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+  }
+
+  @Test
+  public void getDataPoints_noFunc_noFill_noGroupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
+          null,
+          null,
+          null
+        );
+
+    Assert.assertEquals(3, actual.size());
+    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
+    Assert.assertEquals(22.2, (Double) actual.get(2).getValue(), doubleEpsilon);
+  }
+
+  @Test
+  public void getDataPoints_noFunc_Fill_noGroupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
+          null,
+          null,
+          FillOption.LINEAR
+        );
+    });
+  }
+
+  @Test
+  public void getDataPoints_getMean_returnMean_noFill_noGroupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
+          null,
+          AggregateFunctions.MEAN,
+          null
+        );
+
+    Assert.assertEquals(1, actual.size());
+    Assert.assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+  }
+
+  @Test
+  public void getDataPoints_getMin_returnMin_noFill_noGroupBy() {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.getDataPointsAggregated(
+          container.getId(),
+          timeseries,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
+          null,
+          AggregateFunctions.MIN,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
@@ -325,16 +501,15 @@ public class ExperimentalTimeseriesContainerServiceTest {
   }
 
   @Test
-  public void getDataPoints_getMean_returnsMean() {
+  public void getDataPoints_getLast_returnLast_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
       )
     );
 
@@ -345,26 +520,26 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.MEAN
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
+          null,
+          AggregateFunctions.LAST,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(113.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getMedian_returnsMedian() {
+  public void getDataPoints_getFirst_returnFirst_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
       )
     );
 
@@ -375,26 +550,26 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.MEDIAN
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
+          null,
+          AggregateFunctions.FIRST,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(120, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getCount_returnsCount() {
+  public void getDataPoints_getSpread_returnSpread_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
       )
     );
 
@@ -405,26 +580,33 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.COUNT
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
+          null,
+          AggregateFunctions.SPREAD,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals((long) 5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(0.2, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getSum_returnsSum() {
+  public void getDataPoints_getMode_returnMode_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.4),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
       )
     );
 
@@ -435,26 +617,30 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.SUM
+          instantHelper.addSeconds(1).toNano(),
+          null,
+          AggregateFunctions.MODE,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(565.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getLast_returnsLast() {
+  public void getDataPoints_getMedian_returnMedian_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 11.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 13.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 26.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 34.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 47.0)
       )
     );
 
@@ -465,26 +651,30 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.LAST
+          InstantHelper.fromGermanDate("01.01.2024").addSeconds(8).toNano(),
+          null,
+          AggregateFunctions.MEDIAN,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(90.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(13.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getFirst_returnsFirst() {
+  public void getDataPoints_getCount_returnCount_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 11.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 13.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 26.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 34.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 47.0)
       )
     );
 
@@ -495,29 +685,27 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.FIRST
+          instantHelper.addSeconds(2).toNano(),
+          null,
+          AggregateFunctions.COUNT,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(134.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals((long) 7, actual.get(0).getValue());
   }
 
   @Test
-  public void getDataPoints_getMode_returnsMode() {
+  public void getDataPoints_getSum_returnSum_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-5).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-6).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-7).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 5.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 7.0)
       )
     );
 
@@ -528,26 +716,31 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.MODE
+          instantHelper.addSeconds(2).toNano(),
+          null,
+          AggregateFunctions.SUM,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(121.25, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(17.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
-  public void getDataPoints_getSpread_returnsSpread() {
+  public void getDataPoints_getStddev_returnStddev_noFill_noGroupBy() {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 10.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 12.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 16.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 21.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 16.0)
       )
     );
 
@@ -558,43 +751,14 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.SPREAD
+          instantHelper.addSeconds(2).toNano(),
+          null,
+          AggregateFunctions.STDDEV,
+          null
         );
 
     Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(44, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  public void getDataPoints_getStddev_returnsStddev() {
-    var container = timeseriesService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 100.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 120.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 121.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
-      )
-    );
-
-    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
-
-    var actual =
-      this.timeseriesService.getDataPointsAggregated(
-          container.getId(),
-          timeseries,
-          InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
-          Duration.ofMinutes(2).toNanos(),
-          AggregateFunctions.STDDEV
-        );
-
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(17.745245842197, (Double) actual.get(0).getValue(), doubleEpsilon);
+    Assert.assertEquals(5.2372293656638, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   /**********************
