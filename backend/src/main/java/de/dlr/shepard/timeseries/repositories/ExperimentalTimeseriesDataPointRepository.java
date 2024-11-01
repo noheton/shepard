@@ -30,9 +30,6 @@ public class ExperimentalTimeseriesDataPointRepository
     AggregateFunctions function,
     FillOption fillOption
   ) throws InvalidRequestException {
-    // var queryString = buildQuery(timeseriesId, timeInNanoseconds, function);
-    // var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
-
     if (function == AggregateFunctions.INTEGRAL) {
       throw new InvalidRequestException("Aggregation function 'integral' is currently not implemented.");
     }
@@ -63,12 +60,6 @@ public class ExperimentalTimeseriesDataPointRepository
       );
     }
 
-    Log.warn("startNano: " + startNanoseconds);
-    Log.warn("endNano: " + endNanoseconds);
-    Log.warn("valueType: " + valueType);
-    Log.warn("function: " + function);
-    Log.warn("fill: " + fillOption);
-
     var query = buildQueryObject(
       timeseriesId,
       startNanoseconds,
@@ -93,8 +84,6 @@ public class ExperimentalTimeseriesDataPointRepository
     AggregateFunctions function,
     FillOption fillOption
   ) {
-    // TODO: query location, device, symbolic_name, ...
-
     String columnName =
       switch (valueType) {
         case Double -> "double_value";
@@ -134,36 +123,31 @@ public class ExperimentalTimeseriesDataPointRepository
 
       // handle filling - by default bucket_gapfill uses NULL filloption
       if (fillOption == FillOption.LINEAR) {
-        aggregationString = String.format("interpolate(%s) as value", aggregationString);
+        aggregationString = String.format("interpolate(%s) as value ", aggregationString);
       } else if (fillOption == FillOption.PREVIOUS) {
-        aggregationString = String.format("locf(%s) as value", aggregationString);
+        aggregationString = String.format("locf(%s) as value ", aggregationString);
       } else {
         aggregationString += " as value ";
       }
 
       queryString += aggregationString;
-      queryString +=
-      """
-      FROM timeseries_payload
-      WHERE timeseries_id = :timeseriesId
-        AND time >= :startTimeNano
-        AND time <= :endTimeNano
-      GROUP BY timestamp
-      """;
     } else {
-      queryString = String.format(
-        """
-        SELECT time, %s
-        FROM timeseries_payload
-        WHERE timeseries_id = :timeseriesId
-          AND time >= :startTimeNano
-          AND time <= :endTimeNano
-        """,
-        columnName
-      );
+      queryString = String.format("SELECT time, %s ", columnName);
     }
-    Log.warn("intervalNano: " + timeIntervalNanoseconds);
-    Log.warn("query: " + queryString);
+
+    queryString +=
+    """
+    FROM timeseries_payload
+    WHERE timeseries_id = :timeseriesId
+      AND time >= :startTimeNano
+      AND time <= :endTimeNano
+    """;
+
+    if (function != null) {
+      queryString += " GROUP BY timestamp";
+    }
+
+    Log.debug("DataPoint Query String: " + queryString);
 
     var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
 
@@ -173,6 +157,7 @@ public class ExperimentalTimeseriesDataPointRepository
     query.setParameter("timeseriesId", timeseriesId);
     query.setParameter("startTimeNano", startNanoseconds);
     query.setParameter("endTimeNano", endNanoseconds);
+
     return query;
   }
 }
