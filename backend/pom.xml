@@ -243,7 +243,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  
+
 
   <build>
     <finalName>${finalName}</finalName>
@@ -374,7 +374,73 @@
       </plugin>
     </plugins>
   </build>
-
+  <reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+				<configuration>
+					<rulesUri>file://${session.executionRootDirectory}/version-rules.xml</rulesUri>
+				</configuration>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>dependency-updates-report</report>
+							<report>plugin-updates-report</report>
+							<report>property-updates-report</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<configuration>
+					<linkJavadoc>true</linkJavadoc>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<!-- select non-aggregate reports -->
+							<report>report</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<configuration>
+					<onlyAnalyze>de.dlr.shepard.*</onlyAnalyze>
+					<effort>Max</effort>
+					<threshold>Low</threshold>
+					<plugins>
+						<plugin>
+							<groupId>com.h3xstream.findsecbugs</groupId>
+							<artifactId>findsecbugs-plugin</artifactId>
+							<version>1.13.0</version>
+						</plugin>
+					</plugins>
+				</configuration>
+			</plugin>
+		</plugins>
+	</reporting>
   <profiles>
     <profile>
       <id>dev</id>
