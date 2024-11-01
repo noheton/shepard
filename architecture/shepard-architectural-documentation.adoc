@@ -5,9 +5,13 @@
 // enable table-of-contents
 :toc:
 // where are images located?
-:imagesdir: ./images
+ifndef::imagesdir[:imagesdir: ./images]
+// Version variable to be overwritten in pipeline jobs
+:shepard_version: DEV
 
 = shepard Architectural Documentation
+shepard Team
+{shepard_version}, {docdate}
 
 :numbered:
 
@@ -34,3 +38,4 @@ include::src/10_quality_requirements/index.adoc[]
 include::src/11_technical_risks/index.adoc[]
 
 include::src/12_glossary/index.adoc[]
+

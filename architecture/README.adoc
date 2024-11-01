@@ -6,7 +6,6 @@ See link:src/08_concepts/documentation.adoc[here] for an introduction to the doc
 
 ## Architectural Docs on develop
 
-// TODO: Check link to the job output on develop
 You can find the *rendered view* of the current architectural documentation on the develop branch link:https://gitlab.com/dlr-shepard/shepard/-/jobs/artifacts/develop/file/build/html5/index.html?job=build_documentation[here].
 
 You can find the *GitLab view* of each chapter at the following locations:
