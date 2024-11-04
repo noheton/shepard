@@ -22,30 +22,34 @@ public class ExperimentalTimeseriesEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
 
-  @Column(name = "container_id")
+  @Column(name = "container_id", nullable = false)
   private long containerId;
 
   @NotBlank
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String measurement;
 
   @NotBlank
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String field;
 
   @NotBlank
   @Schema(nullable = true)
+  @Column(columnDefinition = "TEXT", nullable = true)
   private String device;
 
   @NotBlank
   @Schema(nullable = true)
+  @Column(columnDefinition = "TEXT", nullable = true)
   private String location;
 
   @NotBlank
   @Schema(nullable = true)
-  @Column(name = "symbolic_name")
+  @Column(name = "symbolic_name", columnDefinition = "TEXT", nullable = false)
   private String symbolicName;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "value_type")
+  @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)
   private ExperimentalDataPointValueTypes valueType;
 
   public ExperimentalTimeseriesEntity(
