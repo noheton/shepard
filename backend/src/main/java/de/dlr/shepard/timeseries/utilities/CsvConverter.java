@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -134,10 +135,31 @@ public class CsvConverter {
         csvInputLine.getTimestamp(),
         parseValue(csvInputLine.getValue())
       );
+
+      var parsedValue = parseValue(csvInputLine.getValue());
+      if (parsedValue instanceof Boolean) {
+        Log.info("BOOLEAN - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof String) {
+        Log.info("STRING - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof Integer) {
+        Log.info("INTEGER - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof Double) {
+        Log.info("DOUBLE - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof BigInteger) {
+        Log.info("BIG INT - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof Float) {
+        Log.info("FLOAT - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof Long) {
+        Log.info("LONG - dataPoint: " + dataPoint);
+      } else if (parsedValue instanceof Number) {
+        Log.info("NUMBER - dataPoint: " + dataPoint);
+      }
+
       if (result.containsKey(timeseries)) {
         result.get(timeseries).add(dataPoint);
       } else {
-        var dataPoints = List.of(dataPoint);
+        var dataPoints = new ArrayList<ExperimentalTimeseriesPayloadDataPointIO>();
+        dataPoints.add(dataPoint);
         result.put(timeseries, dataPoints);
       }
     }
@@ -146,10 +168,20 @@ public class CsvConverter {
 
   private Object parseValue(Object input) {
     List<String> boolString = List.of("true", "false");
-
     if (input instanceof String sInput) {
       if (NumberUtils.isCreatable(sInput)) {
-        return NumberUtils.createNumber(sInput);
+        //var createdNumber = NumberUtils.createNumber(sInput);
+        try {
+          Integer intValue = Integer.parseInt(sInput);
+          return intValue;
+        } catch (NumberFormatException e) {
+          Double doubleValue = Double.parseDouble(sInput);
+          return doubleValue;
+        }
+        /*if (createdNumber instanceof Float) {
+          createdNumber = Double.parseDouble(createdNumber);
+        }
+        return createdNumber;*/
       } else if (boolString.contains(sInput.toLowerCase())) {
         return sInput.equalsIgnoreCase("true");
       }

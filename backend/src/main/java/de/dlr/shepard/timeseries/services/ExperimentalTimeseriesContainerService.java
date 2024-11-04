@@ -324,7 +324,7 @@ public class ExperimentalTimeseriesContainerService {
     long containerId,
     List<ExperimentalTimeseries> timeseriesList,
     AggregateFunctions function,
-    long groupBy,
+    Long groupBy,
     FillOption fillOption,
     long start,
     long end,
@@ -348,6 +348,7 @@ public class ExperimentalTimeseriesContainerService {
     return new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>(timeseriesDataQueue);
   }
 
+  @Transactional
   public void importTimeseries(long timeseriesContainerId, InputStream stream) {
     var timeseriesContainer = timeseriesContainerDAO.findLightByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
@@ -356,6 +357,7 @@ public class ExperimentalTimeseriesContainerService {
     }
     HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesPayloadDataPointIO>> timeseriesList =
       csvConverter.convertToPayload(stream);
+
     for (var timeseries : timeseriesList.entrySet()) {
       createTimeseries(timeseriesContainerId, timeseries.getKey(), timeseries.getValue());
     }

@@ -11,7 +11,9 @@ import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesPayloadDataPointIO;
 import de.dlr.shepard.timeseries.model.AggregateFunctions;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.model.FillOption;
+import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import de.dlr.shepard.timeseries.utilities.InstantHelper;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -19,7 +21,9 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
@@ -1232,5 +1236,70 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
 
     assertEquals(actualCsvContent.toString().trim(), expectedCsvContent.trim());
+  }
+
+  /**********************
+   * importTimeseriesData
+   ***********************/
+
+  @Test
+  public void importTimeseriesData_oneTimeseriesWithBooleanValues_success() throws IOException, URISyntaxException {
+    var container = timeseriesService.createContainer(containerName, userName);
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+
+    File importCSVFile = new File(
+      getClass().getClassLoader().getResource("timeseries_import_experimental.csv").toURI()
+    );
+
+    String csvFileContent = Files.readString(importCSVFile.toPath());
+    Log.info(csvFileContent);
+
+    try (InputStream fileInputStream = new FileInputStream(importCSVFile)) {
+      timeseriesService.importTimeseries(container.getId(), fileInputStream);
+    }
+
+    List<ExperimentalTimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(
+      container.getId()
+    );
+
+    List<ExperimentalTimeseries> expTimeseries = new ArrayList<ExperimentalTimeseries>();
+
+    for (var currTimeseries : availTimeseriesList) {
+      expTimeseries.add(
+        new ExperimentalTimeseries(
+          currTimeseries.getMeasurement(),
+          currTimeseries.getField(),
+          currTimeseries.getDevice(),
+          currTimeseries.getLocation(),
+          currTimeseries.getSymbolicName()
+        )
+      );
+    }
+
+    var actualTimeseriesDataMap = timeseriesService.getTimeseriesDataList(
+      container.getId(),
+      expTimeseries,
+      null,
+      null,
+      null,
+      InstantHelper.fromGermanDate("01.01.2024").toNano(),
+      instantHelper.toNano(),
+      null,
+      null,
+      null
+    );
+
+    CsvConverter csvConverter = new CsvConverter();
+    var actualTimeSeriesStream = csvConverter.convertToCsv(actualTimeseriesDataMap);
+
+    StringBuilder actualTimeSeriesContent = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(actualTimeSeriesStream))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        actualTimeSeriesContent.append(line).append("\n");
+      }
+    }
+
+    assertEquals(actualTimeSeriesContent.toString().trim(), csvFileContent.trim());
   }
 }
