@@ -15,6 +15,7 @@ const router = useRouter();
 const filterInput = ref("");
 const collections = ref<Collection[]>([]);
 const page = ref(1);
+const totalPages = ref(1);
 
 const filterOptions = useStorage<FilterOptions>(
   "collection-list-filter-options",
@@ -38,6 +39,7 @@ function fetchCollections(page?: number) {
     })
     .then(response => {
       collections.value = response;
+      updateTotalPages();
     })
     .catch(e => {
       handleError(e as ResponseError, "fetching collections");
@@ -45,15 +47,13 @@ function fetchCollections(page?: number) {
 }
 
 const currentPage = ref(1);
-const totalRows = computed(() => {
-  if (collections.value)
-    return getTotalRows(
-      collections.value.length,
-      filterOptions.value.perPage,
-      currentPage.value,
-    );
-  else return 0;
-});
+
+function updateTotalPages() {
+  if (collections.value.length >= filterOptions.value.perPage)
+    totalPages.value = currentPage.value + 1;
+  else if (totalPages.value > 1 && currentPage.value == 1) --totalPages.value;
+}
+
 function filterChanged(options: FilterChangedData) {
   currentPage.value = options.currentPage;
   filterOptions.value.perPage = options.perPage;
@@ -115,16 +115,22 @@ onMounted(() => {
     </v-menu>
 
     <CollectionSortingOptions
-      :max-objects="totalRows"
+      :max-objects="totalPages"
       :current-page="currentPage"
       :filter-options="filterOptions"
       @filter-changed="options => filterChanged(options)"
     />
     <div :style="{ marginTop: '10px', width: '100%' }">
       <CollectionList
-        :max-objects="totalRows"
+        :pagination-length="totalPages"
+        :max-objects="filterOptions.perPage"
         :collections="collections"
         :page="page"
+      />
+      <v-pagination
+        v-model="currentPage"
+        :length="totalPages"
+        @update:model-value="fetchCollections(currentPage)"
       />
     </div>
   </div>

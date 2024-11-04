@@ -35,3 +35,8 @@ services:
     extends:
       file: docker-compose.headless.yml
       service: chronograf
+
+  timescaledb:
+    extends:
+      file: docker-compose.headless.yml
+      service: timescaledb

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -17,7 +18,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NoArgsConstructor
 public class UserGroup extends BasicEntity {
 
-  @Relationship(type = Constants.IS_IN_GROUP, direction = Relationship.INCOMING)
+  @Relationship(type = Constants.IS_IN_GROUP, direction = Direction.INCOMING)
   private List<User> users = new ArrayList<>();
 
   @ToString.Exclude

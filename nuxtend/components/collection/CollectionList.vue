@@ -11,8 +11,6 @@ const props = defineProps<{
 }>();
 
 const page = ref(props.page);
-const paginationLength =
-  Math.floor(props.collections.length / props.maxObjects) + 1;
 </script>
 
 <template>
@@ -30,7 +28,6 @@ const paginationLength =
       >
         <CollectionListItemContent :collection="item.raw" />
       </v-card>
-      <v-pagination v-model="page" :length="paginationLength" />
     </template>
   </v-data-iterator>
 </template>

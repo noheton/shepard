@@ -1,0 +1,11 @@
+build_documentation:
+  image: doctoolchain/doctoolchain:v3.4.1
+  stage: build
+  needs: [get_version]
+  script:
+    - 'sed -i "/:shepard_version:.*/c\:shepard_version: ${VERSION_NUMBER}" architecture/shepard-architectural-documentation.adoc'
+    - ./dtcw generateHTML
+    - mv build/html5/shepard-architectural-documentation.html build/html5/index.html
+  artifacts:
+    paths:
+      - build/html5

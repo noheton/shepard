@@ -15,6 +15,7 @@ include:
   - local: .gitlab/ci/jobs/build-nuxtend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
   - local: .gitlab/ci/jobs/coverage.yml
+  - local: .gitlab/ci/jobs/build-documentation.yml
   - local: .gitlab/ci/jobs/integration-test.yml
   - local: .gitlab/ci/jobs/build-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml

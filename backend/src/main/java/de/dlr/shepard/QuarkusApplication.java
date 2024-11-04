@@ -1,7 +1,6 @@
 package de.dlr.shepard;
 
 import de.dlr.shepard.influxDB.InfluxDBConnector;
-import de.dlr.shepard.mongoDB.MongoDBConnector;
 import de.dlr.shepard.neo4j.MigrationsRunner;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.IConnector;
@@ -17,9 +16,6 @@ public class QuarkusApplication {
 
   @Inject
   InfluxDBConnector influxdb;
-
-  @Inject
-  MongoDBConnector mongodb;
 
   private static IConnector neo4j = NeoConnector.getInstance();
 
@@ -40,8 +36,6 @@ public class QuarkusApplication {
     Log.info("Initialize databases");
     neo4j.connect();
     Log.info("Connection established to neo4j database.");
-    mongodb.connect();
-    Log.info("Connection established to mongodb database.");
     influxdb.connect();
     Log.info(("Connection established to influx database."));
   }
@@ -49,7 +43,6 @@ public class QuarkusApplication {
   @Shutdown
   void shutdown() {
     neo4j.disconnect();
-    mongodb.disconnect();
     influxdb.disconnect();
   }
 }
