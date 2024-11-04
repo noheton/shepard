@@ -17,15 +17,14 @@ create table timeseries_payload (
     double_value DOUBLE PRECISION,
     int_value integer,
     string_value TEXT,
-    boolean_value boolean --,
-    -- primary key (id)
+    boolean_value boolean
 );
 
--- TODO: On delete cascade
 alter table if exists timeseries_payload
     add constraint FKog3jr0iowrx3wkun79k0ihs6o
     foreign key (timeseries_id)
-    references timeseries;
+    references timeseries
+    on delete cascade;
 
 -- Create hypertable for timeseries_payload on time
 select create_hypertable('timeseries_payload', by_range('time', 86400000000000)); -- Chunk size of one day in nanoseconds

@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "timeseries_payload")
@@ -22,6 +24,7 @@ public class ExperimentalTimeseriesDataPointEntity {
   @JsonIgnore
   @ManyToOne(targetEntity = ExperimentalTimeseriesEntity.class, fetch = FetchType.LAZY)
   @JoinColumn(name = "timeseries_id")
+  @OnDelete(action = OnDeleteAction.CASCADE)
   private int timeseriesId;
 
   @Column(name = "time", nullable = false)
