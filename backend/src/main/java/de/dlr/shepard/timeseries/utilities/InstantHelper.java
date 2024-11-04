@@ -33,9 +33,13 @@ public class InstantHelper {
     this.instant = instant;
   }
 
-  /*
+  /**
+   * Changes and returns the current instant object after adding a new duration/ temporal amount to it.
+   * <p>
    * TemporalAmount is the base interface type for amounts of time.
    * Use Period for dates and Duration for times.
+   * @param duration
+   * @return InstantHelper
    */
   public InstantHelper addDuration(TemporalAmount duration) {
     instant = this.instant.plus(duration);

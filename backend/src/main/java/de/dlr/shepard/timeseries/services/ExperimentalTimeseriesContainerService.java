@@ -243,7 +243,7 @@ public class ExperimentalTimeseriesContainerService {
     long containerId,
     ExperimentalTimeseries timeseries,
     AggregateFunctions function,
-    long groupBy,
+    Long groupBy,
     long start,
     long end,
     FillOption fillOption

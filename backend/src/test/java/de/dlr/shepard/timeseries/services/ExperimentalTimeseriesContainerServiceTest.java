@@ -1,6 +1,5 @@
 package de.dlr.shepard.timeseries.services;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
@@ -1112,13 +1111,14 @@ public class ExperimentalTimeseriesContainerServiceTest {
   public void exportTimeseriesData_oneTimeseriesWithDoubleValues_success() throws IOException, URISyntaxException {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("water_level");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
       List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().toNano(), 90.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-1).toNano(), 120.57),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-2).toNano(), 127.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-3).toNano(), 129.25),
-        TimeseriesTestDataGenerator.generateDataPointDouble(InstantHelper.now().addSeconds(-4).toNano(), 134.0)
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 90.0),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 120.57),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 127.25),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(3).toNano(), 129.25),
+        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 134.0)
       )
     );
 
@@ -1129,9 +1129,9 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           null,
-          Duration.ofMinutes(2).toNanos(),
+          null,
           InstantHelper.fromGermanDate("01.01.2024").toNano(),
-          InstantHelper.now().toNano(),
+          instantHelper.toNano(),
           null
         );
 
@@ -1143,18 +1143,21 @@ public class ExperimentalTimeseriesContainerServiceTest {
       }
     }
 
-    var expectedCsvFile = new File(getClass().getClassLoader().getResource("timeseries_export.csv").toURI());
+    var expectedCsvFile = new File(
+      getClass().getClassLoader().getResource("timeseries_export_experimental_double.csv").toURI()
+    );
     var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
 
-    assertEquals(actualCsvContent.toString(), expectedCsvContent); //TODO check again after finished implementation of getDataPointsAggregated()
+    assertEquals(actualCsvContent.toString().trim(), expectedCsvContent.trim());
   }
 
   @Test
   public void exportTimeseriesData_oneTimeseriesWithStringValues_success() throws IOException, URISyntaxException {
     var container = timeseriesService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("status");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
-      List.of(TimeseriesTestDataGenerator.generateDataPointString("running"))
+      List.of(TimeseriesTestDataGenerator.generateDataPointString(instantHelper.toNano(), "running"))
     );
 
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
@@ -1164,9 +1167,9 @@ public class ExperimentalTimeseriesContainerServiceTest {
           container.getId(),
           timeseries,
           null,
-          Duration.ofMinutes(2).toNanos(),
-          InstantHelper.now().addHours(-1).toNano(),
-          InstantHelper.now().addHours(1).toNano(),
+          null,
+          instantHelper.toNano(),
+          instantHelper.addSeconds(2).toNano(),
           null
         );
 
@@ -1178,6 +1181,11 @@ public class ExperimentalTimeseriesContainerServiceTest {
       }
     }
 
-    assertTrue(actualCsvContent.toString().endsWith("\"running\""));
+    var expectedCsvFile = new File(
+      getClass().getClassLoader().getResource("timeseries_export_experimental_string.csv").toURI()
+    );
+    var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
+
+    assertEquals(actualCsvContent.toString().trim(), expectedCsvContent.trim());
   }
 }
