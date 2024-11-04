@@ -1189,4 +1189,48 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     assertEquals(actualCsvContent.toString().trim(), expectedCsvContent.trim());
   }
+
+  @Test
+  public void exportTimeseriesData_oneTimeseriesWithBooleanValues_success() throws IOException, URISyntaxException {
+    var container = timeseriesService.createContainer(containerName, userName);
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("motion");
+    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    List<ExperimentalTimeseriesPayloadDataPointIO> dataPoints = new ArrayList<>(
+      List.of(
+        TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.toNano(), true),
+        TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.addSeconds(1).toNano(), false),
+        TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.addSeconds(2).toNano(), true),
+        TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.addSeconds(3).toNano(), false),
+        TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.addSeconds(4).toNano(), true)
+      )
+    );
+
+    this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
+
+    var actual =
+      this.timeseriesService.exportTimeseriesData(
+          container.getId(),
+          timeseries,
+          null,
+          null,
+          InstantHelper.fromGermanDate("01.01.2024").toNano(),
+          instantHelper.toNano(),
+          null
+        );
+
+    StringBuilder actualCsvContent = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        actualCsvContent.append(line).append("\n");
+      }
+    }
+
+    var expectedCsvFile = new File(
+      getClass().getClassLoader().getResource("timeseries_export_experimental_boolean.csv").toURI()
+    );
+    var expectedCsvContent = Files.readString(expectedCsvFile.toPath());
+
+    assertEquals(actualCsvContent.toString().trim(), expectedCsvContent.trim());
+  }
 }

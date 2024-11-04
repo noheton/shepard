@@ -237,7 +237,6 @@ public class ExperimentalTimeseriesContainerService {
    * @param end                   The end of the timeseries
    * @param fillOption            The fill option for missing values
    * @return InputStream containing the CSV file
-   * @throws IOException When the CSV file could not be written
    */
   public InputStream exportTimeseriesData(
     long containerId,

@@ -37,4 +37,8 @@ public final class TimeseriesTestDataGenerator {
   public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointBoolean(Boolean value) {
     return new ExperimentalTimeseriesPayloadDataPointIO(Instant.now().toEpochMilli() * 1_000_000, value);
   }
+
+  public static ExperimentalTimeseriesPayloadDataPointIO generateDataPointBoolean(long timestamp, Boolean value) {
+    return new ExperimentalTimeseriesPayloadDataPointIO(timestamp, value);
+  }
 }
