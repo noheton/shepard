@@ -1,6 +1,9 @@
 package de.dlr.shepard.timeseries.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
@@ -24,8 +27,6 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -44,8 +45,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
   public void createContainer_containerDoesNotExist_containerIsCreated() {
     var created = timeseriesService.createContainer(containerName, userName);
 
-    Assertions.assertEquals(containerName, created.getName());
-    Assertions.assertTrue(created.getId() > 0);
+    assertEquals(containerName, created.getName());
+    assertTrue(created.getId() > 0);
   }
 
   @Test
@@ -60,18 +61,18 @@ public class ExperimentalTimeseriesContainerServiceTest {
     Log.infof("Timeseries: containerId: %d, timeseriesId: %d", container.getId(), created.getId());
     Log.warn(startDate);
     Log.warn(endDate);
-    Assertions.assertNotNull(created);
+    assertNotNull(created);
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
-    Assert.assertNotNull(actual);
-    Assert.assertEquals(1, actual.size());
+    assertNotNull(actual);
+    assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
-    Assert.assertEquals("DoubleValue must be taken over.", point.getValue(), actualPoint.getDoubleValue());
-    Assert.assertTrue("Id must be set.", actualPoint.getId() > 0);
-    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
-    Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
-    Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
-    Assert.assertEquals("Timestamp must be taken over.", point.getTimestamp(), actualPoint.getTime());
-    Assert.assertTrue("TimeseriesId must be unequal to 0.", actualPoint.getTimeseriesId() > 0);
+    assertEquals(point.getValue(), actualPoint.getDoubleValue(), "DoubleValue must be taken over.");
+    assertTrue(actualPoint.getId() > 0, "Id must be set.");
+    assertEquals(null, actualPoint.getStringValue(), "StringValue must be null.");
+    assertEquals(null, actualPoint.getBooleanValue(), "BooleanValue must be null.");
+    assertEquals(null, actualPoint.getIntValue(), "IntValue must be null.");
+    assertEquals(point.getTimestamp(), actualPoint.getTime(), "Timestamp must be taken over.");
+    assertTrue(actualPoint.getTimeseriesId() > 0, "TimeseriesId must be unequal to 0.");
   }
 
   @Test
@@ -83,16 +84,16 @@ public class ExperimentalTimeseriesContainerServiceTest {
     dataPoints.add(point);
 
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
-    Assertions.assertNotNull(created);
+    assertNotNull(created);
 
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
-    Assert.assertNotNull(actual);
-    Assert.assertEquals(1, actual.size());
+    assertNotNull(actual);
+    assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
-    Assert.assertEquals("BooleanValue must be taken over.", point.getValue(), actualPoint.getBooleanValue());
-    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
-    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
-    Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
+    assertEquals(point.getValue(), actualPoint.getBooleanValue(), "BooleanValue must be taken over.");
+    assertEquals(null, actualPoint.getStringValue(), "StringValue must be null.");
+    assertEquals(null, actualPoint.getDoubleValue(), "DoubleValue must be null.");
+    assertEquals(null, actualPoint.getIntValue(), "IntValue must be null.");
   }
 
   @Test
@@ -104,16 +105,16 @@ public class ExperimentalTimeseriesContainerServiceTest {
     dataPoints.add(point);
 
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
-    Assertions.assertNotNull(created);
+    assertNotNull(created);
 
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
-    Assert.assertNotNull(actual);
-    Assert.assertEquals(1, actual.size());
+    assertNotNull(actual);
+    assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
-    Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
-    Assert.assertEquals("StringValue must be taken over.", point.getValue(), actualPoint.getStringValue());
-    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
-    Assert.assertEquals("IntValue must be null.", null, actualPoint.getIntValue());
+    assertEquals(null, actualPoint.getBooleanValue(), "BooleanValue must be null.");
+    assertEquals(point.getValue(), actualPoint.getStringValue(), "StringValue must be taken over.");
+    assertEquals(null, actualPoint.getDoubleValue(), "DoubleValue must be null.");
+    assertEquals(null, actualPoint.getIntValue(), "IntValue must be null.");
   }
 
   @Test
@@ -125,16 +126,16 @@ public class ExperimentalTimeseriesContainerServiceTest {
     dataPoints.add(point);
 
     var created = this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
-    Assertions.assertNotNull(created);
+    assertNotNull(created);
 
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
-    Assert.assertNotNull(actual);
-    Assert.assertEquals(1, actual.size());
+    assertNotNull(actual);
+    assertEquals(1, actual.size());
     var actualPoint = actual.get(0);
-    Assert.assertEquals("BooleanValue must be null.", null, actualPoint.getBooleanValue());
-    Assert.assertEquals("StringValue must be null.", null, actualPoint.getStringValue());
-    Assert.assertEquals("DoubleValue must be null.", null, actualPoint.getDoubleValue());
-    Assert.assertEquals("IntValue must be taken over.", point.getValue(), actualPoint.getIntValue());
+    assertEquals(null, actualPoint.getBooleanValue(), "BooleanValue must be null.");
+    assertEquals(null, actualPoint.getStringValue(), "StringValue must be null.");
+    assertEquals(null, actualPoint.getDoubleValue(), "DoubleValue must be null.");
+    assertEquals(point.getValue(), actualPoint.getIntValue(), "IntValue must be taken over.");
   }
 
   @Test
@@ -154,7 +155,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, morePoints);
 
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, startDate, endDate);
-    Assert.assertEquals(2, actual.size());
+    assertEquals(2, actual.size());
   }
 
   @Test
@@ -165,11 +166,11 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
     dataPoints.add(point);
 
-    InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
       this.timeseriesService.addPayload(nonExistingContainerId, timeseries, dataPoints);
     });
 
-    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+    assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
   @Test
@@ -180,11 +181,11 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
     dataPoints.add(point);
 
-    InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
       this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
     });
 
-    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+    assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
   @Test
@@ -201,11 +202,11 @@ public class ExperimentalTimeseriesContainerServiceTest {
     var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
     otherDataPoints.add(pointWithDifferentType);
 
-    InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
+    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
       this.timeseriesService.addPayload(container.getId(), timeseries, otherDataPoints);
     });
 
-    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+    assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
   /*************************
@@ -222,15 +223,15 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
     var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals("temperature", actual.get(0).getMeasurement());
+    assertEquals(1, actual.size());
+    assertEquals("temperature", actual.get(0).getMeasurement());
   }
 
   @Test
   public void getTimeseriesAvailable_containerDoesNotExist_returnsEmptyList() {
     int nonExistingContainerId = -1;
     var actual = this.timeseriesService.getTimeseriesAvailable(nonExistingContainerId);
-    Assert.assertEquals(0, actual.size());
+    assertEquals(0, actual.size());
   }
 
   /**************
@@ -256,7 +257,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
 
     var actual = this.timeseriesService.getDataPoints(container.getId(), timeseries, start, end);
 
-    Assert.assertEquals(3, actual.size());
+    assertEquals(3, actual.size());
   }
 
   /************************
@@ -293,8 +294,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -323,8 +324,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -353,8 +354,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -383,8 +384,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -413,8 +414,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -443,8 +444,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(0.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(0.2, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -480,8 +481,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -514,8 +515,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(13.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(13.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -548,8 +549,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals((long) 7, actual.get(0).getValue());
+    assertEquals(1, actual.size());
+    assertEquals((long) 7, actual.get(0).getValue());
   }
 
   @Test
@@ -579,8 +580,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(17.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(17.0, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -614,8 +615,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(5.2372293656638, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(5.2372293656638, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -645,8 +646,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals((long) 17, actual.get(0).getValue());
+    assertEquals(1, actual.size());
+    assertEquals((long) 17, actual.get(0).getValue());
   }
 
   @Test
@@ -680,8 +681,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(5.2372293656638, ((BigDecimal) actual.get(0).getValue()).doubleValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(5.2372293656638, ((BigDecimal) actual.get(0).getValue()).doubleValue(), doubleEpsilon);
   }
 
   @Test
@@ -710,8 +711,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(23, actual.get(0).getValue());
+    assertEquals(1, actual.size());
+    assertEquals(23, actual.get(0).getValue());
   }
 
   /*
@@ -744,8 +745,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(1, actual.size());
+    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -775,13 +776,13 @@ public class ExperimentalTimeseriesContainerServiceTest {
           FillOption.PREVIOUS
         );
 
-    Assert.assertEquals(6, actual.size());
-    Assert.assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.5, (Double) actual.get(1).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.3, (Double) actual.get(3).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.2, (Double) actual.get(5).getValue(), doubleEpsilon);
+    assertEquals(6, actual.size());
+    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.5, (Double) actual.get(1).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.get(3).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.get(5).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -810,10 +811,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(3, actual.size());
-    Assert.assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.2, (Double) actual.get(2).getValue(), doubleEpsilon);
+    assertEquals(3, actual.size());
+    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.get(2).getValue(), doubleEpsilon);
   }
 
   @Test
@@ -842,10 +843,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(3, actual.size());
-    Assert.assertEquals(true, actual.get(0).getValue());
-    Assert.assertEquals(false, actual.get(1).getValue());
-    Assert.assertEquals(true, actual.get(2).getValue());
+    assertEquals(3, actual.size());
+    assertEquals(true, actual.get(0).getValue());
+    assertEquals(false, actual.get(1).getValue());
+    assertEquals(true, actual.get(2).getValue());
   }
 
   @Test
@@ -874,10 +875,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(3, actual.size());
-    Assert.assertEquals("Hello", actual.get(0).getValue());
-    Assert.assertEquals("World", actual.get(1).getValue());
-    Assert.assertEquals("!", actual.get(2).getValue());
+    assertEquals(3, actual.size());
+    assertEquals("Hello", actual.get(0).getValue());
+    assertEquals("World", actual.get(1).getValue());
+    assertEquals("!", actual.get(2).getValue());
   }
 
   @Test
@@ -906,10 +907,10 @@ public class ExperimentalTimeseriesContainerServiceTest {
           null
         );
 
-    Assert.assertEquals(3, actual.size());
-    Assert.assertEquals(1, actual.get(0).getValue());
-    Assert.assertEquals(2, actual.get(1).getValue());
-    Assert.assertEquals(3, actual.get(2).getValue());
+    assertEquals(3, actual.size());
+    assertEquals(1, actual.get(0).getValue());
+    assertEquals(2, actual.get(1).getValue());
+    assertEquals(3, actual.get(2).getValue());
   }
 
   @Test
@@ -939,13 +940,13 @@ public class ExperimentalTimeseriesContainerServiceTest {
           FillOption.NULL
         );
 
-    Assert.assertEquals(6, actual.size());
-    Assert.assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    Assert.assertEquals(null, actual.get(1).getValue());
-    Assert.assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    Assert.assertEquals(null, actual.get(3).getValue());
-    Assert.assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    Assert.assertEquals(null, actual.get(5).getValue());
+    assertEquals(6, actual.size());
+    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(null, actual.get(1).getValue());
+    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
+    assertEquals(null, actual.get(3).getValue());
+    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
+    assertEquals(null, actual.get(5).getValue());
   }
 
   @Test
@@ -975,13 +976,13 @@ public class ExperimentalTimeseriesContainerServiceTest {
           FillOption.LINEAR
         );
 
-    Assert.assertEquals(6, actual.size());
-    Assert.assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.4, (Double) actual.get(1).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.25, (Double) actual.get(3).getValue(), doubleEpsilon);
-    Assert.assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    Assert.assertEquals(null, actual.get(5).getValue());
+    assertEquals(6, actual.size());
+    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.4, (Double) actual.get(1).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
+    assertEquals(22.25, (Double) actual.get(3).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
+    assertEquals(null, actual.get(5).getValue());
   }
 
   /*
@@ -1003,7 +1004,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
     // Booleans must not use aggregation
-    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+    assertThrowsExactly(InvalidRequestException.class, () -> {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,
@@ -1032,7 +1033,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
     // Strings must not use aggregation
-    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+    assertThrowsExactly(InvalidRequestException.class, () -> {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,
@@ -1061,7 +1062,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
     // Filling/ Grouping without specifying aggregation function is not allowed
-    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+    assertThrowsExactly(InvalidRequestException.class, () -> {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,
@@ -1090,7 +1091,7 @@ public class ExperimentalTimeseriesContainerServiceTest {
     this.timeseriesService.addPayload(container.getId(), timeseries, dataPoints);
 
     // Setting fill option, without specifying groupBy/ interval is not allowed
-    Assertions.assertThrowsExactly(InvalidRequestException.class, () -> {
+    assertThrowsExactly(InvalidRequestException.class, () -> {
       this.timeseriesService.getDataPointsAggregated(
           container.getId(),
           timeseries,

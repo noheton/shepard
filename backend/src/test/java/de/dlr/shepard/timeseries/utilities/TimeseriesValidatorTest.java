@@ -2,8 +2,8 @@ package de.dlr.shepard.timeseries.utilities;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TimeseriesValidatorTest {
 
