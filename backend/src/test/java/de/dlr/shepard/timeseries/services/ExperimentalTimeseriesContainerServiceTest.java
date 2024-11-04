@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -1284,9 +1285,9 @@ public class ExperimentalTimeseriesContainerServiceTest {
       null,
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.toNano(),
-      null,
-      null,
-      null
+      Collections.emptySet(),
+      Collections.emptySet(),
+      Collections.emptySet()
     );
 
     CsvConverter csvConverter = new CsvConverter();
