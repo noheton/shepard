@@ -3,28 +3,30 @@ package de.dlr.shepard.timeseries.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "timeseries_payload")
 public class ExperimentalTimeseriesDataPointEntity {
 
+  /**
+   * This id is a crutch to make hibernate work properly.
+   * This id is not actually needed as we use a timescale hypertable for this entity.
+   * In the database it is not saved as a primary key as this would make it impossible to have a hypertable.
+   */
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
 
+  /**
+   * This is actually modelled in the database with a foreign key constraint.
+   * Since hibernate would require us to use the referenced Entity here (which we don't need) we decided not to model it in the entity.
+   */
   @JsonIgnore
-  @ManyToOne(targetEntity = ExperimentalTimeseriesEntity.class, fetch = FetchType.LAZY)
-  @JoinColumn(name = "timeseries_id")
-  @OnDelete(action = OnDeleteAction.CASCADE)
+  @Column(name = "timeseries_id")
   private int timeseriesId;
 
   @Column(name = "time", nullable = false)
