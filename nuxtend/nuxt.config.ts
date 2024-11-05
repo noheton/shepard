@@ -48,7 +48,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "Shepard",
+      title: "shepard",
     },
   },
 
