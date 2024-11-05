@@ -12,17 +12,17 @@ public class TimeseriesMatchFilter {
     Set<String> symName
   ) {
     var deviceMatches = true;
-    var locatioMatches = true;
+    var locationMatches = true;
     var symbolicNameMatches = true;
     if (!device.isEmpty()) {
       deviceMatches = device.contains(timeseries.getDevice());
     }
     if (!location.isEmpty()) {
-      locatioMatches = location.contains(timeseries.getLocation());
+      locationMatches = location.contains(timeseries.getLocation());
     }
     if (!symName.isEmpty()) {
       symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
     }
-    return deviceMatches && locatioMatches && symbolicNameMatches;
+    return deviceMatches && locationMatches && symbolicNameMatches;
   }
 }

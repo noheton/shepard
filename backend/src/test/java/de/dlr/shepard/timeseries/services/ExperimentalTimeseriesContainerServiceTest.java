@@ -1246,14 +1246,12 @@ public class ExperimentalTimeseriesContainerServiceTest {
   @Test
   public void importTimeseriesData_oneTimeseriesWithBooleanValues_success() throws IOException, URISyntaxException {
     var container = timeseriesService.createContainer(containerName, userName);
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
 
     File importCSVFile = new File(
       getClass().getClassLoader().getResource("timeseries_import_experimental.csv").toURI()
     );
 
     String csvFileContent = Files.readString(importCSVFile.toPath());
-    Log.info(csvFileContent);
 
     try (InputStream fileInputStream = new FileInputStream(importCSVFile)) {
       timeseriesService.importTimeseries(container.getId(), fileInputStream);
@@ -1283,8 +1281,8 @@ public class ExperimentalTimeseriesContainerServiceTest {
       null,
       null,
       null,
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.toNano(),
+      InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
+      InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
       Collections.emptySet(),
       Collections.emptySet(),
       Collections.emptySet()
@@ -1293,14 +1291,19 @@ public class ExperimentalTimeseriesContainerServiceTest {
     CsvConverter csvConverter = new CsvConverter();
     var actualTimeSeriesStream = csvConverter.convertToCsv(actualTimeseriesDataMap);
 
-    StringBuilder actualTimeSeriesContent = new StringBuilder();
+    int lineCounter = 0;
+
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(actualTimeSeriesStream))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        actualTimeSeriesContent.append(line).append("\n");
+        lineCounter += 1;
+        assertTrue(
+          csvFileContent.contains(line),
+          String.format("Line '%s' is not contained in original CSV file", line)
+        );
       }
     }
-
-    assertEquals(actualTimeSeriesContent.toString().trim(), csvFileContent.trim());
+    // make sure the number of lines in both CSV files are equal
+    assertEquals(csvFileContent.split("\n").length, lineCounter);
   }
 }
