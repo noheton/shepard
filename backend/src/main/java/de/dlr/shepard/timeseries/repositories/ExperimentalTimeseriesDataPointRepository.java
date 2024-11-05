@@ -7,7 +7,6 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.FillOption;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -30,35 +29,11 @@ public class ExperimentalTimeseriesDataPointRepository
     AggregateFunctions function,
     FillOption fillOption
   ) throws InvalidRequestException {
-    if (function == AggregateFunctions.INTEGRAL) {
-      throw new InvalidRequestException("Aggregation function 'integral' is currently not implemented.");
-    }
-
-    if (
-      (valueType == ExperimentalDataPointValueTypes.Boolean || valueType == ExperimentalDataPointValueTypes.String) &&
-      (function != null)
-    ) {
-      throw new InvalidRequestException(
-        "Cannot execute aggregation functions on data points of type boolean or string."
-      );
-    }
-
-    if (
-      (valueType == ExperimentalDataPointValueTypes.Boolean || valueType == ExperimentalDataPointValueTypes.String) &&
-      (fillOption != null)
-    ) {
-      throw new InvalidRequestException("Cannot use gap filling options on data points of type boolean or string.");
-    }
-
-    if (timeIntervalNanoseconds == null && fillOption != null) {
-      throw new InvalidRequestException("Cannot use gap filling option when no grouping interval is specified.");
-    }
-
-    if (function == null && (fillOption != null || timeIntervalNanoseconds != null)) {
-      throw new InvalidRequestException(
-        "Cannot use gap filling option or grouping of data when no aggregation function is specified."
-      );
-    }
+    assertNotIntegral(function);
+    assertCorrectValueTypesForAggregation(function, valueType);
+    assertCorrectValueTypesForFillOption(fillOption, valueType);
+    assertTimeIntervalForFillOption(timeIntervalNanoseconds, fillOption);
+    assertAggregationSetForFillOrGrouping(function, timeIntervalNanoseconds, fillOption);
 
     var query = buildQueryObject(
       timeseriesId,
@@ -147,8 +122,6 @@ public class ExperimentalTimeseriesDataPointRepository
       queryString += " GROUP BY timestamp";
     }
 
-    Log.debug("DataPoint Query String: " + queryString);
-
     var query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
 
     if (timeIntervalNanoseconds != null) {
@@ -159,5 +132,67 @@ public class ExperimentalTimeseriesDataPointRepository
     query.setParameter("endTimeNano", endNanoseconds);
 
     return query;
+  }
+
+  /**
+   * Throw when trying to access unsupported aggregation function.
+   */
+  private void assertNotIntegral(AggregateFunctions function) {
+    if (function == AggregateFunctions.INTEGRAL) {
+      throw new InvalidRequestException("Aggregation function 'integral' is currently not implemented.");
+    }
+  }
+
+  /**
+   * Throw when trying to use aggregation functions with boolean or string value types.
+   */
+  private void assertCorrectValueTypesForAggregation(
+    AggregateFunctions function,
+    ExperimentalDataPointValueTypes valueType
+  ) {
+    if (
+      (valueType == ExperimentalDataPointValueTypes.Boolean || valueType == ExperimentalDataPointValueTypes.String) &&
+      (function != null)
+    ) {
+      throw new InvalidRequestException(
+        "Cannot execute aggregation functions on data points of type boolean or string."
+      );
+    }
+  }
+
+  /**
+   * Throw when trying to use gap filling with unsupported value types boolean or string.
+   */
+  private void assertCorrectValueTypesForFillOption(FillOption fillOption, ExperimentalDataPointValueTypes valueType) {
+    if (
+      (valueType == ExperimentalDataPointValueTypes.Boolean || valueType == ExperimentalDataPointValueTypes.String) &&
+      (fillOption != null)
+    ) {
+      throw new InvalidRequestException("Cannot use gap filling options on data points of type boolean or string.");
+    }
+  }
+
+  /**
+   * Throw when trying to use fill option without specifying the timeinterval/ groupBy value
+   */
+  private void assertTimeIntervalForFillOption(Long timeIntervalNanoseconds, FillOption fillOption) {
+    if (timeIntervalNanoseconds == null && fillOption != null) {
+      throw new InvalidRequestException("Cannot use gap filling option when no grouping interval is specified.");
+    }
+  }
+
+  /**
+   * Throw when trying to use fill option or grouping when no aggregation function is set.
+   */
+  private void assertAggregationSetForFillOrGrouping(
+    AggregateFunctions function,
+    Long timeIntervalNanoseconds,
+    FillOption fillOption
+  ) {
+    if (function == null && (fillOption != null || timeIntervalNanoseconds != null)) {
+      throw new InvalidRequestException(
+        "Cannot use gap filling option or grouping of data when no aggregation function is specified."
+      );
+    }
   }
 }

@@ -194,6 +194,7 @@ public class ExperimentalTimeseriesContainerService {
     return retVal;
   }
 
+  @Transactional
   public List<ExperimentalTimeseriesDataPoint> getDataPointsAggregated(
     long containerId,
     ExperimentalTimeseries timeseries,
