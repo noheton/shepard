@@ -20,10 +20,6 @@ In the Neo4j UI, the applied migrations form a chain when querying `MATCH (n) RE
 Migrations for the Postgres/TimescaleDB schema are done using link:https://quarkus.io/guides/flyway[Flyway].
 The integration with hibernate is described in the Quarkus documentation link:https://quarkus.io/guides/hibernate-orm#flyway[here].
 
-The existing migrations can be found at `src/main/resources/db/migration/`.
+Migrations are stored at `src/main/resources/db/migration/`.
 
 The migrations are executed automatically on startup.
-
-===== Creating Migrations
-
-// TODO: Describe process to create new migrations

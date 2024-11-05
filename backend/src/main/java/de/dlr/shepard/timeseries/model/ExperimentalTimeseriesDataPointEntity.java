@@ -26,7 +26,7 @@ public class ExperimentalTimeseriesDataPointEntity {
    * Since hibernate would require us to use the referenced Entity here (which we don't need) we decided not to model it in the entity.
    */
   @JsonIgnore
-  @Column(name = "timeseries_id")
+  @Column(name = "timeseries_id", nullable = false)
   private int timeseriesId;
 
   @Column(name = "time", nullable = false)
