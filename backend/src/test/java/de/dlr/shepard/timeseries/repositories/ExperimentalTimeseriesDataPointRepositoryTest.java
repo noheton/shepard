@@ -1,10 +1,11 @@
 package de.dlr.shepard.timeseries.repositories;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ public class ExperimentalTimeseriesDataPointRepositoryTest {
     repository.insert(timeseriesId, dataPoints);
     var actual = repository.getByTimeseries(timeseriesId);
 
-    Assert.assertEquals(1, actual.size());
-    Assert.assertEquals(dataPoints, actual);
+    assertEquals(1, actual.size());
+    assertEquals(dataPoints, actual);
   }
 }
