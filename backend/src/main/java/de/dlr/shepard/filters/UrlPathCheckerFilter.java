@@ -3,6 +3,7 @@ package de.dlr.shepard.filters;
 import de.dlr.shepard.exceptions.ApiError;
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.services.UrlPathChecker;
+import io.micrometer.core.annotation.Timed;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -21,6 +22,7 @@ public class UrlPathCheckerFilter implements ContainerRequestFilter {
   UrlPathChecker urlPathChecker;
 
   @Override
+  @Timed(value = "shepard.filters.url-path-checker", description = "Measure the duration of UrlPathCheckerFilter.")
   public void filter(ContainerRequestContext requestContext) throws IOException {
     try {
       urlPathChecker.checkPathSegments(requestContext.getUriInfo().getPathSegments());
