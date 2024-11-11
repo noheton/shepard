@@ -12,6 +12,12 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +189,45 @@ public class TimeseriesIT extends BaseTestCaseIT {
 
   @Test
   @Order(7)
+  public void importTimeseriesPayload()
+    throws URISyntaxException, NoSuchAlgorithmException, FileNotFoundException, IOException {
+    var file = new File(getClass().getClassLoader().getResource("timeseries_import.csv").toURI());
+    given()
+      .spec(containerRequestSpec)
+      .contentType(ContentType.MULTIPART)
+      .multiPart(file)
+      .when()
+      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.IMPORT))
+      .then()
+      .statusCode(200);
+  }
+
+  @Test
+  @Order(8)
+  public void exportTimeseriesPayload() throws URISyntaxException, IOException {
+    var importFile = new File(getClass().getClassLoader().getResource("timeseries_import.csv").toURI());
+    var expected = Files.readString(importFile.toPath());
+    var actual = given()
+      .spec(containerRequestSpec)
+      .when()
+      .queryParam("device", "temp-sensor")
+      .queryParam("field", "temperature")
+      .queryParam("location", "living-room")
+      .queryParam("measurement", "apartment")
+      .queryParam("symbolic_name", "my-favorite")
+      .queryParam("start", 1708339761809582900L)
+      .queryParam("end", 1708339881809582900L)
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.EXPORT))
+      .then()
+      .statusCode(200)
+      .extract()
+      .asString();
+
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Order(9)
   public void deleteContainer() {
     given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
     given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);

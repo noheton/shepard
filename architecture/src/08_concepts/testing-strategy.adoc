@@ -2,7 +2,26 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === Testing Strategy
 
-==== Integration Tests utilizing External REST APIs
+To automatically test shepard, several strategies are used.
+They are described in this section.
+
+==== Unit Tests
+
+We use junit5 for unit testing parts of our backend code.
+We aim to cover everything except endpoints by our unit tests.
+
+===== @QuarkusTest with Running Databases
+
+For special cases, we use tests with the `@QuarkusTest` annotation to test beans of a running quarkus instance with running databases.
+This is especially used for behaviour strongly coupled to databases, in order to reduce the need for mocking and get more precise test results.
+They are executed in a seperate job in the pipeline in order to provide the needed databases.
+
+==== Integration Tests
+
+To test the overall functionality of the backend we test our http endpoints with integration tests using `@QuarkusIntegrationTest`.
+In the pipeline, the tests are executed on a quarkus instance based on the build artifact built in the pipeline.
+
+===== Integration Tests utilizing External REST APIs
 
 Some of the integration tests in the backend rely on an external REST API.
 One example are the integration tests that utilize semantic annotations like the `CollectionSearcherIT`.
@@ -24,7 +43,7 @@ wireMockServer.stubFor(
         .willReturn(aResponse().withStatus(200).withBody("{ \"head\": {\"link\": []  }, \"boolean\": true }"))
     );
 ```
-The rules in this snippet are defined as the following: 
+The rules in this snippet are defined as the following:
 for every GET request to `localhost:PORT/sparql` with the query parameter `query=ASK { ?x ?y ?z }`, the WireMock HTTP server will return a HTTP response with code 200, containing this JSON string in its body `"{ \"head\": {\"link\": []  }, \"boolean\": true }"`.
 
 Since we are using Quarkus as our backend framework, we utilize the https://docs.quarkiverse.io/quarkus-wiremock/0.x/index.html[Quarkus WireMock Extension].

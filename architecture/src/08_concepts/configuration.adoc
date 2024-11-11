@@ -21,6 +21,34 @@ To support administrators, relevant configuration options are documented in link
 
 Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
 
+===== Conditionally Excluding Beans at Buildtime
+
+Quarkus allows us to conditionally exclude beans at runtime.
+For example, the endpoints of an experimental feature can be enabled or disabled at build time to be included in dev builds but excluded in release builds.
+
+For example, the `ExperimentalTimeseriesRest` can have a `@IfBuildProperty` annotation like this:
+
+```java
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("experimental-" + Constants.TIMESERIES_CONTAINERS)
+@RequestScoped
+@IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
+public class ExperimentalTimeseriesRest {
+  ...
+}
+```
+
+In this example the endpoints are only available when `shepard.experimental-timeseries.enabled` was `true` at build time.
+
+Using this we can enable the variable locally and for dev builds to make sure the experimental code is not deployed to production.
+
+[CAUTION]
+Don't mistake the build profiles `dev` and `prod` for the profiles for dev and prod images.
+To have our dev environment as close to the production environment as possible, the dev images are also built using the `prod` profile.
+
+See link:https://quarkus.io/guides/cdi-reference#enable_build_properties[here] for more information.
+
 ==== Frontend (Nuxt)
 
 This section is a short summary of link:https://nuxt.com/docs/getting-started/configuration[this page].

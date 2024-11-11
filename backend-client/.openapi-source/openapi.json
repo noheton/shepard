@@ -24,6 +24,8 @@
   }, {
     "name" : "dataObjectReference"
   }, {
+    "name" : "experimental-timeseriesContainer"
+  }, {
     "name" : "fileContainer"
   }, {
     "name" : "fileReference"
@@ -2957,6 +2959,554 @@
         }
       }
     },
+    "/experimental-timeseriesContainers" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get all timeseries containers",
+        "operationId" : "getAllExperimentalTimeseriesContainers",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "orderBy",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/ContainerAttributes"
+          }
+        }, {
+          "name" : "orderDesc",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TimeseriesContainer"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Create a new timeseries container",
+        "operationId" : "createExperimentalTimeseriesContainer",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TimeseriesContainer"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TimeseriesContainer"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get timeseries container",
+        "operationId" : "getExperimentalTimeseriesContainer",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TimeseriesContainer"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Delete timeseries container",
+        "operationId" : "deleteExperimentalTimeseriesContainer",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "deleted"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/available" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get timeseries available",
+        "operationId" : "getExperimentalTimeseriesAvailable",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ExperimentalTimeseries"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/export" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Export timeseries payload",
+        "operationId" : "exportExperimentalTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "measurement",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "location",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "device",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "symbolic_name",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "field",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "start",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "end",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "function",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/AggregateFunction"
+          }
+        }, {
+          "name" : "group_by",
+          "in" : "query",
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "fill_option",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/FillOption1"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/import" : {
+      "post" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Import timeseries payload",
+        "operationId" : "importExperimentalTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MultipartBodyFileUpload2"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "ok"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/payload" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get timeseries payload",
+        "operationId" : "getExperimentalTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "measurement",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "location",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "device",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "symbolic_name",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "field",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "start",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "end",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "function",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/AggregateFunction"
+          }
+        }, {
+          "name" : "group_by",
+          "in" : "query",
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "fill_option",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/FillOption1"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperimentalTimeseriesWithDataPoints"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Upload timeseries to container",
+        "operationId" : "createExperimentalTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ExperimentalTimeseriesWithDataPoints"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExperimentalTimeseries"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/permissions" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get permissions",
+        "operationId" : "getExperimentalTimeseriesPermissions",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Permissions"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Edit permissions",
+        "operationId" : "editExperimentalTimeseriesPermissions",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Permissions"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Permissions"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/experimental-timeseriesContainers/{timeseriesContainerId}/roles" : {
+      "get" : {
+        "tags" : [ "experimental-timeseriesContainer" ],
+        "description" : "Get roles",
+        "operationId" : "getExperimentalTimeseriesRoles",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Roles"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
     "/fileContainers" : {
       "get" : {
         "tags" : [ "fileContainer" ],
@@ -5234,6 +5784,10 @@
           }
         }
       },
+      "AggregateFunction" : {
+        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "FIRST", "INTEGRAL", "MODE", "SPREAD", "STDDEV" ],
+        "type" : "string"
+      },
       "ApiKey" : {
         "required" : [ "name" ],
         "type" : "object",
@@ -5766,6 +6320,61 @@
           }
         }
       },
+      "ExperimentalTimeseries" : {
+        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
+        "type" : "object",
+        "properties" : {
+          "measurement" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "device" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "location" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "symbolicName" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "field" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          }
+        }
+      },
+      "ExperimentalTimeseriesDataPoint" : {
+        "type" : "object",
+        "properties" : {
+          "timestamp" : {
+            "format" : "int64",
+            "description" : "Time in nanoseconds since unix epoch.",
+            "type" : "integer"
+          },
+          "value" : {
+            "description" : "A string, an int, a double or a boolean"
+          }
+        }
+      },
+      "ExperimentalTimeseriesWithDataPoints" : {
+        "required" : [ "timeseries", "points" ],
+        "type" : "object",
+        "properties" : {
+          "timeseries" : {
+            "$ref" : "#/components/schemas/ExperimentalTimeseries"
+          },
+          "points" : {
+            "minItems" : 1,
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExperimentalTimeseriesDataPoint"
+            }
+          }
+        }
+      },
       "FileContainer" : {
         "required" : [ "name" ],
         "type" : "object",
@@ -5873,6 +6482,10 @@
         "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
         "type" : "string"
       },
+      "FillOption1" : {
+        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
+        "type" : "string"
+      },
       "HasId" : {
         "type" : "object",
         "properties" : {
@@ -5921,6 +6534,9 @@
       },
       "MultipartBodyFileUpload1" : {
         "$ref" : "#/components/schemas/UploadFormSchema1"
+      },
+      "MultipartBodyFileUpload2" : {
+        "$ref" : "#/components/schemas/UploadFormSchema2"
       },
       "PermissionType" : {
         "enum" : [ "Public", "PublicReadable", "Private" ],
@@ -6610,12 +7226,26 @@
           }
         }
       },
+      "UploadFormSchema2" : {
+        "required" : [ "file" ],
+        "type" : "object",
+        "properties" : {
+          "file" : {
+            "$ref" : "#/components/schemas/UploadItemSchema2"
+          }
+        }
+      },
       "UploadItemSchema" : {
         "format" : "binary",
         "description" : "File which you want to upload",
         "type" : "string"
       },
       "UploadItemSchema1" : {
+        "format" : "binary",
+        "description" : "Timeseries as CSV",
+        "type" : "string"
+      },
+      "UploadItemSchema2" : {
         "format" : "binary",
         "description" : "Timeseries as CSV",
         "type" : "string"

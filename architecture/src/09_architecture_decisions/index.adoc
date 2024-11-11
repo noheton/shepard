@@ -24,3 +24,5 @@ include::008-database-target-architecture.adoc[]
 include::009-nuxt-oidc-library.adoc[]
 
 include::010-postgres-timescale-image.adoc[]
+
+include::011-timescale-database-schema.adoc[]

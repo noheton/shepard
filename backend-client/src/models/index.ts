@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AbstractDataObject';
+export * from './AggregateFunction';
 export * from './ApiKey';
 export * from './ApiKeyWithJWT';
 export * from './BasicContainer';
@@ -18,9 +19,13 @@ export * from './DataObject';
 export * from './DataObjectAttributes';
 export * from './DataObjectReference';
 export * from './Event';
+export * from './ExperimentalTimeseries';
+export * from './ExperimentalTimeseriesDataPoint';
+export * from './ExperimentalTimeseriesWithDataPoints';
 export * from './FileContainer';
 export * from './FileReference';
 export * from './FillOption';
+export * from './FillOption1';
 export * from './GetAllApiKeys200ResponseInner';
 export * from './HasId';
 export * from './Healthy';

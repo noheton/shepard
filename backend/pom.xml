@@ -96,12 +96,28 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-orm-panache</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-flyway</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-validator</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkiverse.micrometer.registry</groupId>
       <artifactId>quarkus-micrometer-registry-otlp</artifactId>
       <version>${quarkus-micrometer-registry-otlp.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-postgresql</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -452,21 +468,32 @@
       </properties>
     </profile>
     <profile>
-      <id>test</id>
-      <properties>
-        <build.profile.id>test</build.profile.id>
-        <logging.appender>STDOUT</logging.appender>
-        <skipUTs>true</skipUTs>
-        <quarkus.native.enabled>false</quarkus.native.enabled>
-      </properties>
-    </profile>
-    <profile>
       <id>prod</id>
       <properties>
         <build.profile.id>prod</build.profile.id>
         <logging.appender>FILE</logging.appender>
         <skipTests>true</skipTests>
         <quarkus.native.enabled>false</quarkus.native.enabled>
+      </properties>
+    </profile>
+    <profile>
+      <id>unit-test</id>
+      <properties>
+        <build.profile.id>test</build.profile.id>
+        <logging.appender>STDOUT</logging.appender>
+        <skipITs>true</skipITs>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
+        <excludedGroups>io.quarkus.test.junit.QuarkusTest</excludedGroups>
+      </properties>
+    </profile>
+    <profile>
+      <id>unit-test-with-db</id>
+      <properties>
+        <build.profile.id>test</build.profile.id>
+        <logging.appender>STDOUT</logging.appender>
+        <skipITs>true</skipITs>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
+        <groups>io.quarkus.test.junit.QuarkusTest</groups>
       </properties>
     </profile>
     <profile>

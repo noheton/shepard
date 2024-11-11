@@ -1,0 +1,6 @@
+DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
+device,field,location,motion,symbolicName,1704067200000000000,true
+device,field,location,motion,symbolicName,1704067201000000000,false
+device,field,location,motion,symbolicName,1704067203000000000,true
+device,field,location,motion,symbolicName,1704067206000000000,false
+device,field,location,motion,symbolicName,1704067210000000000,true

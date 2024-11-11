@@ -155,7 +155,7 @@ The variables preconfigured in `env.example` also contain variables for local da
 
 > **Hint:** If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
 >
-> 1. run the integration tests: `./mvnw verify -DskipUTs`
+> 1. run the integration tests: `./mvnw verify -P integration`
 > 2. go to <http://localhost:7474/> and log in to your local neo4j database
 > 3. obtain your api key with the following query:
 >    `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`

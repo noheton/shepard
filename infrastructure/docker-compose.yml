@@ -67,7 +67,7 @@ services:
     volumes:
       - /opt/shepard/mongodb/db:/data/db
       - /opt/shepard/mongodb/configdb:/data/configdb
-      - ./docker-entrypoint-initdb.d/00-create-mongo-user.js:/docker-entrypoint-initdb.d/00-create-mongo-user.js
+      - ./docker-entrypoint-initdb.d/mongodb/00-create-mongo-user.js:/docker-entrypoint-initdb.d/00-create-mongo-user.js
     restart: unless-stopped
     networks:
       - shepard

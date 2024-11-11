@@ -7,6 +7,7 @@ src/apis/CollectionApi.ts
 src/apis/CollectionReferenceApi.ts
 src/apis/DataObjectApi.ts
 src/apis/DataObjectReferenceApi.ts
+src/apis/ExperimentalTimeseriesContainerApi.ts
 src/apis/FileContainerApi.ts
 src/apis/FileReferenceApi.ts
 src/apis/HealthzApi.ts
@@ -25,6 +26,7 @@ src/apis/UserGroupApi.ts
 src/apis/index.ts
 src/index.ts
 src/models/AbstractDataObject.ts
+src/models/AggregateFunction.ts
 src/models/ApiKey.ts
 src/models/ApiKeyWithJWT.ts
 src/models/BasicContainer.ts
@@ -42,9 +44,13 @@ src/models/DataObject.ts
 src/models/DataObjectAttributes.ts
 src/models/DataObjectReference.ts
 src/models/Event.ts
+src/models/ExperimentalTimeseries.ts
+src/models/ExperimentalTimeseriesDataPoint.ts
+src/models/ExperimentalTimeseriesWithDataPoints.ts
 src/models/FileContainer.ts
 src/models/FileReference.ts
 src/models/FillOption.ts
+src/models/FillOption1.ts
 src/models/GetAllApiKeys200ResponseInner.ts
 src/models/HasId.ts
 src/models/Healthy.ts
