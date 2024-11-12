@@ -60,7 +60,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path("experimental-" + Constants.TIMESERIES_CONTAINERS)
+@Path(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)
 @RequestScoped
 @IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
 public class ExperimentalTimeseriesRest {
@@ -94,7 +94,7 @@ public class ExperimentalTimeseriesRest {
   }
 
   @GET
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get all timeseries containers")
   @APIResponse(
     description = "ok",
@@ -126,7 +126,7 @@ public class ExperimentalTimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries container")
   @APIResponse(
     description = "ok",
@@ -143,7 +143,7 @@ public class ExperimentalTimeseriesRest {
   }
 
   @POST
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Create a new timeseries container")
   @APIResponse(
     description = "created",
@@ -169,7 +169,7 @@ public class ExperimentalTimeseriesRest {
   @DELETE
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
   @Subscribable
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Delete timeseries container")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
@@ -186,7 +186,7 @@ public class ExperimentalTimeseriesRest {
   @POST
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Subscribable
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Upload timeseries to container")
   @APIResponse(
     description = "created",
@@ -220,7 +220,7 @@ public class ExperimentalTimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries available")
   @APIResponse(
     description = "ok",
@@ -252,7 +252,7 @@ public class ExperimentalTimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get timeseries payload")
   @APIResponse(
     description = "ok",
@@ -312,7 +312,7 @@ public class ExperimentalTimeseriesRest {
   @GET
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Export timeseries payload")
   @APIResponse(
     description = "ok",
@@ -380,7 +380,7 @@ public class ExperimentalTimeseriesRest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Import timeseries payload")
   @APIResponse(description = "ok", responseCode = "200")
   @APIResponse(description = "not found", responseCode = "404")
@@ -410,7 +410,7 @@ public class ExperimentalTimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get permissions")
   @APIResponse(
     description = "ok",
@@ -429,7 +429,7 @@ public class ExperimentalTimeseriesRest {
 
   @PUT
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Edit permissions")
   @APIResponse(
     description = "ok",
@@ -452,7 +452,7 @@ public class ExperimentalTimeseriesRest {
 
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
-  @Tag(name = "experimental-" + Constants.TIMESERIES_CONTAINER)
+  @Tag(name = Constants.EXPERIMENTAL_TIMESERIES_CONTAINER)
   @Operation(description = "Get roles")
   @APIResponse(
     description = "ok",

@@ -31,7 +31,7 @@ For example, the `ExperimentalTimeseriesRest` can have a `@IfBuildProperty` anno
 ```java
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path("experimental-" + Constants.TIMESERIES_CONTAINERS)
+@Path(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)
 @RequestScoped
 @IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
 public class ExperimentalTimeseriesRest {
