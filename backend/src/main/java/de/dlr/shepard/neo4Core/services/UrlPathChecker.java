@@ -1,5 +1,9 @@
 package de.dlr.shepard.neo4Core.services;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicContainer;
@@ -11,13 +15,11 @@ import de.dlr.shepard.neo4Core.entities.SemanticRepository;
 import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.PathSegment;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 
 @RequestScoped
 public class UrlPathChecker {
@@ -30,6 +32,7 @@ public class UrlPathChecker {
   private URIReferenceService uriReferenceService;
   private TimeseriesReferenceService timeseriesReferenceService;
   private TimeseriesContainerService timeseriesContainerService;
+  private ExperimentalTimeseriesContainerService experimentalTimeseriesContainerService;
   private StructuredDataReferenceService structuredDataReferenceService;
   private StructuredDataContainerService structuredDataContainerService;
   private FileReferenceService fileReferenceService;
@@ -55,6 +58,7 @@ public class UrlPathChecker {
     URIReferenceService uriReferenceService,
     TimeseriesReferenceService timeseriesReferenceService,
     TimeseriesContainerService timeseriesContainerService,
+    ExperimentalTimeseriesContainerService experimentalTimeseriesContainerService,
     StructuredDataReferenceService structuredDataReferenceService,
     StructuredDataContainerService structuredDataContainerService,
     FileReferenceService fileReferenceService,
@@ -74,6 +78,7 @@ public class UrlPathChecker {
     this.uriReferenceService = uriReferenceService;
     this.timeseriesReferenceService = timeseriesReferenceService;
     this.timeseriesContainerService = timeseriesContainerService;
+    this.experimentalTimeseriesContainerService = experimentalTimeseriesContainerService;
     this.structuredDataReferenceService = structuredDataReferenceService;
     this.structuredDataContainerService = structuredDataContainerService;
     this.fileReferenceService = fileReferenceService;
@@ -146,6 +151,16 @@ public class UrlPathChecker {
     if (pathElems.containsKey(Constants.TIMESERIES_CONTAINERS)) {
       long id = Long.parseLong(pathElems.get(Constants.TIMESERIES_CONTAINERS));
       var timeseriesContainer = timeseriesContainerService.getContainer(id);
+      String error = checkContainer(timeseriesContainer);
+      if (error != null) {
+        return builder.append(error).toString();
+      }
+    }
+
+    // This is temporary for the experimental timeseries endpoints
+    if (pathElems.containsKey(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)) {
+      long id = Long.parseLong(pathElems.get(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS));
+      var timeseriesContainer = experimentalTimeseriesContainerService.getContainer(id);
       String error = checkContainer(timeseriesContainer);
       if (error != null) {
         return builder.append(error).toString();
