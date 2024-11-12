@@ -1,9 +1,5 @@
 package de.dlr.shepard.neo4Core.services;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-
 import de.dlr.shepard.exceptions.InvalidPathException;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicContainer;
@@ -20,6 +16,9 @@ import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.PathSegment;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class UrlPathChecker {
