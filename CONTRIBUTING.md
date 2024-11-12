@@ -142,6 +142,7 @@ The variables preconfigured in `env.example` also contain variables for local da
 | mongodb Frontend  | <http://localhost:8084/> |                             |
 | influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_ |
 | influxdb Frontend | <http://localhost:8888>  |                             |
+| postgres Database | <http://localhost:5432>  |                             |
 
 #### First run
 

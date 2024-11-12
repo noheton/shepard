@@ -1,8 +1,32 @@
 services:
   backend:
-    extends:
-      file: docker-compose.yml
-      service: backend
+    image: registry.gitlab.com/dlr-shepard/shepard/backend:latest
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: "-Xms2G -Xmx2G"
+      OIDC_PUBLIC: ${OIDC_PUBLIC}
+      OIDC_AUTHORITY: ${OIDC_AUTHORITY}
+      OIDC_ROLE: ${OIDC_ROLE}
+      INFLUX_HOST: influxdb:8086
+      INFLUX_USERNAME: admin
+      INFLUX_PASSWORD: ${INFLUX_PW}
+      NEO4J_HOST: neo4j:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PW}
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PW}@mongodb:27017/${MONGO_DATABASE}
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_SHEPARD_USER}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
+    volumes:
+      - /opt/shepard/backend/logs:/deployments/logs
+      - /opt/shepard/backend/config:/home/jboss/.shepard
+    depends_on:
+      - neo4j
+      - mongodb
+      - influxdb
+      - timescaledb
+    networks:
+      - shepard
 
   frontend:
     extends:
@@ -58,13 +82,13 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PW}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
       POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
       PGDATA: /var/lib/postgres/data
     volumes:
-      - /opt/shepard/timescaledb:/home/postgres/pgdata/data
-      - /docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
+      - /opt/shepard/timescaledb:/var/lib/postgres/data
+      - ./docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
     restart: unless-stopped
     networks:
       - shepard

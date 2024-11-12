@@ -14,7 +14,6 @@ services:
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: ${NEO4J_PW}
       QUARKUS_MONGODB_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PW}@mongodb:27017/${MONGO_DATABASE}
-
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
       - /opt/shepard/backend/config:/home/jboss/.shepard
