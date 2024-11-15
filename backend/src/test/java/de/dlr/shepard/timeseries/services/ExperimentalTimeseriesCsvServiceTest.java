@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusTest
+@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isExperimentalTimeseriesEnabled")
 public class ExperimentalTimeseriesCsvServiceTest {
 
   @Inject

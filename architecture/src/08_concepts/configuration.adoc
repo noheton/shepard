@@ -6,22 +6,33 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 This section is a short summary of link:https://quarkus.io/guides/config[this page].
 
-===== Setting Properties
+===== Application Properties
+
+====== Setting Properties
 
 Quarkus reads configuration properties from several sources.
 More information on the sources and how they override each other can be found link:https://quarkus.io/guides/config-reference#configuration-sources[here].
 
 We define a standard value for most properties under `src/main/resources/application.properties`.
-In a dev environment, they can be overridden using a `.env` file.
+For the dev and test environment, we provide properties with a `%dev`, `%test` or `%integration` prefix overriding the default value.
+
+Additonally they can be overridden locally using a `.env` file.
+We use this for configuration differing between developers, e.g. the OIDC config.
 In a dockerized setup they can be overridden by providing environment variables to the service.
 
-To support administrators, relevant configuration options are documented in link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/env.example[infrastructure/env.example] and link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/README.md[infrastructure/README.md].
+To support administrators, relevant configuration options are documented in link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/.env.example[infrastructure/.env.example] and link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/README.md[infrastructure/README.md].
 
-===== Reading Properties
+====== Reading Properties
 
 Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
 
-===== Conditionally Excluding Beans at Buildtime
+===== Feature Toggles
+
+With feature toggles we want to conditionally build shepard images with or without a certain feature.
+This is especially useful for features under development.
+To implement feature toggles, Quarkus provides us with a mechanism to conditionally exclude beans at buildtime.
+
+====== Conditionally Excluding Beans at Buildtime
 
 Quarkus allows us to conditionally exclude beans at runtime.
 For example, the endpoints of an experimental feature can be enabled or disabled at build time to be included in dev builds but excluded in release builds.
@@ -41,13 +52,66 @@ public class ExperimentalTimeseriesRest {
 
 In this example the endpoints are only available when `shepard.experimental-timeseries.enabled` was `true` at build time.
 
-Using this we can enable the variable locally and for dev builds to make sure the experimental code is not deployed to production.
+With the same annotation, we can also exclude relevant tests, for example like this:
 
-[CAUTION]
-Don't mistake the build profiles `dev` and `prod` for the profiles for dev and prod images.
-To have our dev environment as close to the production environment as possible, the dev images are also built using the `prod` profile.
+```java
+@Test
+@IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
+@Transactional
+public void createContainer_containerDoesNotExist_containerIsCreated() {
+  ...
+}
+```
 
 See link:https://quarkus.io/guides/cdi-reference#enable_build_properties[here] for more information.
+
+====== Connect further Configuration with a Feature Toggle
+
+For a feature toggle, we want a single property to control it.
+
+.Control further config options
+
+In case we need to adapt further configuration based on the feature toggle (e.g. disabling hibernate), we can reference the property like this:
+
+```
+shepard.experimental-timeseries.enabled=false
+
+quarkus.hibernate-orm.active=${shepard.experimental-timeseries.enabled}
+```
+
+To reenable a feature for a dev or test profile, we can then activate the toggle for these profiles.
+
+.Conditionally executing tests
+
+In order to execute tests conditionally based on a toggle we provide a `FeatureToggleHelper` in the test project.
+For each feature flag, it exports a helper method like this:
+
+```java
+public static boolean isExperimentalTimeseriesEnabled() {
+  return isToggleEnabled("shepard.experimental-timeseries.enabled");
+}
+```
+
+In a test class or method, we can then add a annotation like this:
+
+```java
+@QuarkusTest
+@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isExperimentalTimeseriesEnabled")
+public class ExperimentalTimeseriesContainerServiceTest {
+  ...
+}
+```
+
+====== Feature toggles in the pipeline
+
+Don't mistake the build profiles `dev` and `prod` for the profiles for dev and prod images.
+
+To have our dev environment as close to the production environment as possible, the dev images are also built using the `prod` profile.
+In order to enable the feature for a dev or prod build, we provide the feature toggle in the `get-version` pipeline job for dev or prod.
+
+[CAUTION]
+Make sure to provide the toggle for all pipelines.
+Otherwise the value of the `test` profile is used, which can lead to errors.
 
 ==== Frontend (Nuxt)
 
@@ -75,7 +139,7 @@ NUXT_API_SECRET=api_secret_token
 NUXT_PUBLIC_API_BASE=https://nuxtjs.org
 ```
 
-In order to ease the configuration we provide a `env.example` file with all relevant variables.
+In order to ease the configuration we provide a `.env.example` file with all relevant variables.
 That file can be copied to `.env` and filled with the appropriate values.
 
 ===== Reading Properties

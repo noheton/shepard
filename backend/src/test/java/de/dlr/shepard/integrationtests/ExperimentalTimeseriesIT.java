@@ -10,7 +10,6 @@ import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.services.InstantHelper;
 import de.dlr.shepard.util.Constants;
-import io.quarkus.arc.properties.IfBuildProperty;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -23,10 +22,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
+@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isExperimentalTimeseriesEnabled")
 public class ExperimentalTimeseriesIT extends BaseTestCaseIT {
 
   private static String containerURL;

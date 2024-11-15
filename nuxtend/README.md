@@ -33,7 +33,7 @@ yarn install
 bun install
 ```
 
-- Add the needed environment variables by copying `env.example` into `.env` and adapting the values:
+- Add the needed environment variables by copying `.env.example` into `.env` and adapting the values:
 
 ```bash
 NUXT_PUBLIC_BACKEND_API_URL='Backend API URL' # (should end with '/')

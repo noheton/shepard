@@ -4,7 +4,7 @@ services:
   frontend:
     image: registry.gitlab.com/dlr-shepard/shepard/frontend:dev
     environment:
-      - VUE_APP_BACKEND=${VUE_APP_BACKEND}
+      - VUE_APP_BACKEND=${VUE_APP_BACKEND-http://localhost:8080/shepard/api}
       - VUE_APP_OIDC_AUTHORITY=${VUE_APP_OIDC_AUTHORITY}
       - VUE_APP_CLIENT_ID=${VUE_APP_CLIENT_ID}
     ports:

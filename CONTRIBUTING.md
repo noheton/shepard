@@ -48,7 +48,7 @@ shepard uses three types of branches to organize development:
 ### Fullstack Development Environment
 
 - Follow the installation and configuration instructions for both front- and backend
-- Make sure the `.env` files for front- and backend are available with correct values
+- Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` in the folders)
 - install Docker and Docker Compose (alternatively Podman and Podman Compose)
 - Run `docker compose -f backend/docker-compose.headless.yml up` (alternatively `podman compose ...`)
 - Run backend & frontend using `npm run start:dev`
@@ -79,7 +79,7 @@ If you don't have a working backend available, you can find a description of how
 
 #### First run
 
-- in the frontend folder, copy `env.example` to `.env` and fill in the variables
+- in the frontend folder, copy `.env.example` to `.env` and fill in the variables
 - start the project: `npm run serve`
 
 ### Backend Development Environment
@@ -120,9 +120,9 @@ If you don't have a working backend available, you can find a description of how
 
 The Backend configuration is environment dependant and specific properties need to be setup.
 This setup is done using environment variables to override or append existing application properties in `application.properties` file according to [the Quarkus documentation](https://quarkus.io/guides/config-reference#env-file).
-The variables preconfigured in `env.example` also contain variables for local databases and frontend as described below.
+The variables preconfigured in `.env.example` also contain variables for local databases and frontend as described below.
 
-1. Copy `env.example` to `.env`
+1. Copy `.env.example` to `.env`
 2. Enter valid OIDC parameters
 
 #### Local databases & frontend
@@ -133,16 +133,19 @@ The variables preconfigured in `env.example` also contain variables for local da
 4. local instances of the databases will be launched without persistent storage
 5. quick tip: run the integration tests to fill your databases with some content
 
-| Service           | URL                      | Comment                     |
-| ----------------- | ------------------------ | --------------------------- |
-| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_         |
-| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepard_  |
-| neo4j Frontend    | <http://localhost:7474>  |                             |
-| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_  |
-| mongodb Frontend  | <http://localhost:8084/> |                             |
-| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_ |
-| influxdb Frontend | <http://localhost:8888>  |                             |
-| postgres Database | <http://localhost:5432>  |                             |
+| Service           | URL                      | Comment                           |
+| ----------------- | ------------------------ | --------------------------------- |
+| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_               |
+| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepardshepard_ |
+| neo4j Frontend    | <http://localhost:7474>  |                                   |
+| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_        |
+| mongodb Frontend  | <http://localhost:8084/> |                                   |
+| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_       |
+| influxdb Frontend | <http://localhost:8888>  |                                   |
+| postgres Database | <http://localhost:5432>  | _user: username, pw: password_    |
+
+The credentials can be overridden with environment variables.
+Check the docker-compose file to find overridable variables.
 
 #### First run
 
@@ -175,7 +178,7 @@ Either start quarkus with `./mvnw quarkus:dev` and start the interactive test ru
 Running Integration Tests
 
 ```sh
-./mvnw verify -DskipUTs
+./mvnw verify -P integration
 ```
 
 #### Known Issues

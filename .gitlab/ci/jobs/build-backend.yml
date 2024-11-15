@@ -6,9 +6,6 @@ build_backend:
     - echo building Quarkus Backend jar
   script:
     - cd backend
-    - if [ $IS_DEV_JOB -eq 1 ]; then
-      export SHEPARD_EXPERIMENTAL_TIMESERIES_ENABLED=true;
-      fi
     - mvn ${MAVEN_CLI_OPTS} -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
     - mvn ${MAVEN_CLI_OPTS} package -P prod -Drevision=${VERSION_NUMBER}
 

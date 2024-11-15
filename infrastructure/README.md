@@ -96,11 +96,11 @@ command: --wiredTigerCacheSizeGB 2.0
 INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
 ```
 
-### 6. Copy the file `env.example` to `.env`
+### 6. Copy the file `.env.example` to `.env`
 
 ```bash
 # copy configuration file
-cp env.example .env
+cp .env.example .env
 ```
 
 ### 7. Set passwords and configuration in the `.env` file
@@ -247,7 +247,7 @@ Sometimes the installation does not work as expected or the system does not boot
 
 ### Review your configuration
 
-Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `env.example` must be set. Also look at the provided URLs, as all URLs must end with a trailing slash.
+Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `.env.example` must be set. Also look at the provided URLs, as all URLs must end with a trailing slash.
 
 ### Read the logs
 

@@ -480,6 +480,7 @@
       <id>unit-test</id>
       <properties>
         <build.profile.id>test</build.profile.id>
+        <quarkus.profile>test</quarkus.profile>
         <logging.appender>STDOUT</logging.appender>
         <skipITs>true</skipITs>
         <quarkus.native.enabled>false</quarkus.native.enabled>
@@ -490,6 +491,7 @@
       <id>unit-test-with-db</id>
       <properties>
         <build.profile.id>test</build.profile.id>
+        <quarkus.profile>test</quarkus.profile>
         <logging.appender>STDOUT</logging.appender>
         <skipITs>true</skipITs>
         <quarkus.native.enabled>false</quarkus.native.enabled>
@@ -500,6 +502,7 @@
       <id>integration</id>
       <properties>
         <build.profile.id>integration</build.profile.id>
+        <quarkus.profile>test</quarkus.profile>
         <logging.appender>STDOUT</logging.appender>
         <skipUTs>true</skipUTs>
         <quarkus.native.enabled>false</quarkus.native.enabled>

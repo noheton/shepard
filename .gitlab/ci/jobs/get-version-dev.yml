@@ -12,6 +12,10 @@ get_version:
     - echo "IS_DEV_JOB"=1 >> versions.env
     - echo "LATEST_TAG=$LATEST_TAG" >> versions.env
     - echo "VERSION_NUMBER=$VERSION_NUMBER" >> versions.env
+
+    # Set feature toggles for dev pipeline
+    - echo "SHEPARD_EXPERIMENTAL_TIMESERIES_ENABLED=true" >> versions.env
+
     - cat versions.env
   artifacts:
     when: always
