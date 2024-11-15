@@ -41,7 +41,15 @@ services:
       file: docker-compose.headless.yml
       service: timescaledb
 
+  prometheus:
+    extends:
+      file: docker-compose.headless.yml
+      service: prometheus
+
   grafana:
     extends:
       file: docker-compose.headless.yml
       service: grafana
+
+networks:
+  shepard:

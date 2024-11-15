@@ -1,0 +1,3 @@
+# settings file contains secrets to access the backend
+mount/settings.json
+dist/**

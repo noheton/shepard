@@ -9,6 +9,7 @@
     "vscjava.vscode-lombok",
     "ms-python.python",
     "asciidoctor.asciidoctor-vscode",
-    "nuxtr.nuxt-vscode-extentions"
+    "nuxtr.nuxt-vscode-extentions",
+    "k6.k6"
   ]
 }

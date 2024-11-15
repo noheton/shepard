@@ -28,5 +28,8 @@
     "vuex"
   ],
   "asciidoc.extensions.enableKroki": true,
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  }
 }

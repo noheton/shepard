@@ -18,7 +18,8 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
       status = webException.getResponse().getStatus();
     }
 
-    Log.error(exception.toString());
+    // log exception with stack trace
+    Log.error(exception.getMessage(), exception);
 
     return Response.status(status)
       .entity(new ApiError(status, exception.getClass().getSimpleName(), exception.getMessage()))

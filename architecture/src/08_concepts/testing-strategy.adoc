@@ -58,3 +58,30 @@ A proper way to integrate WireMock into a Quarkus integration test is described 
 
 WireMock is a strong tool and provides many options to mock complex web services.
 To name only a few possibilities with WireMock, you are able to use https://wiremock.org/docs/response-templating/[response templates], it provides https://wiremock.org/docs/proxying[proxying] to forward specific requests, and it supports multiple protocols like gRPC,GraphQL, HTTPS and JWT.
+
+==== Load and Performance Tests
+We are using https://k6.io[grafana k6] for load and performance tests.
+They are in the directory `load-tests` and are written in TypeScript.
+Tests can only be triggered on a local development computer but can be configured to use the local or the dev environment.
+
+===== Configuration
+* Create a file under `/load-tests/mount/settings.json`
+* Copy contents from `/load-tests/mount/settings.example.json`
+* Adapt configuration settings as needed
+
+===== Execute tests
+There is a shell script `run-load-test.sh` that can be used to execute load tests.
+It takes the test file to execute as first parameter.
+
+```Javascript
+./run-load-test.sh src/collections/smoke-test.ts
+```
+
+===== Good to know
+* `Webpack` is used for bundling all dependencies into the test file.
+* `Webpack` uses `ts-loader` to transpile TypeScript to JavaScript.
+* K6 does not use a node environment.
+Therefore some functionality is not available.
+* `Webpack.config.js` identifies entry points (tests) dynamically.
+All `*.ts` files are added automatically if they are not located in the `utils` folder.
+* K6 pushes some metrics to prometheus after test execution.
