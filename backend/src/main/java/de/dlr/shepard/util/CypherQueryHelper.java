@@ -2,6 +2,7 @@ package de.dlr.shepard.util;
 
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
 import java.util.UUID;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 public class CypherQueryHelper {
 
@@ -96,7 +97,11 @@ public class CypherQueryHelper {
   }
 
   public static String getVersionHeadPart(String variable) {
-    return "(NOT exists ((" + variable + ")<-[:has_predecessor]-(:Version)))";
+    String versioningEnabled = ConfigProvider.getConfig().getValue("shepard.versioning.enabled", String.class);
+    if ("true".equals(versioningEnabled)) {
+      return "(NOT exists ((" + variable + ")<-[:has_predecessor]-(:Version)))";
+    }
+    return "(1=1)";
   }
 
   public static String getVersionPart(String variable, UUID versionUID) {

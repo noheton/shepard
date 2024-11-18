@@ -14,12 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.neo4j.ogm.model.QueryStatistics;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
+@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isVersioningEnabled")
 public class VersionDAOTest extends BaseTestCase {
 
   @Mock

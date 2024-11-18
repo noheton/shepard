@@ -2,6 +2,7 @@ package de.dlr.shepard.endpoints;
 
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.export.ExportService;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
@@ -14,6 +15,7 @@ import de.dlr.shepard.neo4Core.services.VersionService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
+import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -33,8 +35,8 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
-import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -124,14 +126,14 @@ public class CollectionRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
+  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
   public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    throw new NotImplementedException();
-    /*List<Version> versions = versionService.getAllVersions(collectionId);
+    List<Version> versions = versionService.getAllVersions(collectionId);
     var result = new ArrayList<VersionIO>(versions.size());
     for (var version : versions) {
       result.add(new VersionIO(version));
     }
-    return Response.ok(result).build();*/
+    return Response.ok(result).build();
   }
 
   @GET
@@ -146,13 +148,13 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.VERSION_UID)
+  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
   public Response getVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    throw new NotImplementedException();
-    /*Version version = versionService.getVersion(versionUID);
-    return Response.ok(new VersionIO(version)).build();*/
+    Version version = versionService.getVersion(versionUID);
+    return Response.ok(new VersionIO(version)).build();
   }
 
   @POST
@@ -165,6 +167,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = VersionIO.class))
   )
   @Parameter(name = Constants.COLLECTION_ID)
+  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
   public Response createVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(
@@ -172,13 +175,12 @@ public class CollectionRest {
       content = @Content(schema = @Schema(implementation = VersionIO.class))
     ) @Valid VersionIO version
   ) {
-    throw new NotImplementedException();
-    /*Version newVersion = versionService.createVersion(
+    Version newVersion = versionService.createVersion(
       collectionId,
       version,
       securityContext.getUserPrincipal().getName()
     );
-    return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();*/
+    return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();
   }
 
   @GET
