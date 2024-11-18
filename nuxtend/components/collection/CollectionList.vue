@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Collection } from "@dlr-shepard/backend-client";
+import { collectionsPath } from "../../utils/constants";
 import CollectionListItemContent from "./CollectionListItemContent.vue";
 
 const router = useRouter();
