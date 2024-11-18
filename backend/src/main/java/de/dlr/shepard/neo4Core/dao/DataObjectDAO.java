@@ -131,11 +131,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "<-[:has_child]-(parent:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getParentId() +
-        "})";
+          "<-[:has_child]-(parent:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getParentId() +
+          "})";
       }
     }
 
@@ -144,11 +144,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getPredecessorId() +
-        "})";
+          "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getPredecessorId() +
+          "})";
       }
     }
     if (paramsWithShepardIds.hasSuccessorId()) {
@@ -156,23 +156,23 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "-[:has_successor]->(successor:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getSuccessorId() +
-        "})";
+          "-[:has_successor]->(successor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getSuccessorId() +
+          "})";
       }
     }
 
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
       query +=
-      " " +
-      CypherQueryHelper.getOrderByPart(
-        "d",
-        paramsWithShepardIds.getOrderByAttribute(),
-        paramsWithShepardIds.getOrderDesc()
-      );
+        " " +
+        CypherQueryHelper.getOrderByPart(
+          "d",
+          paramsWithShepardIds.getOrderByAttribute(),
+          paramsWithShepardIds.getOrderDesc()
+        );
     }
     if (paramsWithShepardIds.hasPagination()) {
       query += " " + CypherQueryHelper.getPaginationPart();

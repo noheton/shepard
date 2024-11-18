@@ -227,14 +227,15 @@ public class Neo4jEmitter {
 
   private static String emitContainerIdPart(JsonNode node, String variable, String containerType) {
     String ret = "(";
-    ret = ret +
-    "EXISTS {MATCH (" +
-    variable +
-    ")-[:" +
-    Constants.IS_IN_CONTAINER +
-    "]->(refCon:" +
-    containerType +
-    ") WHERE id(refCon) ";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.IS_IN_CONTAINER +
+      "]->(refCon:" +
+      containerType +
+      ") WHERE id(refCon) ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";
@@ -243,14 +244,15 @@ public class Neo4jEmitter {
 
   private static String emitReferencedDataObjectIdPart(JsonNode node, String variable) {
     String ret = "(";
-    ret = ret +
-    "EXISTS {MATCH (" +
-    variable +
-    ")-[:" +
-    Constants.POINTS_TO +
-    "]->(refDo:DataObject) WHERE refDo." +
-    Constants.SHEPARD_ID +
-    " ";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.POINTS_TO +
+      "]->(refDo:DataObject) WHERE refDo." +
+      Constants.SHEPARD_ID +
+      " ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";
@@ -259,14 +261,15 @@ public class Neo4jEmitter {
 
   private static String emitReferencedCollectionIdPart(JsonNode node, String variable) {
     String ret = "(";
-    ret = ret +
-    "EXISTS {MATCH (" +
-    variable +
-    ")-[:" +
-    Constants.POINTS_TO +
-    "]->(refCol:Collection) WHERE refCol." +
-    Constants.SHEPARD_ID +
-    " ";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.POINTS_TO +
+      "]->(refCol:Collection) WHERE refCol." +
+      Constants.SHEPARD_ID +
+      " ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";

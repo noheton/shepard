@@ -69,8 +69,7 @@ public class ExperimentalTimeseriesDataPointRepository
 
       queryString = "SELECT ";
 
-      queryString +=
-      switch (fillOption) {
+      queryString += switch (fillOption) {
         case NONE -> "time_bucket(:timeInNanoseconds, time) as timestamp, ";
         case NULL, LINEAR, PREVIOUS -> "time_bucket_gapfill(:timeInNanoseconds, time) as timestamp, ";
       };
@@ -100,8 +99,7 @@ public class ExperimentalTimeseriesDataPointRepository
       queryString = String.format("SELECT time, %s ", columnName);
     }
 
-    queryString +=
-    """
+    queryString += """
     FROM timeseries_data_points
     WHERE timeseries_id = :timeseriesId
       AND time >= :startTimeNano

@@ -80,7 +80,7 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     );
     if (params.hasOrderByAttribute()) {
       query +=
-      " " + CypherQueryHelper.getOrderByPart(collectionVariable, params.getOrderByAttribute(), params.getOrderDesc());
+        " " + CypherQueryHelper.getOrderByPart(collectionVariable, params.getOrderByAttribute(), params.getOrderDesc());
     }
     if (params.hasPagination()) {
       query += " " + CypherQueryHelper.getPaginationPart();
