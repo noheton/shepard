@@ -59,7 +59,7 @@
     {
       "matchPackageNames": ["influxdb"],
       "matchManagers": ["docker-compose", "gitlabci"],
-      "allowedVersions": "<2"
+      "allowedVersions": "<=1.8"
     },
     {
       "matchPackageNames": ["chronograf"],
