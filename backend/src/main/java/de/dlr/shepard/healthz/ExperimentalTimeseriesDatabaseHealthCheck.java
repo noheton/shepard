@@ -4,7 +4,6 @@ import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceException;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
@@ -22,7 +21,7 @@ public class ExperimentalTimeseriesDatabaseHealthCheck implements HealthCheck {
     try {
       entityManager.createNativeQuery("SELECT 1").getSingleResult();
       return HealthCheckResponse.up("TimescaleDB connection health check");
-    } catch (PersistenceException e) {
+    } catch (Exception e) {
       return HealthCheckResponse.down("TimescaleDB connection health check");
     }
   }
