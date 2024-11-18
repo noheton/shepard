@@ -57,8 +57,9 @@ The corresponding branch must also be deleted manually to keep things clean.
 |tomcat<11
 |v11 is still a pre-release
 
-|influxdb<2
-|V2 introduces major breaking changes
+|influxdb<=1.8
+|V2 introduces major breaking changes.
+Since we want to move to timescaleDB anyways, we disregard any new updates that require some kind of migration effort.
 
 |chronograf<1.10
 |The container cannot be started with v1.10. We expect to move away from influxdb in the future, so we will stick with v1.9 for the time being.
