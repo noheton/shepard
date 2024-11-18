@@ -21,12 +21,6 @@ import { mapValues } from '../runtime';
 export interface HealthCheck {
     /**
      * 
-     * @type {string}
-     * @memberof HealthCheck
-     */
-    status?: HealthCheckStatusEnum;
-    /**
-     * 
      * @type {object}
      * @memberof HealthCheck
      */
@@ -37,6 +31,12 @@ export interface HealthCheck {
      * @memberof HealthCheck
      */
     name?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof HealthCheck
+     */
+    status?: HealthCheckStatusEnum;
 }
 
 
@@ -67,9 +67,9 @@ export function HealthCheckFromJSONTyped(json: any, ignoreDiscriminator: boolean
     }
     return {
         
-        'status': json['status'] == null ? undefined : json['status'],
         'data': json['data'] == null ? undefined : json['data'],
         'name': json['name'] == null ? undefined : json['name'],
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
@@ -79,9 +79,9 @@ export function HealthCheckToJSON(value?: HealthCheck | null): any {
     }
     return {
         
-        'status': value['status'],
         'data': value['data'],
         'name': value['name'],
+        'status': value['status'],
     };
 }
 

@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
 import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesWithDataPoints;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isExperimentalTimeseriesEnabled")
+@EnabledIf(ExperimentalTimeseriesFeatureToggle.IS_ENABLED_METHOD_ID)
 public class ExperimentalTimeseriesIT extends BaseTestCaseIT {
 
   private static String containerURL;

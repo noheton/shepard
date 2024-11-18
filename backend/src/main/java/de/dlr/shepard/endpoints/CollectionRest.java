@@ -1,5 +1,6 @@
 package de.dlr.shepard.endpoints;
 
+import de.dlr.shepard.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.Version;
@@ -126,7 +127,7 @@ public class CollectionRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
+  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
   public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
     List<Version> versions = versionService.getAllVersions(collectionId);
     var result = new ArrayList<VersionIO>(versions.size());
@@ -148,7 +149,7 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.VERSION_UID)
-  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
+  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
   public Response getVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.VERSION_UID) UUID versionUID
@@ -167,7 +168,7 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = VersionIO.class))
   )
   @Parameter(name = Constants.COLLECTION_ID)
-  @IfBuildProperty(name = "shepard.versioning.enabled", stringValue = "true")
+  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
   public Response createVersion(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @RequestBody(

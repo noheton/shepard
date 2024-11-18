@@ -1,5 +1,6 @@
 package de.dlr.shepard.timeseries.endpoints;
 
+import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
@@ -62,7 +63,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)
 @RequestScoped
-@IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
+@IfBuildProperty(name = ExperimentalTimeseriesFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
 public class ExperimentalTimeseriesRest {
 
   private ExperimentalTimeseriesService timeseriesService;

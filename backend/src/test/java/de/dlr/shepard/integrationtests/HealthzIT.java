@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.FeatureToggleHelper;
+import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.List;
@@ -19,7 +19,7 @@ public class HealthzIT extends BaseTestCaseIT {
 
   @Test
   public void getHealthz() {
-    List<String> expectedServices = FeatureToggleHelper.isExperimentalTimeseriesEnabled()
+    List<String> expectedServices = ExperimentalTimeseriesFeatureToggle.isEnabled()
       ? List.of("Neo4J", "MongoDB", "InfluxDB", "TimescaleDB")
       : List.of("Neo4J", "MongoDB", "InfluxDB");
 

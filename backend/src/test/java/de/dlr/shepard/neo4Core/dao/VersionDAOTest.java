@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
@@ -21,7 +22,7 @@ import org.neo4j.ogm.model.QueryStatistics;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
-@EnabledIf("de.dlr.shepard.FeatureToggleHelper#isVersioningEnabled")
+@EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
 public class VersionDAOTest extends BaseTestCase {
 
   @Mock
