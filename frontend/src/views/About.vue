@@ -2,13 +2,17 @@
 import Loading from "@/components/generic/Loading.vue";
 import HealthzService from "@/services/healthzService";
 import getEnv from "@/utils/env";
-import type { Healthz, ResponseError } from "@dlr-shepard/backend-client";
+import {
+  HealthCheckStatusEnum,
+  type HealthResponse,
+  type ResponseError,
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 
 const backendUrl = getEnv("VITE_BACKEND");
 const backend = ref<{ info: { version: string } } | undefined>();
-const health = ref<Healthz | undefined>();
+const health = ref<HealthResponse | undefined>();
 const healthy = ref(true);
 const appVersion = APP_VERSION;
 
@@ -74,11 +78,11 @@ onMounted(() => {
     <b-alert :show="healthy" variant="success"> Healthy </b-alert>
     <b-alert :show="!healthy" variant="danger"> Unhealthy </b-alert>
     <b-list-group v-if="health" class="mb-3">
-      <b-list-group-item v-for="(value, key) in health" :key="key">
-        <strong>{{ key }}:</strong>
+      <b-list-group-item v-for="check in health.checks" :key="check.name">
+        <strong>{{ check.name }}:</strong>
         <div class="float-right">
           <HealthyIcon
-            v-if="value == 'healthy'"
+            v-if="check.status == HealthCheckStatusEnum.Up"
             v-b-tooltip.hover
             title="healthy"
             variant="success"

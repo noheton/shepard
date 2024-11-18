@@ -15,23 +15,22 @@
 
 import * as runtime from '../runtime';
 import type {
-  HealthResponse,
+  VersionzIO,
 } from '../models/index';
 import {
-    HealthResponseFromJSON,
-    HealthResponseToJSON,
+    VersionzIOFromJSON,
+    VersionzIOToJSON,
 } from '../models/index';
 
 /**
  * 
  */
-export class HealthzApi extends runtime.BaseAPI {
+export class VersionzApi extends runtime.BaseAPI {
 
     /**
-     * Check the health of the application
-     * An aggregated view of the Liveness, Readiness and Startup of this application
+     * Get shepard version
      */
-    async getServerHealthRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HealthResponse>> {
+    async getShepardVersionRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VersionzIO>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -49,21 +48,20 @@ export class HealthzApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/healthz`,
+            path: `/versionz`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => HealthResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => VersionzIOFromJSON(jsonValue));
     }
 
     /**
-     * Check the health of the application
-     * An aggregated view of the Liveness, Readiness and Startup of this application
+     * Get shepard version
      */
-    async getServerHealth(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthResponse> {
-        const response = await this.getServerHealthRaw(initOverrides);
+    async getShepardVersion(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VersionzIO> {
+        const response = await this.getShepardVersionRaw(initOverrides);
         return await response.value();
     }
 

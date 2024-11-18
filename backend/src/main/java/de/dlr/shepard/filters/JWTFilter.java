@@ -88,6 +88,8 @@ public class JWTFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
+    if (PublicEndpointRegistry.isRequestPathPublic(requestContext)) return;
+
     // Allow CORS preflight requests
     if (HttpMethod.OPTIONS.equals(requestContext.getMethod())) {
       // Allow all requests with request method OPTIONS
@@ -123,7 +125,6 @@ public class JWTFilter implements ContainerRequestFilter {
       );
       return;
     }
-
     if (principal == null) {
       requestContext.abortWith(
         Response.status(Status.UNAUTHORIZED)

@@ -41,6 +41,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext requestContext) {
+    if (PublicEndpointRegistry.isRequestPathPublic(requestContext)) return;
     var principal = requestContext.getSecurityContext().getUserPrincipal();
     if (principal == null || principal.getName() == null) {
       Log.warnf("Unknown principal %s", principal);

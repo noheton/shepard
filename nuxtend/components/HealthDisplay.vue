@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { Healthz, ResponseError } from "@dlr-shepard/backend-client";
+import type {
+  HealthResponse,
+  ResponseError,
+} from "@dlr-shepard/backend-client";
 import { HealthzApi } from "@dlr-shepard/backend-client";
 
-const health = ref<Healthz | undefined>();
+const health = ref<HealthResponse | undefined>();
 const healthy = ref<boolean | undefined>();
 
 function fetchHealthz() {

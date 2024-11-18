@@ -2,42 +2,33 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.neo4Core.io.HealthzIO;
+import de.dlr.shepard.FeatureToggleHelper;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import org.junit.jupiter.api.BeforeAll;
+import java.util.List;
+import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.Test;
 
 @QuarkusIntegrationTest
 public class HealthzIT extends BaseTestCaseIT {
 
-  private static String healthURL;
-  private static RequestSpecification requestSpecification;
-
-  @BeforeAll
-  public static void setUp() {
-    healthURL = "/" + Constants.HEALTHZ;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-  }
+  private static String healthURL = "/" + Constants.HEALTHZ;
 
   @Test
-  public void getHealthcheck() {
-    var expected = new HealthzIO(true, true, true);
-    var actual = given()
-      .spec(requestSpecification)
-      .when()
-      .get(healthURL)
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(HealthzIO.class);
-    assertEquals(expected, actual);
+  public void getHealthz() {
+    List<String> expectedServices = FeatureToggleHelper.isExperimentalTimeseriesEnabled()
+      ? List.of("Neo4J", "MongoDB", "InfluxDB", "TimescaleDB")
+      : List.of("Neo4J", "MongoDB", "InfluxDB");
+
+    assertNotNull(expectedServices);
+
+    var expected = HealthzIO.createInstanceWithCheckedServices(HealthCheckResponse.Status.UP, expectedServices);
+    var actual = given().when().get(healthURL).then().statusCode(200).extract().as(HealthzIO.class);
+    assertEquals(expected.getStatus(), actual.getStatus());
+    assertTrue(actual.getChecks().containsAll(expected.getChecks()));
+    assertTrue(expected.getChecks().containsAll(actual.getChecks()));
   }
 }

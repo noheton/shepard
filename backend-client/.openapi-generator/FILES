@@ -23,6 +23,7 @@ src/apis/TimeseriesReferenceApi.ts
 src/apis/UriReferenceApi.ts
 src/apis/UserApi.ts
 src/apis/UserGroupApi.ts
+src/apis/VersionzApi.ts
 src/apis/index.ts
 src/index.ts
 src/models/AbstractDataObject.ts
@@ -53,8 +54,8 @@ src/models/FillOption.ts
 src/models/FillOption1.ts
 src/models/GetAllApiKeys200ResponseInner.ts
 src/models/HasId.ts
-src/models/Healthy.ts
-src/models/Healthz.ts
+src/models/HealthCheck.ts
+src/models/HealthResponse.ts
 src/models/InfluxPoint.ts
 src/models/PermissionType.ts
 src/models/Permissions.ts
@@ -90,6 +91,7 @@ src/models/UserSearchBody.ts
 src/models/UserSearchParams.ts
 src/models/UserSearchResult.ts
 src/models/Version.ts
+src/models/VersionzIO.ts
 src/models/index.ts
 src/runtime.ts
 tsconfig.esm.json

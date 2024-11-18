@@ -41,6 +41,7 @@ public class UserFilter implements ContainerRequestFilter {
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
+    if (PublicEndpointRegistry.isRequestPathPublic(requestContext)) return;
     var principal = requestContext.getSecurityContext().getUserPrincipal();
     if (!(principal instanceof JWTPrincipal)) {
       Log.warnf("Unknown principal %s", principal);

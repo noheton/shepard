@@ -60,6 +60,20 @@ Each of those modules contains all technical components needed to fulfill it's p
 
 Additionally, there may be modules for special functionalities like authentication.
 
+==== REST Endpoints
+
+We use link:https://quarkus.io/guides/rest[quarkus-rest] to define REST endpoints.
+
+For authentication and general request validation, we use filters following the link:https://quarkus.io/guides/rest#the-jakarta-rest-way[Jakarta REST way].
+The filters can be found at `filters/`.
+In general, all requests need to be done by authenticated users.
+The `JWTFilter` and the `UserFilter` take care of validating authentication.
+
+Some endpoints should be public, for example `/healthz` and `/versionz`.
+To make this possible we use the `PublicEndpointRegistry` class.
+In this class we register all public endpoints in a static string array.
+The authentication filters will be bypassed for endpoints in this array.
+Since the `/healthz` endpoint is automatically public thanks to the link:https://quarkus.io/guides/smallrye-health[SmallRye Health] extension, we don't need to add it to the `PublicEndpointRegistry`.
 
 === Frontend (Nuxt)
 

@@ -14,9 +14,18 @@ public class LoggingFilter implements ContainerRequestFilter {
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {
     var method = requestContext.getMethod();
-    var username = requestContext.getSecurityContext().getUserPrincipal().getName();
     var endpoint = requestContext.getUriInfo().getPath();
     var queryParams = requestContext.getUriInfo().getQueryParameters();
+    if (requestContext.getSecurityContext().getUserPrincipal() == null) {
+      Log.infof(
+        "Received %s request without security context on %s with query params %s",
+        method,
+        endpoint,
+        queryParams
+      );
+      return;
+    }
+    var username = requestContext.getSecurityContext().getUserPrincipal().getName();
 
     Log.infof("Received %s request on %s from %s with query params %s", method, endpoint, username, queryParams);
   }

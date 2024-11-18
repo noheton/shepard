@@ -264,6 +264,10 @@
       <version>1.3.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-health</artifactId>
+  </dependency>
   </dependencies>
   <build>
     <finalName>${finalName}</finalName>

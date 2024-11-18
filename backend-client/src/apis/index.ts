@@ -21,3 +21,4 @@ export * from './TimeseriesReferenceApi';
 export * from './UriReferenceApi';
 export * from './UserApi';
 export * from './UserGroupApi';
+export * from './VersionzApi';

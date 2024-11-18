@@ -13,6 +13,7 @@
     "dataobjects",
     "Datas",
     "Healthz",
+    "integrationtests",
     "jsoneditor",
     "nuxtend",
     "oidc",
@@ -24,6 +25,7 @@
     "Timeseries",
     "usergroup",
     "usergroups",
+    "Versionz",
     "VITE",
     "vuex"
   ],
