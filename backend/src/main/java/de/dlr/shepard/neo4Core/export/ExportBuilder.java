@@ -16,7 +16,6 @@ import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
 import io.quarkus.logging.Log;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
@@ -48,7 +47,8 @@ public class ExportBuilder {
 
     var roCrateName = collection.getName() + " Research Object Crate";
     var roCrateDescription = "Research Object Crate representing the shepard Collection " + collection.getName();
-    builder = new RoCrateBuilder(roCrateName, roCrateDescription);
+
+    builder = new RoCrateBuilder().addName(roCrateName).addDescription(roCrateDescription);
 
     var collectionEntity = createFileEntity(new CollectionIO(collection));
     builder.addDataEntity(collectionEntity);
@@ -129,14 +129,7 @@ public class ExportBuilder {
   }
 
   private static FileEntityBuilder createFileEntityBuilder(String filename, String name) {
-    // We need a dummy file since the FileEntityBuilder cannot work without a source
-    // file. We only use the RoCrate lib just for creating the
-    // ro-crate-metadata.json, so there is no file needed at this point.
-    var dummyFile = new File("dummy.txt");
-    return new FileEntity.FileEntityBuilder()
-      .setId(filename)
-      .setSource(dummyFile)
-      .addProperty(ExportConstants.NAME_PROP, name);
+    return new FileEntity.FileEntityBuilder().setId(filename).addProperty(ExportConstants.NAME_PROP, name);
   }
 
   private static FileEntityBuilder createFileEntityBuilder(String filename, String name, String encodingFormat) {
