@@ -162,6 +162,95 @@ docker compose up -d
 
 You can find the backend logs in `/opt/shepard/backend/logs`.
 
+## How to use Metrics
+
+Shepard backend provides a metrics endpoint.
+You can access helpful information about the system and resource consumption by using this endpoint.
+We recommend to use `Prometheus` as a monitoring system and data store and Grafana for visualization,
+but you can access the metrics endpoint directly in the browser: `/shepard/doc/metrics/prometheus`.
+You will receive a JSON document with the current values.
+
+### Setup Prometheus
+
+We provide a `docker-compose-monitoring.yml` file in the infrastructure folder.
+That contains two images, prometheus and grafana.
+
+The configuration file for prometheus is located in `infrastructure/prometheus/prometheus.yml`.
+In general the configuration should be correct.
+You may have to adapt the configuration file if you changed you network name or any other configuration in the docker compose files.
+The docker compose files that we provide make use of the same network called `shepard`.
+Prometheus and shepard backend have to run in the same network, otherwise prometheus is not able to collect the metrics.
+The configuration file contains one job that collects metrics from the metrics endpoint of shepard.
+If the backend service is called `backend` the configuration should be correct.
+Otherwise you have to adapt it.
+
+### Setup Grafana
+
+#### Adapt caddyfile
+
+Grafana is used for visualization.
+In order to access Grafana, you have to configure it in the caddyfile.
+Make a copy of an existing section and do the following changes:
+
+```json
+https://grafana.shepard.example.com {
+	reverse_proxy grafana:3000
+  ...
+}
+```
+
+Make sure to replace _shepard.example.com_ with the correct hostname of your system like for the other entries.
+
+#### Configuration in .env file
+
+You have to provide username and password for using Grafana.
+They have to be configured in the .env file.
+
+```json
+GRAFANA_ADMIN_USERNAME=grafana
+GRAFANA_ADMIN_PASSWORD=secure_password
+```
+
+#### Adapt network name in docker compose file
+
+Prometheus needs access to the shepard backend, so we have to use the same network name.
+You can get a list of used network names by docker with the following command:
+
+```shell
+docker network ls
+```
+
+Pick the network name that contains the keyword 'shepard'.
+Copy that name and paste it into the `docker-compose-monitoring.yml` file in the networks section:
+
+```json
+networks:
+  shepard_network
+    name: _your_network_name_here
+    external: true
+```
+
+Now you should be able to start the docker files with `docker compose up`.
+
+#### First steps with Grafana
+
+Now you should be able to open the grafana ui via browser with the url you have configured in the caddyfile.
+First, you need to configure a data source (prometheus).
+Second, you can explore the metrics that are available.
+Third, you can build a dashboard that provides a good overview over the system and resource consumption.
+
+##### Adding a data source
+
+Metrics are collected by and stored in prometheus.
+In order to visualize them with Grafana, you have to add a connection to prometheus:
+
+- open Grafana UI and login
+- click on Connections/Add new connection
+- search for Prometheus and select it
+- use the following settings to connect:
+  - Connection: http://prometheus:9090
+- Click 'Save & test'
+
 ## Experimental features
 
 There is a `docker-compose-exp.yml` file that holds a deployment setup with experimental extensions.
