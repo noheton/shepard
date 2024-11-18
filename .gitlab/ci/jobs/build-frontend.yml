@@ -1,6 +1,6 @@
 #TODO: Remove this file when the old frontend is deleted
 .prepare_npm:
-  image: node:20-slim
+  image: node:22-slim
   cache:
     key:
       files:

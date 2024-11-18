@@ -1,5 +1,5 @@
 .prepare_nuxtend:
-  image: node:20-slim
+  image: node:22-slim
   cache:
     key:
       files:
