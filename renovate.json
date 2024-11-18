@@ -134,6 +134,16 @@
       "allowedVersions": "<9"
     },
     {
+      "matchPackageNames": ["@vue/eslint-config-typescript"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<14"
+    },
+    {
+      "matchPackageNames": ["@vue/eslint-config-prettier"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<10"
+    },
+    {
       "matchPackageNames": ["org.neo4j:neo4j-ogm{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"

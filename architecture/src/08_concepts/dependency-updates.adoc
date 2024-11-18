@@ -95,7 +95,13 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 |
 
 |eslint<9
-|
+|`--ext` option is not supported and the current eslintrc file structure is not supported anymore.
+
+|@vue/eslint-config-prettier<10
+|Has peer dependency to current version of eslint
+
+|@vue/eslint-config-typescript<14
+|Has peer dependency to current version of eslint
 
 |neo4j-ogm<4
 |v5 is not compatible with neo4j v4
