@@ -100,3 +100,7 @@ In order to directly instantiate the API clients with our default configuration,
 ==== Using Node LTS
 
 The current LTS version of Node.js should be used in all of the project (Gitlab jobs, docker images, local development, etc.) to maintain reliability and performance.
+
+==== Using Quarkus LTS
+
+The current LTS version of Quarkus should be used in our backend to maintain reliability and performance.
