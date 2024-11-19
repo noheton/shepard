@@ -47,6 +47,15 @@ Sometimes, when the configuration changes or dependency updates were done withou
 In this case the merge request is not automatically closed and has to be closed manually.
 The corresponding branch must also be deleted manually to keep things clean.
 
+
+===== Use Only LTS updates for Quarkus
+
+In our technology choices we decided to only rely on LTS updates of Quarkus.
+Currently, there is no way to advice the renovate bot to respect only LTS releases of Quarkus.
+Therefore, we have to manually check that the Quarkus update is always the latest LTS release.
+We do not want to update to non-LTS versions of Quarkus.
+A list of current Quarkus releases can be found here link:https://quarkus.io/blog/tag/release/[Quarkus releases].
+
 [[suspended-updates]]
 ===== Suspended Updates
 
