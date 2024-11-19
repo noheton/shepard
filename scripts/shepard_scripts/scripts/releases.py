@@ -20,7 +20,7 @@ DEPENDENCY_BUMP_LABEL = "dependencies"
 TEMPLATE_FILE = "templates/release_notes.md"
 MAIN_BRANCH = "main"
 DEV_BRANCH = "develop"
-SEMVER_PATTERN = r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$"
+SEMVER_PATTERN = r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?:-(?P<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"  # noqa: E501
 
 DEPENDENCY_ISSUE_DESCRIPTION = (
     "After performing the release we need to update all dependencies. "
