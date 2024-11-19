@@ -9,3 +9,7 @@ include:
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
+  - local: .gitlab/ci/jobs/build-backend.yml
+  - local: .gitlab/ci/jobs/test-backend.yml
+  - local: .gitlab/ci/jobs/build-maven-report.yml
+  - local: .gitlab/ci/jobs/get-version-dev.yml
