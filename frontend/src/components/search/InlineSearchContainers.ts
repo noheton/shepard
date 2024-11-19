@@ -5,7 +5,7 @@ import type {
   BasicContainer,
   ContainerQueryType,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { computed, ref, watch, type Ref } from "vue";
 
 export function useSearchContainers(

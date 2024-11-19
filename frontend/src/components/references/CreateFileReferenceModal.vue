@@ -10,7 +10,7 @@ import type {
   FileContainer,
   FileReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { refDebounced } from "@vueuse/core";
 import { computed, reactive, ref } from "vue";
 

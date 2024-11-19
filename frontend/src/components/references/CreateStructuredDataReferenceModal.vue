@@ -11,7 +11,7 @@ import type {
   StructuredDataContainer,
   StructuredDataPayload,
   StructuredDataReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { refDebounced } from "@vueuse/core";
 import { reactive, ref } from "vue";
 import { useSearchContainers } from "../search/InlineSearchContainers";

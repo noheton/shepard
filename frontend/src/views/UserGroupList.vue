@@ -15,7 +15,7 @@ import type {
   ResponseError,
   UserGroup,
   UserGroupAttributes,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

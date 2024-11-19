@@ -1,0 +1,28 @@
+# Shepard load tests
+
+Load tests are executed with [grafana/k6](https://k6.io).
+They use the backend on the dev instance to have a single reference system for measurements.
+
+We use a docker image for executing tests so that no local installation of k6 is necessary.
+If you run load tests for the first time, the docker image will be downloaded.
+
+K6 is collecting some metrics during test execution.
+Those metrics are reported directly to prometheus.
+We can use grafana to visualize those metrics.
+In order to make that working, you have to use the docker compose file in the backend folder.
+That will start prometheus and grafana with the correct settings and the correct network.
+
+## How to run load tests?
+
+- Run `docker compose up` from the backend folder.
+- Create a copy of file `./mount/settings.example.json` and name it `settings.json` in the same folder.
+  - Provide the url for the backend.
+  - Provide an api key that can be used to access the backend.
+    You can create an api key with help of the frontend easily.
+- Use the script `run-load-test.sh` and provide the file name of the load test that should be executed as parameter.
+  The script must be executed from the directory `load-test`.
+- each load test file has an `Options` object that controls the parameters of the load test in this object you can configure the following parameters:
+  - `executor` - the [k6 test executor ](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/)
+  - `vus` - number of virtual users executing the tests at the same time, this tests an endpoint for concurrency
+  - `duration` - how long the test should run
+  - `exec` - specify here the name of the test function you want to execute

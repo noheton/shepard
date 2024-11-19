@@ -5,7 +5,7 @@ import {
   type GetAllCollectionReferencesRequest,
   type GetCollectionReferencePayloadRequest,
   type GetCollectionReferenceRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class CollectionReferenceService {

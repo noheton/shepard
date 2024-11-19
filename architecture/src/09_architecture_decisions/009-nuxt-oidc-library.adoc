@@ -1,0 +1,49 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-009 Nuxt OIDC Library
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|17.09.2024
+|Status|Done
+
+|Context|
+We want to implement authentication using OIDC in the new Nuxt-based frontend.
+We expect to authenticate with an existing Keycloak instance, similar to the old frontend.
+
+In the future authentication with client secrets may be needed to operate with more OIDC providers.
+
+For Nuxt 2 there was an link:https://auth.nuxtjs.org/[auth module] that is not yet available for Nuxt 3.
+
+|Possible Alternatives|
+
+* link:https://www.npmjs.com/package/@hebilicious/authjs-nuxt[authjs-nuxt]
+** Provides integration with Auth.js for handling OAuth, OAuth2, OIDC, and custom authentication providers
+** ca. 3000 weekly downloads on npm, 250 GitHub stars
+** Last update a year ago
+** Not yet released with a 1.x.x version
+* link:https://www.npmjs.com/package/nuxt-oidc-auth[nuxt-oidc-auth]
+** Specifically for OpenID Connect (OIDC) authentication, focusing on OIDC-compliant providers like Keycloak, Auth0, etc.
+** ca. 600 weekly downloads on npm, 68 GitHub stars
+** Proper documentation as nuxt module here: https://nuxt.com/modules/nuxt-oidc-auth
+** Not yet released with a 1.x.x version
+* link:https://www.npmjs.com/package/nuxt-auth-utils[nuxt-auth-utils]
+** Utility module for handling various auth strategies including JWT, session-based, OAuth/OIDC
+** ca. 5600 weekly downloads on npm, 805 GitHub stars
+** Last update very recent
+** Not yet released with a 1.x.x version
+* link:https://github.com/sidebase/nuxt-auth[@sidebase/nuxt-auth]
+** Full-featured authentication solution based on Auth.js, providing many built-in providers (Google, GitHub, Keycloak, etc.)
+** ca. 22000 weekly downloads on npm, 1200 GitHub stars
+** Uses authjs under the hood
+** Last update very recent
+** Not yet released with a 1.x.x version
+
+|Decision|
+We decide to go with link:https://github.com/sidebase/nuxt-auth[@sidebase/nuxt-auth] for its support of multiple built in providers including Keycloak and the superior documentation and community support.
+
+|Consequences|
+* We have to gain knowledge about this module and how to efficiently use it.
+* We have to add two additional environment variables(`AUTH_ORIGIN` and `NUXT_AUTH_SECRET`), introducing a breaking change.
+|===

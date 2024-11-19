@@ -1,0 +1,41 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Subscription Feature
+
+The subscriptions feature allows users to react on certain events.
+Shepard defines some rest endpoints as subscribable.
+Users than can subscribe to requests handled by these endpoints.
+In addition to a specific endpoint user have to specify a regular expression which is matched with the respective URL as well as a callback endpoint.
+The callback endpoint is called by shepard when an endpoint triggers a subscription and the regular expression matches.
+The callback contains the respective subscription, the actually called URL as well as the ID of the affected object.
+The callback itself is executed asynchronously to avoid slowing down the response to the request in question.
+
+A common use case for this feature is the automatic conversion of certain data types.
+For example, if a user wants to know about every file uploaded to a specific container, they would create a subscription in the following form:
+
+```json
+{
+  "name": "My Subscription",
+  "callbackURL": "https://my.callback.com",
+  "subscribedURL": ".*/files/123/payload",
+  "requestMethod": "POST"
+}
+```
+
+Once shepard has received a matching request, it sends the following `POST' request to the specified callback URL `https://my.callback.com`:
+
+```json
+{
+  "subscription": {
+    "name": "My Subscription",
+    "callbackURL": "https://my.callback.com",
+    "subscribedURL": ".*/files/123/payload",
+    "requestMethod": "POST"
+  },
+  "subscribedObject": {
+    "uniqueId": "123abc"
+  },
+  "url": "https://my.shepard.com/shepard/api/files/123/payload",
+  "requestMethod": "POST"
+}
+```

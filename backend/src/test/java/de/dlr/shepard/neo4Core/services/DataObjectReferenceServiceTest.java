@@ -146,7 +146,7 @@ public class DataObjectReferenceServiceTest {
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
-    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
+    when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     DataObjectReference actual = service.createReferenceByShepardId(
       dataObject.getShepardId(),
       input,

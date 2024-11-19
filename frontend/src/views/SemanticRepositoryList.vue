@@ -14,7 +14,7 @@ import type {
   ResponseError,
   SemanticRepository,
   SemanticRepositoryType,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { useStorage, useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

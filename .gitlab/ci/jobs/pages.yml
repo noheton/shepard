@@ -6,9 +6,7 @@ pages:
     - ls -hal backend/target/site
     - mkdir public
     - mv backend/target/site/* public/
-    # TODO: Link to these docs in the Maven report menu
     - mkdir public/architecture-docs
-
     - mv build/html5/* public/architecture-docs/
     - echo ${CI_PAGES_DOMAIN}
   artifacts:

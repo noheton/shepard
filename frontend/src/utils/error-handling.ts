@@ -1,4 +1,4 @@
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 import { useEventBus } from "@vueuse/core";
 import log from "loglevel";
 import { errorKey, type ErrorType } from "./event-bus";

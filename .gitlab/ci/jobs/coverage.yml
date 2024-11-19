@@ -1,7 +1,7 @@
 coverage:
   stage: test
   image: haynes/jacoco2cobertura:1.0.10
-  needs: [test_backend]
+  needs: [test_backend, test_backend_with_databases]
   script:
     - ls -hal backend/target/site/jacoco
     # convert report from jacoco to cobertura

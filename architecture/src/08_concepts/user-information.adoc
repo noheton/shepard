@@ -1,0 +1,11 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== User Information
+
+Shepard needs to know certain information about the current user, such as the first and last name and e-mail address.
+We can retrieve some information from the given JWT, as Keycloak usually adds some information there.
+However, most of the fields are not required by the specification, so we have to use other measures to get the required information.
+OIDC specifies a `UserinfoEndpoint` which can be used to retrieve some data about the current user.
+We have implemented a `UserinfoService` to access this data.
+Each time a user sends a request, the `UserFilter` fetches the relevant user information from the identity provider and updates the internally stored data if necessary.
+To reduce the number of requests, we have implemented a grace period during which no new data is retrieved.

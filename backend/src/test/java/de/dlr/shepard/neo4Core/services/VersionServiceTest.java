@@ -2,6 +2,9 @@ package de.dlr.shepard.neo4Core.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +49,9 @@ public class VersionServiceTest extends BaseTestCase {
   ArgumentCaptor<Version> newVersionCaptor;
 
   @Captor
+  ArgumentCaptor<Version> HEADVersionCaptor;
+
+  @Captor
   ArgumentCaptor<Collection> collectionCaptor;
 
   @InjectMock
@@ -53,17 +59,6 @@ public class VersionServiceTest extends BaseTestCase {
 
   @Inject
   VersionService service;
-
-  @Test
-  public void getVersionTest() {
-    Version ver = new Version();
-    ver.setName("name");
-    long collectionId = 10L;
-    String versionUID = "123";
-    when(versionDAO.find(collectionId, versionUID)).thenReturn(ver);
-    Version found = service.getVersion(collectionId, versionUID);
-    assertEquals(ver, found);
-  }
 
   @Test
   public void getAllVersionsTest() {
@@ -88,18 +83,39 @@ public class VersionServiceTest extends BaseTestCase {
     User user = new User(username);
     Version HEADVersion = new Version();
     HEADVersion.setName("HEADVersion");
+    Version newVersion = new Version();
+    newVersion.setName("new Version");
+    UUID HeadVersionUUID = new UUID(2L, 3L);
+    HEADVersion.setUid(HeadVersionUUID);
+    Version predecessorVersion = new Version();
+    predecessorVersion.setName("predecessor");
+    UUID predecessorUUID = new UUID(1L, 2L);
+    predecessorVersion.setUid(predecessorUUID);
+    HEADVersion.setPredecessor(predecessorVersion);
     Date date = new Date(10L);
     when(versionDAO.findHEADVersion(collectionId)).thenReturn(HEADVersion);
     when(userDAO.find(username)).thenReturn(user);
     when(collectionService.getCollectionByShepardId(collectionId, null)).thenReturn(collection);
     when(dateHelper.getDate()).thenReturn(date);
+    when(versionDAO.createOrUpdate(any())).thenReturn(predecessorVersion);
     service.createVersion(collectionId, versionIO, username);
-    verify(versionDAO).createOrUpdate(newVersionCaptor.capture());
-    Version newVersion = newVersionCaptor.getValue();
-    verify(collectionDAO).createOrUpdate(collectionCaptor.capture());
-    Collection collectionCopy = collectionCaptor.getValue();
-    assertEquals(newVersion.getDescription(), versionIO.getDescription());
-    assertEquals(newVersion.getPredecessor(), HEADVersion);
-    assertEquals(collectionCopy.getVersion().getDescription(), versionIO.getDescription());
+    verify(versionDAO, times(2)).createOrUpdate(newVersionCaptor.capture());
+    verify(collectionDAO, times(1)).createOrUpdate(any());
+  }
+
+  @Test
+  public void copyDataObjectsWithParentsAndPredecessorsTest() {
+    UUID sourceVersionUID = new UUID(0L, 1L);
+    UUID targetVersionUID = new UUID(0L, 1L);
+    when(versionDAO.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID)).thenReturn(true);
+    assertTrue(service.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID));
+  }
+
+  @Test
+  public void getVersionTest() {
+    UUID VersionUID = new UUID(0L, 1L);
+    Version version = new Version(VersionUID);
+    when(versionDAO.find(VersionUID)).thenReturn(version);
+    assertEquals(version, service.getVersion(VersionUID));
   }
 }

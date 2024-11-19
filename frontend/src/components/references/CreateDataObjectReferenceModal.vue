@@ -7,7 +7,7 @@ import type {
   DataObject,
   DataObjectReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { reactive } from "vue";
 
 interface Option {

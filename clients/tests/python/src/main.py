@@ -1,9 +1,8 @@
+import argparse
+import difflib
 import inspect
 import sys
-import difflib
-from typing import List, Tuple, Dict, Any
-import argparse
-
+from typing import Any, Dict, List, Tuple
 
 from shepard_client import *
 from shepard_client_local import *
@@ -205,10 +204,6 @@ def main():
         find_same_class_names(remote_package_classes, local_package_classes)
     )
 
-    print(
-        f"Classes that are in the old package but not in the new package: {classes_not_in_orig_class}\n"
-    )
-
     if is_printing_all:
         print(
             f"Classes with the same name from both packages: {same_class_name_list}\n"
@@ -217,7 +212,6 @@ def main():
             f"Classes that are in the new package but not in the old package: {classes_not_in_new_class}\n"
         )
 
-    print("Comparing same name classes from both packages...")
     diff_list_orig_to_new: List[str] = []
     diff_list_new_to_orig: List[str] = []
     for class_name in same_class_name_list:
@@ -234,23 +228,26 @@ def main():
         )
         diff_list_new_to_orig.append("\n".join(diffs_new_to_orig))
 
-    print(
-        "Differences (possible breaking changes) from original package to new package:"
-    )
-    print("\n".join([x for x in diff_list_orig_to_new if x]))
-
     if is_printing_all:
-        print("\nDifference from new package to original package:")
-        print("\n".join([x for x in diff_list_new_to_orig if x]))
+        if len([x for x in diff_list_new_to_orig if x]) > 0:
+            print("\nDifference from new package to original package:")
+            print("\n".join([x for x in diff_list_new_to_orig if x]))
 
     # missing classes from the old package in the new package are a breaking change
-    if len(classes_not_in_orig_class) > 0:
+    if len([x for x in classes_not_in_orig_class if x]) > 0:
+        print(
+            f"Classes that are in the old package but not in the new package: {classes_not_in_orig_class}\n"
+        )
         sys.exit(
             "WARNING: Classes from the original client package are missing in the new client package!"
         )
 
     # missing functions, attributes from the old package in the new package are a breaking change
-    if len(diff_list_orig_to_new) > 0:
+    if len([x for x in diff_list_orig_to_new if x]) > 0:
+        print(
+            "Differences (possible breaking changes) from original package to new package:"
+        )
+        print("\n".join([x for x in diff_list_orig_to_new if x]))
         sys.exit(
             "WARNING: Class attributes or methods from the original client package are missing in the new client package!"
         )

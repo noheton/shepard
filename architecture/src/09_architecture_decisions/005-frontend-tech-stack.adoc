@@ -1,0 +1,266 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-005 Frontend Tech Stack
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|30.08.2024
+|Status|Done
+
+|Context|
+shepard provides a frontend.
+Until now, the frontend basically provides a UI for the backend API.
+In the future, the frontend will provide useful features easing the interaction with shepard, especially for non-tech-savvy users.
+
+The application may also plot timeseries data.
+The available data may contain a lot more data points than the amount required for a rendered graphic.
+
+We don't necessarily need SEO or server-side rendering.
+
+We also want to achieve benefits for API users when developing server-side code for the frontend.
+
+Since there is not a lot of developers working on the project, maintainability is very important.
+
+For OIDC, authentication with client secrets may be needed to operate with more OIDC providers.
+
+We want an easy to understand and maintainable structure for the frontend.
+
+The current frontend is written in Vue.js 2.
+Vue.js 2 reached End of Life in the end of 2023.
+It already uses the composition API to ease migration to Vue.js 3.
+It is not possible to update to TypeScript 5 due to incompatibilities.
+When updating to Vue.js 3, vue router and Vuex have to be updated or replaced.
+
+Because of the already existing frontend and the experience in the dev team, we want to stay in the Vue ecosystem.
+
+As a UI library, BootstrapVue (based von Bootstrap 4) is used.
+Bootstrap 4 reached end of life in the beginning of 2023.
+BootstrapVue is incompatible with Bootstrap 5 and cannot be updated.
+
+|Possible Alternatives|
+In this ADR two decisions are taken.
+One for the JavaScript framework for the frontend and another for the UI library.
+
+See <<adr-005-frameworks, here>> for the comparison of frameworks.
+
+See <<adr-005-ui-libraries, here>> for the comparison of UI libraries.
+
+|Decision|
+We decide to use Nuxt as a JavaScript framework because of the broad use, opinionated defaults & structure while still being open for extension, e.g. to choose the best UI library available.
+
+As a UI library we choose Vuetify based on it's versatility and broad use.
+
+|Consequences|
+* Because of the number of updated or replaced dependencies, we will setup a fresh frontend with the desired tech stack and migrate the components step by step
+* The migration of the current frontend functionality has to be planned
+* Current and new frontends have different Vue versions but npm workspaces are not able to properly handle different versions of the same dependency in two workspaces.To overcome this issue, we exclude the frontend from the workspaces and adjust the pipelines. This will cause the least effort and does not hinder active development.
+* We need to make sure to distribute Nuxt knowledge in the team
+|===
+
+
+
+==== Appendix
+
+[[adr-005-frameworks]]
+.Comparison of possible frameworks
+
+[cols="1h,1a,1a,1a"]
+|===
+||Vue.js 3|Vue.js 3 + Nuxt.js|Vue.js 3 + Quasar
+
+|Short description
+|Vue.js is an open-source front end JavaScript framework for building user interfaces and single-page applications.
+|Nuxt is a free and open source JavaScript framework based on Vue.js, Nitro and Vite.
+The framework is advertised as a "Meta-framework for universal applications".
+It allows server-side rendering and server-side code in API routes.
+|Quasar is an open-source Vue.js based framework for building apps with a single codebase.
+It can be deployed on the web as a SPA, PWA, SSR, to a Mobile App, using Cordova for iOS & Android, and to a Desktop App, using Electron for Max, Windows and Linux.
+
+|Setup & Migration effort
+|Folder structure from Vue2 can probably be reused. Setting up a new project with Vue3 recommended defaults is possible with official Vue tools. Well documented migration path for switching from Vue2 to Vue3.
+|Setup probably easier than Vue alone because Nuxt comes with a lot of defaults/recommendations for folder structure, routing, state etc.
+The migration effort may be a little bit higher because the defaults & recommendations may differ from the current application.
+|Quasar brings it's own CLI tooling. Therefore, the initial setup is easily done. Migration is probably harder, since quasar uses it's own UI framework and we might have to use that.
+
+|Dev Complexity
+|Freedom of choice for many project decisions. Allows flexibility when creating applications, but has the risk of making the wrong decisions or implementing features in a non-optimal way (i.e., project structure). If you are already familiar with Vue, there is no need to learn a new framework.
+|Added complexity because it's not just JavaScript on the browser anymore, we have to think about code running on the server and on the client.
+API routes & middleware may be handy, but provide a second place to implement server-side functionality.
+|Quasar offers some functionality over plain Vuejs. Therefore, the complexity might be a little higher.
+On the other hand, everything comes out of one box, so there is less confusion to find answers to potential questions.
+
+|Dev Joy (awesome tooling)
+|New projects should use Vite, which integrates well with Vue (same author). Vue provides its own Browser DevTools and IDE support. With vue-tsc TypeScript typechecking is possible in SFCs. Vue is a well documented framework with a large community and many community tools.
+|Integrated tooling and clear structure do spark joy.
+|There is only one documentation to be familiar with. However, a potential vendor lock-in might reduce the dev experience.
+
+|Application Structure provided by the framework (Opinionated Architecture)
+|Vue does not restrict on how to structure your code, but enforces high-level principles and general recommendations.
+|Nuxt comes with a lot of defaults/recommendations for folder structure, routing, state etc.
+It's also easier to keep the app consistent with this structure in mind.
+We have do document less things ourselves when we follow the recommended structure.
+|Quasar offers a default structure and recommendations, but without implications for routing.
+
+|OIDC with client secret
+|Vue itself does not provide any authentication or OIDC mechanisms.
+You'd have to rely on external libraries and tools.
+Those tools probably cannot use a client secret as all code is delivered to the client.
+|Can work, probably with link:https://nuxt.com/modules/nuxt-oidc-auth[nuxt-oidc-auth] or link:https://nuxt.com/modules/authjs[authjs].
+|Quasar offers no special functionality for authentication.
+
+|Stable, backed by big Community
+|According to the StackOverflow survey from 2024, Vue is currently the 8th most popular frontend framework (https://survey.stackoverflow.co/2024/technology#most-popular-technologies-webframe[source]). It has a large community and many sponsors. Since Vue3.js is the third iteration of Vue.js, it improved a lot over the years and has solved many previous problems.
+|According to link:https://2023.stateofjs.com/en-US/libraries/meta-frameworks/[stateofjs] Nuxt is among the most used meta frameworks.
+They seem to have learned to provide good major update experience and try to make the next major update to version 4 as pleasant as possible.
+|Quasar is well-known and has some well-known sponsors.
+
+|License / free to use
+|MIT License
+|MIT License
+|MIT License
+
+|Server Resource Need
+|Even though Vue has support for SSR, its main focus is often on SPA. Therefore, depending on how exactly the frontend is implemented, the server resources may be lower than the resource need of Nuxt or Quasar.
+|More resources needed than for hosting an SPA.
+May need to be scaled individually in bigger setups.
+|Probably same as nuxt. Quasar is designed with performance in mind.
+
+|Adminstration Complexity
+|Nothing special
+|Can probably run just as good as the frontend in a docker compose setup, as long as it doesn't need to be scaled.
+|Nothing special
+
+|Experience in the DEV Team
+|Already developed the old frontend in Vue.js 2, Vite, composition API and script setup.
+Experience with some Vue.js 3 component development.
+|Played around with Nuxt a little bit.
+Previous experience with Next.js and modern JavaScript meta framework approaches.
+|Only known from documentation.
+
+|Gut Feeling
+|
+|Nuxt integrates on a rather low level, gives us a structure we can follow and integrate into, is in broad use.
+|
+
+|Further Notes
+|- Vue also provides features of Nuxt and Quasar like: SSG pre-rendering, full page hydration and SPA client-side navigation https://vuejs.org/guide/scaling-up/ssr.html[(source)]. However, the documentation itself mentions that many of these features are "intentionally low-level", and that Nuxt and Quasar provide a "streamlined development experience".
+- The latest version of Vue (3.x) only supports browsers with native https://caniuse.com/es6[ES2015 support]. This excludes IE11. Vue 3.x uses ES2015 features that cannot be polyfilled in legacy browsers, so if you need to support legacy browsers, you will need to use Vue 2.x instead.
+|
+* link:https://nuxt.com/docs/getting-started/upgrade#opting-in-to-nuxt-4[Nuxt 4] is to be released soon and we could already opt into it's new features saving us a major release migration
+* Nuxt recently added server-side components that do not execute JS on the client side called link:https://nuxt.com/docs/api/components/nuxt-island[NuxtIsland].
+|
+> Quasar was born because I felt that a full featured framework to build responsive websites, PWAs (Progressive Web Apps), Mobile Apps (Android, iOS) and Electron apps simultaneously (using same code-base) was missing.
+> So I quit my job to make this idea a reality.
+> – Razvan Stoenescu, Mon 25th Oct 2015
+
+|===
+
+Further resources:
+
+* https://enterprisevue.dev/blog/should-i-use-nuxt-instead-of-vue/
+* https://medium.com/@zsiddique980/vue-js-vs-nuxt-js-1ded0ff8e198
+* https://www.reddit.com/r/vuejs/comments/ny52qu/vuejs_vs_nuxtjs
+* https://2023.stateofjs.com/en-US/libraries/meta-frameworks/
+
+
+[[adr-005-ui-libraries]]
+.Comparison of possible UI libraries
+
+[cols="1h,1a,1a,1a,1a,1a"]
+|===
+||Bootstrap 5|primevue|vuetify|Nuxt UI|tailwind
+
+|Links:
+|link:https://getbootstrap.com/docs/5.2/getting-started/introduction/[Bootstrap 5]
+|link:https://primevue.org/setup/[primevue]
+|link:https://vuetifyjs.com/en/getting-started/installation/#installation[vuetify]
+|link:https://ui.nuxt.com/getting-started[Nuxt UI]
+|link:https://tailwindcss.com/docs/installation[tailwind]
+
+|Migration effort
+|high
+|high
+|high
+|high
+|high
+
+|Easy to use / Versatility
+|No wrapper library for vue. https://stackoverflow.com/a/65555991[StackOverflow] suggests to use bootstrap components directly in vue templates without wrapper lib. This is not the vue-way to get things working.
+|There are many components available and PrimeVue has a direct Vite and Nuxt integration. The tutorials imply that it is extremely easy to create a beautiful webpage. However, it is not so clear how far one can come without paying money on pre-defined layouts and UI building blocks.
+|Vuetify seems to be extremely versatile and provides a lot of options and a comprehensive documentation.
+|There are quite some components available, theming and customization seems reasonable.
+|We would need to define our own UI library, so it's probably too much effort.
+
+|Theming (setting colors, spacing & global style overrides)
+|Bootstrap has predefined themes that can be bought.
+|Has styled and unstyled mode for components. Styled mode utilizes pre-skinned components and default primary color. Unstyled mode allows complete control over CSS properties for components or integration of i.e., tailwind css.
+|A custom theme including colors can be defined as described https://vuetifyjs.com/en/features/theme/#changing-theme[here].
+Additionally, global or component-specific overrides can be defined as described https://vuetifyjs.com/en/features/global-configuration/#setup[here].
+|NuxtUI enables to set colors and style overrides in a the Nuxt config (See https://ui.nuxt.com/getting-started/theming[here]).
+|
+
+|Custom CSS Styling for Components
+|A lot of things can be custoimized via SASS and CSS.
+|See unstyled mode above.
+|Class attribute can be set on components.
+Vuetify uses link:https://vuetifyjs.com/en/features/sass-variables/[sass] and has a lot of utility classes.
+|NuxtUI allows to set a class attribute on components to add classes as well as setting a link:https://ui.nuxt.com/getting-started/theming#ui-prop[ui prop] to define custom styles.
+|
+
+|Effort to adapt to potential style guide (consult with UE)
+|
+|Can opt-in for styled mode, meaning components come pre-skinned after the Aura style guide (can be changed).
+|
+|
+|
+
+
+|Backed by large community / future proof
+|Bootstrap itself is still popular. However, the https://bootstrap-vue.org/[BootstrapVue] library still struggles with vue3 and bootstrap 4. There are plans to support bootstrap 5, but they are delayed as of now: https://github.com/bootstrap-vue/bootstrap-vue/issues/6872[Roadmap]
+|https://github.com/primefaces/primevue[9.6k Github stars], https://www.npmjs.com/package/primevue[232k weekly npm downloads]
+|link:https://github.com/vuetifyjs/vuetify[39.6k GitHub Stars],
+link:https://www.npmjs.com/package/vuetify[521k weekly downloads on npm]
+|link:https://github.com/nuxt/ui[3.7k GitHub Stars],
+link:https://www.npmjs.com/package/@nuxt/ui?activeTab=readme[38k weekly downloads on npm]
+|
+
+|License
+|MIT License
+|MIT License for OpenSource parts (PrimeVue, core, icons, themes, nuxt-module, auto-import-resolver, metadata)
+|MIT License
+|MIT License (for Nuxt UI without Pro)
+|
+
+|Free to use
+|Bootstrap is free to use. Predefined Themes can be bought.
+|Not all components are free to use. Single PrimeBlocks (UI building blocks) licenses cost $99/ developer, for small teams it is $349. Allows access to the Figma UI toolkit and Vue UI Blocks (UI building blocks). Single layout templates can be purchased on their own.
+|Yes
+|Not all components.
+There is a set of components only available in link:https://ui.nuxt.com/pro/getting-started[Nuxt UI Pro], especially for dashboards, Layouts etc.
+Nuxt UI Pro also contains templates.
+|
+
+|figma or sketch UI kit available
+|There is a Bootstrap 5 UI kit including Bootstrap Icons
+|Not for free
+|There is a figma ui kit available for free link:https://www.figma.com/community/file/1266515419060480209[here].
+There are additional UI kits available to buy link:https://store.vuetifyjs.com/collections/ui-kits[here]
+|There is a figma ui kit available link:https://www.figma.com/community/file/1288455405058138934[here].
+|
+
+|Gut Feeling
+|There are better alternatives available.
+|
+|Vuetify is very popular and seems to support a lot of stuff and has extensive documentation.
+|Not known yet, may be not grown enough.
+|
+
+|Further Notes
+|
+|
+|Vuetify also has a plugin for a quick integration into Nuxt, see link:https://vuetifyjs.com/en/getting-started/installation/#vuetify-nuxt-module[here].
+|
+|
+
+|===

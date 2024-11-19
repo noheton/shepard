@@ -1,0 +1,27 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Theming
+
+We are using vuetify as component library so we followed their link:https://vuetifyjs.com/en/features/theme/[theme configuration] guide.
+
+==== Global definitions and overrides
+
+Global definitions like the font we use and typographies are defined as sass variables under 'nuxtend/styles/settings.scss'.
+Global overrides of component specific properties are also defined there.
+
+==== Theme colors
+
+The theme itself that mainly contains colors are defined in 'nuxtend/plugins/vuetify.ts'.
+The colors are taken over from the Style Guide that resides in Figma.
+
+==== Styling individual components
+
+There are multiple possibilities to style vue components.
+We agreed on the following order when styling components.
+
+1. Use global overrides with sass variables if all components of the same type are affected.
+2. Use properties of the components if they exist, e.g. VButton has an 'color' property.
+3. Use the class property of components to use predefined css helper classes.
+In the vuetify documentation there is a list of utility classes under 'Styles and animations'.
+4. Use the <style> tag to override css classes directly.
+

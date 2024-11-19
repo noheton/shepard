@@ -10,7 +10,7 @@ import type {
   ResponseError,
   User,
   UserGroup,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { refDebounced } from "@vueuse/core";
 import { reactive, ref, watch, type PropType } from "vue";
 import { useSearchUsers } from "./search/InlineSearchUsers";

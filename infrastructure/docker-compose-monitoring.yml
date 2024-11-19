@@ -1,0 +1,33 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    command:
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+      - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - shepard_network
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0-security-01
+    networks:
+      - shepard_network
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=true
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    restart: unless-stopped
+
+networks:
+  shepard_network:
+    name: infrastructure_shepard
+    external: true
+
+volumes:
+  grafana-storage: {}

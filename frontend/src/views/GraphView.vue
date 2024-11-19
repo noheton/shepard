@@ -8,7 +8,7 @@ import type {
   Collection,
   DataObject,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { DataSet } from "vis-data";
 import { Network, type Edge, type IdType, type Node } from "vis-network";
 import { computed, onMounted, ref } from "vue";

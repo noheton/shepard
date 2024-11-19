@@ -8,7 +8,7 @@ import CreateFileReferenceModal from "@/components/references/CreateFileReferenc
 import FileReferenceService from "@/services/fileReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
-import type { FileReference, ResponseError } from "@dlr-shepard/shepard-client";
+import type { FileReference, ResponseError } from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

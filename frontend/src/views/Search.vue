@@ -12,7 +12,7 @@ import {
   removeQueryParam,
   setQueryParam,
 } from "@/utils/helpers";
-import { TraversalRules } from "@dlr-shepard/shepard-client";
+import { TraversalRules } from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

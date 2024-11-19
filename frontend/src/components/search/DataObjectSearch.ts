@@ -4,7 +4,7 @@ import { handleError } from "@/utils/error-handling";
 import type {
   ResponseError,
   TraversalRules,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { ref, watch, type Ref } from "vue";
 
 export function useDataObjectSearch(

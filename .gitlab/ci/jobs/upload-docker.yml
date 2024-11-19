@@ -1,10 +1,10 @@
 spec:
   inputs:
     image_name:
-      options: ["backend", "frontend"]
+      options: ["backend", "frontend", "nuxtend"]
 ---
 "upload-docker-$[[ inputs.image_name ]]":
-  image: docker:27.1
+  image: docker:27.3
   stage: upload
   services:
     - name: docker:dind

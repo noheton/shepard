@@ -7,7 +7,7 @@ import {
   PermissionType,
   ResponseError,
   type Collection,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { ref, type PropType } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";
 

@@ -1,0 +1,1 @@
+MATCH(v:Version) WHERE v.name='initial version' SET v.name='HEAD', v.description='HEAD version';

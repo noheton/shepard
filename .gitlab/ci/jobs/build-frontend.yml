@@ -1,28 +1,33 @@
+#TODO: Remove this file when the old frontend is deleted
 .prepare_npm:
-  image: node:21
+  image: node:22-slim
   cache:
     key:
       files:
-        - package-lock.json
+        - frontend/package-lock.json
+        - backend-client/package-lock.json
     paths:
-      - .npm/
+      - frontend/.npm/
+      - backend-client/.npm/
   before_script:
+    - cd backend-client/
+    - npm ci --cache .npm --prefer-offline
+    - cd ../frontend/
     - echo //gitlab.com/api/v4/packages/npm/:_authToken=${CI_JOB_TOKEN} >> .npmrc
-    - npm ci --cache .npm --prefer-offline --workspace=frontend
+    - npm ci --cache .npm --prefer-offline
 
 lint_frontend:
   extends: .prepare_npm
   stage: test
   needs: []
   script:
-    - npm run lint --workspace=frontend
+    - npm run lint
 
 build_frontend:
   extends: .prepare_npm
   stage: build
   needs: [get_version]
   script:
-    - cd frontend
     - npm version --no-git-tag-version --allow-same-version ${VERSION_NUMBER}
     - npm run type-check
     - npm run build-only

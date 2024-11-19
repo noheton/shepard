@@ -23,7 +23,7 @@ import type {
   ResponseError,
   Roles,
   SemanticAnnotation,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue2-helpers/vue-router";

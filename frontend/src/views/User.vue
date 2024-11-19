@@ -4,7 +4,7 @@ import ApiKeyList from "@/components/user/ApiKeysList.vue";
 import SubscriptionList from "@/components/user/SubscriptionList.vue";
 import UserService from "@/services/userService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError, User } from "@dlr-shepard/shepard-client";
+import type { ResponseError, User } from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 

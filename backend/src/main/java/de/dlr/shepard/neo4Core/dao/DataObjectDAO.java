@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 @RequestScoped
@@ -92,6 +93,13 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     return result;
   }
 
+  public List<DataObject> findByCollectionByShepardIds(
+    long collectionShepardId,
+    QueryParamHelper paramsWithShepardIds
+  ) {
+    return findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds, null);
+  }
+
   /**
    * Searches the database for DataObjects.
    *
@@ -101,7 +109,8 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    */
   public List<DataObject> findByCollectionByShepardIds(
     long collectionShepardId,
-    QueryParamHelper paramsWithShepardIds
+    QueryParamHelper paramsWithShepardIds,
+    UUID versionUID
   ) {
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", paramsWithShepardIds.getName());
@@ -110,20 +119,23 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       paramsMap.put("size", paramsWithShepardIds.getPagination().getSize());
     }
     String match =
-      "MATCH (c:Collection)-[hdo:has_dataobject]->" +
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->" +
       CypherQueryHelper.getObjectPart("d", "DataObject", paramsWithShepardIds.hasName());
-    String where = " WHERE c." + Constants.SHEPARD_ID + "=" + collectionShepardId;
-
+    String where = " WHERE c." + Constants.SHEPARD_ID + "=" + collectionShepardId + " AND ";
+    //search in HEAD version
+    if (versionUID == null) where = where + CypherQueryHelper.getVersionHeadPart("v");
+    //search in version given by versionUID
+    else where = where + CypherQueryHelper.getVersionPart("v", versionUID);
     if (paramsWithShepardIds.hasParentId()) {
       if (paramsWithShepardIds.getParentId() == -1) {
         where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "<-[:has_child]-(parent:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getParentId() +
-        "})";
+          "<-[:has_child]-(parent:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getParentId() +
+          "})";
       }
     }
 
@@ -132,11 +144,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getPredecessorId() +
-        "})";
+          "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getPredecessorId() +
+          "})";
       }
     }
     if (paramsWithShepardIds.hasSuccessorId()) {
@@ -144,23 +156,23 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
       } else {
         match +=
-        "-[:has_successor]->(successor:DataObject {deleted: FALSE, " +
-        Constants.SHEPARD_ID +
-        ": " +
-        paramsWithShepardIds.getSuccessorId() +
-        "})";
+          "-[:has_successor]->(successor:DataObject {deleted: FALSE, " +
+          Constants.SHEPARD_ID +
+          ": " +
+          paramsWithShepardIds.getSuccessorId() +
+          "})";
       }
     }
 
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
       query +=
-      " " +
-      CypherQueryHelper.getOrderByPart(
-        "d",
-        paramsWithShepardIds.getOrderByAttribute(),
-        paramsWithShepardIds.getOrderDesc()
-      );
+        " " +
+        CypherQueryHelper.getOrderByPart(
+          "d",
+          paramsWithShepardIds.getOrderByAttribute(),
+          paramsWithShepardIds.getOrderDesc()
+        );
     }
     if (paramsWithShepardIds.hasPagination()) {
       query += " " + CypherQueryHelper.getPaginationPart();

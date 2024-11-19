@@ -5,7 +5,7 @@ import type {
   Collection,
   CollectionReference,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { reactive } from "vue";
 
 defineProps({

@@ -58,13 +58,14 @@ sed -i "s@hostname_placeholder_do_not_change@HOSTNAME@" proxy/shepard/index.html
 - Prepare needed directories for volume mounts:
 
 ```bash
-mkdir /opt/shepard/backend/logs/ /opt/shepard/backend/config
+mkdir /opt/shepard/backend/logs/ /opt/shepard/backend/config /opt/shepard/timescaledb/
 ```
 
 - Adapt user permissions
 
 ```bash
 sudo chown 185:185 /opt/shepard/backend/logs/ /opt/shepard/backend/config
+sudo chown 1000:1000 /opt/shepard/timescaledb/
 ```
 
 ### 5. Check configuration in `docker-compose.yml` and especially check available memory
@@ -95,11 +96,11 @@ command: --wiredTigerCacheSizeGB 2.0
 INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
 ```
 
-### 6. Copy the file `env.example` to `.env`
+### 6. Copy the file `.env.example` to `.env`
 
 ```bash
 # copy configuration file
-cp env.example .env
+cp .env.example .env
 ```
 
 ### 7. Set passwords and configuration in the `.env` file
@@ -108,16 +109,22 @@ cp env.example .env
 - URLs have to end with a trailing slash
 - The database passwords can be changed arbitrarily at the beginning
 
-| Variable       | Description                                                                                               | Example                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| BACKEND_URL    | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
-| NEO4J_PW       | initial Neo4j password                                                                                    |                                                                                                   |
-| MONGO_PW       | initial MongoDB password                                                                                  |                                                                                                   |
-| INFLUX_PW      | initial InfluxDB password                                                                                 |                                                                                                   |
-| OIDC_AUTHORITY | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
-| OIDC_PUBLIC    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
-| OIDC_ROLE      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID      | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| Variable            | Description                                                                                               | Example                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL         | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW            | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_ROOT_USERNAME | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
+| MONGO_ROOT_PASSWORD | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
+| MONGO_DATABASE      | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
+| MONGO_USERNAME      | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
+| MONGO_PW            | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |
+| INFLUX_PW           | initial InfluxDB password                                                                                 |                                                                                                   |
+| POSTGRES_PW         | postgres user password                                                                                    |                                                                                                   |
+| OIDC_AUTHORITY      | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC         | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE           | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID           | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| Variable            | Description                                                                                               | Example                                                                                           |
 
 ## Restrict access to users with specific roles
 
@@ -140,6 +147,10 @@ Some OpenID Connect identity providers such as [Keycloak](https://www.keycloak.o
 
 The shepard backend can be configured to allow only users with a specific role. To do so, the optional `OIDC_ROLE` variable in `.env` can be set to the given role. From the next restart, users without this role will no longer be able to access shepard.
 
+## Restrict public access to Chronograph
+
+Chronograf by default is publicly accessible! You can configure it with OAuth or simply with a password and username. More information can be found [here](https://docs.influxdata.com/chronograf/v1/administration/managing-security/).
+
 ## Start
 
 Make sure that all requested resources are available. In particular, check the free memory, since the shepard backend and the databases will use a lot of it. You can adjust the maximum amount of used memory in `docker-compose.yml`.
@@ -150,6 +161,143 @@ docker compose up -d
 ```
 
 You can find the backend logs in `/opt/shepard/backend/logs`.
+
+## How to use Metrics
+
+Shepard backend provides a metrics endpoint.
+You can access helpful information about the system and resource consumption by using this endpoint.
+We recommend to use `Prometheus` as a monitoring system and data store and Grafana for visualization,
+but you can access the metrics endpoint directly in the browser: `/shepard/doc/metrics/prometheus`.
+You will receive a JSON document with the current values.
+
+### Setup Prometheus
+
+We provide a `docker-compose-monitoring.yml` file in the infrastructure folder.
+That contains two images, prometheus and grafana.
+
+The configuration file for prometheus is located in `infrastructure/prometheus/prometheus.yml`.
+In general the configuration should be correct.
+You may have to adapt the configuration file if you changed you network name or any other configuration in the docker compose files.
+The docker compose files that we provide make use of the same network called `shepard`.
+Prometheus and shepard backend have to run in the same network, otherwise prometheus is not able to collect the metrics.
+The configuration file contains one job that collects metrics from the metrics endpoint of shepard.
+If the backend service is called `backend` the configuration should be correct.
+Otherwise you have to adapt it.
+
+### Setup Grafana
+
+#### Adapt caddyfile
+
+Grafana is used for visualization.
+In order to access Grafana, you have to configure it in the caddyfile.
+Make a copy of an existing section and do the following changes:
+
+```json
+https://grafana.shepard.example.com {
+	reverse_proxy grafana:3000
+  ...
+}
+```
+
+Make sure to replace _shepard.example.com_ with the correct hostname of your system like for the other entries.
+
+#### Configuration in .env file
+
+You have to provide username and password for using Grafana.
+They have to be configured in the .env file.
+
+```json
+GRAFANA_ADMIN_USERNAME=grafana
+GRAFANA_ADMIN_PASSWORD=secure_password
+```
+
+#### Adapt network name in docker compose file
+
+Prometheus needs access to the shepard backend, so we have to use the same network name.
+You can get a list of used network names by docker with the following command:
+
+```shell
+docker network ls
+```
+
+Pick the network name that contains the keyword 'shepard'.
+Copy that name and paste it into the `docker-compose-monitoring.yml` file in the networks section:
+
+```json
+networks:
+  shepard_network
+    name: _your_network_name_here
+    external: true
+```
+
+Now you should be able to start the docker files with `docker compose up`.
+
+#### First steps with Grafana
+
+Now you should be able to open the grafana ui via browser with the url you have configured in the caddyfile.
+First, you need to configure a data source (prometheus).
+Second, you can explore the metrics that are available.
+Third, you can build a dashboard that provides a good overview over the system and resource consumption.
+
+##### Adding a data source
+
+Metrics are collected by and stored in prometheus.
+In order to visualize them with Grafana, you have to add a connection to prometheus:
+
+- open Grafana UI and login
+- click on Connections/Add new connection
+- search for Prometheus and select it
+- use the following settings to connect:
+  - Connection: http://prometheus:9090
+- Click 'Save & test'
+
+## Experimental features
+
+There is a `docker-compose-exp.yml` file that holds a deployment setup with experimental extensions.
+To be able to try those extensions, the deployment should be run using this file instead.
+
+### Standalone Nuxt frontend (v2.0.0)
+
+- Adapt the proxy config by adding the subdomain mapping the the Caddy file.
+
+```
+https://nuxtend.hostname_placeholder_do_not_change {
+	reverse_proxy nuxtend:3000
+
+	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
+}
+```
+
+- Add the new link the index page
+
+```html
+<a href="https://nuxtend.hostname_placeholder_do_not_change/"> https://nuxtend.hostname_placeholder_do_not_change/ </a>
+```
+
+- Add the experimental environment variables in `.env`
+
+```
+FRONTEND_URL='Frontend URL' # (should end with '/')
+FRONTEND_AUTH_SECRET='Frontend auth secret'
+```
+
+> **_NOTE:_** The `FRONTEND_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`
+>
+> ```bash
+> $ openssl rand -base64 32
+> ```
+
+### TimescaleDB
+
+There is an experimental database to store the timeseries data used as replacement for InfluxDB.
+This database will be experimental until the migration from InfluxDB is completely layed down.
+Running this database requires changes to directory permissions like mentioned in [here](#4-create-necessary-directories)
+
+### Run the experimental docker compose file
+
+```bash
+docker compose -f .\docker-compose-exp.yml up -d
+```
 
 ## Update
 
@@ -188,7 +336,7 @@ Sometimes the installation does not work as expected or the system does not boot
 
 ### Review your configuration
 
-Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `env.example` must be set. Also look at the provided URLs, as all URLs must end with a trailing slash.
+Verify that the configuration meets the given requirements. The file must have the name `.env` and all variables from `.env.example` must be set. Also look at the provided URLs, as all URLs must end with a trailing slash.
 
 ### Read the logs
 
@@ -240,3 +388,11 @@ access user (UID=185).
 > LogManager error of type OPEN_FAILURE: Failed to set log file
 
 To keep the backend docker image secure and clean we can keep relying on the same user and make sure to [set the right directory permissions](#4-create-necessary-directories).
+
+### Permission issue for TimescaleDB
+
+The following error indicates that the mounted volume requires different access permission to be able to store data in the hosting system.
+
+> initdb: error: could not change permissions of directory "/var/lib/postgres/data": Operation not permitted
+
+To solve it make sure to [set the right directory permissions](#4-create-necessary-directories).

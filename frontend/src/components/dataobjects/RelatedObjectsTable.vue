@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DataObjectList from "@/components/dataobjects/DataObjectList.vue";
-import type { DataObject } from "@dlr-shepard/shepard-client";
+import type { DataObject } from "@dlr-shepard/backend-client";
 import { ref, type PropType } from "vue";
 
 const props = defineProps({

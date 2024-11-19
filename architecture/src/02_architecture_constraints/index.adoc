@@ -11,4 +11,9 @@ ifndef::imagesdir[:imagesdir: ../../images]
 * Software must be operational in the DLR environment:
 ** no access to the internet
 ** DNS is not available everywhere
+* Responsiveness:
+** shepard works well on desktop screens from 14 to 24 inches with 1080p resolution, also on half window size
+** shepard works well on tablets
+** shepard is not optimized for mobile devices
+* Browser support: shepard supports at least Firefox ESR and the latest version of Microsoft Edge
 * Accessibility: The basic features should be implemented like high contrast and big font sizes. No special features like support for screen readers are needed.

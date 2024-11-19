@@ -4,7 +4,7 @@ import { handleError } from "@/utils/error-handling";
 import type {
   ContainerQueryType,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { ref, watch, type Ref } from "vue";
 
 const routerMap: { [key: string]: string } = {

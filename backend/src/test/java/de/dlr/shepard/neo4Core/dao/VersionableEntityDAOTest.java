@@ -5,10 +5,12 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.VersionableEntity;
+import de.dlr.shepard.util.CypherQueryHelper;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -41,7 +43,9 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     String query =
       "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = " +
       ent.getShepardId() +
-      " AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
+      " AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
     VersionableEntity actual = dao.findByShepardId(ent.getShepardId());
     assertEquals(ent, actual);
@@ -52,14 +56,10 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     TestObject ent = new TestObject();
     ent.setId(1L);
     ent.setShepardId(11L);
-    String versionUID = "123";
+    UUID versionUID = new UUID(1L, 2L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = " +
-      ent.getShepardId() +
-      " AND v.uid = '" +
-      versionUID +
-      "' WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND (v.uid = '00000000-0000-0001-0000-000000000002') WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
     VersionableEntity actual = dao.findByShepardId(ent.getShepardId(), versionUID);
     assertEquals(ent, actual);
@@ -85,7 +85,9 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     ent.setShepardId(11L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) WITH o RETURN o";
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " WITH o RETURN o";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
     VersionableEntity actual = dao.findLightByShepardId(ent.getShepardId());
     assertEquals(ent, actual);

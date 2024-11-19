@@ -45,10 +45,16 @@ In these cases, the situation needs to be described in the <<technical-debt, tab
 |===
 |ID|Name|Description|Solution Strategy|Priority
 
-|
-|
-|
-|
-|
+|1
+|Missing permissions
+|Back in the time when we started developing shepard, there was no authorization implemented. Therefore, not all Collections or Containers are guaranteed to have permissions attached. There is a fallback solution implemented in shepard to take care of such situations. We decided that `no permissions` means `everyone has access`.
+|A database migration could be implemented to add empty permissions to all entities. However, we should not make any assumptions about the actual permissions to avoid breaking existing datasets.
+|Low
+
+|2
+|Cryptic usernames
+|Depending on how the OIDC identity provider is configured, shepard sometimes generates very cryptic user names. The username is retrieved from the `subject` field of the JWT. While the subject is guaranteed to be unique, some identity providers generate a UUID, which makes the resulting username not very user-friendly. Keycloak uses subjects in the form `f:173df088-e611-4535-827a-feb57457a5a6:haas_tb`, where the last part is the actual username as it appears in the active directory. Therefore it seemed to be a good idea to use only the last part as username in shepard. However, this logic breaks as soon as another identity provider is used.
+|Since the username is used to identify users in shepard, it is not so easy to change it. A migration would be possible if shepard could fetch all available users from the identity provider and then migrate all users at once. However, this is not possible with the current configuration. Keycloak adds a `preferred_username` field to the JWTs, but this is an addition that comes from Keycloak and is not specified by OIDC.
+|High
 
 |===

@@ -4,7 +4,7 @@ import {
   type DeleteApiKeyRequest,
   type GetAllApiKeysRequest,
   type GetApiKeyRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class ApiKeyService {

@@ -23,6 +23,12 @@
       "groupName": "backend dependencies"
     },
     {
+      "matchFileNames": ["backend/**"],
+      "packageNames": ["io.quarkus:quarkus-bom"],
+      "groupName": "backend quarkus update",
+      "prBody": "This pull request updates Quarkus to the latest version. We do not want to update to non-LTS versions of Quarkus. A list of current Quarkus releases can be found here [Quarkus releases](https://quarkus.io/blog/tag/release/)."
+    },
+    {
       "matchFileNames": ["frontend/**"],
       "groupName": "frontend dependencies"
     },
@@ -108,6 +114,12 @@
       "allowedVersions": "<5"
     },
     {
+      "matchPackageNames": ["node"],
+      "matchManagers": ["gitlabci", "dockerfile"],
+      "versionCompatibility": "^(?<version>[^-]+)(?<compatibility>-.*)?$",
+      "versioning": "node"
+    },
+    {
       "matchPackageNames": ["@vue/tsconfig"],
       "matchManagers": ["npm"],
       "allowedVersions": "<0.2"
@@ -128,6 +140,16 @@
       "allowedVersions": "<9"
     },
     {
+      "matchPackageNames": ["@vue/eslint-config-typescript"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<14"
+    },
+    {
+      "matchPackageNames": ["@vue/eslint-config-prettier"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<10"
+    },
+    {
       "matchPackageNames": ["org.neo4j:neo4j-ogm{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
@@ -141,11 +163,6 @@
       "matchPackageNames": ["org.junit.jupiter:junit-jupiter{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<5.11"
-    },
-    {
-      "matchPackageNames": ["openapitools/openapi-generator-cli"],
-      "matchFileNames": [".gitlab/ci/clients/python-legacy.gitlab-ci.yml"],
-      "allowedVersions": "<7"
     }
   ]
 }

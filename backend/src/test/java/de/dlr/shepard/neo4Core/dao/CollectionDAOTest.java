@@ -11,6 +11,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.orderBy.DataObjectAttributes;
+import de.dlr.shepard.util.CypherQueryHelper;
 import de.dlr.shepard.util.QueryParamHelper;
 import java.util.Collections;
 import java.util.Date;
@@ -77,7 +78,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
 
@@ -129,7 +134,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -186,7 +195,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
 
@@ -241,7 +254,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c ORDER BY toLower(c.name) DESC MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
@@ -297,7 +314,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -354,7 +375,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) \
       WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
@@ -416,7 +441,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN c, nodes(path), relationships(path)""";
     when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1, col2));
@@ -478,7 +507,11 @@ public class CollectionDAOTest extends BaseTestCase {
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
       OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
-      AND (NOT exists ((v)<-[:has_predecessor]-(:Version))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " " +
+      """
       WITH c ORDER BY toLower(c.name) DESC SKIP $offset LIMIT $size MATCH path=(c)-[*0..1]-(n) \
       WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN c, nodes(path), relationships(path)""";

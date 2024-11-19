@@ -171,7 +171,7 @@ public class StructuredDataReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), structuredData.getOid())).thenReturn(structuredData);
-    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
+    when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
   }
@@ -232,7 +232,7 @@ public class StructuredDataReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(null);
-    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
+    when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
   }

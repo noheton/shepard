@@ -1,7 +1,7 @@
 import {
   ReferenceApi,
   type GetAllReferencesRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class ReferenceService {

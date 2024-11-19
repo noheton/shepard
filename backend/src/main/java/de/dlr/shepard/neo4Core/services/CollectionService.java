@@ -17,6 +17,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class CollectionService {
@@ -62,7 +63,7 @@ public class CollectionService {
     toCreate.setName(collection.getName());
     var createdCollection = collectionDAO.createOrUpdate(toCreate);
 
-    Version nullVersion = new Version(Constants.INITIAL_VERSION, Constants.INITIAL_VERSION, date, user);
+    Version nullVersion = new Version(Constants.HEAD, Constants.HEAD_VERSION, date, user);
     Version savedNullVersion = versionDAO.createOrUpdate(nullVersion);
 
     long collectionId = createdCollection.getId();
@@ -87,7 +88,7 @@ public class CollectionService {
     return collections;
   }
 
-  public Collection getCollectionByShepardId(long shepardId, String versionUID) {
+  public Collection getCollectionByShepardId(long shepardId, UUID versionUID) {
     Collection ret;
     String errorMsg;
     if (versionUID == null) {

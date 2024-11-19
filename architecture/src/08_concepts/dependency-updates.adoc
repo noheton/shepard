@@ -3,9 +3,15 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [[dependency-updates,Dependency Updates]]
 === Dependency Updates
 
-Dependencies of shepard are updated regularly. To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab. The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json]. In order for the config to be active, it has to be present at the default branch of the repository (main). The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
+Dependencies of shepard are updated regularly.
+To automate most of this, we use link:https://docs.renovatebot.com/[renovate] in GitLab.
+The configuration for the repository is located at link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate.json].
+In order for the config to be active, it has to be present at the default branch of the repository (main).
+The renovate runner is located in this (private) repository: link:https://gitlab.com/dlr-shepard/renovate-runner[].
 
-The developer team is responsible of regularly handling the pull requests opened by renovate. This should happen once a week, except for weeks where new versions are released. As a weekly reminder, weekly update tickets are part of the sprints.
+The developer team is responsible of regularly handling the pull requests opened by renovate.
+This should happen once a month directly after creating a monthly release.
+As a reminder, monthly update tickets are part of the sprints.
 
 ==== Performing Updates
 
@@ -16,14 +22,17 @@ We handle the merge requests opened by renovate by performing the following step
 3. applying necessary changes if they are not too much effort
 4. merging the branch *or* <<suspending-an-update, suspending the update>>.
 
-Also, the dependencies in package-lock.json should be updated. This is done by running `npm update` in the top level directory.
+Also, the dependencies in package-lock.json should be updated.
+This is done by running `npm update` in the top level directory.
 
 [[suspending-an-update]]
 ==== Suspending an Update
 
-In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>. The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
+In case we could not perform the update it should be suspended and documented in the list of <<suspended-updates, suspended updates>>.
+The reason can either be too much effort (we create a new story for that update) or that the update is not possible or feasible right now.
 
-This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config]. Afterwards the config needs to be merged to main with the following commands:
+This can be done by excluding the library or specific version in the link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/renovate.json?ref_type=heads[renovate config].
+Afterwards the config needs to be merged to main with the following commands:
 
 ```sh
 git checkout main
@@ -31,6 +40,21 @@ git cherry-pick <commit-hash>
 ```
 
 Afterwards the merge request can be closed.
+
+==== Abandoned dependency updates
+
+Sometimes, when the configuration changes or dependency updates were done without renovate, the bot might abandon a merge request.
+In this case the merge request is not automatically closed and has to be closed manually.
+The corresponding branch must also be deleted manually to keep things clean.
+
+
+===== Use Only LTS updates for Quarkus
+
+In our technology choices we decided to only rely on LTS updates of Quarkus.
+Currently, there is no way to advice the renovate bot to respect only LTS releases of Quarkus.
+Therefore, we have to manually check that the Quarkus update is always the latest LTS release.
+We do not want to update to non-LTS versions of Quarkus.
+A list of current Quarkus releases can be found here link:https://quarkus.io/blog/tag/release/[Quarkus releases].
 
 [[suspended-updates]]
 ===== Suspended Updates
@@ -80,7 +104,13 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 |
 
 |eslint<9
-|
+|`--ext` option is not supported and the current eslintrc file structure is not supported anymore.
+
+|@vue/eslint-config-prettier<10
+|Has peer dependency to current version of eslint
+
+|@vue/eslint-config-typescript<14
+|Has peer dependency to current version of eslint
 
 |neo4j-ogm<4
 |v5 is not compatible with neo4j v4
@@ -90,7 +120,4 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 
 |junit-jupiter<5.11
 |Not possible atm because parametrized tests in combination with CsvSource do not work any longer. We will wait for the next version.
-
-|openapi-generator-cli<7 (for python-legacy client)
-|the python-legacy client was removed afterwards
 |===

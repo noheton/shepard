@@ -5,7 +5,7 @@ import {
   type GetAllStructuredDataReferencesRequest,
   type GetStructuredDataPayloadRequest,
   type GetStructuredDataReferenceRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class StructuredDataReferenceService {

@@ -8,7 +8,6 @@ import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.QueryParamHelper;
@@ -18,6 +17,7 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class DataObjectService {
@@ -78,8 +78,7 @@ public class DataObjectService {
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
-    Version version = collection.getVersion();
-    versionDAO.createLink(created.getId(), version.getUid().toString());
+    versionDAO.createLink(created.getId(), collection.getVersion().getUid());
     return created;
   }
 
@@ -89,14 +88,26 @@ public class DataObjectService {
    * @param shepardId identifies the searched dataObject
    * @return the DataObject with the given id or null
    */
-  public DataObject getDataObjectByShepardId(long shepardId) {
-    DataObject dataObject = dataObjectDAO.findByShepardId(shepardId);
-    if (dataObject == null || dataObject.isDeleted()) {
-      Log.errorf("Data Object with id %s is null or deleted", shepardId);
+  public DataObject getDataObjectByShepardId(long shepardId, UUID versionUID) {
+    DataObject ret;
+    String errorMsg;
+    if (versionUID == null) {
+      ret = dataObjectDAO.findByShepardId(shepardId);
+      errorMsg = String.format("DataObject with id %s is null or deleted", shepardId);
+    } else {
+      ret = dataObjectDAO.findByShepardId(shepardId, versionUID);
+      errorMsg = String.format("DataObject with id %s and versionUID %s is null or deleted", shepardId, versionUID);
+    }
+    if (ret == null || ret.isDeleted()) {
+      Log.error(errorMsg);
       return null;
     }
-    cutDeleted(dataObject);
-    return dataObject;
+    cutDeleted(ret);
+    return ret;
+  }
+
+  public DataObject getDataObjectByShepardId(long shepardId) {
+    return getDataObjectByShepardId(shepardId, null);
   }
 
   /**
@@ -104,13 +115,16 @@ public class DataObjectService {
    *
    * @param collectionShepardId  identifies the collection
    * @param paramsWithShepardIds encapsulates possible parameters
+   * @param versionUID identifies the version
    * @return a List of DataObjects
    */
+
   public List<DataObject> getAllDataObjectsByShepardIds(
     long collectionShepardId,
-    QueryParamHelper paramsWithShepardIds
+    QueryParamHelper paramsWithShepardIds,
+    UUID versionUID
   ) {
-    var unfiltered = dataObjectDAO.findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds);
+    var unfiltered = dataObjectDAO.findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds, versionUID);
     var dataObjects = unfiltered.stream().map(this::cutDeleted).toList();
     return dataObjects;
   }

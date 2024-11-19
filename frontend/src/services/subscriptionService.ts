@@ -4,7 +4,7 @@ import {
   type DeleteSubscriptionRequest,
   type GetAllSubscriptionsRequest,
   type GetSubscriptionRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class SubscriptionService {

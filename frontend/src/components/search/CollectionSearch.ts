@@ -1,7 +1,7 @@
 import router from "@/router";
 import SearchService from "@/services/searchService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 import { ref, watch, type Ref } from "vue";
 
 export function useCollectionSearch(

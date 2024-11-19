@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@dlr-shepard/shepard-client";
+import type { User } from "@dlr-shepard/backend-client";
 import type { BPopover } from "bootstrap-vue";
 import { ref, type PropType } from "vue";
 

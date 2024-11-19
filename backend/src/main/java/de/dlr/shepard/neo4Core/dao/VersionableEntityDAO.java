@@ -3,6 +3,7 @@ package de.dlr.shepard.neo4Core.dao;
 import de.dlr.shepard.util.CypherQueryHelper;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
 
@@ -14,7 +15,7 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     return findByShepardId(shepardId, false);
   }
 
-  public T findByShepardId(Long shepardId, String versionUID) {
+  public T findByShepardId(Long shepardId, UUID versionUID) {
     return findByShepardId(shepardId, versionUID, false);
   }
 
@@ -36,7 +37,7 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     return result.iterator().next();
   }
 
-  private T findByShepardId(Long shepardId, String versionUID, boolean light) {
+  private T findByShepardId(Long shepardId, UUID versionUID, boolean light) {
     Map<String, Object> paramsMap = new HashMap<>();
     var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
     String query = String.format(
@@ -45,6 +46,7 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
       CypherQueryHelper.getVersionPart("v", versionUID)
     );
     query += returnPart;
+
     Iterable<T> result = findByQuery(query, paramsMap);
     if (!result.iterator().hasNext()) return null;
     return result.iterator().next();

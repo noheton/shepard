@@ -4,7 +4,7 @@ import {
   type DeleteUriReferenceRequest,
   type GetAllUriReferencesRequest,
   type GetUriReferenceRequest,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getConfiguration } from "./serviceHelper";
 
 export default class UriReferenceService {

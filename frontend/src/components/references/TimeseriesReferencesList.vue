@@ -11,7 +11,7 @@ import { convertDate, getQueryParam } from "@/utils/helpers";
 import type {
   ResponseError,
   TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

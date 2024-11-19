@@ -37,3 +37,70 @@ This chapter is still under construction
 |
 |
 |===
+
+=== Backend (Quarkus)
+
+==== Modularization
+
+[NOTE]
+====
+Previously, the modules have been organized along their technical purpose.
+That means that there was one package for all endpoints, one package for all neo4j entities, one package for all DAOs etc.
+This leads to logic and domain objects that are closely coupled being far away from each other, making both changes very distributed across the code base and the code of one feature hard to grasp.
+
+To mitigate this, we decided on a new modularization strategy, that will be applied with each update or refactoring touching a part of the code.
+The first example is the new timeseries module under `de.dlr.shepard.timeseries`.
+The following is a description of this **target** modularization.
+====
+
+The backend is split into modules by their functionality.
+That means that there is e.g. a module for timeseries including managing containers and timeseries data, a module for managing files, for collections & data objects etc.
+
+Each of those modules contains all technical components needed to fulfill it's purpose, including endpoints, services, domain model objects, DAOs, entities and repositories.
+
+Additionally, there may be modules for special functionalities like authentication.
+
+==== REST Endpoints
+
+We use link:https://quarkus.io/guides/rest[quarkus-rest] to define REST endpoints.
+
+For authentication and general request validation, we use filters following the link:https://quarkus.io/guides/rest#the-jakarta-rest-way[Jakarta REST way].
+The filters can be found at `filters/`.
+In general, all requests need to be done by authenticated users.
+The `JWTFilter` and the `UserFilter` take care of validating authentication.
+
+Some endpoints should be public, for example `/healthz` and `/versionz`.
+To make this possible we use the `PublicEndpointRegistry` class.
+In this class we register all public endpoints in a static string array.
+The authentication filters will be bypassed for endpoints in this array.
+Since the `/healthz` endpoint is automatically public thanks to the link:https://quarkus.io/guides/smallrye-health[SmallRye Health] extension, we don't need to add it to the `PublicEndpointRegistry`.
+
+=== Frontend (Nuxt)
+
+==== Structure
+
+Each route is defined in **pages/**.
+The root file of a route itself should not contain a lot of logic, instead it should invoke one or more components.
+
+In **components/** all components are stored.
+These are grouped in folders by domain, e.g. `components/collections`.
+
+Stateful logic can be extracted into link:https://vuejs.org/guide/reusability/composables[composables] and are stored in **composables/**.
+
+Stateless utility functions should be stored under **utils/**.
+
+==== Backend Interaction
+
+For the interaction with the backend we check a generated openapi client into the repository, see <<backend-client-for-frontend, here>> for more information.
+
+In order to directly instantiate the API clients with our default configuration, we use the `createApiInstance` utility.
+
+=== Technology Choices
+
+==== Using Node LTS
+
+The current LTS version of Node.js should be used in all of the project (Gitlab jobs, docker images, local development, etc.) to maintain reliability and performance.
+
+==== Using Quarkus LTS
+
+The current LTS version of Quarkus should be used in our backend to maintain reliability and performance.

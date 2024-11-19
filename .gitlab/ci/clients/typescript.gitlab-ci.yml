@@ -1,7 +1,7 @@
 .build_typescript: &build_typescript
   stage: build
   image:
-    name: openapitools/openapi-generator-cli:v7.8.0
+    name: openapitools/openapi-generator-cli:v7.10.0
     entrypoint: [""]
   needs: [build_backend, get_version]
   script:
@@ -13,7 +13,7 @@
 
 .upload_typescript: &upload_typescript
   stage: upload
-  image: node:21-slim
+  image: node:22-slim
   needs: [build_typescript_client, get_version]
   before_script:
     - cd clients/typescript

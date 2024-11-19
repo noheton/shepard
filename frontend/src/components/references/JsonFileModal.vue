@@ -2,7 +2,7 @@
 import JsonEditor from "@/components/generic/JsonEditor.vue";
 import FileService from "@/services/fileService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 
 import { ref } from "vue";
 

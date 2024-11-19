@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { permissionOptions as pOptions } from "@/utils/helpers";
-import { PermissionType } from "@dlr-shepard/shepard-client";
+import { PermissionType } from "@dlr-shepard/backend-client";
 import { ref } from "vue";
 
 const props = defineProps({

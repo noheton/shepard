@@ -137,14 +137,14 @@ public abstract class GenericDAO<T> {
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
     ret +=
-    " WHERE d." +
-    Constants.SHEPARD_ID +
-    " = " +
-    startShepardId +
-    " AND col." +
-    Constants.SHEPARD_ID +
-    " = " +
-    collectionShepardId;
+      " WHERE d." +
+      Constants.SHEPARD_ID +
+      " = " +
+      startShepardId +
+      " AND col." +
+      Constants.SHEPARD_ID +
+      " = " +
+      collectionShepardId;
     ret += getReturnPart("ns", "ret", "col", userName);
     return ret;
   }
@@ -196,14 +196,14 @@ public abstract class GenericDAO<T> {
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
     ret +=
-    " WHERE d." +
-    Constants.SHEPARD_ID +
-    " = " +
-    startShepardId +
-    " AND col." +
-    Constants.SHEPARD_ID +
-    " = " +
-    collectionShepardId;
+      " WHERE d." +
+      Constants.SHEPARD_ID +
+      " = " +
+      startShepardId +
+      " AND col." +
+      Constants.SHEPARD_ID +
+      " = " +
+      collectionShepardId;
     ret += getReturnPart("ns", "ret", "col", userName);
     return ret;
   }

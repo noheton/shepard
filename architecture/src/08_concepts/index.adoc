@@ -7,7 +7,11 @@ include::documentation.adoc[]
 
 include::migrations.adoc[]
 
+include::authentication.adoc[]
+
 include::authorization.adoc[]
+
+include::user-information.adoc[]
 
 include::dependency-updates.adoc[]
 
@@ -24,3 +28,15 @@ include::configuration.adoc[]
 include::versioning.adoc[]
 
 include::openapi-specification.adoc[]
+
+include::backend-clients.adoc[]
+
+include::testing-strategy.adoc[]
+
+include::exceptions.adoc[]
+
+include::subscriptions.adoc[]
+
+include::theming.adoc[]
+
+include::session-management.adoc[]

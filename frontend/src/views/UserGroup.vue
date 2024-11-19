@@ -11,7 +11,7 @@ import type {
   Roles,
   User,
   UserGroup,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
 import { computed, onMounted, onUpdated, ref, type Ref } from "vue";
 import { createVuexHelpers } from "vue2-helpers";

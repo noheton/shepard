@@ -2,7 +2,7 @@
 import CollectionService from "@/services/collectionService";
 import DataObjectService from "@/services/dataObjectService";
 import { logError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 import { computed, ref, watch } from "vue";
 import type { Location } from "vue-router";
 import { useRoute } from "vue2-helpers/vue-router";

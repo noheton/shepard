@@ -12,7 +12,7 @@ import type {
   Timeseries,
   TimeseriesPayload,
   TimeseriesReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { Chart, registerables } from "chart.js";
 import Vue, { computed, onMounted, reactive, ref, type PropType } from "vue";
 

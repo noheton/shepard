@@ -10,7 +10,7 @@ import type {
   BasicReference,
   ResponseError,
   SemanticAnnotation,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { getCurrentInstance, onMounted, ref, type PropType } from "vue";
 
 const props = defineProps({

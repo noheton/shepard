@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FileService from "@/services/fileService";
 import { logError } from "@/utils/error-handling";
-import type { ResponseError } from "@dlr-shepard/shepard-client";
+import type { ResponseError } from "@dlr-shepard/backend-client";
 import { Chart, registerables } from "chart.js";
 import {
   parse,

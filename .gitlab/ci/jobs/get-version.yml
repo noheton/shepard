@@ -1,7 +1,7 @@
 get_version:
   stage: check
   image:
-    name: curlimages/curl:8.9.1
+    name: curlimages/curl:8.11.0
   script:
     - export LATEST_TAG=$(curl -s ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases | grep -oE '"tag_name":"[0-9]+\.[0-9]+\.[0-9]+(-\w+)?"' | head -n 1 | sed 's/.*"tag_name":"\([^"]*\)".*/\1/' | sed 's/-release//g')
     # version number is the latest tag if there is no pushed tag (for the release)
@@ -11,6 +11,11 @@ get_version:
     - echo "IS_DEV_JOB"=0 >> versions.env
     - echo "LATEST_TAG=$LATEST_TAG" >> versions.env
     - echo "VERSION_NUMBER=$VERSION_NUMBER" >> versions.env
+
+    # Disable feature toggles for main pipeline
+    - echo "SHEPARD_EXPERIMENTAL_TIMESERIES_ENABLED=false" >> versions.env
+    - echo "SHEPARD_VERSIONING_ENABLED=false" >> versions.env
+
     - cat versions.env
   artifacts:
     when: always

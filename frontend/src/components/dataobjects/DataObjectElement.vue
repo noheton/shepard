@@ -2,7 +2,7 @@
 import DataObjectListItem from "@/components/dataobjects/DataObjectListItem.vue";
 import DataObjectService from "@/services/dataObjectService";
 import { handleError } from "@/utils/error-handling";
-import type { DataObject, ResponseError } from "@dlr-shepard/shepard-client";
+import type { DataObject, ResponseError } from "@dlr-shepard/backend-client";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({

@@ -92,4 +92,4 @@ poetry run cli release ./token.txt
 ** Other changes besides dependency updates are listed below
 * A release tag `<version number>` on `main` is created
 ** The script automatically uses a Major version increase if the previous changes contain breaking changes.
-
+* Ask the user if the script should automatically create a 'Update Dependencies issue' for the current milestone after performing a successful release. This is done since we agreed on updating all dependencies after performing a release.

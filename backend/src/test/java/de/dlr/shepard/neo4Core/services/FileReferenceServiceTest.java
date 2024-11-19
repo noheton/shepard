@@ -168,7 +168,7 @@ public class FileReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
-    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
+    when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     FileReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
   }
@@ -229,7 +229,7 @@ public class FileReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(null);
-    when(versionDAO.findVersionByNeo4jId(dataObject.getId())).thenReturn(version);
+    when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
     assertEquals(createdWithShepardId, actual);
   }

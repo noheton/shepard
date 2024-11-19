@@ -1,6 +1,6 @@
 import store from "@/store";
 import getEnv from "@/utils/env";
-import { Configuration } from "@dlr-shepard/shepard-client";
+import { Configuration } from "@dlr-shepard/backend-client";
 
 export function getConfiguration(): Configuration {
   const token = store.getters["oidcStore/oidcAccessToken"];

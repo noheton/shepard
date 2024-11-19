@@ -4,7 +4,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import SubscriptionModal from "@/components/user/SubscriptionModal.vue";
 import SubscriptionService from "@/services/subscriptionService";
 import { handleError } from "@/utils/error-handling";
-import type { ResponseError, Subscription } from "@dlr-shepard/shepard-client";
+import type { ResponseError, Subscription } from "@dlr-shepard/backend-client";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({

@@ -2,7 +2,7 @@
 import type {
   DataObject,
   DataObjectReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import type { PropType } from "vue";
 
 defineProps({

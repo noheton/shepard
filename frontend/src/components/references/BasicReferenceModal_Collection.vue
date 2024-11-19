@@ -2,7 +2,7 @@
 import type {
   Collection,
   CollectionReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import type { PropType } from "vue";
 
 defineProps({

@@ -1,0 +1,31 @@
+.prepare_nuxtend:
+  image: node:22-slim
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+  before_script:
+    - echo //gitlab.com/api/v4/packages/npm/:_authToken=${CI_JOB_TOKEN} >> .npmrc
+    - npm ci --cache .npm --prefer-offline --workspace=nuxtend
+
+lint_nuxtend:
+  extends: .prepare_nuxtend
+  stage: test
+  needs: []
+  script:
+    - npm run lint --workspace=nuxtend
+
+build_nuxtend:
+  extends: .prepare_nuxtend
+  stage: build
+  needs: [get_version]
+  script:
+    - cd nuxtend
+    - npm version --no-git-tag-version --allow-same-version ${VERSION_NUMBER}
+    - npm run typecheck
+    - npm run build
+  artifacts:
+    paths:
+      - nuxtend/.output/

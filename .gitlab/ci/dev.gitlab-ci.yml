@@ -13,7 +13,9 @@ include:
   - local: .gitlab/ci/jobs/check-scripts.yml
   - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
+  - local: .gitlab/ci/jobs/build-nuxtend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
+  - local: .gitlab/ci/jobs/test-backend-with-databases.yml
   - local: .gitlab/ci/jobs/coverage.yml
   - local: .gitlab/ci/jobs/integration-test.yml
   - local: .gitlab/ci/jobs/build-documentation.yml
@@ -24,9 +26,13 @@ include:
   - local: .gitlab/ci/jobs/build-clients.yml
   - local: .gitlab/ci/jobs/upload-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml
+  - local: .gitlab/ci/jobs/diff-backend-client.yml
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: frontend
+  - local: .gitlab/ci/jobs/upload-docker.yml
+    inputs:
+      image_name: nuxtend
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: backend

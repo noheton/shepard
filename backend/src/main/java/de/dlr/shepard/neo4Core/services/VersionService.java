@@ -4,12 +4,15 @@ import de.dlr.shepard.neo4Core.dao.CollectionDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.dao.VersionDAO;
 import de.dlr.shepard.neo4Core.entities.Collection;
+import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.io.VersionIO;
 import de.dlr.shepard.util.DateHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class VersionService {
@@ -42,8 +45,8 @@ public class VersionService {
     return versions;
   }
 
-  public Version getVersion(long collectionId, String versionUID) {
-    return versionDAO.find(collectionId, versionUID);
+  public Version getVersion(UUID versionUID) {
+    return versionDAO.find(versionUID);
   }
 
   public Version createVersion(long collectionId, VersionIO version, String username) {
@@ -53,19 +56,33 @@ public class VersionService {
     Collection collectionCopy = new Collection(collection);
     collectionCopy.setCreatedAt(dateHelper.getDate());
     collectionCopy.setCreatedBy(user);
+    List<DataObject> dataObjectListCopy = new ArrayList<>();
+    collectionCopy.setDataObjects(dataObjectListCopy);
 
     Version newVersion = new Version();
     newVersion.setCreatedAt(dateHelper.getDate());
     newVersion.setCreatedBy(user);
     newVersion.setDescription(version.getDescription());
     newVersion.setName(version.getName());
-    newVersion.setPredecessor(HEADVersion);
+    if (HEADVersion.getPredecessor() != null) {
+      newVersion.setPredecessor(HEADVersion.getPredecessor());
+    }
 
     Version createdVersion = versionDAO.createOrUpdate(newVersion);
+    HEADVersion.setPredecessor(createdVersion);
+    versionDAO.createOrUpdate(HEADVersion);
 
     collectionCopy.setVersion(newVersion);
     collectionDAO.createOrUpdate(collectionCopy);
 
+    UUID HEADVersionUID = HEADVersion.getUid();
+    UUID createdVersionUID = createdVersion.getUid();
+    copyDataObjectsWithParentsAndPredecessors(HEADVersionUID, createdVersionUID);
+
     return createdVersion;
+  }
+
+  public boolean copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
+    return versionDAO.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID);
   }
 }

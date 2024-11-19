@@ -104,6 +104,8 @@ public class JWTFilterTest extends BaseTestCase {
   public void setUpUriInfo() throws URISyntaxException {
     URI uri = new URI("http://localhost:8080/shepard/api/projects");
     URI baseUri = new URI("http://localhost:8080/shepard/api");
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
     when(uriInfo.getAbsolutePath()).thenReturn(uri);
     when(uriInfo.getBaseUri()).thenReturn(baseUri);
     when(context.getUriInfo()).thenReturn(uriInfo);
@@ -115,6 +117,20 @@ public class JWTFilterTest extends BaseTestCase {
     when(context.getMethod()).thenReturn("OPTIONS");
     filter.filter(context);
     verify(context, never()).abortWith(any());
+  }
+
+  @Test
+  public void testFilterPublic_publicRoute() throws URISyntaxException {
+    when(uriInfo.getPath()).thenReturn("/versionz");
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+  }
+
+  @Test
+  public void testFilterPublic_privateRoute() throws URISyntaxException {
+    when(uriInfo.getPath()).thenReturn("/versionsz");
+    filter.filter(context);
+    verify(context).abortWith(any());
   }
 
   @Test

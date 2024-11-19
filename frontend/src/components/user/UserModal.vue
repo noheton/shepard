@@ -3,7 +3,7 @@ import { useSearchUsers } from "@/components/search/InlineSearchUsers";
 import UserSelectionPopover from "@/components/user/UserSelectionPopover.vue";
 import UserService from "@/services/userService";
 import { logError } from "@/utils/error-handling";
-import type { ResponseError, User } from "@dlr-shepard/shepard-client";
+import type { ResponseError, User } from "@dlr-shepard/backend-client";
 import { refDebounced } from "@vueuse/core";
 import { ref } from "vue";
 

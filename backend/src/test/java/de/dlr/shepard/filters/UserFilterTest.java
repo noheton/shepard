@@ -18,7 +18,9 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.security.Principal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,9 @@ public class UserFilterTest {
   @InjectMock
   UserGracePeriod lastSeen;
 
+  @InjectMock
+  UriInfo uriInfo;
+
   @Inject
   UserFilter filter;
 
@@ -55,12 +60,34 @@ public class UserFilterTest {
   }
 
   @Test
+  public void testFilterPublic_publicRoute() throws URISyntaxException, IOException {
+    String relativePath = "/versionz";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
+    filter.filter(requestContext);
+    verify(requestContext, never()).abortWith(any());
+  }
+
+  @Test
+  public void testFilterPublic_privateRoute() throws URISyntaxException, IOException {
+    String relativePath = "/versionsz";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
+    filter.filter(requestContext);
+    verify(requestContext).abortWith(any());
+  }
+
+  @Test
   public void testFilter_Successful() throws IOException, ShepardProcessingException {
     Principal p = new JWTPrincipal("bob", "MyKeyId");
     Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
     User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
+
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
     when(userService.updateUser(u)).thenReturn(u);
@@ -81,6 +108,9 @@ public class UserFilterTest {
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
     when(userService.updateUser(u)).thenReturn(u);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService).updateUser(u);
@@ -95,6 +125,9 @@ public class UserFilterTest {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(lastSeen.elementIsKnown("bob")).thenReturn(true);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -105,6 +138,9 @@ public class UserFilterTest {
   public void testFilter_NoPrincipal() throws IOException {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(null);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -123,6 +159,9 @@ public class UserFilterTest {
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -136,6 +175,9 @@ public class UserFilterTest {
 
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn(null);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -148,6 +190,9 @@ public class UserFilterTest {
 
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("invalid");
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -161,6 +206,9 @@ public class UserFilterTest {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenThrow(new ShepardProcessingException("Message"));
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -176,6 +224,9 @@ public class UserFilterTest {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(userService, never()).updateUser(any());
@@ -193,6 +244,9 @@ public class UserFilterTest {
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
     when(userService.updateUser(u)).thenReturn(null);
+    String relativePath = "/projects";
+    when(uriInfo.getPath()).thenReturn(relativePath);
+    when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
     verify(lastSeen, never()).elementSeen(any());

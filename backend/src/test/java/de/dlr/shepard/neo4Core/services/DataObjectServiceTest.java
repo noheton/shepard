@@ -64,6 +64,16 @@ public class DataObjectServiceTest {
   }
 
   @Test
+  public void getDataObjectByShepardIdWithVersionUIDTest() {
+    DataObject dataObject = new DataObject(5L);
+    UUID versionUID = new UUID(0L, 1L);
+    dataObject.setShepardId(55L);
+    when(dao.findByShepardId(dataObject.getShepardId(), versionUID)).thenReturn(dataObject);
+    DataObject returned = service.getDataObjectByShepardId(dataObject.getShepardId(), versionUID);
+    assertEquals(dataObject, returned);
+  }
+
+  @Test
   public void getDataObjectByShepardIdTest_deleted() {
     DataObject dataObject = new DataObject(5L);
     dataObject.setDeleted(true);
@@ -156,9 +166,78 @@ public class DataObjectServiceTest {
 
     QueryParamHelper params = new QueryParamHelper().withName("Name");
     Long collectionShepardId = 1L;
-    when(dao.findByCollectionByShepardIds(collectionShepardId, params)).thenReturn(List.of(dataObjectNotDeleted));
-    List<DataObject> returned = service.getAllDataObjectsByShepardIds(collectionShepardId, params);
+    when(dao.findByCollectionByShepardIds(collectionShepardId, params, null)).thenReturn(List.of(dataObjectNotDeleted));
+    List<DataObject> returned = service.getAllDataObjectsByShepardIds(collectionShepardId, params, null);
     assertEquals(List.of(dataObjectNotDeleted), returned);
+  }
+
+  @Test
+  public void createDataObjectByShepardIdWithoutPredecessorsTest() {
+    User user = new User("bob");
+    Date date = new Date(23);
+    Version version = new Version(new UUID(1L, 2L));
+    Collection collection = new Collection(2L);
+    collection.setShepardId(25L);
+    collection.setVersion(version);
+    DataObject parent = new DataObject(3L);
+    parent.setShepardId(35L);
+    parent.setCollection(collection);
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setParentId(parent.getShepardId());
+      }
+    };
+    DataObject toCreate = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setCollection(collection);
+        setParent(parent);
+      }
+    };
+    DataObject created = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setCollection(collection);
+        setParent(parent);
+        setId(1L);
+      }
+    };
+    DataObject createdWithShepardId = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setCollection(collection);
+        setParent(parent);
+        setId(created.getId());
+        setShepardId(created.getId());
+      }
+    };
+    when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(collectionDAO.findByShepardId(collection.getShepardId())).thenReturn(collection);
+    when(dao.createOrUpdate(toCreate)).thenReturn(created);
+    when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+    DataObject actual = service.createDataObjectByCollectionShepardId(
+      collection.getShepardId(),
+      input,
+      user.getUsername()
+    );
+    assertEquals(createdWithShepardId, actual);
   }
 
   @Test

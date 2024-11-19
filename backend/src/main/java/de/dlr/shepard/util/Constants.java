@@ -9,6 +9,7 @@ public class Constants {
   public static final String API_KEY_HEADER = "X-API-KEY";
 
   public static final String HEALTHZ = "healthz";
+  public static final String VERSIONZ = "versionz";
 
   public static final String USER = "user";
   public static final String USERS = "users";
@@ -75,6 +76,9 @@ public class Constants {
   public static final String TIMESERIES_CONTAINER = "timeseriesContainer";
   public static final String TIMESERIES_CONTAINERS = "timeseriesContainers";
 
+  public static final String EXPERIMENTAL_TIMESERIES_CONTAINER = "experimental-timeseriesContainer";
+  public static final String EXPERIMENTAL_TIMESERIES_CONTAINERS = "experimental-timeseriesContainers";
+
   public static final String TIMESERIES_CONTAINER_ID = "timeseriesContainerId";
   public static final String TIMESERIES_REFERENCE = "timeseriesReference";
   public static final String TIMESERIES_REFERENCES = "timeseriesReferences";
@@ -102,6 +106,8 @@ public class Constants {
   public static final String VERSION = "version";
   public static final String VERSIONS = "versions";
   public static final String INITIAL_VERSION = "initial version";
+  public static final String HEAD = "HEAD";
+  public static final String HEAD_VERSION = "HEAD version";
   public static final String VERSION_UID = "versionUid";
 
   public static final String OWNED_BY = "owned_by";

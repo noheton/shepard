@@ -1,0 +1,106 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Authentication
+
+We decided to rely on external identity providers with shepard.
+This allows us to use existing user databases such as Active Directories.
+In addition, we do not have to implement our own user database.
+Most shepard instances use keycloak as their identity provider.
+However, we want to be compatible with the OIDC specification so that other OIDC identity providers could work with shepard.
+
+The `JWTFilter`, which filters every incoming request, implements authentication by validating the submitted JWT.
+For this purpose, the JWT is decoded with a statically configured public key.
+OIDC allows the key to be obtained dynamically from the identity provider.
+However, we decided that a static configuration is more secure and has practically no disadvantages.
+The attack vector we are trying to mitigate here is that an attacker gains access to the infrastructure and somehow injects their own public key, which shepard would accept from that point on.
+
+If configured, the system also checks whether certain roles are present among the JWT's `realm_access.roles` attribute.
+This can be done by configuring the variable `OIDC_ROLES` for the backend.
+The backend then only accepts JWTs with the specified role.
+This enables the reuse of existing identity providers for different shepard instances, each of which can be accessed by different user groups.
+For example, if someone uses an Active Directory for Keycloak to fetch users from, then Keycloak could add specific roles to people based on AD groups they belong to.
+
+In addition to OIDC, we also allow authentication via API keys.
+Shepard generates these keys itself and stores them in our internal database.
+Although the API keys are also JWTs, we have to check whether the specified key can be found in our database.
+Otherwise, we would continue to accept keys that have already been deleted, which is not the intended behavior.
+
+==== Using Nuxt-Auth
+
+To be able to authenticate in the frontend and acquire a JWT token, we use link:https://auth.sidebase.io/[@sidebase/nuxt-auth] as our authentication module in the frontend.
+
+===== Adjust Nuxt config
+
+The file `nuxt.config.ts` holds configuration for the application.
+
+That is where we need to add the `@sidebase/nuxt-auth` module to the modules array.
+
+Then, in the same config object, populate the `auth` configuration.
+
+The `auth` config holds details about our authentication provider and session refresh management.
+
+Add the `@sidebase/nuxt-auth` module to the modules array and enable the `auth` configuration in `nuxt.config.ts`
+
+```typescript
+export default defineNuxtConfig({
+  modules: [
+    "@sidebase/nuxt-auth",
+    ...,
+  ],
+
+  auth: {
+    isEnabled: true,
+    provider: {
+      type: "authjs",
+      ...,
+    },
+    sessionRefresh: {...},
+  },
+  ...,
+})
+```
+
+Details about the auth config attributes could be found in the link:https://auth.sidebase.io/guide/application-side/configuration[docs]
+
+===== Add environment variables
+
+A couple of env variables are needed for this to work.
+These variables are documented in the setup of the frontend.
+
+To be able to make use of them we should list them in the `runtimeConfig`.
+
+```typescript
+export default defineNuxtConfig({  runtimeConfig: {
+  authSecret: "",
+  oidcClientId: "",
+  oidcIssuer: "",
+  }
+})
+```
+
+===== Configure the authentication provider
+
+After the configuration adjustment mentioned previously, an automatically generated auth path is created `/api/auth`.
+
+Which is where we should create our OIDC provider config under `/src/server/api/auth/[...].ts`.
+
+```typescript
+export default NuxtAuthHandler({
+  secret: runtimeConfig.authSecret,
+  providers: [
+    {
+      id: "oidc",
+      name: "OIDC",
+      type: "oauth",
+      ...,
+    },
+  ],
+})
+```
+
+Details about the provider config can be found in the link:https://next-auth.js.org/configuration/providers/oauth#using-a-custom-provider[NextAuth docs]
+
+After this setup we should be able to authenticate using the specified OIDC provider.
+
+To handle token and session refresh we can use the `jwt()` and `session()` callbacks to control the behavior in the same `NuxtAuthHandler`.
+

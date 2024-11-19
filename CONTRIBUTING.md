@@ -45,7 +45,15 @@ shepard uses three types of branches to organize development:
 
 ## Setting up a Developing Environment
 
-### Frontend
+### Fullstack Development Environment
+
+- Follow the installation and configuration instructions for both front- and backend
+- Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` in the folders)
+- install Docker and Docker Compose (alternatively Podman and Podman Compose)
+- Run `docker compose -f backend/docker-compose.headless.yml up` (alternatively `podman compose ...`)
+- Run backend & frontend using `npm run start:dev`
+
+### Frontend Development Environment
 
 #### Downloads
 
@@ -71,15 +79,15 @@ If you don't have a working backend available, you can find a description of how
 
 #### First run
 
-- fill in the variables in your environment file [/frontend/.env.development](/frontend/.env.development)
+- in the frontend folder, copy `.env.example` to `.env` and fill in the variables
 - start the project: `npm run serve`
 
-### Backend
+### Backend Development Environment
 
 #### Downloads
 
 - OpenJDK 17 (LTS): <https://adoptium.net/index.html?variant=openjdk17&jvmVariant=hotspot>
-- Node.js v21.2.0 or later and NPM: <https://nodejs.org/en/>
+- Node.js v20.17.0 (LTS) and NPM: <https://nodejs.org/en/>
 - One of the following IDEs:
   - VSCode: <https://code.visualstudio.com/download>
   - IntelliJ: <https://www.jetbrains.com/idea/download/>
@@ -112,9 +120,9 @@ If you don't have a working backend available, you can find a description of how
 
 The Backend configuration is environment dependant and specific properties need to be setup.
 This setup is done using environment variables to override or append existing application properties in `application.properties` file according to [the Quarkus documentation](https://quarkus.io/guides/config-reference#env-file).
-The variables preconfigured in `env.example` also contain variables for local databases and frontend as described below.
+The variables preconfigured in `.env.example` also contain variables for local databases and frontend as described below.
 
-1. Copy `env.example` to `.env`
+1. Copy `.env.example` to `.env`
 2. Enter valid OIDC parameters
 
 #### Local databases & frontend
@@ -125,15 +133,19 @@ The variables preconfigured in `env.example` also contain variables for local da
 4. local instances of the databases will be launched without persistent storage
 5. quick tip: run the integration tests to fill your databases with some content
 
-| Service           | URL                      | Comment                     |
-| ----------------- | ------------------------ | --------------------------- |
-| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_         |
-| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepard_  |
-| neo4j Frontend    | <http://localhost:7474>  |                             |
-| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_  |
-| mongodb Frontend  | <http://localhost:8084/> |                             |
-| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_ |
-| influxdb Frontend | <http://localhost:8888>  |                             |
+| Service           | URL                      | Comment                           |
+| ----------------- | ------------------------ | --------------------------------- |
+| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_               |
+| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepardshepard_ |
+| neo4j Frontend    | <http://localhost:7474>  |                                   |
+| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_        |
+| mongodb Frontend  | <http://localhost:8084/> |                                   |
+| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_       |
+| influxdb Frontend | <http://localhost:8888>  |                                   |
+| postgres Database | <http://localhost:5432>  | _user: username, pw: password_    |
+
+The credentials can be overridden with environment variables.
+Check the docker-compose file to find overridable variables.
 
 #### First run
 
@@ -147,7 +159,7 @@ The variables preconfigured in `env.example` also contain variables for local da
 
 > **Hint:** If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
 >
-> 1. run the integration tests: `./mvnw verify -DskipUTs`
+> 1. run the integration tests: `./mvnw verify -P integration`
 > 2. go to <http://localhost:7474/> and log in to your local neo4j database
 > 3. obtain your api key with the following query:
 >    `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
@@ -166,7 +178,7 @@ Either start quarkus with `./mvnw quarkus:dev` and start the interactive test ru
 Running Integration Tests
 
 ```sh
-./mvnw verify -DskipUTs
+./mvnw verify -P integration
 ```
 
 #### Known Issues

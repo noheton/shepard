@@ -6,6 +6,16 @@ build_backend:
     - echo building Quarkus Backend jar
   script:
     - cd backend
+    - if [ "$SHEPARD_EXPERIMENTAL_TIMESERIES_ENABLED" == "true" ]; then
+      echo 'shepard.experimental-timeseries.enabled=true' >> src/main/resources/application.properties;
+      else
+      echo 'shepard.experimental-timeseries.enabled=false' >> src/main/resources/application.properties;
+      fi
+    - if [ "$SHEPARD_VERSIONING_ENABLED" == "true" ]; then
+      echo 'shepard.versioning.enabled=true' >> src/main/resources/application.properties;
+      else
+      echo 'shepard.versioning.enabled=false' >> src/main/resources/application.properties;
+      fi
     - mvn ${MAVEN_CLI_OPTS} -B org.apache.maven.plugins:maven-dependency-plugin:3.1.2:go-offline
     - mvn ${MAVEN_CLI_OPTS} package -P prod -Drevision=${VERSION_NUMBER}
 

@@ -2,6 +2,7 @@ package de.dlr.shepard.neo4Core.dao;
 
 import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.util.CypherQueryHelper;
+import de.dlr.shepard.util.CypherQueryHelper.Neighborhood;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,32 +14,6 @@ import java.util.UUID;
 
 @RequestScoped
 public class VersionDAO extends GenericDAO<Version> {
-
-  /**
-   * Find a version by collectionId and uid
-   *
-   * @param collectionId Identifies the collection
-   * @param versionUID   Identifies the version
-   * @return the found version
-   */
-  public Version find(long collectionId, String versionUID) {
-    Version ver = null;
-    Map<String, Object> paramsMap = new HashMap<>();
-    String query = "";
-    query = query +
-    "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " +
-    collectionId +
-    " AND ver.uid = '" +
-    versionUID +
-    "' AND col.deleted = false";
-    query = query + " RETURN ver";
-    var resultSet = findByQuery(query, paramsMap);
-    Iterator<Version> it = resultSet.iterator();
-    if (it.hasNext()) {
-      ver = find(it.next().getUid());
-    }
-    return ver;
-  }
 
   /**
    * Find a version by uid
@@ -61,11 +36,9 @@ public class VersionDAO extends GenericDAO<Version> {
     HashSet<Version> resultHashSet = new HashSet<Version>();
     Map<String, Object> paramsMap = new HashMap<>();
     String query = "";
-    query = query +
-    "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " +
-    collectionId +
-    " AND col.deleted = false";
-    query = query + " RETURN ver";
+    query = query + "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " + collectionId + " ";
+    query = query + CypherQueryHelper.getReturnPart("ver", Neighborhood.EVERYTHING);
+
     var resultSet = findByQuery(query, paramsMap);
     Iterator<Version> it = resultSet.iterator();
     while (it.hasNext()) {
@@ -76,23 +49,6 @@ public class VersionDAO extends GenericDAO<Version> {
     return result;
   }
 
-  public UUID findHEADVersionUUID(long collectionId) {
-    UUID ret = null;
-    String query =
-      "MATCH (c:Collection)-[:has_version]->(v:Version) WHERE c.shepardId = " +
-      collectionId +
-      " AND " +
-      CypherQueryHelper.getVersionHeadPart("v") +
-      " RETURN v";
-    Map<String, Object> paramsMap = new HashMap<>();
-    var resultSet = findByQuery(query, paramsMap);
-    Iterator<Version> it = resultSet.iterator();
-    if (it.hasNext()) {
-      ret = it.next().getUid();
-    }
-    return ret;
-  }
-
   public Version findHEADVersion(long collectionId) {
     Version ret = null;
     String query =
@@ -100,7 +56,8 @@ public class VersionDAO extends GenericDAO<Version> {
       collectionId +
       " AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " RETURN v";
+      " " +
+      CypherQueryHelper.getReturnPart("v", Neighborhood.EVERYTHING);
     Map<String, Object> paramsMap = new HashMap<>();
     var resultSet = findByQuery(query, paramsMap);
     Iterator<Version> it = resultSet.iterator();
@@ -110,7 +67,19 @@ public class VersionDAO extends GenericDAO<Version> {
     return ret;
   }
 
-  public void createLink(long versionableEntityId, String versionUID) {
+  public Version findVersionLightByNeo4jId(long neo4jId) {
+    Version ret = null;
+    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = " + neo4jId + " RETURN v";
+    Map<String, Object> paramsMap = new HashMap<>();
+    var resultSet = findByQuery(query, paramsMap);
+    Iterator<Version> it = resultSet.iterator();
+    if (it.hasNext()) {
+      ret = it.next();
+    }
+    return ret;
+  }
+
+  public void createLink(long versionableEntityId, UUID versionUID) {
     String query =
       "MATCH (ve:VersionableEntity), (v:Version) WHERE id(ve) = " +
       versionableEntityId +
@@ -121,15 +90,69 @@ public class VersionDAO extends GenericDAO<Version> {
     runQuery(query, paramsMap);
   }
 
-  public Version findVersionByNeo4jId(long neo4jId) {
-    Version ret = null;
-    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = " + neo4jId + " RETURN v";
+  public boolean copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
+    copyDataObjects(sourceVersionUID, targetVersionUID);
+    copyChildRelations(sourceVersionUID, targetVersionUID);
+    copySuccessorRelations(sourceVersionUID, targetVersionUID);
+    return true;
+  }
+
+  public void removeSuperflousHasDataObjects(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (v_target:Version)<-[:has_version]-(col_target:Collection)-[hd:has_dataobject]->(do_source:DataObject)-[:has_version]->(v_source:Version)"
+    );
+    queryBuffer.append(
+      "WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(" DELETE hd");
+  }
+
+  public void copyDataObjects(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(col_target:Collection)"
+    );
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(" CREATE (col_target)-[:has_dataobject]->(do_target:DataObject)-[:has_version]->(v_target) ");
+    queryBuffer.append(" SET do_target = do_source");
     Map<String, Object> paramsMap = new HashMap<>();
-    var resultSet = findByQuery(query, paramsMap);
-    Iterator<Version> it = resultSet.iterator();
-    if (it.hasNext()) {
-      ret = it.next();
-    }
-    return ret;
+    runQuery(queryBuffer.toString(), paramsMap);
+  }
+
+  public void copyChildRelations(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source_parent:DataObject)-[:has_child]->(do_source_child:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_parent:DataObject), "
+    );
+    queryBuffer.append("(v_target)<-[:has_version]-(do_target_child:DataObject) ");
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(
+      " AND do_source_parent.shepardId=do_target_parent.shepardId AND do_source_child.shepardId=do_target_child.shepardId "
+    );
+    queryBuffer.append(" CREATE (do_target_parent)-[:has_child]->(do_target_child)");
+    Map<String, Object> paramsMap = new HashMap<>();
+    runQuery(queryBuffer.toString(), paramsMap);
+  }
+
+  public void copySuccessorRelations(UUID sourceVersionUID, UUID targetVersionUID) {
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append(
+      "MATCH (do_source_predecessor:DataObject)-[:has_successor]->(do_source_successor:DataObject)-[:has_version]->(v_source:Version)-[:has_predecessor]->(v_target:Version)<-[:has_version]-(do_target_predecessor:DataObject), "
+    );
+    queryBuffer.append("(v_target)<-[:has_version]-(do_target_successor:DataObject) ");
+    queryBuffer.append(
+      " WHERE v_source.uid = '" + sourceVersionUID + "' AND v_target.uid = '" + targetVersionUID + "' "
+    );
+    queryBuffer.append(
+      " AND do_source_predecessor.shepardId=do_target_predecessor.shepardId AND do_source_successor.shepardId=do_target_successor.shepardId "
+    );
+    queryBuffer.append(" CREATE (do_target_predecessor)-[:has_successor]->(do_target_successor)");
+    Map<String, Object> paramsMap = new HashMap<>();
+    runQuery(queryBuffer.toString(), paramsMap);
   }
 }

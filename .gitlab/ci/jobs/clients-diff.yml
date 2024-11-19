@@ -1,5 +1,5 @@
 diff_typescript_client:
-  image: node:21-slim
+  image: node:22-slim
   cache:
     key:
       files:
@@ -15,7 +15,7 @@ diff_typescript_client:
   allow_failure: true
 
 diff_python_client:
-  image: python:3.12.5-alpine3.19
+  image: python:3.13.0-alpine3.19
   cache:
     key:
       files:

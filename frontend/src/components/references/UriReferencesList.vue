@@ -8,7 +8,7 @@ import CreateUriReferenceModal from "@/components/references/CreateUriReferenceM
 import UriReferenceService from "@/services/uriReferenceService";
 import { handleError } from "@/utils/error-handling";
 import { getQueryParam } from "@/utils/helpers";
-import type { ResponseError, URIReference } from "@dlr-shepard/shepard-client";
+import type { ResponseError, URIReference } from "@dlr-shepard/backend-client";
 import { getCurrentInstance, nextTick, onMounted, ref } from "vue";
 
 const props = defineProps({

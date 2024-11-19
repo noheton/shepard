@@ -13,7 +13,7 @@ import type {
   DataObject,
   DataObjectAttributes,
   ResponseError,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { useStorage } from "@vueuse/core";
 import { computed, onMounted, ref } from "vue";
 

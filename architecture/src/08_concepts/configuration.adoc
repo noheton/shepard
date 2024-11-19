@@ -2,21 +2,152 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === Configuration
 
-==== Quarkus
+==== Backend (Quarkus)
 
 This section is a short summary of link:https://quarkus.io/guides/config[this page].
 
-===== Setting Properties
+===== Application Properties
+
+====== Setting Properties
 
 Quarkus reads configuration properties from several sources.
 More information on the sources and how they override each other can be found link:https://quarkus.io/guides/config-reference#configuration-sources[here].
 
 We define a standard value for most properties under `src/main/resources/application.properties`.
-In a dev environment, they can be overridden using a `.env` file.
+For the dev and test environment, we provide properties with a `%dev`, `%test` or `%integration` prefix overriding the default value.
+
+Additonally they can be overridden locally using a `.env` file.
+We use this for configuration differing between developers, e.g. the OIDC config.
 In a dockerized setup they can be overridden by providing environment variables to the service.
 
-To support administrators, relevant configuration options are documented in link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/env.example[infrastructure/env.example] and link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/README.md[infrastructure/README.md].
+To support administrators, relevant configuration options are documented in link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/.env.example[infrastructure/.env.example] and link:https://gitlab.com/dlr-shepard/shepard/-/blob/main/infrastructure/README.md[infrastructure/README.md].
+
+====== Reading Properties
+
+Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
+
+===== Feature Toggles
+
+With feature toggles we want to conditionally build shepard images with or without a certain feature.
+This is especially useful for features under development.
+
+To define a feature toggle, we add the property to `configuration.feature.toggles.FeatureToggleHelper` and create a class in `configuration.feature.toggles` that contains the name of the property, an `isEnabled` method as well as the method id of `isEnabled`.
+An example could look like this:
+
+```java
+package de.dlr.shepard.configuration.feature.toggles;
+
+public class ExperimentalTimeseriesFeatureToggle {
+
+  public static final String TOGGLE_PROPERTY = "shepard.experimental-timeseries.enabled";
+
+  public static final String IS_ENABLED_METHOD_ID =
+    "de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle#isEnabled";
+
+  public static boolean isEnabled() {
+    return FeatureToggleHelper.isToggleEnabled(TOGGLE_PROPERTY);
+  }
+}
+```
+
+We can then use this feature toggle in multiple ways:
+
+====== Conditionally Excluding Beans at Buildtime
+
+Quarkus provides us with a mechanism to conditionally exclude beans at buildtime.
+For example, the endpoints of an experimental feature can be enabled or disabled at build time to be included in dev builds but excluded in release builds.
+
+For example, the `ExperimentalTimeseriesRest` can have a `@IfBuildProperty` annotation like this:
+
+```java
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)
+@RequestScoped
+@IfBuildProperty(name = ExperimentalTimeseriesFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
+public class ExperimentalTimeseriesRest {
+  ...
+}
+```
+
+In this example the endpoints are only available when `shepard.experimental-timeseries.enabled` was `true` at build time.
+
+[CAUTION]
+The `@IfBuildProperty` annotations are evaluated at build-time.
+Make sure to add the property to the application.properties file during build, so that the build artifact has the same value at runtime.
+
+See link:https://quarkus.io/guides/cdi-reference#enable_build_properties[here] for more information.
+
+====== Connect further Configuration with a Feature Toggle
+
+For a feature toggle, we want a single property to control it.
+
+.Control further config options
+
+In case we need to adapt further configuration based on the feature toggle (e.g. disabling hibernate), we can reference the property like this:
+
+```
+shepard.experimental-timeseries.enabled=false
+
+quarkus.hibernate-orm.active=${shepard.experimental-timeseries.enabled}
+```
+
+To reenable a feature for a dev or test profile, we can then activate the toggle for these profiles.
+
+.Conditionally executing tests
+
+In order to execute tests conditionally based on a toggle we use the `isEnabled` and `METHOD_ID` method of the feature toggle class.
+
+In a test class or method, we can then add a annotation like this:
+
+```java
+@QuarkusTest
+@EnabledIf(ExperimentalTimeseriesFeatureToggle.IS_ENABLED_METHOD_ID)
+public class ExperimentalTimeseriesContainerServiceTest {
+  ...
+}
+```
+
+====== Feature toggles in the pipeline
+
+Don't mistake the build profiles `dev` and `prod` for the profiles for dev and prod images.
+
+To have our dev environment as close to the production environment as possible, the dev images are also built using the `prod` profile.
+In order to enable the feature for a dev or prod build, we provide the feature toggle in the `get-version` pipeline job for dev or prod.
+
+[CAUTION]
+Make sure to provide the toggle for all pipelines and adapt it in the `application.properties` before building.
+Otherwise the value of the `test` profile is used, which can lead to errors.
+
+==== Frontend (Nuxt)
+
+This section is a short summary of link:https://nuxt.com/docs/getting-started/configuration[this page].
+
+===== Setting properties
+
+We define environment variables in the Nuxt config like this:
+
+```typescript
+export default defineNuxtConfig({  runtimeConfig: {
+  // A value that should only be available on server-side
+  apiSecret: '123',
+  // Values that should be available also on client side
+  public: {
+    apiBase: '/api'
+  }
+}})
+```
+
+These values can be overridden by a `.env` file like this:
+
+```
+NUXT_API_SECRET=api_secret_token
+NUXT_PUBLIC_API_BASE=https://nuxtjs.org
+```
+
+In order to ease the configuration we provide a `.env.example` file with all relevant variables.
+That file can be copied to `.env` and filled with the appropriate values.
 
 ===== Reading Properties
 
-Poperties can be either link:https://quarkus.io/guides/config#inject-the-configuration[injected] or link:https://quarkus.io/guides/config#programmatically-access-the-configuration[accessed programatically].
+Properties can be accessed using `useRuntimeConfig()`.

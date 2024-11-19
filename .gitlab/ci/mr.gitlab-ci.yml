@@ -12,12 +12,15 @@ include:
   - local: .gitlab/ci/jobs/check-scripts.yml
   - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
+  - local: .gitlab/ci/jobs/build-nuxtend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
+  - local: .gitlab/ci/jobs/test-backend-with-databases.yml
   - local: .gitlab/ci/jobs/coverage.yml
-  - local: .gitlab/ci/jobs/build-documentation.yml
   - local: .gitlab/ci/jobs/integration-test.yml
+  - local: .gitlab/ci/jobs/build-documentation.yml
   - local: .gitlab/ci/jobs/build-clients.yml
   - local: .gitlab/ci/jobs/clients-diff.yml
   - local: .gitlab/ci/jobs/openapi-diff.yml
     inputs:
       target_branch: develop
+  - local: .gitlab/ci/jobs/diff-backend-client.yml

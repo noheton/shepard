@@ -8,7 +8,7 @@ import type {
   ResponseError,
   StructuredDataPayload,
   StructuredDataReference,
-} from "@dlr-shepard/shepard-client";
+} from "@dlr-shepard/backend-client";
 import { onMounted, ref, type PropType } from "vue";
 
 const props = defineProps({

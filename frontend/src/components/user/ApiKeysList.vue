@@ -4,7 +4,7 @@ import GenericName from "@/components/generic/GenericName.vue";
 import ApiKeyModal from "@/components/user/ApiKeyModal.vue";
 import ApiKeyService from "@/services/apiKeyService";
 import { handleError } from "@/utils/error-handling";
-import type { ApiKey, ResponseError } from "@dlr-shepard/shepard-client";
+import type { ApiKey, ResponseError } from "@dlr-shepard/backend-client";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({

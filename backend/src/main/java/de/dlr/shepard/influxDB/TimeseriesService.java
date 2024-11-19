@@ -1,6 +1,7 @@
 package de.dlr.shepard.influxDB;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import io.micrometer.core.annotation.Timed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class TimeseriesService {
    * @param payload  the Timeseries with InfluxPoints to be created
    * @return An error if there was a problem, empty string if all went well
    */
+  @Timed(value = "shepard.timeseries.service")
   public String createTimeseries(String database, TimeseriesPayload payload) {
     String sanityCheck = InfluxUtil.sanitize(payload.getTimeseries());
     if (!sanityCheck.isBlank()) throw new InvalidBodyException(sanityCheck);
@@ -53,6 +55,7 @@ public class TimeseriesService {
    * @param fillOption     The fill option for missing values
    * @return timeseries with influx points
    */
+  @Timed(value = "shepard.timeseries.service")
   public TimeseriesPayload getTimeseriesPayload(
     long startTimeStamp,
     long endTimeStamp,
@@ -90,6 +93,7 @@ public class TimeseriesService {
    * @param symbolicNameFilterSet A set of allowed symbolic names or an empty set
    * @return a list of timeseries with influx points
    */
+  @Timed(value = "shepard.timeseries.service")
   public List<TimeseriesPayload> getTimeseriesPayloadList(
     long start,
     long end,
@@ -123,6 +127,7 @@ public class TimeseriesService {
    * @param database the given database
    * @return a list of timeseries objects
    */
+  @Timed(value = "shepard.timeseries.service")
   public List<Timeseries> getTimeseriesAvailable(String database) {
     return influxConnector.getTimeseriesAvailable(database);
   }
@@ -144,6 +149,7 @@ public class TimeseriesService {
    * @return InputStream containing the CSV file
    * @throws IOException When the CSV file could not be written
    */
+  @Timed(value = "shepard.timeseries.service")
   public InputStream exportTimeseriesPayload(
     long start,
     long end,
@@ -180,6 +186,7 @@ public class TimeseriesService {
    * @return An error if there was a problem, empty string if all went well
    * @throws IOException If the CSV file could not be read
    */
+  @Timed(value = "shepard.timeseries.service")
   public String importTimeseries(String database, InputStream stream) throws IOException {
     List<String> errors = new ArrayList<>();
     var timeseriesList = csvConverter.convertToPayload(stream);
@@ -197,12 +204,14 @@ public class TimeseriesService {
    *
    * @return String the new database
    */
+  @Timed(value = "shepard.timeseries.service")
   public String createDatabase() {
     String name = UUID.randomUUID().toString();
     influxConnector.createDatabase(name);
     return name;
   }
 
+  @Timed(value = "shepard.timeseries.service")
   public void deleteDatabase(String database) {
     influxConnector.deleteDatabase(database);
   }

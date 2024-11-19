@@ -13,7 +13,9 @@
     "dataobjects",
     "Datas",
     "Healthz",
+    "integrationtests",
     "jsoneditor",
+    "nuxtend",
     "oidc",
     "Oids",
     "openapi",
@@ -23,9 +25,13 @@
     "Timeseries",
     "usergroup",
     "usergroups",
+    "Versionz",
     "VITE",
     "vuex"
   ],
   "asciidoc.extensions.enableKroki": true,
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  }
 }
