@@ -64,7 +64,7 @@ For example, the `ExperimentalTimeseriesRest` can have a `@IfBuildProperty` anno
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.EXPERIMENTAL_TIMESERIES_CONTAINERS)
 @RequestScoped
-@IfBuildProperty(name = "shepard.experimental-timeseries.enabled", stringValue = "true")
+@IfBuildProperty(name = ExperimentalTimeseriesFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
 public class ExperimentalTimeseriesRest {
   ...
 }
@@ -102,7 +102,7 @@ In a test class or method, we can then add a annotation like this:
 
 ```java
 @QuarkusTest
-@EnabledIf(ExperimentalTimeseriesFeatureToggle.METHOD_ID)
+@EnabledIf(ExperimentalTimeseriesFeatureToggle.IS_ENABLED_METHOD_ID)
 public class ExperimentalTimeseriesContainerServiceTest {
   ...
 }
