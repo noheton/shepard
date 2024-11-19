@@ -5768,308 +5768,74 @@
   },
   "components" : {
     "schemas" : {
-      "AbstractDataObject" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "description" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "attributes" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "AggregateFunction" : {
-        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "FIRST", "INTEGRAL", "MODE", "SPREAD", "STDDEV" ],
+      "DataObjectAttributes" : {
+        "enum" : [ "createdAt", "updatedAt", "name" ],
         "type" : "string"
       },
-      "ApiKey" : {
-        "required" : [ "name" ],
+      "ExperimentalTimeseriesDataPoint" : {
         "type" : "object",
         "properties" : {
-          "uid" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/UUID"
-            } ],
-            "readOnly" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "belongsTo" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "ApiKeyWithJWT" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "uid" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/UUID"
-            } ],
-            "readOnly" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "belongsTo" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "jwt" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "BasicContainer" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
+          "timestamp" : {
             "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
+            "description" : "Time in nanoseconds since unix epoch.",
+            "type" : "integer"
           },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+          "value" : {
+            "description" : "A string, an int, a double or a boolean"
           }
         }
       },
-      "BasicEntity" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
-      "BasicReference" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "dataObjectId" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "type" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "BasicReferenceAttributes" : {
-        "enum" : [ "createdAt", "updatedAt", "name", "type" ],
+      "RequestMethod" : {
+        "enum" : [ "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE" ],
         "type" : "string"
       },
-      "Collection" : {
-        "required" : [ "name" ],
+      "StructuredData" : {
         "type" : "object",
         "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
+          "oid" : {
+            "type" : "string",
             "readOnly" : true
           },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string",
             "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
             "example" : "2024-08-15T11:18:44.632+00:00",
             "nullable" : true
           },
-          "updatedBy" : {
+          "name" : {
             "type" : "string",
-            "readOnly" : true,
+            "nullable" : true
+          }
+        }
+      },
+      "HealthCheck" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "object",
             "nullable" : true
           },
           "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
-          "description" : {
-            "type" : "string",
-            "nullable" : true
-          },
-          "attributes" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          },
-          "dataObjectIds" : {
-            "type" : "array",
-            "items" : {
-              "format" : "int64",
-              "type" : "integer"
-            },
-            "readOnly" : true
-          },
-          "incomingIds" : {
-            "type" : "array",
-            "items" : {
-              "format" : "int64",
-              "type" : "integer"
-            },
-            "readOnly" : true
+          "status" : {
+            "enum" : [ "UP", "DOWN" ],
+            "type" : "string"
           }
         }
+      },
+      "SemanticRepositoryAttributes" : {
+        "enum" : [ "createdAt", "updatedAt", "name" ],
+        "type" : "string"
+      },
+      "UserGroupAttributes" : {
+        "enum" : [ "createdAt", "updatedAt", "name" ],
+        "type" : "string"
+      },
+      "FillOption" : {
+        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
+        "type" : "string"
       },
       "CollectionReference" : {
         "required" : [ "name", "referencedCollectionId" ],
@@ -6126,13 +5892,303 @@
           }
         }
       },
-      "ContainerAttributes" : {
-        "enum" : [ "createdAt", "updatedAt", "name" ],
+      "UserGroup" : {
+        "required" : [ "name", "usernames" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "usernames" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "HasId" : {
+        "type" : "object",
+        "properties" : {
+          "uniqueId" : {
+            "type" : "string",
+            "writeOnly" : true
+          }
+        }
+      },
+      "Version" : {
+        "type" : "object",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UUID"
+            } ],
+            "readOnly" : true
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "predecessorUUID" : {
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UUID"
+            } ],
+            "readOnly" : true
+          }
+        }
+      },
+      "StructuredDataContainer" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "oid" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        }
+      },
+      "ExperimentalTimeseriesWithDataPoints" : {
+        "required" : [ "timeseries", "points" ],
+        "type" : "object",
+        "properties" : {
+          "timeseries" : {
+            "$ref" : "#/components/schemas/ExperimentalTimeseries"
+          },
+          "points" : {
+            "minItems" : 1,
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExperimentalTimeseriesDataPoint"
+            }
+          }
+        }
+      },
+      "Permissions" : {
+        "required" : [ "reader", "writer", "manager" ],
+        "type" : "object",
+        "properties" : {
+          "entityId" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "owner" : {
+            "type" : "string"
+          },
+          "permissionType" : {
+            "$ref" : "#/components/schemas/PermissionType"
+          },
+          "reader" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "writer" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "readerGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            }
+          },
+          "writerGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            }
+          },
+          "manager" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "Subscription" : {
+        "required" : [ "name", "subscribedURL", "requestMethod" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "callbackURL" : {
+            "pattern" : "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
+            "type" : "string",
+            "nullable" : true
+          },
+          "subscribedURL" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "requestMethod" : {
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RequestMethod"
+            } ],
+            "nullable" : true
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          }
+        }
+      },
+      "UUID" : {
+        "format" : "uuid",
+        "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
         "type" : "string"
       },
-      "ContainerQueryType" : {
-        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA" ],
-        "type" : "string"
+      "DataObjectReference" : {
+        "required" : [ "name", "referencedDataObjectId" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "type" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "referencedDataObjectId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "relationship" : {
+            "type" : "string",
+            "nullable" : true
+          }
+        }
       },
       "ContainerSearchBody" : {
         "required" : [ "searchParams" ],
@@ -6143,16 +6199,39 @@
           }
         }
       },
-      "ContainerSearchParams" : {
-        "required" : [ "query", "queryType" ],
+      "UploadItemSchema" : {
+        "format" : "binary",
+        "description" : "File which you want to upload",
+        "type" : "string"
+      },
+      "SemanticAnnotation" : {
+        "required" : [ "propertyIRI", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
         "type" : "object",
         "properties" : {
-          "query" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "name" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "propertyIRI" : {
             "pattern" : "\\S",
             "type" : "string"
           },
-          "queryType" : {
-            "$ref" : "#/components/schemas/ContainerQueryType"
+          "valueIRI" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "propertyRepositoryId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "valueRepositoryId" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         }
       },
@@ -6166,6 +6245,230 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/BasicContainer"
+            }
+          }
+        }
+      },
+      "InfluxPoint" : {
+        "type" : "object",
+        "properties" : {
+          "timestamp" : {
+            "format" : "int64",
+            "description" : "Time in nanoseconds since epoch",
+            "type" : "integer"
+          },
+          "value" : {
+            "description" : "A string, a number or a boolean"
+          }
+        }
+      },
+      "SearchParams" : {
+        "required" : [ "query", "queryType" ],
+        "type" : "object",
+        "properties" : {
+          "query" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "queryType" : {
+            "$ref" : "#/components/schemas/QueryType"
+          }
+        }
+      },
+      "URIReference" : {
+        "required" : [ "name", "uri" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "type" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "uri" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          }
+        }
+      },
+      "TimeseriesPayload" : {
+        "required" : [ "timeseries", "points" ],
+        "type" : "object",
+        "properties" : {
+          "timeseries" : {
+            "$ref" : "#/components/schemas/Timeseries"
+          },
+          "points" : {
+            "minItems" : 1,
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/InfluxPoint"
+            }
+          }
+        }
+      },
+      "Roles" : {
+        "type" : "object",
+        "properties" : {
+          "owner" : {
+            "type" : "boolean",
+            "readOnly" : true
+          },
+          "manager" : {
+            "type" : "boolean",
+            "readOnly" : true
+          },
+          "writer" : {
+            "type" : "boolean",
+            "readOnly" : true
+          },
+          "reader" : {
+            "type" : "boolean",
+            "readOnly" : true
+          }
+        }
+      },
+      "TimeseriesContainer" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "database" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        }
+      },
+      "ResponseBody" : {
+        "type" : "object",
+        "properties" : {
+          "searchParams" : {
+            "$ref" : "#/components/schemas/SearchParams"
+          },
+          "resultSet" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ResultTriple"
+            }
+          },
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BasicEntity"
+            }
+          }
+        }
+      },
+      "AbstractDataObject" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "description" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "attributes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
             }
           }
         }
@@ -6267,590 +6570,33 @@
           }
         }
       },
-      "DataObjectAttributes" : {
-        "enum" : [ "createdAt", "updatedAt", "name" ],
+      "VersionzIO" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AggregateFunction" : {
+        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "FIRST", "INTEGRAL", "MODE", "SPREAD", "STDDEV" ],
         "type" : "string"
       },
-      "DataObjectReference" : {
-        "required" : [ "name", "referencedDataObjectId" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "dataObjectId" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "type" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "referencedDataObjectId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "relationship" : {
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
-      "Date" : {
-        "format" : "date",
-        "type" : "string",
-        "example" : "2022-03-10"
-      },
-      "Event" : {
-        "type" : "object",
-        "properties" : {
-          "subscription" : {
-            "$ref" : "#/components/schemas/Subscription"
-          },
-          "subscribedObject" : {
-            "type" : "object",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/HasId"
-            } ],
-            "nullable" : true
-          },
-          "url" : {
-            "type" : "string"
-          },
-          "requestMethod" : {
-            "$ref" : "#/components/schemas/RequestMethod"
-          }
-        }
-      },
-      "ExperimentalTimeseries" : {
-        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
-        "type" : "object",
-        "properties" : {
-          "measurement" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "device" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "location" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "symbolicName" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "field" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          }
-        }
-      },
-      "ExperimentalTimeseriesDataPoint" : {
-        "type" : "object",
-        "properties" : {
-          "timestamp" : {
-            "format" : "int64",
-            "description" : "Time in nanoseconds since unix epoch.",
-            "type" : "integer"
-          },
-          "value" : {
-            "description" : "A string, an int, a double or a boolean"
-          }
-        }
-      },
-      "ExperimentalTimeseriesWithDataPoints" : {
-        "required" : [ "timeseries", "points" ],
-        "type" : "object",
-        "properties" : {
-          "timeseries" : {
-            "$ref" : "#/components/schemas/ExperimentalTimeseries"
-          },
-          "points" : {
-            "minItems" : 1,
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ExperimentalTimeseriesDataPoint"
-            }
-          }
-        }
-      },
-      "FileContainer" : {
-        "required" : [ "name" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "oid" : {
-            "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "FileReference" : {
-        "required" : [ "name", "fileOids", "fileContainerId" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "dataObjectId" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "type" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "fileOids" : {
-            "minItems" : 1,
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "fileContainerId" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        }
-      },
-      "FileUpload" : {
-        "type" : "object"
-      },
-      "FillOption" : {
-        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
-        "type" : "string"
-      },
-      "FillOption1" : {
-        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
-        "type" : "string"
-      },
-      "HasId" : {
-        "type" : "object",
-        "properties" : {
-          "uniqueId" : {
-            "type" : "string",
-            "writeOnly" : true
-          }
-        }
-      },
-      "InfluxPoint" : {
-        "type" : "object",
-        "properties" : {
-          "timestamp" : {
-            "format" : "int64",
-            "description" : "Time in nanoseconds since epoch",
-            "type" : "integer"
-          },
-          "value" : {
-            "description" : "A string, a number or a boolean"
-          }
-        }
-      },
-      "MultipartBodyFileUpload" : {
-        "$ref" : "#/components/schemas/UploadFormSchema"
-      },
-      "MultipartBodyFileUpload1" : {
-        "$ref" : "#/components/schemas/UploadFormSchema1"
-      },
-      "MultipartBodyFileUpload2" : {
-        "$ref" : "#/components/schemas/UploadFormSchema2"
-      },
-      "PermissionType" : {
-        "enum" : [ "Public", "PublicReadable", "Private" ],
-        "type" : "string"
-      },
-      "Permissions" : {
-        "required" : [ "reader", "writer", "manager" ],
-        "type" : "object",
-        "properties" : {
-          "entityId" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "owner" : {
-            "type" : "string"
-          },
-          "permissionType" : {
-            "$ref" : "#/components/schemas/PermissionType"
-          },
-          "reader" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "writer" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "readerGroupIds" : {
-            "type" : "array",
-            "items" : {
-              "format" : "int64",
-              "type" : "integer"
-            }
-          },
-          "writerGroupIds" : {
-            "type" : "array",
-            "items" : {
-              "format" : "int64",
-              "type" : "integer"
-            }
-          },
-          "manager" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "QueryType" : {
-        "enum" : [ "StructuredData", "Collection", "DataObject", "Reference" ],
-        "type" : "string"
-      },
-      "RequestMethod" : {
-        "enum" : [ "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE" ],
-        "type" : "string"
-      },
-      "ResponseBody" : {
+      "UserSearchResult" : {
         "type" : "object",
         "properties" : {
           "searchParams" : {
-            "$ref" : "#/components/schemas/SearchParams"
-          },
-          "resultSet" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ResultTriple"
-            }
+            "$ref" : "#/components/schemas/UserSearchParams"
           },
           "results" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/BasicEntity"
+              "$ref" : "#/components/schemas/User"
             }
           }
         }
       },
-      "ResultTriple" : {
-        "type" : "object",
-        "properties" : {
-          "collectionId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "dataObjectId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "referenceId" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        }
-      },
-      "Roles" : {
-        "type" : "object",
-        "properties" : {
-          "owner" : {
-            "type" : "boolean",
-            "readOnly" : true
-          },
-          "manager" : {
-            "type" : "boolean",
-            "readOnly" : true
-          },
-          "writer" : {
-            "type" : "boolean",
-            "readOnly" : true
-          },
-          "reader" : {
-            "type" : "boolean",
-            "readOnly" : true
-          }
-        }
-      },
-      "SearchBody" : {
-        "required" : [ "searchParams", "scopes" ],
-        "type" : "object",
-        "properties" : {
-          "searchParams" : {
-            "$ref" : "#/components/schemas/SearchParams"
-          },
-          "scopes" : {
-            "minItems" : 1,
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SearchScope"
-            }
-          }
-        }
-      },
-      "SearchParams" : {
-        "required" : [ "query", "queryType" ],
-        "type" : "object",
-        "properties" : {
-          "query" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "queryType" : {
-            "$ref" : "#/components/schemas/QueryType"
-          }
-        }
-      },
-      "SearchScope" : {
-        "required" : [ "traversalRules" ],
-        "type" : "object",
-        "properties" : {
-          "collectionId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "dataObjectId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "traversalRules" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/TraversalRules"
-            }
-          }
-        }
-      },
-      "SemanticAnnotation" : {
-        "required" : [ "propertyIRI", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "name" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "propertyIRI" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "valueIRI" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "propertyRepositoryId" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "valueRepositoryId" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        }
-      },
-      "SemanticRepository" : {
-        "required" : [ "name", "type", "endpoint" ],
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "updatedBy" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          },
-          "name" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "type" : {
-            "$ref" : "#/components/schemas/SemanticRepositoryType"
-          },
-          "endpoint" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          }
-        }
-      },
-      "SemanticRepositoryAttributes" : {
-        "enum" : [ "createdAt", "updatedAt", "name" ],
-        "type" : "string"
-      },
-      "SemanticRepositoryType" : {
-        "enum" : [ "SPARQL", "JSKOS", "SKOSMOS" ],
-        "type" : "string"
-      },
-      "ShepardFile" : {
-        "type" : "object",
-        "properties" : {
-          "oid" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "filename" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "md5" : {
-            "type" : "string",
-            "readOnly" : true,
-            "nullable" : true
-          }
-        }
-      },
-      "SingleValuedUnaryFunction" : {
-        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "INTEGRAL", "MODE", "SPREAD", "STDDEV", "FIRST" ],
-        "type" : "string"
-      },
-      "StructuredData" : {
-        "type" : "object",
-        "properties" : {
-          "oid" : {
-            "type" : "string",
-            "readOnly" : true
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00",
-            "nullable" : true
-          },
-          "name" : {
-            "type" : "string",
-            "nullable" : true
-          }
-        }
-      },
-      "StructuredDataContainer" : {
+      "Collection" : {
         "required" : [ "name" ],
         "type" : "object",
         "properties" : {
@@ -6886,21 +6632,31 @@
             "type" : "string",
             "nullable" : true
           },
-          "oid" : {
+          "description" : {
             "type" : "string",
-            "readOnly" : true
-          }
-        }
-      },
-      "StructuredDataPayload" : {
-        "type" : "object",
-        "properties" : {
-          "structuredData" : {
-            "$ref" : "#/components/schemas/StructuredData"
+            "nullable" : true
           },
-          "payload" : {
-            "minLength" : 2,
-            "type" : "string"
+          "attributes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "dataObjectIds" : {
+            "type" : "array",
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "readOnly" : true
+          },
+          "incomingIds" : {
+            "type" : "array",
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "readOnly" : true
           }
         }
       },
@@ -6962,13 +6718,57 @@
           }
         }
       },
-      "Subscription" : {
-        "required" : [ "name", "subscribedURL", "requestMethod" ],
+      "MultipartBodyFileUpload" : {
+        "$ref" : "#/components/schemas/UploadFormSchema"
+      },
+      "QueryType" : {
+        "enum" : [ "StructuredData", "Collection", "DataObject", "Reference" ],
+        "type" : "string"
+      },
+      "ExperimentalTimeseries" : {
+        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
         "type" : "object",
         "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer",
+          "measurement" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "device" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "location" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "symbolicName" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "field" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          }
+        }
+      },
+      "UploadFormSchema" : {
+        "required" : [ "file" ],
+        "type" : "object",
+        "properties" : {
+          "file" : {
+            "$ref" : "#/components/schemas/UploadItemSchema"
+          }
+        }
+      },
+      "ApiKey" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UUID"
+            } ],
             "readOnly" : true
           },
           "name" : {
@@ -6976,34 +6776,60 @@
             "type" : "string",
             "nullable" : true
           },
-          "callbackURL" : {
-            "pattern" : "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
-            "type" : "string",
-            "nullable" : true
-          },
-          "subscribedURL" : {
-            "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
-          },
-          "requestMethod" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/RequestMethod"
-            } ],
-            "nullable" : true
-          },
-          "createdBy" : {
-            "type" : "string",
-            "readOnly" : true
-          },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string",
             "readOnly" : true,
             "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "belongsTo" : {
+            "type" : "string",
+            "readOnly" : true
           }
         }
+      },
+      "User" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "subscriptionIds" : {
+            "type" : "array",
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "readOnly" : true
+          },
+          "apiKeyIds" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UUID"
+            },
+            "readOnly" : true
+          }
+        }
+      },
+      "MultipartBodyFileUpload1" : {
+        "$ref" : "#/components/schemas/UploadFormSchema1"
+      },
+      "MultipartBodyFileUpload2" : {
+        "$ref" : "#/components/schemas/UploadFormSchema2"
+      },
+      "PermissionType" : {
+        "enum" : [ "Public", "PublicReadable", "Private" ],
+        "type" : "string"
       },
       "Timeseries" : {
         "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
@@ -7035,7 +6861,82 @@
           }
         }
       },
-      "TimeseriesContainer" : {
+      "SingleValuedUnaryFunction" : {
+        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "INTEGRAL", "MODE", "SPREAD", "STDDEV", "FIRST" ],
+        "type" : "string"
+      },
+      "StructuredDataPayload" : {
+        "type" : "object",
+        "properties" : {
+          "structuredData" : {
+            "$ref" : "#/components/schemas/StructuredData"
+          },
+          "payload" : {
+            "minLength" : 2,
+            "type" : "string"
+          }
+        }
+      },
+      "TraversalRules" : {
+        "enum" : [ "children", "parents", "predecessors", "successors" ],
+        "type" : "string"
+      },
+      "SemanticRepositoryType" : {
+        "enum" : [ "SPARQL", "JSKOS", "SKOSMOS" ],
+        "type" : "string"
+      },
+      "UploadFormSchema2" : {
+        "required" : [ "file" ],
+        "type" : "object",
+        "properties" : {
+          "file" : {
+            "$ref" : "#/components/schemas/UploadItemSchema2"
+          }
+        }
+      },
+      "BasicContainer" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          }
+        }
+      },
+      "ContainerAttributes" : {
+        "enum" : [ "createdAt", "updatedAt", "name" ],
+        "type" : "string"
+      },
+      "FileContainer" : {
         "required" : [ "name" ],
         "type" : "object",
         "properties" : {
@@ -7071,25 +6972,125 @@
             "type" : "string",
             "nullable" : true
           },
-          "database" : {
+          "oid" : {
             "type" : "string",
             "readOnly" : true
           }
         }
       },
-      "TimeseriesPayload" : {
-        "required" : [ "timeseries", "points" ],
+      "FileUpload" : {
+        "type" : "object"
+      },
+      "UploadFormSchema1" : {
+        "required" : [ "file" ],
         "type" : "object",
         "properties" : {
-          "timeseries" : {
-            "$ref" : "#/components/schemas/Timeseries"
-          },
-          "points" : {
-            "minItems" : 1,
+          "file" : {
+            "$ref" : "#/components/schemas/UploadItemSchema1"
+          }
+        }
+      },
+      "HealthResponse" : {
+        "type" : "object",
+        "properties" : {
+          "checks" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/InfluxPoint"
+              "$ref" : "#/components/schemas/HealthCheck"
             }
+          },
+          "status" : {
+            "enum" : [ "UP", "DOWN" ],
+            "type" : "string"
+          }
+        }
+      },
+      "UploadItemSchema2" : {
+        "format" : "binary",
+        "description" : "Timeseries as CSV",
+        "type" : "string"
+      },
+      "UploadItemSchema1" : {
+        "format" : "binary",
+        "description" : "Timeseries as CSV",
+        "type" : "string"
+      },
+      "ApiKeyWithJWT" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "uid" : {
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/UUID"
+            } ],
+            "readOnly" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "belongsTo" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "jwt" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        }
+      },
+      "ShepardFile" : {
+        "type" : "object",
+        "properties" : {
+          "oid" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "filename" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "md5" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          }
+        }
+      },
+      "UserSearchBody" : {
+        "required" : [ "searchParams" ],
+        "type" : "object",
+        "properties" : {
+          "searchParams" : {
+            "$ref" : "#/components/schemas/UserSearchParams"
+          }
+        }
+      },
+      "ContainerSearchParams" : {
+        "required" : [ "query", "queryType" ],
+        "type" : "object",
+        "properties" : {
+          "query" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "queryType" : {
+            "$ref" : "#/components/schemas/ContainerQueryType"
           }
         }
       },
@@ -7159,12 +7160,123 @@
           }
         }
       },
-      "TraversalRules" : {
-        "enum" : [ "children", "parents", "predecessors", "successors" ],
+      "Date" : {
+        "format" : "date",
+        "type" : "string",
+        "example" : "2022-03-10"
+      },
+      "SemanticRepository" : {
+        "required" : [ "name", "type", "endpoint" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/SemanticRepositoryType"
+          },
+          "endpoint" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          }
+        }
+      },
+      "BasicReferenceAttributes" : {
+        "enum" : [ "createdAt", "updatedAt", "name", "type" ],
         "type" : "string"
       },
-      "URIReference" : {
-        "required" : [ "name", "uri" ],
+      "ContainerQueryType" : {
+        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA" ],
+        "type" : "string"
+      },
+      "SearchScope" : {
+        "required" : [ "traversalRules" ],
+        "type" : "object",
+        "properties" : {
+          "collectionId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "traversalRules" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TraversalRules"
+            }
+          }
+        }
+      },
+      "Event" : {
+        "type" : "object",
+        "properties" : {
+          "subscription" : {
+            "$ref" : "#/components/schemas/Subscription"
+          },
+          "subscribedObject" : {
+            "type" : "object",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/HasId"
+            } ],
+            "nullable" : true
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "requestMethod" : {
+            "$ref" : "#/components/schemas/RequestMethod"
+          }
+        }
+      },
+      "SearchBody" : {
+        "required" : [ "searchParams", "scopes" ],
+        "type" : "object",
+        "properties" : {
+          "searchParams" : {
+            "$ref" : "#/components/schemas/SearchParams"
+          },
+          "scopes" : {
+            "minItems" : 1,
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SearchScope"
+            }
+          }
+        }
+      },
+      "FileReference" : {
+        "required" : [ "name", "fileOids", "fileContainerId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7208,94 +7320,90 @@
             "type" : "string",
             "readOnly" : true
           },
-          "uri" : {
+          "fileOids" : {
+            "minItems" : 1,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "fileContainerId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }
+      },
+      "FillOption1" : {
+        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
+        "type" : "string"
+      },
+      "UserSearchParams" : {
+        "required" : [ "query" ],
+        "type" : "object",
+        "properties" : {
+          "query" : {
             "pattern" : "\\S",
             "type" : "string"
           }
         }
       },
-      "UUID" : {
-        "format" : "uuid",
-        "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-        "type" : "string"
-      },
-      "UploadFormSchema" : {
-        "required" : [ "file" ],
+      "ResultTriple" : {
         "type" : "object",
         "properties" : {
-          "file" : {
-            "$ref" : "#/components/schemas/UploadItemSchema"
+          "collectionId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "referenceId" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         }
       },
-      "UploadFormSchema1" : {
-        "required" : [ "file" ],
+      "BasicEntity" : {
+        "required" : [ "name" ],
         "type" : "object",
         "properties" : {
-          "file" : {
-            "$ref" : "#/components/schemas/UploadItemSchema1"
-          }
-        }
-      },
-      "UploadFormSchema2" : {
-        "required" : [ "file" ],
-        "type" : "object",
-        "properties" : {
-          "file" : {
-            "$ref" : "#/components/schemas/UploadItemSchema2"
-          }
-        }
-      },
-      "UploadItemSchema" : {
-        "format" : "binary",
-        "description" : "File which you want to upload",
-        "type" : "string"
-      },
-      "UploadItemSchema1" : {
-        "format" : "binary",
-        "description" : "Timeseries as CSV",
-        "type" : "string"
-      },
-      "UploadItemSchema2" : {
-        "format" : "binary",
-        "description" : "Timeseries as CSV",
-        "type" : "string"
-      },
-      "User" : {
-        "type" : "object",
-        "properties" : {
-          "username" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
             "type" : "string",
             "readOnly" : true
           },
-          "firstName" : {
-            "type" : "string"
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
           },
-          "lastName" : {
-            "type" : "string"
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
           },
-          "email" : {
-            "type" : "string"
-          },
-          "subscriptionIds" : {
-            "type" : "array",
-            "items" : {
-              "format" : "int64",
-              "type" : "integer"
-            },
-            "readOnly" : true
-          },
-          "apiKeyIds" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/UUID"
-            },
-            "readOnly" : true
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
-      "UserGroup" : {
-        "required" : [ "name", "usernames" ],
+      "BasicReference" : {
+        "required" : [ "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7330,122 +7438,14 @@
             "type" : "string",
             "nullable" : true
           },
-          "usernames" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "UserGroupAttributes" : {
-        "enum" : [ "createdAt", "updatedAt", "name" ],
-        "type" : "string"
-      },
-      "UserSearchBody" : {
-        "required" : [ "searchParams" ],
-        "type" : "object",
-        "properties" : {
-          "searchParams" : {
-            "$ref" : "#/components/schemas/UserSearchParams"
-          }
-        }
-      },
-      "UserSearchParams" : {
-        "required" : [ "query" ],
-        "type" : "object",
-        "properties" : {
-          "query" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          }
-        }
-      },
-      "UserSearchResult" : {
-        "type" : "object",
-        "properties" : {
-          "searchParams" : {
-            "$ref" : "#/components/schemas/UserSearchParams"
-          },
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/User"
-            }
-          }
-        }
-      },
-      "Version" : {
-        "type" : "object",
-        "properties" : {
-          "uid" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/UUID"
-            } ],
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer",
             "readOnly" : true
           },
-          "name" : {
-            "type" : "string"
-          },
-          "description" : {
-            "type" : "string"
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string",
-            "readOnly" : true,
-            "example" : "2024-08-15T11:18:44.632+00:00"
-          },
-          "createdBy" : {
+          "type" : {
             "type" : "string",
             "readOnly" : true
-          },
-          "predecessorUUID" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/UUID"
-            } ],
-            "readOnly" : true
-          }
-        }
-      },
-      "VersionzIO" : {
-        "type" : "object",
-        "properties" : {
-          "version" : {
-            "type" : "string"
-          }
-        }
-      },
-      "HealthResponse" : {
-        "type" : "object",
-        "properties" : {
-          "status" : {
-            "enum" : [ "UP", "DOWN" ],
-            "type" : "string"
-          },
-          "checks" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/HealthCheck"
-            }
-          }
-        }
-      },
-      "HealthCheck" : {
-        "type" : "object",
-        "properties" : {
-          "data" : {
-            "type" : "object",
-            "nullable" : true
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "status" : {
-            "enum" : [ "UP", "DOWN" ],
-            "type" : "string"
           }
         }
       }

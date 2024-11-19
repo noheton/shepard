@@ -28,16 +28,16 @@ import {
 export interface HealthResponse {
     /**
      * 
-     * @type {string}
-     * @memberof HealthResponse
-     */
-    status?: HealthResponseStatusEnum;
-    /**
-     * 
      * @type {Array<HealthCheck>}
      * @memberof HealthResponse
      */
     checks?: Array<HealthCheck>;
+    /**
+     * 
+     * @type {string}
+     * @memberof HealthResponse
+     */
+    status?: HealthResponseStatusEnum;
 }
 
 
@@ -68,8 +68,8 @@ export function HealthResponseFromJSONTyped(json: any, ignoreDiscriminator: bool
     }
     return {
         
-        'status': json['status'] == null ? undefined : json['status'],
         'checks': json['checks'] == null ? undefined : ((json['checks'] as Array<any>).map(HealthCheckFromJSON)),
+        'status': json['status'] == null ? undefined : json['status'],
     };
 }
 
@@ -79,8 +79,8 @@ export function HealthResponseToJSON(value?: HealthResponse | null): any {
     }
     return {
         
-        'status': value['status'],
         'checks': value['checks'] == null ? undefined : ((value['checks'] as Array<any>).map(HealthCheckToJSON)),
+        'status': value['status'],
     };
 }
 

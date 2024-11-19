@@ -1,6 +1,7 @@
 package de.dlr.shepard.filters;
 
 import io.quarkus.smallrye.openapi.OpenApiFilter;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
+import org.eclipse.microprofile.openapi.models.media.Schema;
 
 @OpenApiFilter(OpenApiFilter.RunStage.BUILD)
 public class ApiPathFilter implements OASFilter {
@@ -17,6 +19,7 @@ public class ApiPathFilter implements OASFilter {
   public void filterOpenAPI(OpenAPI openAPI) {
     fixOpenApiPaths(openAPI);
     excludeExtraHealthEndpointsAndAdjustHealthzTag(openAPI);
+    sortPropertiesOfHealthCheckSchemas(openAPI);
   }
 
   /**
@@ -64,5 +67,43 @@ public class ApiPathFilter implements OASFilter {
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
     openAPI.setPaths(newPaths);
+  }
+
+  private void sortPropertiesOfHealthCheckSchemas(OpenAPI openAPI) {
+    Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+
+    openAPI
+      .getComponents()
+      .setSchemas(
+        schemas
+          .entrySet()
+          .stream()
+          .map(schema -> {
+            if (!List.of("HealthCheck", "HealthResponse").contains(schema.getKey())) {
+              return schema;
+            }
+
+            schema
+              .getValue()
+              .setProperties(
+                schema
+                  .getValue()
+                  .getProperties()
+                  .entrySet()
+                  .stream()
+                  .sorted(Map.Entry.comparingByKey())
+                  .collect(
+                    Collectors.toMap(
+                      Map.Entry::getKey,
+                      Map.Entry::getValue,
+                      (oldValue, newValue) -> oldValue,
+                      LinkedHashMap::new
+                    )
+                  )
+              );
+            return schema;
+          })
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+      );
   }
 }
