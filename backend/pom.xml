@@ -38,7 +38,6 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.15.2</quarkus.platform.version>
-    <quarkus-micrometer-registry-otlp.version>3.2.4</quarkus-micrometer-registry-otlp.version>
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
     <assertj.version>3.26.3</assertj.version>
     <commons.version>2.17.0</commons.version>
@@ -109,11 +108,6 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-validator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.micrometer.registry</groupId>
-      <artifactId>quarkus-micrometer-registry-otlp</artifactId>
-      <version>${quarkus-micrometer-registry-otlp.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
