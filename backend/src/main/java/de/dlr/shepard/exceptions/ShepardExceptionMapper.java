@@ -18,7 +18,6 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
       status = webException.getResponse().getStatus();
     }
 
-    // log exception with stack trace
     Log.error(exception.getMessage(), exception);
 
     return Response.status(status)

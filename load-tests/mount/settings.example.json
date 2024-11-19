@@ -1,4 +1,4 @@
 {
-  "BACKEND_BASE_URL": "https://backend.desh.dev.xitaso.com",
+  "BACKEND_BASE_URL": "<BACKEND_BASE_URL>",
   "API_KEY": ""
 }

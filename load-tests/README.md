@@ -16,9 +16,11 @@ That will start prometheus and grafana with the correct settings and the correct
 
 - Run `docker compose up` from the backend folder.
 - Create a copy of file `./mount/settings.example.json` and name it `settings.json` in the same folder.
+  - Provide the url for the backend.
   - Provide an api key that can be used to access the backend.
     You can create an api key with help of the frontend easily.
 - Use the script `run-load-test.sh` and provide the file name of the load test that should be executed as parameter.
+  The script must be executed from the directory `load-test`.
 - each load test file has an `Options` object that controls the parameters of the load test in this object you can configure the following parameters:
   - `executor` - the [k6 test executor ](https://grafana.com/docs/k6/latest/using-k6/scenarios/executors/)
   - `vus` - number of virtual users executing the tests at the same time, this tests an endpoint for concurrency
