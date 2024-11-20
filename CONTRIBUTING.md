@@ -50,7 +50,7 @@ shepard uses three types of branches to organize development:
 - Follow the installation and configuration instructions for both front- and backend
 - Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` in the folders)
 - install Docker and Docker Compose (alternatively Podman and Podman Compose)
-- Run `docker compose -f backend/docker-compose.headless.yml up` (alternatively `podman compose ...`)
+- Run `docker compose -f backend/docker-compose.yml up` (alternatively `podman compose ...`)
 - Run backend & frontend using `npm run start:dev`
 
 ### Frontend Development Environment
@@ -130,6 +130,7 @@ The variables preconfigured in `.env.example` also contain variables for local d
 1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
 2. change to the backend root directory (backend folder)
 3. run `docker-compose up` (or `podman-compose up`)
+   - run `docker-compose --profile frontend up` to start core services and the frontend container
 4. local instances of the databases will be launched without persistent storage
 5. quick tip: run the integration tests to fill your databases with some content
 
