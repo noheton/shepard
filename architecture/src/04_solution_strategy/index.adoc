@@ -89,6 +89,14 @@ Stateful logic can be extracted into link:https://vuejs.org/guide/reusability/co
 
 Stateless utility functions should be stored under **utils/**.
 
+===== Routing
+
+We aim to make routes as understandable as possible and try to make each resource view have a unique URL in order to be able to directly link to resources.
+
+This means that for example the collections list view is at `/collections`.
+One collection can be found at `/collections/:id`.
+Since data objects belong to a collection and share a common side bar menu with their collection, they can be found at `/collections/:id/dataobjects/:id`.
+
 ==== Backend Interaction
 
 For the interaction with the backend we check a generated openapi client into the repository, see <<backend-client-for-frontend, here>> for more information.

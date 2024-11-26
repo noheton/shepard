@@ -6,6 +6,6 @@ useHead({
 
 <template>
   <div :style="{ display: 'flex', justifyContent: 'center' }">
-    <CollectionCollectionsPage />
+    <CollectionListPage />
   </div>
 </template>

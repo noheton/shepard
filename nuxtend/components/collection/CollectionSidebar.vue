@@ -6,17 +6,16 @@ import {
   type TreeViewItem,
 } from "./collectionUtils";
 
-interface CollectionTreeViewProps {
+interface CollectionSidebarProps {
   collectionId: number;
 }
 
-const props = defineProps<CollectionTreeViewProps>();
-const emit = defineEmits<{
-  dataObjectSelected: [dataObjectId: number];
-}>();
+const props = defineProps<CollectionSidebarProps>();
+
+const router = useRouter();
 
 const collectionId = props.collectionId;
-const items = ref<TreeViewItem[]>([]);
+const items = ref<TreeViewItem[] | undefined>(undefined);
 
 async function fetchRootDataObjectsOfCollection() {
   createApiInstance(DataObjectApi)
@@ -56,10 +55,10 @@ function fetchDataObject(
 }
 
 function onActivated(activeItems: unknown) {
-  if (Array.isArray(activeItems)) {
-    if (!activeItems.length) return;
-    emit("dataObjectSelected", activeItems[0]);
-  }
+  if (Array.isArray(activeItems) && activeItems.length)
+    router.push(
+      collectionsPath + collectionId + dataObjectsPathFragment + activeItems[0],
+    );
 }
 
 fetchRootDataObjectsOfCollection();
@@ -75,6 +74,7 @@ fetchRootDataObjectsOfCollection();
       <div class="text-body-2 text-uppercase">Contents</div>
     </div>
     <v-treeview
+      v-if="!!items"
       class="bg-blue-grey-50"
       :items="items"
       item-value="id"
@@ -84,14 +84,15 @@ fetchRootDataObjectsOfCollection();
       color="blue-500"
       density="compact"
       mandatory
-      @update:activated="onActivated"
-      expand-icon="mdi-chevron-right"
       collapse-icon="mdi-chevron-down"
+      expand-icon="mdi-chevron-right"
+      @update:activated="onActivated"
     >
       <template #title="{ title }">
         {{ title }}
       </template>
     </v-treeview>
+    <v-progress-circular v-else indeterminate />
   </div>
 </template>
 

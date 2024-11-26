@@ -36,5 +36,6 @@
   "java.configuration.updateBuildConfiguration": "interactive",
   "[shellscript]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
-  }
+  },
+  "editor.gotoLocation.multipleDefinitions": "goto"
 }

@@ -1,8 +1,7 @@
+<script setup lang="ts">
+import DefaultLayout from "~/components/layout-components/DefaultLayout.vue";
+</script>
+
 <template>
-  <v-app>
-    <HeaderBar />
-    <v-main>
-      <slot />
-    </v-main>
-  </v-app>
+  <DefaultLayout><slot /></DefaultLayout>
 </template>
