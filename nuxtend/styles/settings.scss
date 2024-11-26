@@ -72,5 +72,8 @@
   // snackbar overrides
   $snackbar-background: #f4c2c7,
   $snackbar-color: #a52834,
-  $snackbar-elevation: 0
+  $snackbar-elevation: 0,
+
+  //breadcrumb overrides
+  $breadcrumbs-item-disabled-opacity: true
 );

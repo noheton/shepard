@@ -28,14 +28,14 @@ fetchCollection(collectionId);
   <v-container fluid class="pa-0 fill-height align-start">
     <v-row no-gutters class="fill-height">
       <v-col cols="12">
-        <v-breadcrumbs
+        <LayoutComponentsShepardBreadcrumbs
           :items="[
             {
               title: 'Collections',
               href: collectionsPath,
             },
             {
-              title: collection?.name ?? 'Not Found',
+              title: `Collection '${collection?.name ?? 'Not Found'}'`,
               href: collectionsPath + collectionId,
             },
           ]"

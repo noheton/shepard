@@ -54,14 +54,14 @@ fetchDataObjectDetails();
 
 <template>
   <div v-if="!!collection && !!dataObject">
-    <v-breadcrumbs
+    <LayoutComponentsShepardBreadcrumbs
       :items="[
         {
           title: 'Collections',
           href: collectionsPath,
         },
         {
-          title: collection.name ?? 'No Collection Name',
+          title: `Collection '${collection?.name ?? 'Not Found'}'`,
           href: collectionsPath + collectionId,
         },
         {

@@ -6,6 +6,11 @@ import "vuetify/styles";
 
 export default defineNuxtPlugin(app => {
   const vuetify = createVuetify({
+    defaults: {
+      VBreadcrumbs: {
+        color: "blue-500",
+      },
+    },
     components: {
       VTreeview,
     },
@@ -74,5 +79,6 @@ const customTheme: ThemeDefinition = {
     "yellow-700": "#997404",
     "yellow-800": "#735703",
     "yellow-900": "#4D3A02",
+    "grey-200": "#8c8c8c",
   },
 };
