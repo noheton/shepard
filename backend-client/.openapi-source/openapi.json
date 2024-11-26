@@ -30,6 +30,8 @@
   }, {
     "name" : "fileReference"
   }, {
+    "name" : "labJournal"
+  }, {
     "name" : "reference"
   }, {
     "name" : "search"
@@ -753,6 +755,69 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ExperimentalTimeseries"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/labJournals" : {
+      "get" : {
+        "tags" : [ "labJournal" ],
+        "description" : "Get all lab journals in a data object",
+        "operationId" : "getLabJournalsByCollection",
+        "parameters" : [ {
+          "name" : "dataObjectId",
+          "in" : "query",
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/LabJournal"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "labJournal" ],
+        "description" : "Create a lab journal in a data object",
+        "operationId" : "createLabJournal",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LabJournal"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LabJournal"
                 }
               }
             }
@@ -3725,6 +3790,98 @@
         }
       }
     },
+    "/labJournals/{labJournalId}" : {
+      "get" : {
+        "tags" : [ "labJournal" ],
+        "description" : "Get a lab journal",
+        "operationId" : "getLabJournalById",
+        "parameters" : [ {
+          "name" : "labJournalId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LabJournal"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "labJournal" ],
+        "description" : "Update a lab journal",
+        "operationId" : "updateLabJournal",
+        "parameters" : [ {
+          "name" : "labJournalId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LabJournal"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "updated",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LabJournal"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "labJournal" ],
+        "description" : "Delete a lab journal",
+        "operationId" : "deleteLabJournal",
+        "parameters" : [ {
+          "name" : "labJournalId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "deleted"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
     "/collections/{collectionId}/dataObjects/{dataObjectId}/fileReferences" : {
       "get" : {
         "tags" : [ "fileReference" ],
@@ -5782,6 +5939,19 @@
           },
           "value" : {
             "description" : "A string, an int, a double or a boolean"
+          }
+        }
+      },
+      "LabJournal" : {
+        "required" : [ "dataObjectId", "journalContent" ],
+        "type" : "object",
+        "properties" : {
+          "dataObjectId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "journalContent" : {
+            "type" : "string"
           }
         }
       },

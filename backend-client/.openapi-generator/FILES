@@ -11,6 +11,7 @@ src/apis/ExperimentalTimeseriesContainerApi.ts
 src/apis/FileContainerApi.ts
 src/apis/FileReferenceApi.ts
 src/apis/HealthzApi.ts
+src/apis/LabJournalApi.ts
 src/apis/ReferenceApi.ts
 src/apis/SearchApi.ts
 src/apis/SemanticAnnotationApi.ts
@@ -57,6 +58,7 @@ src/models/HasId.ts
 src/models/HealthCheck.ts
 src/models/HealthResponse.ts
 src/models/InfluxPoint.ts
+src/models/LabJournal.ts
 src/models/PermissionType.ts
 src/models/Permissions.ts
 src/models/QueryType.ts

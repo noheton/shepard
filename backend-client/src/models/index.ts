@@ -31,6 +31,7 @@ export * from './HasId';
 export * from './HealthCheck';
 export * from './HealthResponse';
 export * from './InfluxPoint';
+export * from './LabJournal';
 export * from './PermissionType';
 export * from './Permissions';
 export * from './QueryType';
