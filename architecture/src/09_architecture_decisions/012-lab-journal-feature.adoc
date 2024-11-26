@@ -1,0 +1,108 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-012 Lab Journal feature
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|21.11.2024
+|Status|Done
+
+|Context|
+
+== How to persist the Lab Journal content
+
+We need to implement a solution for storing content of the *Lab Journal* feature in shepard.
+This feature will allow users to create, store, and manage lab journal entries that will be related to DataObjects.
+There are several options for how to persist the content of the lab journal and integrate it with the current shepard state.
+The main considerations include ease of implementation, maintainability, performance, and how well the solution integrates with our existing domain model and infrastructure.
+
+=== Choices
+
+=== 1. Use Existing REST API and Implement Logic in Frontend
+
+*Advantages:*
+
+No changes in the backend necessary.
+
+*Disadvantages:*
+
+- Business logic is implemented in the frontend.
+- Mixing DataObjects for experimental data with DataObjects for lab journal entries.
+- Lab Journal entries would appear in the Treeview, causing clutter.
+- Filtering out lab journal entries from DataObjects must be done by users of the REST API, which destroys pagination.
+- Using StructuredData containers would result in one container for all lab journal entries, not related to individual collections.
+
+=== 2. Create New REST APIs for Lab Journal Using Existing Domain Model
+
+*Advantages:*
+
+- No changes in the existing domain model.
+- Business logic is stored in the backend.
+- Simplifies use cases like filtering, searching, and pagination with new REST API.
+- Can utilize pagination and filtering of the existing REST API for containers.
+
+*Disadvantages:*
+
+- Pollutes the data objects tree view if implemented with DataObjects.
+- Only one global container for all lab journal entries if implemented with Structured Data containers.
+- Permissions are made for the global container, not for each collection separately.
+- Filtering requires accessing properties within the JSON document.
+
+=== 3. Store content in Neo4j using an independent service with new REST API
+
+*Advantages:*
+
+- Relationship between DataObject and Lab Journal entry can use database references.
+- Core domain model is located in the neo4j database.
+- More control and freedom in designing data model classes.
+- Clear and clean separate endpoint for the special feature.
+- Possibility to store images from the description in a file container or elsewhere.
+
+*Disadvantages:*
+
+More implementation effort for filtering, pagination, new model, permissions, etc.
+
+=== 4. Create Independent Service with New REST API Stored in Postgres
+
+*Advantages:*
+
+- Completely isolated from the rest of the application (microservice approach).
+- Easily testable and maintainable.
+- More control and freedom in designing data model classes.
+- Clear and clean separate endpoint for the special feature.
+- Possibility to store images from the description in a file container or elsewhere.
+
+*Disadvantages:*
+
+- More implementation effort for filtering, pagination, new model, permissions, etc.
+- Lose the direct database reference for connecting the DataObjects and lab journals.
+- Separate storage from the related business domain objects.
+
+=== 5. Extend Existing Data Object Model
+
+*Advantages:*
+
+- No changes to the existing endpoints.
+- Lab journals are included automatically in the data object.
+- Easy to implement.
+
+*Disadvantages:*
+
+- Hard to maintain field meta info like created-by, created-at, etc.
+- Loading the needed lab journals could be complex and resource-intensive at the collection level.
+- Could be overcome by creating an endpoint to get all lab journals and apply the needed filter.
+
+
+|Decision|
+We have decided to implement *Option 3: Store content in Neo4j using an independent service with new REST API*.
+
+- Neo4j allows us to leverage database references to establish relationships between Collections, DataObjects and Lab Journal entries.
+- It provides a clear and clean separate endpoint for the Lab Journal feature, making it easier to manage and maintain.
+- This decision aligns with our goal of maintaining a clean and organized domain model while providing the necessary functionality for the Lab Journal feature.
+
+|Consequences|
+
+- We will need to invest more effort in implementing filtering, pagination, new model, permissions, etc.
+
+|===

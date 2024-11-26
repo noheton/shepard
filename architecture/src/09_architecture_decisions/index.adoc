@@ -26,3 +26,5 @@ include::009-nuxt-oidc-library.adoc[]
 include::010-postgres-timescale-image.adoc[]
 
 include::011-timescale-database-schema.adoc[]
+
+include::012-lab-journal-feature.adoc[]
