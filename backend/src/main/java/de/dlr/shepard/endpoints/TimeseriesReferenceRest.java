@@ -42,9 +42,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.TIMESERIES_REFERENCES
 )
@@ -73,10 +73,10 @@ public class TimeseriesReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response getAllTimeseriesReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
     var references = timeseriesReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
     var result = new ArrayList<TimeseriesReferenceIO>(references.size());
@@ -98,11 +98,11 @@ public class TimeseriesReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   public Response getTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId
   ) {
     var result = timeseriesReferenceService.getReferenceByShepardId(timeseriesId);
@@ -121,10 +121,10 @@ public class TimeseriesReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
@@ -147,11 +147,11 @@ public class TimeseriesReferenceRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   public Response deleteTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId
   ) {
     var result = timeseriesReferenceService.deleteReferenceByShepardId(
@@ -173,7 +173,7 @@ public class TimeseriesReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   @Parameter(name = Constants.FUNCTION)
   @Parameter(name = Constants.GROUP_BY)
@@ -183,7 +183,7 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.SYMBOLICNAME)
   public Response getTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
     @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
@@ -220,7 +220,7 @@ public class TimeseriesReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   @Parameter(name = Constants.FUNCTION)
   @Parameter(name = Constants.GROUP_BY)
@@ -230,7 +230,7 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.SYMBOLICNAME)
   public Response exportTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
     @QueryParam(Constants.FUNCTION) SingleValuedUnaryFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,

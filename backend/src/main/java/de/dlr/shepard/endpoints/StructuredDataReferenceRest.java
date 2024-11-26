@@ -37,9 +37,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.STRUCTURED_DATA_REFERENCES
 )
@@ -68,10 +68,10 @@ public class StructuredDataReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response getAllStructuredDataReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
     var references = structuredDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
     var result = new ArrayList<StructuredDataReferenceIO>(references.size());
@@ -92,11 +92,11 @@ public class StructuredDataReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   public Response getStructuredDataReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long referenceId
   ) {
     var ref = structuredDataReferenceService.getReferenceByShepardId(referenceId);
@@ -114,10 +114,10 @@ public class StructuredDataReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createStructuredDataReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))
@@ -139,11 +139,11 @@ public class StructuredDataReferenceRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   public Response deleteStructuredDataReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataReferenceId
   ) {
     var result = structuredDataReferenceService.deleteReferenceByShepardId(
@@ -164,11 +164,11 @@ public class StructuredDataReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   public Response getStructuredDataPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId
   ) {
     var payload = structuredDataReferenceService.getAllPayloadsByShepardId(
@@ -189,12 +189,12 @@ public class StructuredDataReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response getSpecificStructuredDataPayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
   ) {

@@ -82,7 +82,7 @@ public class BaseTestCaseIT {
   }
 
   protected static DataObjectIO createDataObject(String name, long collectionId) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

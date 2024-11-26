@@ -33,9 +33,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.BASIC_REFERENCES +
   "/{" +
@@ -69,7 +69,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
@@ -94,7 +94,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
@@ -123,7 +123,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
@@ -151,7 +151,7 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)

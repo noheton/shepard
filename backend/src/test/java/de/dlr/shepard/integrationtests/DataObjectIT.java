@@ -59,18 +59,18 @@ public class DataObjectIT extends BaseTestCaseIT {
     collectionForOrderByTest = createCollection("OrderByTestCollection");
     versionizedCollection = createCollection("collection for versioning");
 
-    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
+    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     orderByDataObjectsURL = String.format(
       "/%s/%d/%s",
       Constants.COLLECTIONS,
       collectionForOrderByTest.getId(),
-      Constants.DATAOBJECTS
+      Constants.DATA_OBJECTS
     );
     versioningURL = String.format(
       "/%s/%d/%s",
       Constants.COLLECTIONS,
       versionizedCollection.getId(),
-      Constants.DATAOBJECTS
+      Constants.DATA_OBJECTS
     );
     versionizedCollectionURL = String.format("/%s/%d", Constants.COLLECTIONS, versionizedCollection.getId());
 

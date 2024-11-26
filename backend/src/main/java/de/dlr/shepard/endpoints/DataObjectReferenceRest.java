@@ -37,9 +37,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.DATAOBJECT_REFERENCES
 )
@@ -68,10 +68,10 @@ public class DataObjectReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response getAllDataObjectReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
     var references = dataObjectReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
     var result = new ArrayList<DataObjectReferenceIO>(references.size());
@@ -92,11 +92,11 @@ public class DataObjectReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   public Response getDataObjectReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
   ) {
     var result = dataObjectReferenceService.getReferenceByShepardId(dataObjectReferenceId);
@@ -114,10 +114,10 @@ public class DataObjectReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createDataObjectReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
@@ -139,11 +139,11 @@ public class DataObjectReferenceRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   public Response deleteDataObjectReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
   ) {
     var result = dataObjectReferenceService.deleteReferenceByShepardId(
@@ -164,11 +164,11 @@ public class DataObjectReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   public Response getDataObjectReferencePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
   ) {
     var payload = dataObjectReferenceService.getPayloadByShepardId(dataObjectReferenceId);

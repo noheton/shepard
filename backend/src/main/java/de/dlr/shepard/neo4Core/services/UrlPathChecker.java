@@ -129,8 +129,8 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.DATAOBJECTS)) {
-      long id = Long.parseLong(pathElems.get(Constants.DATAOBJECTS));
+    if (pathElems.containsKey(Constants.DATA_OBJECTS)) {
+      long id = Long.parseLong(pathElems.get(Constants.DATA_OBJECTS));
       dataObject = dataObjectService.getDataObjectByShepardId(id);
       String error = checkDataObject(dataObject, collection);
       if (error != null) {

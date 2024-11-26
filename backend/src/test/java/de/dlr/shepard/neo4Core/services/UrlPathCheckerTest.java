@@ -135,7 +135,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dummyIdSeg.getPath()).thenReturn("123");
 
     when(collectionsSeg.getPath()).thenReturn(Constants.COLLECTIONS);
-    when(dataObjectsSeg.getPath()).thenReturn(Constants.DATAOBJECTS);
+    when(dataObjectsSeg.getPath()).thenReturn(Constants.DATA_OBJECTS);
     when(basicReferencesSeg.getPath()).thenReturn(Constants.BASIC_REFERENCES);
 
     when(usersSeg.getPath()).thenReturn(Constants.USERS);

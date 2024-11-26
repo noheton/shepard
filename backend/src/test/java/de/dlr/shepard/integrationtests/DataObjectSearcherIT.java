@@ -45,7 +45,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     collection = createCollection("DataObjectSearcherTestCollection");
-    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
+    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -550,7 +550,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)

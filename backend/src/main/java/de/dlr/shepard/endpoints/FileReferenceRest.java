@@ -37,9 +37,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.FILE_REFERENCES
 )
@@ -68,10 +68,10 @@ public class FileReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response getAllFileReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
     var references = fileReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
     var result = new ArrayList<FileReferenceIO>(references.size());
@@ -92,11 +92,11 @@ public class FileReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response getFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long referenceId
   ) {
     var ref = fileReferenceService.getReferenceByShepardId(referenceId);
@@ -114,10 +114,10 @@ public class FileReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
@@ -139,11 +139,11 @@ public class FileReferenceRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response deleteFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId
   ) {
     var result = fileReferenceService.deleteReferenceByShepardId(
@@ -168,12 +168,12 @@ public class FileReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   @Parameter(name = Constants.OID)
   public Response getFilePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId,
     @PathParam(Constants.OID) String oid
   ) {
@@ -201,11 +201,11 @@ public class FileReferenceRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response getFiles(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long fileId
   ) {
     var ret = fileReferenceService.getFilesByShepardId(fileId);

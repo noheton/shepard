@@ -758,7 +758,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -779,7 +779,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithPredecessors(String name, long collectionId, long[] predecessorsIDs) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATAOBJECTS);
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
@@ -849,7 +849,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObject.getId(),
       Constants.STRUCTURED_DATA_REFERENCES
     );
@@ -873,7 +873,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS
+      Constants.DATA_OBJECTS
     );
     RequestSpecification dataObjectRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
@@ -888,7 +888,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static void putDataObject(Long dataObjectToChangeID, Long collectionID, DataObjectIO changedDataObject) {
-    String putURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATAOBJECTS);
+    String putURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     putURL = putURL + "/" + dataObjectToChangeID;
     RequestSpecification putSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)

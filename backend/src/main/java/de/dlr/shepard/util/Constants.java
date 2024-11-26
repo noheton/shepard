@@ -35,9 +35,9 @@ public class Constants {
   public static final String COLLECTIONS = "collections";
   public static final String COLLECTION_ID = "collectionId";
 
-  public static final String DATAOBJECT = "dataObject";
-  public static final String DATAOBJECTS = "dataObjects";
-  public static final String DATAOBJECT_ID = "dataObjectId";
+  public static final String DATA_OBJECT = "dataObject";
+  public static final String DATA_OBJECTS = "dataObjects";
+  public static final String DATA_OBJECT_ID = "dataObjectId";
 
   public static final String BASIC_REFERENCE = "reference";
   public static final String BASIC_REFERENCES = "references";
@@ -101,6 +101,10 @@ public class Constants {
 
   public static final String PERMISSIONS = "permissions";
   public static final String PERMISSION_ID = "permissionId";
+
+  public static final String LAB_JOURNAL = "labJournal";
+  public static final String LAB_JOURNALS = "labJournals";
+  public static final String LAB_JOURNAL_ID = "labJournalId";
 
   public static final String ROLES = "roles";
   public static final String VERSION = "version";

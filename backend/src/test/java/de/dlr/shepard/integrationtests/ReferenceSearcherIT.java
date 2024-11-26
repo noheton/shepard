@@ -118,7 +118,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObjectIO1.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
@@ -160,7 +160,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObjectIO4.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
@@ -182,7 +182,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObjectIO2.getId(),
       Constants.FILE_REFERENCES
     );
@@ -459,7 +459,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection1.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       collection1DataObject.getId(),
       Constants.COLLECTION_REFERENCES
     );
@@ -554,7 +554,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       sDataCollection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       sDataObject.getId(),
       Constants.STRUCTURED_DATA_REFERENCES
     );
@@ -648,7 +648,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       tSerCollection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       tSerDataObject.getId(),
       Constants.TIMESERIES_REFERENCES
     );
@@ -743,7 +743,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "/%s/%d/%s/",
       Constants.COLLECTIONS,
       dataObjectIO.getCollectionId(),
-      Constants.DATAOBJECTS
+      Constants.DATA_OBJECTS
     );
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)

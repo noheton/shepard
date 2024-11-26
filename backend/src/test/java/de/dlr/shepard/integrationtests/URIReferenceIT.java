@@ -38,7 +38,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObject.getId(),
       Constants.URI_REFERENCES
     );

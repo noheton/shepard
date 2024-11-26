@@ -43,7 +43,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       "/%s/%d/%s/%d/references",
       Constants.COLLECTIONS,
       collection.getId(),
-      Constants.DATAOBJECTS,
+      Constants.DATA_OBJECTS,
       dataObject.getId(),
       Constants.BASIC_REFERENCES
     );
@@ -142,7 +142,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       "/" +
       collectionId +
       "/" +
-      Constants.DATAOBJECTS +
+      Constants.DATA_OBJECTS +
       "/" +
       dataObjectId +
       "/" +
@@ -174,7 +174,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       "/" +
       collectionId +
       "/" +
-      Constants.DATAOBJECTS +
+      Constants.DATA_OBJECTS +
       "/" +
       dataObjectId +
       "/" +

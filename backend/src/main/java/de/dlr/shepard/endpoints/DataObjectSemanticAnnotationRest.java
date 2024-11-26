@@ -33,9 +33,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.COLLECTION_ID +
   "}/" +
-  Constants.DATAOBJECTS +
+  Constants.DATA_OBJECTS +
   "/{" +
-  Constants.DATAOBJECT_ID +
+  Constants.DATA_OBJECT_ID +
   "}/" +
   Constants.SEMANTIC_ANNOTATIONS
 )
@@ -63,8 +63,8 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.COLLECTION_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
-  @Parameter(name = Constants.DATAOBJECT_ID)
-  public Response getAllAnnotations(@PathParam(Constants.DATAOBJECT_ID) long dataObjectId) {
+  @Parameter(name = Constants.DATA_OBJECT_ID)
+  public Response getAllAnnotations(@PathParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
     return getAllByShepardId(dataObjectId);
   }
 
@@ -85,7 +85,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
@@ -108,9 +108,9 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     name = Constants.COLLECTION_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createAnnotation(
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
@@ -133,7 +133,7 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @Parameter(
     in = ParameterIn.PATH,
-    name = Constants.DATAOBJECT_ID,
+    name = Constants.DATA_OBJECT_ID,
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)

@@ -37,7 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATAOBJECTS)
+@Path(Constants.COLLECTIONS + "/{" + Constants.COLLECTION_ID + "}/" + Constants.DATA_OBJECTS)
 @RequestScoped
 public class DataObjectRest {
 
@@ -54,7 +54,7 @@ public class DataObjectRest {
   }
 
   @GET
-  @Tag(name = Constants.DATAOBJECT)
+  @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Get all dataObjects")
   @APIResponse(
     description = "ok",
@@ -102,8 +102,8 @@ public class DataObjectRest {
   }
 
   @GET
-  @Path("/{" + Constants.DATAOBJECT_ID + "}")
-  @Tag(name = Constants.DATAOBJECT)
+  @Path("/{" + Constants.DATA_OBJECT_ID + "}")
+  @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Get dataObject")
   @APIResponse(
     description = "ok",
@@ -112,11 +112,11 @@ public class DataObjectRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId, versionUID);
@@ -125,7 +125,7 @@ public class DataObjectRest {
 
   @POST
   @Subscribable
-  @Tag(name = Constants.DATAOBJECT)
+  @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Create a new dataObject")
   @APIResponse(
     description = "created",
@@ -150,9 +150,9 @@ public class DataObjectRest {
   }
 
   @PUT
-  @Path("/{" + Constants.DATAOBJECT_ID + "}")
+  @Path("/{" + Constants.DATA_OBJECT_ID + "}")
   @Subscribable
-  @Tag(name = Constants.DATAOBJECT)
+  @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Update dataObject")
   @APIResponse(
     description = "ok",
@@ -161,10 +161,10 @@ public class DataObjectRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response updateDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
@@ -182,17 +182,17 @@ public class DataObjectRest {
   }
 
   @DELETE
-  @Path("/{" + Constants.DATAOBJECT_ID + "}")
+  @Path("/{" + Constants.DATA_OBJECT_ID + "}")
   @Subscribable
-  @Tag(name = Constants.DATAOBJECT)
+  @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Delete dataObject")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.DATAOBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response deleteDataObject(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATAOBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
     return dataObjectService.deleteDataObjectByShepardId(dataObjectId, securityContext.getUserPrincipal().getName())
       ? Response.status(Status.NO_CONTENT).build()

@@ -123,7 +123,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .spec(requestSpecification)
       .body(payload)
       .when()
-      .post(collectionsURL + "/" + collection.getId() + "/" + Constants.DATAOBJECTS)
+      .post(collectionsURL + "/" + collection.getId() + "/" + Constants.DATA_OBJECTS)
       .then()
       .statusCode(201)
       .extract()
