@@ -28,3 +28,5 @@ include::010-postgres-timescale-image.adoc[]
 include::011-timescale-database-schema.adoc[]
 
 include::012-lab-journal-feature.adoc[]
+
+include::013-editor-library.adoc[]

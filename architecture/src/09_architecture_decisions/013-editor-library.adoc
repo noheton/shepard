@@ -1,0 +1,170 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-013 Editor Library
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|26.11.2024
+|Status|Done
+
+|Context|
+For the lab journal feature, we need an editor in the new frontend.
+In the old frontend, tiptap was used to edit & render descriptions of collections and data objects.
+Editing lab journals needs more features than the descriptions in the old frontend, e.g. tables & images.
+In the new frontend, we want one editor for both descriptions and lab journal entries for consistency.
+
+|Possible Alternatives|
+
+[cols="1a,2a,2a,2a,2a,2a,2a"]
+
+!===
+!!editor.js!tiptap!lexical!CKEDitor!TinyMCE!quill
+
+!General Information
+!https://editorjs.io/
+!https://tiptap.dev/docs/editor/getting-started/install/vue3
+!https://lexical.dev/
+!https://ckeditor.com/ckeditor-5/demo/feature-rich/
+!https://www.tiny.cloud/
+!https://quilljs.com/playground/snow
+
+!GitHub Stars
+!29k
+!27k
+!20k
+!9,6k
+!15k
+!43k
+
+!npm downloads
+!110k
+!1200k
+!667k
+!800k
+!656k
+!1600k
+
+!Good Look & Feel
+!Yes
+!Yes
+!Demo looks great, but is React based
+!Yes
+!Yes
+!Very basic
+
+!Standard Text Editor
+!Block based
+!Standard WYSIWYG
+!Block Based
+!Standard WYSIWYG
+!Standard WYSIWYG
+!Standard WYSIWYG
+
+!Documentation Quality
+!Great Docs
+!Good Docs
+!Not great, Only few examples
+!
+!
+!
+
+!Formatting Bar on Top Possible
+!Even with manual effort not easily, see link:https://stackoverflow.com/questions/71950350/how-to-add-a-fixed-top-toolbar-to-editorjs[here]
+!Does not provide a toolbar on its own, has to be implemented and designed by ourselves like link:https://tiptap.dev/docs/editor/getting-started/style-editor/[this] custom-menus or link:https://github.com/ueberdosis/tiptap/blob/v2.10.2/demos/src/Examples/Menus/Vue/index.vue[this]
+!Not easily
+!Yes
+!Yes
+!
+
+!Lists & Tables
+!Yes
+!Yes
+!Yes
+!Yes
+!Yes
+!
+
+!Images in Text
+!Yes
+!Yes
+!The playground supports it (with a custom plugin in the playground), but the documentation does not make it clear how image inclusion and file upload work. The playground is written in react, the vue plugin does not have the image stuff
+!Yes
+!Yes
+!
+
+!Image Upload per Drag & Drop
+!Yes
+!Manually possible following link:https://www.codemzy.com/blog/tiptap-drag-drop-image[this]
+!The playground supports it (with a custom plugin in the playground), but the documentation does not make it clear how image inclusion and file upload work. The playground is written in react, the vue plugin does not have the image stuff
+!
+!
+!
+
+!Data Validation possible (make sure data can be validated at the api to make sure the frontend can render it)
+!Yes, The block format allows for easy data validation and a clear API documentable in the OpenAPI spec
+!Kind of, it emits html
+!Kind of, it emits html
+!Kind of, it emits html
+!No, since TinyMCE is very cloud focused and expects to talk with it's own backend
+!
+
+!Vue Compatible
+!link:https://www.reddit.com/r/vuejs/comments/17n3jm6/is_editorjs_for_vue_3_dead/[Yes]
+!link:https://tiptap.dev/docs/editor/getting-started/install/vue3[Yes]
+!link:https://lexical-vue.vercel.app/[Yes]
+!link:https://ckeditor.com/docs/ckeditor5/latest/getting-started/installation/vuejs-v3.html[Yes]
+!link:https://github.com/tinymce/tinymce-vue[Yes]
+!link:https://vueup.github.io/vue-quill/[No, the extension is still experimental]
+
+!Active Development
+!Yes and No (No response in the link:https://github.com/codex-team/editor.js/discussions/1943[toolbar feature request] for more than a year )
+!Yes
+!Yes
+!Yes
+!Yes
+!Yes
+
+!Open Source, best case no freemium model
+!Yes
+!Yes but freemium stuff (that we don't need)
+!Yes
+!Yes but Freemium stuff
+!Yes but Freemium & cloud stuff
+!Yes
+
+!Not blocking potential export
+!Yes
+!Yes
+!Yes
+!Yes
+!Not clear how to export data to save it in the database ourselves
+!
+
+!Not blocking potential full text search
+!Yes
+!Yes
+!Yes
+!Yes
+!Yes
+!Yes
+!===
+
+|Decision|
+
+We decide to go with tiptap since
+
+* we save migration effort for old descriptions,
+* it is possible with reasonable effort to add a toolbar to our liking,
+* implement an image upload functionality tailored to shepard
+* CKEditor & TinyMCE seemed quite commercial,
+* lexical did not have great documentation & vue support,
+* quill does not have production-ready vue support and
+* editor.js is missing a way to have the toolbar we need without a hacky solution.
+
+|Consequences|
+
+* We can migrate the old description mechanism to the new frontend almost as is
+* We need to think about data validation for lab journal entries
+
+|===
