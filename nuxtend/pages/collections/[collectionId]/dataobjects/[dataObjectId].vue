@@ -58,15 +58,15 @@ fetchDataObjectDetails();
       :items="[
         {
           title: 'Collections',
-          href: collectionsPath,
+          to: collectionsPath,
         },
         {
           title: `Collection '${collection?.name ?? 'Not Found'}'`,
-          href: collectionsPath + collectionId,
+          to: collectionsPath + collectionId,
         },
         {
           title: dataObject.name ?? 'No Data Object Name',
-          href:
+          to:
             collectionsPath +
             collectionId +
             dataObjectsPathFragment +
