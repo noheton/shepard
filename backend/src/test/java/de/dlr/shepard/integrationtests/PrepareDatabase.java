@@ -53,7 +53,11 @@ public class PrepareDatabase {
 
   public Session openSession(String connectionString) {
     Configuration configuration = new Configuration.Builder().uri(connectionString).build();
-    sessionFactory = new SessionFactory(configuration, "de.dlr.shepard.neo4Core.entities");
+    sessionFactory = new SessionFactory(
+      configuration,
+      "de.dlr.shepard.neo4Core.entities",
+      "de.dlr.shepard.labJournal.entities"
+    );
     return sessionFactory.openSession();
   }
 

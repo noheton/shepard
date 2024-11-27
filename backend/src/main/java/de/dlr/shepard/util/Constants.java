@@ -158,6 +158,7 @@ public class Constants {
   public static final String TIMESERIES_IN_CONTAINER = "timeseries_in_container";
   public static final String STRUCTUREDDATA_IN_CONTAINER = "structureddata_in_container";
   public static final String HAS_PAYLOAD = "has_payload";
+  public static final String HAS_LABJOURNAL = "has_labjournal";
 
   // Influx
   public static final String MEASUREMENT = "measurement";

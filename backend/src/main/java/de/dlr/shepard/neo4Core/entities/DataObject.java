@@ -1,5 +1,6 @@
 package de.dlr.shepard.neo4Core.entities;
 
+import de.dlr.shepard.labJournal.entities.LabJournal;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
 import java.util.ArrayList;
@@ -37,6 +38,9 @@ public class DataObject extends AbstractDataObject {
 
   @Relationship(type = Constants.POINTS_TO, direction = Direction.INCOMING)
   private List<DataObjectReference> incoming = new ArrayList<>();
+
+  @Relationship(type = Constants.HAS_LABJOURNAL)
+  private List<LabJournal> labJournals = new ArrayList<>();
 
   /**
    * For testing purposes only
@@ -78,6 +82,7 @@ public class DataObject extends AbstractDataObject {
     result = prime * result + HasId.hashcodeHelper(children);
     result = prime * result + HasId.hashcodeHelper(parent);
     result = prime * result + HasId.hashcodeHelper(incoming);
+    result = prime * result + HasId.hashcodeHelper(labJournals);
     return result;
   }
 
@@ -94,7 +99,8 @@ public class DataObject extends AbstractDataObject {
       HasId.equalsHelper(successors, other.successors) &&
       HasId.equalsHelper(parent, other.parent) &&
       HasId.equalsHelper(children, other.children) &&
-      HasId.equalsHelper(incoming, other.incoming)
+      HasId.equalsHelper(incoming, other.incoming) &&
+      HasId.equalsHelper(labJournals, other.labJournals)
     );
   }
 }
