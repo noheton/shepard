@@ -8,7 +8,7 @@ const router = useRouter();
 const props = defineProps<{
   maxObjects: number;
   page: number;
-  entities: BasicEntity[];
+  collections: BasicEntity[];
 }>();
 
 const page = ref(props.page);
@@ -16,7 +16,7 @@ const page = ref(props.page);
 
 <template>
   <v-data-iterator
-    :items="$props.entities"
+    :items="$props.collections"
     :items-per-page="$props.maxObjects"
     :page="page"
   >
@@ -27,7 +27,7 @@ const page = ref(props.page);
         :style="{ padding: '5px' }"
         @click="router.push(collectionsPath + item.raw.id)"
       >
-        <CollectionListItemContent :entity="item.raw" />
+        <CollectionListItemContent :collection="item.raw" />
       </v-card>
     </template>
   </v-data-iterator>

@@ -108,7 +108,7 @@ onMounted(() => {
         </v-card-title>
         <template v-for="result in results" :key="result.id">
           <v-card @click="router.push('/collections/' + result.id)">
-            <CollectionListItemContent :entity="result" />
+            <CollectionListItemContent :collection="result" />
           </v-card>
         </template>
       </v-card>
@@ -124,7 +124,7 @@ onMounted(() => {
       <CollectionList
         :pagination-length="totalPages"
         :max-objects="filterOptions.perPage"
-        :entities="entities"
+        :collections="entities"
         :page="page"
       />
       <v-pagination
