@@ -97,6 +97,16 @@ This means that for example the collections list view is at `/collections`.
 One collection can be found at `/collections/:id`.
 Since data objects belong to a collection and share a common side bar menu with their collection, they can be found at `/collections/:id/dataobjects/:id`.
 
+====== Links
+
+In order to navigate users to another page we aim to avoid:
+
+* javascript only navigations like `router.push(...)` to make users able to see where they will be redirected
+* standard href links to avoid rerendering the whole page
+
+Instead, we use link:https://nuxt.com/docs/api/components/nuxt-link[NuxtLink] as much as possible.
+This enables a url display on hover as well as client-side navigations in a hydrated page.
+
 ==== Backend Interaction
 
 For the interaction with the backend we check a generated openapi client into the repository, see <<backend-client-for-frontend, here>> for more information.
