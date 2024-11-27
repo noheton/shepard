@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "FileContainer")
 public class FileContainerIO extends BasicContainerIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String oid;
 
   public FileContainerIO(FileContainer container) {

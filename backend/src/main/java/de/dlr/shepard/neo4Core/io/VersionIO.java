@@ -13,7 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "Version")
 public class VersionIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private UUID uid;
 
   private String name;

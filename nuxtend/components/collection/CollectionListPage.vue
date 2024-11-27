@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   CollectionApi,
-  type Collection,
+  type BasicEntity,
   type DataObjectAttributes,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
@@ -13,7 +13,7 @@ import CollectionList from "./CollectionList.vue";
 const router = useRouter();
 
 const filterInput = ref("");
-const collections = ref<Collection[]>([]);
+const entities = ref<BasicEntity[]>([]);
 const page = ref(1);
 const totalPages = ref(1);
 
@@ -38,7 +38,7 @@ function fetchCollections(page?: number) {
       orderDesc: filterOptions.value.descending,
     })
     .then(response => {
-      collections.value = response;
+      entities.value = response;
       updateTotalPages();
     })
     .catch(e => {
@@ -49,7 +49,7 @@ function fetchCollections(page?: number) {
 const currentPage = ref(1);
 
 function updateTotalPages() {
-  if (collections.value.length >= filterOptions.value.perPage)
+  if (entities.value.length >= filterOptions.value.perPage)
     totalPages.value = currentPage.value + 1;
   else if (totalPages.value > 1 && currentPage.value == 1) --totalPages.value;
 }
@@ -108,7 +108,7 @@ onMounted(() => {
         </v-card-title>
         <template v-for="result in results" :key="result.id">
           <v-card @click="router.push('/collections/' + result.id)">
-            <CollectionListItemContent :collection="result" />
+            <CollectionListItemContent :entity="result" />
           </v-card>
         </template>
       </v-card>
@@ -124,7 +124,7 @@ onMounted(() => {
       <CollectionList
         :pagination-length="totalPages"
         :max-objects="filterOptions.perPage"
-        :collections="collections"
+        :entities="entities"
         :page="page"
       />
       <v-pagination

@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class DataObjectReferenceIO extends BasicReferenceIO {
 
   @NotNull
+  @Schema(required = true)
   private long referencedDataObjectId;
 
   @Schema(nullable = true)

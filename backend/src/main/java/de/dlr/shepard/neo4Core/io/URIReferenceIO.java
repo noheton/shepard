@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class URIReferenceIO extends BasicReferenceIO {
 
   @NotBlank
+  @Schema(required = true)
   private String uri;
 
   public URIReferenceIO(URIReference ref) {

@@ -30,25 +30,25 @@ export interface Timeseries {
      * @type {string}
      * @memberof Timeseries
      */
-    device: string | null;
+    device: string;
     /**
      * 
      * @type {string}
      * @memberof Timeseries
      */
-    location: string | null;
+    location: string;
     /**
      * 
      * @type {string}
      * @memberof Timeseries
      */
-    symbolicName: string | null;
+    symbolicName: string;
     /**
      * 
      * @type {string}
      * @memberof Timeseries
      */
-    field: string | null;
+    field: string;
 }
 
 /**

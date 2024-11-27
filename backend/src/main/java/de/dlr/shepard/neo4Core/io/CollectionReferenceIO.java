@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class CollectionReferenceIO extends BasicReferenceIO {
 
   @NotNull
+  @Schema(required = true)
   private long referencedCollectionId;
 
   @Schema(nullable = true)

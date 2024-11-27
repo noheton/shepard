@@ -15,17 +15,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "Permissions")
 public class PermissionsIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long entityId;
 
   private String owner;
 
+  @Schema(required = true)
   private PermissionType permissionType;
 
   @NotNull
+  @Schema(required = true)
   private String[] reader;
 
   @NotNull
+  @Schema(required = true)
   private String[] writer;
 
   private long[] readerGroupIds = {};
@@ -33,6 +36,7 @@ public class PermissionsIO {
   private long[] writerGroupIds = {};
 
   @NotNull
+  @Schema(required = true)
   private String[] manager;
 
   public PermissionsIO(Permissions permissions) {

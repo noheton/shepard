@@ -24,7 +24,7 @@ export interface Version {
      * @type {string}
      * @memberof Version
      */
-    readonly uid?: string;
+    readonly uid: string;
     /**
      * 
      * @type {string}
@@ -61,6 +61,7 @@ export interface Version {
  * Check if a given object implements the Version interface.
  */
 export function instanceOfVersion(value: object): value is Version {
+    if (!('uid' in value) || value['uid'] === undefined) return false;
     return true;
 }
 
@@ -74,7 +75,7 @@ export function VersionFromJSONTyped(json: any, ignoreDiscriminator: boolean): V
     }
     return {
         
-        'uid': json['uid'] == null ? undefined : json['uid'],
+        'uid': json['uid'],
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),

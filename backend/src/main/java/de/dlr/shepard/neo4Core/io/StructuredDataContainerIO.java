@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "StructuredDataContainer")
 public class StructuredDataContainerIO extends BasicContainerIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String oid;
 
   public StructuredDataContainerIO(StructuredDataContainer container) {

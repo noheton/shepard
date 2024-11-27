@@ -24,38 +24,42 @@ export interface ApiKeyWithJWT {
      * @type {string}
      * @memberof ApiKeyWithJWT
      */
-    readonly uid?: string;
+    readonly uid: string;
     /**
      * 
      * @type {string}
      * @memberof ApiKeyWithJWT
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {Date}
      * @memberof ApiKeyWithJWT
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
     /**
      * 
      * @type {string}
      * @memberof ApiKeyWithJWT
      */
-    readonly belongsTo?: string;
+    readonly belongsTo: string;
     /**
      * 
      * @type {string}
      * @memberof ApiKeyWithJWT
      */
-    readonly jwt?: string;
+    readonly jwt: string;
 }
 
 /**
  * Check if a given object implements the ApiKeyWithJWT interface.
  */
 export function instanceOfApiKeyWithJWT(value: object): value is ApiKeyWithJWT {
+    if (!('uid' in value) || value['uid'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('belongsTo' in value) || value['belongsTo'] === undefined) return false;
+    if (!('jwt' in value) || value['jwt'] === undefined) return false;
     return true;
 }
 
@@ -69,11 +73,11 @@ export function ApiKeyWithJWTFromJSONTyped(json: any, ignoreDiscriminator: boole
     }
     return {
         
-        'uid': json['uid'] == null ? undefined : json['uid'],
+        'uid': json['uid'],
         'name': json['name'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'belongsTo': json['belongsTo'] == null ? undefined : json['belongsTo'],
-        'jwt': json['jwt'] == null ? undefined : json['jwt'],
+        'createdAt': (new Date(json['createdAt'])),
+        'belongsTo': json['belongsTo'],
+        'jwt': json['jwt'],
     };
 }
 

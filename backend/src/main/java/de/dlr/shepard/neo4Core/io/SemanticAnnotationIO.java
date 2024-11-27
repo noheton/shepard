@@ -13,22 +13,26 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "SemanticAnnotation")
 public class SemanticAnnotationIO implements HasId {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private Long id;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String name;
 
   @NotBlank
+  @Schema(required = true)
   private String propertyIRI;
 
   @NotBlank
+  @Schema(required = true)
   private String valueIRI;
 
   @NotNull
+  @Schema(required = true)
   private long propertyRepositoryId;
 
   @NotNull
+  @Schema(required = true)
   private long valueRepositoryId;
 
   public SemanticAnnotationIO(SemanticAnnotation ref) {

@@ -31,13 +31,13 @@ export interface Subscription {
      * @type {number}
      * @memberof Subscription
      */
-    readonly id?: number;
+    readonly id: number;
     /**
      * 
      * @type {string}
      * @memberof Subscription
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {string}
@@ -49,25 +49,25 @@ export interface Subscription {
      * @type {string}
      * @memberof Subscription
      */
-    subscribedURL: string | null;
+    subscribedURL: string;
     /**
      * 
      * @type {RequestMethod}
      * @memberof Subscription
      */
-    requestMethod: RequestMethod | null;
+    requestMethod: RequestMethod;
     /**
      * 
      * @type {string}
      * @memberof Subscription
      */
-    readonly createdBy?: string;
+    readonly createdBy: string;
     /**
      * 
      * @type {Date}
      * @memberof Subscription
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
 }
 
 
@@ -76,9 +76,12 @@ export interface Subscription {
  * Check if a given object implements the Subscription interface.
  */
 export function instanceOfSubscription(value: object): value is Subscription {
+    if (!('id' in value) || value['id'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('subscribedURL' in value) || value['subscribedURL'] === undefined) return false;
     if (!('requestMethod' in value) || value['requestMethod'] === undefined) return false;
+    if (!('createdBy' in value) || value['createdBy'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     return true;
 }
 
@@ -92,13 +95,13 @@ export function SubscriptionFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
+        'id': json['id'],
         'name': json['name'],
         'callbackURL': json['callbackURL'] == null ? undefined : json['callbackURL'],
         'subscribedURL': json['subscribedURL'],
         'requestMethod': RequestMethodFromJSON(json['requestMethod']),
-        'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'createdBy': json['createdBy'],
+        'createdAt': (new Date(json['createdAt'])),
     };
 }
 

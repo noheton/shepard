@@ -14,18 +14,18 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "ApiKey")
 public class ApiKeyIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private UUID uid;
 
   @NotBlank
-  @Schema(nullable = true)
+  @Schema(required = true)
   private String name;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
+  @Schema(readOnly = true, required = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String belongsTo;
 
   public ApiKeyIO(ApiKey key) {

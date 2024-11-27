@@ -11,15 +11,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @AllArgsConstructor
 public class RolesIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private boolean owner;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private boolean manager;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private boolean writer;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private boolean reader;
 }

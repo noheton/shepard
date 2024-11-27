@@ -16,9 +16,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class SemanticRepositoryIO extends BasicEntityIO {
 
   @NotNull
+  @Schema(required = true)
   private SemanticRepositoryType type;
 
   @NotBlank
+  @Schema(required = true)
   private String endpoint;
 
   public SemanticRepositoryIO(SemanticRepository container) {

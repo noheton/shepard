@@ -16,9 +16,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class StructuredDataReferenceIO extends BasicReferenceIO {
 
   @NotEmpty
+  @Schema(required = true)
   private String[] structuredDataOids;
 
   @NotNull
+  @Schema(required = true)
   private long structuredDataContainerId;
 
   public StructuredDataReferenceIO(StructuredDataReference ref) {

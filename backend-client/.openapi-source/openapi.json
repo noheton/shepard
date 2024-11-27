@@ -2892,7 +2892,7 @@
                   "description" : "The search result page",
                   "type" : "array",
                   "items" : {
-                    "required" : [ "name" ],
+                    "required" : [ "uid", "name", "createdAt", "belongsTo" ],
                     "type" : "object",
                     "properties" : {
                       "uid" : {
@@ -2904,8 +2904,7 @@
                       },
                       "name" : {
                         "pattern" : "\\S",
-                        "type" : "string",
-                        "nullable" : true
+                        "type" : "string"
                       },
                       "createdAt" : {
                         "format" : "date-time",
@@ -6008,7 +6007,7 @@
         "type" : "string"
       },
       "CollectionReference" : {
-        "required" : [ "name", "referencedCollectionId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "referencedCollectionId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6040,8 +6039,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -6063,7 +6061,7 @@
         }
       },
       "UserGroup" : {
-        "required" : [ "name", "usernames" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "usernames" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6095,8 +6093,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "usernames" : {
             "type" : "array",
@@ -6116,6 +6113,7 @@
         }
       },
       "Version" : {
+        "required" : [ "uid" ],
         "type" : "object",
         "properties" : {
           "uid" : {
@@ -6151,7 +6149,7 @@
         }
       },
       "StructuredDataContainer" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "oid" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6183,8 +6181,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "oid" : {
             "type" : "string",
@@ -6209,7 +6206,7 @@
         }
       },
       "Permissions" : {
-        "required" : [ "reader", "writer", "manager" ],
+        "required" : [ "entityId", "permissionType", "reader", "writer", "manager" ],
         "type" : "object",
         "properties" : {
           "entityId" : {
@@ -6258,7 +6255,7 @@
         }
       },
       "Subscription" : {
-        "required" : [ "name", "subscribedURL", "requestMethod" ],
+        "required" : [ "id", "name", "subscribedURL", "requestMethod", "createdBy", "createdAt" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6268,8 +6265,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "callbackURL" : {
             "pattern" : "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
@@ -6278,15 +6274,10 @@
           },
           "subscribedURL" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "requestMethod" : {
-            "type" : "string",
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/RequestMethod"
-            } ],
-            "nullable" : true
+            "$ref" : "#/components/schemas/RequestMethod"
           },
           "createdBy" : {
             "type" : "string",
@@ -6306,7 +6297,7 @@
         "type" : "string"
       },
       "DataObjectReference" : {
-        "required" : [ "name", "referencedDataObjectId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "referencedDataObjectId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6338,8 +6329,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -6375,7 +6365,7 @@
         "type" : "string"
       },
       "SemanticAnnotation" : {
-        "required" : [ "propertyIRI", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
+        "required" : [ "id", "name", "propertyIRI", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6446,7 +6436,7 @@
         }
       },
       "URIReference" : {
-        "required" : [ "name", "uri" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "uri" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6478,8 +6468,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -6513,6 +6502,7 @@
         }
       },
       "Roles" : {
+        "required" : [ "owner", "manager", "writer", "reader" ],
         "type" : "object",
         "properties" : {
           "owner" : {
@@ -6534,7 +6524,7 @@
         }
       },
       "TimeseriesContainer" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "database" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6566,8 +6556,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "database" : {
             "type" : "string",
@@ -6596,7 +6585,7 @@
         }
       },
       "AbstractDataObject" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6628,8 +6617,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "description" : {
             "type" : "string",
@@ -6644,7 +6632,7 @@
         }
       },
       "DataObject" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "collectionId", "referenceIds", "successorIds", "childrenIds", "parentId", "incomingIds" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6676,8 +6664,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "description" : {
             "type" : "string",
@@ -6767,7 +6754,7 @@
         }
       },
       "Collection" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "dataObjectIds", "incomingIds" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6799,8 +6786,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "description" : {
             "type" : "string",
@@ -6831,7 +6817,7 @@
         }
       },
       "StructuredDataReference" : {
-        "required" : [ "name", "structuredDataOids", "structuredDataContainerId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "structuredDataOids", "structuredDataContainerId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6863,8 +6849,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -6931,7 +6916,7 @@
         }
       },
       "ApiKey" : {
-        "required" : [ "name" ],
+        "required" : [ "uid", "name", "createdAt", "belongsTo" ],
         "type" : "object",
         "properties" : {
           "uid" : {
@@ -6943,8 +6928,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "createdAt" : {
             "format" : "date-time",
@@ -6959,6 +6943,7 @@
         }
       },
       "User" : {
+        "required" : [ "username", "subscriptionIds", "apiKeyIds" ],
         "type" : "object",
         "properties" : {
           "username" : {
@@ -7011,23 +6996,19 @@
           },
           "device" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "location" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "symbolicName" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "field" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           }
         }
       },
@@ -7065,7 +7046,7 @@
         }
       },
       "BasicContainer" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7097,8 +7078,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           }
         }
       },
@@ -7107,7 +7087,7 @@
         "type" : "string"
       },
       "FileContainer" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "oid" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7139,8 +7119,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "oid" : {
             "type" : "string",
@@ -7186,7 +7165,7 @@
         "type" : "string"
       },
       "ApiKeyWithJWT" : {
-        "required" : [ "name" ],
+        "required" : [ "uid", "name", "createdAt", "belongsTo", "jwt" ],
         "type" : "object",
         "properties" : {
           "uid" : {
@@ -7198,8 +7177,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "createdAt" : {
             "format" : "date-time",
@@ -7265,7 +7243,7 @@
         }
       },
       "TimeseriesReference" : {
-        "required" : [ "name", "start", "end", "timeseries", "timeseriesContainerId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "start", "end", "timeseries", "timeseriesContainerId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7297,8 +7275,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -7336,7 +7313,7 @@
         "example" : "2022-03-10"
       },
       "SemanticRepository" : {
-        "required" : [ "name", "type", "endpoint" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type", "endpoint" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7368,8 +7345,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "type" : {
             "$ref" : "#/components/schemas/SemanticRepositoryType"
@@ -7446,7 +7422,7 @@
         }
       },
       "FileReference" : {
-        "required" : [ "name", "fileOids", "fileContainerId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "fileOids", "fileContainerId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7478,8 +7454,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",
@@ -7535,7 +7510,7 @@
         }
       },
       "BasicEntity" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7567,13 +7542,12 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           }
         }
       },
       "BasicReference" : {
-        "required" : [ "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7605,8 +7579,7 @@
           },
           "name" : {
             "pattern" : "\\S",
-            "type" : "string",
-            "nullable" : true
+            "type" : "string"
           },
           "dataObjectId" : {
             "format" : "int64",

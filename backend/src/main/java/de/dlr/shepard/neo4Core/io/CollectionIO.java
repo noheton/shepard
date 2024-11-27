@@ -12,10 +12,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "Collection")
 public class CollectionIO extends AbstractDataObjectIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] dataObjectIds;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] incomingIds;
 
   public CollectionIO(Collection collection) {

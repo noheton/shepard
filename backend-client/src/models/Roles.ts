@@ -24,31 +24,35 @@ export interface Roles {
      * @type {boolean}
      * @memberof Roles
      */
-    readonly owner?: boolean;
+    readonly owner: boolean;
     /**
      * 
      * @type {boolean}
      * @memberof Roles
      */
-    readonly manager?: boolean;
+    readonly manager: boolean;
     /**
      * 
      * @type {boolean}
      * @memberof Roles
      */
-    readonly writer?: boolean;
+    readonly writer: boolean;
     /**
      * 
      * @type {boolean}
      * @memberof Roles
      */
-    readonly reader?: boolean;
+    readonly reader: boolean;
 }
 
 /**
  * Check if a given object implements the Roles interface.
  */
 export function instanceOfRoles(value: object): value is Roles {
+    if (!('owner' in value) || value['owner'] === undefined) return false;
+    if (!('manager' in value) || value['manager'] === undefined) return false;
+    if (!('writer' in value) || value['writer'] === undefined) return false;
+    if (!('reader' in value) || value['reader'] === undefined) return false;
     return true;
 }
 
@@ -62,10 +66,10 @@ export function RolesFromJSONTyped(json: any, ignoreDiscriminator: boolean): Rol
     }
     return {
         
-        'owner': json['owner'] == null ? undefined : json['owner'],
-        'manager': json['manager'] == null ? undefined : json['manager'],
-        'writer': json['writer'] == null ? undefined : json['writer'],
-        'reader': json['reader'] == null ? undefined : json['reader'],
+        'owner': json['owner'],
+        'manager': json['manager'],
+        'writer': json['writer'],
+        'reader': json['reader'],
     };
 }
 

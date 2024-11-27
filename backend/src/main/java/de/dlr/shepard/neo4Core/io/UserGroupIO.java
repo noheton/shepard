@@ -15,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class UserGroupIO extends BasicEntityIO {
 
   @NotNull
+  @Schema(required = true)
   private String[] usernames;
 
   public UserGroupIO(UserGroup userGroup) {

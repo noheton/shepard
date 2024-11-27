@@ -31,7 +31,7 @@ export interface Permissions {
      * @type {number}
      * @memberof Permissions
      */
-    readonly entityId?: number;
+    readonly entityId: number;
     /**
      * 
      * @type {string}
@@ -43,7 +43,7 @@ export interface Permissions {
      * @type {PermissionType}
      * @memberof Permissions
      */
-    permissionType?: PermissionType;
+    permissionType: PermissionType;
     /**
      * 
      * @type {Array<string>}
@@ -82,6 +82,8 @@ export interface Permissions {
  * Check if a given object implements the Permissions interface.
  */
 export function instanceOfPermissions(value: object): value is Permissions {
+    if (!('entityId' in value) || value['entityId'] === undefined) return false;
+    if (!('permissionType' in value) || value['permissionType'] === undefined) return false;
     if (!('reader' in value) || value['reader'] === undefined) return false;
     if (!('writer' in value) || value['writer'] === undefined) return false;
     if (!('manager' in value) || value['manager'] === undefined) return false;
@@ -98,9 +100,9 @@ export function PermissionsFromJSONTyped(json: any, ignoreDiscriminator: boolean
     }
     return {
         
-        'entityId': json['entityId'] == null ? undefined : json['entityId'],
+        'entityId': json['entityId'],
         'owner': json['owner'] == null ? undefined : json['owner'],
-        'permissionType': json['permissionType'] == null ? undefined : PermissionTypeFromJSON(json['permissionType']),
+        'permissionType': PermissionTypeFromJSON(json['permissionType']),
         'reader': json['reader'],
         'writer': json['writer'],
         'readerGroupIds': json['readerGroupIds'] == null ? undefined : json['readerGroupIds'],

@@ -24,13 +24,13 @@ export interface SemanticAnnotation {
      * @type {number}
      * @memberof SemanticAnnotation
      */
-    readonly id?: number;
+    readonly id: number;
     /**
      * 
      * @type {string}
      * @memberof SemanticAnnotation
      */
-    readonly name?: string;
+    readonly name: string;
     /**
      * 
      * @type {string}
@@ -61,6 +61,8 @@ export interface SemanticAnnotation {
  * Check if a given object implements the SemanticAnnotation interface.
  */
 export function instanceOfSemanticAnnotation(value: object): value is SemanticAnnotation {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
     if (!('propertyIRI' in value) || value['propertyIRI'] === undefined) return false;
     if (!('valueIRI' in value) || value['valueIRI'] === undefined) return false;
     if (!('propertyRepositoryId' in value) || value['propertyRepositoryId'] === undefined) return false;
@@ -78,8 +80,8 @@ export function SemanticAnnotationFromJSONTyped(json: any, ignoreDiscriminator: 
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'name': json['name'] == null ? undefined : json['name'],
+        'id': json['id'],
+        'name': json['name'],
         'propertyIRI': json['propertyIRI'],
         'valueIRI': json['valueIRI'],
         'propertyRepositoryId': json['propertyRepositoryId'],

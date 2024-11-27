@@ -24,37 +24,37 @@ export interface DataObject {
      * @type {number}
      * @memberof DataObject
      */
-    readonly id?: number;
+    readonly id: number;
     /**
      * 
      * @type {Date}
      * @memberof DataObject
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
     /**
      * 
      * @type {string}
      * @memberof DataObject
      */
-    readonly createdBy?: string;
+    readonly createdBy: string;
     /**
      * 
      * @type {Date}
      * @memberof DataObject
      */
-    readonly updatedAt?: Date | null;
+    readonly updatedAt: Date | null;
     /**
      * 
      * @type {string}
      * @memberof DataObject
      */
-    readonly updatedBy?: string | null;
+    readonly updatedBy: string | null;
     /**
      * 
      * @type {string}
      * @memberof DataObject
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {string}
@@ -72,19 +72,19 @@ export interface DataObject {
      * @type {number}
      * @memberof DataObject
      */
-    readonly collectionId?: number;
+    readonly collectionId: number;
     /**
      * 
      * @type {Array<number>}
      * @memberof DataObject
      */
-    readonly referenceIds?: Array<number>;
+    readonly referenceIds: Array<number>;
     /**
      * 
      * @type {Array<number>}
      * @memberof DataObject
      */
-    readonly successorIds?: Array<number>;
+    readonly successorIds: Array<number>;
     /**
      * 
      * @type {Array<number>}
@@ -96,26 +96,37 @@ export interface DataObject {
      * @type {Array<number>}
      * @memberof DataObject
      */
-    readonly childrenIds?: Array<number>;
+    readonly childrenIds: Array<number>;
     /**
      * 
      * @type {number}
      * @memberof DataObject
      */
-    parentId?: number | null;
+    parentId: number | null;
     /**
      * 
      * @type {Array<number>}
      * @memberof DataObject
      */
-    readonly incomingIds?: Array<number>;
+    readonly incomingIds: Array<number>;
 }
 
 /**
  * Check if a given object implements the DataObject interface.
  */
 export function instanceOfDataObject(value: object): value is DataObject {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('createdBy' in value) || value['createdBy'] === undefined) return false;
+    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
+    if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('collectionId' in value) || value['collectionId'] === undefined) return false;
+    if (!('referenceIds' in value) || value['referenceIds'] === undefined) return false;
+    if (!('successorIds' in value) || value['successorIds'] === undefined) return false;
+    if (!('childrenIds' in value) || value['childrenIds'] === undefined) return false;
+    if (!('parentId' in value) || value['parentId'] === undefined) return false;
+    if (!('incomingIds' in value) || value['incomingIds'] === undefined) return false;
     return true;
 }
 
@@ -129,21 +140,21 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
-        'updatedBy': json['updatedBy'] == null ? undefined : json['updatedBy'],
+        'id': json['id'],
+        'createdAt': (new Date(json['createdAt'])),
+        'createdBy': json['createdBy'],
+        'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
+        'updatedBy': json['updatedBy'],
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
-        'collectionId': json['collectionId'] == null ? undefined : json['collectionId'],
-        'referenceIds': json['referenceIds'] == null ? undefined : json['referenceIds'],
-        'successorIds': json['successorIds'] == null ? undefined : json['successorIds'],
+        'collectionId': json['collectionId'],
+        'referenceIds': json['referenceIds'],
+        'successorIds': json['successorIds'],
         'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
-        'childrenIds': json['childrenIds'] == null ? undefined : json['childrenIds'],
-        'parentId': json['parentId'] == null ? undefined : json['parentId'],
-        'incomingIds': json['incomingIds'] == null ? undefined : json['incomingIds'],
+        'childrenIds': json['childrenIds'],
+        'parentId': json['parentId'],
+        'incomingIds': json['incomingIds'],
     };
 }
 

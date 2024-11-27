@@ -16,11 +16,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "Subscription")
 public class SubscriptionIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private Long id;
 
   @NotBlank
-  @Schema(nullable = true)
+  @Schema(required = true)
   private String name;
 
   @Pattern(
@@ -30,18 +30,18 @@ public class SubscriptionIO {
   private String callbackURL;
 
   @NotBlank
-  @Schema(nullable = true)
+  @Schema(required = true)
   private String subscribedURL;
 
   @NotNull
-  @Schema(nullable = true)
+  @Schema(required = true)
   private RequestMethod requestMethod;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String createdBy;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
+  @Schema(readOnly = true, required = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
   public SubscriptionIO(Subscription sub) {

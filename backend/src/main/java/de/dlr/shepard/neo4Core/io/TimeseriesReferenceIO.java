@@ -16,15 +16,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class TimeseriesReferenceIO extends BasicReferenceIO {
 
   @NotNull
+  @Schema(required = true)
   private long start;
 
   @NotNull
+  @Schema(required = true)
   private long end;
 
   @NotEmpty
+  @Schema(required = true)
   private Timeseries[] timeseries;
 
   @NotNull
+  @Schema(required = true)
   private long timeseriesContainerId;
 
   public TimeseriesReferenceIO(TimeseriesReference ref) {

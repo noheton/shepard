@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { Collection } from "@dlr-shepard/backend-client";
+import type { BasicEntity } from "@dlr-shepard/backend-client";
 
 defineProps<{
-  collection: Collection;
+  entity: BasicEntity;
 }>();
 </script>
 
 <template>
   <v-card-title>
-    <h4>{{ collection.name }}</h4>
-    ID: {{ collection.id }}
+    <h4>{{ entity.name }}</h4>
+    ID: {{ entity.id }}
   </v-card-title>
   <v-card-subtitle>
     {{
       "created at " +
-      collection.createdAt?.toDateString() +
+      entity.createdAt.toDateString() +
       " by " +
-      collection.createdBy
+      entity.createdBy
     }}
   </v-card-subtitle>
 </template>

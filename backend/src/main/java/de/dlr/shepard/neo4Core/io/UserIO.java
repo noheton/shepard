@@ -13,7 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "User")
 public class UserIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String username;
 
   private String firstName;
@@ -22,10 +22,10 @@ public class UserIO {
 
   private String email;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private Long[] subscriptionIds;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private UUID[] apiKeyIds;
 
   public UserIO(User user) {

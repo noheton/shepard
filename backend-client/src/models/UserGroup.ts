@@ -24,37 +24,37 @@ export interface UserGroup {
      * @type {number}
      * @memberof UserGroup
      */
-    readonly id?: number;
+    readonly id: number;
     /**
      * 
      * @type {Date}
      * @memberof UserGroup
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
     /**
      * 
      * @type {string}
      * @memberof UserGroup
      */
-    readonly createdBy?: string;
+    readonly createdBy: string;
     /**
      * 
      * @type {Date}
      * @memberof UserGroup
      */
-    readonly updatedAt?: Date | null;
+    readonly updatedAt: Date | null;
     /**
      * 
      * @type {string}
      * @memberof UserGroup
      */
-    readonly updatedBy?: string | null;
+    readonly updatedBy: string | null;
     /**
      * 
      * @type {string}
      * @memberof UserGroup
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {Array<string>}
@@ -67,6 +67,11 @@ export interface UserGroup {
  * Check if a given object implements the UserGroup interface.
  */
 export function instanceOfUserGroup(value: object): value is UserGroup {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('createdBy' in value) || value['createdBy'] === undefined) return false;
+    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
+    if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('usernames' in value) || value['usernames'] === undefined) return false;
     return true;
@@ -82,11 +87,11 @@ export function UserGroupFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     }
     return {
         
-        'id': json['id'] == null ? undefined : json['id'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
-        'updatedBy': json['updatedBy'] == null ? undefined : json['updatedBy'],
+        'id': json['id'],
+        'createdAt': (new Date(json['createdAt'])),
+        'createdBy': json['createdBy'],
+        'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
+        'updatedBy': json['updatedBy'],
         'name': json['name'],
         'usernames': json['usernames'],
     };

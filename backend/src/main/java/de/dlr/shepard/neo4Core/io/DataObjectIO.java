@@ -12,24 +12,24 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "DataObject")
 public class DataObjectIO extends AbstractDataObjectIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long collectionId;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] referenceIds;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] successorIds;
 
   private long[] predecessorIds;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] childrenIds;
 
-  @Schema(nullable = true)
+  @Schema(nullable = true, required = true)
   private Long parentId;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private long[] incomingIds;
 
   public DataObjectIO(DataObject dataObject) {

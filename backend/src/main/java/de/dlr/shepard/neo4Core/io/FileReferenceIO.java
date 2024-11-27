@@ -16,9 +16,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class FileReferenceIO extends BasicReferenceIO {
 
   @NotEmpty
+  @Schema(required = true)
   private String[] fileOids;
 
   @NotNull
+  @Schema(required = true)
   private long fileContainerId;
 
   public FileReferenceIO(FileReference ref) {

@@ -24,32 +24,35 @@ export interface ApiKey {
      * @type {string}
      * @memberof ApiKey
      */
-    readonly uid?: string;
+    readonly uid: string;
     /**
      * 
      * @type {string}
      * @memberof ApiKey
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {Date}
      * @memberof ApiKey
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
     /**
      * 
      * @type {string}
      * @memberof ApiKey
      */
-    readonly belongsTo?: string;
+    readonly belongsTo: string;
 }
 
 /**
  * Check if a given object implements the ApiKey interface.
  */
 export function instanceOfApiKey(value: object): value is ApiKey {
+    if (!('uid' in value) || value['uid'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('belongsTo' in value) || value['belongsTo'] === undefined) return false;
     return true;
 }
 
@@ -63,10 +66,10 @@ export function ApiKeyFromJSONTyped(json: any, ignoreDiscriminator: boolean): Ap
     }
     return {
         
-        'uid': json['uid'] == null ? undefined : json['uid'],
+        'uid': json['uid'],
         'name': json['name'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'belongsTo': json['belongsTo'] == null ? undefined : json['belongsTo'],
+        'createdAt': (new Date(json['createdAt'])),
+        'belongsTo': json['belongsTo'],
     };
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Collection } from "@dlr-shepard/backend-client";
+import type { BasicEntity } from "@dlr-shepard/backend-client";
 import { collectionsPath } from "../../utils/constants";
 import CollectionListItemContent from "./CollectionListItemContent.vue";
 
@@ -8,7 +8,7 @@ const router = useRouter();
 const props = defineProps<{
   maxObjects: number;
   page: number;
-  collections: Collection[];
+  entities: BasicEntity[];
 }>();
 
 const page = ref(props.page);
@@ -16,7 +16,7 @@ const page = ref(props.page);
 
 <template>
   <v-data-iterator
-    :items="$props.collections"
+    :items="$props.entities"
     :items-per-page="$props.maxObjects"
     :page="page"
   >
@@ -27,7 +27,7 @@ const page = ref(props.page);
         :style="{ padding: '5px' }"
         @click="router.push(collectionsPath + item.raw.id)"
       >
-        <CollectionListItemContent :collection="item.raw" />
+        <CollectionListItemContent :entity="item.raw" />
       </v-card>
     </template>
   </v-data-iterator>

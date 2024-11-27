@@ -16,25 +16,31 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "BasicEntity")
 public class BasicEntityIO implements HasId {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private Long id;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
+  @Schema(readOnly = true, required = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String createdBy;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, nullable = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    required = true,
+    format = "date-time",
+    example = "2024-08-15T11:18:44.632+00:00"
+  )
   private Date updatedAt;
 
-  @Schema(readOnly = true, nullable = true)
+  @Schema(readOnly = true, nullable = true, required = true)
   private String updatedBy;
 
   @NotBlank
-  @Schema(nullable = true)
+  @Schema(required = true)
   private String name;
 
   public BasicEntityIO(BasicEntity entity) {

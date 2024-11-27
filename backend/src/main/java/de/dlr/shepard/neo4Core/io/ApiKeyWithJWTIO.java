@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "ApiKeyWithJWT")
 public class ApiKeyWithJWTIO extends ApiKeyIO {
 
-  @Schema(readOnly = true)
+  @Schema(readOnly = true, required = true)
   private String jwt;
 
   public ApiKeyWithJWTIO(ApiKey key) {

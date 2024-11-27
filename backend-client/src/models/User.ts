@@ -24,7 +24,7 @@ export interface User {
      * @type {string}
      * @memberof User
      */
-    readonly username?: string;
+    readonly username: string;
     /**
      * 
      * @type {string}
@@ -48,19 +48,22 @@ export interface User {
      * @type {Array<number>}
      * @memberof User
      */
-    readonly subscriptionIds?: Array<number>;
+    readonly subscriptionIds: Array<number>;
     /**
      * 
      * @type {Array<string>}
      * @memberof User
      */
-    readonly apiKeyIds?: Array<string>;
+    readonly apiKeyIds: Array<string>;
 }
 
 /**
  * Check if a given object implements the User interface.
  */
 export function instanceOfUser(value: object): value is User {
+    if (!('username' in value) || value['username'] === undefined) return false;
+    if (!('subscriptionIds' in value) || value['subscriptionIds'] === undefined) return false;
+    if (!('apiKeyIds' in value) || value['apiKeyIds'] === undefined) return false;
     return true;
 }
 
@@ -74,12 +77,12 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
     }
     return {
         
-        'username': json['username'] == null ? undefined : json['username'],
+        'username': json['username'],
         'firstName': json['firstName'] == null ? undefined : json['firstName'],
         'lastName': json['lastName'] == null ? undefined : json['lastName'],
         'email': json['email'] == null ? undefined : json['email'],
-        'subscriptionIds': json['subscriptionIds'] == null ? undefined : json['subscriptionIds'],
-        'apiKeyIds': json['apiKeyIds'] == null ? undefined : json['apiKeyIds'],
+        'subscriptionIds': json['subscriptionIds'],
+        'apiKeyIds': json['apiKeyIds'],
     };
 }
 

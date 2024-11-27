@@ -24,32 +24,35 @@ export interface GetAllApiKeys200ResponseInner {
      * @type {string}
      * @memberof GetAllApiKeys200ResponseInner
      */
-    readonly uid?: string;
+    readonly uid: string;
     /**
      * 
      * @type {string}
      * @memberof GetAllApiKeys200ResponseInner
      */
-    name: string | null;
+    name: string;
     /**
      * 
      * @type {Date}
      * @memberof GetAllApiKeys200ResponseInner
      */
-    readonly createdAt?: Date;
+    readonly createdAt: Date;
     /**
      * 
      * @type {string}
      * @memberof GetAllApiKeys200ResponseInner
      */
-    readonly belongsTo?: string;
+    readonly belongsTo: string;
 }
 
 /**
  * Check if a given object implements the GetAllApiKeys200ResponseInner interface.
  */
 export function instanceOfGetAllApiKeys200ResponseInner(value: object): value is GetAllApiKeys200ResponseInner {
+    if (!('uid' in value) || value['uid'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('belongsTo' in value) || value['belongsTo'] === undefined) return false;
     return true;
 }
 
@@ -63,10 +66,10 @@ export function GetAllApiKeys200ResponseInnerFromJSONTyped(json: any, ignoreDisc
     }
     return {
         
-        'uid': json['uid'] == null ? undefined : json['uid'],
+        'uid': json['uid'],
         'name': json['name'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
-        'belongsTo': json['belongsTo'] == null ? undefined : json['belongsTo'],
+        'createdAt': (new Date(json['createdAt'])),
+        'belongsTo': json['belongsTo'],
     };
 }
 
