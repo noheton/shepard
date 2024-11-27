@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DefaultLayout from "~/components/layout-components/DefaultLayout.vue";
 
-const route = useRoute();
+const route = useRouter().currentRoute.value;
 const collectionId = parseInt(route.params.collectionId as string);
 </script>
 
