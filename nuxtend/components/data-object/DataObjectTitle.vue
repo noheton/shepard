@@ -10,7 +10,7 @@ defineProps<DataObjectTitleProps>();
 <template>
   <v-container fluid class="pt-0">
     <v-row>
-      <v-col cols="12">
+      <v-col cols="12" class="ml-n1">
         <div class="font-weight-medium text-h1">{{ dataObject.name }}</div>
       </v-col>
     </v-row>
