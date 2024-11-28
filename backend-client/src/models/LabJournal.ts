@@ -31,6 +31,36 @@ export interface LabJournal {
      * @memberof LabJournal
      */
     journalContent: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof LabJournal
+     */
+    readonly id: number;
+    /**
+     * 
+     * @type {Date}
+     * @memberof LabJournal
+     */
+    readonly createdAt: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof LabJournal
+     */
+    readonly createdBy: string;
+    /**
+     * 
+     * @type {Date}
+     * @memberof LabJournal
+     */
+    readonly updatedAt: Date | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof LabJournal
+     */
+    readonly updatedBy: string | null;
 }
 
 /**
@@ -39,6 +69,11 @@ export interface LabJournal {
 export function instanceOfLabJournal(value: object): value is LabJournal {
     if (!('dataObjectId' in value) || value['dataObjectId'] === undefined) return false;
     if (!('journalContent' in value) || value['journalContent'] === undefined) return false;
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
+    if (!('createdBy' in value) || value['createdBy'] === undefined) return false;
+    if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
+    if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     return true;
 }
 
@@ -54,10 +89,15 @@ export function LabJournalFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         
         'dataObjectId': json['dataObjectId'],
         'journalContent': json['journalContent'],
+        'id': json['id'],
+        'createdAt': (new Date(json['createdAt'])),
+        'createdBy': json['createdBy'],
+        'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
+        'updatedBy': json['updatedBy'],
     };
 }
 
-export function LabJournalToJSON(value?: LabJournal | null): any {
+export function LabJournalToJSON(value?: Omit<LabJournal, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
     if (value == null) {
         return value;
     }
