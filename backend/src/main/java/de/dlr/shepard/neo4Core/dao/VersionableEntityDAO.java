@@ -12,7 +12,11 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
   }
 
   public T findByShepardId(Long shepardId) {
-    return findByShepardId(shepardId, false);
+    return findByShepardId(shepardId, false, 1);
+  }
+
+  public T findByShepardId(Long shepardId, int depth) {
+    return findByShepardId(shepardId, false, depth);
   }
 
   public T findByShepardId(Long shepardId, UUID versionUID) {
@@ -20,12 +24,20 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
   }
 
   public T findLightByShepardId(Long shepardId) {
-    return findByShepardId(shepardId, true);
+    return findByShepardId(shepardId, true, 1);
+  }
+
+  public T findLightByShepardId(Long shepardId, int depth) {
+    return findByShepardId(shepardId, true, depth);
   }
 
   private T findByShepardId(Long shepardId, boolean light) {
+    return findByShepardId(shepardId, light, 1);
+  }
+
+  private T findByShepardId(Long shepardId, boolean light, int depth) {
     Map<String, Object> paramsMap = new HashMap<>();
-    var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
+    var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o", depth);
     String query = String.format(
       "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
       CypherQueryHelper.getShepardIdPart("o", shepardId),

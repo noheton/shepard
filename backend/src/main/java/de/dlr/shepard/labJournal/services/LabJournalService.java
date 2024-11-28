@@ -67,7 +67,7 @@ public class LabJournalService {
   }
 
   public List<LabJournal> getLabJournals(long objectId) {
-    DataObject dataObject = dataObjectDAO.findByShepardId(objectId);
+    DataObject dataObject = dataObjectDAO.findByShepardId(objectId, 2);
     if (null == dataObject) return new ArrayList<LabJournal>();
     return dataObject
       .getLabJournals()

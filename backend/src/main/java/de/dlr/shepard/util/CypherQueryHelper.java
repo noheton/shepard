@@ -42,19 +42,29 @@ public class CypherQueryHelper {
   }
 
   public static String getReturnPart(String entity) {
-    return getReturnPart(entity, Neighborhood.EVERYTHING);
+    return getReturnPart(entity, Neighborhood.EVERYTHING, 1);
+  }
+
+  public static String getReturnPart(String entity, int depth) {
+    return getReturnPart(entity, Neighborhood.EVERYTHING, depth);
   }
 
   public static String getReturnPart(String entity, Neighborhood neighborhood) {
+    return getReturnPart(entity, neighborhood, 1);
+  }
+
+  public static String getReturnPart(String entity, Neighborhood neighborhood, int depth) {
+    // Clamp the depth between 1 and 3 nodes
+    depth = Math.max(1, Math.min(3, depth));
     String match =
       switch (neighborhood) {
-        case EVERYTHING -> "path=(%s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
-        case OUTGOING -> "path=(%s)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
-        case ESSENTIAL -> "path=(%s)-[*0..1]->(n) WHERE n:Permission OR n:User";
+        case EVERYTHING -> "path=(%s)-[*0..%d]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
+        case OUTGOING -> "path=(%s)-[*0..%d]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
+        case ESSENTIAL -> "path=(%s)-[*0..%d]->(n) WHERE n:Permission OR n:User";
       };
     var result =
       "MATCH " +
-      String.format(match, entity) +
+      String.format(match, entity, depth) +
       " RETURN " +
       String.format("%s, nodes(path), relationships(path)", entity);
     return result;
