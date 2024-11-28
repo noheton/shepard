@@ -28,7 +28,7 @@ fetchDataObjectDetails();
 </script>
 
 <template>
-  <v-container v-if="dataObject" fluid>
+  <v-container v-if="dataObject" fluid class="pt-0">
     <v-row>
       <DataObjectTitle :data-object="dataObject" />
     </v-row>
