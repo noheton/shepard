@@ -10,7 +10,7 @@
   $typography: (
     "h1": (
       "size": 3rem,
-      "weight": 300,
+      "weight": 500,
       "line-height": 3.75rem,
     ),
     "h2": (
@@ -33,6 +33,7 @@
       (
         "size": 1.25rem,
         "line-height": 2rem,
+        "weight": 500,
       ),
     // Text 3
     "subtitle-2":
@@ -74,6 +75,9 @@
   $snackbar-color: #a52834,
   $snackbar-elevation: 0,
 
-  //breadcrumb overrides
-  $breadcrumbs-item-disabled-opacity: true
+  // breadcrumb overrides
+  $breadcrumbs-item-disabled-opacity: true,
+
+  // expansion panel overrides
+  $expansion-panel-text-padding: 8px 0px 16px
 );

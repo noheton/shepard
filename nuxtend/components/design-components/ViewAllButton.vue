@@ -6,7 +6,7 @@ const viewAll = defineModel<boolean>("viewAll", {
 
 <template>
   <v-btn
-    class="ml-15"
+    class="ml-15 opacity-100"
     :prepend-icon="viewAll ? 'mdi-chevron-up' : 'mdi-chevron-down'"
     variant="plain"
     base-color="blue-500"
@@ -16,9 +16,3 @@ const viewAll = defineModel<boolean>("viewAll", {
     View all
   </v-btn>
 </template>
-
-<style scoped>
-.v-btn--variant-plain {
-  opacity: unset;
-}
-</style>

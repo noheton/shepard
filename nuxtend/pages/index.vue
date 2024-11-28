@@ -3,7 +3,7 @@
 <template>
   <!-- Main Content -->
   <v-container>
-    <v-row>
+    <v-row no-gutters>
       <v-col cols="12">
         <v-card class="mx-auto my-5" elevation="4">
           <v-card-title>Welcome to shepard</v-card-title>

@@ -8,7 +8,7 @@ definePageMeta({ layout: "collection" });
 const route = useRoute();
 const collectionId = parseInt(route.params.collectionId as string);
 
-const collection = ref<Collection>();
+const collection = ref<Collection | undefined>(undefined);
 
 function fetchCollection(collectionId: number) {
   createApiInstance(CollectionApi)
@@ -26,7 +26,7 @@ fetchCollection(collectionId);
 
 <template>
   <v-container fluid class="pa-0 fill-height align-start">
-    <v-row no-gutters class="fill-height">
+    <v-row v-if="!!collection" no-gutters>
       <v-col cols="12">
         <LayoutComponentsShepardBreadcrumbs
           :items="[
@@ -35,17 +35,16 @@ fetchCollection(collectionId);
               to: collectionsPath,
             },
             {
-              title: `Collection '${collection?.name ?? 'Not Found'}'`,
+              title: `Collection '${collection.name}'`,
               to: collectionsPath + collectionId,
             },
           ]"
         />
       </v-col>
-    </v-row>
-    <v-row no-gutters class="fill-height">
       <v-col cols="12">
-        <div>No Content</div>
+        <EntityTitle :entity="collection" id-label="Collection ID" />
       </v-col>
     </v-row>
+    <LayoutComponentsCenteredLoadingSpinner v-else />
   </v-container>
 </template>

@@ -92,7 +92,7 @@ fetchRootDataObjectsOfCollection();
         {{ title }}
       </template>
     </v-treeview>
-    <v-progress-circular v-else indeterminate />
+    <LayoutComponentsCenteredLoadingSpinner v-else />
   </div>
 </template>
 

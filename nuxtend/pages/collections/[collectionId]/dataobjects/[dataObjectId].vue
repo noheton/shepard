@@ -18,8 +18,9 @@ const collectionId = parseInt(route.params.collectionId as string);
 const dataObjectId = parseInt(route.params.dataObjectId as string);
 
 const collection = ref<Collection | undefined>(undefined);
+const dataObject = ref<DataObject | undefined>(undefined);
 
-function fetchCollection(collectionId: number) {
+function fetchCollection() {
   createApiInstance(CollectionApi)
     .getCollection({ collectionId })
     .then(response => {
@@ -30,26 +31,22 @@ function fetchCollection(collectionId: number) {
     });
 }
 
-fetchCollection(collectionId);
-
-const dataObject = ref<DataObject | undefined>(undefined);
-
-async function fetchDataObjectDetails() {
-  if (dataObjectId)
-    createApiInstance(DataObjectApi)
-      .getDataObject({
-        collectionId: collectionId,
-        dataObjectId: dataObjectId,
-      })
-      .then(response => {
-        dataObject.value = response;
-      })
-      .catch(error => {
-        handleError(error, "getDataObject");
-      });
+async function fetchDataObject() {
+  createApiInstance(DataObjectApi)
+    .getDataObject({
+      collectionId: collectionId,
+      dataObjectId: dataObjectId,
+    })
+    .then(response => {
+      dataObject.value = response;
+    })
+    .catch(error => {
+      handleError(error, "getDataObject");
+    });
 }
 
-fetchDataObjectDetails();
+fetchCollection();
+fetchDataObject();
 </script>
 
 <template>
@@ -61,11 +58,11 @@ fetchDataObjectDetails();
           to: collectionsPath,
         },
         {
-          title: `Collection '${collection?.name ?? 'Not Found'}'`,
-          to: collectionsPath + collectionId,
+          title: `Collection '${collection.name}'`,
+          to: collectionsPath + collection.id,
         },
         {
-          title: dataObject.name ?? 'No Data Object Name',
+          title: dataObject.name,
           to:
             collectionsPath +
             collectionId +
@@ -75,9 +72,9 @@ fetchDataObjectDetails();
       ]"
     />
     <DataObjectDetailView
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
+      :collection-id="collection.id"
+      :data-object="dataObject"
     />
   </div>
-  <v-progress-circular v-else indeterminate />
+  <LayoutComponentsCenteredLoadingSpinner v-else />
 </template>

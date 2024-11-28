@@ -6,6 +6,7 @@ const props = defineProps<{ title: string }>();
   <v-expansion-panel class="pb-4">
     <v-expansion-panel-title
       v-slot="slotProps"
+      class="pl-0"
       :expand-icon="() => null"
       :collapse-icon="() => null"
     >
@@ -13,7 +14,7 @@ const props = defineProps<{ title: string }>();
         :icon="slotProps.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
         class
       />
-      <div class="text-subtitle-1 text-black-500 font-weight-medium pl-2">
+      <div class="text-subtitle-1 text-black-500 pl-2">
         {{ props.title }}
       </div>
     </v-expansion-panel-title>

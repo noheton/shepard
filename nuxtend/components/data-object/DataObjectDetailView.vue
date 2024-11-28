@@ -1,38 +1,19 @@
 <script setup lang="ts">
-import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import type { DataObject } from "@dlr-shepard/backend-client";
 
 interface DataObjectDetailViewProps {
   collectionId: number;
-  dataObjectId: number | undefined;
+  dataObject: DataObject;
 }
-const props = defineProps<DataObjectDetailViewProps>();
-
-const dataObject = ref<DataObject | undefined>(undefined);
-
-async function fetchDataObjectDetails() {
-  if (props.dataObjectId)
-    createApiInstance(DataObjectApi)
-      .getDataObject({
-        collectionId: props.collectionId,
-        dataObjectId: props.dataObjectId,
-      })
-      .then(response => {
-        dataObject.value = response;
-      })
-      .catch(error => {
-        handleError(error, "getDataObject");
-      });
-}
-
-fetchDataObjectDetails();
+defineProps<DataObjectDetailViewProps>();
 </script>
 
 <template>
-  <v-container v-if="dataObject" fluid class="pt-0">
-    <v-row>
-      <DataObjectTitle :data-object="dataObject" />
+  <v-container v-if="dataObject" fluid class="pa-0">
+    <v-row no-gutters>
+      <EntityTitle :entity="dataObject" id-label="Data Object ID" />
     </v-row>
-    <v-row>
+    <v-row no-gutters>
       <LayoutComponentsExpansionPanels>
         <LayoutComponentsExpansionPanelItem title="Description">
           <DataObjectDescription :data-object="dataObject" />

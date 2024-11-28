@@ -8,7 +8,7 @@ defineProps<DataObjectDescriptionProps>();
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row>{{ dataObject.description }}</v-row>
+  <v-container fluid class="pa-0">
+    <v-row no-gutters>{{ dataObject.description }}</v-row>
   </v-container>
 </template>

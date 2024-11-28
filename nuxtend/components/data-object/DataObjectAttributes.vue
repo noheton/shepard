@@ -31,8 +31,12 @@ const viewAllAttributes = ref(false);
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row v-for="(attributeKey, index) in attributeKeysToDisplay" :key="index">
+  <v-container fluid class="pa-0">
+    <v-row
+      v-for="(attributeKey, index) in attributeKeysToDisplay"
+      :key="index"
+      no-gutters
+    >
       <v-col cols="2" class="text-body-2 black-600 px-0 py-1">
         {{ attributeKey }}:
       </v-col>
@@ -40,7 +44,7 @@ const viewAllAttributes = ref(false);
         {{ dataObject.attributes?.[attributeKey] }}
       </v-col>
     </v-row>
-    <v-row v-if="showViewAllBtn">
+    <v-row v-if="showViewAllBtn" no-gutters>
       <DesignComponentsViewAllButton v-model:view-all="viewAllAttributes" />
     </v-row>
   </v-container>
