@@ -33,23 +33,17 @@ fetchDataObjectDetails();
       <DataObjectTitle :data-object="dataObject" />
     </v-row>
     <v-row>
-      <v-expansion-panels variant="accordion">
-        <v-expansion-panel title="Description">
-          <v-expansion-panel-text>
-            <DataObjectDescription :data-object="dataObject" />
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-        <v-expansion-panel title="Attributes">
-          <v-expansion-panel-text>
-            <DataObjectAttributes :data-object="dataObject" />
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-        <v-expansion-panel title="Lab Journal">
-          <v-expansion-panel-text>
-            <DataObjectLabJournal :data-object="dataObject" />
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
+      <LayoutComponentsExpansionPanels>
+        <LayoutComponentsExpansionPanelItem title="Description">
+          <DataObjectDescription :data-object="dataObject" />
+        </LayoutComponentsExpansionPanelItem>
+        <LayoutComponentsExpansionPanelItem title="Attributes">
+          <DataObjectAttributes :data-object="dataObject" />
+        </LayoutComponentsExpansionPanelItem>
+        <LayoutComponentsExpansionPanelItem title="Lab Journal">
+          <DataObjectLabJournal :data-object="dataObject" />
+        </LayoutComponentsExpansionPanelItem>
+      </LayoutComponentsExpansionPanels>
     </v-row>
   </v-container>
 </template>
