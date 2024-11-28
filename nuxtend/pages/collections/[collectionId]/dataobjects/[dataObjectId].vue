@@ -71,10 +71,24 @@ fetchDataObject();
         },
       ]"
     />
-    <DataObjectDetailView
-      :collection-id="collection.id"
-      :data-object="dataObject"
-    />
+    <v-container fluid class="pa-0">
+      <v-row no-gutters>
+        <EntityTitle :entity="dataObject" id-label="Data Object ID" />
+      </v-row>
+      <v-row no-gutters>
+        <LayoutComponentsExpansionPanels>
+          <LayoutComponentsExpansionPanelItem title="Description">
+            <EntityDescription :entity="dataObject" />
+          </LayoutComponentsExpansionPanelItem>
+          <LayoutComponentsExpansionPanelItem title="Attributes">
+            <EntityAttributes :entity="dataObject" />
+          </LayoutComponentsExpansionPanelItem>
+          <LayoutComponentsExpansionPanelItem title="Lab Journal">
+            <DataObjectLabJournal :data-object="dataObject" />
+          </LayoutComponentsExpansionPanelItem>
+        </LayoutComponentsExpansionPanels>
+      </v-row>
+    </v-container>
   </div>
   <LayoutComponentsCenteredLoadingSpinner v-else />
 </template>

@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import type { DataObject } from "@dlr-shepard/backend-client";
 const NUMBER_OF_ITEMS_TO_DISPLAY_WHEN_NOT_SHOWING_ALL = 7;
 
-interface DataObjectAttributesProps {
-  dataObject: DataObject;
+interface EntityAttributesProps {
+  entity: { attributes?: { [key: string]: string } };
 }
-const props = defineProps<DataObjectAttributesProps>();
+const props = defineProps<EntityAttributesProps>();
 
 const attributeKeysToDisplay = computed(() => {
-  const dataObjectAttributes = Object.keys(props.dataObject.attributes ?? {});
+  const dataObjectAttributes = Object.keys(props.entity.attributes ?? {});
   if (
     viewAllAttributes.value ||
     dataObjectAttributes.length <=
@@ -23,7 +22,7 @@ const attributeKeysToDisplay = computed(() => {
 
 const showViewAllBtn = computed(
   () =>
-    Object.keys(props.dataObject.attributes ?? {}).length >
+    Object.keys(props.entity.attributes ?? {}).length >
     NUMBER_OF_ITEMS_TO_DISPLAY_WHEN_NOT_SHOWING_ALL,
 );
 
@@ -41,7 +40,7 @@ const viewAllAttributes = ref(false);
         {{ attributeKey }}:
       </v-col>
       <v-col class="text-body-2 black-600 px-0 py-1">
-        {{ dataObject.attributes?.[attributeKey] }}
+        {{ entity.attributes?.[attributeKey] }}
       </v-col>
     </v-row>
     <v-row v-if="showViewAllBtn" no-gutters>

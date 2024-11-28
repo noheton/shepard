@@ -42,7 +42,21 @@ fetchCollection(collectionId);
         />
       </v-col>
       <v-col cols="12">
-        <EntityTitle :entity="collection" id-label="Collection ID" />
+        <v-container fluid class="pa-0">
+          <v-row no-gutters>
+            <EntityTitle :entity="collection" id-label="Collection ID" />
+          </v-row>
+          <v-row no-gutters>
+            <LayoutComponentsExpansionPanels>
+              <LayoutComponentsExpansionPanelItem title="Description">
+                <EntityDescription :entity="collection" />
+              </LayoutComponentsExpansionPanelItem>
+              <LayoutComponentsExpansionPanelItem title="Attributes">
+                <EntityAttributes :entity="collection" />
+              </LayoutComponentsExpansionPanelItem>
+            </LayoutComponentsExpansionPanels>
+          </v-row>
+        </v-container>
       </v-col>
     </v-row>
     <LayoutComponentsCenteredLoadingSpinner v-else />
