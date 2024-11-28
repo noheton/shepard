@@ -14,7 +14,9 @@ import de.dlr.shepard.util.DateHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestScoped
 public class LabJournalService {
@@ -67,7 +69,11 @@ public class LabJournalService {
   public List<LabJournal> getLabJournals(long objectId) {
     DataObject dataObject = dataObjectDAO.findByShepardId(objectId);
     if (null == dataObject) return new ArrayList<LabJournal>();
-    return dataObject.getLabJournals();
+    return dataObject
+      .getLabJournals()
+      .stream()
+      .sorted(Comparator.comparing(LabJournal::getCreatedAt))
+      .collect(Collectors.toList());
   }
 
   public LabJournal getLabJournal(long labJournalId) {
