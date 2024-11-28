@@ -9,6 +9,7 @@ export default defineNuxtPlugin(app => {
     defaults: {
       VBreadcrumbs: {
         color: "blue-500",
+        activeColor: "blue-500",
       },
     },
     components: {
