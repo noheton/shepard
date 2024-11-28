@@ -16,14 +16,17 @@
 import * as runtime from '../runtime';
 import type {
   LabJournal,
+  UpdateLabJournalRequest,
 } from '../models/index';
 import {
     LabJournalFromJSON,
     LabJournalToJSON,
+    UpdateLabJournalRequestFromJSON,
+    UpdateLabJournalRequestToJSON,
 } from '../models/index';
 
 export interface CreateLabJournalRequest {
-    labJournal: LabJournal;
+    labJournal: Omit<LabJournal, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
 }
 
 export interface DeleteLabJournalRequest {
@@ -38,9 +41,9 @@ export interface GetLabJournalsByCollectionRequest {
     dataObjectId?: number;
 }
 
-export interface UpdateLabJournalRequest {
+export interface UpdateLabJournalOperationRequest {
     labJournalId: number;
-    labJournal: LabJournal;
+    updateLabJournalRequest: UpdateLabJournalRequest;
 }
 
 /**
@@ -230,7 +233,7 @@ export class LabJournalApi extends runtime.BaseAPI {
     /**
      * Update a lab journal
      */
-    async updateLabJournalRaw(requestParameters: UpdateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournal>> {
+    async updateLabJournalRaw(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournal>> {
         if (requestParameters['labJournalId'] == null) {
             throw new runtime.RequiredError(
                 'labJournalId',
@@ -238,10 +241,10 @@ export class LabJournalApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['labJournal'] == null) {
+        if (requestParameters['updateLabJournalRequest'] == null) {
             throw new runtime.RequiredError(
-                'labJournal',
-                'Required parameter "labJournal" was null or undefined when calling updateLabJournal().'
+                'updateLabJournalRequest',
+                'Required parameter "updateLabJournalRequest" was null or undefined when calling updateLabJournal().'
             );
         }
 
@@ -268,7 +271,7 @@ export class LabJournalApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: LabJournalToJSON(requestParameters['labJournal']),
+            body: UpdateLabJournalRequestToJSON(requestParameters['updateLabJournalRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalFromJSON(jsonValue));
@@ -277,7 +280,7 @@ export class LabJournalApi extends runtime.BaseAPI {
     /**
      * Update a lab journal
      */
-    async updateLabJournal(requestParameters: UpdateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournal> {
+    async updateLabJournal(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournal> {
         const response = await this.updateLabJournalRaw(requestParameters, initOverrides);
         return await response.value();
     }

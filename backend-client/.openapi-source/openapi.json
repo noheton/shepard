@@ -3836,7 +3836,11 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/LabJournal"
+                "properties" : {
+                  "journalContent" : {
+                    "type" : "string"
+                  }
+                }
               }
             }
           },
@@ -5942,7 +5946,7 @@
         }
       },
       "LabJournal" : {
-        "required" : [ "dataObjectId", "journalContent" ],
+        "required" : [ "dataObjectId", "journalContent", "id", "createdAt", "createdBy", "updatedAt", "updatedBy" ],
         "type" : "object",
         "properties" : {
           "dataObjectId" : {
@@ -5951,6 +5955,33 @@
           },
           "journalContent" : {
             "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
           }
         }
       },

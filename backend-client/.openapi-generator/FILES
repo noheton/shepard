@@ -86,6 +86,7 @@ src/models/TimeseriesPayload.ts
 src/models/TimeseriesReference.ts
 src/models/TraversalRules.ts
 src/models/URIReference.ts
+src/models/UpdateLabJournalRequest.ts
 src/models/User.ts
 src/models/UserGroup.ts
 src/models/UserGroupAttributes.ts

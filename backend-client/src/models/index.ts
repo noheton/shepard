@@ -59,6 +59,7 @@ export * from './TimeseriesPayload';
 export * from './TimeseriesReference';
 export * from './TraversalRules';
 export * from './URIReference';
+export * from './UpdateLabJournalRequest';
 export * from './User';
 export * from './UserGroup';
 export * from './UserGroupAttributes';
