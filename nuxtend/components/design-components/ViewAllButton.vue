@@ -6,13 +6,13 @@ const viewAll = defineModel<boolean>("viewAll", {
 
 <template>
   <v-btn
-    class="ml-15 opacity-100"
+    class="opacity-100 pa-0"
     :prepend-icon="viewAll ? 'mdi-chevron-up' : 'mdi-chevron-down'"
     variant="plain"
     base-color="blue-500"
     :ripple="false"
     @click="viewAll = !viewAll"
   >
-    View all
+    {{ viewAll ? "Collapse" : "View All" }}
   </v-btn>
 </template>

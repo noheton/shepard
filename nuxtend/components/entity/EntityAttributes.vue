@@ -37,13 +37,20 @@ const viewAllAttributes = ref(false);
       no-gutters
       class="text-body-2 text-black-400"
     >
-      <v-col cols="2" class="px-0 py-1">{{ attributeKey }}:</v-col>
+      <v-col cols="2" class="px-0 py-1">
+        <div class="pr-4" style="word-wrap: break-word">
+          {{ attributeKey }}:
+        </div>
+      </v-col>
       <v-col class="px-0 py-1">
         {{ entity.attributes?.[attributeKey] }}
       </v-col>
     </v-row>
     <v-row v-if="showViewAllBtn" no-gutters>
-      <DesignComponentsViewAllButton v-model:view-all="viewAllAttributes" />
+      <v-col cols="2" class="px-0 py-1" />
+      <v-col class="px-0 py-1">
+        <DesignComponentsViewAllButton v-model:view-all="viewAllAttributes" />
+      </v-col>
     </v-row>
   </v-container>
 </template>

@@ -21,14 +21,39 @@ defineProps<DataObjectTitleProps>();
       </v-col>
     </v-row>
     <v-row no-gutters class="text-body-2 text-black-400">
-      <v-col cols="4">{{ idLabel }}: {{ entity.id }}</v-col>
-      <v-col cols="4">
-        Created at: {{ entity.createdAt?.toDateString() }} by
-        {{ entity.createdBy }}
+      <v-col cols="2">
+        <div>{{ idLabel }}:</div>
+        <div>{{ entity.id }}</div>
       </v-col>
+      <v-spacer />
+      <v-col cols="4">
+        <div>Created at:</div>
+        <div>
+          {{
+            entity.createdAt?.toLocaleDateString("en-UK", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          }}
+          by
+          {{ entity.createdBy }}
+        </div>
+      </v-col>
+      <v-spacer />
       <v-col v-if="entity.updatedAt" cols="4">
-        Updated at: {{ entity.updatedAt?.toDateString() }} by
-        {{ entity.updatedBy }}
+        <div>Updated at:</div>
+        <div>
+          {{
+            entity.updatedAt?.toLocaleDateString("en-UK", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          }}
+          by
+          {{ entity.updatedBy }}
+        </div>
       </v-col>
       <v-spacer v-else />
     </v-row>
