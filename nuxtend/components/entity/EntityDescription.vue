@@ -7,6 +7,8 @@ defineProps<EntityDescriptionProps>();
 
 <template>
   <v-container fluid class="pa-0">
-    <v-row no-gutters>{{ entity.description }}</v-row>
+    <v-row no-gutters class="text-body-2 text-black-500">
+      {{ entity.description }}
+    </v-row>
   </v-container>
 </template>

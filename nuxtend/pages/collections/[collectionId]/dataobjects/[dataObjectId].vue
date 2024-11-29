@@ -76,17 +76,20 @@ fetchDataObject();
         <EntityTitle :entity="dataObject" id-label="Data Object ID" />
       </v-row>
       <v-row no-gutters>
-        <LayoutComponentsExpansionPanels>
-          <LayoutComponentsExpansionPanelItem title="Description">
+        <EntityExpansionPanels>
+          <EntityExpansionPanelItem title="Description">
             <EntityDescription :entity="dataObject" />
-          </LayoutComponentsExpansionPanelItem>
-          <LayoutComponentsExpansionPanelItem title="Attributes">
+          </EntityExpansionPanelItem>
+          <EntityExpansionPanelItem
+            title="Attributes"
+            :count="Object.keys(dataObject.attributes ?? {}).length"
+          >
             <EntityAttributes :entity="dataObject" />
-          </LayoutComponentsExpansionPanelItem>
-          <LayoutComponentsExpansionPanelItem title="Lab Journal">
+          </EntityExpansionPanelItem>
+          <EntityExpansionPanelItem title="Lab Journal">
             <DataObjectLabJournal :data-object="dataObject" />
-          </LayoutComponentsExpansionPanelItem>
-        </LayoutComponentsExpansionPanels>
+          </EntityExpansionPanelItem>
+        </EntityExpansionPanels>
       </v-row>
     </v-container>
   </div>

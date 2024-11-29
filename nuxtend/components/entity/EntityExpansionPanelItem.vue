@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{ title: string }>();
+defineProps<{ title: string; count?: number }>();
 </script>
 
 <template>
@@ -15,7 +15,13 @@ const props = defineProps<{ title: string }>();
         class
       />
       <div class="text-subtitle-1 text-black-500 pl-2">
-        {{ props.title }}
+        {{ title }}
+      </div>
+      <div
+        v-if="count !== undefined && count !== null"
+        class="text-subtitle-1 text-black-200 pl-2"
+      >
+        ({{ count }})
       </div>
     </v-expansion-panel-title>
     <v-expansion-panel-text>

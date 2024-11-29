@@ -47,14 +47,17 @@ fetchCollection(collectionId);
             <EntityTitle :entity="collection" id-label="Collection ID" />
           </v-row>
           <v-row no-gutters>
-            <LayoutComponentsExpansionPanels>
-              <LayoutComponentsExpansionPanelItem title="Description">
+            <EntityExpansionPanels>
+              <EntityExpansionPanelItem title="Description">
                 <EntityDescription :entity="collection" />
-              </LayoutComponentsExpansionPanelItem>
-              <LayoutComponentsExpansionPanelItem title="Attributes">
+              </EntityExpansionPanelItem>
+              <EntityExpansionPanelItem
+                title="Attributes"
+                :count="Object.keys(collection.attributes ?? {}).length"
+              >
                 <EntityAttributes :entity="collection" />
-              </LayoutComponentsExpansionPanelItem>
-            </LayoutComponentsExpansionPanels>
+              </EntityExpansionPanelItem>
+            </EntityExpansionPanels>
           </v-row>
         </v-container>
       </v-col>

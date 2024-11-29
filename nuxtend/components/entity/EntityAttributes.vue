@@ -35,11 +35,10 @@ const viewAllAttributes = ref(false);
       v-for="(attributeKey, index) in attributeKeysToDisplay"
       :key="index"
       no-gutters
+      class="text-body-2 text-black-400"
     >
-      <v-col cols="2" class="text-body-2 black-600 px-0 py-1">
-        {{ attributeKey }}:
-      </v-col>
-      <v-col class="text-body-2 black-600 px-0 py-1">
+      <v-col cols="2" class="px-0 py-1">{{ attributeKey }}:</v-col>
+      <v-col class="px-0 py-1">
         {{ entity.attributes?.[attributeKey] }}
       </v-col>
     </v-row>
