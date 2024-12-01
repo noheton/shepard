@@ -66,14 +66,12 @@ public class LabJournalService {
     return labJournal;
   }
 
-  public List<LabJournal> getLabJournals(long objectId) {
-    DataObject dataObject = dataObjectDAO.findByShepardId(objectId, 2);
+  public List<LabJournal> getLabJournals(DataObject dataObject) {
     if (null == dataObject) return new ArrayList<LabJournal>();
-    return dataObject
-      .getLabJournals()
-      .stream()
-      .sorted(Comparator.comparing(LabJournal::getCreatedAt))
-      .collect(Collectors.toList());
+    List<LabJournal> labJournals = dataObject.getLabJournals();
+    List<Long> labJournalIds = labJournals.stream().map(LabJournal::getShepardId).collect(Collectors.toList());
+    labJournals = labJournalDAO.findByShepardIds(labJournalIds);
+    return labJournals.stream().sorted(Comparator.comparing(LabJournal::getCreatedAt)).collect(Collectors.toList());
   }
 
   public LabJournal getLabJournal(long labJournalId) {

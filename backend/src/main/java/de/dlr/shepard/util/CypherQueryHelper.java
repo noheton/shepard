@@ -2,7 +2,9 @@ package de.dlr.shepard.util;
 
 import de.dlr.shepard.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.neo4Core.orderBy.OrderByAttribute;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class CypherQueryHelper {
 
@@ -85,6 +87,11 @@ public class CypherQueryHelper {
 
   public static String getShepardIdPart(String variable, long shepardId) {
     return variable + "." + Constants.SHEPARD_ID + " = " + shepardId;
+  }
+
+  public static String getShepardIdsPart(String variable, List<Long> shepardIds) {
+    String commaSeparatedIds = shepardIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+    return variable + "." + Constants.SHEPARD_ID + " in [" + commaSeparatedIds + "]";
   }
 
   public static String getReadableByQuery(String variable, String username) {

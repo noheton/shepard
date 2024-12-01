@@ -69,7 +69,7 @@ public class LabJournalRest {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
     if (null == dataObject) return Response.status(Status.NOT_FOUND).build();
     ArrayList<LabJournalIO> result = new ArrayList<LabJournalIO>();
-    for (var labJournal : labJournalService.getLabJournals(dataObjectId)) {
+    for (var labJournal : labJournalService.getLabJournals(dataObject)) {
       result.add(new LabJournalIO(labJournal));
     }
     return Response.ok(result).build();

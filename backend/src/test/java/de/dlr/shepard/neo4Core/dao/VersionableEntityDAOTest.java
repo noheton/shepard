@@ -41,8 +41,10 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     ent.setShepardId(11L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = " +
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId in " +
+      "[" +
       ent.getShepardId() +
+      "]" +
       " AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
@@ -85,7 +87,11 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     ent.setShepardId(11L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND " +
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId in " +
+      "[" +
+      ent.getShepardId() +
+      "]" +
+      " AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " WITH o RETURN o";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
