@@ -41,21 +41,22 @@ defineProps<DataObjectTitleProps>();
         </div>
       </v-col>
       <v-spacer />
-      <v-col v-if="entity.updatedAt" cols="4">
-        <div>Updated at:</div>
-        <div>
-          {{
-            entity.updatedAt?.toLocaleDateString("en-UK", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          }}
-          by
-          {{ entity.updatedBy }}
-        </div>
+      <v-col cols="4">
+        <template v-if="entity.updatedAt">
+          <div>Updated at:</div>
+          <div>
+            {{
+              entity.updatedAt?.toLocaleDateString("en-UK", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            }}
+            by
+            {{ entity.updatedBy }}
+          </div>
+        </template>
       </v-col>
-      <v-spacer v-else />
     </v-row>
   </v-container>
 </template>
