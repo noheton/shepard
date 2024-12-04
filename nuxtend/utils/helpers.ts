@@ -20,12 +20,22 @@ export const dateFormat: Intl.DateTimeFormatOptions = {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
+};
+
+export const dateTimeFormat: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
 };
 
-export function convertDate(date: Date | undefined | null) {
+export function toLocaleDateTimeString(date: Date | undefined | null) {
+  if (date) return new Date(date).toLocaleString("en-GB", dateTimeFormat);
+}
+
+export function toLocaleDateString(date: Date | undefined | null) {
   if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
 }
 

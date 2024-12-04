@@ -29,12 +29,13 @@ export default defineNuxtPlugin(app => {
 const customTheme: ThemeDefinition = {
   colors: {
     "black-50": "#E5E5E5",
-    "black-100": "#BFBFBF",
+    "black-100": "#B2B2B2",
     "black-200": "#999999",
     "black-300": "#737373",
     "black-400": "#4D4D4D",
     "black-500": "#262626",
     "black-600": "#000000",
+    "black-grey-25": "#F5F7F9",
     "blue-50": "#D9EAF5",
     "blue-100": "#B2D6EB",
     "blue-200": "#8CC1E0",

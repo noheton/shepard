@@ -19,6 +19,7 @@ const dataObjectId = parseInt(route.params.dataObjectId as string);
 
 const collection = ref<Collection | undefined>(undefined);
 const dataObject = ref<DataObject | undefined>(undefined);
+const numberOfLabJournalEntries = ref<number | undefined>(undefined);
 
 function fetchCollection() {
   createApiInstance(CollectionApi)
@@ -43,6 +44,10 @@ async function fetchDataObject() {
     .catch(error => {
       handleError(error, "getDataObject");
     });
+}
+
+async function onLabJournalCountChanged(count: number) {
+  numberOfLabJournalEntries.value = count;
 }
 
 fetchCollection();
@@ -91,8 +96,15 @@ fetchDataObject();
                 >
                   <EntityAttributes :entity="dataObject" />
                 </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem title="Lab Journal">
-                  <DataObjectLabJournal :data-object="dataObject" />
+                <EntityExpansionPanelItem
+                  title="Lab Journal"
+                  :count="numberOfLabJournalEntries"
+                >
+                  <LabJournalList
+                    :collection-id="collectionId"
+                    :data-object-id="dataObject.id"
+                    @number-of-entries-changed="onLabJournalCountChanged"
+                  />
                 </EntityExpansionPanelItem>
               </EntityExpansionPanels>
             </v-row>

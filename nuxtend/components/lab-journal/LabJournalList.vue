@@ -1,0 +1,95 @@
+<script setup lang="ts">
+import {
+  CollectionApi,
+  LabJournalApi,
+  type LabJournal,
+  type Roles,
+} from "@dlr-shepard/backend-client";
+
+interface LabJournalListProps {
+  collectionId: number;
+  dataObjectId: number | undefined;
+}
+
+const props = defineProps<LabJournalListProps>();
+const emit = defineEmits(["numberOfEntriesChanged"]);
+const entries = ref<LabJournal[] | undefined>(undefined);
+const userRoles = ref<Roles | undefined>(undefined);
+
+// load list of lab journals based on collectionId OR dataObjectId
+async function fetchLabJournalEntries(dataObjectId: number | undefined) {
+  // load lab journals for collection or data object, depending on the parameters
+  if (dataObjectId) {
+    createApiInstance(LabJournalApi)
+      .getLabJournalsByCollection({ dataObjectId })
+      .then(response => {
+        entries.value = response;
+        emit("numberOfEntriesChanged", entries.value.length);
+      })
+      .catch(error => {
+        handleError(error, "getLabJournalsByCollection");
+      });
+  }
+}
+
+async function fetchRoles() {
+  createApiInstance(CollectionApi)
+    .getCollectionRoles({ collectionId: props.collectionId })
+    .then(response => {
+      userRoles.value = response;
+    })
+    .catch(error => {
+      handleError(error, "getCollectionRoles");
+    });
+}
+
+async function appendNewLabJournalEntry(newLabJournalEntry: LabJournal) {
+  if (entries.value) {
+    entries.value.unshift(newLabJournalEntry);
+    emit("numberOfEntriesChanged", entries.value.length);
+  }
+}
+
+async function onLabJournalDeleted(deletedLabjournalIndex: number) {
+  if (entries.value) {
+    entries.value.splice(deletedLabjournalIndex, 1);
+    emit("numberOfEntriesChanged", entries.value.length);
+  }
+}
+
+function isAllowedToCreate() {
+  return userRoles.value?.owner || userRoles.value?.writer;
+}
+
+fetchLabJournalEntries(props.dataObjectId);
+fetchRoles();
+</script>
+
+<template>
+  <LabJournalNewEntry
+    v-if="!!dataObjectId && isAllowedToCreate()"
+    :model-value="dataObjectId"
+    @new-lab-journal-saved="
+      savedLabjournal => appendNewLabJournalEntry(savedLabjournal)
+    "
+  />
+  <div v-if="!!entries">
+    <LabJournalEntry
+      v-for="(entry, index) in entries"
+      :key="'lab-journal-' + entry.id"
+      :lab-journal="entry"
+      :user-roles="userRoles"
+      @deleted="onLabJournalDeleted(index)"
+    />
+    <div v-if="entries.length === 0" class="text-center">
+      <v-img
+        src="../../assets/empty_list.svg"
+        height="77"
+        width="77"
+        class="mx-auto"
+      />
+      <span class="text-body-2 text-black-300">No entry yet</span>
+    </div>
+  </div>
+  <LayoutComponentsCenteredLoadingSpinner v-else />
+</template>

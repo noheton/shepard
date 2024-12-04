@@ -29,6 +29,7 @@ export default NuxtAuthHandler({
           idToken: account.id_token,
           expiresAt: account.expires_at,
           refreshToken: account.refresh_token,
+          userId: account.providerAccountId,
         } as typeof token;
       } else if (Date.now() < token.expiresAt * 1000 - 10000) {
         return token;
@@ -73,6 +74,7 @@ export default NuxtAuthHandler({
     async session({ session, token }) {
       session.accessToken = token.accessToken;
       session.idToken = token.idToken;
+      session.userId = token.userId;
       return session;
     },
   },
@@ -95,6 +97,7 @@ declare module "next-auth/jwt" {
     idToken: string;
     refreshToken: string;
     error?: "RefreshTokenError";
+    userId: string;
   }
 }
 
@@ -102,5 +105,6 @@ declare module "next-auth" {
   interface Session {
     accessToken: string;
     idToken: string;
+    userId: string;
   }
 }
