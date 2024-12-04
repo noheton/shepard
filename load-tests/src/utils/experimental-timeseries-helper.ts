@@ -7,7 +7,7 @@ export const timeseriesUrl = buildUri("/shepard/api/experimental-timeseriesConta
 const params = buildParamsWithApiKey();
 
 /*
-  Endpoint-related Functions 
+  Endpoint-related Functions
 */
 
 export function createTimeseriesContainer(name: string) {
@@ -19,7 +19,7 @@ export function deleteTimeseriesContainer(containerId: number) {
   return http.del(timeseriesUrl + "/" + containerId, null, params);
 }
 
-export function addTimeseriesData(containerId: number, timeseries: TimeseriesData) {
+export function addExperimentalTimeseriesData(containerId: number, timeseries: TimeseriesData) {
   const timeseriesDataUrl = timeseriesUrl + `/${containerId}/payload`;
   return http.post(timeseriesDataUrl, JSON.stringify(timeseries), params);
 }

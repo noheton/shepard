@@ -15,7 +15,8 @@ export const options: Options = {
       vus: 1,
       duration: "1m",
       // use function name here that should be executed
-      exec: "measuring_throughput_for_single_data_point",
+      // exec: "measuring_throughput_for_single_data_point",
+      exec: "measuring_throughput_for_multiple_data_points",
     },
   },
 };

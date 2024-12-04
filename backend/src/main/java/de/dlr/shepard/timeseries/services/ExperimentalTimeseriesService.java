@@ -135,7 +135,7 @@ public class ExperimentalTimeseriesService {
       .map(dataPoint -> dataPoint.toEntity(timeseriesEntity))
       .toList();
 
-    timeseriesDataPointRepository.persist(timeseriesDataPointEntities);
+    timeseriesDataPointRepository.insertManyDataPoints(timeseriesDataPointEntities, timeseriesEntity.getValueType());
   }
 
   private static void assertDataPointsMatchTimeseriesValueType(
