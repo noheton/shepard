@@ -124,6 +124,7 @@ public class LabJournalTest extends BaseTestCase {
       <p>Here is a line break<br>
         like this.</p>
       <p>You can include some <code>inline code</code> as well.</p>
+      <p>You can include some <s>strike format</s> as well.</p>
       <ul>
        <li>Unordered list item 1</li>
        <li>Unordered list item 2</li>

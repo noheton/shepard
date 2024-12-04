@@ -27,12 +27,12 @@ public abstract class AbstractDataObject extends VersionableEntity {
       newDescription = Jsoup.clean(
         description,
         // Basic safelist allows the following tags:
-        //  a, b, blockquote, br, cite, code, dd, dl, dt, em, i, li, ol, p, pre, q, small, span, strike, strong, sub, sup, u, ul, and appropriate attributes.
+        //  a, b, blockquote, br, cite, code, dd, dl, dt, em, i, li, ol, p, pre, q, small, span, strike, s, strong, sub, sup, u, ul, and appropriate attributes.
         Safelist.basicWithImages()
           // Tags that are allowed in the 'basic' Safelist, but are unwanted
           .removeTags("blockquote", "cite", "dl", "dt", "dd", "h4", "h5", "h6", "small", "sub", "sup", "tfoot", "q")
           // Allow specific tags
-          .addTags("th", "thead", "tbody", "tr", "table", "td", "h1", "h2", "h3", "colgroup", "col")
+          .addTags("th", "thead", "tbody", "tr", "table", "td", "h1", "h2", "h3", "colgroup", "col", "strike", "s")
           // Allow specific attributes
           .addAttributes(":all", "style", "text-align", "align", "colspan", "rowspan", "target", "rel")
       );
