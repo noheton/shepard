@@ -67,7 +67,6 @@ public class LabJournalRest {
   public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId)
     throws NotImplementedException {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
-    if (null == dataObject) return Response.status(Status.NOT_FOUND).build();
     ArrayList<LabJournalIO> result = new ArrayList<LabJournalIO>();
     for (var labJournal : labJournalService.getLabJournals(dataObject)) {
       result.add(new LabJournalIO(labJournal));
@@ -88,7 +87,6 @@ public class LabJournalRest {
   @Parameter(name = Constants.LAB_JOURNAL_ID)
   public Response getLabJournalById(@PathParam(Constants.LAB_JOURNAL_ID) long labJournalId) {
     LabJournal labJournal = labJournalService.getLabJournal(labJournalId);
-    if (null == labJournal) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(new LabJournalIO(labJournal)).build();
   }
 
@@ -108,8 +106,6 @@ public class LabJournalRest {
       content = @Content(schema = @Schema(implementation = LabJournalIO.class))
     ) @Valid LabJournalIO labJournal
   ) {
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(labJournal.getDataObjectId());
-    if (null == dataObject) return Response.status(Status.NOT_FOUND).build();
     LabJournalIO labJournalIO = new LabJournalIO(
       labJournalService.CreateLabJournal(labJournal, securityContext.getUserPrincipal().getName())
     );
@@ -140,7 +136,6 @@ public class LabJournalRest {
     ) @Valid LabJournalIO labJournalIO
   ) {
     LabJournal labJournal = labJournalService.getLabJournal(labJournalId);
-    if (null == labJournal) return Response.status(Status.NOT_FOUND).build();
     String userName = securityContext.getUserPrincipal().getName();
     if (!labJournal.getCreatedBy().getUsername().equals(userName)) return Response.status(Status.FORBIDDEN).build();
     labJournal = labJournalService.updateLabJournal(
@@ -159,10 +154,6 @@ public class LabJournalRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.LAB_JOURNAL_ID)
   public Response deleteLabJournal(@PathParam(Constants.LAB_JOURNAL_ID) long labJournalId) {
-    LabJournal labJournal = labJournalService.getLabJournal(labJournalId);
-    if (null == labJournal) return Response.status(Status.NOT_FOUND).build();
-    String userName = securityContext.getUserPrincipal().getName();
-    if (!labJournal.getCreatedBy().getUsername().equals(userName)) return Response.status(Status.FORBIDDEN).build();
     return labJournalService.deleteLabJournal(labJournalId, securityContext.getUserPrincipal().getName())
       ? Response.status(Status.NO_CONTENT).build()
       : Response.status(Status.INTERNAL_SERVER_ERROR).build();

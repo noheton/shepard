@@ -93,4 +93,11 @@ public class LabJournalService {
     User user = userDAO.find(userName);
     return labJournalDAO.deleteLabJournal(labJournalId, user, dateHelper.getDate());
   }
+
+  public Long getCollectionId(Long labJournalId) {
+    LabJournal labJournal = labJournalDAO.findByShepardId(labJournalId);
+    if (null == labJournal) return null;
+    DataObject dataObject = dataObjectDAO.findByShepardId(labJournal.getDataObject().getShepardId());
+    return dataObject.getCollection().getShepardId();
+  }
 }

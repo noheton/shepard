@@ -235,4 +235,10 @@ public class DataObjectService {
 
     return dataObject;
   }
+
+  public Long getCollectionId(Long dataObjectId) {
+    DataObject dataObject = dataObjectDAO.findByShepardId(dataObjectId);
+    if (null == dataObject) return null;
+    return dataObject.getCollection().getShepardId();
+  }
 }

@@ -25,6 +25,7 @@ public class UrlPathCheckerFilter implements ContainerRequestFilter {
   @Timed(value = "shepard.filters.url-path-checker", description = "Measure the duration of UrlPathCheckerFilter.")
   public void filter(ContainerRequestContext requestContext) throws IOException {
     try {
+      urlPathChecker.setRequestContext(requestContext);
       urlPathChecker.checkPathSegments(requestContext.getUriInfo().getPathSegments());
     } catch (InvalidPathException e) {
       Log.warnf("Caught invalid path exception: %s", e.getMessage());

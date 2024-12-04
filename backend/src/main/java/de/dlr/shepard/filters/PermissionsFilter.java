@@ -54,7 +54,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
       return;
     }
     var accessType = getAccessType(requestContext.getUriInfo().getPathSegments(), requestContext.getMethod());
-    if (permissionsUtil.isAllowed(requestContext.getUriInfo().getPathSegments(), accessType, principal.getName())) {
+    if (permissionsUtil.isAllowed(requestContext, accessType, principal.getName())) {
       lastSeen.elementSeen(lastSeenKey);
       return;
     }

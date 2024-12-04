@@ -73,7 +73,7 @@ public class PermissionsFilterTest {
 
   @Test
   public void filterTest_Read() {
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "principal")).thenReturn(true);
+    when(permissionsUtil.isAllowed(context, AccessType.Read, "principal")).thenReturn(true);
 
     filter.filter(context);
     verify(context, never()).abortWith(any());
@@ -82,7 +82,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Write() {
     when(context.getMethod()).thenReturn("PUT");
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Write, "principal")).thenReturn(true);
+    when(permissionsUtil.isAllowed(context, AccessType.Write, "principal")).thenReturn(true);
 
     filter.filter(context);
     verify(context, never()).abortWith(any());
@@ -91,7 +91,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Manage() {
     when(pathSeg.getPath()).thenReturn("permissions");
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Manage, "principal")).thenReturn(true);
+    when(permissionsUtil.isAllowed(context, AccessType.Manage, "principal")).thenReturn(true);
 
     filter.filter(context);
     verify(context, never()).abortWith(any());
@@ -100,7 +100,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Invalid() {
     when(context.getMethod()).thenReturn("OPTIONS");
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.None, "principal")).thenReturn(false);
+    when(permissionsUtil.isAllowed(context, AccessType.None, "principal")).thenReturn(false);
 
     filter.filter(context);
     verify(context).abortWith(any());
@@ -108,7 +108,7 @@ public class PermissionsFilterTest {
 
   @Test
   public void filterTest_NotAllowed() {
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "principal")).thenReturn(false);
+    when(permissionsUtil.isAllowed(context, AccessType.Read, "principal")).thenReturn(false);
 
     filter.filter(context);
     verify(context).abortWith(any());
@@ -130,12 +130,13 @@ public class PermissionsFilterTest {
     verify(context).abortWith(any());
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void filterTest_lastSeen() {
     when(lastSeen.elementIsKnown("principalGET/shepard/api/projects")).thenReturn(true);
 
     filter.filter(context);
-    verify(permissionsUtil, never()).isAllowed(any(), any(), any());
+    verify(permissionsUtil, never()).isAllowed(any(List.class), any(), any());
     verify(context, never()).abortWith(any());
   }
 }

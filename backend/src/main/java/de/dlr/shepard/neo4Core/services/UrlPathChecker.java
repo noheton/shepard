@@ -1,6 +1,8 @@
 package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.exceptions.InvalidPathException;
+import de.dlr.shepard.labJournal.entities.LabJournal;
+import de.dlr.shepard.labJournal.services.LabJournalService;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicContainer;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
@@ -15,10 +17,13 @@ import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 @RequestScoped
 public class UrlPathChecker {
@@ -40,10 +45,14 @@ public class UrlPathChecker {
   private ApiKeyService apiKeyService;
   private SubscriptionService subscriptionService;
   private UserGroupService userGroupService;
+  private LabJournalService labJournalService;
 
   private SemanticRepositoryService semanticRepositoryService;
 
   private SemanticAnnotationService semanticAnnotationService;
+
+  @Setter
+  private ContainerRequestContext requestContext;
 
   UrlPathChecker() {}
 
@@ -67,7 +76,8 @@ public class UrlPathChecker {
     SubscriptionService subscriptionService,
     UserGroupService userGroupService,
     SemanticRepositoryService semanticRepositoryService,
-    SemanticAnnotationService semanticAnnotationService
+    SemanticAnnotationService semanticAnnotationService,
+    LabJournalService labJournalService
   ) {
     this.collectionService = collectionService;
     this.dataObjectService = dataObjectService;
@@ -88,6 +98,7 @@ public class UrlPathChecker {
     this.userGroupService = userGroupService;
     this.semanticRepositoryService = semanticRepositoryService;
     this.semanticAnnotationService = semanticAnnotationService;
+    this.labJournalService = labJournalService;
   }
 
   /**
@@ -133,6 +144,15 @@ public class UrlPathChecker {
       long id = Long.parseLong(pathElems.get(Constants.DATA_OBJECTS));
       dataObject = dataObjectService.getDataObjectByShepardId(id);
       String error = checkDataObject(dataObject, collection);
+      if (error != null) {
+        return builder.append(error).toString();
+      }
+    }
+
+    if (pathElems.containsKey(Constants.LAB_JOURNALS)) {
+      long id = Long.parseLong(pathElems.get(Constants.LAB_JOURNALS));
+      LabJournal labJournal = labJournalService.getLabJournal(id);
+      String error = checkLabJournal(labJournal);
       if (error != null) {
         return builder.append(error).toString();
       }
@@ -291,6 +311,19 @@ public class UrlPathChecker {
       }
     }
 
+    //Check for LabJournal calls that do not have id segment
+    if (pathSegments.size() > 0 && pathSegments.get(0).getPath().equals(Constants.LAB_JOURNALS)) {
+      String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
+      // TODO Check dataobject id from body
+      // If the labjournal request has objectId parameter [in GET/labJournals and POST /labJournals]
+      if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
+        DataObject labJournalDataObject = dataObjectService.getDataObjectByShepardId(Long.parseLong(dataObjectId));
+        String error = checkDataObject(labJournalDataObject);
+        if (error != null) {
+          return builder.append(error).toString();
+        }
+      }
+    }
     return "ok";
   }
 
@@ -301,11 +334,25 @@ public class UrlPathChecker {
     return null;
   }
 
+  private String checkDataObject(DataObject dataObject) {
+    if (dataObject == null) {
+      return "DataObject does not exist";
+    }
+    return null;
+  }
+
   private String checkDataObject(DataObject dataObject, Collection collection) {
     if (dataObject == null) {
       return "DataObject does not exist";
     } else if (!dataObject.getCollection().getShepardId().equals(collection.getShepardId())) {
       return "There is no association between collection and dataObject";
+    }
+    return null;
+  }
+
+  private String checkLabJournal(LabJournal labJournal) {
+    if (labJournal == null) {
+      return "LabJournal does not exist";
     }
     return null;
   }
