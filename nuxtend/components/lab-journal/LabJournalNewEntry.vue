@@ -29,7 +29,6 @@ async function saveNewLabJournalEntry() {
     createApiInstance(LabJournalApi)
       .createLabJournal({ labJournal: newLabJournalEntryModel.value })
       .then(response => {
-        // Todo: add success notification
         resetNewLabJournalEntry();
         emit("newLabJournalSaved", response);
       })
@@ -46,7 +45,7 @@ async function saveNewLabJournalEntry() {
     id="newLabJournalEntryArea"
     variant="outlined"
     label="New entry"
-    bg-color="black-grey-25"
+    bg-color="blue-grey-25"
     base-color="black-100"
     :no-resize="true"
     density="compact"
