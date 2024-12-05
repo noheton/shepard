@@ -15,26 +15,27 @@
 
 import * as runtime from '../runtime';
 import type {
-  LabJournal,
+  LabJournalEntry,
   UpdateLabJournalRequest,
 } from '../models/index';
 import {
-    LabJournalFromJSON,
-    LabJournalToJSON,
+    LabJournalEntryFromJSON,
+    LabJournalEntryToJSON,
     UpdateLabJournalRequestFromJSON,
     UpdateLabJournalRequestToJSON,
 } from '../models/index';
 
 export interface CreateLabJournalRequest {
-    labJournal: Omit<LabJournal, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
+    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
+    dataObjectId?: number;
 }
 
 export interface DeleteLabJournalRequest {
-    labJournalId: number;
+    labJournalEntryId: number;
 }
 
 export interface GetLabJournalByIdRequest {
-    labJournalId: number;
+    labJournalEntryId: number;
 }
 
 export interface GetLabJournalsByCollectionRequest {
@@ -42,27 +43,31 @@ export interface GetLabJournalsByCollectionRequest {
 }
 
 export interface UpdateLabJournalOperationRequest {
-    labJournalId: number;
+    labJournalEntryId: number;
     updateLabJournalRequest: UpdateLabJournalRequest;
 }
 
 /**
  * 
  */
-export class LabJournalApi extends runtime.BaseAPI {
+export class LabJournalEntryApi extends runtime.BaseAPI {
 
     /**
      * Create a lab journal in a data object
      */
-    async createLabJournalRaw(requestParameters: CreateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournal>> {
-        if (requestParameters['labJournal'] == null) {
+    async createLabJournalRaw(requestParameters: CreateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournalEntry>> {
+        if (requestParameters['labJournalEntry'] == null) {
             throw new runtime.RequiredError(
-                'labJournal',
-                'Required parameter "labJournal" was null or undefined when calling createLabJournal().'
+                'labJournalEntry',
+                'Required parameter "labJournalEntry" was null or undefined when calling createLabJournal().'
             );
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['dataObjectId'] != null) {
+            queryParameters['dataObjectId'] = requestParameters['dataObjectId'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -81,20 +86,20 @@ export class LabJournalApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/labJournals`,
+            path: `/labJournalEntries`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: LabJournalToJSON(requestParameters['labJournal']),
+            body: LabJournalEntryToJSON(requestParameters['labJournalEntry']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalEntryFromJSON(jsonValue));
     }
 
     /**
      * Create a lab journal in a data object
      */
-    async createLabJournal(requestParameters: CreateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournal> {
+    async createLabJournal(requestParameters: CreateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournalEntry> {
         const response = await this.createLabJournalRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -103,10 +108,10 @@ export class LabJournalApi extends runtime.BaseAPI {
      * Delete a lab journal
      */
     async deleteLabJournalRaw(requestParameters: DeleteLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['labJournalId'] == null) {
+        if (requestParameters['labJournalEntryId'] == null) {
             throw new runtime.RequiredError(
-                'labJournalId',
-                'Required parameter "labJournalId" was null or undefined when calling deleteLabJournal().'
+                'labJournalEntryId',
+                'Required parameter "labJournalEntryId" was null or undefined when calling deleteLabJournal().'
             );
         }
 
@@ -127,7 +132,7 @@ export class LabJournalApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/labJournals/{labJournalId}`.replace(`{${"labJournalId"}}`, encodeURIComponent(String(requestParameters['labJournalId']))),
+            path: `/labJournalEntries/{labJournalEntryId}`.replace(`{${"labJournalEntryId"}}`, encodeURIComponent(String(requestParameters['labJournalEntryId']))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -146,11 +151,11 @@ export class LabJournalApi extends runtime.BaseAPI {
     /**
      * Get a lab journal
      */
-    async getLabJournalByIdRaw(requestParameters: GetLabJournalByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournal>> {
-        if (requestParameters['labJournalId'] == null) {
+    async getLabJournalByIdRaw(requestParameters: GetLabJournalByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournalEntry>> {
+        if (requestParameters['labJournalEntryId'] == null) {
             throw new runtime.RequiredError(
-                'labJournalId',
-                'Required parameter "labJournalId" was null or undefined when calling getLabJournalById().'
+                'labJournalEntryId',
+                'Required parameter "labJournalEntryId" was null or undefined when calling getLabJournalById().'
             );
         }
 
@@ -171,19 +176,19 @@ export class LabJournalApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/labJournals/{labJournalId}`.replace(`{${"labJournalId"}}`, encodeURIComponent(String(requestParameters['labJournalId']))),
+            path: `/labJournalEntries/{labJournalEntryId}`.replace(`{${"labJournalEntryId"}}`, encodeURIComponent(String(requestParameters['labJournalEntryId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalEntryFromJSON(jsonValue));
     }
 
     /**
      * Get a lab journal
      */
-    async getLabJournalById(requestParameters: GetLabJournalByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournal> {
+    async getLabJournalById(requestParameters: GetLabJournalByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournalEntry> {
         const response = await this.getLabJournalByIdRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -191,7 +196,7 @@ export class LabJournalApi extends runtime.BaseAPI {
     /**
      * Get all lab journals in a data object
      */
-    async getLabJournalsByCollectionRaw(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournal>>> {
+    async getLabJournalsByCollectionRaw(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournalEntry>>> {
         const queryParameters: any = {};
 
         if (requestParameters['dataObjectId'] != null) {
@@ -213,19 +218,19 @@ export class LabJournalApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/labJournals`,
+            path: `/labJournalEntries`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LabJournalFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LabJournalEntryFromJSON));
     }
 
     /**
      * Get all lab journals in a data object
      */
-    async getLabJournalsByCollection(requestParameters: GetLabJournalsByCollectionRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournal>> {
+    async getLabJournalsByCollection(requestParameters: GetLabJournalsByCollectionRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalEntry>> {
         const response = await this.getLabJournalsByCollectionRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -233,11 +238,11 @@ export class LabJournalApi extends runtime.BaseAPI {
     /**
      * Update a lab journal
      */
-    async updateLabJournalRaw(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournal>> {
-        if (requestParameters['labJournalId'] == null) {
+    async updateLabJournalRaw(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournalEntry>> {
+        if (requestParameters['labJournalEntryId'] == null) {
             throw new runtime.RequiredError(
-                'labJournalId',
-                'Required parameter "labJournalId" was null or undefined when calling updateLabJournal().'
+                'labJournalEntryId',
+                'Required parameter "labJournalEntryId" was null or undefined when calling updateLabJournal().'
             );
         }
 
@@ -267,20 +272,20 @@ export class LabJournalApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/labJournals/{labJournalId}`.replace(`{${"labJournalId"}}`, encodeURIComponent(String(requestParameters['labJournalId']))),
+            path: `/labJournalEntries/{labJournalEntryId}`.replace(`{${"labJournalEntryId"}}`, encodeURIComponent(String(requestParameters['labJournalEntryId']))),
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
             body: UpdateLabJournalRequestToJSON(requestParameters['updateLabJournalRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LabJournalEntryFromJSON(jsonValue));
     }
 
     /**
      * Update a lab journal
      */
-    async updateLabJournal(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournal> {
+    async updateLabJournal(requestParameters: UpdateLabJournalOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LabJournalEntry> {
         const response = await this.updateLabJournalRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {
-  LabJournalApi,
+  LabJournalEntryApi,
   type CreateLabJournalRequest,
-  type LabJournal,
+  type LabJournalEntry,
 } from "@dlr-shepard/backend-client";
 
 const dataObjectId = defineModel<number>({
@@ -10,13 +10,14 @@ const dataObjectId = defineModel<number>({
 });
 
 const emit = defineEmits<{
-  newLabJournalSaved: [value: LabJournal];
+  newLabJournalSaved: [value: LabJournalEntry];
 }>();
 
-const newLabJournalEntryModel = ref<CreateLabJournalRequest["labJournal"]>({
-  dataObjectId: dataObjectId.value,
-  journalContent: "",
-});
+const newLabJournalEntryModel = ref<CreateLabJournalRequest["labJournalEntry"]>(
+  {
+    journalContent: "",
+  },
+);
 const isCreatingNew = ref<boolean>(false);
 
 async function resetNewLabJournalEntry() {
@@ -26,8 +27,11 @@ async function resetNewLabJournalEntry() {
 
 async function saveNewLabJournalEntry() {
   if (newLabJournalEntryModel.value) {
-    createApiInstance(LabJournalApi)
-      .createLabJournal({ labJournal: newLabJournalEntryModel.value })
+    createApiInstance(LabJournalEntryApi)
+      .createLabJournal({
+        labJournalEntry: newLabJournalEntryModel.value,
+        dataObjectId: dataObjectId.value,
+      })
       .then(response => {
         resetNewLabJournalEntry();
         emit("newLabJournalSaved", response);

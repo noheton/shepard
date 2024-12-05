@@ -9,7 +9,7 @@ export * from './ExperimentalTimeseriesContainerApi';
 export * from './FileContainerApi';
 export * from './FileReferenceApi';
 export * from './HealthzApi';
-export * from './LabJournalApi';
+export * from './LabJournalEntryApi';
 export * from './ReferenceApi';
 export * from './SearchApi';
 export * from './SemanticAnnotationApi';

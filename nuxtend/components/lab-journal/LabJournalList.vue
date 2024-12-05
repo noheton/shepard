@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {
   CollectionApi,
-  LabJournalApi,
-  type LabJournal,
+  LabJournalEntryApi,
+  type LabJournalEntry,
   type Roles,
 } from "@dlr-shepard/backend-client";
 
@@ -13,14 +13,14 @@ interface LabJournalListProps {
 
 const props = defineProps<LabJournalListProps>();
 const emit = defineEmits(["numberOfEntriesChanged"]);
-const entries = ref<LabJournal[] | undefined>(undefined);
+const entries = ref<LabJournalEntry[] | undefined>(undefined);
 const userRoles = ref<Roles | undefined>(undefined);
 
 // load list of lab journals based on collectionId OR dataObjectId
 async function fetchLabJournalEntries(dataObjectId: number | undefined) {
   // load lab journals for collection or data object, depending on the parameters
   if (dataObjectId) {
-    createApiInstance(LabJournalApi)
+    createApiInstance(LabJournalEntryApi)
       .getLabJournalsByCollection({ dataObjectId })
       .then(response => {
         entries.value = response;
@@ -43,7 +43,7 @@ async function fetchRoles() {
     });
 }
 
-async function appendNewLabJournalEntry(newLabJournalEntry: LabJournal) {
+async function appendNewLabJournalEntry(newLabJournalEntry: LabJournalEntry) {
   if (entries.value) {
     entries.value.unshift(newLabJournalEntry);
     emit("numberOfEntriesChanged", entries.value.length);

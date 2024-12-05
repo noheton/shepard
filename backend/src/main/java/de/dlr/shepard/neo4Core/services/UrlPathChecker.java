@@ -1,8 +1,8 @@
 package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.exceptions.InvalidPathException;
-import de.dlr.shepard.labJournal.entities.LabJournal;
-import de.dlr.shepard.labJournal.services.LabJournalService;
+import de.dlr.shepard.labJournal.entities.LabJournalEntry;
+import de.dlr.shepard.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
 import de.dlr.shepard.neo4Core.entities.BasicContainer;
 import de.dlr.shepard.neo4Core.entities.BasicReference;
@@ -45,7 +45,7 @@ public class UrlPathChecker {
   private ApiKeyService apiKeyService;
   private SubscriptionService subscriptionService;
   private UserGroupService userGroupService;
-  private LabJournalService labJournalService;
+  private LabJournalEntryService labJournalService;
 
   private SemanticRepositoryService semanticRepositoryService;
 
@@ -77,7 +77,7 @@ public class UrlPathChecker {
     UserGroupService userGroupService,
     SemanticRepositoryService semanticRepositoryService,
     SemanticAnnotationService semanticAnnotationService,
-    LabJournalService labJournalService
+    LabJournalEntryService labJournalService
   ) {
     this.collectionService = collectionService;
     this.dataObjectService = dataObjectService;
@@ -149,10 +149,10 @@ public class UrlPathChecker {
       }
     }
 
-    if (pathElems.containsKey(Constants.LAB_JOURNALS)) {
-      long id = Long.parseLong(pathElems.get(Constants.LAB_JOURNALS));
-      LabJournal labJournal = labJournalService.getLabJournal(id);
-      String error = checkLabJournal(labJournal);
+    if (pathElems.containsKey(Constants.LAB_JOURNAL_ENTRIES)) {
+      long id = Long.parseLong(pathElems.get(Constants.LAB_JOURNAL_ENTRIES));
+      LabJournalEntry labJournalEntry = labJournalService.getLabJournalEntry(id);
+      String error = checkLabJournalEntry(labJournalEntry);
       if (error != null) {
         return builder.append(error).toString();
       }
@@ -311,11 +311,10 @@ public class UrlPathChecker {
       }
     }
 
-    //Check for LabJournal calls that do not have id segment
-    if (pathSegments.size() > 0 && pathSegments.get(0).getPath().equals(Constants.LAB_JOURNALS)) {
+    //Check for LabJournalEntry calls that do not have id segment
+    if (pathSegments.size() > 0 && pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
       String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
-      // TODO Check dataobject id from body
-      // If the labjournal request has objectId parameter [in GET/labJournals and POST /labJournals]
+      // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
       if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
         DataObject labJournalDataObject = dataObjectService.getDataObjectByShepardId(Long.parseLong(dataObjectId));
         String error = checkDataObject(labJournalDataObject);
@@ -350,9 +349,9 @@ public class UrlPathChecker {
     return null;
   }
 
-  private String checkLabJournal(LabJournal labJournal) {
-    if (labJournal == null) {
-      return "LabJournal does not exist";
+  private String checkLabJournalEntry(LabJournalEntry labJournalEntry) {
+    if (labJournalEntry == null) {
+      return "LabJournalEntry does not exist";
     }
     return null;
   }
