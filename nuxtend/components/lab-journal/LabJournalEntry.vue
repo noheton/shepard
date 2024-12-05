@@ -131,7 +131,7 @@ const getUpdatedInfoString = computed(() => {
     </div>
 
     <!-- text editor -->
-    <div>
+    <div class="pr-2 pl-4">
       <CommonTextEditor
         v-model="model.journalContent"
         :initial-content="model.journalContent"
