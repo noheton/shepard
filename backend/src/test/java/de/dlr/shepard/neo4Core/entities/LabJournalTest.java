@@ -3,7 +3,7 @@ package de.dlr.shepard.neo4Core.entities;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.labJournal.entities.LabJournal;
+import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import org.junit.jupiter.api.Test;
 
 public class LabJournalTest extends BaseTestCase {
@@ -13,7 +13,7 @@ public class LabJournalTest extends BaseTestCase {
     String unsafeHtml = "<p><a href='http://example.com/' onclick='stealCookies()'>Link</a></p>";
     String safeHtml = "<p><a href=\"http://example.com/\" rel=\"nofollow\">Link</a></p>";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(unsafeHtml);
     assertEquals(safeHtml, journal.getDescription());
   }
@@ -22,7 +22,7 @@ public class LabJournalTest extends BaseTestCase {
   public void testJournalSimpleTextSanitizing() {
     String textString = "This is my text that should not be changed by sanitizing.";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(textString);
     assertEquals(textString, journal.getDescription());
   }
@@ -32,7 +32,7 @@ public class LabJournalTest extends BaseTestCase {
     String unsafeHtml = "<p>Useful information, thanks!<script>alert('This is an injection!');</script></p>";
     String safeHtml = "<p>Useful information, thanks!</p>";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(unsafeHtml);
     assertEquals(safeHtml, journal.getDescription());
   }
@@ -42,7 +42,7 @@ public class LabJournalTest extends BaseTestCase {
     String unsafeHtml = "<button onclick=\"alert('Button')\">Hello</button>";
     String safeHtml = "Hello";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(unsafeHtml);
     assertEquals(safeHtml, journal.getDescription());
   }
@@ -53,7 +53,7 @@ public class LabJournalTest extends BaseTestCase {
     String unsafeHtmlSrc = "<img src=\"test.jpg\" onerror=\"alert('XSS Hata!');\">";
     String safeHtmlSrc = "<img>";
 
-    LabJournal journal1 = new LabJournal();
+    LabJournalEntry journal1 = new LabJournalEntry();
     journal1.setDescription(unsafeHtmlSrc);
     assertEquals(safeHtmlSrc, journal1.getDescription());
 
@@ -61,7 +61,7 @@ public class LabJournalTest extends BaseTestCase {
     String unsafeHtmlOnError = "<img src=\"https://my-website.xyz\" onerror=\"alert('XSS Hata!');\">";
     String safeHtmlOnerror = "<img src=\"https://my-website.xyz\">";
 
-    LabJournal journal2 = new LabJournal();
+    LabJournalEntry journal2 = new LabJournalEntry();
     journal2.setDescription(unsafeHtmlOnError);
     assertEquals(safeHtmlOnerror, journal2.getDescription());
   }
@@ -107,7 +107,7 @@ public class LabJournalTest extends BaseTestCase {
        </tbody>
       </table>""";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(unwantedHtmlCaptionTag);
     assertEquals(wantedHtmlCaptionTag, journal.getDescription());
   }
@@ -136,7 +136,7 @@ public class LabJournalTest extends BaseTestCase {
        <li>Ordered list item 3</li>
       </ol>""";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(htmlString);
     assertEquals(htmlString, journal.getDescription());
   }
@@ -150,7 +150,7 @@ public class LabJournalTest extends BaseTestCase {
       <p style="text-align: right">my desription</p>
       <p>is here</p>""";
 
-    LabJournal journal = new LabJournal();
+    LabJournalEntry journal = new LabJournalEntry();
     journal.setDescription(htmlString);
     assertEquals(htmlString, journal.getDescription());
   }

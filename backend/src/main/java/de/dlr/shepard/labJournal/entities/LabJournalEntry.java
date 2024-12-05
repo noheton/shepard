@@ -11,9 +11,9 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
-public class LabJournal extends AbstractDataObject {
+public class LabJournalEntry extends AbstractDataObject {
 
-  @Relationship(type = Constants.HAS_LABJOURNAL, direction = Direction.INCOMING)
+  @Relationship(type = Constants.HAS_LABJOURNAL_ENTRY, direction = Direction.INCOMING)
   private DataObject dataObject;
 
   @Override
@@ -29,7 +29,7 @@ public class LabJournal extends AbstractDataObject {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
     if (!(obj instanceof DataObject)) return false;
-    LabJournal other = (LabJournal) obj;
+    LabJournalEntry other = (LabJournalEntry) obj;
     return (HasId.equalsHelper(dataObject, other.dataObject));
   }
 }

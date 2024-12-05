@@ -1,16 +1,17 @@
 package de.dlr.shepard.labJournal.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import de.dlr.shepard.labJournal.entities.LabJournal;
+import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import jakarta.validation.constraints.NotNull;
 import java.util.Date;
 import lombok.Data;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
-@Schema(name = "LabJournal")
-public class LabJournalIO {
+@Schema(name = "LabJournalEntry")
+public class LabJournalEntryIO {
 
+  @Schema(readOnly = true, required = true)
   @NotNull
   private long dataObjectId;
 
@@ -40,15 +41,15 @@ public class LabJournalIO {
   @Schema(readOnly = true, nullable = true, required = true)
   private String updatedBy;
 
-  public LabJournalIO() {}
+  public LabJournalEntryIO() {}
 
-  public LabJournalIO(LabJournal labJournal) {
-    this.dataObjectId = labJournal.getDataObject().getShepardId();
-    this.journalContent = labJournal.getDescription();
-    this.id = labJournal.getShepardId();
-    this.createdAt = labJournal.getCreatedAt();
-    this.createdBy = labJournal.getCreatedBy() != null ? labJournal.getCreatedBy().getUsername() : null;
-    this.updatedAt = labJournal.getUpdatedAt();
-    this.updatedBy = labJournal.getUpdatedBy() != null ? labJournal.getUpdatedBy().getUsername() : null;
+  public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
+    this.dataObjectId = labJournalEntry.getDataObject().getShepardId();
+    this.journalContent = labJournalEntry.getDescription();
+    this.id = labJournalEntry.getShepardId();
+    this.createdAt = labJournalEntry.getCreatedAt();
+    this.createdBy = labJournalEntry.getCreatedBy() != null ? labJournalEntry.getCreatedBy().getUsername() : null;
+    this.updatedAt = labJournalEntry.getUpdatedAt();
+    this.updatedBy = labJournalEntry.getUpdatedBy() != null ? labJournalEntry.getUpdatedBy().getUsername() : null;
   }
 }

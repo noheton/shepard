@@ -16,57 +16,57 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface LabJournal
+ * @interface LabJournalEntry
  */
-export interface LabJournal {
+export interface LabJournalEntry {
     /**
      * 
      * @type {number}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
-    dataObjectId: number;
+    readonly dataObjectId: number;
     /**
      * 
      * @type {string}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     journalContent: string;
     /**
      * 
      * @type {number}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     readonly id: number;
     /**
      * 
      * @type {Date}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     readonly createdAt: Date;
     /**
      * 
      * @type {string}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     readonly createdBy: string;
     /**
      * 
      * @type {Date}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     readonly updatedAt: Date | null;
     /**
      * 
      * @type {string}
-     * @memberof LabJournal
+     * @memberof LabJournalEntry
      */
     readonly updatedBy: string | null;
 }
 
 /**
- * Check if a given object implements the LabJournal interface.
+ * Check if a given object implements the LabJournalEntry interface.
  */
-export function instanceOfLabJournal(value: object): value is LabJournal {
+export function instanceOfLabJournalEntry(value: object): value is LabJournalEntry {
     if (!('dataObjectId' in value) || value['dataObjectId'] === undefined) return false;
     if (!('journalContent' in value) || value['journalContent'] === undefined) return false;
     if (!('id' in value) || value['id'] === undefined) return false;
@@ -77,11 +77,11 @@ export function instanceOfLabJournal(value: object): value is LabJournal {
     return true;
 }
 
-export function LabJournalFromJSON(json: any): LabJournal {
-    return LabJournalFromJSONTyped(json, false);
+export function LabJournalEntryFromJSON(json: any): LabJournalEntry {
+    return LabJournalEntryFromJSONTyped(json, false);
 }
 
-export function LabJournalFromJSONTyped(json: any, ignoreDiscriminator: boolean): LabJournal {
+export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boolean): LabJournalEntry {
     if (json == null) {
         return json;
     }
@@ -97,13 +97,12 @@ export function LabJournalFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function LabJournalToJSON(value?: Omit<LabJournal, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
+export function LabJournalEntryToJSON(value?: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
-        'dataObjectId': value['dataObjectId'],
         'journalContent': value['journalContent'],
     };
 }

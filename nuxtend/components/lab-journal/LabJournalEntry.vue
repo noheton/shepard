@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {
-  LabJournalApi,
-  type LabJournal,
+  LabJournalEntryApi,
+  type LabJournalEntry,
   type Roles,
 } from "@dlr-shepard/backend-client";
 import { computed } from "vue";
 
 interface LabJournalEntryProps {
-  labJournal: LabJournal;
+  labJournal: LabJournalEntry;
   userRoles: Roles | undefined;
 }
 
@@ -27,8 +27,8 @@ async function startEditing(event: Event) {
 }
 
 async function cancelEditing() {
-  createApiInstance(LabJournalApi)
-    .getLabJournalById({ labJournalId: model.value.id })
+  createApiInstance(LabJournalEntryApi)
+    .getLabJournalById({ labJournalEntryId: model.value.id })
     .then(response => {
       model.value = response;
       isEditing.value = false;
@@ -40,9 +40,9 @@ async function cancelEditing() {
 }
 
 async function saveChanges() {
-  createApiInstance(LabJournalApi)
+  createApiInstance(LabJournalEntryApi)
     .updateLabJournal({
-      labJournalId: model.value.id,
+      labJournalEntryId: model.value.id,
       updateLabJournalRequest: {
         journalContent: model.value.journalContent,
       },
@@ -58,8 +58,8 @@ async function saveChanges() {
 }
 
 async function deleteEntry() {
-  createApiInstance(LabJournalApi)
-    .deleteLabJournal({ labJournalId: model.value.id })
+  createApiInstance(LabJournalEntryApi)
+    .deleteLabJournal({ labJournalEntryId: model.value.id })
     .then(_ => {
       emit("deleted");
     })

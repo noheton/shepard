@@ -102,9 +102,9 @@ public class Constants {
   public static final String PERMISSIONS = "permissions";
   public static final String PERMISSION_ID = "permissionId";
 
-  public static final String LAB_JOURNAL = "labJournal";
-  public static final String LAB_JOURNALS = "labJournals";
-  public static final String LAB_JOURNAL_ID = "labJournalId";
+  public static final String LAB_JOURNAL_ENTRY = "labJournalEntry";
+  public static final String LAB_JOURNAL_ENTRIES = "labJournalEntries";
+  public static final String LAB_JOURNAL_ENTRY_ID = "labJournalEntryId";
 
   public static final String ROLES = "roles";
   public static final String VERSION = "version";
@@ -158,7 +158,7 @@ public class Constants {
   public static final String TIMESERIES_IN_CONTAINER = "timeseries_in_container";
   public static final String STRUCTUREDDATA_IN_CONTAINER = "structureddata_in_container";
   public static final String HAS_PAYLOAD = "has_payload";
-  public static final String HAS_LABJOURNAL = "has_labjournal";
+  public static final String HAS_LABJOURNAL_ENTRY = "has_labjournalentry";
 
   // Influx
   public static final String MEASUREMENT = "measurement";
