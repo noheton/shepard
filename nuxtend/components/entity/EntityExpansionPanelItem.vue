@@ -25,8 +25,14 @@ defineProps<{ title: string; count?: number }>();
         ({{ count }})
       </div>
     </v-expansion-panel-title>
-    <v-expansion-panel-text>
+    <v-expansion-panel-text class="no-padding-bottom">
       <slot />
     </v-expansion-panel-text>
   </v-expansion-panel>
 </template>
+
+<style scoped>
+.no-padding-bottom ::v-deep .v-expansion-panel-text__wrapper {
+  padding-bottom: 0;
+}
+</style>

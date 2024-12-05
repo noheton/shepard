@@ -100,11 +100,13 @@ fetchDataObject();
                   title="Lab Journal"
                   :count="numberOfLabJournalEntries"
                 >
-                  <LabJournalList
-                    :collection-id="collectionId"
-                    :data-object-id="dataObject.id"
-                    @number-of-entries-changed="onLabJournalCountChanged"
-                  />
+                  <div class="pt-4">
+                    <LabJournalList
+                      :collection-id="collectionId"
+                      :data-object-id="dataObject.id"
+                      @number-of-entries-changed="onLabJournalCountChanged"
+                    />
+                  </div>
                 </EntityExpansionPanelItem>
               </EntityExpansionPanels>
             </v-row>
