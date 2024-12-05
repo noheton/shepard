@@ -101,7 +101,7 @@ fetchDataObject();
                   :count="numberOfLabJournalEntries"
                 >
                   <div class="pt-4">
-                    <LabJournalList
+                    <LabJournalEntryList
                       :collection-id="collectionId"
                       :data-object-id="dataObject.id"
                       @number-of-entries-changed="onLabJournalCountChanged"
