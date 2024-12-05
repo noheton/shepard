@@ -39,6 +39,14 @@ export function toLocaleDateString(date: Date | undefined | null) {
   if (date) return new Date(date).toLocaleString("en-GB", dateFormat);
 }
 
+export function toShortDateString(date: Date | null) {
+  return date?.toLocaleDateString("en-UK", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function isNumeric(text: string): boolean {
   return !isNaN(+text) && text != "";
 }

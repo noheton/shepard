@@ -15,7 +15,7 @@ const props = defineProps<LabJournalEntryProps>();
 const model = ref(props.labJournal);
 const emit = defineEmits(["deleted"]);
 
-const title = `${toLocaleDateString(model.value.createdAt)} | by ${model.value.createdBy}`;
+const title = `${toShortDateString(model.value.createdAt)} | by ${model.value.createdBy}`;
 const isEditing = ref<boolean>(false);
 const isExpanded = ref<boolean>(false);
 const isHovering = ref<boolean>(false);
@@ -78,7 +78,7 @@ async function toggleExpanded() {
 }
 
 const getUpdatedInfoString = computed(() => {
-  return `Last edited: ${toLocaleDateString(model.value.updatedAt)} by ${model.value.updatedBy}`;
+  return `Last edited: ${toShortDateString(model.value.updatedAt)} by ${model.value.updatedBy}`;
 });
 </script>
 

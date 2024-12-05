@@ -10,7 +10,11 @@ interface DataObjectTitleProps {
     updatedBy: string | null;
   };
 }
-defineProps<DataObjectTitleProps>();
+const props = defineProps<DataObjectTitleProps>();
+const createdAt = toShortDateString(props.entity.createdAt);
+const updatedAt = props.entity.updatedAt
+  ? toShortDateString(props.entity.updatedAt)
+  : undefined;
 </script>
 
 <template>
@@ -29,29 +33,17 @@ defineProps<DataObjectTitleProps>();
       <v-col cols="4">
         <div>Created at:</div>
         <div>
-          {{
-            entity.createdAt?.toLocaleDateString("en-UK", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          }}
+          {{ createdAt }}
           by
           {{ entity.createdBy }}
         </div>
       </v-col>
       <v-spacer />
       <v-col cols="4">
-        <template v-if="entity.updatedAt">
+        <template v-if="updatedAt">
           <div>Updated at:</div>
           <div>
-            {{
-              entity.updatedAt?.toLocaleDateString("en-UK", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            }}
+            {{ updatedAt }}
             by
             {{ entity.updatedBy }}
           </div>
