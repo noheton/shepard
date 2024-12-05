@@ -81,6 +81,7 @@ async function saveNewLabJournalEntry() {
   display: flex;
   justify-content: right;
   gap: 1em;
+  padding-right: 1rem;
   padding-top: 1em;
   padding-bottom: 1em;
 }
