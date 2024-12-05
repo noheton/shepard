@@ -45,8 +45,8 @@ public class LabJournalEntryIO {
 
   public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
     this.dataObjectId = labJournalEntry.getDataObject().getShepardId();
-    this.journalContent = labJournalEntry.getDescription();
-    this.id = labJournalEntry.getShepardId();
+    this.journalContent = labJournalEntry.getContent();
+    this.id = labJournalEntry.getId();
     this.createdAt = labJournalEntry.getCreatedAt();
     this.createdBy = labJournalEntry.getCreatedBy() != null ? labJournalEntry.getCreatedBy().getUsername() : null;
     this.updatedAt = labJournalEntry.getUpdatedAt();

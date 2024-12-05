@@ -3,44 +3,21 @@ package de.dlr.shepard.neo4Core.entities;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.HasId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.Index;
 import org.neo4j.ogm.annotation.Relationship;
-import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
-@Data
+@Getter
+@Setter
+@ToString
 @NoArgsConstructor
-public class BasicEntity implements HasId {
+public class BasicEntity extends AbstractEntity {
 
-  @Id
-  @GeneratedValue
-  private Long id;
-
-  @Index
-  private boolean deleted = false;
-
-  @DateLong
-  private Date createdAt;
-
-  @ToString.Exclude
-  @Relationship(type = Constants.CREATED_BY)
-  private User createdBy;
-
-  @DateLong
-  private Date updatedAt;
-
-  @ToString.Exclude
-  @Relationship(type = Constants.UPDATED_BY)
-  private User updatedBy;
-
-  private String name;
+  protected String name;
 
   @ToString.Exclude
   @Relationship(type = Constants.HAS_ANNOTATION)
@@ -52,11 +29,15 @@ public class BasicEntity implements HasId {
    * @param id identifies the entity
    */
   public BasicEntity(long id) {
-    this.id = id;
+    super(id);
   }
 
   public void addAnnotation(SemanticAnnotation annotation) {
     annotations.add(annotation);
+  }
+
+  public long getNumericId() {
+    return getId();
   }
 
   @Override
@@ -85,14 +66,5 @@ public class BasicEntity implements HasId {
       Objects.equals(name, other.name) &&
       HasId.equalsHelper(annotations, other.annotations)
     );
-  }
-
-  public long getNumericId() {
-    return getId();
-  }
-
-  @Override
-  public String getUniqueId() {
-    return id.toString();
   }
 }
