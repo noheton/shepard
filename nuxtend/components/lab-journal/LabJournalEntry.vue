@@ -104,7 +104,7 @@ const getUpdatedInfoString = computed(() => {
       >
         {{ title }}
       </span>
-      <span>
+      <span class="pr-2">
         <v-icon
           v-if="(isHovering || isExpanded) && isAllowedToEdit()"
           icon="mdi-pencil-outline"
