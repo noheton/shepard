@@ -82,5 +82,6 @@ const customTheme: ThemeDefinition = {
     "yellow-800": "#735703",
     "yellow-900": "#4D3A02",
     "grey-200": "#8c8c8c",
+    white: "#FFFFFF",
   },
 };
