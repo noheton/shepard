@@ -64,7 +64,9 @@ async function saveNewLabJournalEntry() {
       <v-btn variant="flat" color="black-50" @click="resetNewLabJournalEntry">
         Cancel
       </v-btn>
-      <v-btn color="primary" @click="saveNewLabJournalEntry">Save</v-btn>
+      <v-btn variant="flat" color="primary" @click="saveNewLabJournalEntry">
+        Save
+      </v-btn>
     </div>
   </div>
 </template>

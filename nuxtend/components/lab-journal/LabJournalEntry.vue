@@ -148,7 +148,7 @@ const getUpdatedInfoString = computed(() => {
     </div>
 
     <!-- action buttons -->
-    <div v-if="isEditing" class="d-flex justify-end pt-2 px-4">
+    <div v-if="isEditing" class="d-flex justify-end pt-2 px-6">
       <v-btn
         variant="flat"
         color="black-50"
