@@ -5,6 +5,7 @@ import {
   type Roles,
 } from "@dlr-shepard/backend-client";
 import { computed } from "vue";
+import TextEditor from "../common/TextEditor.vue";
 
 interface LabJournalEntryProps {
   labJournal: LabJournalEntry;
@@ -15,7 +16,7 @@ const props = defineProps<LabJournalEntryProps>();
 const model = ref(props.labJournal);
 const emit = defineEmits(["deleted"]);
 
-const title = `${toLocaleDateString(model.value.createdAt)} | by ${model.value.createdBy}`;
+const title = `${toShortDateString(model.value.createdAt)} | by ${model.value.createdBy}`;
 const isEditing = ref<boolean>(false);
 const isExpanded = ref<boolean>(false);
 const isHovering = ref<boolean>(false);
@@ -50,7 +51,7 @@ async function saveChanges() {
     .then(response => {
       model.value = response;
       isEditing.value = false;
-      isExpanded.value = false;
+      isExpanded.value = true;
     })
     .catch(error => {
       handleError(error, "updateLabJournal");
@@ -78,7 +79,7 @@ async function toggleExpanded() {
 }
 
 const getUpdatedInfoString = computed(() => {
-  return `Last edited: ${toLocaleDateString(model.value.updatedAt)} by ${model.value.updatedBy}`;
+  return `Last edited: ${toShortDateString(model.value.updatedAt)} by ${model.value.updatedBy}`;
 });
 </script>
 
@@ -104,7 +105,7 @@ const getUpdatedInfoString = computed(() => {
       >
         {{ title }}
       </span>
-      <span>
+      <span class="pr-2">
         <v-icon
           v-if="(isHovering || isExpanded) && isAllowedToEdit()"
           icon="mdi-pencil-outline"
@@ -131,24 +132,23 @@ const getUpdatedInfoString = computed(() => {
     </div>
 
     <!-- text editor -->
-    <div>
-      <CommonTextEditor
-        v-model="model.journalContent"
-        :initial-content="model.journalContent"
-        :is-editable="isEditing"
-        :is-preview-collapsed="!isExpanded"
-      />
-    </div>
+    <TextEditor
+      v-model="model.journalContent"
+      class="pr-2 pl-4"
+      :initial-content="model.journalContent"
+      :is-editable="isEditing"
+      :is-preview-collapsed="!isExpanded"
+    />
 
     <div
       v-if="isExpanded && model.updatedAt != undefined && !isEditing"
-      class="px-5 py-2 updated-info-text"
+      class="pl-8 py-2 updated-info-text"
     >
       {{ getUpdatedInfoString }}
     </div>
 
     <!-- action buttons -->
-    <div v-if="isEditing" class="d-flex justify-end pt-2 px-4">
+    <div v-if="isEditing" class="d-flex justify-end pt-2 px-6">
       <v-btn
         variant="flat"
         color="black-50"

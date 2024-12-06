@@ -3,10 +3,11 @@ defineProps<{ title: string; count?: number }>();
 </script>
 
 <template>
-  <v-expansion-panel class="pb-4">
+  <v-expansion-panel class="pb-8">
     <v-expansion-panel-title
       v-slot="slotProps"
-      class="pl-0"
+      min-height="32"
+      class="pl-0 py-0"
       :expand-icon="() => null"
       :collapse-icon="() => null"
     >
@@ -24,8 +25,14 @@ defineProps<{ title: string; count?: number }>();
         ({{ count }})
       </div>
     </v-expansion-panel-title>
-    <v-expansion-panel-text>
+    <v-expansion-panel-text class="no-padding-bottom">
       <slot />
     </v-expansion-panel-text>
   </v-expansion-panel>
 </template>
+
+<style scoped>
+.no-padding-bottom ::v-deep .v-expansion-panel-text__wrapper {
+  padding-bottom: 0;
+}
+</style>

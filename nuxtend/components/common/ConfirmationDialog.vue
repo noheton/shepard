@@ -14,7 +14,13 @@ const confirm = () => {
 };
 </script>
 <template>
-  <v-dialog v-model="dialog" max-width="475" persistent>
+  <v-dialog
+    v-model="dialog"
+    max-width="475"
+    persistent
+    @keydown.esc="dialog = false"
+    @keydown.enter="confirm"
+  >
     <template #activator="{ props: activatorProps }">
       <span v-bind="activatorProps">
         <slot />
@@ -28,11 +34,16 @@ const confirm = () => {
         </div>
       </v-card-text>
       <template #actions>
-        <v-btn variant="flat" color="primary" @click="dialog = false">
+        <v-btn
+          variant="flat"
+          color="blue-grey-100"
+          class="text-white"
+          @click="dialog = false"
+        >
           Cancel
         </v-btn>
 
-        <v-btn variant="flat" color="black-50" @click="confirm">
+        <v-btn variant="flat" color="red-500" @click="confirm">
           {{ confirmButtonText }}
         </v-btn>
       </template>
