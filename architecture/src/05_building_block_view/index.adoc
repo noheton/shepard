@@ -98,17 +98,18 @@ Will replace the old InfluxDB timeseries module.
 ==== Timeseries (TimescaleDB)
 
 This module will replace the old implementation using InfluxDB.
-For decisions and reasoning, check out ADR-008, ADR-010 and ADR-011.
+For decisions and reasoning, check out <<adr008>>, <<adr010>> and <<adr011>>.
 
-The new module handles persisting timeseries data in a TimescaleDB.
+The new module handles persisting timeseries data in a link:https://www.timescale.com/[TimescaleDB].
 It includes all relevant endpoints and services.
 The database schema includes two tables:
 
 * A timeseries table containing the metadata for each timeseries (measurement, field, etc.) similar to the metadata in an Influx timeseries.
-* A hypertable containing the data points.
+* A link:https://docs.timescale.com/use-timescale/latest/hypertables/[hypertable] containing the data points.
 
-The timeseries table is defined by the database migrations in `src/main/java/resources/db/migration` and managed in the code using hibernate entities.
-The data point table is also defined by the database schema, but since we want to make full use of TimescaleDB features and performance, we use specific queries for inserting and querying and don't use hibernate entities to interact with it.
+The schema for both tables is defined by the database migrations in `src/main/java/resources/db/migration`.
+The timeseries table is managed in the code using hibernate entities.
+The data point table is managed directly using custom queries, since we want to make full use of TimescaleDB features and performance.
 
 === Class Diagram
 

@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[adr010]]
 === ADR-010 Postgres/Timescaledb Image
 
 [%autowidth.stretch]

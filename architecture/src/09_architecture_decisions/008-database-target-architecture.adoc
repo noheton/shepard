@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[adr008]]
 === ADR-008 Database Target Architecture
 
 [%autowidth.stretch]

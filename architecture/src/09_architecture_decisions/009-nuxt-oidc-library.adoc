@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[adr009]]
 === ADR-009 Nuxt OIDC Library
 
 [%autowidth.stretch]

@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[adr011]]
 === ADR-011 Timescale database schema
 
 [%autowidth.stretch]
