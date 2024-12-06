@@ -16,9 +16,7 @@ const emit = defineEmits(["numberOfEntriesChanged"]);
 const entries = ref<LabJournalEntry[] | undefined>(undefined);
 const userRoles = ref<Roles | undefined>(undefined);
 
-// load list of lab journals based on collectionId OR dataObjectId
 async function fetchLabJournalEntries(dataObjectId: number | undefined) {
-  // load lab journals for collection or data object, depending on the parameters
   if (dataObjectId) {
     createApiInstance(LabJournalEntryApi)
       .getLabJournalsByCollection({ dataObjectId })
