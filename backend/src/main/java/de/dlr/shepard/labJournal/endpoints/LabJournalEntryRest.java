@@ -1,11 +1,13 @@
 package de.dlr.shepard.labJournal.endpoints;
 
+import de.dlr.shepard.exceptions.InvalidHtmlResponse;
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.util.HtmlSanitizer;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -98,6 +100,11 @@ public class LabJournalEntryRest {
     content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(
+    description = "bad request",
+    responseCode = "400",
+    content = @Content(schema = @Schema(implementation = InvalidHtmlResponse.class))
+  )
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createLabJournal(
     @QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId,
@@ -106,6 +113,13 @@ public class LabJournalEntryRest {
       content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
     ) @Valid LabJournalEntryIO labJournalEntryIO
   ) {
+    if (!HtmlSanitizer.isSafeHtml(labJournalEntryIO.getJournalContent())) {
+      String sanitizedHtml = HtmlSanitizer.cleanHtmlString(labJournalEntryIO.getJournalContent());
+      return Response.status(Status.BAD_REQUEST)
+        .entity(new InvalidHtmlResponse(labJournalEntryIO.getJournalContent(), sanitizedHtml))
+        .build();
+    }
+
     labJournalEntryIO = new LabJournalEntryIO(
       labJournalEntryService.CreateLabJournalEntry(
         dataObjectId,
@@ -126,6 +140,11 @@ public class LabJournalEntryRest {
     content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(
+    description = "bad request",
+    responseCode = "400",
+    content = @Content(schema = @Schema(implementation = InvalidHtmlResponse.class))
+  )
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response updateLabJournal(
     @PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId,
@@ -139,6 +158,13 @@ public class LabJournalEntryRest {
       )
     ) @Valid LabJournalEntryIO labJournalEntryIO
   ) {
+    if (!HtmlSanitizer.isSafeHtml(labJournalEntryIO.getJournalContent())) {
+      String sanitizedHtml = HtmlSanitizer.cleanHtmlString(labJournalEntryIO.getJournalContent());
+      return Response.status(Status.BAD_REQUEST)
+        .entity(new InvalidHtmlResponse(labJournalEntryIO.getJournalContent(), sanitizedHtml))
+        .build();
+    }
+
     LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
     String userName = securityContext.getUserPrincipal().getName();
     if (!labJournalEntry.getCreatedBy().getUsername().equals(userName)) return Response.status(
