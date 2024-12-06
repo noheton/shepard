@@ -1,6 +1,17 @@
 package de.dlr.shepard.labJournal.endpoints;
 
-import com.arjuna.ats.jta.exceptions.NotImplementedException;
+import java.util.ArrayList;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.labJournal.services.LabJournalEntryService;
@@ -24,16 +35,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.media.SchemaProperty;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/" + Constants.LAB_JOURNAL_ENTRIES)
@@ -64,8 +65,7 @@ public class LabJournalEntryRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.DATA_OBJECT_ID)
-  public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId)
-    throws NotImplementedException {
+  public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
     for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(dataObject)) {
