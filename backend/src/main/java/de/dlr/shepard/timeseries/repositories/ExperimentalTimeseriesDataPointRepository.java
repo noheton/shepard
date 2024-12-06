@@ -2,12 +2,11 @@ package de.dlr.shepard.timeseries.repositories;
 
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
 import de.dlr.shepard.timeseries.model.enums.FillOption;
-import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -18,8 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @ApplicationScoped
-public class ExperimentalTimeseriesDataPointRepository
-  implements PanacheRepositoryBase<ExperimentalTimeseriesDataPointEntity, Long> {
+public class ExperimentalTimeseriesDataPointRepository {
 
   private final int INSERT_BATCH_SIZE = 1000;
 
@@ -27,12 +25,12 @@ public class ExperimentalTimeseriesDataPointRepository
   EntityManager entityManager;
 
   public void insertManyDataPoints(
-    List<ExperimentalTimeseriesDataPointEntity> entities,
-    ExperimentalDataPointValueType valueType
+    List<ExperimentalTimeseriesDataPoint> entities,
+    ExperimentalTimeseriesEntity timeseriesEntity
   ) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, valueType);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
       query.executeUpdate();
     }
   }
@@ -60,14 +58,16 @@ public class ExperimentalTimeseriesDataPointRepository
   }
 
   private Query buildInsertQueryObject(
-    List<ExperimentalTimeseriesDataPointEntity> entities,
+    List<ExperimentalTimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    ExperimentalDataPointValueType valueType
+    ExperimentalTimeseriesEntity timeseriesEntity
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
-      "INSERT INTO timeseries_data_points (timeseries_id, time, " + getColumnName(valueType) + ") values "
+      "INSERT INTO timeseries_data_points (timeseries_id, time, " +
+      getColumnName(timeseriesEntity.getValueType()) +
+      ") values "
     );
     queryString.append(
       IntStream.range(startInclusive, endExclusive)
@@ -78,16 +78,11 @@ public class ExperimentalTimeseriesDataPointRepository
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
-    query.setParameter("timeseriesid", entities.get(0).getTimeseriesId());
+    query.setParameter("timeseriesid", timeseriesEntity.getId());
 
     IntStream.range(startInclusive, endExclusive).forEach(index -> {
-      query.setParameter("time" + index, entities.get(index).getTime());
-      switch (valueType) {
-        case Double -> query.setParameter("value" + index, entities.get(index).getDoubleValue());
-        case Integer -> query.setParameter("value" + index, entities.get(index).getIntValue());
-        case String -> query.setParameter("value" + index, entities.get(index).getStringValue());
-        case Boolean -> query.setParameter("value" + index, entities.get(index).getBooleanValue());
-      }
+      query.setParameter("time" + index, entities.get(index).getTimestamp());
+      query.setParameter("value" + index, entities.get(index).getValue());
     });
 
     return query;

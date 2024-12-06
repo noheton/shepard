@@ -4,7 +4,6 @@ import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointEntity;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
 import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
@@ -96,7 +95,7 @@ public class ExperimentalTimeseriesService {
 
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
 
-    addDataPointsToTimeseries(timeseriesEntity, dataPoints);
+    timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
 
     return timeseriesEntity;
   }
@@ -124,18 +123,6 @@ public class ExperimentalTimeseriesService {
     );
     this.timeseriesRepository.persist(timeseriesEntity);
     return timeseriesEntity;
-  }
-
-  private void addDataPointsToTimeseries(
-    ExperimentalTimeseriesEntity timeseriesEntity,
-    List<ExperimentalTimeseriesDataPoint> dataPoints
-  ) {
-    List<ExperimentalTimeseriesDataPointEntity> timeseriesDataPointEntities = dataPoints
-      .stream()
-      .map(dataPoint -> dataPoint.toEntity(timeseriesEntity))
-      .toList();
-
-    timeseriesDataPointRepository.insertManyDataPoints(timeseriesDataPointEntities, timeseriesEntity.getValueType());
   }
 
   private static void assertDataPointsMatchTimeseriesValueType(

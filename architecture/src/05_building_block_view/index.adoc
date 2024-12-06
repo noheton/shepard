@@ -47,7 +47,7 @@ This structure as well as the corresponding references is managed by the `core` 
 |Building Block | Responsibility
 
 | Backend
-| Handles incoming requests from actors like the shepard Timeseries Collector, Webfrontend and Users. 
+| Handles incoming requests from actors like the shepard Timeseries Collector, Webfrontend and Users.
 Allows these actors to upload, search and retrieve different kinds of data.
 
 | Webfrontend (UI)
@@ -87,7 +87,28 @@ Consists of a connector to establish a connection to the Neo4j database, data ac
 
 | MongoDB
 | Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
+
+| Timeseries (TimescaleDB)
+| Manages timeseries data.
+Uses TimescaleDB instead of InfluxDB.
+In an experimental state right now.
+Will replace the old InfluxDB timeseries module.
 |===
+
+==== Timeseries (TimescaleDB)
+
+This module will replace the old implementation using InfluxDB.
+For decisions and reasoning, check out ADR-008, ADR-010 and ADR-011.
+
+The new module handles persisting timeseries data in a TimescaleDB.
+It includes all relevant endpoints and services.
+The database schema includes two tables:
+
+* A timeseries table containing the metadata for each timeseries (measurement, field, etc.) similar to the metadata in an Influx timeseries.
+* A hypertable containing the data points.
+
+The timeseries table is defined by the database migrations in `src/main/java/resources/db/migration` and managed in the code using hibernate entities.
+The data point table is also defined by the database schema, but since we want to make full use of TimescaleDB features and performance, we use specific queries for inserting and querying and don't use hibernate entities to interact with it.
 
 === Class Diagram
 
