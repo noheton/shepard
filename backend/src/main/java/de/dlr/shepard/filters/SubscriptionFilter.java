@@ -73,11 +73,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
       Pattern pattern = Pattern.compile(sub.getSubscribedURL());
       if (
         pattern.matcher(event.getUrl()).matches() &&
-        permissionsUtil.isAllowed(
-          requestContext.getUriInfo().getPathSegments(),
-          AccessType.Read,
-          sub.getCreatedBy().getUsername()
-        )
+        permissionsUtil.isAllowed(requestContext, AccessType.Read, sub.getCreatedBy().getUsername())
       ) {
         EventIO e = new EventIO(event);
         e.setSubscription(new SubscriptionIO(sub));

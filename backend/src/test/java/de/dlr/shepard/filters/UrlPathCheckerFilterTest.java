@@ -14,6 +14,8 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -42,9 +44,13 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
   @Captor
   ArgumentCaptor<Response> responseCaptor;
 
+  MultivaluedMap<String, String> queryParams;
+
   @BeforeEach
   public void prepareSpy() {
     when(request.getUriInfo()).thenReturn(uriInfo);
+    queryParams = new MultivaluedHashMap<String, String>();
+    when(request.getUriInfo().getQueryParameters()).thenReturn(queryParams);
   }
 
   @Test
@@ -52,10 +58,10 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
     PathSegment segment = mock(PathSegment.class);
     var segments = List.of(segment);
     when(uriInfo.getPathSegments()).thenReturn(segments);
-    doNothing().when(checker).checkPathSegments(segments);
+    doNothing().when(checker).check(segments, queryParams);
 
     filter.filter(request);
-    verify(checker).checkPathSegments(segments);
+    verify(checker).check(segments, queryParams);
   }
 
   @Test
@@ -63,11 +69,11 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
     PathSegment segment = mock(PathSegment.class);
     var segments = List.of(segment);
     when(uriInfo.getPathSegments()).thenReturn(segments);
-    doThrow(new InvalidPathException("MyError")).when(checker).checkPathSegments(segments);
+    doThrow(new InvalidPathException("MyError")).when(checker).check(segments, queryParams);
 
     filter.filter(request);
     verify(request).abortWith(responseCaptor.capture());
-    verify(checker).checkPathSegments(segments);
+    verify(checker).check(segments, queryParams);
     assertEquals(404, responseCaptor.getValue().getStatus());
   }
 }

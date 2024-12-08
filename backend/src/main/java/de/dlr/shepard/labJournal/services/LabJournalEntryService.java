@@ -2,10 +2,10 @@ package de.dlr.shepard.labJournal.services;
 
 import de.dlr.shepard.labJournal.dao.LabJournalEntryDAO;
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.util.DateHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -19,7 +19,7 @@ public class LabJournalEntryService {
 
   private LabJournalEntryDAO labJournalEntryDAO;
 
-  private DataObjectDAO dataObjectDAO;
+  private DataObjectService dataObjectService;
 
   private UserDAO userDAO;
 
@@ -28,20 +28,20 @@ public class LabJournalEntryService {
   @Inject
   LabJournalEntryService(
     LabJournalEntryDAO labJournalEntryDAO,
-    DataObjectDAO dataObjectDAO,
+    DataObjectService dataObjectService,
     UserDAO userDAO,
     DateHelper dateHelper
   ) {
     this.labJournalEntryDAO = labJournalEntryDAO;
-    this.dataObjectDAO = dataObjectDAO;
+    this.dataObjectService = dataObjectService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
   }
 
-  public LabJournalEntry CreateLabJournalEntry(Long dataObjectId, String content, String userName) {
+  public LabJournalEntry createLabJournalEntry(Long dataObjectId, String content, String userName) {
     LabJournalEntry labJournalEntry = new LabJournalEntry();
     User user = userDAO.find(userName);
-    DataObject dataObject = dataObjectDAO.findByNeo4jId(dataObjectId);
+    DataObject dataObject = dataObjectService.getDataObjectByNeo4jId(dataObjectId);
     labJournalEntry.setContent(content);
     labJournalEntry.setCreatedBy(user);
     labJournalEntry.setCreatedAt(dateHelper.getDate());
@@ -84,7 +84,7 @@ public class LabJournalEntryService {
   public Long getCollectionId(Long labJournalEntryId) {
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
     if (null == labJournalEntry) return null;
-    DataObject dataObject = dataObjectDAO.findByShepardId(labJournalEntry.getDataObject().getShepardId());
-    return dataObject.getCollection().getShepardId();
+    DataObject dataObject = dataObjectService.getDataObjectByNeo4jId(labJournalEntry.getDataObject().getId());
+    return dataObject.getCollection().getId();
   }
 }

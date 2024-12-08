@@ -25,7 +25,7 @@ public class PermissionsUtil {
 
   private PermissionsService permissionsService;
   private UserGroupService userGroupService;
-  private LabJournalEntryService labJournalService;
+  private LabJournalEntryService labJournalEntryService;
   private DataObjectService dataObjectService;
 
   PermissionsUtil() {}
@@ -34,15 +34,21 @@ public class PermissionsUtil {
   public PermissionsUtil(
     PermissionsService permissionsService,
     UserGroupService userGroupService,
-    LabJournalEntryService labJournalService,
+    LabJournalEntryService labJournalEntryService,
     DataObjectService dataObjectService
   ) {
     this.permissionsService = permissionsService;
     this.userGroupService = userGroupService;
-    this.labJournalService = labJournalService;
+    this.labJournalEntryService = labJournalEntryService;
     this.dataObjectService = dataObjectService;
   }
 
+  /**
+   * Checks if the request is allowed based on access type and user name. The check is performed by checking the path segments, and request body.
+   * @param requestContext
+   * @param accessType
+   * @param userName
+   */
   public boolean isAllowed(ContainerRequestContext requestContext, AccessType accessType, String userName) {
     List<PathSegment> pathSegments = requestContext.getUriInfo().getPathSegments();
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
@@ -53,31 +59,18 @@ public class PermissionsUtil {
       if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
         Long collectionId = dataObjectService.getCollectionId(Long.parseLong(dataObjectId));
         if (collectionId == null) return true;
-        return isAllowed(collectionId, accessType, userName);
+        return isAccessTypeAllowedForUser(collectionId, accessType, userName);
       }
       if (idSegment == null || idSegment.isBlank()) {
         return true;
       }
-
       Long labJournalId = Long.parseLong(idSegment);
-      Long collectionId = labJournalService.getCollectionId(labJournalId);
+      Long collectionId = labJournalEntryService.getCollectionId(labJournalId);
       if (collectionId == null) return true;
       // If the labjournalEntry request has labjournalId as path segment [in GET/labJournals/{labjournalId}, PUT/labJournals/{labjournalId}, DELETE/labJournals/{labjournalId} ]
-      return isAllowed(collectionId, accessType, userName);
+      return isAccessTypeAllowedForUser(collectionId, accessType, userName);
     }
-    return isAllowed(requestContext.getUriInfo().getPathSegments(), accessType, userName);
-  }
-
-  /**
-   * Check whether a request is allowed or not
-   *
-   * @param pathSegments the path segments of the request uri
-   * @param accessType   the access type (read, write, manage)
-   * @param username     the user that wants access
-   * @return whether the request is allowed or not
-   */
-  public boolean isAllowed(List<PathSegment> pathSegments, AccessType accessType, String username) {
-    var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
+    // Perform the generic check
     if (idSegment == null || idSegment.isBlank()) {
       // No id in path
       return true;
@@ -91,13 +84,13 @@ public class PermissionsUtil {
       // non-numeric id
       else if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
         if (pathSegments.size() <= 2 && AccessType.Read.equals(accessType)) return true; // it is allowed to read all users
-        else if (username.equals(idSegment)) return true; // it is allowed to access yourself
+        else if (userName.equals(idSegment)) return true; // it is allowed to access yourself
       }
       return false;
     }
 
     var entityId = Long.parseLong(idSegment);
-    return isAllowed(entityId, accessType, username);
+    return isAccessTypeAllowedForUser(entityId, accessType, userName);
   }
 
   /**
@@ -108,7 +101,7 @@ public class PermissionsUtil {
    * @param username   the user that wants access
    * @return whether the access is allowed or not
    */
-  public boolean isAllowed(long entityId, AccessType accessType, String username) {
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
     var perms = permissionsService.getPermissionsByNeo4jId(entityId);
     if (perms == null) return true; // No permissions
 

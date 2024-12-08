@@ -167,7 +167,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     if (
       reference.getTimeseriesContainer() == null ||
       reference.getTimeseriesContainer().isDeleted() ||
-      !permissionsUtil.isAllowed(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
+      !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
     ) return reference.getTimeseries().stream().map(ts -> new TimeseriesPayload(ts, Collections.emptyList())).toList();
 
     var database = reference.getTimeseriesContainer().getDatabase();
@@ -200,7 +200,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()
     ) throw new InvalidRequestException("The timeseries container in question is not accessible");
     if (
-      !permissionsUtil.isAllowed(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
+      !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this timeseries");
 
     var database = reference.getTimeseriesContainer().getDatabase();

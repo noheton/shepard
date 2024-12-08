@@ -64,7 +64,7 @@ public class LabJournalEntryRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = LabJournalEntryIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID, required = true)
   public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
@@ -121,7 +121,7 @@ public class LabJournalEntryRest {
     }
 
     labJournalEntryIO = new LabJournalEntryIO(
-      labJournalEntryService.CreateLabJournalEntry(
+      labJournalEntryService.createLabJournalEntry(
         dataObjectId,
         labJournalEntryIO.getJournalContent(),
         securityContext.getUserPrincipal().getName()

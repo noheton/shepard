@@ -97,7 +97,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
     verify(executorService).execute(any());
@@ -120,7 +120,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(noId);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
     verify(executorService).execute(any());
@@ -167,7 +167,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(uriInfo.getPathSegments(), AccessType.Read, "bob")).thenReturn(false);
+    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(false);
 
     filter.filter(request, response);
     verify(executorService, never()).execute(any());

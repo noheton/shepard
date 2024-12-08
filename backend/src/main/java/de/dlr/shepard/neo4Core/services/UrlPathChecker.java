@@ -17,12 +17,11 @@ import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 @RequestScoped
@@ -50,9 +49,6 @@ public class UrlPathChecker {
   private SemanticRepositoryService semanticRepositoryService;
 
   private SemanticAnnotationService semanticAnnotationService;
-
-  @Setter
-  private ContainerRequestContext requestContext;
 
   UrlPathChecker() {}
 
@@ -107,11 +103,12 @@ public class UrlPathChecker {
    * entities. Throws an InvalidPathException in case of an error.
    *
    * @param pathSegments to process
+   * @param multivaluedMap query params map
    */
-  public void checkPathSegments(List<PathSegment> pathSegments) {
+  public void check(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams) {
     String errorString;
     try {
-      errorString = check(pathSegments);
+      errorString = checkForError(pathSegments, queryParams);
     } catch (NumberFormatException e) {
       throw new InvalidPathException("The given path seems wrong");
     }
@@ -121,7 +118,8 @@ public class UrlPathChecker {
     }
   }
 
-  private String check(List<PathSegment> pathSegments) throws NumberFormatException {
+  private String checkForError(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams)
+    throws NumberFormatException {
     HashMap<String, String> pathElems = getPathElements(pathSegments);
     StringBuilder builder = new StringBuilder();
     DataObject dataObject = null;
@@ -313,10 +311,10 @@ public class UrlPathChecker {
 
     //Check for LabJournalEntry calls that do not have id segment
     if (pathSegments.size() > 0 && pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
-      String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
+      String dataObjectId = queryParams.getFirst(Constants.DATA_OBJECT_ID);
       // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
       if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
-        DataObject labJournalDataObject = dataObjectService.getDataObjectByShepardId(Long.parseLong(dataObjectId));
+        DataObject labJournalDataObject = dataObjectService.getDataObjectByNeo4jId(Long.parseLong(dataObjectId));
         String error = checkDataObject(labJournalDataObject);
         if (error != null) {
           return builder.append(error).toString();

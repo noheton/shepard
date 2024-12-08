@@ -391,7 +391,7 @@ public class TimeseriesReferenceServiceTest {
     };
     TimeseriesPayload payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(50L, 7)));
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       timeseriesService.getTimeseriesPayloadList(
         ref.getStart(),
@@ -437,7 +437,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     List<TimeseriesPayload> actual = service.getTimeseriesPayloadByShepardId(
       ref.getShepardId(),
       SingleValuedUnaryFunction.MEAN,
@@ -497,7 +497,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
 
     var actual = service.getTimeseriesPayloadByShepardId(
       15L,
@@ -531,7 +531,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       timeseriesService.exportTimeseriesPayload(
         ref.getStart(),
@@ -577,7 +577,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       timeseriesService.exportTimeseriesPayload(
         ref.getStart(),
@@ -613,7 +613,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
     assertThrows(InvalidAuthException.class, () ->
       service.exportTimeseriesPayloadByShepardId(
         15L,
@@ -646,7 +646,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     assertThrows(InvalidRequestException.class, () ->
       service.exportTimeseriesPayloadByShepardId(
         ref.getShepardId(),

@@ -152,9 +152,9 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     ) throw new InvalidRequestException("The file container in question is not accessible");
 
     long containerId = reference.getFileContainer().getId();
-    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
-      "You are not authorized to access this file"
-    );
+    if (
+      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+    ) throw new InvalidAuthException("You are not authorized to access this file");
 
     String mongoId = reference.getFileContainer().getMongoId();
     return fileService.getPayload(mongoId, oid);
@@ -180,9 +180,9 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
     // Throw exception when not isAllowed
     var containerId = reference.getFileContainer().getId();
-    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
-      "You are not authorized to access this file container"
-    );
+    if (
+      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+    ) throw new InvalidAuthException("You are not authorized to access this file container");
 
     var result = new ArrayList<NamedInputStream>(files.size());
     for (var file : files) {

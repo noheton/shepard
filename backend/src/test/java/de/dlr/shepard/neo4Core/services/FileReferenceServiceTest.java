@@ -309,7 +309,7 @@ public class FileReferenceServiceTest {
     NamedInputStream result = new NamedInputStream(fileOID, null, "myInputStream", 123L);
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
     NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username);
 
@@ -349,7 +349,7 @@ public class FileReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(20L, AccessType.Read, username)).thenReturn(false);
+    when(permissionsUtil.isAccessTypeAllowedForUser(20L, AccessType.Read, username)).thenReturn(false);
     assertThrows(InvalidAuthException.class, () -> service.getPayloadByShepardId(15L, "oid", username));
   }
 
@@ -366,7 +366,7 @@ public class FileReferenceServiceTest {
     var nis2 = new NamedInputStream("oid1", null, "mySecondStream", 124L);
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(nis2);
     var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
@@ -391,7 +391,7 @@ public class FileReferenceServiceTest {
     );
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.get(0));
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(null);
     var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
@@ -411,7 +411,7 @@ public class FileReferenceServiceTest {
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     assertThrows(InvalidRequestException.class, () -> service.getAllPayloadsByShepardId(ref.getShepardId(), username));
   }
 
@@ -435,7 +435,7 @@ public class FileReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAllowed(20L, AccessType.Read, username)).thenReturn(false);
+    when(permissionsUtil.isAccessTypeAllowedForUser(20L, AccessType.Read, username)).thenReturn(false);
     assertThrows(InvalidAuthException.class, () -> service.getAllPayloadsByShepardId(15L, username));
   }
 

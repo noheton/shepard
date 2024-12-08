@@ -154,7 +154,11 @@ public class StructuredDataReferenceService
     if (
       reference.getStructuredDataContainer() == null ||
       reference.getStructuredDataContainer().isDeleted() ||
-      !permissionsUtil.isAllowed(reference.getStructuredDataContainer().getId(), AccessType.Read, username)
+      !permissionsUtil.isAccessTypeAllowedForUser(
+        reference.getStructuredDataContainer().getId(),
+        AccessType.Read,
+        username
+      )
     ) return reference.getStructuredDatas().stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
 
     String mongoId = reference.getStructuredDataContainer().getMongoId();
@@ -188,9 +192,9 @@ public class StructuredDataReferenceService
     ) throw new InvalidRequestException("The structured data container in question is not accessible");
 
     long containerId = reference.getStructuredDataContainer().getId();
-    if (!permissionsUtil.isAllowed(containerId, AccessType.Read, username)) throw new InvalidAuthException(
-      "You are not authorized to access this structured data"
-    );
+    if (
+      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+    ) throw new InvalidAuthException("You are not authorized to access this structured data");
 
     String mongoId = reference.getStructuredDataContainer().getMongoId();
     return structuredDataService.getPayload(mongoId, oid);
