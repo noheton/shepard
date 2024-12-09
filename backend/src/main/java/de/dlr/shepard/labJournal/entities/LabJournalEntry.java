@@ -26,7 +26,7 @@ public class LabJournalEntry extends AbstractEntity {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof DataObject)) return false;
+    if (!(obj instanceof LabJournalEntry)) return false;
     LabJournalEntry other = (LabJournalEntry) obj;
     return super.equals(other) && content.equals(other.content) && HasId.equalsHelper(dataObject, other.dataObject);
   }

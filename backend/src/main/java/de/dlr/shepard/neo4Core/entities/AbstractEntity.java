@@ -70,10 +70,10 @@ public abstract class AbstractEntity implements HasId {
     return (
       id.equals(entity.id) &&
       deleted == entity.deleted &&
-      createdAt.equals(entity.createdAt) &&
-      createdBy.equals(entity.createdBy) &&
-      updatedAt.equals(entity.updatedAt) &&
-      updatedBy.equals(entity.updatedBy)
+      Objects.equals(createdAt, entity.createdAt) &&
+      Objects.equals(createdBy, entity.createdBy) &&
+      Objects.equals(updatedAt, entity.updatedAt) &&
+      Objects.equals(updatedBy, entity.updatedBy)
     );
   }
 

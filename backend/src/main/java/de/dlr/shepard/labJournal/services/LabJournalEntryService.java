@@ -57,6 +57,7 @@ public class LabJournalEntryService {
     labJournalEntries = labJournalEntryDAO.findLabJournalEntriesByIds(labJournalEntryIds);
     return labJournalEntries
       .stream()
+      .filter(labJournalEntry -> !labJournalEntry.isDeleted())
       .sorted(Comparator.comparing(LabJournalEntry::getCreatedAt))
       .collect(Collectors.toList());
   }
@@ -76,7 +77,7 @@ public class LabJournalEntryService {
     return labJournalEntry;
   }
 
-  public boolean deleteLabJournal(long labJournalEntryId, String userName) {
+  public boolean deleteLabJournalEntry(long labJournalEntryId, String userName) {
     User user = userDAO.find(userName);
     return labJournalEntryDAO.deleteLabJournalEntry(labJournalEntryId, user, dateHelper.getDate());
   }

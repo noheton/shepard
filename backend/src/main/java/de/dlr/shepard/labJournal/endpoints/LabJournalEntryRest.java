@@ -186,7 +186,7 @@ public class LabJournalEntryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response deleteLabJournal(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
-    labJournalEntryService.deleteLabJournal(labJournalEntryId, securityContext.getUserPrincipal().getName());
+    labJournalEntryService.deleteLabJournalEntry(labJournalEntryId, securityContext.getUserPrincipal().getName());
     return Response.status(Status.NO_CONTENT).build();
   }
 }
