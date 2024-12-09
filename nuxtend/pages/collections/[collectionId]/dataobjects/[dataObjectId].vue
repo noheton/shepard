@@ -56,7 +56,7 @@ fetchDataObject();
 
 <template>
   <div style="max-width: 1000px">
-    <v-container fluid class="pa-0 fill-height">
+    <v-container fluid class="pa-0 fill-height" max-width="1000px">
       <v-row v-if="!!collection && !!dataObject" no-gutters>
         <v-col cols="12">
           <LayoutComponentsShepardBreadcrumbs
@@ -81,7 +81,7 @@ fetchDataObject();
           />
         </v-col>
         <v-col cols="12">
-          <v-container fluid class="pa-0">
+          <v-container fluid class="pa-0" max-width="1000px">
             <v-row no-gutters>
               <EntityTitle :entity="dataObject" id-label="Data Object ID" />
             </v-row>

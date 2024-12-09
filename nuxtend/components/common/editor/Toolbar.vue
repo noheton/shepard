@@ -5,13 +5,6 @@ import { ref } from "vue";
 interface ToolbarProps {
   editor: Editor;
   isToolbarShown: boolean;
-  hideMarker?: boolean;
-  hideHeading?: boolean;
-  hideAlignment?: boolean;
-  hideLinks?: boolean;
-  hideBulletList?: boolean;
-  hideOrderedList?: boolean;
-  hideTable?: boolean;
 }
 
 const props = defineProps<ToolbarProps>();
@@ -185,8 +178,8 @@ const alignmentMenuEntries = [
     v-if="props.isToolbarShown"
     class="d-flex py-0 gc-2 justify-end pr-0"
   >
-    <toolbar-button
-      v-if="!props.hideMarker"
+    <!-- Marker Controls (bold, italic, ...)-->
+    <CommonEditorToolbarButton
       v-model="boldState"
       icon="mdi-format-bold"
       tooltip-text="Bold"
@@ -196,8 +189,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideMarker"
+    <CommonEditorToolbarButton
       v-model="italicState"
       icon="mdi-format-italic"
       tooltip-text="Italic"
@@ -207,8 +199,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideMarker"
+    <CommonEditorToolbarButton
       v-model="underlineState"
       icon="mdi-format-underline"
       tooltip-text="Underline"
@@ -218,8 +209,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideMarker"
+    <CommonEditorToolbarButton
       v-model="codeState"
       icon="mdi-code-tags"
       tooltip-text="Code"
@@ -229,8 +219,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideHeading"
+    <CommonEditorToolbarButton
       v-model="headingState"
       btn-text="Heading"
       tooltip-text="Heading"
@@ -245,10 +234,9 @@ const alignmentMenuEntries = [
       "
     />
 
-    <v-divider v-if="!props.hideMarker || !props.hideHeading" vertical />
-
-    <toolbar-menu
-      v-if="!props.hideAlignment"
+    <v-divider vertical />
+    <!-- Text Alignment Menu-->
+    <CommonEditorToolbarMenu
       :base-icon="alignmentMenuIcon"
       menu-icon-size="small"
       tooltip-text="Alignment"
@@ -256,10 +244,9 @@ const alignmentMenuEntries = [
       :menu-entries="alignmentMenuEntries"
     />
 
-    <v-divider v-if="!props.hideAlignment" vertical />
-
-    <toolbar-button
-      v-if="!props.hideLinks"
+    <v-divider vertical />
+    <!-- Link Controls (set link, unlink)-->
+    <CommonEditorToolbarButton
       v-model="linkState"
       icon="mdi-link"
       tooltip-text="Set Link"
@@ -269,8 +256,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideLinks"
+    <CommonEditorToolbarButton
       :disabled="linkState === null"
       :is-toggling-disabled="true"
       icon="mdi-link-off"
@@ -282,10 +268,9 @@ const alignmentMenuEntries = [
       "
     />
 
-    <v-divider v-if="!props.hideLinks" vertical />
-
-    <toolbar-button
-      v-if="!props.hideBulletList"
+    <v-divider vertical />
+    <!-- List Controls-->
+    <CommonEditorToolbarButton
       v-model="bulletListState"
       icon="mdi-format-list-bulleted"
       tooltip-text="Bullet List"
@@ -295,8 +280,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <toolbar-button
-      v-if="!props.hideOrderedList"
+    <CommonEditorToolbarButton
       v-model="orderedListState"
       icon="mdi-format-list-numbered"
       tooltip-text="Numbered List"
@@ -307,13 +291,9 @@ const alignmentMenuEntries = [
       "
     />
 
-    <v-divider
-      v-if="!props.hideBulletList || !props.hideOrderedList"
-      vertical
-    />
-
-    <toolbar-menu
-      v-if="!props.hideTable"
+    <v-divider vertical />
+    <!-- Table Menu-->
+    <CommonEditorToolbarMenu
       base-icon="mdi-table"
       menu-icon-size="small"
       tooltip-text="Table"

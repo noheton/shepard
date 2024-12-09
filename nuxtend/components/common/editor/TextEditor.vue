@@ -10,7 +10,6 @@ import StarterKit from "@tiptap/starter-kit";
 import type { Editor } from "@tiptap/vue-3";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { defineProps, type ShallowRef } from "vue";
-import TextEditorToolbar from "../toolbar/TextEditorToolbar.vue";
 
 interface TextEditorProps {
   isEditable: boolean;
@@ -88,7 +87,7 @@ watch(
 
 <template>
   <div class="h-100 d-flex flex-column flex-nowrap ga-1 mx-4">
-    <TextEditorToolbar
+    <CommonEditorToolbar
       v-if="editor"
       :editor="editor"
       :is-toolbar-shown="isEditable"
@@ -124,6 +123,13 @@ watch(
   flex: 1;
   min-height: 6lh;
   border-radius: 4px;
+
+  h3 {
+    // These are the typography settings for 'subtitle-1' semi bold
+    font-size: 1.25rem;
+    line-height: 2rem;
+    font-weight: 600;
+  }
 
   code {
     background-color: rgb(var(--v-theme-black-100));

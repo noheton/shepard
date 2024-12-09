@@ -64,32 +64,30 @@ fetchRoles();
 </script>
 
 <template>
-  <div style="max-width: 1000px">
-    <LabJournalNewEntry
-      v-if="!!dataObjectId && isAllowedToCreate()"
-      :model-value="dataObjectId"
-      @new-lab-journal-saved="
-        savedLabjournal => appendNewLabJournalEntry(savedLabjournal)
-      "
+  <LabJournalNewEntry
+    v-if="!!dataObjectId && isAllowedToCreate()"
+    :model-value="dataObjectId"
+    @new-lab-journal-saved="
+      savedLabjournal => appendNewLabJournalEntry(savedLabjournal)
+    "
+  />
+  <div v-if="!!entries">
+    <LabJournalEntry
+      v-for="(entry, index) in entries"
+      :key="'lab-journal-' + entry.id"
+      :lab-journal="entry"
+      :user-roles="userRoles"
+      @deleted="onLabJournalDeleted(index)"
     />
-    <div v-if="!!entries">
-      <LabJournalEntry
-        v-for="(entry, index) in entries"
-        :key="'lab-journal-' + entry.id"
-        :lab-journal="entry"
-        :user-roles="userRoles"
-        @deleted="onLabJournalDeleted(index)"
+    <div v-if="entries.length === 0" class="text-center">
+      <v-img
+        src="../../assets/empty_list.svg"
+        height="77"
+        width="77"
+        class="mx-auto"
       />
-      <div v-if="entries.length === 0" class="text-center">
-        <v-img
-          src="../../assets/empty_list.svg"
-          height="77"
-          width="77"
-          class="mx-auto"
-        />
-        <span class="text-body-2 text-black-300">No entry yet</span>
-      </div>
+      <span class="text-body-2 text-black-300">No entry yet</span>
     </div>
-    <LayoutComponentsCenteredLoadingSpinner v-else />
   </div>
+  <LayoutComponentsCenteredLoadingSpinner v-else />
 </template>

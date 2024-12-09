@@ -5,7 +5,6 @@ import {
   type Roles,
 } from "@dlr-shepard/backend-client";
 import { computed } from "vue";
-import TextEditor from "../common/TextEditor.vue";
 
 interface LabJournalEntryProps {
   labJournal: LabJournalEntry;
@@ -132,7 +131,7 @@ const getUpdatedInfoString = computed(() => {
     </div>
 
     <!-- text editor -->
-    <TextEditor
+    <CommonEditorTextEditor
       v-model="model.journalContent"
       class="pr-2 pl-4"
       :initial-content="model.journalContent"

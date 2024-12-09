@@ -5,7 +5,6 @@ import {
   type LabJournalEntry,
 } from "@dlr-shepard/backend-client";
 
-import TextEditor from "../common/TextEditor.vue";
 
 const dataObjectId = defineModel<number>({
   required: true,
@@ -59,7 +58,7 @@ async function saveNewLabJournalEntry() {
     @mousedown:control="isCreatingNew = true"
   />
   <div v-if="!!isCreatingNew" id="labJournalNewEntry">
-    <TextEditor
+    <CommonEditorTextEditor
       v-model="newLabJournalEntryModel.journalContent"
       :is-editable="true"
       :placeholder-content="'Enter your lab journal entry here...'"
