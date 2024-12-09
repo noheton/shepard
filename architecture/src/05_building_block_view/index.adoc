@@ -21,6 +21,7 @@ This chapter is still under construction
 [Backend] as backend
 database "Neo4j" as neo4j #DAE8FC
 database "InfluxDB" as influxdb #D5E8D4
+database "TimescaleDB" as timescale #AAEEFF
 database "MongoDB" as mongodb #FFE6CC
 
 stc --> backend
@@ -28,6 +29,7 @@ frontend --> backend
 
 backend --> neo4j
 backend --> influxdb
+backend --> timescale
 backend --> mongodb
 
 user --> frontend
@@ -62,7 +64,32 @@ It is one of many tools in the shepard ecosystem and aims to collect data from d
 
 === Level 2
 
-image::building_block/backend-view-databases.png[]
+[plantuml, "{plantUMLDir}whitebox-backend", png]
+----
+@startuml Whitebox Backend
+
+[Authorization] as authorization
+[Collections & DataObjects] as collections
+[Timeseries (InfluxDB)] as influx
+[Timeseries (TimescaleDB)] as timeseries
+[Structured Data & Files] as files
+[Lab Journal] as labjournal
+[Status] as status
+
+database "Neo4j" as neo4j #DAE8FC
+database "TimescaleDB" as timescaledb #AAEEFF
+database "InfluxDB" as influxdb #D5E8D4
+database "MongoDB" as mongodb #FFE6CC
+
+authorization --> neo4j
+collections --> neo4j
+labjournal --> neo4j
+influx --> influxdb
+timeseries --> timescaledb
+files --> mongodb
+
+@enduml
+----
 
 Multiple databases are used to enable CRUD operations for many types of data.
 The user can access these databases via the REST API.
@@ -78,24 +105,87 @@ In addition, the corresponding REST endpoints and the respective references must
 |===
 |Building Block | Responsibility
 
-| Neo4j
+| Authorization
+| This module handles user permissions and roles.
+Most of the endpoints are protected and can only be used by authenticated users or a valid API key.
+
+| Collections & DataObjects
 | Manages metadata and references of organizational elements like `DataObjects`, `Collections` and `Containers`.
 Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
 
-| InfluxDB
-| Manages timeseries data. Consists of a connector to handle the database and a service to provide a higher level view on the database operations.
-
-| MongoDB
-| Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
+| Timeseries (InfluxDB)
+| Manages timeseries data.
+Consists of a connector to handle the database and a service to provide a higher level view on the database operations.
 
 | Timeseries (TimescaleDB)
 | Manages timeseries data.
 Uses TimescaleDB instead of InfluxDB.
 In an experimental state right now.
 Will replace the old InfluxDB timeseries module.
+
+| Structured Data & Files
+| Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
+
+| Status
+| Contains a health and version endpoint that is accessible via REST.
+It is easy extensible to provide status information about the backend like the current state of database connections.
+
 |===
 
-==== Timeseries (TimescaleDB)
+==== Level 3
+
+===== Lab Journal
+
+[plantuml, "{plantUMLDir}component-lab-journal", png]
+----
+@startuml Component Lab Journal
+
+database "Neo4j"
+
+REST - [LabJournal]
+[LabJournal] ..> [Collections & DataObjects] : use
+[LabJournal] ..> [Authorization] : use
+[LabJournal] ..> [Neo4j] : use
+[Frontend] ..> REST : use
+
+@enduml
+----
+
+The Lab Journal module allows users to create, edit and delete journal entries.
+Lab Journal Entries can be used for documentation purposes.
+This feature is thought to be used via the frontend but can also be used directly via the REST interface if needed.
+Lab Journal entries are stored in the neo4j database.
+This module has a dependency to the `Collections & DataObjects` module because they are always linked to a `DataObject`.
+This module also has a dependency to the `Authoriziation` module because the user needs the correct permissions to see and edit lab journal entries.
+
+
+[plantuml, "{plantUMLDir}classes-lab-journal", png]
+----
+@startuml Classes Lab Journal
+
+class LabJournalEntryRest
+class LabJournalEntryService
+class AbstractEntity
+class LabJournalEntry {
+  String content
+}
+class LabJournalEntryDAO
+class LabJournalEntryIO
+
+AbstractEntity <|-- LabJournalEntry
+
+@enduml
+----
+
+Following our solution strategy, we have the following classes:
+
+- `LabJournalEntryRest` contains the REST endpoints
+- `LabJournalEntryIO` is the data transfer object used in the REST interface
+- `LabJournalEntryService` contains the business logic
+- `LabJournalEntry` is the main business entity containing the content as html string
+- `LabJournalEntryDAO` is used for communication with the neo4j database
+
+===== Timeseries (TimescaleDB)
 
 This module will replace the old implementation using InfluxDB.
 For decisions and reasoning, check out <<adr008>>, <<adr010>> and <<adr011>>.
@@ -110,13 +200,3 @@ The database schema includes two tables:
 The schema for both tables is defined by the database migrations in `src/main/java/resources/db/migration`.
 The timeseries table is managed in the code using hibernate entities.
 The data point table is managed directly using custom queries, since we want to make full use of TimescaleDB features and performance.
-
-=== Class Diagram
-
-image::building_block/backend-class-diagram.png[]
-
-A complete class diagram with all objects and data types can be seen above.
-The class diagram represents the internal data structure as seen by the backend.
-There are slight differences between the classes seen by the backend and the representation shown to the user.
-E.g. objects with `deleted = true` won't be shown to the user at all.
-

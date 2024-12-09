@@ -37,10 +37,6 @@ shepard -> oidc
 
 TDB
 
-=== Domain Stories / Use Cases
-
-TBD
-
 === Users and Roles
 
 [cols="1,2"]
@@ -53,3 +49,38 @@ TBD
 |Researcher
 |Researcher are using the system as data sink for external data sources. They are running experiments and link data that belongs together. They use the data for further analysis.
 |===
+
+=== Use Cases
+
+[plantuml, "{plantUMLDir}use-cases", png]
+----
+@startuml Use Cases
+
+:Researcher: --> (use Lab Journal)
+:Researcher: --> (create collection)
+:Researcher: --> (create project structure)
+:Researcher: --> (create container)
+
+@enduml
+----
+
+==== Create Collection
+Collections are meant as the root or container of your entire structure.
+All information, data, files, permissions, etc. are related to exactly one collection.
+Usually, a collection is the first thing you create.
+
+==== Create Project Structure
+In order to organize your project, you use *Data Objects*.
+They are very generic and can be used to organize your work as you wish.
+You can use them to create a tree based on experiments, lots, process steps or whatever you want.
+
+==== Create Container
+There are different types of container available, e.g. for files, structured data, timeseries or semantic repositories.
+You can use them to group things together.
+If you want to store some images of a video camera, you can create a file container and upload them.
+If you need to store coordinates of a robot movement, you can create a timeseries containers and store the data there.
+
+==== Use Lab Journal
+The Lab Journal enables researchers to document their experiments, data and results.
+Lab Journal entries can be linked to any *Data Object*.
+They also support html content, so that basic formatting and structuring can be used.
