@@ -54,7 +54,7 @@ async function saveNewLabJournalEntry() {
     :no-resize="true"
     density="compact"
     rows="1"
-    @mousedown:control="isCreatingNew = true"
+    @update:focused="isCreatingNew = true"
   />
   <div v-if="!!isCreatingNew" id="labJournalNewEntry">
     <CommonEditorTextEditor
