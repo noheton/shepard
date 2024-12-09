@@ -144,6 +144,15 @@ public class HtmlSanitizerTest {
   }
 
   @Test
+  public void testInvalidHtmlUnclosedTagSanitizing() {
+    String htmlString = "<h1>My Heading";
+    String repairedHtmlString = "<h1>My Heading</h1>";
+
+    assertEquals(false, HtmlSanitizer.isSafeHtml(htmlString));
+    assertEquals(repairedHtmlString, HtmlSanitizer.cleanHtmlString(htmlString));
+  }
+
+  @Test
   public void testUnSafeHtmlSanitizing() {
     // This is the invalid html string from the LabJournal integration test
     String htmlString1 =
