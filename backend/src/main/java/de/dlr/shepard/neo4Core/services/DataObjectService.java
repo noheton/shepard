@@ -110,19 +110,6 @@ public class DataObjectService {
     return getDataObjectByShepardId(shepardId, null);
   }
 
-  public DataObject getDataObjectByNeo4jId(long id) {
-    DataObject ret;
-    String errorMsg;
-    ret = dataObjectDAO.findByNeo4jId(id);
-    errorMsg = String.format("DataObject with id %s is null or deleted", id);
-    if (ret == null || ret.isDeleted()) {
-      Log.error(errorMsg);
-      return null;
-    }
-    cutDeleted(ret);
-    return ret;
-  }
-
   /**
    * Searches the database for DataObjects.
    *

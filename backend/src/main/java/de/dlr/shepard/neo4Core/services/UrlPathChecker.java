@@ -105,10 +105,10 @@ public class UrlPathChecker {
    * @param pathSegments to process
    * @param multivaluedMap query params map
    */
-  public void check(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams) {
+  public void assertIfIdsAreValid(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams) {
     String errorString;
     try {
-      errorString = checkForError(pathSegments, queryParams);
+      errorString = validateIds(pathSegments, queryParams);
     } catch (NumberFormatException e) {
       throw new InvalidPathException("The given path seems wrong");
     }
@@ -118,7 +118,7 @@ public class UrlPathChecker {
     }
   }
 
-  private String checkForError(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams)
+  private String validateIds(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams)
     throws NumberFormatException {
     HashMap<String, String> pathElems = getPathElements(pathSegments);
     StringBuilder builder = new StringBuilder();
@@ -314,7 +314,7 @@ public class UrlPathChecker {
       String dataObjectId = queryParams.getFirst(Constants.DATA_OBJECT_ID);
       // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
       if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
-        DataObject labJournalDataObject = dataObjectService.getDataObjectByNeo4jId(Long.parseLong(dataObjectId));
+        DataObject labJournalDataObject = dataObjectService.getDataObjectByShepardId(Long.parseLong(dataObjectId));
         String error = checkDataObject(labJournalDataObject);
         if (error != null) {
           return builder.append(error).toString();

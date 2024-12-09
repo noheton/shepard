@@ -54,21 +54,7 @@ public class PermissionsUtil {
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
     // Check initially for lab journal entries requests, then pass it to the generic check
     if (pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
-      String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
-      // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
-      if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
-        Long collectionId = dataObjectService.getCollectionId(Long.parseLong(dataObjectId));
-        if (collectionId == null) return true;
-        return isAccessTypeAllowedForUser(collectionId, accessType, userName);
-      }
-      if (idSegment == null || idSegment.isBlank()) {
-        return true;
-      }
-      Long labJournalId = Long.parseLong(idSegment);
-      Long collectionId = labJournalEntryService.getCollectionId(labJournalId);
-      if (collectionId == null) return true;
-      // If the labjournalEntry request has labjournalId as path segment [in GET/labJournals/{labjournalId}, PUT/labJournals/{labjournalId}, DELETE/labJournals/{labjournalId} ]
-      return isAccessTypeAllowedForUser(collectionId, accessType, userName);
+      return isAllowedLabJournalEntryRequest(requestContext, accessType, userName, idSegment);
     }
     // Perform the generic check
     if (idSegment == null || idSegment.isBlank()) {
@@ -91,6 +77,29 @@ public class PermissionsUtil {
 
     var entityId = Long.parseLong(idSegment);
     return isAccessTypeAllowedForUser(entityId, accessType, userName);
+  }
+
+  private boolean isAllowedLabJournalEntryRequest(
+    ContainerRequestContext requestContext,
+    AccessType accessType,
+    String userName,
+    String idSegment
+  ) {
+    String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
+    // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
+    if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
+      Long collectionId = dataObjectService.getCollectionId(Long.parseLong(dataObjectId));
+      if (collectionId == null) return true;
+      return isAccessTypeAllowedForUser(collectionId, accessType, userName);
+    }
+    if (idSegment == null || idSegment.isBlank()) {
+      return true;
+    }
+    Long labJournalId = Long.parseLong(idSegment);
+    Long collectionId = labJournalEntryService.getCollectionId(labJournalId);
+    if (collectionId == null) return true;
+    // If the labjournalEntry request has labjournalId as path segment [in GET/labJournals/{labjournalId}, PUT/labJournals/{labjournalId}, DELETE/labJournals/{labjournalId} ]
+    return isAccessTypeAllowedForUser(collectionId, accessType, userName);
   }
 
   /**

@@ -2,10 +2,10 @@ package de.dlr.shepard.labJournal.services;
 
 import de.dlr.shepard.labJournal.dao.LabJournalEntryDAO;
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.services.DataObjectService;
+import de.dlr.shepard.neo4Core.services.UserService;
 import de.dlr.shepard.util.DateHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -21,7 +21,7 @@ public class LabJournalEntryService {
 
   private DataObjectService dataObjectService;
 
-  private UserDAO userDAO;
+  private UserService userService;
 
   private DateHelper dateHelper;
 
@@ -29,19 +29,19 @@ public class LabJournalEntryService {
   LabJournalEntryService(
     LabJournalEntryDAO labJournalEntryDAO,
     DataObjectService dataObjectService,
-    UserDAO userDAO,
+    UserService userService,
     DateHelper dateHelper
   ) {
     this.labJournalEntryDAO = labJournalEntryDAO;
     this.dataObjectService = dataObjectService;
-    this.userDAO = userDAO;
+    this.userService = userService;
     this.dateHelper = dateHelper;
   }
 
   public LabJournalEntry createLabJournalEntry(Long dataObjectId, String content, String userName) {
     LabJournalEntry labJournalEntry = new LabJournalEntry();
-    User user = userDAO.find(userName);
-    DataObject dataObject = dataObjectService.getDataObjectByNeo4jId(dataObjectId);
+    User user = userService.getUser(userName);
+    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
     labJournalEntry.setContent(content);
     labJournalEntry.setCreatedBy(user);
     labJournalEntry.setCreatedAt(dateHelper.getDate());
@@ -69,7 +69,7 @@ public class LabJournalEntryService {
   public LabJournalEntry updateLabJournalEntry(long labJournalEntryId, String content, String userName) {
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
     if (null == labJournalEntry) return null;
-    User user = userDAO.find(userName);
+    User user = userService.getUser(userName);
     labJournalEntry.setContent(content);
     labJournalEntry.setUpdatedAt(dateHelper.getDate());
     labJournalEntry.setUpdatedBy(user);
@@ -78,14 +78,14 @@ public class LabJournalEntryService {
   }
 
   public boolean deleteLabJournalEntry(long labJournalEntryId, String userName) {
-    User user = userDAO.find(userName);
+    User user = userService.getUser(userName);
     return labJournalEntryDAO.deleteLabJournalEntry(labJournalEntryId, user, dateHelper.getDate());
   }
 
   public Long getCollectionId(Long labJournalEntryId) {
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
     if (null == labJournalEntry) return null;
-    DataObject dataObject = dataObjectService.getDataObjectByNeo4jId(labJournalEntry.getDataObject().getId());
+    DataObject dataObject = dataObjectService.getDataObjectByShepardId(labJournalEntry.getDataObject().getId());
     return dataObject.getCollection().getId();
   }
 }

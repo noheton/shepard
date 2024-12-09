@@ -67,7 +67,7 @@ public class LabJournalTest {
       labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 3", userName),
       labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 4", userName)
     );
-    dataObject = dataObjectService.getDataObjectByNeo4jId(dataObject.getId());
+    dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
     assertEquals(created, actual);
   }
@@ -103,7 +103,7 @@ public class LabJournalTest {
       "content 3",
       userName
     );
-    dataObject = dataObjectService.getDataObjectByNeo4jId(dataObject.getId());
+    dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
     labJournalEntryService.deleteLabJournalEntry(toBeDeleted.getId(), userName);
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
     assertFalse(actual.contains(toBeDeleted));

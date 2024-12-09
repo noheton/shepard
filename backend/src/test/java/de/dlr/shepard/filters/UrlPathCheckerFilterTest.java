@@ -58,10 +58,10 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
     PathSegment segment = mock(PathSegment.class);
     var segments = List.of(segment);
     when(uriInfo.getPathSegments()).thenReturn(segments);
-    doNothing().when(checker).check(segments, queryParams);
+    doNothing().when(checker).assertIfIdsAreValid(segments, queryParams);
 
     filter.filter(request);
-    verify(checker).check(segments, queryParams);
+    verify(checker).assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -69,11 +69,11 @@ public class UrlPathCheckerFilterTest extends BaseTestCase {
     PathSegment segment = mock(PathSegment.class);
     var segments = List.of(segment);
     when(uriInfo.getPathSegments()).thenReturn(segments);
-    doThrow(new InvalidPathException("MyError")).when(checker).check(segments, queryParams);
+    doThrow(new InvalidPathException("MyError")).when(checker).assertIfIdsAreValid(segments, queryParams);
 
     filter.filter(request);
     verify(request).abortWith(responseCaptor.capture());
-    verify(checker).check(segments, queryParams);
+    verify(checker).assertIfIdsAreValid(segments, queryParams);
     assertEquals(404, responseCaptor.getValue().getStatus());
   }
 }

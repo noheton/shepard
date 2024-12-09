@@ -185,7 +185,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionIdSeg.getPath()).thenReturn("100");
     when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Collection does not exist", e.getMessage());
   }
 
@@ -200,7 +202,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     collection.setShepardId(100L);
     when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -218,7 +220,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(102L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - DataObject does not exist", e.getMessage());
   }
 
@@ -239,7 +243,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     dataObject.setCollection(collection);
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -263,7 +267,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between collection and dataObject", e.getMessage());
   }
 
@@ -277,7 +283,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
 
     User user = new User("bob");
     when(userService.getUser("bob")).thenReturn(user);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -289,7 +295,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userIdSeg.getPath()).thenReturn("bob");
     when(userService.getUser("bob")).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - User does not exist", e.getMessage());
   }
 
@@ -313,7 +321,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -331,7 +339,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(apiKeyService.getApiKey(uid)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - ApiKey does not exist", e.getMessage());
   }
 
@@ -357,7 +367,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between apiKey and user", e.getMessage());
   }
 
@@ -379,7 +391,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(subscriptionService.getSubscription(100L)).thenReturn(sub);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -396,7 +408,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(subscriptionService.getSubscription(100L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Subscription does not exist", e.getMessage());
   }
 
@@ -419,7 +433,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
     when(subscriptionService.getSubscription(100L)).thenReturn(sub);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between subscription and user", e.getMessage());
   }
 
@@ -434,7 +450,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     var container = new TimeseriesContainer(100);
     when(timeseriesContainerService.getContainer(100)).thenReturn(container);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -446,7 +462,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(timeseriesIdSeg.getPath()).thenReturn("100");
     when(timeseriesContainerService.getContainer(100)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Container does not exist", e.getMessage());
   }
 
@@ -474,7 +492,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -499,7 +517,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -530,7 +550,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -545,7 +567,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     var container = new StructuredDataContainer(100);
     when(structuredDataContainerService.getContainer(100)).thenReturn(container);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -557,7 +579,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(structuredDataIdSeg.getPath()).thenReturn("100");
     when(structuredDataContainerService.getContainer(100)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Container does not exist", e.getMessage());
   }
 
@@ -585,7 +609,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -610,7 +634,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -641,7 +667,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -656,7 +684,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     var container = new FileContainer(100);
     when(fileContainerService.getContainer(100)).thenReturn(container);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -668,7 +696,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(fileIdSeg.getPath()).thenReturn("100");
     when(fileContainerService.getContainer(100)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Container does not exist", e.getMessage());
   }
 
@@ -696,7 +726,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -721,7 +751,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
     when(fileReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -752,7 +784,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -780,7 +814,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -805,7 +839,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(uriReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -836,7 +872,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -864,7 +902,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -889,7 +927,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(collectionReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -920,7 +960,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(collectionReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -948,7 +990,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -973,7 +1015,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(dataObjectReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -1004,7 +1048,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(dataObjectReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -1032,7 +1078,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1057,7 +1103,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(basicReferenceService.getReferenceByShepardId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - Reference does not exist", e.getMessage());
   }
 
@@ -1088,7 +1136,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between dataObject and reference", e.getMessage());
   }
 
@@ -1100,7 +1150,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(userGroupIdSeg.getPath()).thenReturn("100");
     when(userGroupService.getUserGroup(100L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - UserGroup does not exist", e.getMessage());
   }
 
@@ -1114,7 +1166,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     UserGroup userGroup = new UserGroup(100L);
     when(userGroupService.getUserGroup(100L)).thenReturn(userGroup);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1128,7 +1180,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     var repository = new SemanticRepository(100);
     when(semanticRepositoryService.getRepository(100)).thenReturn(repository);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1140,7 +1192,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(semanticRepositoryIdSeg.getPath()).thenReturn("100");
     when(semanticRepositoryService.getRepository(100)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - SemanticRepository does not exist", e.getMessage());
   }
 
@@ -1160,7 +1214,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     collection.setAnnotations(List.of(semanticAnnotation));
     when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
     when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId())).thenReturn(semanticAnnotation);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1186,7 +1240,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1219,7 +1273,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
     when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId())).thenReturn(semanticAnnotation);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1244,7 +1298,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
     when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(null);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - SemanticAnnotation does not exist", e.getMessage());
   }
 
@@ -1258,7 +1314,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     SemanticAnnotation semanticAnnotation = new SemanticAnnotation(104L);
     when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - No entity was found annotated", e.getMessage());
   }
 
@@ -1280,7 +1338,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
     when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between annotation and collection", e.getMessage());
   }
 
@@ -1309,7 +1369,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(semanticAnnotationService.getAnnotationByNeo4jId(104L)).thenReturn(semanticAnnotation);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between annotation and dataObject", e.getMessage());
   }
 
@@ -1345,14 +1407,16 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
     when(semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotation.getId())).thenReturn(semanticAnnotation);
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - There is no association between annotation and reference", e.getMessage());
   }
 
   @Test
   public void emptyUrl() {
     List<PathSegment> segments = new ArrayList<>();
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1369,7 +1433,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     collection.setShepardId(collection.getId());
     when(collectionService.getCollectionByShepardId(100L, null)).thenReturn(collection);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1386,7 +1450,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     collection.setShepardId(collection.getId());
     when(collectionService.getCollectionByShepardId(collection.getShepardId(), null)).thenReturn(collection);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1397,7 +1461,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     segments.add(dataObjectsSeg);
     when(collectionIdSeg.getPath()).thenReturn("abc");
 
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("The given path seems wrong", e.getMessage());
   }
 
@@ -1411,7 +1477,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
     LabJournalEntry labJournalEntry = new LabJournalEntry();
     labJournalEntry.setId(100L);
     when(labJournalEntryService.getLabJournalEntry(labJournalEntry.getId())).thenReturn(labJournalEntry);
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1422,7 +1488,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     when(labJournalEntryIdSeg.getPath()).thenReturn("100");
 
     when(labJournalEntryService.getLabJournalEntry(100L)).thenReturn(null);
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - LabJournalEntry does not exist", e.getMessage());
   }
 
@@ -1433,9 +1501,9 @@ public class UrlPathCheckerTest extends BaseTestCase {
     queryParams.add(Constants.DATA_OBJECT_ID, "101");
 
     DataObject dataObject = new DataObject(101L);
-    when(dataObjectService.getDataObjectByNeo4jId(dataObject.getId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
 
-    urlPathChecker.check(segments, queryParams);
+    urlPathChecker.assertIfIdsAreValid(segments, queryParams);
   }
 
   @Test
@@ -1445,8 +1513,10 @@ public class UrlPathCheckerTest extends BaseTestCase {
     queryParams.add(Constants.DATA_OBJECT_ID, "101");
 
     DataObject dataObject = new DataObject(102L);
-    when(dataObjectService.getDataObjectByNeo4jId(dataObject.getId())).thenReturn(dataObject);
-    Exception e = assertThrows(InvalidPathException.class, () -> urlPathChecker.check(segments, queryParams));
+    when(dataObjectService.getDataObjectByShepardId(dataObject.getId())).thenReturn(dataObject);
+    Exception e = assertThrows(InvalidPathException.class, () ->
+      urlPathChecker.assertIfIdsAreValid(segments, queryParams)
+    );
     assertEquals("ID ERROR - DataObject does not exist", e.getMessage());
   }
 }
