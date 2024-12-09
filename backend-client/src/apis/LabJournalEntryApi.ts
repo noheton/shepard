@@ -15,10 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
+  InvalidHtmlResponse,
   LabJournalEntry,
   UpdateLabJournalRequest,
 } from '../models/index';
 import {
+    InvalidHtmlResponseFromJSON,
+    InvalidHtmlResponseToJSON,
     LabJournalEntryFromJSON,
     LabJournalEntryToJSON,
     UpdateLabJournalRequestFromJSON,
@@ -39,7 +42,7 @@ export interface GetLabJournalByIdRequest {
 }
 
 export interface GetLabJournalsByCollectionRequest {
-    dataObjectId?: number;
+    dataObjectId: number;
 }
 
 export interface UpdateLabJournalOperationRequest {
@@ -197,6 +200,13 @@ export class LabJournalEntryApi extends runtime.BaseAPI {
      * Get all lab journals in a data object
      */
     async getLabJournalsByCollectionRaw(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournalEntry>>> {
+        if (requestParameters['dataObjectId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectId',
+                'Required parameter "dataObjectId" was null or undefined when calling getLabJournalsByCollection().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['dataObjectId'] != null) {
@@ -230,7 +240,7 @@ export class LabJournalEntryApi extends runtime.BaseAPI {
     /**
      * Get all lab journals in a data object
      */
-    async getLabJournalsByCollection(requestParameters: GetLabJournalsByCollectionRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalEntry>> {
+    async getLabJournalsByCollection(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalEntry>> {
         const response = await this.getLabJournalsByCollectionRaw(requestParameters, initOverrides);
         return await response.value();
     }
