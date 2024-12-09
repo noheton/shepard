@@ -32,6 +32,9 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
     StarterKit.configure({
       heading: {
         levels: [3],
+        HTMLAttributes: {
+          class: "text-subtitle-1",
+        },
       },
     }),
     Underline,
@@ -125,9 +128,7 @@ watch(
   border-radius: 4px;
 
   h3 {
-    // These are the typography settings for 'subtitle-1' semi bold
-    font-size: 1.25rem;
-    line-height: 2rem;
+    // H3 already uses 'subtitle-1', but we have to make it semi bold
     font-weight: 600;
   }
 
