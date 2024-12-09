@@ -5,7 +5,6 @@ import {
   type LabJournalEntry,
 } from "@dlr-shepard/backend-client";
 
-
 const dataObjectId = defineModel<number>({
   required: true,
 });
