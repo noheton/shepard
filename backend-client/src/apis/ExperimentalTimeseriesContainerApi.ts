@@ -19,7 +19,7 @@ import type {
   ContainerAttributes,
   ExperimentalTimeseries,
   ExperimentalTimeseriesWithDataPoints,
-  FillOption1,
+  FillOption,
   Permissions,
   Roles,
   TimeseriesContainer,
@@ -33,8 +33,8 @@ import {
     ExperimentalTimeseriesToJSON,
     ExperimentalTimeseriesWithDataPointsFromJSON,
     ExperimentalTimeseriesWithDataPointsToJSON,
-    FillOption1FromJSON,
-    FillOption1ToJSON,
+    FillOptionFromJSON,
+    FillOptionToJSON,
     PermissionsFromJSON,
     PermissionsToJSON,
     RolesFromJSON,
@@ -72,7 +72,7 @@ export interface ExportExperimentalTimeseriesRequest {
     end: number;
     _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: FillOption1;
+    fillOption?: FillOption;
 }
 
 export interface GetAllExperimentalTimeseriesContainersRequest {
@@ -94,7 +94,7 @@ export interface GetExperimentalTimeseriesRequest {
     end: number;
     _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: FillOption1;
+    fillOption?: FillOption;
 }
 
 export interface GetExperimentalTimeseriesAvailableRequest {

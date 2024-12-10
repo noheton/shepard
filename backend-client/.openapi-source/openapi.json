@@ -361,7 +361,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption1"
+            "$ref" : "#/components/schemas/FillOption"
           }
         } ],
         "responses" : {
@@ -706,7 +706,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption1"
+            "$ref" : "#/components/schemas/FillOption"
           }
         } ],
         "responses" : {
@@ -1356,7 +1356,7 @@
           "name" : "function",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/SingleValuedUnaryFunction"
+            "$ref" : "#/components/schemas/InfluxSingleValuedUnaryFunction"
           }
         }, {
           "name" : "group_by",
@@ -1369,7 +1369,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption"
+            "$ref" : "#/components/schemas/InfluxFillOption"
           }
         } ],
         "responses" : {
@@ -1378,7 +1378,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/TimeseriesPayload"
+                  "$ref" : "#/components/schemas/InfluxTimeseriesPayload"
                 }
               }
             }
@@ -1405,7 +1405,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/TimeseriesPayload"
+                "$ref" : "#/components/schemas/InfluxTimeseriesPayload"
               }
             }
           },
@@ -1417,7 +1417,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Timeseries"
+                  "$ref" : "#/components/schemas/InfluxTimeseries"
                 }
               }
             }
@@ -3166,7 +3166,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/Timeseries"
+                    "$ref" : "#/components/schemas/InfluxTimeseries"
                   }
                 }
               }
@@ -4090,7 +4090,7 @@
           "name" : "function",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/SingleValuedUnaryFunction"
+            "$ref" : "#/components/schemas/InfluxSingleValuedUnaryFunction"
           }
         }, {
           "name" : "group_by",
@@ -4103,7 +4103,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption"
+            "$ref" : "#/components/schemas/InfluxFillOption"
           }
         } ],
         "responses" : {
@@ -4358,7 +4358,7 @@
           "name" : "function",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/SingleValuedUnaryFunction"
+            "$ref" : "#/components/schemas/InfluxSingleValuedUnaryFunction"
           }
         }, {
           "name" : "group_by",
@@ -4371,7 +4371,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption"
+            "$ref" : "#/components/schemas/InfluxFillOption"
           }
         }, {
           "name" : "device",
@@ -4412,7 +4412,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/TimeseriesPayload"
+                    "$ref" : "#/components/schemas/InfluxTimeseriesPayload"
                   }
                 }
               }
@@ -4861,7 +4861,7 @@
           "name" : "function",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/SingleValuedUnaryFunction"
+            "$ref" : "#/components/schemas/InfluxSingleValuedUnaryFunction"
           }
         }, {
           "name" : "group_by",
@@ -4874,7 +4874,7 @@
           "name" : "fill_option",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/FillOption"
+            "$ref" : "#/components/schemas/InfluxFillOption"
           }
         }, {
           "name" : "device",
@@ -6274,6 +6274,32 @@
           }
         }
       },
+      "InfluxTimeseries" : {
+        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
+        "type" : "object",
+        "properties" : {
+          "measurement" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "device" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "location" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "symbolicName" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "field" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          }
+        }
+      },
       "Subscription" : {
         "required" : [ "id", "name", "subscribedURL", "requestMethod", "createdBy", "createdAt" ],
         "type" : "object",
@@ -6550,12 +6576,12 @@
           }
         }
       },
-      "TimeseriesPayload" : {
+      "InfluxTimeseriesPayload" : {
         "required" : [ "timeseries", "points" ],
         "type" : "object",
         "properties" : {
           "timeseries" : {
-            "$ref" : "#/components/schemas/Timeseries"
+            "$ref" : "#/components/schemas/InfluxTimeseries"
           },
           "points" : {
             "minItems" : 1,
@@ -7051,36 +7077,6 @@
         "enum" : [ "Public", "PublicReadable", "Private" ],
         "type" : "string"
       },
-      "Timeseries" : {
-        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
-        "type" : "object",
-        "properties" : {
-          "measurement" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "device" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "location" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "symbolicName" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "field" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          }
-        }
-      },
-      "SingleValuedUnaryFunction" : {
-        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "INTEGRAL", "MODE", "SPREAD", "STDDEV", "FIRST" ],
-        "type" : "string"
-      },
       "StructuredDataPayload" : {
         "type" : "object",
         "properties" : {
@@ -7099,6 +7095,10 @@
       },
       "SemanticRepositoryType" : {
         "enum" : [ "SPARQL", "JSKOS", "SKOSMOS" ],
+        "type" : "string"
+      },
+      "InfluxSingleValuedUnaryFunction" : {
+        "enum" : [ "MEAN", "MEDIAN", "COUNT", "SUM", "MIN", "MAX", "LAST", "INTEGRAL", "MODE", "SPREAD", "STDDEV", "FIRST" ],
         "type" : "string"
       },
       "InvalidHtmlResponse" : {
@@ -7391,7 +7391,7 @@
             "minItems" : 1,
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Timeseries"
+              "$ref" : "#/components/schemas/InfluxTimeseries"
             }
           },
           "timeseriesContainerId" : {
@@ -7498,6 +7498,10 @@
           }
         }
       },
+      "InfluxFillOption" : {
+        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
+        "type" : "string"
+      },
       "SearchBody" : {
         "required" : [ "searchParams", "scopes" ],
         "type" : "object",
@@ -7570,10 +7574,6 @@
             "type" : "integer"
           }
         }
-      },
-      "FillOption1" : {
-        "enum" : [ "LINEAR", "NONE", "NULL", "PREVIOUS" ],
-        "type" : "string"
       },
       "UserSearchParams" : {
         "required" : [ "query" ],

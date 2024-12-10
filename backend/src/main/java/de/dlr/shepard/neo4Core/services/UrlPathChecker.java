@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.services;
 
 import de.dlr.shepard.exceptions.InvalidPathException;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesContainerService;
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
@@ -14,6 +15,7 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesContainerService;
+import de.dlr.shepard.timeseriesreference.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -34,7 +36,7 @@ public class UrlPathChecker {
   private DataObjectReferenceService dataObjectReferenceService;
   private URIReferenceService uriReferenceService;
   private TimeseriesReferenceService timeseriesReferenceService;
-  private TimeseriesContainerService timeseriesContainerService;
+  private InfluxTimeseriesContainerService timeseriesContainerService;
   private ExperimentalTimeseriesContainerService experimentalTimeseriesContainerService;
   private StructuredDataReferenceService structuredDataReferenceService;
   private StructuredDataContainerService structuredDataContainerService;
@@ -61,7 +63,7 @@ public class UrlPathChecker {
     DataObjectReferenceService dataObjectReferenceService,
     URIReferenceService uriReferenceService,
     TimeseriesReferenceService timeseriesReferenceService,
-    TimeseriesContainerService timeseriesContainerService,
+    InfluxTimeseriesContainerService timeseriesContainerService,
     ExperimentalTimeseriesContainerService experimentalTimeseriesContainerService,
     StructuredDataReferenceService structuredDataReferenceService,
     StructuredDataContainerService structuredDataContainerService,

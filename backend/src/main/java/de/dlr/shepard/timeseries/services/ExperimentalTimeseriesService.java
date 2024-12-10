@@ -1,11 +1,11 @@
 package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
 import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;

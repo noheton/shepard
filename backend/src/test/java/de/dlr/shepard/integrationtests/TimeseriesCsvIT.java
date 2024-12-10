@@ -3,11 +3,11 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.influxDB.Timeseries;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -95,9 +95,9 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
   @Test
   @Order(2)
   public void createReference() {
-    var ts1 = new Timeseries("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
-    var ts2 = new Timeseries("Different", "Just", "For", "Testing", "Purposes");
-    var timeseries = new Timeseries[] { ts1, ts2 };
+    var ts1 = new InfluxTimeseries("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
+    var ts2 = new InfluxTimeseries("Different", "Just", "For", "Testing", "Purposes");
+    var timeseries = new InfluxTimeseries[] { ts1, ts2 };
 
     var toCreate = new TimeseriesReferenceIO();
     toCreate.setName("TimeseriesReferenceDummy");

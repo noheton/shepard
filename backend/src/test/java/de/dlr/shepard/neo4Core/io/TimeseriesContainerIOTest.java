@@ -2,8 +2,9 @@ package de.dlr.shepard.neo4Core.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;

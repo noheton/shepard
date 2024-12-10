@@ -1,10 +1,10 @@
 package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
-import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
+import de.dlr.shepard.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import de.dlr.shepard.util.QueryParamHelper;

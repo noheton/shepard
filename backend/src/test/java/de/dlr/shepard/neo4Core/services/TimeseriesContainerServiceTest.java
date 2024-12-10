@@ -8,19 +8,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.influxDB.FillOption;
-import de.dlr.shepard.influxDB.InfluxPoint;
-import de.dlr.shepard.influxDB.SingleValuedUnaryFunction;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
-import de.dlr.shepard.influxDB.TimeseriesService;
+import de.dlr.shepard.influxtimeseries.InfluxFillOption;
+import de.dlr.shepard.influxtimeseries.InfluxPoint;
+import de.dlr.shepard.influxtimeseries.InfluxSingleValuedUnaryFunction;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesContainerService;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesService;
 import de.dlr.shepard.neo4Core.dao.PermissionsDAO;
-import de.dlr.shepard.neo4Core.dao.TimeseriesContainerDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.entities.Permissions;
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.util.DateHelper;
 import de.dlr.shepard.util.PermissionType;
 import io.quarkus.test.InjectMock;
@@ -43,7 +44,7 @@ public class TimeseriesContainerServiceTest {
   PermissionsDAO permissionsDAO;
 
   @InjectMock
-  TimeseriesService timeseriesService;
+  InfluxTimeseriesService timeseriesService;
 
   @InjectMock
   UserDAO userDAO;
@@ -52,7 +53,7 @@ public class TimeseriesContainerServiceTest {
   DateHelper dateHelper;
 
   @Inject
-  TimeseriesContainerService service;
+  InfluxTimeseriesContainerService service;
 
   @Test
   public void getTimeseriesContainerTest_successful() {
@@ -177,8 +178,8 @@ public class TimeseriesContainerServiceTest {
   public void createTimeseriesTest() {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-    var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
+    var payload = new InfluxTimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(timeseriesService.createTimeseries("database", payload)).thenReturn("");
@@ -189,8 +190,8 @@ public class TimeseriesContainerServiceTest {
 
   @Test
   public void createTimeseriesTest_isNull() {
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-    var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
+    var payload = new InfluxTimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
     when(dao.findByNeo4jId(1L)).thenReturn(null);
 
@@ -203,8 +204,8 @@ public class TimeseriesContainerServiceTest {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
     container.setDeleted(true);
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-    var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
+    var payload = new InfluxTimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
 
@@ -216,8 +217,8 @@ public class TimeseriesContainerServiceTest {
   public void createTimeseriesTest_influxIssue() {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-    var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
+    var payload = new InfluxTimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(timeseriesService.createTimeseries("database", payload)).thenReturn("error");
@@ -230,8 +231,8 @@ public class TimeseriesContainerServiceTest {
   public void getTimeseriesTest() {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
-    var payload = new TimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
+    var payload = new InfluxTimeseriesPayload(ts, List.of(new InfluxPoint(123L, "value")));
     var start = 123L;
     var end = 456L;
 
@@ -242,9 +243,9 @@ public class TimeseriesContainerServiceTest {
         end,
         "database",
         ts,
-        SingleValuedUnaryFunction.MEAN,
+        InfluxSingleValuedUnaryFunction.MEAN,
         10L,
-        FillOption.LINEAR
+        InfluxFillOption.LINEAR
       )
     ).thenReturn(payload);
 
@@ -253,16 +254,16 @@ public class TimeseriesContainerServiceTest {
       ts,
       start,
       end,
-      SingleValuedUnaryFunction.MEAN,
+      InfluxSingleValuedUnaryFunction.MEAN,
       10L,
-      FillOption.LINEAR
+      InfluxFillOption.LINEAR
     );
     assertEquals(payload, actual);
   }
 
   @Test
   public void getTimeseriesTest_containerNull() {
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
     var start = 123L;
     var end = 456L;
 
@@ -273,9 +274,9 @@ public class TimeseriesContainerServiceTest {
       ts,
       start,
       end,
-      SingleValuedUnaryFunction.MEAN,
+      InfluxSingleValuedUnaryFunction.MEAN,
       10L,
-      FillOption.LINEAR
+      InfluxFillOption.LINEAR
     );
     assertNull(actual);
   }
@@ -285,7 +286,7 @@ public class TimeseriesContainerServiceTest {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
     container.setDeleted(true);
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
     var start = 123L;
     var end = 456L;
 
@@ -296,9 +297,9 @@ public class TimeseriesContainerServiceTest {
       ts,
       start,
       end,
-      SingleValuedUnaryFunction.MEAN,
+      InfluxSingleValuedUnaryFunction.MEAN,
       10L,
-      FillOption.LINEAR
+      InfluxFillOption.LINEAR
     );
     assertNull(actual);
   }
@@ -307,7 +308,7 @@ public class TimeseriesContainerServiceTest {
   public void getTimeseriesAvailableTest() {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
-    var expected = List.of(new Timeseries("meas", "dev", "loc", "symName", "field"));
+    var expected = List.of(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
 
     when(dao.findLightByNeo4jId(1L)).thenReturn(container);
     when(timeseriesService.getTimeseriesAvailable("database")).thenReturn(expected);
@@ -340,7 +341,7 @@ public class TimeseriesContainerServiceTest {
   public void exportTimeseriesTest() throws IOException {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
     var start = 123L;
     var end = 456L;
     var payload = new ByteArrayInputStream("123".getBytes());
@@ -352,9 +353,9 @@ public class TimeseriesContainerServiceTest {
         end,
         "database",
         List.of(ts),
-        SingleValuedUnaryFunction.MEAN,
+        InfluxSingleValuedUnaryFunction.MEAN,
         10L,
-        FillOption.LINEAR,
+        InfluxFillOption.LINEAR,
         Collections.emptySet(),
         Collections.emptySet(),
         Collections.emptySet()
@@ -366,22 +367,22 @@ public class TimeseriesContainerServiceTest {
       ts,
       start,
       end,
-      SingleValuedUnaryFunction.MEAN,
+      InfluxSingleValuedUnaryFunction.MEAN,
       10L,
-      FillOption.LINEAR
+      InfluxFillOption.LINEAR
     );
     assertEquals(payload, actual);
   }
 
   @Test
   public void exportTimeseriesTest_containerNull() throws IOException {
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
     var start = 123L;
     var end = 456L;
 
     when(dao.findLightByNeo4jId(1L)).thenReturn(null);
 
-    var actual = service.exportTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, null);
+    var actual = service.exportTimeseriesPayload(1L, ts, start, end, InfluxSingleValuedUnaryFunction.MEAN, 10L, null);
     assertNull(actual);
   }
 
@@ -390,13 +391,13 @@ public class TimeseriesContainerServiceTest {
     var container = new TimeseriesContainer(1L);
     container.setDatabase("database");
     container.setDeleted(true);
-    var ts = new Timeseries("meas", "dev", "loc", "symName", "field");
+    var ts = new InfluxTimeseries("meas", "dev", "loc", "symName", "field");
     var start = 123L;
     var end = 456L;
 
     when(dao.findLightByNeo4jId(1L)).thenReturn(container);
 
-    var actual = service.exportTimeseriesPayload(1L, ts, start, end, SingleValuedUnaryFunction.MEAN, 10L, null);
+    var actual = service.exportTimeseriesPayload(1L, ts, start, end, InfluxSingleValuedUnaryFunction.MEAN, 10L, null);
     assertNull(actual);
   }
 

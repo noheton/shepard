@@ -3,13 +3,13 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.influxDB.InfluxPoint;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
+import de.dlr.shepard.influxtimeseries.InfluxPoint;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -37,7 +37,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
 
   private static TimeseriesContainerIO container;
   private static TimeseriesReferenceIO reference;
-  private static TimeseriesPayload payload;
+  private static InfluxTimeseriesPayload payload;
 
   private static int numPoints = 32;
 
@@ -87,8 +87,8 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       points.add(point);
     }
 
-    payload = new TimeseriesPayload();
-    payload.setTimeseries(new Timeseries("meas", "dev", "loc", "symName", "field"));
+    payload = new InfluxTimeseriesPayload();
+    payload.setTimeseries(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
     payload.setPoints(points);
 
     given()
@@ -108,7 +108,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(nanos - 1000000000L);
     toCreate.setEnd(nanos + 1000000000L * numPoints);
-    toCreate.setTimeseries(new Timeseries[] { payload.getTimeseries() });
+    toCreate.setTimeseries(new InfluxTimeseries[] { payload.getTimeseries() });
     toCreate.setTimeseriesContainerId(container.getId());
 
     var actual = given()
@@ -129,7 +129,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getStart()).isEqualTo(nanos - 1000000000L);
     assertThat(actual.getEnd()).isEqualTo(nanos + 1000000000L * numPoints);
     assertThat(actual.getName()).isEqualTo("TimeseriesReferenceDummy");
-    assertThat(actual.getTimeseries()).isEqualTo(new Timeseries[] { payload.getTimeseries() });
+    assertThat(actual.getTimeseries()).isEqualTo(new InfluxTimeseries[] { payload.getTimeseries() });
     assertThat(actual.getType()).isEqualTo("TimeseriesReference");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -175,7 +175,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .then()
       .statusCode(200)
       .extract()
-      .as(TimeseriesPayload[].class);
+      .as(InfluxTimeseriesPayload[].class);
 
     assertThat(actual).containsExactly(payload);
   }

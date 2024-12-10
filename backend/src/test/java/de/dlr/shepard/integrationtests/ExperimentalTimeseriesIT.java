@@ -4,9 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.timeseries.io.ExperimentalTimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.services.InstantHelper;

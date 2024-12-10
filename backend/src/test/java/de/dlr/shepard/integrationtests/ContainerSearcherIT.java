@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
 import de.dlr.shepard.search.container.ContainerQueryType;
 import de.dlr.shepard.search.container.ContainerSearchBody;
 import de.dlr.shepard.search.container.ContainerSearchParams;
 import de.dlr.shepard.search.container.ContainerSearchResult;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;

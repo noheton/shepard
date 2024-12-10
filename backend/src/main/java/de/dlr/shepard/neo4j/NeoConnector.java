@@ -59,7 +59,9 @@ public class NeoConnector implements IConnector {
           configuration,
           "de.dlr.shepard.neo4Core.entities",
           "de.dlr.shepard.labJournal.entities",
-          "de.dlr.shepard.influxDB",
+          "de.dlr.shepard.timeseries.model",
+          "de.dlr.shepard.influxtimeseries",
+          "de.dlr.shepard.timeseriesreference",
           "de.dlr.shepard.mongoDB"
         );
         return true;

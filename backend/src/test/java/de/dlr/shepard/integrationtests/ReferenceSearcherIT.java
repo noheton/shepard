@@ -4,9 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.influxDB.InfluxPoint;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
+import de.dlr.shepard.influxtimeseries.InfluxPoint;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
@@ -19,14 +19,14 @@ import de.dlr.shepard.neo4Core.io.FileContainerIO;
 import de.dlr.shepard.neo4Core.io.FileReferenceIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataContainerIO;
 import de.dlr.shepard.neo4Core.io.StructuredDataReferenceIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
-import de.dlr.shepard.neo4Core.io.TimeseriesReferenceIO;
 import de.dlr.shepard.search.unified.QueryType;
 import de.dlr.shepard.search.unified.ResponseBody;
 import de.dlr.shepard.search.unified.ResultTriple;
 import de.dlr.shepard.search.unified.SearchBody;
 import de.dlr.shepard.search.unified.SearchParams;
 import de.dlr.shepard.search.unified.SearchScope;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -88,7 +88,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   private static RequestSpecification tSerContainerRequestSpec;
   private static TimeseriesContainerIO tSerContainer;
   private static TimeseriesReferenceIO tSerReference;
-  private static TimeseriesPayload tSerPayload;
+  private static InfluxTimeseriesPayload tSerPayload;
   private static int numPoints = 32;
 
   @BeforeAll
@@ -680,8 +680,8 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       var point = new InfluxPoint(currentTime + offset, Math.sin(slice * i));
       points.add(point);
     }
-    tSerPayload = new TimeseriesPayload();
-    tSerPayload.setTimeseries(new Timeseries("meas", "dev", "loc", "symName", "field"));
+    tSerPayload = new InfluxTimeseriesPayload();
+    tSerPayload.setTimeseries(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
     tSerPayload.setPoints(points);
     given()
       .spec(tSerContainerRequestSpec)
@@ -695,7 +695,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     tSerReferenceToCreate.setName("TimeseriesReferenceDummy");
     tSerReferenceToCreate.setStart(nanos - 1000000000L);
     tSerReferenceToCreate.setEnd(nanos + 1000000000L * numPoints);
-    tSerReferenceToCreate.setTimeseries(new Timeseries[] { tSerPayload.getTimeseries() });
+    tSerReferenceToCreate.setTimeseries(new InfluxTimeseries[] { tSerPayload.getTimeseries() });
     tSerReferenceToCreate.setTimeseriesContainerId(tSerContainer.getId());
     tSerReference = given()
       .spec(tSerReferencesRequestSpec)

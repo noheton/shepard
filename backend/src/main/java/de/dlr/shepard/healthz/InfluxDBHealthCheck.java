@@ -1,6 +1,6 @@
 package de.dlr.shepard.healthz;
 
-import de.dlr.shepard.influxDB.InfluxDBConnector;
+import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;

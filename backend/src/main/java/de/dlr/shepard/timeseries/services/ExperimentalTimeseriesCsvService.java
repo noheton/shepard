@@ -1,9 +1,9 @@
 package de.dlr.shepard.timeseries.services;
 
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;

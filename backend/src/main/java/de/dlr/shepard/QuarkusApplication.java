@@ -1,6 +1,6 @@
 package de.dlr.shepard;
 
-import de.dlr.shepard.influxDB.InfluxDBConnector;
+import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.neo4j.MigrationsRunner;
 import de.dlr.shepard.neo4j.NeoConnector;
 import de.dlr.shepard.util.IConnector;

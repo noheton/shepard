@@ -1,7 +1,6 @@
 package de.dlr.shepard.timeseries.io;
 
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import java.util.ArrayList;
 import java.util.List;
 

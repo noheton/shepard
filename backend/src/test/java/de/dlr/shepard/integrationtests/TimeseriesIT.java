@@ -3,10 +3,10 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.influxDB.InfluxPoint;
-import de.dlr.shepard.influxDB.Timeseries;
-import de.dlr.shepard.influxDB.TimeseriesPayload;
-import de.dlr.shepard.neo4Core.io.TimeseriesContainerIO;
+import de.dlr.shepard.influxtimeseries.InfluxPoint;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -35,7 +35,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   private static RequestSpecification containerRequestSpec;
 
   private static TimeseriesContainerIO container;
-  private static TimeseriesPayload payload;
+  private static InfluxTimeseriesPayload payload;
   private static long start;
   private static long end;
 
@@ -122,8 +122,8 @@ public class TimeseriesIT extends BaseTestCaseIT {
     start = points.get(0).getTimeInNanoseconds();
     end = points.get(numPoints - 1).getTimeInNanoseconds();
 
-    payload = new TimeseriesPayload();
-    payload.setTimeseries(new Timeseries("meas", "dev", "loc", "symName", "field"));
+    payload = new InfluxTimeseriesPayload();
+    payload.setTimeseries(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
     payload.setPoints(points);
 
     var actual = given()
@@ -134,7 +134,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .then()
       .statusCode(201)
       .extract()
-      .as(Timeseries.class);
+      .as(InfluxTimeseries.class);
 
     assertThat(actual).isEqualTo(payload.getTimeseries());
   }
@@ -149,9 +149,9 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .then()
       .statusCode(200)
       .extract()
-      .as(Timeseries[].class);
+      .as(InfluxTimeseries[].class);
 
-    assertThat(actual).contains(new Timeseries("meas", "dev", "loc", "symName", "field"));
+    assertThat(actual).contains(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
   }
 
   @Test
@@ -182,7 +182,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .then()
       .statusCode(200)
       .extract()
-      .as(TimeseriesPayload.class);
+      .as(InfluxTimeseriesPayload.class);
 
     assertThat(actual).isEqualTo(payload);
   }

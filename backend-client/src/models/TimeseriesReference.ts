@@ -13,12 +13,12 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Timeseries } from './Timeseries';
+import type { InfluxTimeseries } from './InfluxTimeseries';
 import {
-    TimeseriesFromJSON,
-    TimeseriesFromJSONTyped,
-    TimeseriesToJSON,
-} from './Timeseries';
+    InfluxTimeseriesFromJSON,
+    InfluxTimeseriesFromJSONTyped,
+    InfluxTimeseriesToJSON,
+} from './InfluxTimeseries';
 
 /**
  * 
@@ -88,10 +88,10 @@ export interface TimeseriesReference {
     end: number;
     /**
      * 
-     * @type {Array<Timeseries>}
+     * @type {Array<InfluxTimeseries>}
      * @memberof TimeseriesReference
      */
-    timeseries: Array<Timeseries>;
+    timeseries: Array<InfluxTimeseries>;
     /**
      * 
      * @type {number}
@@ -137,7 +137,7 @@ export function TimeseriesReferenceFromJSONTyped(json: any, ignoreDiscriminator:
         'type': json['type'] == null ? undefined : json['type'],
         'start': json['start'],
         'end': json['end'],
-        'timeseries': ((json['timeseries'] as Array<any>).map(TimeseriesFromJSON)),
+        'timeseries': ((json['timeseries'] as Array<any>).map(InfluxTimeseriesFromJSON)),
         'timeseriesContainerId': json['timeseriesContainerId'],
     };
 }
@@ -151,7 +151,7 @@ export function TimeseriesReferenceToJSON(value?: Omit<TimeseriesReference, 'id'
         'name': value['name'],
         'start': value['start'],
         'end': value['end'],
-        'timeseries': ((value['timeseries'] as Array<any>).map(TimeseriesToJSON)),
+        'timeseries': ((value['timeseries'] as Array<any>).map(InfluxTimeseriesToJSON)),
         'timeseriesContainerId': value['timeseriesContainerId'],
     };
 }

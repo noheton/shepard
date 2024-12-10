@@ -1,6 +1,7 @@
 package de.dlr.shepard.neo4Core.entities;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 

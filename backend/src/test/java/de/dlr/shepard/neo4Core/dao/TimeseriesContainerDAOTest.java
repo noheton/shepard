@@ -5,8 +5,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.neo4Core.entities.TimeseriesContainer;
 import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
+import de.dlr.shepard.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.util.QueryParamHelper;
 import java.util.HashMap;
 import java.util.List;
