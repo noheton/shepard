@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.exceptions.InvalidPathException;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesContainerService;
 import de.dlr.shepard.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.neo4Core.entities.ApiKey;
@@ -26,6 +25,7 @@ import de.dlr.shepard.neo4Core.entities.URIReference;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.timeseriesreference.TimeseriesReference;
 import de.dlr.shepard.timeseriesreference.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
@@ -55,7 +55,7 @@ public class UrlPathCheckerTest extends BaseTestCase {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @Mock
-  InfluxTimeseriesContainerService timeseriesContainerService;
+  TimeseriesContainerService timeseriesContainerService;
 
   @Mock
   StructuredDataReferenceService structuredDataReferenceService;

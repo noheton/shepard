@@ -3,12 +3,11 @@ package de.dlr.shepard.timeseries.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -23,20 +22,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusTest
-@EnabledIf(ExperimentalTimeseriesFeatureToggle.IS_ENABLED_METHOD_ID)
-public class ExperimentalTimeseriesCsvServiceTest {
+public class TimeseriesCsvServiceTest {
 
   @Inject
-  ExperimentalTimeseriesContainerService timeseriesContainerService;
+  TimeseriesContainerService timeseriesContainerService;
 
   @Inject
-  ExperimentalTimeseriesService timeseriesService;
+  TimeseriesService timeseriesService;
 
   @Inject
-  ExperimentalTimeseriesCsvService timeseriesCsvService;
+  TimeseriesCsvService timeseriesCsvService;
 
   private final String containerName = "AnotherContainer";
   private final String userName = "Testuser";
@@ -51,7 +48,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("water_level");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 90.0),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 120.57),
@@ -62,7 +59,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.toNano(),
       null,
@@ -93,12 +90,12 @@ public class ExperimentalTimeseriesCsvServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("status");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointString(instantHelper.toNano(), "running"))
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       instantHelper.toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -130,7 +127,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("motion");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.toNano(), true),
         TimeseriesTestDataGenerator.generateDataPointBoolean(instantHelper.addSeconds(1).toNano(), false),
@@ -141,7 +138,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.toNano(),
       null,
@@ -184,15 +181,13 @@ public class ExperimentalTimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container, importCSVFile.toPath().toString());
 
-    List<ExperimentalTimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(
-      container.getId()
-    );
+    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
-    List<ExperimentalTimeseries> expTimeseries = new ArrayList<ExperimentalTimeseries>();
+    List<Timeseries> expTimeseries = new ArrayList<Timeseries>();
 
     for (var currTimeseries : availTimeseriesList) {
       expTimeseries.add(
-        new ExperimentalTimeseries(
+        new Timeseries(
           currTimeseries.getMeasurement(),
           currTimeseries.getDevice(),
           currTimeseries.getLocation(),
@@ -202,7 +197,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
       );
     }
 
-    var timeseriesDataQueue = new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>();
+    var timeseriesDataQueue = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
     expTimeseries
       .stream()
       .forEach(timeseries -> {
@@ -211,7 +206,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
           timeseriesService.getDataPointsByTimeseries(
             container.getId(),
             timeseries,
-            new ExperimentalTimeseriesDataPointsQueryParams(
+            new TimeseriesDataPointsQueryParams(
               InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
               InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
               null,
@@ -221,9 +216,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
           )
         );
       });
-    var actualTimeseriesDataMap = new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>(
-      timeseriesDataQueue
-    );
+    var actualTimeseriesDataMap = new HashMap<Timeseries, List<TimeseriesDataPoint>>(timeseriesDataQueue);
 
     var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap);
 
@@ -254,9 +247,7 @@ public class ExperimentalTimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container, importCSVFile.toPath().toString());
 
-    List<ExperimentalTimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(
-      container.getId()
-    );
+    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
     assertEquals(
       0,

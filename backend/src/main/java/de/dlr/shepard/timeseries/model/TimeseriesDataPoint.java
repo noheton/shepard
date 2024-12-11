@@ -5,7 +5,7 @@ import lombok.Data;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
-public class ExperimentalTimeseriesDataPoint {
+public class TimeseriesDataPoint {
 
   @JsonProperty("timestamp")
   @Schema(description = "Time in nanoseconds since unix epoch.")
@@ -14,7 +14,7 @@ public class ExperimentalTimeseriesDataPoint {
   @Schema(description = "A string, an int, a double or a boolean")
   private Object value;
 
-  public ExperimentalTimeseriesDataPoint(long timestamp, Object value) {
+  public TimeseriesDataPoint(long timestamp, Object value) {
     this.timestamp = timestamp;
     this.value = value;
   }

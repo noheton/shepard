@@ -5,13 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.configuration.feature.toggles.ExperimentalTimeseriesFeatureToggle;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.timeseries.model.enums.FillOption;
 import io.quarkus.test.junit.QuarkusTest;
@@ -23,17 +22,15 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusTest
-@EnabledIf(ExperimentalTimeseriesFeatureToggle.IS_ENABLED_METHOD_ID)
-public class ExperimentalTimeseriesServiceTest {
+public class TimeseriesServiceTest {
 
   @Inject
-  ExperimentalTimeseriesService timeseriesService;
+  TimeseriesService timeseriesService;
 
   @Inject
-  ExperimentalTimeseriesContainerService timeseriesContainerService;
+  TimeseriesContainerService timeseriesContainerService;
 
   private final String containerName = "AnotherContainer";
   private final String userName = "Testuser";
@@ -46,13 +43,13 @@ public class ExperimentalTimeseriesServiceTest {
   public void saveDataPoints_addDoubleValue_success() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(123.456);
     dataPoints.add(point);
 
     var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
     assertNotNull(created);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
       null,
@@ -62,7 +59,7 @@ public class ExperimentalTimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    ExperimentalTimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.get(0);
     assertTrue(actualPoint.getValue() instanceof Double, "DataPoint value must be a double");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -72,13 +69,13 @@ public class ExperimentalTimeseriesServiceTest {
   public void saveDataPoints_addBooleanValue_success() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointBoolean(true);
     dataPoints.add(point);
 
     var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
     assertNotNull(created);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
       null,
@@ -88,7 +85,7 @@ public class ExperimentalTimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    ExperimentalTimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.get(0);
     assertTrue(actualPoint.getValue() instanceof Boolean, "DataPoint value must be a boolean");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -98,13 +95,13 @@ public class ExperimentalTimeseriesServiceTest {
   public void saveDataPoints_addStringValue_success() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointString("Hello World");
     dataPoints.add(point);
 
     var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
     assertNotNull(created);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
       null,
@@ -114,7 +111,7 @@ public class ExperimentalTimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    ExperimentalTimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.get(0);
     assertTrue(actualPoint.getValue() instanceof String, "DataPoint value must be a string");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -124,13 +121,13 @@ public class ExperimentalTimeseriesServiceTest {
   public void saveDataPoints_addIntegerValue_success() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(42);
     dataPoints.add(point);
 
     var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
     assertNotNull(created);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
       null,
@@ -140,7 +137,7 @@ public class ExperimentalTimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    ExperimentalTimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.get(0);
     assertTrue(actualPoint.getValue() instanceof Integer, "DataPoint value must be an integer");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -150,18 +147,18 @@ public class ExperimentalTimeseriesServiceTest {
   public void saveDataPoints_toExistingTimeseries_success() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
 
-    List<ExperimentalTimeseriesDataPoint> morePoints = new ArrayList<>(
+    List<TimeseriesDataPoint> morePoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.2))
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, morePoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
       null,
@@ -176,8 +173,8 @@ public class ExperimentalTimeseriesServiceTest {
   @Transactional
   public void saveDataPoints_requiredFieldsMissing_throwsException() throws Exception {
     var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = new ExperimentalTimeseries("", "", "", "", "");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    var timeseries = new Timeseries("", "", "", "", "");
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
     dataPoints.add(point);
 
@@ -194,12 +191,12 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
 
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(22.3);
     dataPoints.add(point);
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
 
-    List<ExperimentalTimeseriesDataPoint> otherDataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> otherDataPoints = new ArrayList<>();
     var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
     otherDataPoints.add(pointWithDifferentType);
 
@@ -218,7 +215,7 @@ public class ExperimentalTimeseriesServiceTest {
   public void getTimeseriesAvailable_timeseriesExists_returnsTimeseries() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
     );
 
@@ -249,7 +246,7 @@ public class ExperimentalTimeseriesServiceTest {
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
 
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(start, 70),
         TimeseriesTestDataGenerator.generateDataPointInteger(start + 1000, 80),
@@ -261,13 +258,7 @@ public class ExperimentalTimeseriesServiceTest {
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
 
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
-      start,
-      end,
-      null,
-      null,
-      null
-    );
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
 
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
@@ -283,7 +274,7 @@ public class ExperimentalTimeseriesServiceTest {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(InstantHelper.now().addDays(-5).toNano(), 70),
         TimeseriesTestDataGenerator.generateDataPointInteger(start, 80),
@@ -294,13 +285,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
-      start,
-      end,
-      null,
-      null,
-      null
-    );
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(3, actual.size());
@@ -313,7 +298,7 @@ public class ExperimentalTimeseriesServiceTest {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(start - 1000, 70),
         TimeseriesTestDataGenerator.generateDataPointInteger(start - 1100, 80),
@@ -324,13 +309,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
-      start,
-      end,
-      null,
-      null,
-      null
-    );
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(0, actual.size());
@@ -342,7 +321,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -351,7 +330,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(1).toNano(),
       null,
@@ -370,7 +349,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -379,7 +358,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
       null,
@@ -398,7 +377,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -407,7 +386,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
       null,
@@ -426,7 +405,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -435,7 +414,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
       null,
@@ -454,7 +433,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -463,7 +442,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
       null,
@@ -482,7 +461,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -491,7 +470,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
       null,
@@ -510,7 +489,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
@@ -526,7 +505,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(1).toNano(),
       null,
@@ -545,7 +524,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
@@ -558,7 +537,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(8).toNano(),
       null,
@@ -577,7 +556,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
@@ -590,7 +569,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -609,7 +588,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
@@ -619,7 +598,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -638,7 +617,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 10.0),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 12.0),
@@ -652,7 +631,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -671,7 +650,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 2),
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 3),
@@ -681,7 +660,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -700,7 +679,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 10),
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 12),
@@ -714,7 +693,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       null,
@@ -733,7 +712,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 21),
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 22),
@@ -742,7 +721,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofMinutes(2).toNanos(),
@@ -765,7 +744,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
@@ -774,7 +753,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
       Duration.ofMinutes(2).toNanos(),
@@ -793,7 +772,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
@@ -803,7 +782,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofSeconds(2).toNanos(),
@@ -827,7 +806,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -836,7 +815,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
       null,
@@ -856,7 +835,7 @@ public class ExperimentalTimeseriesServiceTest {
   public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy_boolean() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointBoolean(true),
         TimeseriesTestDataGenerator.generateDataPointBoolean(false),
@@ -865,7 +844,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
       null,
@@ -885,7 +864,7 @@ public class ExperimentalTimeseriesServiceTest {
   public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy_string() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointString("Hello"),
         TimeseriesTestDataGenerator.generateDataPointString("World"),
@@ -894,7 +873,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
       null,
@@ -915,7 +894,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 1),
         TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 2),
@@ -924,7 +903,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
       null,
@@ -945,7 +924,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
@@ -955,7 +934,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofSeconds(2).toNanos(),
@@ -979,7 +958,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
@@ -989,7 +968,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofSeconds(2).toNanos(),
@@ -1016,7 +995,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointBoolean(true),
         TimeseriesTestDataGenerator.generateDataPointBoolean(false),
@@ -1025,7 +1004,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofMinutes(2).toNanos(),
@@ -1044,7 +1023,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointString("Hello"),
         TimeseriesTestDataGenerator.generateDataPointString("World"),
@@ -1053,7 +1032,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
       Duration.ofMinutes(2).toNanos(),
@@ -1072,7 +1051,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(6).toNano(), 22.3),
@@ -1081,7 +1060,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
       Duration.ofSeconds(3).toNanos(),
@@ -1100,7 +1079,7 @@ public class ExperimentalTimeseriesServiceTest {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
         TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
@@ -1109,7 +1088,7 @@ public class ExperimentalTimeseriesServiceTest {
     );
 
     this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
-    ExperimentalTimeseriesDataPointsQueryParams queryParams = new ExperimentalTimeseriesDataPointsQueryParams(
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
       null,

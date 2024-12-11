@@ -1,5 +1,6 @@
-package de.dlr.shepard.influxtimeseries;
+package de.dlr.shepard.timeseries.endpoints;
 
+import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
 import de.dlr.shepard.filters.Subscribable;
 import de.dlr.shepard.neo4Core.io.PermissionsIO;
@@ -8,30 +9,43 @@ import de.dlr.shepard.neo4Core.orderBy.ContainerAttributes;
 import de.dlr.shepard.neo4Core.services.PermissionsService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.timeseries.io.TimeseriesContainerIOMapper;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.timeseries.model.enums.FillOption;
+import de.dlr.shepard.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.timeseries.services.TimeseriesCsvService;
+import de.dlr.shepard.timeseries.services.TimeseriesService;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -47,25 +61,32 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.TIMESERIES_CONTAINERS)
 @RequestScoped
-public class InfluxTimeseriesRest {
+public class TimeseriesRest {
 
-  private InfluxTimeseriesContainerService timeseriesContainerService;
+  private TimeseriesService timeseriesService;
+  private TimeseriesCsvService timeseriesCsvService;
+  private TimeseriesContainerService timeseriesContainerService;
   private PermissionsService permissionsService;
-
   private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
 
-  InfluxTimeseriesRest() {}
+  TimeseriesRest() {}
 
   @Inject
-  public InfluxTimeseriesRest(
-    InfluxTimeseriesContainerService timeseriesContainerService,
+  public TimeseriesRest(
+    TimeseriesService timeseriesService,
+    TimeseriesCsvService timeseriesCsvService,
+    TimeseriesContainerService timeseriesContainerService,
+    SecurityContext securityContext,
     PermissionsService permissionsService,
     PermissionsUtil permissionsUtil
   ) {
+    this.timeseriesService = timeseriesService;
+    this.timeseriesCsvService = timeseriesCsvService;
     this.timeseriesContainerService = timeseriesContainerService;
+    this.securityContext = securityContext;
     this.permissionsService = permissionsService;
     this.permissionsUtil = permissionsUtil;
   }
@@ -95,11 +116,9 @@ public class InfluxTimeseriesRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var containers = timeseriesContainerService.getAllContainers(params, securityContext.getUserPrincipal().getName());
-    var result = new ArrayList<TimeseriesContainerIO>(containers.size());
-    for (var container : containers) {
-      result.add(new TimeseriesContainerIO(container));
-    }
+    var containers = timeseriesContainerService.getContainers(params, securityContext.getUserPrincipal().getName());
+    var result = TimeseriesContainerIOMapper.map(containers);
+
     return Response.ok(result).build();
   }
 
@@ -115,8 +134,8 @@ public class InfluxTimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var result = timeseriesContainerService.getContainer(timeseriesContainerId);
-    return Response.ok(new TimeseriesContainerIO(result)).build();
+    var container = timeseriesContainerService.getContainer(timeseriesContainerId);
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).build();
   }
 
   @POST
@@ -128,18 +147,19 @@ public class InfluxTimeseriesRest {
     content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Transactional
   public Response createTimeseriesContainer(
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
     ) @Valid TimeseriesContainerIO timeseriesContainer
   ) {
-    var result = timeseriesContainerService.createContainer(
-      timeseriesContainer,
+    var container = timeseriesContainerService.createContainer(
+      timeseriesContainer.getName(),
       securityContext.getUserPrincipal().getName()
     );
 
-    return Response.ok(new TimeseriesContainerIO(result)).status(Status.CREATED).build();
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).status(Status.CREATED).build();
   }
 
   @DELETE
@@ -150,13 +170,11 @@ public class InfluxTimeseriesRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Transactional
   public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var result = timeseriesContainerService.deleteContainer(
-      timeseriesContainerId,
-      securityContext.getUserPrincipal().getName()
-    );
+    timeseriesContainerService.deleteContainer(timeseriesContainerId, securityContext.getUserPrincipal().getName());
 
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @POST
@@ -167,21 +185,31 @@ public class InfluxTimeseriesRest {
   @APIResponse(
     description = "created",
     responseCode = "201",
-    content = @Content(schema = @Schema(implementation = InfluxTimeseries.class))
+    content = @Content(schema = @Schema(implementation = Timeseries.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Transactional
   public Response createTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = InfluxTimeseriesPayload.class))
-    ) @Valid InfluxTimeseriesPayload payload
+      content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+    ) @Valid TimeseriesWithDataPoints payload
   ) {
-    var result = timeseriesContainerService.createTimeseries(timeseriesId, payload);
-    return result != null
-      ? Response.status(Status.CREATED).entity(result).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    Optional<TimeseriesContainer> containerOptional = this.timeseriesContainerService.getContainerOptional(containerId);
+
+    if (containerOptional.isEmpty()) {
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
+    }
+
+    TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
+      containerOptional.get(),
+      payload.getTimeseries(),
+      payload.getPoints()
+    );
+
+    return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
   }
 
   @GET
@@ -191,11 +219,25 @@ public class InfluxTimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = InfluxTimeseries.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
   )
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    return Response.ok(timeseriesContainerService.getTimeseriesAvailable(timeseriesContainerId)).build();
+    Optional<TimeseriesContainer> containerOptional =
+      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
+
+    if (containerOptional.isEmpty()) {
+      return Response.ok(Collections.emptyList()).build();
+    }
+
+    List<TimeseriesEntity> timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+
+    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
+      .stream()
+      .map(entity -> new Timeseries(entity))
+      .toList();
+
+    return Response.ok(timeseriesListWithoutId).build();
   }
 
   @GET
@@ -205,7 +247,7 @@ public class InfluxTimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = InfluxTimeseriesPayload.class))
+    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
@@ -228,26 +270,30 @@ public class InfluxTimeseriesRest {
     @QueryParam(Constants.FIELD) String field,
     @QueryParam(Constants.START) long start,
     @QueryParam(Constants.END) long end,
-    @QueryParam(Constants.FUNCTION) InfluxSingleValuedUnaryFunction function,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) InfluxFillOption fillOption
-  ) {
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+  ) throws Exception {
     if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
-      throw new InvalidRequestException("Some query params are missing");
+      throw new InvalidRequestException(
+        "Some query params are missing. Make sure that 'measurement', 'location', 'device', 'symbolicName' and 'field' are set."
+      );
     }
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 
-    var timeseries = new InfluxTimeseries(measurement, device, location, symbolicName, field);
-    var result = timeseriesContainerService.getTimeseriesPayload(
-      timeseriesContainerId,
-      timeseries,
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
       end,
-      function,
       groupBy,
-      fillOption
+      fillOption,
+      function
     );
 
-    return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
+    var timeseriesData = timeseriesService.getDataPointsByTimeseries(timeseriesContainerId, timeseries, queryParams);
+
+    TimeseriesWithDataPoints timeseriesWithData = new TimeseriesWithDataPoints(timeseries, timeseriesData);
+
+    return Response.ok(timeseriesWithData).build();
   }
 
   @GET
@@ -284,29 +330,38 @@ public class InfluxTimeseriesRest {
     @QueryParam(Constants.FIELD) String field,
     @QueryParam(Constants.START) long start,
     @QueryParam(Constants.END) long end,
-    @QueryParam(Constants.FUNCTION) InfluxSingleValuedUnaryFunction function,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) InfluxFillOption fillOption
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
   ) throws IOException {
     if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    var timeseries = new InfluxTimeseries(measurement, device, location, symbolicName, field);
-    var result = timeseriesContainerService.exportTimeseriesPayload(
-      timeseriesContainerId,
-      timeseries,
+    Optional<TimeseriesContainer> containerOptional =
+      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
+
+    if (containerOptional.isEmpty()) {
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", timeseriesContainerId);
+    }
+
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
       end,
-      function,
       groupBy,
-      fillOption
+      fillOption,
+      function
     );
-    return result != null
-      ? Response.ok(result, MediaType.APPLICATION_OCTET_STREAM)
-        .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
-        .build()
-      : Response.status(Status.NOT_FOUND).build();
+    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(
+      containerOptional.get().getId(),
+      timeseries,
+      queryParams
+    );
+
+    return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
+      .build();
   }
 
   @POST
@@ -318,6 +373,7 @@ public class InfluxTimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Transactional
   public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     MultipartBodyFileUpload body
@@ -325,15 +381,18 @@ public class InfluxTimeseriesRest {
     String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
 
     if (filePath == null) {
-      return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+      throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
     }
 
-    File file = new File(filePath);
-    try (InputStream fileInputStream = new FileInputStream(file)) {
-      var result = timeseriesContainerService.importTimeseries(timeseriesContainerId, fileInputStream);
+    Optional<TimeseriesContainer> containerOptional =
+      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
 
-      return result ? Response.ok().build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    if (containerOptional.isEmpty()) {
+      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", timeseriesContainerId);
     }
+
+    timeseriesCsvService.importTimeseriesFromCsv(containerOptional.get(), filePath);
+    return Response.ok().build();
   }
 
   @GET
@@ -347,9 +406,12 @@ public class InfluxTimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response getTimeseriesPermissions(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var perms = permissionsService.getPermissionsByNeo4jId(timeseriesContainerId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+  public PermissionsIO getTimeseriesPermissions(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
+  ) {
+    var permissions = permissionsService.getPermissionsByNeo4jId(timeseriesContainerId);
+    if (permissions == null) throw new NotFoundException();
+    return new PermissionsIO(permissions);
   }
 
   @PUT
@@ -363,15 +425,16 @@ public class InfluxTimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response editTimeseriesPermissions(
+  public PermissionsIO editTimeseriesPermissions(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
-    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, timeseriesContainerId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var updatedPermissions = permissionsService.updatePermissionsByNeo4jId(permissions, timeseriesContainerId);
+    if (updatedPermissions == null) throw new NotFoundException();
+    return new PermissionsIO(updatedPermissions);
   }
 
   @GET
@@ -385,9 +448,10 @@ public class InfluxTimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public RolesIO getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     var roles = permissionsUtil.getRolesByNeo4jId(timeseriesContainerId, securityContext.getUserPrincipal().getName());
-    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+    if (roles == null) throw new NotFoundException();
+    return roles;
   }
 
   @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")

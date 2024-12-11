@@ -14,7 +14,6 @@ get_version:
     - echo "VERSION_NUMBER=$VERSION_NUMBER" >> versions.env
 
     # Set feature toggles for dev pipeline
-    - echo "SHEPARD_EXPERIMENTAL_TIMESERIES_ENABLED=true" >> versions.env
     - echo "SHEPARD_VERSIONING_ENABLED=false" >> versions.env
 
     - cat versions.env

@@ -16,35 +16,35 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface ExperimentalTimeseriesDataPoint
+ * @interface TimeseriesDataPoint
  */
-export interface ExperimentalTimeseriesDataPoint {
+export interface TimeseriesDataPoint {
     /**
      * Time in nanoseconds since unix epoch.
      * @type {number}
-     * @memberof ExperimentalTimeseriesDataPoint
+     * @memberof TimeseriesDataPoint
      */
     timestamp?: number;
     /**
      * A string, an int, a double or a boolean
      * @type {any}
-     * @memberof ExperimentalTimeseriesDataPoint
+     * @memberof TimeseriesDataPoint
      */
     value?: any | null;
 }
 
 /**
- * Check if a given object implements the ExperimentalTimeseriesDataPoint interface.
+ * Check if a given object implements the TimeseriesDataPoint interface.
  */
-export function instanceOfExperimentalTimeseriesDataPoint(value: object): value is ExperimentalTimeseriesDataPoint {
+export function instanceOfTimeseriesDataPoint(value: object): value is TimeseriesDataPoint {
     return true;
 }
 
-export function ExperimentalTimeseriesDataPointFromJSON(json: any): ExperimentalTimeseriesDataPoint {
-    return ExperimentalTimeseriesDataPointFromJSONTyped(json, false);
+export function TimeseriesDataPointFromJSON(json: any): TimeseriesDataPoint {
+    return TimeseriesDataPointFromJSONTyped(json, false);
 }
 
-export function ExperimentalTimeseriesDataPointFromJSONTyped(json: any, ignoreDiscriminator: boolean): ExperimentalTimeseriesDataPoint {
+export function TimeseriesDataPointFromJSONTyped(json: any, ignoreDiscriminator: boolean): TimeseriesDataPoint {
     if (json == null) {
         return json;
     }
@@ -55,7 +55,7 @@ export function ExperimentalTimeseriesDataPointFromJSONTyped(json: any, ignoreDi
     };
 }
 
-export function ExperimentalTimeseriesDataPointToJSON(value?: ExperimentalTimeseriesDataPoint | null): any {
+export function TimeseriesDataPointToJSON(value?: TimeseriesDataPoint | null): any {
     if (value == null) {
         return value;
     }

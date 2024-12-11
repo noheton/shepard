@@ -6,8 +6,8 @@ import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import io.quarkus.logging.Log;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,18 +24,13 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 public final class CsvConverter {
 
-  public static InputStream convertToCsv(
-    ExperimentalTimeseries timeseries,
-    List<ExperimentalTimeseriesDataPoint> dataPoints
-  ) {
-    var timeseriesDataAsMap = new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>();
+  public static InputStream convertToCsv(Timeseries timeseries, List<TimeseriesDataPoint> dataPoints) {
+    var timeseriesDataAsMap = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
     timeseriesDataAsMap.put(timeseries, dataPoints);
     return convertToCsv(timeseriesDataAsMap);
   }
 
-  public static InputStream convertToCsv(
-    HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> timeseriesDataMap
-  ) {
+  public static InputStream convertToCsv(HashMap<Timeseries, List<TimeseriesDataPoint>> timeseriesDataMap) {
     Path tmpfile = null;
     try {
       tmpfile = Files.createTempFile("shepard", ".csv");
@@ -72,9 +67,7 @@ public final class CsvConverter {
     return result;
   }
 
-  public static HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> convertToTimeseriesWithData(
-    InputStream stream
-  ) {
+  public static HashMap<Timeseries, List<TimeseriesDataPoint>> convertToTimeseriesWithData(InputStream stream) {
     try (var reader = new InputStreamReader(stream)) {
       var timeseriesDataBuilder = new CsvToBeanBuilder<CsvTimeseriesDataPoint>(reader)
         .withType(CsvTimeseriesDataPoint.class)
@@ -97,8 +90,8 @@ public final class CsvConverter {
   }
 
   private static List<CsvTimeseriesDataPoint> convertTimeseriesWithDataToCsv(
-    ExperimentalTimeseries timeseries,
-    List<ExperimentalTimeseriesDataPoint> dataPoints
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints
   ) {
     var result = new ArrayList<CsvTimeseriesDataPoint>(dataPoints.size());
     for (var dataPoint : dataPoints) {
@@ -116,28 +109,25 @@ public final class CsvConverter {
     return result;
   }
 
-  private static HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> convertCsvToTimeseriesWithData(
+  private static HashMap<Timeseries, List<TimeseriesDataPoint>> convertCsvToTimeseriesWithData(
     List<CsvTimeseriesDataPoint> csvInputList
   ) {
-    var result = new HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>>();
+    var result = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
 
     for (var csvInputLine : csvInputList) {
-      var timeseries = new ExperimentalTimeseries(
+      var timeseries = new Timeseries(
         csvInputLine.getMeasurement(),
         csvInputLine.getDevice(),
         csvInputLine.getLocation(),
         csvInputLine.getSymbolicName(),
         csvInputLine.getField()
       );
-      var dataPoint = new ExperimentalTimeseriesDataPoint(
-        csvInputLine.getTimestamp(),
-        parseValue(csvInputLine.getValue())
-      );
+      var dataPoint = new TimeseriesDataPoint(csvInputLine.getTimestamp(), parseValue(csvInputLine.getValue()));
 
       if (result.containsKey(timeseries)) {
         result.get(timeseries).add(dataPoint);
       } else {
-        var dataPoints = new ArrayList<ExperimentalTimeseriesDataPoint>();
+        var dataPoints = new ArrayList<TimeseriesDataPoint>();
         dataPoints.add(dataPoint);
         result.put(timeseries, dataPoints);
       }

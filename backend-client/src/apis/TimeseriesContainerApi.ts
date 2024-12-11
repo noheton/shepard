@@ -15,37 +15,37 @@
 
 import * as runtime from '../runtime';
 import type {
+  AggregateFunction,
   ContainerAttributes,
-  InfluxFillOption,
-  InfluxSingleValuedUnaryFunction,
-  InfluxTimeseries,
-  InfluxTimeseriesPayload,
+  FillOption,
   Permissions,
   Roles,
+  Timeseries,
   TimeseriesContainer,
+  TimeseriesWithDataPoints,
 } from '../models/index';
 import {
+    AggregateFunctionFromJSON,
+    AggregateFunctionToJSON,
     ContainerAttributesFromJSON,
     ContainerAttributesToJSON,
-    InfluxFillOptionFromJSON,
-    InfluxFillOptionToJSON,
-    InfluxSingleValuedUnaryFunctionFromJSON,
-    InfluxSingleValuedUnaryFunctionToJSON,
-    InfluxTimeseriesFromJSON,
-    InfluxTimeseriesToJSON,
-    InfluxTimeseriesPayloadFromJSON,
-    InfluxTimeseriesPayloadToJSON,
+    FillOptionFromJSON,
+    FillOptionToJSON,
     PermissionsFromJSON,
     PermissionsToJSON,
     RolesFromJSON,
     RolesToJSON,
+    TimeseriesFromJSON,
+    TimeseriesToJSON,
     TimeseriesContainerFromJSON,
     TimeseriesContainerToJSON,
+    TimeseriesWithDataPointsFromJSON,
+    TimeseriesWithDataPointsToJSON,
 } from '../models/index';
 
 export interface CreateTimeseriesRequest {
     timeseriesContainerId: number;
-    influxTimeseriesPayload: InfluxTimeseriesPayload;
+    timeseriesWithDataPoints: TimeseriesWithDataPoints;
 }
 
 export interface CreateTimeseriesContainerRequest {
@@ -70,9 +70,9 @@ export interface ExportTimeseriesRequest {
     field: string;
     start: number;
     end: number;
-    _function?: InfluxSingleValuedUnaryFunction;
+    _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: InfluxFillOption;
+    fillOption?: FillOption;
 }
 
 export interface GetAllTimeseriesContainersRequest {
@@ -92,9 +92,9 @@ export interface GetTimeseriesRequest {
     field: string;
     start: number;
     end: number;
-    _function?: InfluxSingleValuedUnaryFunction;
+    _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: InfluxFillOption;
+    fillOption?: FillOption;
 }
 
 export interface GetTimeseriesAvailableRequest {
@@ -126,7 +126,7 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     /**
      * Upload timeseries to container
      */
-    async createTimeseriesRaw(requestParameters: CreateTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<InfluxTimeseries>> {
+    async createTimeseriesRaw(requestParameters: CreateTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Timeseries>> {
         if (requestParameters['timeseriesContainerId'] == null) {
             throw new runtime.RequiredError(
                 'timeseriesContainerId',
@@ -134,10 +134,10 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['influxTimeseriesPayload'] == null) {
+        if (requestParameters['timeseriesWithDataPoints'] == null) {
             throw new runtime.RequiredError(
-                'influxTimeseriesPayload',
-                'Required parameter "influxTimeseriesPayload" was null or undefined when calling createTimeseries().'
+                'timeseriesWithDataPoints',
+                'Required parameter "timeseriesWithDataPoints" was null or undefined when calling createTimeseries().'
             );
         }
 
@@ -164,16 +164,16 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: InfluxTimeseriesPayloadToJSON(requestParameters['influxTimeseriesPayload']),
+            body: TimeseriesWithDataPointsToJSON(requestParameters['timeseriesWithDataPoints']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => InfluxTimeseriesFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesFromJSON(jsonValue));
     }
 
     /**
      * Upload timeseries to container
      */
-    async createTimeseries(requestParameters: CreateTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<InfluxTimeseries> {
+    async createTimeseries(requestParameters: CreateTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Timeseries> {
         const response = await this.createTimeseriesRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -520,7 +520,7 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     /**
      * Get timeseries payload
      */
-    async getTimeseriesRaw(requestParameters: GetTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<InfluxTimeseriesPayload>> {
+    async getTimeseriesRaw(requestParameters: GetTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesWithDataPoints>> {
         if (requestParameters['timeseriesContainerId'] == null) {
             throw new runtime.RequiredError(
                 'timeseriesContainerId',
@@ -640,13 +640,13 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => InfluxTimeseriesPayloadFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesWithDataPointsFromJSON(jsonValue));
     }
 
     /**
      * Get timeseries payload
      */
-    async getTimeseries(requestParameters: GetTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<InfluxTimeseriesPayload> {
+    async getTimeseries(requestParameters: GetTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesWithDataPoints> {
         const response = await this.getTimeseriesRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -654,7 +654,7 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     /**
      * Get timeseries available
      */
-    async getTimeseriesAvailableRaw(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<InfluxTimeseries>>> {
+    async getTimeseriesAvailableRaw(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Timeseries>>> {
         if (requestParameters['timeseriesContainerId'] == null) {
             throw new runtime.RequiredError(
                 'timeseriesContainerId',
@@ -685,13 +685,13 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(InfluxTimeseriesFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesFromJSON));
     }
 
     /**
      * Get timeseries available
      */
-    async getTimeseriesAvailable(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<InfluxTimeseries>> {
+    async getTimeseriesAvailable(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Timeseries>> {
         const response = await this.getTimeseriesAvailableRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -1,44 +1,44 @@
 package de.dlr.shepard.timeseries;
 
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import java.time.Instant;
 
 public final class TimeseriesTestDataGenerator {
 
-  public static ExperimentalTimeseries generateTimeseries(String measurement) {
-    return new ExperimentalTimeseries(measurement, "device", "location", "symbolicName", "field");
+  public static Timeseries generateTimeseries(String measurement) {
+    return new Timeseries(measurement, "device", "location", "symbolicName", "field");
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointDouble(long timestamp, Double value) {
-    return new ExperimentalTimeseriesDataPoint(timestamp, value);
+  public static TimeseriesDataPoint generateDataPointDouble(long timestamp, Double value) {
+    return new TimeseriesDataPoint(timestamp, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointDouble(Double value) {
+  public static TimeseriesDataPoint generateDataPointDouble(Double value) {
     return generateDataPointDouble(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointInteger(long timestamp, Integer value) {
-    return new ExperimentalTimeseriesDataPoint(timestamp, value);
+  public static TimeseriesDataPoint generateDataPointInteger(long timestamp, Integer value) {
+    return new TimeseriesDataPoint(timestamp, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointInteger(Integer value) {
-    return new ExperimentalTimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
+  public static TimeseriesDataPoint generateDataPointInteger(Integer value) {
+    return new TimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointString(String value) {
-    return new ExperimentalTimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
+  public static TimeseriesDataPoint generateDataPointString(String value) {
+    return new TimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointString(long timestamp, String value) {
-    return new ExperimentalTimeseriesDataPoint(timestamp, value);
+  public static TimeseriesDataPoint generateDataPointString(long timestamp, String value) {
+    return new TimeseriesDataPoint(timestamp, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointBoolean(Boolean value) {
-    return new ExperimentalTimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
+  public static TimeseriesDataPoint generateDataPointBoolean(Boolean value) {
+    return new TimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 
-  public static ExperimentalTimeseriesDataPoint generateDataPointBoolean(long timestamp, Boolean value) {
-    return new ExperimentalTimeseriesDataPoint(timestamp, value);
+  public static TimeseriesDataPoint generateDataPointBoolean(long timestamp, Boolean value) {
+    return new TimeseriesDataPoint(timestamp, value);
   }
 }

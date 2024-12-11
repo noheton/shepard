@@ -1,11 +1,11 @@
 package de.dlr.shepard.timeseries.repositories;
 
 import de.dlr.shepard.exceptions.InvalidRequestException;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
-import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
+import de.dlr.shepard.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.timeseries.model.enums.FillOption;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,17 +17,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @ApplicationScoped
-public class ExperimentalTimeseriesDataPointRepository {
+public class TimeseriesDataPointRepository {
 
   private final int INSERT_BATCH_SIZE = 1000;
 
   @Inject
   EntityManager entityManager;
 
-  public void insertManyDataPoints(
-    List<ExperimentalTimeseriesDataPoint> entities,
-    ExperimentalTimeseriesEntity timeseriesEntity
-  ) {
+  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
       Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
@@ -35,10 +32,10 @@ public class ExperimentalTimeseriesDataPointRepository {
     }
   }
 
-  public List<ExperimentalTimeseriesDataPoint> queryDataPoints(
+  public List<TimeseriesDataPoint> queryDataPoints(
     int timeseriesId,
-    ExperimentalDataPointValueType valueType,
-    ExperimentalTimeseriesDataPointsQueryParams queryParams
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
   ) {
     assertNotIntegral(queryParams.getFunction());
     assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
@@ -53,15 +50,15 @@ public class ExperimentalTimeseriesDataPointRepository {
     var query = buildSelectQueryObject(timeseriesId, valueType, queryParams);
 
     @SuppressWarnings("unchecked")
-    List<ExperimentalTimeseriesDataPoint> dataPoints = query.getResultList();
+    List<TimeseriesDataPoint> dataPoints = query.getResultList();
     return dataPoints;
   }
 
   private Query buildInsertQueryObject(
-    List<ExperimentalTimeseriesDataPoint> entities,
+    List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    ExperimentalTimeseriesEntity timeseriesEntity
+    TimeseriesEntity timeseriesEntity
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
@@ -90,8 +87,8 @@ public class ExperimentalTimeseriesDataPointRepository {
 
   private Query buildSelectQueryObject(
     int timeseriesId,
-    ExperimentalDataPointValueType valueType,
-    ExperimentalTimeseriesDataPointsQueryParams queryParams
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
   ) {
     String columnName = getColumnName(valueType);
 
@@ -148,7 +145,7 @@ public class ExperimentalTimeseriesDataPointRepository {
       queryString += " GROUP BY timestamp";
     }
 
-    Query query = entityManager.createNativeQuery(queryString, ExperimentalTimeseriesDataPoint.class);
+    Query query = entityManager.createNativeQuery(queryString, TimeseriesDataPoint.class);
 
     if (timeSliceNanoseconds != null) {
       query.setParameter("timeInNanoseconds", timeSliceNanoseconds);
@@ -160,7 +157,7 @@ public class ExperimentalTimeseriesDataPointRepository {
     return query;
   }
 
-  private String getColumnName(ExperimentalDataPointValueType valueType) {
+  private String getColumnName(DataPointValueType valueType) {
     return switch (valueType) {
       case Double -> "double_value";
       case Integer -> "int_value";
@@ -183,12 +180,9 @@ public class ExperimentalTimeseriesDataPointRepository {
    */
   private void assertCorrectValueTypesForAggregation(
     Optional<AggregateFunction> function,
-    ExperimentalDataPointValueType valueType
+    DataPointValueType valueType
   ) {
-    if (
-      (valueType == ExperimentalDataPointValueType.Boolean || valueType == ExperimentalDataPointValueType.String) &&
-      (function.isPresent())
-    ) {
+    if ((valueType == DataPointValueType.Boolean || valueType == DataPointValueType.String) && (function.isPresent())) {
       throw new InvalidRequestException(
         "Cannot execute aggregation functions on data points of type boolean or string."
       );
@@ -198,13 +192,9 @@ public class ExperimentalTimeseriesDataPointRepository {
   /**
    * Throw when trying to use gap filling with unsupported value types boolean or string.
    */
-  private void assertCorrectValueTypesForFillOption(
-    Optional<FillOption> fillOption,
-    ExperimentalDataPointValueType valueType
-  ) {
+  private void assertCorrectValueTypesForFillOption(Optional<FillOption> fillOption, DataPointValueType valueType) {
     if (
-      (valueType == ExperimentalDataPointValueType.Boolean || valueType == ExperimentalDataPointValueType.String) &&
-      (fillOption.isPresent())
+      (valueType == DataPointValueType.Boolean || valueType == DataPointValueType.String) && (fillOption.isPresent())
     ) {
       throw new InvalidRequestException("Cannot use gap filling options on data points of type boolean or string.");
     }

@@ -5,7 +5,6 @@ export * from './CollectionApi';
 export * from './CollectionReferenceApi';
 export * from './DataObjectApi';
 export * from './DataObjectReferenceApi';
-export * from './ExperimentalTimeseriesContainerApi';
 export * from './FileContainerApi';
 export * from './FileReferenceApi';
 export * from './HealthzApi';

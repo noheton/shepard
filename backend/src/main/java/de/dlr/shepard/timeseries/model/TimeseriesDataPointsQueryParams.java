@@ -4,7 +4,7 @@ import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.timeseries.model.enums.FillOption;
 import java.util.Optional;
 
-public class ExperimentalTimeseriesDataPointsQueryParams {
+public class TimeseriesDataPointsQueryParams {
 
   private long startTime;
   private long endTime;
@@ -19,7 +19,7 @@ public class ExperimentalTimeseriesDataPointsQueryParams {
    * @param fillOption            The fill option for missing values when applying aggregate functions on possibly empty time slices.
    * @param function              The aggregate function.
    */
-  public ExperimentalTimeseriesDataPointsQueryParams(
+  public TimeseriesDataPointsQueryParams(
     long startTime,
     long endTime,
     Long timeSliceNanoseconds,

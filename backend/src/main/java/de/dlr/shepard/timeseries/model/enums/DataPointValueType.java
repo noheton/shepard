@@ -1,6 +1,6 @@
 package de.dlr.shepard.timeseries.model.enums;
 
-public enum ExperimentalDataPointValueType {
+public enum DataPointValueType {
   Boolean,
   Integer,
   Double,

@@ -1,7 +1,7 @@
 package de.dlr.shepard.timeseries.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
+import de.dlr.shepard.timeseries.model.enums.DataPointValueType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "timeseries")
-public class ExperimentalTimeseriesEntity {
+public class TimeseriesEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,18 +39,18 @@ public class ExperimentalTimeseriesEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)
-  private ExperimentalDataPointValueType valueType;
+  private DataPointValueType valueType;
 
-  public ExperimentalTimeseriesEntity() {}
+  public TimeseriesEntity() {}
 
-  public ExperimentalTimeseriesEntity(
+  public TimeseriesEntity(
     long containerId,
     String measurement,
     String field,
     String device,
     String location,
     String symbolicName,
-    ExperimentalDataPointValueType valueType
+    DataPointValueType valueType
   ) {
     this.containerId = containerId;
     this.measurement = measurement;
@@ -61,11 +61,7 @@ public class ExperimentalTimeseriesEntity {
     this.valueType = valueType;
   }
 
-  public ExperimentalTimeseriesEntity(
-    long containerId,
-    ExperimentalTimeseries timeseries,
-    ExperimentalDataPointValueType valueType
-  ) {
+  public TimeseriesEntity(long containerId, Timeseries timeseries, DataPointValueType valueType) {
     this(
       containerId,
       timeseries.getMeasurement(),
@@ -105,7 +101,7 @@ public class ExperimentalTimeseriesEntity {
     return field;
   }
 
-  public ExperimentalDataPointValueType getValueType() {
+  public DataPointValueType getValueType() {
     return valueType;
   }
 

@@ -1,7 +1,7 @@
 package de.dlr.shepard.timeseries.repositories;
 
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,10 +10,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class ExperimentalTimeseriesRepository implements PanacheRepositoryBase<ExperimentalTimeseriesEntity, Integer> {
+public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEntity, Integer> {
 
-  public Optional<ExperimentalTimeseriesEntity> findTimeseries(long containerId, ExperimentalTimeseries timeseries) {
-    List<ExperimentalTimeseriesEntity> timeseriesList =
+  public Optional<TimeseriesEntity> findTimeseries(long containerId, Timeseries timeseries) {
+    List<TimeseriesEntity> timeseriesList =
       this.find(
           "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",
           containerId,

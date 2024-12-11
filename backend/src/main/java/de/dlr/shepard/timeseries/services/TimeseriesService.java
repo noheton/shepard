@@ -1,14 +1,14 @@
 package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesEntity;
+import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.timeseries.model.enums.ExperimentalDataPointValueType;
-import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesDataPointRepository;
-import de.dlr.shepard.timeseries.repositories.ExperimentalTimeseriesRepository;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.timeseries.model.enums.DataPointValueType;
+import de.dlr.shepard.timeseries.repositories.TimeseriesDataPointRepository;
+import de.dlr.shepard.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import jakarta.enterprise.context.RequestScoped;
@@ -18,17 +18,17 @@ import java.util.List;
 import java.util.Optional;
 
 @RequestScoped
-public class ExperimentalTimeseriesService {
+public class TimeseriesService {
 
-  private ExperimentalTimeseriesRepository timeseriesRepository;
-  private ExperimentalTimeseriesDataPointRepository timeseriesDataPointRepository;
+  private TimeseriesRepository timeseriesRepository;
+  private TimeseriesDataPointRepository timeseriesDataPointRepository;
 
-  ExperimentalTimeseriesService() {}
+  TimeseriesService() {}
 
   @Inject
-  public ExperimentalTimeseriesService(
-    ExperimentalTimeseriesRepository timeseriesRepository,
-    ExperimentalTimeseriesDataPointRepository timeseriesDataPointRepository
+  public TimeseriesService(
+    TimeseriesRepository timeseriesRepository,
+    TimeseriesDataPointRepository timeseriesDataPointRepository
   ) {
     this.timeseriesRepository = timeseriesRepository;
     this.timeseriesDataPointRepository = timeseriesDataPointRepository;
@@ -40,7 +40,7 @@ public class ExperimentalTimeseriesService {
    * @param containerId of the given timeseries container
    * @return a list of timeseries entities
    */
-  public List<ExperimentalTimeseriesEntity> getTimeseriesAvailable(long containerId) {
+  public List<TimeseriesEntity> getTimeseriesAvailable(long containerId) {
     return timeseriesRepository.list("containerId", containerId);
   }
 
@@ -53,18 +53,17 @@ public class ExperimentalTimeseriesService {
    *
    * @return List of TimeseriesDataPoint
    */
-  public List<ExperimentalTimeseriesDataPoint> getDataPointsByTimeseries(
+  public List<TimeseriesDataPoint> getDataPointsByTimeseries(
     long containerId,
-    ExperimentalTimeseries timeseries,
-    ExperimentalTimeseriesDataPointsQueryParams queryParams
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
   ) {
-    Optional<ExperimentalTimeseriesEntity> timeseriesEntity =
-      this.timeseriesRepository.findTimeseries(containerId, timeseries);
+    Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
 
     if (timeseriesEntity.isEmpty()) return Collections.emptyList();
 
     int timeseriesId = timeseriesEntity.get().getId();
-    ExperimentalDataPointValueType valueType = timeseriesEntity.get().getValueType();
+    DataPointValueType valueType = timeseriesEntity.get().getValueType();
 
     return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
   }
@@ -78,16 +77,16 @@ public class ExperimentalTimeseriesService {
    * @param dataPoints               Data points to be added to the timeseries
    * @return created timeseries
    */
-  public ExperimentalTimeseriesEntity saveDataPoints(
+  public TimeseriesEntity saveDataPoints(
     TimeseriesContainer timeseriesContainer,
-    ExperimentalTimeseries timeseries,
-    List<ExperimentalTimeseriesDataPoint> dataPoints
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints
   ) {
-    ExperimentalDataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(
-      dataPoints.get(0).getValue()
-    ).orElseThrow(() -> new InvalidBodyException());
+    DataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(dataPoints.get(0).getValue()).orElseThrow(
+      () -> new InvalidBodyException()
+    );
 
-    ExperimentalTimeseriesEntity timeseriesEntity = getOrCreateTimeseries(
+    TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(
       timeseriesContainer.getId(),
       timeseries,
       incomingValueType
@@ -100,34 +99,27 @@ public class ExperimentalTimeseriesService {
     return timeseriesEntity;
   }
 
-  private ExperimentalTimeseriesEntity getOrCreateTimeseries(
+  private TimeseriesEntity getOrCreateTimeseries(
     long containerId,
-    ExperimentalTimeseries timeseries,
-    ExperimentalDataPointValueType incomingValueType
+    Timeseries timeseries,
+    DataPointValueType incomingValueType
   ) {
     // try to find timeseries in db
-    Optional<ExperimentalTimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(
-      containerId,
-      timeseries
-    );
+    Optional<TimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
 
     if (matchingTimeseries.isPresent()) return matchingTimeseries.get();
 
     TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
 
     // create new timeseries because it does not exist
-    ExperimentalTimeseriesEntity timeseriesEntity = new ExperimentalTimeseriesEntity(
-      containerId,
-      timeseries,
-      incomingValueType
-    );
+    TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
     this.timeseriesRepository.persist(timeseriesEntity);
     return timeseriesEntity;
   }
 
   private static void assertDataPointsMatchTimeseriesValueType(
-    ExperimentalTimeseriesEntity timeseriesEntity,
-    List<ExperimentalTimeseriesDataPoint> dataPoints
+    TimeseriesEntity timeseriesEntity,
+    List<TimeseriesDataPoint> dataPoints
   ) {
     for (var dataPoint : dataPoints) {
       var expectedType = ObjectTypeEvaluator.determineType(dataPoint.getValue()).orElseThrow(() ->
@@ -138,8 +130,8 @@ public class ExperimentalTimeseriesService {
   }
 
   private static void assertValueTypeMatchesTimeseries(
-    ExperimentalTimeseriesEntity timeseries,
-    ExperimentalDataPointValueType incomingValueType
+    TimeseriesEntity timeseries,
+    DataPointValueType incomingValueType
   ) {
     if (timeseries.getValueType() != incomingValueType) throw new InvalidBodyException(
       "Timeseries already exists for data type %s but new data points are of type %s",

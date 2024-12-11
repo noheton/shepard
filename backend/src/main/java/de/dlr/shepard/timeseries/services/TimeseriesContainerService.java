@@ -16,23 +16,23 @@ import java.util.List;
 import java.util.Optional;
 
 @RequestScoped
-public class ExperimentalTimeseriesContainerService {
+public class TimeseriesContainerService {
 
   private TimeseriesContainerDAO timeseriesContainerDAO;
   private UserDAO userDAO;
   private DateHelper dateHelper;
   private PermissionsDAO permissionsDAO;
-  private ExperimentalTimeseriesService timeseriesService;
+  private TimeseriesService timeseriesService;
 
-  ExperimentalTimeseriesContainerService() {}
+  TimeseriesContainerService() {}
 
   @Inject
-  public ExperimentalTimeseriesContainerService(
+  public TimeseriesContainerService(
     TimeseriesContainerDAO timeseriesContainerDAO,
     UserDAO userDAO,
     DateHelper dateHelper,
     PermissionsDAO permissionsDAO,
-    ExperimentalTimeseriesService timeseriesService
+    TimeseriesService timeseriesService
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.userDAO = userDAO;

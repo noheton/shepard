@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.services.ExperimentalTimeseriesCsvService;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.services.TimeseriesCsvService;
 import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -22,18 +22,18 @@ import org.junit.jupiter.api.Test;
 public class CsvConverterTest {
 
   @Inject
-  ExperimentalTimeseriesCsvService timeseriesService;
+  TimeseriesCsvService timeseriesService;
 
   @Test
   void testConvertToCsv_multipleTypes_success() throws IOException {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>(
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(
-        new ExperimentalTimeseriesDataPoint(88551122, 22.1),
-        new ExperimentalTimeseriesDataPoint(88551123, 4),
-        new ExperimentalTimeseriesDataPoint(88551124, 22.2),
-        new ExperimentalTimeseriesDataPoint(88551125, true),
-        new ExperimentalTimeseriesDataPoint(88551126, "Hello World")
+        new TimeseriesDataPoint(88551122, 22.1),
+        new TimeseriesDataPoint(88551123, 4),
+        new TimeseriesDataPoint(88551124, 22.2),
+        new TimeseriesDataPoint(88551125, true),
+        new TimeseriesDataPoint(88551126, "Hello World")
       )
     );
 
@@ -58,7 +58,7 @@ public class CsvConverterTest {
   @Test
   void testConvertToCsv_emptyData_success() throws IOException {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<ExperimentalTimeseriesDataPoint> dataPoints = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
 
     String expectedCsvString = "";
 
@@ -84,43 +84,30 @@ public class CsvConverterTest {
       device,field,location,boolean,symbolicName,88551128,false
       """;
 
-    var expectedTimeseriesDouble = new ExperimentalTimeseries("double", "device", "location", "symbolicName", "field");
-    var expectedTimeseriesInteger = new ExperimentalTimeseries(
-      "integer",
-      "device",
-      "location",
-      "symbolicName",
-      "field"
-    );
-    var expectedTimeseriesBoolean = new ExperimentalTimeseries(
-      "boolean",
-      "device",
-      "location",
-      "symbolicName",
-      "field"
-    );
-    var expectedTimeseriesString = new ExperimentalTimeseries("string", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesDouble = new Timeseries("double", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesInteger = new Timeseries("integer", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesBoolean = new Timeseries("boolean", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesString = new Timeseries("string", "device", "location", "symbolicName", "field");
 
-    List<ExperimentalTimeseriesDataPoint> expectedDataPointsIODouble = new ArrayList<>(
-      List.of(new ExperimentalTimeseriesDataPoint(88551122, 22.1), new ExperimentalTimeseriesDataPoint(88551124, 22.2))
+    List<TimeseriesDataPoint> expectedDataPointsIODouble = new ArrayList<>(
+      List.of(new TimeseriesDataPoint(88551122, 22.1), new TimeseriesDataPoint(88551124, 22.2))
     );
 
-    List<ExperimentalTimeseriesDataPoint> expectedDataPointsIOInteger = new ArrayList<>(
-      List.of(new ExperimentalTimeseriesDataPoint(88551123, 4), new ExperimentalTimeseriesDataPoint(88551126, 5))
+    List<TimeseriesDataPoint> expectedDataPointsIOInteger = new ArrayList<>(
+      List.of(new TimeseriesDataPoint(88551123, 4), new TimeseriesDataPoint(88551126, 5))
     );
 
-    List<ExperimentalTimeseriesDataPoint> expectedDataPointsIOBoolean = new ArrayList<>(
-      List.of(new ExperimentalTimeseriesDataPoint(88551125, true), new ExperimentalTimeseriesDataPoint(88551128, false))
+    List<TimeseriesDataPoint> expectedDataPointsIOBoolean = new ArrayList<>(
+      List.of(new TimeseriesDataPoint(88551125, true), new TimeseriesDataPoint(88551128, false))
     );
 
-    List<ExperimentalTimeseriesDataPoint> expectedDataPointsIOString = new ArrayList<>(
-      List.of(new ExperimentalTimeseriesDataPoint(88551127, "Hello World"))
+    List<TimeseriesDataPoint> expectedDataPointsIOString = new ArrayList<>(
+      List.of(new TimeseriesDataPoint(88551127, "Hello World"))
     );
 
     InputStream timeseriesDataStream = new ByteArrayInputStream(actualCsvString.getBytes(StandardCharsets.UTF_8));
     var actualTimeseriesDataIOMap = CsvConverter.convertToTimeseriesWithData(timeseriesDataStream);
-    HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> expectedTimeseriesDataIOMap =
-      new HashMap<>();
+    HashMap<Timeseries, List<TimeseriesDataPoint>> expectedTimeseriesDataIOMap = new HashMap<>();
     expectedTimeseriesDataIOMap.put(expectedTimeseriesBoolean, expectedDataPointsIOBoolean);
     expectedTimeseriesDataIOMap.put(expectedTimeseriesString, expectedDataPointsIOString);
     expectedTimeseriesDataIOMap.put(expectedTimeseriesInteger, expectedDataPointsIOInteger);

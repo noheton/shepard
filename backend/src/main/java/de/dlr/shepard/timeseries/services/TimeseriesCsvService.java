@@ -1,9 +1,9 @@
 package de.dlr.shepard.timeseries.services;
 
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseries;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPoint;
-import de.dlr.shepard.timeseries.model.ExperimentalTimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.timeseries.utilities.CsvConverter;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 
 @RequestScoped
-public class ExperimentalTimeseriesCsvService {
+public class TimeseriesCsvService {
 
-  private ExperimentalTimeseriesService timeseriesService;
+  private TimeseriesService timeseriesService;
 
-  ExperimentalTimeseriesCsvService() {}
+  TimeseriesCsvService() {}
 
   @Inject
-  public ExperimentalTimeseriesCsvService(ExperimentalTimeseriesService timeseriesService) {
+  public TimeseriesCsvService(TimeseriesService timeseriesService) {
     this.timeseriesService = timeseriesService;
   }
 
@@ -35,8 +35,8 @@ public class ExperimentalTimeseriesCsvService {
    */
   public InputStream exportTimeseriesDataToCsv(
     long containerId,
-    ExperimentalTimeseries timeseries,
-    ExperimentalTimeseriesDataPointsQueryParams queryParams
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
   ) {
     var stream = CsvConverter.convertToCsv(
       timeseries,
@@ -47,8 +47,9 @@ public class ExperimentalTimeseriesCsvService {
 
   public void importTimeseriesFromCsv(TimeseriesContainer container, String filePath) throws IOException {
     try (InputStream fileInputStream = new FileInputStream(filePath)) {
-      HashMap<ExperimentalTimeseries, List<ExperimentalTimeseriesDataPoint>> timeseriesList =
-        CsvConverter.convertToTimeseriesWithData(fileInputStream);
+      HashMap<Timeseries, List<TimeseriesDataPoint>> timeseriesList = CsvConverter.convertToTimeseriesWithData(
+        fileInputStream
+      );
       for (var timeseries : timeseriesList.entrySet()) {
         this.timeseriesService.saveDataPoints(container, timeseries.getKey(), timeseries.getValue());
       }

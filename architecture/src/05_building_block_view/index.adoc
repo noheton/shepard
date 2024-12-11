@@ -67,19 +67,33 @@ It is one of many tools in the shepard ecosystem and aims to collect data from d
 [plantuml, "{plantUMLDir}whitebox-backend", png]
 ----
 @startuml Whitebox Backend
+left to right direction
+
+:User: as user
+
+package "deprecated" {
+  [InfluxTimeseries] as influx
+  database "InfluxDB" as influxdb #D5E8D4
+}
 
 [Authorization] as authorization
 [Collections & DataObjects] as collections
-[Timeseries (InfluxDB)] as influx
-[Timeseries (TimescaleDB)] as timeseries
+[Timeseries] as timeseries
 [Structured Data & Files] as files
 [Lab Journal] as labjournal
 [Status] as status
 
 database "Neo4j" as neo4j #DAE8FC
 database "TimescaleDB" as timescaledb #AAEEFF
-database "InfluxDB" as influxdb #D5E8D4
 database "MongoDB" as mongodb #FFE6CC
+
+user ---> collections
+user ---> timeseries
+user ---> files
+user ---> labjournal
+user ---> status
+
+timeseries --> influx: extracts data
 
 authorization --> neo4j
 collections --> neo4j
@@ -113,15 +127,15 @@ Most of the endpoints are protected and can only be used by authenticated users 
 | Manages metadata and references of organizational elements like `DataObjects`, `Collections` and `Containers`.
 Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
 
-| Timeseries (InfluxDB)
-| Manages timeseries data.
-Consists of a connector to handle the database and a service to provide a higher level view on the database operations.
+| InfluxTimeseries
+| Manages timeseries data in InfluxDB.
+Since we decided to replace it with TimescaleDB this module is now only used to migrate data out of Influx.
 
-| Timeseries (TimescaleDB)
+| Timeseries
 | Manages timeseries data.
-Uses TimescaleDB instead of InfluxDB.
-In an experimental state right now.
-Will replace the old InfluxDB timeseries module.
+Uses TimescaleDB for persistence.
+Provides all needed code from the endpoint to the database access.
+Uses the InfluxTimeseries module to migrate data into TimescaleDB.
 
 | Structured Data & Files
 | Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
@@ -185,12 +199,12 @@ Following our solution strategy, we have the following classes:
 - `LabJournalEntry` is the main business entity containing the content as html string
 - `LabJournalEntryDAO` is used for communication with the neo4j database
 
-===== Timeseries (TimescaleDB)
+===== Timeseries
 
-This module will replace the old implementation using InfluxDB.
+This module replaces the old implementation using InfluxDB.
 For decisions and reasoning, check out <<adr008>>, <<adr010>> and <<adr011>>.
 
-The new module handles persisting timeseries data in a link:https://www.timescale.com/[TimescaleDB].
+This module handles persisting timeseries data in a link:https://www.timescale.com/[TimescaleDB].
 It includes all relevant endpoints and services.
 The database schema includes two tables:
 

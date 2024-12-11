@@ -16,45 +16,45 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface ExperimentalTimeseries
+ * @interface Timeseries
  */
-export interface ExperimentalTimeseries {
+export interface Timeseries {
     /**
      * 
      * @type {string}
-     * @memberof ExperimentalTimeseries
+     * @memberof Timeseries
      */
     measurement: string;
     /**
      * 
      * @type {string}
-     * @memberof ExperimentalTimeseries
+     * @memberof Timeseries
      */
     device: string;
     /**
      * 
      * @type {string}
-     * @memberof ExperimentalTimeseries
+     * @memberof Timeseries
      */
     location: string;
     /**
      * 
      * @type {string}
-     * @memberof ExperimentalTimeseries
+     * @memberof Timeseries
      */
     symbolicName: string;
     /**
      * 
      * @type {string}
-     * @memberof ExperimentalTimeseries
+     * @memberof Timeseries
      */
     field: string;
 }
 
 /**
- * Check if a given object implements the ExperimentalTimeseries interface.
+ * Check if a given object implements the Timeseries interface.
  */
-export function instanceOfExperimentalTimeseries(value: object): value is ExperimentalTimeseries {
+export function instanceOfTimeseries(value: object): value is Timeseries {
     if (!('measurement' in value) || value['measurement'] === undefined) return false;
     if (!('device' in value) || value['device'] === undefined) return false;
     if (!('location' in value) || value['location'] === undefined) return false;
@@ -63,11 +63,11 @@ export function instanceOfExperimentalTimeseries(value: object): value is Experi
     return true;
 }
 
-export function ExperimentalTimeseriesFromJSON(json: any): ExperimentalTimeseries {
-    return ExperimentalTimeseriesFromJSONTyped(json, false);
+export function TimeseriesFromJSON(json: any): Timeseries {
+    return TimeseriesFromJSONTyped(json, false);
 }
 
-export function ExperimentalTimeseriesFromJSONTyped(json: any, ignoreDiscriminator: boolean): ExperimentalTimeseries {
+export function TimeseriesFromJSONTyped(json: any, ignoreDiscriminator: boolean): Timeseries {
     if (json == null) {
         return json;
     }
@@ -81,7 +81,7 @@ export function ExperimentalTimeseriesFromJSONTyped(json: any, ignoreDiscriminat
     };
 }
 
-export function ExperimentalTimeseriesToJSON(value?: ExperimentalTimeseries | null): any {
+export function TimeseriesToJSON(value?: Timeseries | null): any {
     if (value == null) {
         return value;
     }

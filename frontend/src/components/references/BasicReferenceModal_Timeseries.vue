@@ -10,8 +10,8 @@ import type { PlottingData } from "@/utils/plotting";
 import type {
   ResponseError,
   Timeseries,
-  TimeseriesPayload,
   TimeseriesReference,
+  TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
 import { Chart, registerables } from "chart.js";
 import Vue, { computed, onMounted, reactive, ref, type PropType } from "vue";
@@ -90,7 +90,7 @@ function fetchTimeseriesPayload(selectedTimeseries: Timeseries) {
     });
 }
 
-function addToChartData(payload: TimeseriesPayload) {
+function addToChartData(payload: TimeseriesWithDataPoints) {
   const data = payload.points
     .filter(point => {
       return (
