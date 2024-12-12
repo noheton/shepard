@@ -8,6 +8,6 @@ public class VersioningFeatureToggle {
     "de.dlr.shepard.configuration.feature.toggles.VersioningFeatureToggle#isEnabled";
 
   public static boolean isEnabled() {
-    return FeatureToggleHelper.isToggleEnabled(TOGGLE_PROPERTY);
+    return TogglePropertyUtil.isToggleEnabled(TOGGLE_PROPERTY);
   }
 }

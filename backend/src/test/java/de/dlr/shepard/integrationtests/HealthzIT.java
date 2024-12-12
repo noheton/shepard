@@ -18,7 +18,7 @@ public class HealthzIT extends BaseTestCaseIT {
 
   @Test
   public void getHealthz() {
-    List<String> expectedServices = List.of("Neo4J", "MongoDB", "InfluxDB", "TimescaleDB");
+    List<String> expectedServices = List.of("Neo4J", "MongoDB", "TimescaleDB");
 
     assertNotNull(expectedServices);
 

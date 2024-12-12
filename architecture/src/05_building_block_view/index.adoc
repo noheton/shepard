@@ -214,3 +214,45 @@ The database schema includes two tables:
 The schema for both tables is defined by the database migrations in `src/main/java/resources/db/migration`.
 The timeseries table is managed in the code using hibernate entities.
 The data point table is managed directly using custom queries, since we want to make full use of TimescaleDB features and performance.
+
+====== Migration from InfluxDB
+
+Shepard can be started in migration mode by setting the property `shepard.migration-mode.enabled` to true.
+For example, the following command starts the dev mode in migration mode:
+
+```bash
+./mvnw quarkus:dev -Dshepard.migration-mode.enabled=true
+```
+
+.Migration Behaviour
+
+When shepard is started in migration mode, the migration from InfluxDB to TimescaleDB is run.
+More specifically, the behaviour is as follows:
+
+[cols="1a,1a,1a,1a,1a"]
+|===
+|Migration Mode|InfluxDB|TimescaleDB|Migration Status|Behaviour
+
+|Off|*|*|Open|stops with error
+|Off|Configured|Available|Done|runs as usual, informs user that influx config is obsolete
+|Off|*|Available|Done|runs as usual
+|On|Unavailable|*|Open|stops with error
+|On|*|Unavailable|Open|stops with error
+|On|Available|Available|Open|Run the migrations and shepard without endpoints and stop afterwards
+|On|*|*|Done|Stop and inform users that data is already migrated
+|===
+
+.Migration Status
+
+We identify the status of previous migrations in the following way:
+
+For all timeseries containers with a database name set (this identifies the ones created for influx) that are not deleted there must be a migration task entity in the database.
+This entity must have the finished status and no errors.
+In this case, all data was migrated successfully.
+This also means that new instances have no need for migration, as they don't have timeseries containers yet.
+
+.Rollback Strategy
+
+Since we require the migrations to be run before starting a post-4.0.0 instance of shepard, the TimescaleDB must be empty before the migrations.
+The migration progress is persisted in the TimescaleDB.
+In case of errors, the migration can be re-run by deleting the data in the timescaledb.

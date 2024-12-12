@@ -1,5 +1,6 @@
 package de.dlr.shepard;
 
+import de.dlr.shepard.configuration.feature.toggles.MigrationModeToggle;
 import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.neo4j.MigrationsRunner;
 import de.dlr.shepard.neo4j.NeoConnector;
@@ -12,7 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class QuarkusApplication {
+public class DatabaseInitAndShutdown {
 
   @Inject
   InfluxDBConnector influxdb;
@@ -36,7 +37,9 @@ public class QuarkusApplication {
     Log.info("Initialize databases");
     neo4j.connect();
     Log.info("Connection established to neo4j database.");
-    influxdb.connect();
+    if (MigrationModeToggle.isActive()) {
+      influxdb.connect();
+    }
     Log.info(("Connection established to influx database."));
   }
 
