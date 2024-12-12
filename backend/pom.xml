@@ -492,18 +492,6 @@
         <logging.appender>STDOUT</logging.appender>
         <skipITs>true</skipITs>
         <quarkus.native.enabled>false</quarkus.native.enabled>
-        <excludedGroups>io.quarkus.test.junit.QuarkusTest</excludedGroups>
-      </properties>
-    </profile>
-    <profile>
-      <id>unit-test-with-db</id>
-      <properties>
-        <build.profile.id>test</build.profile.id>
-        <quarkus.profile>test</quarkus.profile>
-        <logging.appender>STDOUT</logging.appender>
-        <skipITs>true</skipITs>
-        <quarkus.native.enabled>false</quarkus.native.enabled>
-        <groups>io.quarkus.test.junit.QuarkusTest</groups>
       </properties>
     </profile>
     <profile>
