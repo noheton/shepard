@@ -3,7 +3,9 @@ package de.dlr.shepard.timeseries.model;
 import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.timeseries.model.enums.FillOption;
 import java.util.Optional;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode
 public class TimeseriesDataPointsQueryParams {
 
   private long startTime;

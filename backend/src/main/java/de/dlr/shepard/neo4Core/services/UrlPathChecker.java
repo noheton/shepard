@@ -14,7 +14,7 @@ import de.dlr.shepard.neo4Core.entities.Subscription;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
 import de.dlr.shepard.timeseries.services.TimeseriesContainerService;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceService;
+import de.dlr.shepard.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;

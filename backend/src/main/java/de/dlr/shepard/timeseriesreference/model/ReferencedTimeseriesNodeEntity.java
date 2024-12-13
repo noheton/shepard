@@ -1,7 +1,7 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
+import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.util.HasId;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -49,7 +49,7 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
     this.field = field;
   }
 
-  public ReferencedTimeseriesNodeEntity(InfluxTimeseries timeseries) {
+  public ReferencedTimeseriesNodeEntity(Timeseries timeseries) {
     this.measurement = timeseries.getMeasurement();
     this.device = timeseries.getDevice();
     this.location = timeseries.getLocation();
@@ -57,8 +57,8 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
     this.field = timeseries.getField();
   }
 
-  public InfluxTimeseries toInfluxTimeseries() {
-    return new InfluxTimeseries(
+  public Timeseries toTimeseries() {
+    return new Timeseries(
       this.getMeasurement(),
       this.getDevice(),
       this.getLocation(),

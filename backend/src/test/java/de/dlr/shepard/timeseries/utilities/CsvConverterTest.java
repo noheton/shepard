@@ -2,9 +2,11 @@ package de.dlr.shepard.timeseries.utilities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.timeseries.services.TimeseriesCsvService;
@@ -14,7 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -106,15 +107,20 @@ public class CsvConverterTest {
     );
 
     InputStream timeseriesDataStream = new ByteArrayInputStream(actualCsvString.getBytes(StandardCharsets.UTF_8));
-    var actualTimeseriesDataIOMap = CsvConverter.convertToTimeseriesWithData(timeseriesDataStream);
-    HashMap<Timeseries, List<TimeseriesDataPoint>> expectedTimeseriesDataIOMap = new HashMap<>();
-    expectedTimeseriesDataIOMap.put(expectedTimeseriesBoolean, expectedDataPointsIOBoolean);
-    expectedTimeseriesDataIOMap.put(expectedTimeseriesString, expectedDataPointsIOString);
-    expectedTimeseriesDataIOMap.put(expectedTimeseriesInteger, expectedDataPointsIOInteger);
-    expectedTimeseriesDataIOMap.put(expectedTimeseriesDouble, expectedDataPointsIODouble);
 
-    assertEquals(4, actualTimeseriesDataIOMap.size());
-    assertEquals(expectedTimeseriesDataIOMap, actualTimeseriesDataIOMap);
+    List<TimeseriesWithDataPoints> actualTimeseriesWithDataPointsList = CsvConverter.convertToTimeseriesWithData(
+      timeseriesDataStream
+    );
+    List<TimeseriesWithDataPoints> expectedTimeseriesWithDataPointsList = List.of(
+      new TimeseriesWithDataPoints(expectedTimeseriesBoolean, expectedDataPointsIOBoolean),
+      new TimeseriesWithDataPoints(expectedTimeseriesInteger, expectedDataPointsIOInteger),
+      new TimeseriesWithDataPoints(expectedTimeseriesString, expectedDataPointsIOString),
+      new TimeseriesWithDataPoints(expectedTimeseriesDouble, expectedDataPointsIODouble)
+    );
+
+    assertEquals(4, actualTimeseriesWithDataPointsList.size());
+    assertTrue(actualTimeseriesWithDataPointsList.containsAll(expectedTimeseriesWithDataPointsList));
+    assertTrue(expectedTimeseriesWithDataPointsList.containsAll(actualTimeseriesWithDataPointsList));
   }
 
   @Test

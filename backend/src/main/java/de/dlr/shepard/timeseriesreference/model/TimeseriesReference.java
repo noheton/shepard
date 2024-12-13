@@ -1,4 +1,4 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.model;
 
 import de.dlr.shepard.neo4Core.entities.BasicReference;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
@@ -23,7 +23,7 @@ public class TimeseriesReference extends BasicReference {
   private long end;
 
   @Relationship(type = Constants.HAS_PAYLOAD)
-  private List<ReferencedTimeseriesNodeEntity> timeseries = new ArrayList<>();
+  private List<ReferencedTimeseriesNodeEntity> referencedTimeseriesList = new ArrayList<>();
 
   @ToString.Exclude
   @Relationship(type = Constants.IS_IN_CONTAINER)
@@ -39,14 +39,14 @@ public class TimeseriesReference extends BasicReference {
   }
 
   public void addTimeseries(ReferencedTimeseriesNodeEntity timeseries) {
-    this.timeseries.add(timeseries);
+    this.referencedTimeseriesList.add(timeseries);
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(end, start, timeseries);
+    result = prime * result + Objects.hash(end, start, referencedTimeseriesList);
     result = prime * result + HasId.hashcodeHelper(timeseriesContainer);
     return result;
   }
@@ -60,7 +60,7 @@ public class TimeseriesReference extends BasicReference {
     return (
       end == other.end &&
       start == other.start &&
-      Objects.equals(timeseries, other.timeseries) &&
+      Objects.equals(referencedTimeseriesList, other.referencedTimeseriesList) &&
       HasId.equalsHelper(timeseriesContainer, other.timeseriesContainer)
     );
   }

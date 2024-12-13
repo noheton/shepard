@@ -1,9 +1,11 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.io;
 
-import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.neo4Core.io.BasicReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -25,7 +27,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
 
   @NotEmpty
   @Schema(required = true)
-  private InfluxTimeseries[] timeseries;
+  private List<ReferencedTimeseriesNodeEntity> referencedTimeseriesList;
 
   @NotNull
   @Schema(required = true)
@@ -35,7 +37,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
     super(ref);
     this.start = ref.getStart();
     this.end = ref.getEnd();
-    this.timeseries = ref.getTimeseries().stream().map(t -> t.toInfluxTimeseries()).toArray(InfluxTimeseries[]::new);
+    this.referencedTimeseriesList = ref.getReferencedTimeseriesList();
     this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
   }
 }

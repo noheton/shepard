@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.timeseries.TimeseriesTestDataGenerator;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -19,7 +20,6 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -197,26 +197,27 @@ public class TimeseriesCsvServiceTest {
       );
     }
 
-    var timeseriesDataQueue = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
+    var actualTimeseriesDataMap = new ArrayList<TimeseriesWithDataPoints>();
     expTimeseries
       .stream()
       .forEach(timeseries -> {
-        timeseriesDataQueue.put(
-          timeseries,
-          timeseriesService.getDataPointsByTimeseries(
-            container.getId(),
+        actualTimeseriesDataMap.add(
+          new TimeseriesWithDataPoints(
             timeseries,
-            new TimeseriesDataPointsQueryParams(
-              InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
-              InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
-              null,
-              null,
-              null
+            timeseriesService.getDataPointsByTimeseries(
+              container.getId(),
+              timeseries,
+              new TimeseriesDataPointsQueryParams(
+                InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
+                InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
+                null,
+                null,
+                null
+              )
             )
           )
         );
       });
-    var actualTimeseriesDataMap = new HashMap<Timeseries, List<TimeseriesDataPoint>>(timeseriesDataQueue);
 
     var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap);
 

@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.neo4Core.entities.DataObject;
+import de.dlr.shepard.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;

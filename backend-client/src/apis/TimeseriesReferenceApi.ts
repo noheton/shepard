@@ -15,20 +15,20 @@
 
 import * as runtime from '../runtime';
 import type {
-  InfluxFillOption,
-  InfluxSingleValuedUnaryFunction,
-  InfluxTimeseriesPayload,
+  AggregateFunction,
+  FillOption,
   TimeseriesReference,
+  TimeseriesWithDataPoints,
 } from '../models/index';
 import {
-    InfluxFillOptionFromJSON,
-    InfluxFillOptionToJSON,
-    InfluxSingleValuedUnaryFunctionFromJSON,
-    InfluxSingleValuedUnaryFunctionToJSON,
-    InfluxTimeseriesPayloadFromJSON,
-    InfluxTimeseriesPayloadToJSON,
+    AggregateFunctionFromJSON,
+    AggregateFunctionToJSON,
+    FillOptionFromJSON,
+    FillOptionToJSON,
     TimeseriesReferenceFromJSON,
     TimeseriesReferenceToJSON,
+    TimeseriesWithDataPointsFromJSON,
+    TimeseriesWithDataPointsToJSON,
 } from '../models/index';
 
 export interface CreateTimeseriesReferenceRequest {
@@ -47,9 +47,9 @@ export interface ExportTimeseriesPayloadRequest {
     collectionId: number;
     dataObjectId: number;
     timeseriesReferenceId: number;
-    _function?: InfluxSingleValuedUnaryFunction;
+    _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: InfluxFillOption;
+    fillOption?: FillOption;
     device?: Set<string>;
     location?: Set<string>;
     symbolicName?: Set<string>;
@@ -64,9 +64,9 @@ export interface GetTimeseriesPayloadRequest {
     collectionId: number;
     dataObjectId: number;
     timeseriesReferenceId: number;
-    _function?: InfluxSingleValuedUnaryFunction;
+    _function?: AggregateFunction;
     groupBy?: number;
-    fillOption?: InfluxFillOption;
+    fillOption?: FillOption;
     device?: Set<string>;
     location?: Set<string>;
     symbolicName?: Set<string>;
@@ -341,7 +341,7 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
     /**
      * Get timeseries reference payload
      */
-    async getTimeseriesPayloadRaw(requestParameters: GetTimeseriesPayloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<InfluxTimeseriesPayload>>> {
+    async getTimeseriesPayloadRaw(requestParameters: GetTimeseriesPayloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesWithDataPoints>>> {
         if (requestParameters['collectionId'] == null) {
             throw new runtime.RequiredError(
                 'collectionId',
@@ -410,13 +410,13 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(InfluxTimeseriesPayloadFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesWithDataPointsFromJSON));
     }
 
     /**
      * Get timeseries reference payload
      */
-    async getTimeseriesPayload(requestParameters: GetTimeseriesPayloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<InfluxTimeseriesPayload>> {
+    async getTimeseriesPayload(requestParameters: GetTimeseriesPayloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesWithDataPoints>> {
         const response = await this.getTimeseriesPayloadRaw(requestParameters, initOverrides);
         return await response.value();
     }

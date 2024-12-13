@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import java.util.Date;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
-import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 public class TimeseriesReferenceIOTest {
@@ -29,33 +31,30 @@ public class TimeseriesReferenceIOTest {
     var container = new TimeseriesContainer(3L);
     var ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "name", "field");
 
-    var obj = new TimeseriesReference(1L);
-    obj.setShepardId(341L);
-    obj.setCreatedAt(date);
-    obj.setCreatedBy(user);
-    obj.setName("MyName");
-    obj.setUpdatedAt(update);
-    obj.setUpdatedBy(updateUser);
-    obj.setDataObject(dataObject);
-    obj.setEnd(213);
-    obj.setStart(123);
-    obj.setTimeseries(List.of(ts));
-    obj.setTimeseriesContainer(container);
+    var timeseriesReference = new TimeseriesReference(1L);
+    timeseriesReference.setShepardId(341L);
+    timeseriesReference.setCreatedAt(date);
+    timeseriesReference.setCreatedBy(user);
+    timeseriesReference.setName("MyName");
+    timeseriesReference.setUpdatedAt(update);
+    timeseriesReference.setUpdatedBy(updateUser);
+    timeseriesReference.setDataObject(dataObject);
+    timeseriesReference.setEnd(213);
+    timeseriesReference.setStart(123);
+    timeseriesReference.setReferencedTimeseriesList(List.of(ts));
+    timeseriesReference.setTimeseriesContainer(container);
 
-    var converted = new TimeseriesReferenceIO(obj);
-    assertEquals(obj.getShepardId(), converted.getId());
-    assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
+    var converted = new TimeseriesReferenceIO(timeseriesReference);
+    assertEquals(timeseriesReference.getShepardId(), converted.getId());
+    assertEquals(timeseriesReference.getCreatedAt(), converted.getCreatedAt());
     assertEquals("bob", converted.getCreatedBy());
-    assertEquals(obj.getName(), converted.getName());
-    assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
+    assertEquals(timeseriesReference.getName(), converted.getName());
+    assertEquals(timeseriesReference.getUpdatedAt(), converted.getUpdatedAt());
     assertEquals("claus", converted.getUpdatedBy());
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
-    assertEquals(obj.getEnd(), converted.getEnd());
-    assertEquals(obj.getStart(), converted.getStart());
-    assertEquals(
-      obj.getTimeseries().stream().map(t -> t.toInfluxTimeseries()).toList(),
-      Arrays.asList(converted.getTimeseries())
-    );
+    assertEquals(timeseriesReference.getEnd(), converted.getEnd());
+    assertEquals(timeseriesReference.getStart(), converted.getStart());
+    assertEquals(timeseriesReference.getReferencedTimeseriesList(), converted.getReferencedTimeseriesList());
     assertEquals(3L, converted.getTimeseriesContainerId());
   }
 
@@ -67,28 +66,25 @@ public class TimeseriesReferenceIOTest {
     dataObject.setShepardId(3485L);
     var ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "name", "field");
 
-    var obj = new TimeseriesReference(1L);
-    obj.setShepardId(234L);
-    obj.setCreatedAt(date);
-    obj.setCreatedBy(user);
-    obj.setName("MyName");
-    obj.setDataObject(dataObject);
-    obj.setEnd(213);
-    obj.setStart(123);
-    obj.setTimeseries(List.of(ts));
+    var timeseriesReference = new TimeseriesReference(1L);
+    timeseriesReference.setShepardId(234L);
+    timeseriesReference.setCreatedAt(date);
+    timeseriesReference.setCreatedBy(user);
+    timeseriesReference.setName("MyName");
+    timeseriesReference.setDataObject(dataObject);
+    timeseriesReference.setEnd(213);
+    timeseriesReference.setStart(123);
+    timeseriesReference.setReferencedTimeseriesList(List.of(ts));
 
-    var converted = new TimeseriesReferenceIO(obj);
-    assertEquals(obj.getShepardId(), converted.getId());
-    assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
+    var converted = new TimeseriesReferenceIO(timeseriesReference);
+    assertEquals(timeseriesReference.getShepardId(), converted.getId());
+    assertEquals(timeseriesReference.getCreatedAt(), converted.getCreatedAt());
     assertEquals("bob", converted.getCreatedBy());
-    assertEquals(obj.getName(), converted.getName());
+    assertEquals(timeseriesReference.getName(), converted.getName());
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
-    assertEquals(obj.getEnd(), converted.getEnd());
-    assertEquals(obj.getStart(), converted.getStart());
-    assertEquals(
-      obj.getTimeseries().stream().map(t -> t.toInfluxTimeseries()).toList(),
-      Arrays.asList(converted.getTimeseries())
-    );
+    assertEquals(timeseriesReference.getEnd(), converted.getEnd());
+    assertEquals(timeseriesReference.getStart(), converted.getStart());
+    assertEquals(timeseriesReference.getReferencedTimeseriesList(), converted.getReferencedTimeseriesList());
     assertEquals(-1, converted.getTimeseriesContainerId());
   }
 }

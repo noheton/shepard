@@ -7,6 +7,8 @@ import de.dlr.shepard.neo4Core.entities.DataObject;
 import de.dlr.shepard.neo4Core.entities.SemanticAnnotation;
 import de.dlr.shepard.neo4Core.entities.User;
 import de.dlr.shepard.neo4Core.entities.UserGroup;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,6 @@ public class TimeseriesReferenceTest extends BaseTestCase {
     var ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symname", "field");
     ref.addTimeseries(ts);
 
-    assertEquals(List.of(ts), ref.getTimeseries());
+    assertEquals(List.of(ts), ref.getReferencedTimeseriesList());
   }
 }

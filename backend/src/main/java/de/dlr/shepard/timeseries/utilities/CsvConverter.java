@@ -6,6 +6,7 @@ import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import io.quarkus.logging.Log;
@@ -20,17 +21,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public final class CsvConverter {
 
   public static InputStream convertToCsv(Timeseries timeseries, List<TimeseriesDataPoint> dataPoints) {
-    var timeseriesDataAsMap = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
-    timeseriesDataAsMap.put(timeseries, dataPoints);
-    return convertToCsv(timeseriesDataAsMap);
+    return convertToCsv(List.of(new TimeseriesWithDataPoints(timeseries, dataPoints)));
   }
 
-  public static InputStream convertToCsv(HashMap<Timeseries, List<TimeseriesDataPoint>> timeseriesDataMap) {
+  public static InputStream convertToCsv(List<TimeseriesWithDataPoints> timeseriesWithDataPointsList) {
     Path tmpfile = null;
     try {
       tmpfile = Files.createTempFile("shepard", ".csv");
@@ -41,9 +41,14 @@ public final class CsvConverter {
           .withApplyQuotesToAll(false)
           .build();
 
-        for (var timeseriesData : timeseriesDataMap.entrySet()) {
+        for (var timeseriesWithDataPoints : timeseriesWithDataPointsList) {
           try {
-            writer.write(convertTimeseriesWithDataToCsv(timeseriesData.getKey(), timeseriesData.getValue()));
+            writer.write(
+              convertTimeseriesWithDataToCsv(
+                timeseriesWithDataPoints.getTimeseries(),
+                timeseriesWithDataPoints.getPoints()
+              )
+            );
           } catch (CsvException e) {
             Log.error("CsvException while writing stream", e);
             throw new InvalidRequestException();
@@ -67,7 +72,7 @@ public final class CsvConverter {
     return result;
   }
 
-  public static HashMap<Timeseries, List<TimeseriesDataPoint>> convertToTimeseriesWithData(InputStream stream) {
+  public static List<TimeseriesWithDataPoints> convertToTimeseriesWithData(InputStream stream) {
     try (var reader = new InputStreamReader(stream)) {
       var timeseriesDataBuilder = new CsvToBeanBuilder<CsvTimeseriesDataPoint>(reader)
         .withType(CsvTimeseriesDataPoint.class)
@@ -109,10 +114,10 @@ public final class CsvConverter {
     return result;
   }
 
-  private static HashMap<Timeseries, List<TimeseriesDataPoint>> convertCsvToTimeseriesWithData(
+  private static List<TimeseriesWithDataPoints> convertCsvToTimeseriesWithData(
     List<CsvTimeseriesDataPoint> csvInputList
   ) {
-    var result = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
+    HashMap<Timeseries, List<TimeseriesDataPoint>> result = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
 
     for (var csvInputLine : csvInputList) {
       var timeseries = new Timeseries(
@@ -132,7 +137,12 @@ public final class CsvConverter {
         result.put(timeseries, dataPoints);
       }
     }
-    return result;
+    List<TimeseriesWithDataPoints> timeseriesWithDataPointsList = result
+      .entrySet()
+      .stream()
+      .map(entry -> new TimeseriesWithDataPoints(entry.getKey(), entry.getValue()))
+      .collect(Collectors.toList());
+    return timeseriesWithDataPointsList;
   }
 
   private static Object parseValue(Object input) {

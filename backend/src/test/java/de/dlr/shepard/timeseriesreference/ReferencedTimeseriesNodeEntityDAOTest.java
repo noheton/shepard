@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

@@ -3,11 +3,11 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
@@ -97,15 +98,15 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
   @Test
   @Order(2)
   public void createReference() {
-    var ts1 = new InfluxTimeseries("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
-    var ts2 = new InfluxTimeseries("Different", "Just", "For", "Testing", "Purposes");
-    var timeseries = new InfluxTimeseries[] { ts1, ts2 };
+    var ts1 = new ReferencedTimeseriesNodeEntity("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
+    var ts2 = new ReferencedTimeseriesNodeEntity("Different", "Just", "For", "Testing", "Purposes");
+    var timeseries = List.of(ts1, ts2);
 
     var toCreate = new TimeseriesReferenceIO();
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(1708067683056000000L);
     toCreate.setEnd(1708068043057000000L);
-    toCreate.setTimeseries(timeseries);
+    toCreate.setReferencedTimeseriesList(timeseries);
     toCreate.setTimeseriesContainerId(container.getId());
     reference = given()
       .spec(referencesRequestSpec)

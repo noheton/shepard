@@ -3,13 +3,14 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.influxtimeseries.InfluxPoint;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.neo4Core.io.CollectionIO;
 import de.dlr.shepard.neo4Core.io.DataObjectIO;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -39,7 +40,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
 
   private static TimeseriesContainerIO container;
   private static TimeseriesReferenceIO reference;
-  private static InfluxTimeseriesPayload payload;
+  private static TimeseriesWithDataPoints timeseriesWithDataPoints;
 
   private static int numPoints = 32;
 
@@ -82,20 +83,21 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     var currentTime = System.currentTimeMillis() * 1000000;
     var slice = (2f * Math.PI) / (numPoints - 1);
 
-    List<InfluxPoint> points = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     for (int i = 0; i < numPoints; i++) {
       var offset = i * 1000000000L;
-      var point = new InfluxPoint(currentTime + offset, Math.sin(slice * i));
-      points.add(point);
+      var point = new TimeseriesDataPoint(currentTime + offset, Math.sin(slice * i));
+      dataPoints.add(point);
     }
 
-    payload = new InfluxTimeseriesPayload();
-    payload.setTimeseries(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
-    payload.setPoints(points);
+    timeseriesWithDataPoints = new TimeseriesWithDataPoints(
+      new Timeseries("meas", "dev", "loc", "symName", "field"),
+      dataPoints
+    );
 
     given()
       .spec(containerRequestSpec)
-      .body(payload)
+      .body(timeseriesWithDataPoints)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
@@ -105,12 +107,14 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void createTimeseriesReference() {
-    var nanos = payload.getPoints().get(0).getTimeInNanoseconds();
+    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
     var toCreate = new TimeseriesReferenceIO();
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(nanos - 1000000000L);
     toCreate.setEnd(nanos + 1000000000L * numPoints);
-    toCreate.setTimeseries(new InfluxTimeseries[] { payload.getTimeseries() });
+    toCreate.setReferencedTimeseriesList(
+      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
+    );
     toCreate.setTimeseriesContainerId(container.getId());
 
     var actual = given()
@@ -131,7 +135,9 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getStart()).isEqualTo(nanos - 1000000000L);
     assertThat(actual.getEnd()).isEqualTo(nanos + 1000000000L * numPoints);
     assertThat(actual.getName()).isEqualTo("TimeseriesReferenceDummy");
-    assertThat(actual.getTimeseries()).isEqualTo(new InfluxTimeseries[] { payload.getTimeseries() });
+    assertThat(actual.getReferencedTimeseriesList()).isEqualTo(
+      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
+    );
     assertThat(actual.getType()).isEqualTo("TimeseriesReference");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -177,9 +183,9 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .then()
       .statusCode(200)
       .extract()
-      .as(InfluxTimeseriesPayload[].class);
+      .as(TimeseriesWithDataPoints[].class);
 
-    assertThat(actual).containsExactly(payload);
+    assertThat(actual).containsExactly(timeseriesWithDataPoints);
   }
 
   @Test

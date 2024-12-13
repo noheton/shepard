@@ -13,9 +13,9 @@ import de.dlr.shepard.neo4Core.services.DataObjectService;
 import de.dlr.shepard.neo4Core.services.FileReferenceService;
 import de.dlr.shepard.neo4Core.services.StructuredDataReferenceService;
 import de.dlr.shepard.neo4Core.services.URIReferenceService;
-import de.dlr.shepard.timeseriesreference.TimeseriesReference;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceService;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
+import de.dlr.shepard.timeseriesreference.services.TimeseriesReferenceService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -94,7 +94,7 @@ public class ExportService {
 
     InputStream timeseriesPayload = null;
     try {
-      timeseriesPayload = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(referenceId, username);
+      timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(referenceId, username);
     } catch (ShepardException e) {
       Log.warn("Cannot access timeseries payload during export");
     }

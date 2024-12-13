@@ -1,6 +1,7 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.daos;
 
 import de.dlr.shepard.neo4Core.dao.VersionableEntityDAO;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.CypherQueryHelper;
 import jakarta.enterprise.context.RequestScoped;

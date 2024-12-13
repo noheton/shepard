@@ -1,13 +1,8 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.services;
 
 import de.dlr.shepard.exceptions.InvalidAuthException;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.exceptions.InvalidRequestException;
-import de.dlr.shepard.influxtimeseries.InfluxFillOption;
-import de.dlr.shepard.influxtimeseries.InfluxSingleValuedUnaryFunction;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesService;
-import de.dlr.shepard.influxtimeseries.InfluxUtil;
 import de.dlr.shepard.neo4Core.dao.DataObjectDAO;
 import de.dlr.shepard.neo4Core.dao.UserDAO;
 import de.dlr.shepard.neo4Core.dao.VersionDAO;
@@ -15,6 +10,18 @@ import de.dlr.shepard.neo4Core.entities.Version;
 import de.dlr.shepard.neo4Core.services.IReferenceService;
 import de.dlr.shepard.security.PermissionsUtil;
 import de.dlr.shepard.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.timeseries.model.enums.FillOption;
+import de.dlr.shepard.timeseries.services.TimeseriesCsvService;
+import de.dlr.shepard.timeseries.services.TimeseriesService;
+import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
+import de.dlr.shepard.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
+import de.dlr.shepard.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.util.AccessType;
 import de.dlr.shepard.util.DateHelper;
 import io.quarkus.logging.Log;
@@ -22,7 +29,6 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +37,8 @@ import java.util.Set;
 public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
 
   private TimeseriesReferenceDAO timeseriesReferenceDAO;
-  private InfluxTimeseriesService timeseriesService;
+  private TimeseriesService timeseriesService;
+  private TimeseriesCsvService timeseriesCsvService;
   private DataObjectDAO dataObjectDAO;
   private TimeseriesContainerDAO timeseriesContainerDAO;
   private ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
@@ -45,7 +52,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   @Inject
   public TimeseriesReferenceService(
     TimeseriesReferenceDAO timeseriesReferenceDAO,
-    InfluxTimeseriesService timeseriesService,
+    TimeseriesService timeseriesService,
+    TimeseriesCsvService timeseriesCsvService,
     DataObjectDAO dataObjectDAO,
     TimeseriesContainerDAO timeseriesContainerDAO,
     ReferencedTimeseriesNodeEntityDAO timeseriesDAO,
@@ -56,6 +64,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   ) {
     this.timeseriesReferenceDAO = timeseriesReferenceDAO;
     this.timeseriesService = timeseriesService;
+    this.timeseriesCsvService = timeseriesCsvService;
     this.dataObjectDAO = dataObjectDAO;
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.timeseriesDAO = timeseriesDAO;
@@ -98,14 +107,14 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
         )
       );
     }
+
     // sanitize timeseries
-    var errors = Arrays.stream(timeseriesReference.getTimeseries())
-      .map(InfluxUtil::sanitize)
-      .filter(e -> !e.isBlank())
-      .toList();
-    if (!errors.isEmpty()) throw new InvalidBodyException(
-      "The timeseries list contains illegal characters: " + String.join(", ", errors)
-    );
+    timeseriesReference
+      .getReferencedTimeseriesList()
+      .forEach(referencedTimeseries ->
+        TimeseriesValidator.assertTimeseriesPropertiesAreValid(referencedTimeseries.toTimeseries())
+      );
+
     var toCreate = new TimeseriesReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
@@ -115,7 +124,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     toCreate.setEnd(timeseriesReference.getEnd());
     toCreate.setTimeseriesContainer(container);
 
-    for (var ts : timeseriesReference.getTimeseries()) {
+    for (var ts : timeseriesReference.getReferencedTimeseriesList()) {
       var found = timeseriesDAO.find(
         ts.getMeasurement(),
         ts.getDevice(),
@@ -126,7 +135,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       if (found != null) {
         toCreate.addTimeseries(found);
       } else {
-        toCreate.addTimeseries(new ReferencedTimeseriesNodeEntity(ts));
+        toCreate.addTimeseries(ts);
       }
     }
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
@@ -150,11 +159,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     return true;
   }
 
-  public List<InfluxTimeseriesPayload> getTimeseriesPayloadByShepardId(
+  public List<TimeseriesWithDataPoints> getReferencedTimeseriesWithDataPointsList(
     long timeseriesShepardId,
-    InfluxSingleValuedUnaryFunction function,
-    Long groupBy,
-    InfluxFillOption fillOption,
+    AggregateFunction function,
+    Long timeSliceNanoseconds,
+    FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet,
@@ -166,31 +175,33 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       reference.getTimeseriesContainer().isDeleted() ||
       !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
     ) return reference
-      .getTimeseries()
+      .getReferencedTimeseriesList()
       .stream()
-      .map(ts -> new InfluxTimeseriesPayload(ts.toInfluxTimeseries(), Collections.emptyList()))
+      .map(ts -> new TimeseriesWithDataPoints(ts.toTimeseries(), Collections.emptyList()))
       .toList();
 
-    var database = reference.getTimeseriesContainer().getDatabase();
-    return timeseriesService.getTimeseriesPayloadList(
+    var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
+    var filteredTimeseriesList = timeseriesList
+      .stream()
+      .filter(timeseries -> matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet))
+      .toList();
+    var containerId = reference.getTimeseriesContainer().getId();
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       reference.getStart(),
       reference.getEnd(),
-      database,
-      reference.getTimeseries().stream().map(t -> t.toInfluxTimeseries()).toList(),
-      function,
-      groupBy,
+      timeSliceNanoseconds,
       fillOption,
-      devicesFilterSet,
-      locationsFilterSet,
-      symbolicNameFilterSet
+      function
     );
+
+    return timeseriesService.getManyTimeseriesWithDataPoints(containerId, filteredTimeseriesList, queryParams);
   }
 
-  public InputStream exportTimeseriesPayloadByShepardId(
+  public InputStream exportReferencedTimeseriesByShepardId(
     long timeseriesShepardId,
-    InfluxSingleValuedUnaryFunction function,
-    Long groupBy,
-    InfluxFillOption fillOption,
+    AggregateFunction function,
+    Long timeSliceNanoseconds,
+    FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet,
@@ -204,25 +215,30 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this timeseries");
 
-    var database = reference.getTimeseriesContainer().getDatabase();
-
-    return timeseriesService.exportTimeseriesPayload(
+    var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
+    var filteredTimeseriesList = timeseriesList
+      .stream()
+      .filter(timeseries -> matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet))
+      .toList();
+    var containerId = reference.getTimeseriesContainer().getId();
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       reference.getStart(),
       reference.getEnd(),
-      database,
-      reference.getTimeseries().stream().map(t -> t.toInfluxTimeseries()).toList(),
-      function,
-      groupBy,
+      timeSliceNanoseconds,
       fillOption,
-      devicesFilterSet,
-      locationsFilterSet,
-      symbolicNameFilterSet
+      function
+    );
+
+    return timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
+      containerId,
+      filteredTimeseriesList,
+      queryParams
     );
   }
 
-  public InputStream exportTimeseriesPayloadByShepardId(long timeseriesId, String username) throws IOException {
-    return exportTimeseriesPayloadByShepardId(
-      timeseriesId,
+  public InputStream exportReferencedTimeseriesByShepardId(long referenceId, String username) throws IOException {
+    return exportReferencedTimeseriesByShepardId(
+      referenceId,
       null,
       null,
       null,
@@ -231,5 +247,21 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       Collections.emptySet(),
       username
     );
+  }
+
+  private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {
+    var deviceMatches = true;
+    var locatioMatches = true;
+    var symbolicNameMatches = true;
+    if (!device.isEmpty()) {
+      deviceMatches = device.contains(timeseries.getDevice());
+    }
+    if (!location.isEmpty()) {
+      locatioMatches = location.contains(timeseries.getLocation());
+    }
+    if (!symName.isEmpty()) {
+      symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
+    }
+    return deviceMatches && locatioMatches && symbolicNameMatches;
   }
 }

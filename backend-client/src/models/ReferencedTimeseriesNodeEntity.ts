@@ -16,45 +16,45 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface InfluxTimeseries
+ * @interface ReferencedTimeseriesNodeEntity
  */
-export interface InfluxTimeseries {
+export interface ReferencedTimeseriesNodeEntity {
     /**
      * 
      * @type {string}
-     * @memberof InfluxTimeseries
+     * @memberof ReferencedTimeseriesNodeEntity
      */
     measurement: string;
     /**
      * 
      * @type {string}
-     * @memberof InfluxTimeseries
+     * @memberof ReferencedTimeseriesNodeEntity
      */
     device: string;
     /**
      * 
      * @type {string}
-     * @memberof InfluxTimeseries
+     * @memberof ReferencedTimeseriesNodeEntity
      */
     location: string;
     /**
      * 
      * @type {string}
-     * @memberof InfluxTimeseries
+     * @memberof ReferencedTimeseriesNodeEntity
      */
     symbolicName: string;
     /**
      * 
      * @type {string}
-     * @memberof InfluxTimeseries
+     * @memberof ReferencedTimeseriesNodeEntity
      */
     field: string;
 }
 
 /**
- * Check if a given object implements the InfluxTimeseries interface.
+ * Check if a given object implements the ReferencedTimeseriesNodeEntity interface.
  */
-export function instanceOfInfluxTimeseries(value: object): value is InfluxTimeseries {
+export function instanceOfReferencedTimeseriesNodeEntity(value: object): value is ReferencedTimeseriesNodeEntity {
     if (!('measurement' in value) || value['measurement'] === undefined) return false;
     if (!('device' in value) || value['device'] === undefined) return false;
     if (!('location' in value) || value['location'] === undefined) return false;
@@ -63,11 +63,11 @@ export function instanceOfInfluxTimeseries(value: object): value is InfluxTimese
     return true;
 }
 
-export function InfluxTimeseriesFromJSON(json: any): InfluxTimeseries {
-    return InfluxTimeseriesFromJSONTyped(json, false);
+export function ReferencedTimeseriesNodeEntityFromJSON(json: any): ReferencedTimeseriesNodeEntity {
+    return ReferencedTimeseriesNodeEntityFromJSONTyped(json, false);
 }
 
-export function InfluxTimeseriesFromJSONTyped(json: any, ignoreDiscriminator: boolean): InfluxTimeseries {
+export function ReferencedTimeseriesNodeEntityFromJSONTyped(json: any, ignoreDiscriminator: boolean): ReferencedTimeseriesNodeEntity {
     if (json == null) {
         return json;
     }
@@ -81,7 +81,7 @@ export function InfluxTimeseriesFromJSONTyped(json: any, ignoreDiscriminator: bo
     };
 }
 
-export function InfluxTimeseriesToJSON(value?: InfluxTimeseries | null): any {
+export function ReferencedTimeseriesNodeEntityToJSON(value?: ReferencedTimeseriesNodeEntity | null): any {
     if (value == null) {
         return value;
     }

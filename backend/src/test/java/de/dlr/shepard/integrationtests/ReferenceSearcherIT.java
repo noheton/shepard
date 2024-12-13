@@ -4,9 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.influxtimeseries.InfluxPoint;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.mongoDB.ShepardFile;
 import de.dlr.shepard.mongoDB.StructuredData;
 import de.dlr.shepard.mongoDB.StructuredDataPayload;
@@ -26,7 +23,11 @@ import de.dlr.shepard.search.unified.SearchBody;
 import de.dlr.shepard.search.unified.SearchParams;
 import de.dlr.shepard.search.unified.SearchScope;
 import de.dlr.shepard.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.timeseriesreference.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.model.Timeseries;
+import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.util.Constants;
 import de.dlr.shepard.util.TraversalRules;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -88,7 +89,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   private static RequestSpecification tSerContainerRequestSpec;
   private static TimeseriesContainerIO tSerContainer;
   private static TimeseriesReferenceIO tSerReference;
-  private static InfluxTimeseriesPayload tSerPayload;
+  private static TimeseriesWithDataPoints timeseriesWithDataPoints;
   private static int numPoints = 32;
 
   @BeforeAll
@@ -674,28 +675,32 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .as(TimeseriesContainerIO.class);
     var currentTime = System.currentTimeMillis() * 1000000;
     var slice = (2f * Math.PI) / (numPoints - 1);
-    List<InfluxPoint> points = new ArrayList<>();
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     for (int i = 0; i < numPoints; i++) {
       var offset = i * 1000000000L;
-      var point = new InfluxPoint(currentTime + offset, Math.sin(slice * i));
-      points.add(point);
+      var point = new TimeseriesDataPoint(currentTime + offset, Math.sin(slice * i));
+      dataPoints.add(point);
     }
-    tSerPayload = new InfluxTimeseriesPayload();
-    tSerPayload.setTimeseries(new InfluxTimeseries("meas", "dev", "loc", "symName", "field"));
-    tSerPayload.setPoints(points);
+    timeseriesWithDataPoints = new TimeseriesWithDataPoints(
+      new Timeseries("meas", "dev", "loc", "symName", "field"),
+      dataPoints
+    );
+
     given()
       .spec(tSerContainerRequestSpec)
-      .body(tSerPayload)
+      .body(timeseriesWithDataPoints)
       .when()
       .post(String.format("%s/%d/%s", tSerContainerURL, tSerContainer.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201);
-    var nanos = tSerPayload.getPoints().get(0).getTimeInNanoseconds();
+    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
     var tSerReferenceToCreate = new TimeseriesReferenceIO();
     tSerReferenceToCreate.setName("TimeseriesReferenceDummy");
     tSerReferenceToCreate.setStart(nanos - 1000000000L);
     tSerReferenceToCreate.setEnd(nanos + 1000000000L * numPoints);
-    tSerReferenceToCreate.setTimeseries(new InfluxTimeseries[] { tSerPayload.getTimeseries() });
+    tSerReferenceToCreate.setReferencedTimeseriesList(
+      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
+    );
     tSerReferenceToCreate.setTimeseriesContainerId(tSerContainer.getId());
     tSerReference = given()
       .spec(tSerReferencesRequestSpec)

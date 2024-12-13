@@ -1,6 +1,7 @@
 package de.dlr.shepard.timeseries.services;
 
 import de.dlr.shepard.exceptions.InvalidBodyException;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.timeseries.model.Timeseries;
 import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
@@ -13,9 +14,11 @@ import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RequestScoped
 public class TimeseriesService {
@@ -66,6 +69,24 @@ public class TimeseriesService {
     DataPointValueType valueType = timeseriesEntity.get().getValueType();
 
     return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
+  }
+
+  public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
+    Long containerId,
+    List<Timeseries> timeseriesList,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<
+      TimeseriesWithDataPoints
+    >();
+    timeseriesList
+      .parallelStream()
+      .forEach(timeseries -> {
+        timeseriesWithDataPointsQueue.add(
+          new TimeseriesWithDataPoints(timeseries, getDataPointsByTimeseries(containerId, timeseries, queryParams))
+        );
+      });
+    return new ArrayList<TimeseriesWithDataPoints>(timeseriesWithDataPointsQueue);
   }
 
   /**
@@ -121,8 +142,8 @@ public class TimeseriesService {
     TimeseriesEntity timeseriesEntity,
     List<TimeseriesDataPoint> dataPoints
   ) {
-    for (var dataPoint : dataPoints) {
-      var expectedType = ObjectTypeEvaluator.determineType(dataPoint.getValue()).orElseThrow(() ->
+    for (TimeseriesDataPoint dataPoint : dataPoints) {
+      DataPointValueType expectedType = ObjectTypeEvaluator.determineType(dataPoint.getValue()).orElseThrow(() ->
         new InvalidBodyException()
       );
       assertValueTypeMatchesTimeseries(timeseriesEntity, expectedType);

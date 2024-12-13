@@ -1,9 +1,11 @@
-package de.dlr.shepard.timeseriesreference;
+package de.dlr.shepard.timeseriesreference.endpoints;
 
 import de.dlr.shepard.filters.Subscribable;
-import de.dlr.shepard.influxtimeseries.InfluxFillOption;
-import de.dlr.shepard.influxtimeseries.InfluxSingleValuedUnaryFunction;
-import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
+import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.timeseries.model.enums.FillOption;
+import de.dlr.shepard.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -23,6 +25,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -167,7 +170,7 @@ public class TimeseriesReferenceRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = InfluxTimeseriesPayload.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesWithDataPoints.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
@@ -183,24 +186,25 @@ public class TimeseriesReferenceRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
-    @QueryParam(Constants.FUNCTION) InfluxSingleValuedUnaryFunction function,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) InfluxFillOption fillOption,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption,
     @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
     @QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
     @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag
   ) {
-    var payload = timeseriesReferenceService.getTimeseriesPayloadByShepardId(
-      timeseriesReferenceId,
-      function,
-      groupBy,
-      fillOption,
-      deviceFilterTag,
-      locationFilterTag,
-      symbolicNameFilterTag,
-      securityContext.getUserPrincipal().getName()
-    );
-    return Response.ok(payload).build();
+    List<TimeseriesWithDataPoints> timeseriesWithDataPointsList =
+      timeseriesReferenceService.getReferencedTimeseriesWithDataPointsList(
+        timeseriesReferenceId,
+        function,
+        groupBy,
+        fillOption,
+        deviceFilterTag,
+        locationFilterTag,
+        symbolicNameFilterTag,
+        securityContext.getUserPrincipal().getName()
+      );
+    return Response.ok(timeseriesWithDataPointsList).build();
   }
 
   @GET
@@ -230,14 +234,14 @@ public class TimeseriesReferenceRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
-    @QueryParam(Constants.FUNCTION) InfluxSingleValuedUnaryFunction function,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) InfluxFillOption fillOption,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption,
     @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
     @QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
     @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag
   ) throws IOException {
-    var stream = timeseriesReferenceService.exportTimeseriesPayloadByShepardId(
+    var stream = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
       timeseriesReferenceId,
       function,
       groupBy,
