@@ -109,22 +109,25 @@ cp .env.example .env
 - URLs have to end with a trailing slash
 - The database passwords can be changed arbitrarily at the beginning
 
-| Variable            | Description                                                                                               | Example                                                                                           |
-| ------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| BACKEND_URL         | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
-| NEO4J_PW            | initial Neo4j password                                                                                    |                                                                                                   |
-| MONGO_ROOT_USERNAME | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
-| MONGO_ROOT_PASSWORD | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
-| MONGO_DATABASE      | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
-| MONGO_USERNAME      | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
-| MONGO_PW            | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |
-| INFLUX_PW           | initial InfluxDB password                                                                                 |                                                                                                   |
-| POSTGRES_PW         | postgres user password                                                                                    |                                                                                                   |
-| OIDC_AUTHORITY      | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
-| OIDC_PUBLIC         | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
-| OIDC_ROLE           | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID           | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
-| Variable            | Description                                                                                               | Example                                                                                           |
+| Variable                 | Description                                                                                               | Example                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL              | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW                 | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_ROOT_USERNAME      | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
+| MONGO_ROOT_PASSWORD      | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
+| MONGO_DATABASE           | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
+| MONGO_USERNAME           | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
+| MONGO_PASSWORD           | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |                                                                                                   |
+| POSTGRES_DB              | Database name                                                                                             | postgres                                                                                          |
+| POSTGRES_USER            | Username for the postgres admin account                                                                   | postgres                                                                                          |
+| POSTGRES_PASSWORD        | Password for the postgres admin account                                                                   | password                                                                                          |
+| POSTGRES_SHEPARD_USER    | Username for the shepard user account                                                                     | shepard                                                                                           |
+| POSTGRES_SHEPARD_USER_PW | Password for the shepard user account                                                                     | shepard_secret                                                                                    |
+| OIDC_AUTHORITY           | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC              | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE                | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID                | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| INFLUX_PW                | initial InfluxDB password (Only needed until timeseries data is successfully migrated)                    |                                                                                                   |
 
 ## Restrict access to users with specific roles
 
@@ -150,6 +153,14 @@ The shepard backend can be configured to allow only users with a specific role. 
 ## Restrict public access to Chronograph
 
 Chronograf by default is publicly accessible! You can configure it with OAuth or simply with a password and username. More information can be found [here](https://docs.influxdata.com/chronograf/v1/administration/managing-security/).
+
+## Migrate Timeseries Data (When Updating from <4.0.0 to >=4.0.0)
+
+InfluxDB has been replaced with TimescaleDB to persist timeseries data as of version 4.0.0.
+Timeseries data needs to be migrated from InfluxDB to the new database.
+Otherwise shepard will not start.
+
+See https://gitlab.com/dlr-shepard/shepard/-/merge_requests/389#migration-instructions for the migration instructions.
 
 ## Start
 
