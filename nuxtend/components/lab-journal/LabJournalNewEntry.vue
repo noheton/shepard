@@ -57,10 +57,9 @@ async function saveNewLabJournalEntry() {
     @update:focused="isCreatingNew = true"
   />
   <div v-if="!!isCreatingNew" id="labJournalNewEntry">
-    <CommonEditorTextEditor
+    <LabJournalEditor
       v-model="newLabJournalEntryModel.journalContent"
       :is-editable="true"
-      :placeholder-content="'Enter your lab journal entry here...'"
     />
 
     <div id="newEntryControlButtons">
