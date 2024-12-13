@@ -255,4 +255,4 @@ This also means that new instances have no need for migration, as they don't hav
 
 Since we require the migrations to be run before starting a post-4.0.0 instance of shepard, the TimescaleDB must be empty before the migrations.
 The migration progress is persisted in the TimescaleDB.
-In case of errors, the migration can be re-run by deleting the data in the timescaledb.
+In case of errors, the migration can be re-run by deleting the data in the timescaledb (or removing the timescale container including it's volumes).

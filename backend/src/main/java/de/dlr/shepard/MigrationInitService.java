@@ -31,7 +31,7 @@ public class MigrationInitService {
   }
 
   public int runMigrations() {
-    Log.info("Running migrations...");
+    Log.info("Running migration from InfluxDB to TimescaleDB.");
 
     // migrationService.doYourThing()
     return 0;
