@@ -126,4 +126,10 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 
 |vite<6 (old frontend)
 |Peer dependency to @vueuse/core v12 (reason in the line above)
+
+|versions-maven-plugin<2.18
+|Maven report fails to generate in pipeline job
+
+|license-maven-plugin<2.5
+|Maven report fails to generate in pipeline job
 |===
