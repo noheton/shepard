@@ -1,6 +1,6 @@
 diff_backend_client:
   stage: test
-  image: alpine:3.20
+  image: alpine:3.21
   needs: [build_backend]
   script:
     # Remove expected differences between api specs
