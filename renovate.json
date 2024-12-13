@@ -163,6 +163,16 @@
       "matchPackageNames": ["org.junit.jupiter:junit-jupiter{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<5.11"
+    },
+    {
+      "matchFileNames": ["frontend/**"],
+      "matchPackageNames": ["@vueuse/core"],
+      "allowedVersions": "<12"
+    },
+    {
+      "matchFileNames": ["frontend/**"],
+      "matchPackageNames": ["vite"],
+      "allowedVersions": "<6"
     }
   ]
 }
