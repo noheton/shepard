@@ -196,10 +196,27 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void postDataObjectTest_Successful() {
+    // try out different attribute keys that should be valid
+    var attributes = Map.of(
+      "a",
+      "1",
+      "b",
+      "2",
+      "key.abc",
+      "value",
+      "key|abc",
+      "value",
+      "key..abc",
+      "value",
+      "key/\\abc",
+      "value",
+      "key\"abc",
+      "value"
+    );
     var payload = new DataObjectIO();
     payload.setName("DataObjectDummy");
     payload.setDescription("My Description");
-    payload.setAttributes(Map.of("a", "1", "b", "2"));
+    payload.setAttributes(attributes);
 
     DataObjectIO actual = given()
       .spec(requestSpecification)
@@ -213,7 +230,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObject = actual;
 
     assertThat(actual.getId()).isNotNull();
-    assertThat(actual.getAttributes()).isEqualTo(Map.of("a", "1", "b", "2"));
+    assertThat(actual.getAttributes()).isEqualTo(attributes);
     assertThat(actual.getDescription()).isEqualTo("My Description");
     assertThat(actual.getCreatedAt()).isNotNull();
     assertThat(actual.getCreatedBy()).isEqualTo(username);
@@ -231,6 +248,19 @@ public class DataObjectIT extends BaseTestCaseIT {
 
   @Test
   @Order(2)
+  public void postDataObjectTest_ValidationError() {
+    // use attribute key that contains parsing delimiter ('||') and therefore is invalid
+    var attributes = Map.of("key||abc", "value");
+    var payload = new DataObjectIO();
+    payload.setName("DataObjectDummy");
+    payload.setDescription("My Description");
+    payload.setAttributes(attributes);
+
+    given().spec(requestSpecification).body(payload).when().post(dataObjectsURL).then().statusCode(400);
+  }
+
+  @Test
+  @Order(3)
   public void postDataObjectTest_ParentId() {
     var payload = new DataObjectIO();
     payload.setName("ChildDummy");
@@ -268,7 +298,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(3)
+  @Order(4)
   public void postDataObjectTest_PredecessorId() {
     var payload = new DataObjectIO();
     payload.setName("SuccessorDummy");
@@ -306,7 +336,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(4)
+  @Order(5)
   public void postDataObjectTest_PredecessorIdAndParentId() {
     var payload = new DataObjectIO();
     payload.setName("ChildAndSuccessorDummy");
@@ -357,7 +387,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(6)
   public void getDataObjectTest_Successful() {
     DataObjectIO actual = given()
       .spec(requestSpecification)
@@ -372,7 +402,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(6)
+  @Order(7)
   public void getDataObjectTest_ByName() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -390,7 +420,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(7)
+  @Order(8)
   public void getDataObjectsTest_Successful() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -407,7 +437,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(8)
+  @Order(9)
   public void getDataObjectsTest_ByParent() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -425,7 +455,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(9)
+  @Order(10)
   public void getDataObjectsTest_WithoutParent() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -443,7 +473,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(10)
+  @Order(11)
   public void getDataObjectsTest_ByPredecessor() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -461,7 +491,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(11)
+  @Order(12)
   public void getDataObjectsTest_WithoutPredecessor() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -479,7 +509,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(12)
+  @Order(13)
   public void getDataObjectsTest_BySuccessor() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -497,7 +527,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(13)
+  @Order(14)
   public void getDataObjectsTest_WithoutSuccessor() {
     DataObjectIO[] response = given()
       .spec(requestSpecification)
@@ -515,7 +545,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(14)
+  @Order(15)
   public void putDataObjectTest_Successful() {
     dataObject.setName("DataObjectSuccessorChanged");
 
@@ -536,7 +566,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(15)
+  @Order(16)
   public void putDataObjectTest_newParent() {
     successorAndChild.setName("DataObjectChildChanged");
     successorAndChild.setParentId(successor.getId());
@@ -578,7 +608,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(16)
+  @Order(17)
   public void putDataObjectTest_newPredecessor() {
     child.setName("DataObjectSuccessorChanged");
     child.setPredecessorIds(new long[] { dataObject.getId() });
@@ -609,7 +639,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(17)
+  @Order(18)
   public void deleteDataObjectTest_Successful() {
     given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(204);
 
@@ -617,7 +647,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(18)
+  @Order(19)
   public void getOrderByName() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -632,7 +662,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(19)
+  @Order(20)
   public void getOrderByNameDesc() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -648,7 +678,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(20)
+  @Order(21)
   public void getOrderByCreatedAt() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -664,7 +694,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(21)
+  @Order(22)
   public void getOrderByCreatedFirstPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -682,7 +712,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(22)
+  @Order(23)
   public void getOrderByCreatedSecondPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -700,7 +730,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(23)
+  @Order(24)
   public void getOrderByCreatedDescSecondPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
@@ -718,7 +748,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(24)
+  @Order(25)
   public void getOrderByCreatedDescFirstPage() {
     DataObjectIO[] response = given()
       .spec(orderByRequestSpecification)
