@@ -205,7 +205,8 @@ Following our solution strategy, we have the following classes:
 ====
 This module replaced the old implementation using InfluxDB as of version 4.0.0.
 For decisions and reasoning, check out <<adr008>>, <<adr010>> and <<adr011>>.
-For migration instructions of shepard instances up to version 3.x.x, see here: <<migration-from-influx>>
+For migration instructions of shepard instances up to version 3.x.x, see here: https://gitlab.com/dlr-shepard/shepard/-/merge_requests/389#migration-instructions
+For a more technical description of the migration, check out <<migration-from-influx>>
 ====
 
 This module handles persisting timeseries data in a link:https://www.timescale.com/[TimescaleDB].
