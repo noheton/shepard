@@ -21,14 +21,12 @@ import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @QuarkusIntegrationTest
-@Disabled
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TimeseriesCsvIT extends BaseTestCaseIT {
 

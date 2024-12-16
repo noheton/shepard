@@ -13,6 +13,7 @@ import de.dlr.shepard.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.timeseries.utilities.TimeseriesValidator;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,8 +55,11 @@ public class TimeseriesService {
   /**
    * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
    *
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a parallel stream.
+   *
    * @return List of TimeseriesDataPoint
    */
+  @ActivateRequestContext
   public List<TimeseriesDataPoint> getDataPointsByTimeseries(
     long containerId,
     Timeseries timeseries,
