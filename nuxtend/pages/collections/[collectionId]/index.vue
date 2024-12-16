@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
-import { CollectionApi } from "@dlr-shepard/backend-client";
+import { CollectionApi, DataObjectApi } from "@dlr-shepard/backend-client";
 import { collectionsPath } from "../../../utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -8,7 +8,10 @@ definePageMeta({ layout: "collection" });
 const route = useRoute();
 const collectionId = parseInt(route.params.collectionId as string);
 
+const numberOfLabJournalEntries = ref<number | undefined>(undefined);
 const collection = ref<Collection | undefined>(undefined);
+
+const dataObjectsMap = ref<Map<number, string>>(new Map<number, string>());
 
 function fetchCollection(collectionId: number) {
   createApiInstance(CollectionApi)
@@ -21,7 +24,25 @@ function fetchCollection(collectionId: number) {
     });
 }
 
+function fetchDataObjectsByCollectionId(collectionId: number) {
+  createApiInstance(DataObjectApi)
+    .getAllDataObjects({ collectionId })
+    .then(response => {
+      response.forEach(dataObject => {
+        dataObjectsMap.value.set(dataObject.id, dataObject.name);
+      });
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "fetching dataobjects");
+    });
+}
+
+async function onLabJournalCountChanged(count: number) {
+  numberOfLabJournalEntries.value = count;
+}
+
 fetchCollection(collectionId);
+fetchDataObjectsByCollectionId(collectionId);
 </script>
 
 <template>
@@ -57,6 +78,18 @@ fetchCollection(collectionId);
                   :count="Object.keys(collection.attributes ?? {}).length"
                 >
                   <EntityAttributes :entity="collection" />
+                </EntityExpansionPanelItem>
+                <EntityExpansionPanelItem
+                  title="Lab Journal"
+                  :count="numberOfLabJournalEntries"
+                >
+                  <div class="pt-4">
+                    <CollectionLabJournalEntryList
+                      :collection-id="collectionId"
+                      :data-object-map="dataObjectsMap"
+                      @number-of-entries-changed="onLabJournalCountChanged"
+                    />
+                  </div>
                 </EntityExpansionPanelItem>
               </EntityExpansionPanels>
             </v-row>

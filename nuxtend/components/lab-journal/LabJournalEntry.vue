@@ -8,8 +8,14 @@ import { computed } from "vue";
 
 interface LabJournalEntryProps {
   labJournal: LabJournalEntry;
-  userRoles: Roles | undefined;
+  userRoles?: Roles;
+  dataObjectLink?: DataObjectLink;
 }
+
+type DataObjectLink = {
+  dataObjectId: number;
+  dataObjectName: string;
+};
 
 const props = defineProps<LabJournalEntryProps>();
 const model = ref(props.labJournal);
@@ -72,9 +78,14 @@ function isAllowedToEdit() {
   return props.userRoles?.owner || props.userRoles?.writer;
 }
 
-async function toggleExpanded() {
+function toggleExpanded() {
   if (isEditing.value === true) return;
   isExpanded.value = !isExpanded.value;
+}
+
+function getDataObjectLink(dataObjectId: number): string {
+  const routePath = useRoute().path;
+  return routePath + `/dataobjects/${dataObjectId}`;
 }
 
 const getUpdatedInfoString = computed(() => {
@@ -98,12 +109,22 @@ const getUpdatedInfoString = computed(() => {
       />
       <span
         id="lab-journal-title"
-        class="me-auto pa-2"
+        class="pa-2 pr-0"
         :class="{ clickable: !isEditing }"
         @click="toggleExpanded"
       >
         {{ title }}
       </span>
+      <span v-if="props.dataObjectLink" id="lab-journal-title" class="pa-2">
+        |
+        <NuxtLink
+          class="dataobject-link"
+          :to="getDataObjectLink(props.dataObjectLink.dataObjectId)"
+        >
+          {{ props.dataObjectLink.dataObjectName }}
+        </NuxtLink>
+      </span>
+      <v-spacer />
       <span class="pr-2">
         <v-icon
           v-if="(isHovering || isExpanded) && isAllowedToEdit()"
@@ -166,6 +187,12 @@ const getUpdatedInfoString = computed(() => {
   font-size: 16px;
   font-weight: 500;
   line-height: 28px;
+  font-style: normal;
+}
+
+.dataobject-link {
+  color: rgb(var(--v-theme-blue-500));
+  text-decoration: none;
 }
 
 .border {

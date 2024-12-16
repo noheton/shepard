@@ -1,0 +1,88 @@
+<script setup lang="ts">
+import {
+  CollectionApi,
+  LabJournalEntryApi,
+  type LabJournalEntry,
+  type Roles,
+} from "@dlr-shepard/backend-client";
+
+interface LabJournalListProps {
+  collectionId: number;
+  dataObjectMap: Map<number, string>;
+}
+
+const props = defineProps<LabJournalListProps>();
+const emit = defineEmits(["numberOfEntriesChanged"]);
+const entries = ref<LabJournalEntry[] | undefined>(undefined);
+const userRoles = ref<Roles | undefined>(undefined);
+
+async function fetchLabJournalEntries(dataObjectIds: number[]) {
+  if (dataObjectIds.length === 0) {
+    entries.value = [];
+  }
+  dataObjectIds.forEach(dataObjectId => {
+    createApiInstance(LabJournalEntryApi)
+      .getLabJournalsByCollection({ dataObjectId })
+      .then(response => {
+        if (entries.value === undefined) {
+          entries.value = [];
+        }
+        entries.value = entries.value.concat(response);
+        emit("numberOfEntriesChanged", entries.value?.length);
+      })
+      .catch(error => {
+        handleError(error, "getLabJournalsByCollection");
+      });
+  });
+}
+
+async function fetchRoles() {
+  createApiInstance(CollectionApi)
+    .getCollectionRoles({ collectionId: props.collectionId })
+    .then(response => {
+      userRoles.value = response;
+    })
+    .catch(error => {
+      handleError(error, "getCollectionRoles");
+    });
+}
+
+async function onLabJournalDeleted(deletedLabjournalIndex: number) {
+  if (entries.value) {
+    entries.value.splice(deletedLabjournalIndex, 1);
+    emit("numberOfEntriesChanged", entries.value.length);
+  }
+}
+
+fetchLabJournalEntries(Array.from(props.dataObjectMap.keys()));
+fetchRoles();
+</script>
+
+<template>
+  <div v-if="entries != undefined">
+    <LabJournalEntry
+      v-for="(entry, index) in entries"
+      :key="'lab-journal-' + entry.id"
+      :lab-journal="entry"
+      :user-roles="userRoles"
+      :data-object-link="{
+        dataObjectId: entry.dataObjectId,
+        dataObjectName: props.dataObjectMap.get(entry.dataObjectId)!,
+      }"
+      @deleted="onLabJournalDeleted(index)"
+    />
+    <div
+      v-if="entries.length === 0 || entries === undefined"
+      class="text-center"
+    >
+      <v-img
+        src="../../assets/empty_list.svg"
+        height="77"
+        width="77"
+        class="mx-auto"
+      />
+      <span class="text-body-2 text-black-300">No entry yet</span>
+    </div>
+  </div>
+  <LayoutComponentsCenteredLoadingSpinner v-else />
+</template>
