@@ -54,6 +54,14 @@ async function onLabJournalDeleted(deletedLabjournalIndex: number) {
   }
 }
 
+const sortedLabJournalEntries = computed(() => {
+  if (entries.value) {
+    const labJournalEntries = entries.value;
+    return labJournalEntries.sort((a, b) => a.dataObjectId - b.dataObjectId);
+  }
+  return undefined;
+});
+
 fetchLabJournalEntries(Array.from(props.dataObjectMap.keys()));
 fetchRoles();
 </script>
@@ -61,7 +69,7 @@ fetchRoles();
 <template>
   <div v-if="entries != undefined">
     <LabJournalEntry
-      v-for="(entry, index) in entries"
+      v-for="(entry, index) in sortedLabJournalEntries"
       :key="'lab-journal-' + entry.id"
       :lab-journal="entry"
       :user-roles="userRoles"
