@@ -13,12 +13,22 @@ import {
 
 interface CollectionSidebarProps {
   collectionId: number;
+  dataObjectId?: number;
 }
 
-const collectionPathPattern = new RegExp("^/collections/\\d+$");
-const dataObjectPathPattern = new RegExp(
-  "^/collections/\\d+/dataobjects/(\\d+)$",
-);
+type RouteParams = {
+  collectionId: string;
+  dataObjectId?: string;
+};
+
+function isRouteParams(obj: any): obj is RouteParams {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    typeof obj.collectionId === "string" &&
+    (typeof obj.dataObjectId === "string" || obj.dataObjectId === undefined)
+  );
+}
 
 const props = defineProps<CollectionSidebarProps>();
 
@@ -89,34 +99,33 @@ function onActivated(activeItems: unknown) {
 }
 
 watch(
-  () => route.path,
-  async newPath => {
-    checkSidebarSelectionOnPathUpdate(newPath);
+  () => route.params,
+  () => {
+    if (isRouteParams(route.params)) {
+      switchFocusOnParams(route.params);
+    }
   },
 );
 
 onMounted(() => {
-  checkSidebarSelectionOnPathUpdate(route.path);
+  switchFocusOnParams(props);
 });
 
-/**
- * This function updates the sidebar selection to select either the collection header or one of the dataobject treeview items.
- * For this the passed `path` parameter is analyzed, to check if currently the collection-view or the dataobject-view is active.
- * @param path - path/ route that is currently shown
- */
-function checkSidebarSelectionOnPathUpdate(path: string) {
-  const isCollectionPath = collectionPathPattern.test(path);
-  isCollectionHeaderFocused.value = isCollectionPath;
-  if (isCollectionPath) {
-    activatedIds.value = [];
-    return;
-  }
-
-  const isDataObjectPath = dataObjectPathPattern.test(path);
-  if (isDataObjectPath) {
-    // extract dataobject Id from path
-    const dataObjectId = parseInt(path.match(dataObjectPathPattern)![1]!);
+function switchFocusOnParams(
+  routeParams: RouteParams | CollectionSidebarProps,
+) {
+  if (routeParams.dataObjectId) {
+    isCollectionHeaderFocused.value = false;
+    let dataObjectId: number | undefined = undefined;
+    if (typeof routeParams.dataObjectId === "string") {
+      dataObjectId = parseInt(routeParams.dataObjectId);
+    } else {
+      dataObjectId = routeParams.dataObjectId;
+    }
     activatedIds.value = [dataObjectId];
+  } else {
+    isCollectionHeaderFocused.value = true;
+    activatedIds.value = [];
   }
 }
 
