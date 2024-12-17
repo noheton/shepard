@@ -192,7 +192,6 @@ const getUpdatedInfoString = computed(() => {
 
 .dataobject-link {
   color: rgb(var(--v-theme-blue-500));
-  text-decoration: none;
 }
 
 .border {
