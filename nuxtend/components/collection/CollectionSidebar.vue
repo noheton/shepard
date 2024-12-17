@@ -29,7 +29,7 @@ const collectionId = props.collectionId;
 const items = ref<TreeViewItem[] | undefined>(undefined);
 const activatedIds = ref<number[]>([]);
 const currentCollection = ref<Collection | undefined>();
-const isCollectionFocused = ref<boolean>(false);
+const isCollectionHeaderFocused = ref<boolean>(false);
 
 async function fetchCollection() {
   createApiInstance(CollectionApi)
@@ -91,23 +91,34 @@ function onActivated(activeItems: unknown) {
 watch(
   () => route.path,
   async newPath => {
-    // check if current path is collection path
-    const isCollectionPath = collectionPathPattern.test(newPath);
-    isCollectionFocused.value = isCollectionPath;
-    if (isCollectionPath) {
-      activatedIds.value = [];
-      return;
-    }
-
-    // check if current path is dataobject path
-    const isDataObjectPath = dataObjectPathPattern.test(newPath);
-    if (isDataObjectPath) {
-      // extract dataobject Id from path
-      const dataObjectId = parseInt(newPath.match(dataObjectPathPattern)![1]!);
-      activatedIds.value = [dataObjectId];
-    }
+    checkSidebarSelectionOnPathUpdate(newPath);
   },
 );
+
+onMounted(() => {
+  checkSidebarSelectionOnPathUpdate(route.path);
+});
+
+/**
+ * This function updates the sidebar selection to select either the collection header or one of the dataobject treeview items.
+ * For this the passed `path` parameter is analyzed, to check if currently the collection-view or the dataobject-view is active.
+ * @param path - path/ route that is currently shown
+ */
+function checkSidebarSelectionOnPathUpdate(path: string) {
+  const isCollectionPath = collectionPathPattern.test(path);
+  isCollectionHeaderFocused.value = isCollectionPath;
+  if (isCollectionPath) {
+    activatedIds.value = [];
+    return;
+  }
+
+  const isDataObjectPath = dataObjectPathPattern.test(path);
+  if (isDataObjectPath) {
+    // extract dataobject Id from path
+    const dataObjectId = parseInt(path.match(dataObjectPathPattern)![1]!);
+    activatedIds.value = [dataObjectId];
+  }
+}
 
 fetchRootDataObjectsOfCollection();
 fetchCollection();
@@ -117,8 +128,8 @@ fetchCollection();
   <div class="bg-blue-grey-50 elevation-4" style="height: 100%">
     <div class="px-6 pt-6 pb-1 text-body-2 text-uppercase">Collection</div>
     <CollectionSideBarEntry
-      :is-focused="isCollectionFocused"
-      :to="`/collections/${collectionId}`"
+      :is-focused="isCollectionHeaderFocused"
+      :to="collectionsPath + `${collectionId}`"
       height="40px"
       class="mb-4"
     >

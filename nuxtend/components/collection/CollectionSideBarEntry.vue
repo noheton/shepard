@@ -1,11 +1,10 @@
 <script lang="ts" setup>
-interface SidebarHeaderEntryBackground {
+interface SidebarEntryBackground {
   isFocused: boolean;
   height: string;
   to?: string;
 }
-
-const props = defineProps<SidebarHeaderEntryBackground>();
+const props = defineProps<SidebarEntryBackground>();
 </script>
 
 <template>
@@ -15,7 +14,11 @@ const props = defineProps<SidebarHeaderEntryBackground>();
     rounded="0"
     :height="props.height"
     :to="props.to"
-    :color="props.isFocused ? '#B2D6EB' : 'rgb(var(--v-theme-blue-grey-50))'"
+    :color="
+      props.isFocused
+        ? 'rgb(var(--v-theme-blue-100))'
+        : 'rgb(var(--v-theme-blue-grey-50))'
+    "
     class="d-flex ga-0"
   >
     <div
@@ -30,7 +33,7 @@ const props = defineProps<SidebarHeaderEntryBackground>();
 
 <style lang="scss" scoped>
 .card-focus-start {
-  background-color: #0075bb;
+  background-color: rgb(var(--v-theme-blue-500));
   min-width: 4px;
   max-width: 4px;
 }
