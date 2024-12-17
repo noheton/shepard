@@ -1,0 +1,97 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-014 Spatial Database
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|10.12.2024
+|Status|In progress
+
+|Context|
+Spatial data can be collected either from data and measurements on robotic platforms or simulating data evolution or other sources. In addition to the normal retrieval filters, the collected data should be stored and retrieved in spatial context, for example retrieve part of the data which lies in a specific box or near to specific points. The retrieval should be quick, and provide various filters and options to strip the results as needed.
+Shepard should be able to handle spatial data, efficiently with fast data ingestion and access and functionally that allows filtering to reduce client load.
+Spatial data could be collected from measurements on robotic platforms or simulation.
+
+We want to select suitable database to store spatial data and perform efficient queries that support the user needs.
+
+|Possible Alternatives|
+
+[cols="1a,2a,2a"]
+
+!===
+!!postgis!pgvector
+
+
+!Performance Optimization
+! In order to enhance performance, PostGIS support CLUSTERing on geometry indices which gives huge performance advantage in index range scans and more efficient caching. PostGIS support spatial index which is used in all spatial queries.
+! pgvector has vector indices using IVFFLAT or HSNW which effects the nearest neighbor searches (KNN and ANN). Both indices can be configured for better recall results.
+
+!Supporting functions
+!• `ST_3DClosestPoint` — Returns the 3-dimensional point on g1 that is closest to g2. This is the first point of the 3D shortest line.
+• `ST_3DDistance` — For geometry type Returns the 3-dimensional cartesian minimum distance (based on spatial ref) between two geometries in projected units.
+• `ST_3DDWithin` — For 3d (z) geometry type Returns true if two geometries 3d distance is within number of units.
+• `ST_3DDFullyWithin` — Returns true if all of the 3D geometries are within the specified distance of one another.
+• `ST_3DIntersects` — Returns TRUE if the Geometries “spatially intersect” in 3d - only for points and linestrings
+• `ST_3DLongestLine` — Returns the 3-dimensional longest line between two geometries
+• `ST_3DMaxDistance` — For geometry type Returns the 3-dimensional cartesian maximum distance (based on spatial ref) between two geometries in projected units.
+`ST_3DShortestLine` — Returns the 3-dimensional shortest line between two geometries
+
+!• exact and approximate nearest neighbor search
+• L2 distance
+• <#> - (negative) inner product
+• <=> - cosine distance
+• <+> - L1 distance (added in 0.7.0)
+single-precision, half-precision, binary, and sparse vectors
+
+!Down sampling
+! No direct support for down sampling, as the point geometry is stored as individual and not related to other points. Custom down sampling algorithm should be implemented (e.g. Skipping)
+! No direct support for down sampling, as the point geometry is stored as individual and not related to other points. Custom down sampling algorithm should be implemented (e.g. Skipping)
+
+!Data transformation
+! PostGIS provides all the basic transformation functions: translate `ST_Translate`, rotate: `ST_Rotate` and scale: `ST_Scale`. But it does not provide a direct transform from a reference to another, the transform should be combined using the three main operation and constructed in the needed order.
+! pgvector does not provide transformation functions, the should be implemented manually.
+
+!Indexing
+! 2D: Uses R-Tree index spatial index, spatial index used by default in some PostGIS functions (ST_3DDWithin), 3D: N-D indexes possible, however application of N-D index must be evaluated to be worthwhile, generally 3 index types possible: GIST, SP-GIST & BRIN (but we probably use GIST)
+! by default uses nearest-neighbor search (with perfect recall), custom added indexes use approximate nearest neighbor search (HNSW index, IVFFlat index)
+
+!Setup
+! community postGIS docker image, package install seems to be complicated, no need to activate extension when using docker image
+! pgvector docker image, or install pgvector package, then activate the extension
+
+!Maintenance efforts
+! generally just run the extension update function/ or update docker image, BUT read version changelog to see if Hard or Soft Update is needed
+! updating and backing up docker container should be enough for update
+
+!3D point handling
+! 3D coordinates are second class citizens, but is well supported, supports specific 3D functions like `ST_3DDFullyWithin` or `ST_3DShortestLine`, extended 3D functionality with the SFCGAL extension
+! 3D point is just vector with 3 dimensions -> natively supported, but pgvector is optimized to handle vectors with much more dimensions, all functions with vectors of all dimensions
+
+!Documentation & Examples
+! extensive manual provided for all aspects of the extension with simple examples, due to the age of this extension, lots of GIS-related online examples
+! only README.md from GitHub project (but since its a simple extension, this is maybe enough), only very basic examples provided, most online examples focus on embeddings and AI use cases
+
+!Support and Updates
+! regular minor releases every couple of months, support for each minor version 2-4years then EOL
+! regular minor releases every couple of months, not yet a stable major release (currently: 0.8.0), no information about support of older versions
+
+!Java quarkus support
+! Hibernate has spatial spatial data types support based on JTS and GeoLatte, and supports the basic geo functions. However it does not support the 3D functions provided by PostGIS.
+! Hibernate has Vector type support can be annotated in `Entity` class as `@JdbcTypeCode(SqlTypes.VECTOR)`. Quarkus has active extension that supports Vector Stores through LangChain4j, but it is more focused on embeddings, storing documents and performing similarity searches.
+
+!Type Representation
+! In the database, points are represented in their binary format, and have to be converted to readable string in order to see the values.
+! Vector types are stored in more readable representation as array of comma separated values.
+
+!===
+
+|Decision|
+
+
+
+|Consequences|
+
+
+
+|===
