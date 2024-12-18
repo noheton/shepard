@@ -16,20 +16,6 @@ interface CollectionSidebarProps {
   dataObjectId?: number;
 }
 
-type RouteParams = {
-  collectionId: string;
-  dataObjectId?: string;
-};
-
-function isRouteParams(obj: any): obj is RouteParams {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof obj.collectionId === "string" &&
-    (typeof obj.dataObjectId === "string" || obj.dataObjectId === undefined)
-  );
-}
-
 const props = defineProps<CollectionSidebarProps>();
 
 const router = useRouter();
@@ -101,9 +87,17 @@ function onActivated(activeItems: unknown) {
 watch(
   () => route.params,
   () => {
-    if (isRouteParams(route.params)) {
-      switchFocusOnParams(route.params);
-    }
+    const routeParams: Partial<CollectionSidebarProps> = {
+      collectionId:
+        typeof route.params.collectionId === "string"
+          ? parseInt(route.params.collectionId)
+          : undefined,
+      dataObjectId:
+        typeof route.params.dataObjectId === "string"
+          ? parseInt(route.params.dataObjectId)
+          : undefined,
+    };
+    switchFocusOnParams(routeParams);
   },
 );
 
@@ -111,19 +105,11 @@ onMounted(() => {
   switchFocusOnParams(props);
 });
 
-function switchFocusOnParams(
-  routeParams: RouteParams | CollectionSidebarProps,
-) {
+function switchFocusOnParams(routeParams: Partial<CollectionSidebarProps>) {
   if (routeParams.dataObjectId) {
     isCollectionHeaderFocused.value = false;
-    let dataObjectId: number | undefined = undefined;
-    if (typeof routeParams.dataObjectId === "string") {
-      dataObjectId = parseInt(routeParams.dataObjectId);
-    } else {
-      dataObjectId = routeParams.dataObjectId;
-    }
-    activatedIds.value = [dataObjectId];
-  } else {
+    activatedIds.value = [routeParams.dataObjectId];
+  } else if (routeParams.collectionId) {
     isCollectionHeaderFocused.value = true;
     activatedIds.value = [];
   }
