@@ -6,14 +6,15 @@ import {
   type DataObject,
 } from "@dlr-shepard/backend-client";
 import {
+  getCollectionRouterParamsFromRoute,
   isTreeViewItem,
   mapToTreeViewItems,
+  type CollectionRouteParams,
   type TreeViewItem,
 } from "./collectionUtils";
 
 interface CollectionSidebarProps {
-  collectionId: number;
-  dataObjectId?: number;
+  collectionRouteParams: CollectionRouteParams;
 }
 
 const props = defineProps<CollectionSidebarProps>();
@@ -21,7 +22,7 @@ const props = defineProps<CollectionSidebarProps>();
 const router = useRouter();
 const route = useRoute();
 
-const collectionId = props.collectionId;
+const collectionId = props.collectionRouteParams.collectionId;
 const items = ref<TreeViewItem[] | undefined>(undefined);
 const activatedIds = ref<number[]>([]);
 const currentCollection = ref<Collection | undefined>();
@@ -87,25 +88,16 @@ function onActivated(activeItems: unknown) {
 watch(
   () => route.params,
   () => {
-    const routeParams: Partial<CollectionSidebarProps> = {
-      collectionId:
-        typeof route.params.collectionId === "string"
-          ? parseInt(route.params.collectionId)
-          : undefined,
-      dataObjectId:
-        typeof route.params.dataObjectId === "string"
-          ? parseInt(route.params.dataObjectId)
-          : undefined,
-    };
+    const routeParams = getCollectionRouterParamsFromRoute(route.params)!;
     switchFocusOnParams(routeParams);
   },
 );
 
 onMounted(() => {
-  switchFocusOnParams(props);
+  switchFocusOnParams(props.collectionRouteParams);
 });
 
-function switchFocusOnParams(routeParams: Partial<CollectionSidebarProps>) {
+function switchFocusOnParams(routeParams: CollectionRouteParams) {
   if (routeParams.dataObjectId) {
     isCollectionHeaderFocused.value = false;
     activatedIds.value = [routeParams.dataObjectId];
