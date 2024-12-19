@@ -42,7 +42,7 @@ public class TimeseriesMigrationInitService {
 
     if (migrationState == MigrationState.NotNeeded) {
       logThatMigrationModeCanBeDisabled();
-      return true;
+      return false;
     }
     if (migrationState == MigrationState.HasErrors) {
       logThatMigrationStateHasErrors();

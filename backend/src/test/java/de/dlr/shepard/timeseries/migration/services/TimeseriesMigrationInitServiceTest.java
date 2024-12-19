@@ -23,13 +23,13 @@ public class TimeseriesMigrationInitServiceTest {
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "true")
-  public void orchestrateMigrations_MigrationModeEnabledNoMigrationNeeded_terminate() {
+  public void orchestrateMigrations_MigrationModeEnabledNoMigrationNeeded_dontTerminate() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.NotNeeded);
 
     boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(0)).runMigrations();
-    assertEquals(true, actual);
+    assertEquals(false, actual);
   }
 
   @Test
