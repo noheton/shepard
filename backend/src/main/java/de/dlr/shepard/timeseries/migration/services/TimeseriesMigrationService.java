@@ -8,6 +8,7 @@ import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.influxtimeseries.InfluxSingleValuedUnaryFunction;
 import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.influxtimeseries.InfluxTimeseriesDataType;
+import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.influxtimeseries.InfluxTimeseriesService;
 import de.dlr.shepard.timeseries.migration.model.MigrationState;
 import de.dlr.shepard.timeseries.migration.model.MigrationTaskEntity;
@@ -27,7 +28,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @RequestScoped
-@Transactional
 public class TimeseriesMigrationService {
 
   private TimeseriesContainerService timeseriesContainerService;
@@ -99,33 +99,37 @@ public class TimeseriesMigrationService {
 
     for (var task : tasks) {
       try {
-        setStateToRunning(task);
-
-        var container = timeseriesContainerService.getContainer(task.getContainerId());
-
-        var databaseName = container.getDatabase();
-        if (doesDatabaseExist(databaseName) == false) {
-          setStateToFinished(task);
-          continue;
-        }
-
-        var timeseriesAvailable = influxConnector.getTimeseriesAvailable(databaseName);
-
-        for (InfluxTimeseries influxTimeseries : timeseriesAvailable) {
-          var influxTimeseriesDataType = influxConnector.getTimeseriesDataType(
-            databaseName,
-            influxTimeseries.getMeasurement(),
-            influxTimeseries.getField()
-          );
-          migratePayloads(container, databaseName, influxTimeseries, influxTimeseriesDataType);
-        }
-
-        setStateToFinished(task);
+        migrateTask(task);
       } catch (Exception ex) {
         Log.errorf("Exception occurred during migration of container %s: %s", task.getContainerId(), ex.getMessage());
         persistError(task, ex.getMessage());
       }
     }
+  }
+
+  protected void migrateTask(MigrationTaskEntity task) throws Exception {
+    setStateToRunning(task);
+
+    var container = timeseriesContainerService.getContainer(task.getContainerId());
+
+    var databaseName = container.getDatabase();
+    if (doesDatabaseExist(databaseName) == false) {
+      setStateToFinished(task);
+      return;
+    }
+
+    var timeseriesAvailable = influxConnector.getTimeseriesAvailable(databaseName);
+
+    for (InfluxTimeseries influxTimeseries : timeseriesAvailable) {
+      var influxTimeseriesDataType = influxConnector.getTimeseriesDataType(
+        databaseName,
+        influxTimeseries.getMeasurement(),
+        influxTimeseries.getField()
+      );
+      migratePayloads(container, databaseName, influxTimeseries, influxTimeseriesDataType);
+    }
+
+    setStateToFinished(task);
   }
 
   private List<MigrationTaskEntity> getPlannedMigrationTasks() {
@@ -136,7 +140,8 @@ public class TimeseriesMigrationService {
    * Get all containers in neo4j that are not deleted.
    * Create a MigrationTask for each container that does not already have one.
    */
-  private void createMigrationTaskForEachContainer() {
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  protected void createMigrationTaskForEachContainer() {
     var containerIds = getExistingContainerIds();
     var containerIdsToMigrate = getContainerIdsThatDoNotHaveMigrationTaskYet(containerIds);
     var tasks = createMigrationTasksForContainers(containerIdsToMigrate);
@@ -185,23 +190,26 @@ public class TimeseriesMigrationService {
     return containerIdsLeft;
   }
 
-  private void setStateToRunning(MigrationTaskEntity task) {
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  protected void setStateToRunning(MigrationTaskEntity task) {
     task.setStartedAt(new Date());
     task.setState(MigrationTaskState.Running);
-    this.migrationTaskRepository.persist(task);
+    this.migrationTaskRepository.getEntityManager().merge(task);
   }
 
-  private void setStateToFinished(MigrationTaskEntity task) {
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  protected void setStateToFinished(MigrationTaskEntity task) {
     task.setFinishedAt(new Date());
     task.setState(MigrationTaskState.Finished);
-    this.migrationTaskRepository.persist(task);
+    this.migrationTaskRepository.getEntityManager().merge(task);
   }
 
-  private void persistError(MigrationTaskEntity task, String errorMessage) {
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  protected void persistError(MigrationTaskEntity task, String errorMessage) {
     task.addError(errorMessage);
     task.setState(MigrationTaskState.Finished);
     task.setFinishedAt(new Date());
-    this.migrationTaskRepository.persist(task);
+    this.migrationTaskRepository.getEntityManager().merge(task);
   }
 
   /**
@@ -279,13 +287,23 @@ public class TimeseriesMigrationService {
             null
           );
 
-      timeseriesService.saveDataPoints(
-        container.getId(),
-        mapToTimeseries(influxTimeseries),
-        mapToTimeseriesDataPoints(payload.getPoints()),
-        mapToValueType(influxTimeseriesDataType)
-      );
+      saveDataPoints(container, influxTimeseries, influxTimeseriesDataType, payload);
       currentStartTimestamp = currentEndTimestamp;
     }
+  }
+
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  protected void saveDataPoints(
+    TimeseriesContainer container,
+    InfluxTimeseries influxTimeseries,
+    InfluxTimeseriesDataType influxTimeseriesDataType,
+    InfluxTimeseriesPayload payload
+  ) {
+    timeseriesService.saveDataPoints(
+      container.getId(),
+      mapToTimeseries(influxTimeseries),
+      mapToTimeseriesDataPoints(payload.getPoints()),
+      mapToValueType(influxTimeseriesDataType)
+    );
   }
 }
