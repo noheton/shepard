@@ -5,6 +5,8 @@ import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.influxtimeseries.InfluxPoint;
 import de.dlr.shepard.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.influxtimeseries.InfluxTimeseriesPayload;
+import de.dlr.shepard.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.enums.DataPointValueType;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -20,11 +22,17 @@ public class TimeseriesMigrationTestDataIngestionService {
 
   private InfluxDBConnector influxConnector;
 
-  private int PAYLOAD_MAX_SIZE = 100;
+  TimeseriesContainerDAO timeseriesContainerDao;
+
+  private int PAYLOAD_MAX_SIZE = 10000;
 
   @Inject
-  TimeseriesMigrationTestDataIngestionService(InfluxDBConnector influxConnector) {
+  TimeseriesMigrationTestDataIngestionService(
+    InfluxDBConnector influxConnector,
+    TimeseriesContainerDAO timeseriesContainerDao
+  ) {
     this.influxConnector = influxConnector;
+    this.timeseriesContainerDao = timeseriesContainerDao;
   }
 
   public void ingestTestData(
@@ -36,6 +44,12 @@ public class TimeseriesMigrationTestDataIngestionService {
     if (influxConnector.databaseExist(databaseName)) {
       throw new ShepardProcessingException("Database already exists: " + databaseName);
     }
+    var containerName = String.format("Container-%d", System.currentTimeMillis());
+    TimeseriesContainer entity = new TimeseriesContainer();
+    entity.setDatabase(databaseName);
+    entity.setName(containerName);
+
+    timeseriesContainerDao.createOrUpdate(entity);
     influxConnector.createDatabase(databaseName);
 
     int remainingDataSize = datasetSize;
