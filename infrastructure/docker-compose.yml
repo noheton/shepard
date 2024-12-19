@@ -17,6 +17,7 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB}
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_SHEPARD_USER}
       QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
+      SHEPARD_MIGRATION_MODE_ENABLED: ${SHEPARD_MIGRATION_MODE_ENABLED}
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
       - /opt/shepard/backend/config:/home/jboss/.shepard
