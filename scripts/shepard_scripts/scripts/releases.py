@@ -59,6 +59,38 @@ def _get_changes(
     return (breaking_changes, dependency_changes, other_changes)
 
 
+def __get_mrs_by_id(
+    project: Project, iids: list[int]
+) -> tuple[list[MergeRequest], list[MergeRequest], list[MergeRequest]]:
+    breaking_changes: list[MergeRequest] = []
+    dependency_changes: list[MergeRequest] = []
+    other_changes: list[MergeRequest] = []
+
+    merge_requests: list[MergeRequest] = project.mergerequests.list(
+        all=True,
+        state="merged",
+        order_by="updated_at",
+        iids=iids,
+        target_branch=DEV_BRANCH,
+    )  # type: ignore
+
+    if len(merge_requests) == 0:
+        raise click.ClickException(
+            f"Could not find any Merge Requests with the provided Ids: {iids}. "
+            + "Please check that these MRs exist!"
+        )
+
+    for merge_request in merge_requests:
+        if BREAKING_CHANGE_LABEL in merge_request.labels:
+            breaking_changes.append(merge_request)
+        elif DEPENDENCY_BUMP_LABEL in merge_request.labels:
+            dependency_changes.append(merge_request)
+        else:
+            other_changes.append(merge_request)
+
+    return (breaking_changes, dependency_changes, other_changes)
+
+
 def _get_mr_list(merge_requests: list[MergeRequest]) -> str:
     result = ""
     for merge_request in merge_requests:
@@ -89,7 +121,7 @@ def get_project(gitlab_instance: str, token: str, project_id: int) -> Project:
     try:
         return instance.projects.get(project_id)
     except KeyError as ex:
-        raise click.Abort(f"Project {ex} could not be found") from ex
+        raise click.ClickException(f"Project {ex} could not be found") from ex
 
 
 def get_user_id(gitlab_instance: str, token: str) -> int:
@@ -99,9 +131,9 @@ def get_user_id(gitlab_instance: str, token: str) -> int:
         current_user: dict[str, Any] = instance.http_get("/user")  # type: ignore
         if "id" in current_user:
             return current_user["id"]
-        raise click.Abort("Current user has no id")
+        raise click.ClickException("Current user has no id")
     except (GitlabHttpError, GitlabParsingError) as ex:
-        raise click.Abort("Could not fetch current user") from ex
+        raise click.ClickException("Could not fetch current user") from ex
 
 
 def _get_latest_release(project: Project) -> tuple[str, str]:
@@ -127,7 +159,7 @@ def _get_current_milestone(project: Project) -> ProjectMilestone:
     milestones = [ms for ms in milestones if ms.expired is False]
 
     if not milestones:
-        raise click.Abort("Could not fetch milestones from gitlab")
+        raise click.ClickException("Could not fetch milestones from gitlab")
 
     return milestones[0]
 
@@ -138,14 +170,21 @@ def _get_dependency_dashboard(project: Project) -> Issue:
     )  # type: ignore
 
     if not issues:
-        raise click.Abort("Could not fetch issues from gitlab")
+        raise click.ClickException("Could not fetch issues from gitlab")
 
     return issues[0]
 
 
-def _generate_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
+def _generate_next_tag(
+    latest_release_tag, has_breaking_changes: bool, isHotFixRelease: bool
+) -> str:
     match = re.match(SEMVER_PATTERN, latest_release_tag)
     version_dict = defaultdict(int)
+
+    defaultReleaseType = "minor"
+    if isHotFixRelease:
+        defaultReleaseType = "patch"
+
     if match:
         version_dict["major"] = int(match.group("major"))
         version_dict["minor"] = int(match.group("minor"))
@@ -168,7 +207,7 @@ def _generate_next_tag(latest_release_tag, has_breaking_changes: bool) -> str:
         release_type = click.prompt(
             "What is the next release type?",
             type=click.Choice(["patch", "minor", "major"]),
-            default="patch",
+            default=defaultReleaseType,
         )
 
     # increase release number according to release type
@@ -184,7 +223,6 @@ def _generate_release_notes(
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
 ) -> str:
-    click.echo({project.name_with_namespace})
     click.echo("Merge Requests:")
     click.echo("\n".join([mr.title for mr in breaking_changes + other_changes]))
     click.echo()
@@ -199,15 +237,25 @@ def _generate_release_notes(
     return release_notes
 
 
-def get_release_details(project: Project) -> tuple[str, str]:
+def get_release_details(project: Project, isHotfixRelease: bool) -> tuple[str, str]:
     latest_release_date, latest_release_tag = _get_latest_release(project)
 
-    breaking_changes, _dependencies, other_changes = _get_changes(
-        project, latest_release_date
-    )
+    breaking_changes: list[MergeRequest] = []
+    other_changes: list[MergeRequest] = []
+    if isHotfixRelease:
+        mr_iids: list[int] = prompt_mr_iids()
+        breaking_changes, _dependencies, other_changes = __get_mrs_by_id(
+            project, mr_iids
+        )
+    else:
+        breaking_changes, _dependencies, other_changes = _get_changes(
+            project, latest_release_date
+        )
     release_notes = _generate_release_notes(project, breaking_changes, other_changes)
     next_tag = _generate_next_tag(
-        latest_release_tag, has_breaking_changes=bool(breaking_changes)
+        latest_release_tag,
+        has_breaking_changes=bool(breaking_changes),
+        isHotFixRelease=isHotfixRelease,
     )
 
     return (next_tag, release_notes)
@@ -226,6 +274,31 @@ def prompt_confirm(title: str, tag: str, notes: str):
     click.echo(notes)
     click.echo()
     click.confirm("OK?", abort=True)
+
+
+def prompt_mr_iids() -> list[int]:
+    mr_iids_input: str = click.prompt(
+        "Enter the IDs of the Merge Requests you want to include in the hotfix release.\n"  # noqa: E501
+        + "You can specify single IDs ('412'), or multiple IDs using comma separation "
+        + "('412,441,51')\n"
+        + "ID(s)",
+        type=str,
+    )
+    id_list: list[int] = []
+    if "," in mr_iids_input:
+        split_list = mr_iids_input.split(",")
+        for mr_id in split_list:
+            if mr_id.isdigit():
+                id_list.append(int(mr_id))
+
+    elif mr_iids_input.isdigit():
+        id_list.append(int(mr_iids_input))
+    else:
+        raise click.ClickException(
+            "Please enter a valid integer ID, or a comma separated list of IDs!"
+        )
+
+    return id_list
 
 
 def create_release(project: Project, title: str, tag: str, notes: str):

@@ -71,14 +71,15 @@ git push
 5. Run the following command:
 +
 ```sh
-poetry run cli release ./token.txt
+poetry run cli release --hotfix-release ./token.txt
 ```
-6. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly. Here you should select a Patch version, since you only want to release a hotfix/ patch.
+6. The script will prompt you for the Merge Request IDs that should be used for the creating the Gitlab release page. You can specify a single ID ("412"), or provide a comma separated list with multiple IDs ("412,413,414"). Make sure to use the Gitlab Merge Request IDs and not the Gitlab Issue IDs. The Merge Requests often start with an exclamation mark ("!") in the Gitlab Web UI.
 7. Verify the listed merged merge request
-8. Verify the release notes created by the script. (editor opens automatically)
-9. Suggest a release title that will be appended to the version number.
-10. Confirm the generated details.
-11. Verify that everything was successfully created. (GitLab Release, Release Notes, etc.)
+8. Verify the release notes created by the script. (editor opens automatically) 
+9. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly. Ideally, a hotfix release should be a Patch release, which is the default value when prompted for the release version.
+10. Suggest a release title that will be appended to the version number.
+11. Confirm the generated details.
+12. Verify that everything was successfully created. (GitLab Release, Release Notes, etc.)
 
 ==== Actions done by the release script in the background
 

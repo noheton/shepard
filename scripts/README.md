@@ -7,7 +7,7 @@ This directory provides useful scripts and tools to help maintaining shepard.
 1. [Poetry](https://python-poetry.org/) is installed and configured on your system
 2. install dependencies: `poetry install`
 
-### Preparation (only when you want to interact with the gitlab repository)
+### Preparation (only when you want to interact with the gitlab repository, i.e., create a new release)
 
 1. go to [gitlab.com](https://gitlab.com/-/profile/personal_access_tokens) and add a personal access token with `api` permissions
 2. create a file `scripts/token.txt` and add your personal access token there
@@ -23,16 +23,22 @@ Run the script by using `poetry run cli [command] [args] [options]`
 
 Possible commands are:
 
-- `release`: Merge the develop branch into main and create a release
+- `release`: Merge the develop branch into main and create a release. If you want to create a new release, please carefully read the documentation before: [Release Process Documentation](https://shepard-dlr-shepard-e573f5a4116ef73f64fe76039b5c0aad01da3a88afa.gitlab.io/architecture-docs/#_release_process).
 - `packages`: Delete outdated development packages from the gitlab registry
 - `example-data`: Create example data on a given shepard instance
 
 ## Example
 
-Create a release
+Create a regular release
 
 ```sh
 poetry run cli release ./token.txt
+```
+
+Create a hotfix release
+
+```sh
+poetry run cli release --hotfix-release ./token.txt
 ```
 
 Clean packages
