@@ -9,11 +9,19 @@ ifndef::imagesdir[:imagesdir: ../../images]
 |Status|In progress
 
 |Context|
-Spatial data can be collected either from data and measurements on robotic platforms or simulating data evolution or other sources. In addition to the normal retrieval filters, the collected data should be stored and retrieved in spatial context, for example retrieve part of the data which lies in a specific box or near to specific points. The retrieval should be quick, and provide various filters and options to strip the results as needed.
+Spatial data can be collected either from data and measurements on robotic platforms or simulating data evolution or other sources. In addition to the normal retrieval filters, the collected data should be stored and retrieved in spatial context, for example retrieve part of the data which lies in a specific box or near to specific points.
+The retrieval should be performant, and provide various filters and options to strip the results as needed.
+Users must be able to combine spatial filters and filters on the structured meta data fields.
 Shepard should be able to handle spatial data, efficiently with fast data ingestion and access and functionally that allows filtering to reduce client load.
 Spatial data could be collected from measurements on robotic platforms or simulation.
 
 We want to select suitable database to store spatial data and perform efficient queries that support the user needs.
+Besides the below comparison table, main points to influence the decision as per the discussed requirements are:
+
+* Performance of the queries on large datasets is one of the main concerns with the spatial database.
+* The approach on combined queries that filter by location and metadata at the same time.
+* Usability of code in the Quarkus framework.
+
 
 |Possible Alternatives|
 
@@ -50,7 +58,7 @@ single-precision, half-precision, binary, and sparse vectors
 
 !Data transformation
 ! PostGIS provides all the basic transformation functions: translate `ST_Translate`, rotate: `ST_Rotate` and scale: `ST_Scale`. But it does not provide a direct transform from a reference to another, the transform should be combined using the three main operation and constructed in the needed order.
-! pgvector does not provide transformation functions, the should be implemented manually.
+! pgvector does not provide transformation functions, this has to implemented manually.
 
 !Indexing
 ! 2D: Uses R-Tree index spatial index, spatial index used by default in some PostGIS functions (ST_3DDWithin), 3D: N-D indexes possible, however application of N-D index must be evaluated to be worthwhile, generally 3 index types possible: GIST, SP-GIST & BRIN (but we probably use GIST)

@@ -30,3 +30,5 @@ include::011-timescale-database-schema.adoc[]
 include::012-lab-journal-feature.adoc[]
 
 include::013-editor-library.adoc[]
+
+include::014-spatial-database.adoc[]
