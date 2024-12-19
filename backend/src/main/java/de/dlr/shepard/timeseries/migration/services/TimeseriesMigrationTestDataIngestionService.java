@@ -10,14 +10,12 @@ import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.enums.DataPointValueType;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 @RequestScoped
-@Transactional
 public class TimeseriesMigrationTestDataIngestionService {
 
   private InfluxDBConnector influxConnector;

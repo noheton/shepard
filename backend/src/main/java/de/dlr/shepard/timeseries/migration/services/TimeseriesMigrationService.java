@@ -96,7 +96,8 @@ public class TimeseriesMigrationService {
   public void runMigrations() {
     createMigrationTaskForEachContainer();
     var tasks = getPlannedMigrationTasks();
-
+    Log.info("Starting migrations...");
+    Log.info("To check the current migration state call the REST endpoint [/temp/migrations/state].");
     for (var task : tasks) {
       try {
         migrateTask(task);
