@@ -21,5 +21,6 @@ diff_backend_client:
       echo "The generated client in the nuxtend is up to date.";
       else
       echo "The generated client in the nuxtend is out of sync. Regenerate to fix this issue.";
+      echo "See here for more information https://shepard-dlr-shepard-e573f5a4116ef73f64fe76039b5c0aad01da3a88afa.gitlab.io/architecture-docs/#_regenerating_the_client"
       exit 1;
       fi
