@@ -20,7 +20,7 @@ public class MigrationModeFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) throws IOException {
     if (!MigrationModeToggle.isActive()) return;
     if (PublicEndpointRegistry.isRequestPathPublic(requestContext)) return;
-    // TODO: Also exclude migration status endpoint
+    if (requestContext.getUriInfo().getPath().startsWith("/temp")) return;
 
     requestContext.abortWith(
       Response.status(Status.SERVICE_UNAVAILABLE)
@@ -28,8 +28,8 @@ public class MigrationModeFilter implements ContainerRequestFilter {
           new ApiError(
             Status.SERVICE_UNAVAILABLE.getStatusCode(),
             "ServiceUnavailableException",
-            "The application is in migration mode right now."
-            // TODO: Reference the status endpoint
+            "The application is in migration mode right now. " +
+            "You can retrieve the current migration status at <backend-url>/shepard/api/temp/migrations/state"
           )
         )
         .build()

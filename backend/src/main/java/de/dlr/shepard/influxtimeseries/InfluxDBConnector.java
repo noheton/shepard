@@ -262,12 +262,23 @@ public class InfluxDBConnector implements IConnector {
     return false;
   }
 
+  public InfluxTimeseriesDataType getTimeseriesDataType(String database, String measurement, String field)
+    throws Exception {
+    var dataTypeAsString = getExpectedDatatype(database, measurement, field);
+    try {
+      return InfluxTimeseriesDataType.valueOf(dataTypeAsString.toUpperCase());
+    } catch (IllegalArgumentException ex) {
+      var message = String.format("Timeseries in influxDB has unknown data type: %s", dataTypeAsString);
+      throw new Exception(message, ex);
+    }
+  }
+
   /**
    * Returns the expected data type of a field or an empty string according to
    * https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_reference/#data-types
    */
   private String getExpectedDatatype(String database, String measurement, String field) {
-    String queryString = String.format("SHOW FIELD KEYS ON \"%s\" FROM %s", database, measurement);
+    String queryString = String.format("SHOW FIELD KEYS ON \"%s\" FROM \"%s\"", database, measurement);
     QueryResult result = influxDB.query(new Query(queryString));
     if (!InfluxUtil.isQueryResultValid(result)) {
       Log.infof("Could not get expected datatype query string \"%s\"", queryString);

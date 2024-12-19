@@ -204,7 +204,7 @@ public class TimeseriesRest {
     }
 
     TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
-      containerOptional.get(),
+      containerOptional.get().getId(),
       payload.getTimeseries(),
       payload.getPoints()
     );

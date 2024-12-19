@@ -41,6 +41,10 @@ public class TimeseriesContainerService {
     this.timeseriesService = timeseriesService;
   }
 
+  public List<TimeseriesContainer> getContainers() {
+    return timeseriesContainerDAO.findAll().stream().filter(c -> c.isDeleted() == false).toList();
+  }
+
   public List<TimeseriesContainer> getContainers(QueryParamHelper params, String username) {
     var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, username);
     return containers;

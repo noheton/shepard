@@ -56,6 +56,10 @@ public class PermissionsUtil {
     if (pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
       return isAllowedLabJournalEntryRequest(requestContext, accessType, userName, idSegment);
     }
+    // Allow migration state endpoint for all authenticated users
+    if (pathSegments.get(0).getPath().equals("temp") && pathSegments.get(1).getPath().equals("migrations")) {
+      return true;
+    }
     // Perform the generic check
     if (idSegment == null || idSegment.isBlank()) {
       // No id in path

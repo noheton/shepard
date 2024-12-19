@@ -44,6 +44,9 @@
   }, {
     "name" : "subscription"
   }, {
+    "name" : "timeseries migration",
+    "description" : "This endpoint is only temporarily available. It is related to the migration of timeseries data from InfluxDB to TimescaleDB."
+  }, {
     "name" : "timeseriesContainer"
   }, {
     "name" : "timeseriesReference"
@@ -4676,6 +4679,31 @@
           },
           "404" : {
             "description" : "not found"
+          }
+        }
+      }
+    },
+    "/temp/migrations/state" : {
+      "get" : {
+        "tags" : [ "timeseries migration" ],
+        "description" : "This endpoint is used to retrieve the current state of all data migrations that are currently running or already finished.",
+        "operationId" : "getStateOfAllMigrations",
+        "parameters" : [ {
+          "name" : "onlyShowErrors",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Returns information about the current state of all data migrations."
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "500" : {
+            "description" : "Internal Server Error."
           }
         }
       }

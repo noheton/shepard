@@ -52,6 +52,7 @@
     <neo4j-ogm.version>4.0.11</neo4j-ogm.version>
     <opencsv.version>5.9</opencsv.version>
     <restassured.version>5.5.0</restassured.version>
+    <apache.commons.version>3.17.0</apache.commons.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -121,6 +122,11 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${apache.commons.version}</version>
     </dependency>
     <dependency>
       <groupId>org.influxdb</groupId>

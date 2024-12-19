@@ -74,7 +74,7 @@ public class TimeseriesCsvService {
       );
       for (var timeseriesWithDataPoints : timeseriesWithDataPointsList) {
         this.timeseriesService.saveDataPoints(
-            container,
+            container.getId(),
             timeseriesWithDataPoints.getTimeseries(),
             timeseriesWithDataPoints.getPoints()
           );

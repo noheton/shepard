@@ -58,7 +58,7 @@ public class TimeseriesCsvServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.toNano(),
@@ -94,7 +94,7 @@ public class TimeseriesCsvServiceTest {
       List.of(TimeseriesTestDataGenerator.generateDataPointString(instantHelper.toNano(), "running"))
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       instantHelper.toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -137,7 +137,7 @@ public class TimeseriesCsvServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.toNano(),

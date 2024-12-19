@@ -47,7 +47,7 @@ public class TimeseriesServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(123.456);
     dataPoints.add(point);
 
-    var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    var created = this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     assertNotNull(created);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
@@ -73,7 +73,7 @@ public class TimeseriesServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointBoolean(true);
     dataPoints.add(point);
 
-    var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    var created = this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     assertNotNull(created);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
@@ -99,7 +99,7 @@ public class TimeseriesServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointString("Hello World");
     dataPoints.add(point);
 
-    var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    var created = this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     assertNotNull(created);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
@@ -125,7 +125,7 @@ public class TimeseriesServiceTest {
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(42);
     dataPoints.add(point);
 
-    var created = this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    var created = this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     assertNotNull(created);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
@@ -151,13 +151,13 @@ public class TimeseriesServiceTest {
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
     List<TimeseriesDataPoint> morePoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.2))
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, morePoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, morePoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       startDate,
       endDate,
@@ -179,7 +179,7 @@ public class TimeseriesServiceTest {
     dataPoints.add(point);
 
     InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
-      this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     });
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
@@ -194,14 +194,14 @@ public class TimeseriesServiceTest {
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(22.3);
     dataPoints.add(point);
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
     List<TimeseriesDataPoint> otherDataPoints = new ArrayList<>();
     var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
     otherDataPoints.add(pointWithDifferentType);
 
     InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
-      this.timeseriesService.saveDataPoints(container, timeseries, otherDataPoints);
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, otherDataPoints);
     });
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
@@ -219,7 +219,7 @@ public class TimeseriesServiceTest {
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
     var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
     assertEquals(1, actual.size());
@@ -256,7 +256,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
 
@@ -284,7 +284,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
@@ -308,7 +308,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(start, end, null, null, null);
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
@@ -329,7 +329,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(1).toNano(),
@@ -357,7 +357,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
@@ -385,7 +385,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
@@ -413,7 +413,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
@@ -441,7 +441,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
@@ -469,7 +469,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
@@ -504,7 +504,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(1).toNano(),
@@ -536,7 +536,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(8).toNano(),
@@ -568,7 +568,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -597,7 +597,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -630,7 +630,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -659,7 +659,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -692,7 +692,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -720,7 +720,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -752,7 +752,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
@@ -781,7 +781,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -814,7 +814,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
@@ -843,7 +843,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
@@ -872,7 +872,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
@@ -902,7 +902,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.now().toNano(),
@@ -933,7 +933,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -967,7 +967,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -1003,7 +1003,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -1031,7 +1031,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       instantHelper.addSeconds(2).toNano(),
@@ -1059,7 +1059,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
@@ -1087,7 +1087,7 @@ public class TimeseriesServiceTest {
       )
     );
 
-    this.timeseriesService.saveDataPoints(container, timeseries, dataPoints);
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       InstantHelper.fromGermanDate("01.01.2024").toNano(),
       InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),

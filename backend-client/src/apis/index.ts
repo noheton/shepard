@@ -17,6 +17,7 @@ export * from './StructuredDataContainerApi';
 export * from './StructuredDataReferenceApi';
 export * from './SubscriptionApi';
 export * from './TimeseriesContainerApi';
+export * from './TimeseriesMigrationApi';
 export * from './TimeseriesReferenceApi';
 export * from './UriReferenceApi';
 export * from './UserApi';

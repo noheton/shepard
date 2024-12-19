@@ -3,7 +3,6 @@ package de.dlr.shepard.timeseries.services;
 import de.dlr.shepard.exceptions.InvalidBodyException;
 import de.dlr.shepard.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.timeseries.model.Timeseries;
-import de.dlr.shepard.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.timeseries.model.TimeseriesEntity;
@@ -103,7 +102,7 @@ public class TimeseriesService {
    * @return created timeseries
    */
   public TimeseriesEntity saveDataPoints(
-    TimeseriesContainer timeseriesContainer,
+    long timeseriesContainerId,
     Timeseries timeseries,
     List<TimeseriesDataPoint> dataPoints
   ) {
@@ -111,11 +110,26 @@ public class TimeseriesService {
       () -> new InvalidBodyException()
     );
 
-    TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(
-      timeseriesContainer.getId(),
-      timeseries,
-      incomingValueType
-    );
+    return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, incomingValueType);
+  }
+
+  /**
+   * Saves data points in the database.
+   * If the corresponding timeseries did not exist before, it will be persisted in the database.
+   *
+   * @param timeseriesContainerId    Identifies the TimeseriesContainer
+   * @param timeseries               The timeseries identifiers
+   * @param dataPoints               Data points to be added to the timeseries
+   * @param dataType                 The data type that values in this timeseries will have
+   * @return created timeseries
+   */
+  public TimeseriesEntity saveDataPoints(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    DataPointValueType dataType
+  ) {
+    TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(timeseriesContainerId, timeseries, dataType);
 
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
 

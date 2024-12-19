@@ -8,6 +8,10 @@ public class PublicEndpointRegistry {
   private static final List<String> publicPaths = List.of("/versionz");
 
   public static boolean isRequestPathPublic(ContainerRequestContext requestContext) {
-    return publicPaths.contains(requestContext.getUriInfo().getPath());
+    return publicPaths
+      .stream()
+      .anyMatch(path -> {
+        return requestContext.getUriInfo().getPath().startsWith(path);
+      });
   }
 }

@@ -19,6 +19,7 @@ src/apis/StructuredDataContainerApi.ts
 src/apis/StructuredDataReferenceApi.ts
 src/apis/SubscriptionApi.ts
 src/apis/TimeseriesContainerApi.ts
+src/apis/TimeseriesMigrationApi.ts
 src/apis/TimeseriesReferenceApi.ts
 src/apis/UriReferenceApi.ts
 src/apis/UserApi.ts

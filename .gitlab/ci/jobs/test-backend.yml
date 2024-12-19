@@ -14,6 +14,10 @@ test_backend:
     QUARKUS_DATASOURCE_USERNAME: shepard
     QUARKUS_DATASOURCE_PASSWORD: shepard_secret
 
+    INFLUX_HOST: influxdb:8086
+    INFLUX_USERNAME: influx
+    INFLUX_PASSWORD: shepard
+
     QUARKUS_MONGODB_CONNECTION_STRING: mongodb://mongo:shepard@mongodb:27017
 
     NEO4J_HOST: neo4j:7687
@@ -43,6 +47,11 @@ test_backend:
         MONGO_INITDB_ROOT_USERNAME: mongo
         MONGO_INITDB_ROOT_PASSWORD: shepard
         MONGO_INITDB_DATABASE: test
+    - name: influxdb:1.8
+      alias: influxdb
+      variables:
+        INFLUXDB_ADMIN_USER: influx
+        INFLUXDB_ADMIN_PASSWORD: shepard
     - name: timescale/timescaledb:latest-pg16
       alias: timescaledb
       variables:
