@@ -23,4 +23,3 @@ diff_backend_client:
       echo "The generated client in the nuxtend is out of sync. Regenerate to fix this issue.";
       exit 1;
       fi
-  allow_failure: true
