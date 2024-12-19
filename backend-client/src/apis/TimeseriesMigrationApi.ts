@@ -14,9 +14,22 @@
 
 
 import * as runtime from '../runtime';
+import type {
+  DataPointValueType,
+} from '../models/index';
+import {
+    DataPointValueTypeFromJSON,
+    DataPointValueTypeToJSON,
+} from '../models/index';
 
 export interface GetStateOfAllMigrationsRequest {
     onlyShowErrors?: boolean;
+}
+
+export interface IngestDataRequest {
+    databaseName: string;
+    datasetSize: number;
+    dataPointValueType: DataPointValueType;
 }
 
 /**
@@ -63,6 +76,76 @@ export class TimeseriesMigrationApi extends runtime.BaseAPI {
      */
     async getStateOfAllMigrations(requestParameters: GetStateOfAllMigrationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.getStateOfAllMigrationsRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Creates new database in influxdb, generate and insert random data to it to be use later in testing the migration.
+     */
+    async ingestDataRaw(requestParameters: IngestDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['databaseName'] == null) {
+            throw new runtime.RequiredError(
+                'databaseName',
+                'Required parameter "databaseName" was null or undefined when calling ingestData().'
+            );
+        }
+
+        if (requestParameters['datasetSize'] == null) {
+            throw new runtime.RequiredError(
+                'datasetSize',
+                'Required parameter "datasetSize" was null or undefined when calling ingestData().'
+            );
+        }
+
+        if (requestParameters['dataPointValueType'] == null) {
+            throw new runtime.RequiredError(
+                'dataPointValueType',
+                'Required parameter "dataPointValueType" was null or undefined when calling ingestData().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['databaseName'] != null) {
+            queryParameters['databaseName'] = requestParameters['databaseName'];
+        }
+
+        if (requestParameters['datasetSize'] != null) {
+            queryParameters['datasetSize'] = requestParameters['datasetSize'];
+        }
+
+        if (requestParameters['dataPointValueType'] != null) {
+            queryParameters['dataPointValueType'] = requestParameters['dataPointValueType'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/temp/migrations/ingest`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Creates new database in influxdb, generate and insert random data to it to be use later in testing the migration.
+     */
+    async ingestData(requestParameters: IngestDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.ingestDataRaw(requestParameters, initOverrides);
     }
 
 }

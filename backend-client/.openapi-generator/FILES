@@ -45,6 +45,7 @@ src/models/ContainerSearchResult.ts
 src/models/DataObject.ts
 src/models/DataObjectAttributes.ts
 src/models/DataObjectReference.ts
+src/models/DataPointValueType.ts
 src/models/Event.ts
 src/models/FileContainer.ts
 src/models/FileReference.ts

@@ -2915,6 +2915,47 @@
         }
       }
     },
+    "/temp/migrations/ingest" : {
+      "post" : {
+        "tags" : [ "timeseries migration" ],
+        "description" : "Creates new database in influxdb, generate and insert random data to it to be use later in testing the migration.",
+        "operationId" : "ingestData",
+        "parameters" : [ {
+          "name" : "databaseName",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "datasetSize",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "dataPointValueType",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/DataPointValueType"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Data inserted successfully."
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "500" : {
+            "description" : "If database already exists."
+          }
+        }
+      }
+    },
     "/collections/{collectionId}/dataObjects/{dataObjectId}/references" : {
       "get" : {
         "tags" : [ "reference" ],
@@ -6001,6 +6042,10 @@
             "type" : "string"
           }
         }
+      },
+      "DataPointValueType" : {
+        "enum" : [ "Boolean", "Integer", "Double", "String" ],
+        "type" : "string"
       },
       "Roles" : {
         "required" : [ "owner", "manager", "writer", "reader" ],

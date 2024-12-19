@@ -18,6 +18,7 @@ export * from './ContainerSearchResult';
 export * from './DataObject';
 export * from './DataObjectAttributes';
 export * from './DataObjectReference';
+export * from './DataPointValueType';
 export * from './Event';
 export * from './FileContainer';
 export * from './FileReference';
