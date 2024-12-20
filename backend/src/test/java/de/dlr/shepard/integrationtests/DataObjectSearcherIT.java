@@ -150,7 +150,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           },
           {
-            "property": "attributes||a",
+            "property": "attributes.a",
             "value": "1",
             "operator": "eq"
           }

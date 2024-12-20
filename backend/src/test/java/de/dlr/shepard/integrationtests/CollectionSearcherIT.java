@@ -22,6 +22,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -61,6 +62,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     var payload1 = new CollectionIO();
     payload1.setName("CollectionDummy");
     payload1.setDescription("First Collection");
+    payload1.setAttributes(Map.of("a", "1", "b", "2"));
     collection1 = given()
       .spec(requestSpecification)
       .body(payload1)
@@ -179,6 +181,50 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
 
   @Test
   @Order(2)
+  public void findCollectionByAttribute() {
+    SearchBody searchBody = new SearchBody();
+    SearchScope searchScope = new SearchScope();
+    searchScope.setTraversalRules(new TraversalRules[] {});
+    searchBody.setScopes(new SearchScope[] { searchScope });
+    SearchParams searchParams = new SearchParams();
+    searchParams.setQueryType(QueryType.Collection);
+    String query = String.format(
+      """
+      {
+        "AND": [
+          {
+            "property": "id",
+            "value": %d,
+            "operator": "eq"
+          },
+          {
+            "property": "attributes.a",
+            "value": "1",
+            "operator": "eq"
+          }
+        ]
+      }""",
+      collection1.getId()
+    );
+    searchParams.setQuery(query);
+    searchBody.setSearchParams(searchParams);
+    var result = given()
+      .spec(searchRequestSpec)
+      .body(searchBody)
+      .when()
+      .post(searchURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(ResponseBody.class);
+    ResultTriple triple1 = new ResultTriple(collection1.getId(), null, null);
+    assertThat(result.getResultSet()).containsExactly(triple1);
+    assertThat(result.getResults()[0].getId()).isEqualTo(collection1.getId());
+    assertThat(result.getSearchParams()).isEqualTo(searchParams);
+  }
+
+  @Test
+  @Order(3)
   public void neTest() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -211,7 +257,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(3)
+  @Order(4)
   public void findTwoOutOfTwoCollectionsTest() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -254,7 +300,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(4)
+  @Order(5)
   public void findNoCollectionTest() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -297,7 +343,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(6)
   public void findByAndTest() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -341,7 +387,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(6)
+  @Order(7)
   public void unauthorizedCollectionsSearchTest() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -384,7 +430,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(7)
+  @Order(8)
   public void authorizedCollectionsSearchTest() {
     String permissionsURL = "/collections/" + collection1.getId() + "/permissions";
     RequestSpecification permissionsSpecification = new RequestSpecBuilder()
@@ -452,7 +498,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(8)
+  @Order(9)
   public void collectionsSearchTestReaderGroup() {
     String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
@@ -538,7 +584,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(8)
+  @Order(10)
   public void inTest() {
     String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
@@ -616,7 +662,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(9)
+  @Order(11)
   public void searchCollectionsViaPropertyIRI() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();
@@ -642,7 +688,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(10)
+  @Order(12)
   public void searchCollectionsViaValueIRI() {
     SearchBody searchBody = new SearchBody();
     SearchScope searchScope = new SearchScope();

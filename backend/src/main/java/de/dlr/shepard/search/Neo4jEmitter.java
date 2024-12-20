@@ -131,10 +131,12 @@ public class Neo4jEmitter {
 
   private static String emitPrimitiveClause(JsonNode node, String variable) {
     String property = node.get(Constants.OP_PROPERTY).textValue();
+    property = changeAttributesDelimiter(property);
+
     if (notIdProperties.contains(property)) return emitSimplePropertyPart(node, variable);
     String ret = "(";
     if (property.equals("id")) ret = ret + "id(" + variable + ")";
-    else ret = ret + variable + ".`" + node.get(Constants.OP_PROPERTY).textValue() + "` ";
+    else ret = ret + variable + ".`" + property + "` ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + emitValuePart(node);
     ret = ret + ")";
@@ -143,14 +145,29 @@ public class Neo4jEmitter {
 
   private static String emitPrimitiveClauseWithShepardId(JsonNode node, String variable) {
     String property = node.get(Constants.OP_PROPERTY).textValue();
+    property = changeAttributesDelimiter(property);
+
     if (notIdProperties.contains(property)) return emitSimplePropertyPart(node, variable);
     String ret = "(";
     if (property.equals("id")) ret = ret + variable + "." + Constants.SHEPARD_ID + " ";
-    else ret = ret + variable + ".`" + node.get(Constants.OP_PROPERTY).textValue() + "` ";
+    else ret = ret + variable + ".`" + property + "` ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + emitValuePart(node);
     ret = ret + ")";
     return ret;
+  }
+
+  /**
+   * This is a fix described in: https://gitlab.com/dlr-shepard/shepard/-/issues/389
+   * We use new delimiter characters for attributes ('||'), but want to support the old search functionality using '.' as a delimiter.
+   * @param property
+   * @return property string, if it contained 'attributes.', it is going to be replaced by 'attributes||'
+   */
+  private static String changeAttributesDelimiter(String property) {
+    if (property.startsWith("attributes.")) {
+      return property.replaceFirst("attributes.", "attributes||");
+    }
+    return property;
   }
 
   private static String emitValuePart(JsonNode node) {
