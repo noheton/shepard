@@ -82,12 +82,12 @@ function handleOk() {
   const newTimeseriesReference: TimeseriesReference = {
     timeseriesContainerId: +userInputSearchContainer.value,
     name: formData.name,
-    timeseries: [],
+    referencedTimeseriesList: [],
     start: startTs * 1e6,
     end: endTs * 1e6,
   };
   formData.selected.forEach(option => {
-    if (option) newTimeseriesReference.timeseries.push(option);
+    if (option) newTimeseriesReference.referencedTimeseriesList.push(option);
   });
   emit("create", newTimeseriesReference);
 }

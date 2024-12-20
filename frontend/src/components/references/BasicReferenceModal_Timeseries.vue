@@ -149,7 +149,7 @@ const currentPage = ref(1);
 const totalRows = computed(() => {
   return filter.value
     ? filteredItemsList.value.length
-    : props.timeseriesReference.timeseries.length;
+    : props.timeseriesReference.referencedTimeseriesList.length;
 });
 
 function onRowClicked(selectedTimeseries: TimeseriesSelectable) {
@@ -183,7 +183,7 @@ onMounted(() => {
   chartData.value = { datasets: [], xLabel: "Time in s" };
   Object.assign(internalState, getInitialState());
   // clear remembered timeseries see "onRowClicked"
-  props.timeseriesReference.timeseries.forEach(e => {
+  props.timeseriesReference.referencedTimeseriesList.forEach(e => {
     Vue.set(e, "isSelected", false);
   });
 });
@@ -275,7 +275,7 @@ onMounted(() => {
         :selectable="dataAvailable"
         :hover="dataAvailable"
         :fields="fields"
-        :items="props.timeseriesReference.timeseries"
+        :items="props.timeseriesReference.referencedTimeseriesList"
         :per-page="perPage"
         :current-page="currentPage"
         :filter="filter"
