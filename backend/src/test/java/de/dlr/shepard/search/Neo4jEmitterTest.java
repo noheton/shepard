@@ -249,13 +249,13 @@ public class Neo4jEmitterTest {
                "operator":"gt"
             },
             {
-               "property":"attributes.b",
+               "property":"attributes||b",
                "value":"abc",
                "operator":"contains"
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") OR (col.`attributes.b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") OR (col.`attributes||b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryAndGtContains = Arguments.of(
       """
@@ -267,24 +267,24 @@ public class Neo4jEmitterTest {
                "operator":"gt"
             },
             {
-               "property":"attributes.b",
+               "property":"attributes||b",
                "value":"abc",
                "operator":"contains"
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") AND (col.`attributes.b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") AND (col.`attributes||b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryNot = Arguments.of(
       """
       {
          "NOT":{
-            "property":"attributes.b",
+            "property":"attributes||b",
             "value":"abc",
             "operator":"contains"
          }
       }""",
-      "MATCH (col:Collection) WHERE (NOT((col.`attributes.b` contains \"abc\"))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (NOT((col.`attributes||b` contains \"abc\"))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryAndReferencedCollectionIdReferencedDataObjectId = Arguments.of(
       """
@@ -362,7 +362,7 @@ public class Neo4jEmitterTest {
       """
       {
          "NOT":{
-            "property":"attributes.b",
+            "property":"attributes||b",
             "value":[
                1,
                2,
@@ -371,16 +371,16 @@ public class Neo4jEmitterTest {
             "operator":"in"
          }
       }""",
-      "MATCH (col:Collection) WHERE (NOT((col.`attributes.b` IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (NOT((col.`attributes||b` IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryIn = Arguments.of(
       """
       {
-         "property":"attributes.b",
+         "property":"attributes||b",
          "value": [],
          "operator":"in"
       }""",
-      "MATCH (col:Collection) WHERE (col.`attributes.b` IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (col.`attributes||b` IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
 
     return Stream.of(
