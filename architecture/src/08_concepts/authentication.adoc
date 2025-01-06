@@ -104,3 +104,71 @@ After this setup we should be able to authenticate using the specified OIDC prov
 
 To handle token and session refresh we can use the `jwt()` and `session()` callbacks to control the behavior in the same `NuxtAuthHandler`.
 
+The `jwt()` callback handles three different scenarios:
+
+1. The user initially signed in by clicking on the `Sign In` button. Then, the `jwt()` function retrieves a `token` and an `account` object. Whereas the received `token` object looks like this:
++
+```typescript
+{ 
+  name: 'user',
+  email: 'user@testmail.xyz',
+  picture: undefined,
+  sub: 'user'
+}
+```
+and the `account` object looks like this:
++
+```typescript
+{ 
+  provider: 'oidc',
+  type: 'oauth',
+  providerAccountId: 'user',
+  access_token: '[...]',
+  expires_at: 1736171866,
+  refresh_expires_in: 1800,
+  refresh_token: '[...]',
+  token_type: 'Bearer',
+  id_token: '[...]',
+  'not-before-policy': 0,
+  session_state: 'UUID',
+  scope: '[...]'
+}
+```
+The `jwt()` callback returns a new `token` object with information from the `account` object.
+This new token object is then used for the other scenarios too and looks like this:
++
+```typescript
+interface JWT {
+  expiresAt: number;
+  accessToken: string;
+  idToken: string;
+  refreshToken: string;
+  error?: "RefreshTokenError";
+  userId: string;
+}
+```
+
+2. The second scenario occurs when the session is refreshed either by reloading the page or automatically according to the refresh interval specified by the `enablePeriodically` setting in the `nuxt.config.ts`. If the session is refreshed and the authentication key is still active, then the currently used `token` object is returned. This scenario therefore occurs when the following condition is true: 
++
+```typescript
+Date.now() < (token.expiresAt * 1000 - REFRESH_INTERVAL * 2)
+```
+
+3. The third scenario occurs when the condition of scenario 2 is false. This implies that the access token needs to be refreshed by providing the current access token and the current refresh token to the OIDC provider.
+In this scenario we utilize the `token` object that was initialized in the first scenario, which is extended by the Nuxt auth with a couple of fields, like `iat` or `exp`. The `token` object that is used in this scenario looks like this:
++
+```typescript
+{ 
+  accessToken: '[...]',
+  idToken: '[...]',
+  expiresAt: 1736173016,
+  refreshToken: '[...]',
+  userId: 'user',
+  iat: 1736172865,
+  exp: 1736174665,
+  jti: 'UUID'
+}
+```
+The `iat` and `exp` fields are specified by the official RFC 7519 (JWT) and are automatically set by Nuxt. For example, the `exp` field is calculated by adding `maxAge` config from the `NuxtAuthHandler` to the `iat` value (issued at). But we do not actually rely on these fields.
++
+In this third scenario a new refresh token is requested from the OIDC provider. If there is an error due to an expired refresh token, the error is directly thrown. If everything is ok, the current `token` object is updated with a new `expiresAt` value, a new access token and if possible, a new refresh token. Then this new `token` object is returned.

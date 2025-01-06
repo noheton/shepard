@@ -42,7 +42,8 @@ export default defineNuxtConfig({
       addDefaultCallbackUrl: true,
     },
     sessionRefresh: {
-      enablePeriodically: 60000 * 5 - 5000,
+      // how often the session is refreshed (querying a new refresh token)
+      enablePeriodically: 30000, // 30 secs
     },
   },
 

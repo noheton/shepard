@@ -1,4 +1,5 @@
 import { NuxtAuthHandler } from "#auth";
+
 const runtimeConfig = useRuntimeConfig();
 const OIDC_CONFIGURATION_URL = new URL(
   `${runtimeConfig.oidcIssuer}.well-known/openid-configuration`,
@@ -31,7 +32,8 @@ export default NuxtAuthHandler({
           refreshToken: account.refresh_token,
           userId: account.providerAccountId,
         } as typeof token;
-      } else if (Date.now() < token.expiresAt * 1000 - 10000) {
+      } else if (Date.now() < token.expiresAt * 1000 - 30000 * 2) {
+        // 30000 since this is the session refresh interval
         return token;
       } else {
         if (!token.refreshToken) throw new TypeError("Missing refresh_token");
@@ -54,14 +56,17 @@ export default NuxtAuthHandler({
             access_token: string;
             expires_in: number;
             refresh_token?: string;
+            refresh_expires_in?: number;
           };
           token.accessToken = newTokens.access_token;
           token.expiresAt = Math.floor(
             Date.now() / 1000 + newTokens.expires_in,
           );
+
           // Some providers only issue refresh tokens once, so preserve if we did not get a new one
-          if (newTokens.refresh_token)
+          if (newTokens.refresh_token) {
             token.refreshToken = newTokens.refresh_token;
+          }
           return token;
         } catch (error) {
           console.error("Error refreshing access_token", error);
@@ -75,11 +80,12 @@ export default NuxtAuthHandler({
       session.accessToken = token.accessToken;
       session.idToken = token.idToken;
       session.userId = token.userId;
+      session.error = token.error;
       return session;
     },
   },
   session: {
-    maxAge: 1800,
+    maxAge: 1800, // 30 min
   },
   events: {
     async signOut({ token }: { token: { idToken: string } }) {
@@ -106,5 +112,6 @@ declare module "next-auth" {
     accessToken: string;
     idToken: string;
     userId: string;
+    error?: string;
   }
 }
