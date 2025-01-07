@@ -112,7 +112,7 @@ fetchCollection();
 </script>
 
 <template>
-  <div class="bg-blue-grey-50 elevation-4" style="height: 100%">
+  <div class="bg-treeview elevation-4" style="height: 100%">
     <div class="px-6 pt-6 pb-1 text-body-2 text-uppercase">Collection</div>
     <CollectionSideBarEntry
       :is-focused="isCollectionHeaderFocused"
@@ -134,14 +134,14 @@ fetchCollection();
     </div>
     <v-treeview
       v-if="!!items"
-      class="bg-blue-grey-50"
+      class="bg-treeview"
       :items="items"
       item-value="id"
       :load-children="fetchChildren"
       activatable
       :activated="activatedIds"
       active-strategy="single-independent"
-      color="blue-500"
+      color="primary"
       density="compact"
       mandatory
       collapse-icon="mdi-chevron-down"

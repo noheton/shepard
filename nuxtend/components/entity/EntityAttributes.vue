@@ -35,7 +35,7 @@ const viewAllAttributes = ref(false);
       v-for="(attributeKey, index) in attributeKeysToDisplay"
       :key="index"
       no-gutters
-      class="text-body-2 text-black-400"
+      class="text-body-2 text-medium-emphasis"
     >
       <v-col cols="2" class="px-0 py-1">
         <div class="pr-4" style="word-wrap: break-word">

@@ -49,8 +49,8 @@ async function saveNewLabJournalEntry() {
     id="newLabJournalEntryArea"
     variant="outlined"
     label="New entry"
-    bg-color="blue-grey-25"
-    base-color="black-100"
+    bg-color="divider2"
+    base-color="divider1"
     :no-resize="true"
     density="compact"
     rows="1"
@@ -63,7 +63,7 @@ async function saveNewLabJournalEntry() {
     />
 
     <div id="newEntryControlButtons">
-      <v-btn variant="flat" color="black-50" @click="resetNewLabJournalEntry">
+      <v-btn variant="flat" color="treeview" @click="resetNewLabJournalEntry">
         Cancel
       </v-btn>
       <v-btn variant="flat" color="primary" @click="saveNewLabJournalEntry">

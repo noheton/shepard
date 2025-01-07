@@ -24,7 +24,7 @@ const updatedAt = props.entity.updatedAt
         <h1 class="text-h1">{{ entity.name }}</h1>
       </v-col>
     </v-row>
-    <v-row no-gutters class="text-body-2 text-black-400">
+    <v-row no-gutters class="text-body-2 text-medium-emphasis">
       <v-col cols="2">
         <div>{{ idLabel }}:</div>
         <div>{{ entity.id }}</div>

@@ -9,7 +9,7 @@ const viewAll = defineModel<boolean>("viewAll", {
     class="opacity-100 pa-0"
     :prepend-icon="viewAll ? 'mdi-chevron-up' : 'mdi-chevron-down'"
     variant="plain"
-    base-color="blue-500"
+    base-color="primary"
     :ripple="false"
     @click="viewAll = !viewAll"
   >

@@ -16,8 +16,8 @@ const props = defineProps<SidebarEntryBackground>();
     :to="props.to"
     :color="
       props.isFocused
-        ? 'rgb(var(--v-theme-blue-100))'
-        : 'rgb(var(--v-theme-blue-grey-50))'
+        ? 'rgb(var(--v-theme-focus1))'
+        : 'rgb(var(--v-theme-treeview))'
     "
     class="d-flex ga-0"
   >
@@ -33,7 +33,7 @@ const props = defineProps<SidebarEntryBackground>();
 
 <style lang="scss" scoped>
 .card-focus-start {
-  background-color: rgb(var(--v-theme-blue-500));
+  background-color: rgb(var(--v-theme-primary));
   min-width: 4px;
   max-width: 4px;
 }

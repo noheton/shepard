@@ -15,12 +15,12 @@ defineProps<{ title: string; count?: number }>();
         :icon="slotProps.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
         class
       />
-      <div class="text-h5 text-black-500 pl-2">
+      <div class="text-h5 text-textbody pl-2">
         {{ title }}
       </div>
       <div
         v-if="count !== undefined && count !== null"
-        class="text-h5 text-black-200 pl-2"
+        class="text-h5 text-low-emphasis pl-2"
       >
         ({{ count }})
       </div>

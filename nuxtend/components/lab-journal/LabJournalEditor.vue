@@ -98,7 +98,7 @@ watch(
 
 <style scoped lang="scss">
 .editor-is-editable {
-  border: 1px solid rgb(var(--v-theme-black-100));
+  border: 1px solid rgb(var(--v-theme-divider1));
   border-radius: 4px;
   margin: 4px;
   :deep(.tiptap) {
@@ -132,7 +132,7 @@ watch(
   }
 
   code {
-    background-color: rgb(var(--v-theme-black-100));
+    background-color: rgb(var(--v-theme-divider1));
     border-radius: 0.4rem;
     font-size: 0.85rem;
     padding: 0.25em 0.3em;
@@ -147,7 +147,7 @@ watch(
 
     td,
     th {
-      border: 1px solid rgb(var(--v-theme-black-300));
+      border: 1px solid rgb(var(--v-theme-textbody2));
       box-sizing: border-box;
       min-width: 1em;
       padding: 6px 8px;
@@ -160,13 +160,13 @@ watch(
     }
 
     th {
-      background-color: rgb(var(--v-theme-blue-grey-50));
+      background-color: rgb(var(--v-theme-treeview));
       font-weight: bold;
       text-align: left;
     }
 
     .selectedCell:after {
-      background: rgb(var(--v-theme-black-100));
+      background: rgb(var(--v-theme-divider1));
       content: "";
       left: 0;
       right: 0;
@@ -178,7 +178,7 @@ watch(
     }
 
     .column-resize-handle {
-      background-color: rgb(var(--v-theme-blue-500));
+      background-color: rgb(var(--v-theme-primary));
       bottom: -2px;
       pointer-events: none;
       position: absolute;

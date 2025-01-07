@@ -11,7 +11,7 @@ defineProps<ShepardBreadcrumbsProps>();
 <template>
   <v-breadcrumbs :items="items" class="pl-0">
     <template #divider>
-      <div class="text-body-1 text-grey-200">/</div>
+      <div class="text-body-1 text-low-emphasis">/</div>
     </template>
     <template #item="{ item }">
       <v-breadcrumbs-item

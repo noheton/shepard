@@ -29,21 +29,21 @@ const confirm = () => {
 
     <v-card class="pa-0">
       <v-card-text>
-        <div class="text-h4 text-black-600">
+        <div class="text-h4 text-textbody">
           {{ promptText }}
         </div>
       </v-card-text>
       <template #actions>
         <v-btn
           variant="flat"
-          color="blue-grey-100"
-          class="text-white"
+          color="divider1"
+          class="text-canvas"
           @click="dialog = false"
         >
           Cancel
         </v-btn>
 
-        <v-btn variant="flat" color="red-500" @click="confirm">
+        <v-btn variant="flat" color="error" @click="confirm">
           {{ confirmButtonText }}
         </v-btn>
       </template>

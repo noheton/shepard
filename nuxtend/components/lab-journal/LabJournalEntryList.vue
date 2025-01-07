@@ -86,7 +86,7 @@ fetchRoles();
         width="77"
         class="mx-auto"
       />
-      <span class="text-body-2 text-black-300">No entry yet</span>
+      <span class="text-body-2 text-textbody2">No entry yet</span>
     </div>
   </div>
   <LayoutComponentsCenteredLoadingSpinner v-else />

@@ -171,7 +171,7 @@ const getUpdatedInfoString = computed(() => {
     <div v-if="isEditing" class="d-flex justify-end pt-2 px-6">
       <v-btn
         variant="flat"
-        color="black-50"
+        color="treeview"
         class="mr-4"
         @click="cancelEditing"
       >
@@ -191,15 +191,15 @@ const getUpdatedInfoString = computed(() => {
 }
 
 .dataobject-link {
-  color: rgb(var(--v-theme-blue-500));
+  color: rgb(var(--v-theme-primary));
 }
 
 .border {
-  border: 1px solid rgb(var(--v-theme-black-100));
+  border: 1px solid rgb(var(--v-theme-divider1));
 }
 
 .border-active {
-  border: 1px solid rgb(var(--v-theme-blue-500)) !important;
+  border: 1px solid rgb(var(--v-theme-primary)) !important;
 }
 
 .clickable {
@@ -207,6 +207,6 @@ const getUpdatedInfoString = computed(() => {
 }
 
 .updated-info-text {
-  color: rgb(var(--v-theme-black-300));
+  color: rgb(var(--v-theme-textbody2));
 }
 </style>
