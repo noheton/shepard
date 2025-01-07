@@ -2,12 +2,12 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 
-import de.dlr.shepard.neo4Core.entities.ApiKey;
-import de.dlr.shepard.neo4Core.entities.User;
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.neo4Core.io.UserIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.auth.apikey.entities.ApiKey;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.io.UserIO;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -32,7 +32,7 @@ public class BaseTestCaseIT {
     RestAssured.port = port;
     RestAssured.basePath = basePath;
 
-    var credentials = new PrepareDatabase().withUser().withApiKey().build();
+    var credentials = new UserWithApiKeyBuilder().withUser().withApiKey().build();
     jws = credentials.getApiKey().getJws();
     username = credentials.getUser().getUsername();
     apiKeyId = credentials.getApiKey().getUid();
@@ -40,11 +40,11 @@ public class BaseTestCaseIT {
   }
 
   protected static UserWithApiKey getNewUserWithApiKey(String username) {
-    return new PrepareDatabase().withUser(username).withApiKey().build();
+    return new UserWithApiKeyBuilder().withUser(username).withApiKey().build();
   }
 
   protected static User getNewUser(String username) {
-    return new PrepareDatabase().withUser(username).build().getUser();
+    return new UserWithApiKeyBuilder().withUser(username).build().getUser();
   }
 
   protected static CollectionIO createCollection(String name) {

@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.neo4Core.io.VersionIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

@@ -62,93 +62,169 @@ It is one of many tools in the shepard ecosystem and aims to collect data from d
 
 |===
 
+[[building-blocks-level-2]]
 === Level 2
 
-[plantuml, "{plantUMLDir}whitebox-backend", png]
+[plantuml, "{plantUMLDir}whitebox-backend-level-2", png]
 ----
 @startuml Whitebox Backend
-left to right direction
 
 :User: as user
 
 package "deprecated" {
-  [InfluxTimeseries] as influx
   database "InfluxDB" as influxdb #D5E8D4
 }
 
-[Authorization] as authorization
-[Collections & DataObjects] as collections
-[Timeseries] as timeseries
-[Structured Data & Files] as files
-[Lab Journal] as labjournal
-[Status] as status
+[Context] as context
+[Data] as data
+[Auth] as auth
+[Common] as common
 
 database "Neo4j" as neo4j #DAE8FC
 database "TimescaleDB" as timescaledb #AAEEFF
 database "MongoDB" as mongodb #FFE6CC
 
-user ---> collections
-user ---> timeseries
-user ---> files
-user ---> labjournal
-user ---> status
+user --> context
+user --> data
 
-timeseries --> influx: extracts data
+context -> data: references data
+context --> neo4j
+data --> neo4j
+data --> mongodb
+data --> influxdb: extracts data during migration
+data --> timescaledb
 
-authorization --> neo4j
-collections --> neo4j
-labjournal --> neo4j
-influx --> influxdb
-timeseries --> timescaledb
-files --> mongodb
+data -[hidden]> common
+common -[hidden]> auth
 
 @enduml
 ----
 
-Multiple databases are used to enable CRUD operations for many types of data.
-The user can access these databases via the REST API.
-
-Each database integration has to create its own data structure as needed.
-The general structure with `Entities`, `References` and `IOEntities` is available to all integrations.
-In order to create a new database integration, one needs to create a new package.
-This package has to contain at least one database connector instance, the necessary data objects and a service class.
-In addition, the corresponding REST endpoints and the respective references must be implemented.
+// TODO: Should we document search & subscription here?
 
 **Contained Blackboxes:**
 [cols="1,1"]
 |===
 |Building Block | Responsibility
 
-| Authorization
-| This module handles user permissions and roles.
-Most of the endpoints are protected and can only be used by authenticated users or a valid API key.
+|Data|
+The data module is responsible for handling research data, including persisting and retrieval of this data.
+Containers for each data type are also part of the data module.
+
+|Context|
+The context module is responsible for managing the context of the research data.
+This includes collections, data objects, references to data (or rather containers) as well as the lab journal.
+
+|Auth|
+The auth module is responsible for everything concerning authentication and authorization.
+
+|Common|
+The common module provides core functionality of shepard as well as commonly used code for other modules.
+For example, it encapsulates common logic to interact with the neo4j database.
+
+The common module must not have dependencies on other modules.
+|===
+
+=== Level 3
+
+// TODO: Include Auth and Common properly as external dependencies & describe blackboxes a little bit more
+
+==== Context
+
+[plantuml, "{plantUMLDir}level-3-overview", png]
+----
+@startuml Level 3 Overview
+left to right direction
+
+[Collections & DataObjects] as collections
+[Lab Journal] as labjournal
+[References] as references
+
+[Data] as data #white
+
+database "Neo4j" as neo4j #DAE8FC
+
+
+collections --> neo4j
+labjournal --> neo4j
+references --> neo4j
+references --> data
+
+@enduml
+----
+
+**Contained Blackboxes:**
+[cols="1,1"]
+|===
+|Building Block | Responsibility
 
 | Collections & DataObjects
-| Manages metadata and references of organizational elements like `DataObjects`, `Collections` and `Containers`.
-Consists of a connector to establish a connection to the Neo4j database, data access objects (dao) to create an interface between data objects and the Neo4j database, and their associated services to provide a higher level view on the database operations.
+| Manages metadata and references of organizational elements like `DataObjects` and `Collections`.
 
-| InfluxTimeseries
-| Manages timeseries data in InfluxDB.
-Since we decided to replace it with TimescaleDB this module is now only used to migrate data out of Influx.
+| Lab Journal
+|
+
+| References
+|
+
+|===
+
+
+==== Data
+
+[plantuml, "{plantUMLDir}level-3-overview", png]
+----
+@startuml Level 3 Overview
+left to right direction
+
+[Timeseries] as timeseries
+[Structured Data] as structureddata
+[Files] as files
+[Semantic Repository] as semantic
+
+package "deprecated" {
+  database "InfluxDB" as influxdb #D5E8D4
+}
+
+database "Neo4j" as neo4j #DAE8FC
+database "TimescaleDB" as timescaledb #AAEEFF
+database "MongoDB" as mongodb #FFE6CC
+
+timeseries --> influxdb: extracts data
+
+neo4j <-- timeseries
+neo4j <-- structureddata
+neo4j <-- files
+timeseries --> timescaledb
+structureddata --> mongodb
+files --> mongodb
+
+timeseries -[hidden]> semantic
+
+@enduml
+----
+
+
+**Contained Blackboxes:**
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
 
 | Timeseries
 | Manages timeseries data.
 Uses TimescaleDB for persistence.
 Provides all needed code from the endpoint to the database access.
-Uses the InfluxTimeseries module to migrate data into TimescaleDB.
 
-| Structured Data & Files
-| Manages structured data and file uploads. Consists of a connector to handle the database connection and two services to provide a higher-level view on the database operations for structured data and files.
+| Structured Data
+| Manages structured data uploads.
 
-| Status
-| Contains a health and version endpoint that is accessible via REST.
-It is easy extensible to provide status information about the backend like the current state of database connections.
+| Files
+| Manages file uploads.
 
 |===
 
-==== Level 3
-
-===== Lab Journal
+==== Lab Journal
 
 [plantuml, "{plantUMLDir}component-lab-journal", png]
 ----
@@ -199,7 +275,7 @@ Following our solution strategy, we have the following classes:
 - `LabJournalEntry` is the main business entity containing the content as html string
 - `LabJournalEntryDAO` is used for communication with the neo4j database
 
-===== Timeseries
+==== Timeseries
 
 [INFO]
 ====
@@ -221,7 +297,7 @@ The timeseries table is managed in the code using hibernate entities.
 The data point table is managed directly using custom queries, since we want to make full use of TimescaleDB features and performance.
 
 [[migration-from-influx]]
-====== Migration from InfluxDB
+===== Migration from InfluxDB
 
 Shepard can be started in migration mode by setting the property `shepard.migration-mode.enabled` to true.
 For example, the following command starts the dev mode in migration mode:

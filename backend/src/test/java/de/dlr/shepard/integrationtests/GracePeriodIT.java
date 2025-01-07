@@ -2,9 +2,9 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.PermissionsIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.io.CollectionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

@@ -3,8 +3,8 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.neo4Core.io.UserIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.auth.users.io.UserIO;
+import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

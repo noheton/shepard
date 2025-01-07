@@ -42,23 +42,14 @@ This chapter is still under construction
 
 ==== Modularization
 
-[NOTE]
-====
-Previously, the modules have been organized along their technical purpose.
-That means that there was one package for all endpoints, one package for all neo4j entities, one package for all DAOs etc.
-This leads to logic and domain objects that are closely coupled being far away from each other, making both changes very distributed across the code base and the code of one feature hard to grasp.
-
-To mitigate this, we decided on a new modularization strategy, that will be applied with each update or refactoring touching a part of the code.
-The first example is the new timeseries module under `de.dlr.shepard.timeseries`.
-The following is a description of this **target** modularization.
-====
-
 The backend is split into modules by their functionality.
 That means that there is e.g. a module for timeseries including managing containers and timeseries data, a module for managing files, for collections & data objects etc.
 
 Each of those modules contains all technical components needed to fulfill it's purpose, including endpoints, services, domain model objects, DAOs, entities and repositories.
 
 Additionally, there may be modules for special functionalities like authentication.
+
+See <<building-blocks-level-2>> for the concrete modularization.
 
 ==== REST Endpoints
 

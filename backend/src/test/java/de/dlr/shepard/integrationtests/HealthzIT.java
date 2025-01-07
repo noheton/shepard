@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.List;
 import org.eclipse.microprofile.health.HealthCheckResponse;

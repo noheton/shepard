@@ -3,9 +3,9 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.mongoDB.ShepardFile;
-import de.dlr.shepard.neo4Core.io.FileContainerIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.data.file.io.FileContainerIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

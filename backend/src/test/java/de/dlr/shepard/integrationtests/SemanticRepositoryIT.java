@@ -3,11 +3,11 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.SemanticAnnotationIO;
-import de.dlr.shepard.neo4Core.io.SemanticRepositoryIO;
-import de.dlr.shepard.semantics.SemanticRepositoryType;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.data.semantic.SemanticRepositoryType;
+import de.dlr.shepard.data.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.data.semantic.io.SemanticRepositoryIO;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;

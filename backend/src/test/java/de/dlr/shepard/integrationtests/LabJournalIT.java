@@ -2,10 +2,10 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 
-import de.dlr.shepard.labJournal.io.LabJournalEntryIO;
-import de.dlr.shepard.neo4Core.io.CollectionIO;
-import de.dlr.shepard.neo4Core.io.DataObjectIO;
-import de.dlr.shepard.util.Constants;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;

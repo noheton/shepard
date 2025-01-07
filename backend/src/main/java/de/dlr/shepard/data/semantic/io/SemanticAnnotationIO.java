@@ -1,0 +1,51 @@
+package de.dlr.shepard.data.semantic.io;
+
+import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+@Data
+@NoArgsConstructor
+@Schema(name = "SemanticAnnotation")
+public class SemanticAnnotationIO implements HasId {
+
+  @Schema(readOnly = true, required = true)
+  private Long id;
+
+  @Schema(readOnly = true, required = true)
+  private String name;
+
+  @NotBlank
+  @Schema(required = true)
+  private String propertyIRI;
+
+  @NotBlank
+  @Schema(required = true)
+  private String valueIRI;
+
+  @NotNull
+  @Schema(required = true)
+  private long propertyRepositoryId;
+
+  @NotNull
+  @Schema(required = true)
+  private long valueRepositoryId;
+
+  public SemanticAnnotationIO(SemanticAnnotation ref) {
+    this.id = ref.getId();
+    this.name = ref.getName();
+    this.propertyIRI = ref.getPropertyIRI();
+    this.valueIRI = ref.getValueIRI();
+    this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
+    this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
+  }
+
+  @Override
+  public String getUniqueId() {
+    return id.toString();
+  }
+}

@@ -1,7 +1,7 @@
 package de.dlr.shepard.integrationtests;
 
-import de.dlr.shepard.neo4Core.entities.ApiKey;
-import de.dlr.shepard.neo4Core.entities.User;
+import de.dlr.shepard.auth.apikey.entities.ApiKey;
+import de.dlr.shepard.auth.users.entities.User;
 import lombok.Value;
 
 @Value

@@ -1,12 +1,12 @@
 package de.dlr.shepard;
 
-import de.dlr.shepard.configuration.feature.toggles.MigrationModeToggle;
-import de.dlr.shepard.influxtimeseries.InfluxDBConnector;
-import de.dlr.shepard.neo4j.MigrationsRunner;
-import de.dlr.shepard.neo4j.NeoConnector;
-import de.dlr.shepard.timeseries.migration.services.TimeseriesMigrationInitService;
-import de.dlr.shepard.util.IConnector;
-import de.dlr.shepard.util.PKIHelper;
+import de.dlr.shepard.common.configuration.feature.toggles.MigrationModeToggle;
+import de.dlr.shepard.common.neo4j.MigrationsRunner;
+import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.util.IConnector;
+import de.dlr.shepard.common.util.PKIHelper;
+import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxDBConnector;
+import de.dlr.shepard.data.timeseries.migration.services.TimeseriesMigrationInitService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;

@@ -1,0 +1,54 @@
+package de.dlr.shepard.context.references.timeseriesreference.daos;
+
+import de.dlr.shepard.common.neo4j.daos.GenericDAO;
+import de.dlr.shepard.common.util.CypherQueryHelper;
+import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
+import jakarta.enterprise.context.RequestScoped;
+import java.util.Map;
+
+@RequestScoped
+public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTimeseriesNodeEntity> {
+
+  /**
+   * Find a timeseries by properties
+   *
+   * @param measurement  measurement
+   * @param device       device
+   * @param location     location
+   * @param symbolicName symbolicName
+   * @param field        field
+   *
+   * @return the found timeseries or null
+   */
+  public ReferencedTimeseriesNodeEntity find(
+    String measurement,
+    String device,
+    String location,
+    String symbolicName,
+    String field
+  ) {
+    var query = String.format(
+      "MATCH (t:Timeseries { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s",
+      CypherQueryHelper.getReturnPart("t")
+    );
+    Map<String, Object> params = Map.of(
+      "measurement",
+      measurement,
+      "device",
+      device,
+      "location",
+      location,
+      "symbolicName",
+      symbolicName,
+      "field",
+      field
+    );
+    var results = findByQuery(query, params);
+    return results.iterator().hasNext() ? results.iterator().next() : null;
+  }
+
+  @Override
+  public Class<ReferencedTimeseriesNodeEntity> getEntityType() {
+    return ReferencedTimeseriesNodeEntity.class;
+  }
+}
