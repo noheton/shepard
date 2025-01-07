@@ -100,8 +100,6 @@ common -[hidden]> auth
 @enduml
 ----
 
-// TODO: Should we document search & subscription here?
-
 **Contained Blackboxes:**
 [cols="1,1"]
 |===
