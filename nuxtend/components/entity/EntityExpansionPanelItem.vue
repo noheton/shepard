@@ -15,7 +15,7 @@ defineProps<{ title: string; count?: number }>();
         :icon="slotProps.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
         class
       />
-      <div class="text-h5 text-textbody pl-2">
+      <div class="text-h5 text-textbody1 pl-2">
         {{ title }}
       </div>
       <div

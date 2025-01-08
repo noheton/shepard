@@ -29,7 +29,7 @@ export default defineNuxtPlugin(app => {
 const lightTheme: ThemeDefinition = {
   colors: {
     primary: "#0075bb",
-    textbody: "#262626",
+    textbody1: "#262626",
     textbody2: "#5b626a",
     "medium-emphasis": "#3e4347",
     "low-emphasis": "#7d878e",
@@ -47,7 +47,7 @@ const lightTheme: ThemeDefinition = {
 const darkTheme: ThemeDefinition = {
   colors: {
     primary: "#00c7e3",
-    textbody: "#ffffff",
+    textbody1: "#ffffff",
     textbody2: "#f5f7f9",
     "medium-emphasis": "#ffffff",
     "low-emphasis": "#a5afb7",

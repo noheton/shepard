@@ -29,7 +29,7 @@ const confirm = () => {
 
     <v-card class="pa-0">
       <v-card-text>
-        <div class="text-h4 text-textbody">
+        <div class="text-h4 text-textbody1">
           {{ promptText }}
         </div>
       </v-card-text>
