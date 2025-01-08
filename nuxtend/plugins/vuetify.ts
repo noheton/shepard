@@ -36,7 +36,7 @@ const lightTheme: ThemeDefinition = {
     "low-emphasis": "#7d878e",
     divider1: "#a5afb7",
     divider2: "#f5f7f9",
-    focus1: "#b2d6eb",
+    focus1: "#d9eaf5",
     focus2: "#66acd6",
     treeview: "#e9ecef",
     canvas: "#ffffff",
