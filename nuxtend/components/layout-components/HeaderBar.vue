@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar class="border-b-sm">
+  <v-app-bar class="border-b-sm bg-canvas">
     <v-app-bar-title>
       <v-btn to="/">
         <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />

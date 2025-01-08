@@ -3,7 +3,7 @@ defineProps<{ title: string; count?: number }>();
 </script>
 
 <template>
-  <v-expansion-panel class="pb-8">
+  <v-expansion-panel class="pb-8 bg-canvas">
     <v-expansion-panel-title
       v-slot="slotProps"
       min-height="32"
