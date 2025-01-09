@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.context.collection.endpoints.ContainerAttributes;
+import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import java.util.HashMap;
 import java.util.List;

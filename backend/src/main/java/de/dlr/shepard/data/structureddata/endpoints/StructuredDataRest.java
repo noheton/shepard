@@ -7,7 +7,7 @@ import de.dlr.shepard.auth.security.PermissionsUtil;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.context.collection.endpoints.ContainerAttributes;
+import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;

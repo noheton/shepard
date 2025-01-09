@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[subscriptions]]
 === Subscription Feature
 
 The subscriptions feature allows users to react on certain events.

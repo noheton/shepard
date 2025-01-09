@@ -1,4 +1,4 @@
-package de.dlr.shepard.context.collection.endpoints;
+package de.dlr.shepard.data;
 
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
 import java.util.List;

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.context.collection.endpoints.ContainerAttributes;
+import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import java.util.HashMap;

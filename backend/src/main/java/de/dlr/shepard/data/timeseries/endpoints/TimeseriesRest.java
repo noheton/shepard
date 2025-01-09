@@ -9,7 +9,7 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.context.collection.endpoints.ContainerAttributes;
+import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;

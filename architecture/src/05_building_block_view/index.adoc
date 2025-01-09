@@ -39,9 +39,8 @@ user --> backend
 
 
 The backend is designed to be modular and expandable.
-One of the main tasks of the backend is the management of metadata.
-The data structure is used to manage the attached data.
-This structure as well as the corresponding references is managed by the `core` package and stored in Neo4j.
+One of the main tasks of the backend is the management of metadata, which is used to manage the attached data.
+The metadata structure as well as the corresponding references are stored in Neo4j.
 
 **Contained Blackboxes:**
 [cols="1,1"]
@@ -63,7 +62,7 @@ It is one of many tools in the shepard ecosystem and aims to collect data from d
 |===
 
 [[building-blocks-level-2]]
-=== Level 2
+=== Backend Level 2
 
 [plantuml, "{plantUMLDir}whitebox-backend-level-2", png]
 ----
@@ -125,49 +124,6 @@ The common module must not have dependencies on other modules.
 
 === Level 3
 
-// TODO: Include Auth and Common properly as external dependencies & describe blackboxes a little bit more
-
-==== Context
-
-[plantuml, "{plantUMLDir}level-3-overview", png]
-----
-@startuml Level 3 Overview
-left to right direction
-
-[Collections & DataObjects] as collections
-[Lab Journal] as labjournal
-[References] as references
-
-[Data] as data #white
-
-database "Neo4j" as neo4j #DAE8FC
-
-
-collections --> neo4j
-labjournal --> neo4j
-references --> neo4j
-references --> data
-
-@enduml
-----
-
-**Contained Blackboxes:**
-[cols="1,1"]
-|===
-|Building Block | Responsibility
-
-| Collections & DataObjects
-| Manages metadata and references of organizational elements like `DataObjects` and `Collections`.
-
-| Lab Journal
-|
-
-| References
-|
-
-|===
-
-
 ==== Data
 
 [plantuml, "{plantUMLDir}level-3-overview", png]
@@ -193,6 +149,7 @@ timeseries --> influxdb: extracts data
 neo4j <-- timeseries
 neo4j <-- structureddata
 neo4j <-- files
+neo4j <-- semantic
 timeseries --> timescaledb
 structureddata --> mongodb
 files --> mongodb
@@ -209,7 +166,7 @@ timeseries -[hidden]> semantic
 |Building Block | Responsibility
 
 
-| Timeseries
+| <<timeseries, Timeseries>>
 | Manages timeseries data.
 Uses TimescaleDB for persistence.
 Provides all needed code from the endpoint to the database access.
@@ -220,8 +177,124 @@ Provides all needed code from the endpoint to the database access.
 | Files
 | Manages file uploads.
 
+| Semantic
+| Manages semantic repositories.
+
 |===
 
+==== Context
+
+[plantuml, "{plantUMLDir}level-3-overview", png]
+----
+@startuml Level 3 Overview
+left to right direction
+
+[Collections] as collections
+[Lab Journal] as labjournal
+[Export] as export
+[References] as references
+[Version] as version
+
+[Data] as data #white
+
+database "Neo4j" as neo4j #DAE8FC
+
+
+collections --> neo4j
+labjournal --> neo4j
+references --> neo4j
+references --> data
+export --> collections
+export --> references
+labjournal -[hidden]> version
+
+@enduml
+----
+
+**Contained Blackboxes:**
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
+| Collections & DataObjects
+| Manages metadata and references of organizational elements: `DataObjects` and `Collections`.
+
+| <<labjournal, Lab Journal>>
+| The lab journal module is responsible for lab journal entries.
+
+| Export
+| The export module offers functionality to export a collection.
+
+| References
+| References are used to link (parts of) data containers to data objects.
+
+| Version
+| The version module encapsulates logic needed for versioning of collections, data objects and references.
+
+|===
+
+==== Auth
+
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
+| API Key
+| Manages API key including retrievals and generation.
+
+| Permission
+| Manages the provides access to the stored permissions and roles.
+
+| Users
+| Manages users and user groups.
+
+| Security
+| Manages the security related interactions including access control and authorization.
+
+|===
+
+==== Common
+
+[cols="1,1"]
+|===
+|Building Block | Responsibility
+
+| Configuration
+| Manages feature toggles configurations.
+
+| Exceptions
+| Contains all the base exceptions <<exceptions>>
+
+| Filters
+| Contains all the web application filters.
+
+| Mongo DB
+| Contains the base classes needed for MongoDB interaction.
+
+| Neo4j
+| Contains the basic classes and structure for Neo4j interaction including `NeoConnector` and `MigrationRunner`.
+It also includes base domain classes including DAOs, IO base classes and base entities.
+
+| Search
+| The search module provides functionality to search for users, collections, data objects, references and structured data.
+
+| Subscription
+| Manages the <<subscriptions>>
+
+| Healthz
+| Includes the functionality for health endpoint
+
+| Versionz
+| Includes the functionality for version endpoint
+
+| Util
+| Includes base util classes.
+
+|===
+
+=== Level 4
+
+[[labjournal]]
 ==== Lab Journal
 
 [plantuml, "{plantUMLDir}component-lab-journal", png]
@@ -273,6 +346,8 @@ Following our solution strategy, we have the following classes:
 - `LabJournalEntry` is the main business entity containing the content as html string
 - `LabJournalEntryDAO` is used for communication with the neo4j database
 
+
+[[timeseries]]
 ==== Timeseries
 
 [INFO]

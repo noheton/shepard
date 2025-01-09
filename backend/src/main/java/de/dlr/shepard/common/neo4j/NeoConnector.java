@@ -10,11 +10,13 @@ import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
+import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
+import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.logging.Log;
 import java.util.Collections;
@@ -88,8 +90,8 @@ public class NeoConnector implements IConnector {
           ApiKey.class.getPackageName(),
           Permissions.class.getPackageName(),
           Subscription.class.getPackageName(),
-          "de.dlr.shepard.influxtimeseries",
-          "de.dlr.shepard.context.references.timeseriesreference"
+          InfluxTimeseries.class.getPackageName(),
+          TimeseriesReference.class.getPackageName()
         );
         return true;
       } catch (ConnectionException ex) {

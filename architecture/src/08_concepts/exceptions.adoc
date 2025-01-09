@@ -13,6 +13,8 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [InvalidRequestException] as ire
 [ShepardParserException] as parser
 [ShepardProcessingException] as processing
+[InvalidBodyException] as ibe
+[InvalidPathException] as ipe
 
 
 wae -u-> re
@@ -23,6 +25,8 @@ iae -u-> se
 ire -u-> se
 parser -u-> se
 processing -u-> se
+ibe -u-> se
+ipe -u-> se
 @enduml
 ----
 
@@ -35,3 +39,5 @@ Currently, there are four different sub-types of the `ShepardException`:
 - **InvalidRequestException:** The `InvalidRequestException` is used when the request misses required information or is otherwise invalid.
 - **ShepardParserException:** The `ShepardParserException` is used by the search package to indicate that the search query could not be parsed.
 - **ShepardProcessingException:** The `ShepardProcessingException` indicates an arbitrary issue while processing the request.
+- **InvalidBodyException** The `InvalidBodyException` will be thrown if a value in the JSON Request Body doesn't fulfill the necessary constraints of an attribute.
+- **InvalidPathException** The `InvalidPathException` indicates that the specified path does not exist.

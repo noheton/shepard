@@ -31,7 +31,7 @@ public class MigrationsRunner {
 
     var config = MigrationsConfig.builder()
       .withTransactionMode(MigrationsConfig.TransactionMode.PER_STATEMENT)
-      .withPackagesToScan("de.dlr.shepard.neo4j.migrations")
+      .withPackagesToScan("de.dlr.shepard.common.neo4j.migrations")
       .withLocationsToScan("file://" + locationsToScan)
       .build();
 
