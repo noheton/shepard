@@ -170,7 +170,6 @@ public class TimeseriesRest {
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  @Transactional
   public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
     timeseriesContainerService.deleteContainer(timeseriesContainerId, securityContext.getUserPrincipal().getName());
 

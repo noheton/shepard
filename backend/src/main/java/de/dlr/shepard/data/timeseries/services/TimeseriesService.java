@@ -48,6 +48,7 @@ public class TimeseriesService {
     return timeseriesRepository.list("containerId", containerId);
   }
 
+  @Transactional
   public void deleteTimeseriesByContainerId(long containerId) {
     timeseriesRepository.delete("containerId", containerId);
   }
