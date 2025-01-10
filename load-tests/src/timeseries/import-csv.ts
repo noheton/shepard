@@ -27,7 +27,8 @@ export function setup() {
   const response = createTimeseriesContainer(containerName);
   const containerId = getIdFromResponse(response.json());
 
-  const csvString = generateCsvString(NUMBER_OF_LINES, createTestMeasurement());
+  const csvString1 = generateCsvString(NUMBER_OF_LINES, createTestMeasurement("measurement1"), true);
+  const csvString = csvString1 + generateCsvString(NUMBER_OF_LINES, createTestMeasurement("measurement2"), false);
 
   return { containerId, csvString };
 }

@@ -9,7 +9,7 @@ export const timeseriesUrl = buildUri("/shepard/api/timeseriesContainers");
 const params = buildParamsWithApiKey();
 
 /*
-  Endpoint-related Functions 
+  Endpoint-related Functions
 */
 
 export function createTimeseriesContainer(name: string) {
@@ -39,7 +39,7 @@ export function importTimeseriesCSV(containerId: number, csvString: string, file
 }
 
 /*
-  Helper Functions 
+  Helper Functions
 */
 
 export function getIdFromResponse(response: JSONValue): number {
@@ -72,13 +72,18 @@ export function generateDataPoints(numberOfDataPoints: number): TimeseriesDataPo
   return dataPoints;
 }
 
-export function generateCsvString(numberOfRows: number, measurement: TimeseriesObject): string {
+export function generateCsvString(
+  numberOfRows: number,
+  measurement: TimeseriesObject,
+  generateHeader: boolean,
+): string {
   const headers = "DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE";
 
   let timeStamp = 1708067683056880000;
   let value = 22.0;
 
-  let csvString = headers + "\n";
+  let csvString = "";
+  if (generateHeader) csvString = headers + "\n";
 
   for (var i = 0; i < numberOfRows; i++) {
     timeStamp += 1;
@@ -88,9 +93,9 @@ export function generateCsvString(numberOfRows: number, measurement: TimeseriesO
   return csvString;
 }
 
-export function createTestMeasurement(): TimeseriesObject {
+export function createTestMeasurement(measurement: string): TimeseriesObject {
   return {
-    measurement: "testmeasurement",
+    measurement: measurement,
     device: "device",
     location: "location",
     symbolicName: "symbolicName",

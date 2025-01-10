@@ -8,8 +8,8 @@ import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +21,7 @@ public class TimeseriesDataPointRepository {
 
   private final int INSERT_BATCH_SIZE = 1000;
 
-  @Inject
+  @PersistenceContext
   EntityManager entityManager;
 
   public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {

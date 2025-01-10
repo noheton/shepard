@@ -14,6 +14,7 @@ import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -123,6 +124,7 @@ public class TimeseriesService {
    * @param dataType                 The data type that values in this timeseries will have
    * @return created timeseries
    */
+  @Transactional
   public TimeseriesEntity saveDataPoints(
     long timeseriesContainerId,
     Timeseries timeseries,
@@ -152,8 +154,9 @@ public class TimeseriesService {
 
     // create new timeseries because it does not exist
     TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
-    this.timeseriesRepository.persist(timeseriesEntity);
-    return timeseriesEntity;
+    this.timeseriesRepository.upsert(containerId, timeseriesEntity);
+    var found = this.timeseriesRepository.findTimeseries(containerId, timeseries);
+    return found.get();
   }
 
   private static void assertDataPointsMatchTimeseriesValueType(

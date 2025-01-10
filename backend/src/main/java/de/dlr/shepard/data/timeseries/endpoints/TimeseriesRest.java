@@ -189,7 +189,6 @@ public class TimeseriesRest {
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  @Transactional
   public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
     @RequestBody(
@@ -373,7 +372,6 @@ public class TimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Subscribable
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  @Transactional
   public Response importTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     MultipartBodyFileUpload body
