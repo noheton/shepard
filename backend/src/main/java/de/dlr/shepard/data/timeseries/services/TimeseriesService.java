@@ -11,6 +11,7 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
@@ -50,7 +51,8 @@ public class TimeseriesService {
 
   @Transactional
   public void deleteTimeseriesByContainerId(long containerId) {
-    timeseriesRepository.delete("containerId", containerId);
+    var rowsAffected = timeseriesRepository.delete("containerId", containerId);
+    Log.infof("deleteTimeseriesByContainerId() deleted %s rows", rowsAffected);
   }
 
   /**
