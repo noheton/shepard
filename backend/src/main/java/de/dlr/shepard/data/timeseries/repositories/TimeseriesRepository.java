@@ -60,4 +60,14 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
     if (rowCount == 1) Log.info("Upsert has created a new timeseries record.");
     if (rowCount > 1) throw new RuntimeException("Upsert has changed multiple rows.");
   }
+
+  public void deleteByContainerId(long containerId) {
+    var rowCount = entityManager
+      .createQuery("delete from TimeseriesEntity where containerId = :containerId")
+      .setParameter("containerId", containerId)
+      .executeUpdate();
+
+    if (rowCount == 0) Log.warn("deleteByContainerId did not delete any timeseries record.");
+    if (rowCount > 0) Log.infof("deleteByContainerId has deleted %s timeseries records.", rowCount);
+  }
 }
