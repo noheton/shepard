@@ -4,20 +4,13 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 Shepard uses several databases for data persistence.
 
-==== Database Transactions
+==== Neo4j
 
-===== TimescaleDB
+For interaction with Neo4j we use link:https://neo4j.com/docs/ogm-manual/current/tutorial/[neo4j-ogm].
+The connection is defined in `src/main/java/de/dlr/shepard/common/neo4j/NeoConnector.java`.
+The packages of all entities have to be registered in the SessionFactory there in order to work properly.
 
-Code modifying our database should use transactions to avoid leaving the database in an inconsistent state in case of errors.
-
-This can be done using the `@Transactional` annotation on methods.
-In the quarkus documentation it is recommended to mark methods at the application entry boundaries with this annotation, e.g. the REST endpoints.
-
-More information can be found link:https://quarkus.io/guides/hibernate-orm#setting-up-and-configuring-hibernate-orm[here].
-
-==== Database Migrations
-
-===== Neo4j
+===== Migrations
 
 Neo4j migrations are done using link:https://mvnrepository.com/artifact/eu.michael-simons.neo4j/neo4j-migrations[neo4j-migrations] and can be written using xml schemas, cypher queries or java classes.
 They need to be named `V<version_number>__<Migration_title>.<xml/cypher/java>`.
@@ -30,7 +23,18 @@ The migrations are executed by the MigrationsRunner at `src/main/java/de/dlr/she
 
 In the Neo4j UI, the applied migrations form a chain when querying `MATCH (n) RETURN n`. While migrations are applied a lock node is present that can be found using ``MATCH (n:`__Neo4jMigrationsLock`) RETURN n``.
 
-===== Postgres/TimescaleDB
+==== Postgres/TimescaleDB
+
+===== Transactions
+
+Code modifying our database should use transactions to avoid leaving the database in an inconsistent state in case of errors.
+
+This can be done using the `@Transactional` annotation on methods.
+In the quarkus documentation it is recommended to mark methods at the application entry boundaries with this annotation, e.g. the REST endpoints.
+
+More information can be found link:https://quarkus.io/guides/hibernate-orm#setting-up-and-configuring-hibernate-orm[here].
+
+===== Migrations
 
 Migrations for the Postgres/TimescaleDB schema are done using link:https://quarkus.io/guides/flyway[Flyway].
 The integration with hibernate is described in the Quarkus documentation link:https://quarkus.io/guides/hibernate-orm#flyway[here].

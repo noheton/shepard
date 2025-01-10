@@ -72,7 +72,6 @@ public class NeoConnector implements IConnector {
       .build();
     while (true) {
       try {
-        // TODO: Make this more generic
         sessionFactory = new SessionFactory(
           configuration,
           Version.class.getPackageName(),

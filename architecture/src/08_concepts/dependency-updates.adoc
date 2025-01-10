@@ -73,12 +73,6 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 |chronograf<1.10
 |The container cannot be started with v1.10. We expect to move away from influxdb in the future, so we will stick with v1.9 for the time being.
 
-|neo4j<5
-|V5 introduces major breaking changes
-
-|mongo<5
-|no real reason, there are some major changes, but nothing serious
-
 |vue<3
 |not compatible with bootstrap v4
 
@@ -111,9 +105,6 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 
 |@vue/eslint-config-typescript<14
 |Has peer dependency to current version of eslint
-
-|neo4j-ogm<4
-|v5 is not compatible with neo4j v4
 
 |jjwt<0.12
 |v0.12.x introduces a series of breaking changes in preparation for v1.0. It is recommended to stay on v0.11 until v1.0 is finished to fix all changes at once.
