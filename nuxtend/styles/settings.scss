@@ -72,8 +72,8 @@
   $app-bar-prominent-height: 64px,
 
   // snackbar overrides
-  $snackbar-background: rgb(var(--v-theme-error-background)),
-  $snackbar-color: rgb(var(--v-theme-high-emphasis)),
+  $snackbar-background: rgb(var(--v-theme-error)),
+  $snackbar-color: rgb(var(--v-theme-white)),
   $snackbar-elevation: 0,
 
   // breadcrumb overrides

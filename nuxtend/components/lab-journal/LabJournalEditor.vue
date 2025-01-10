@@ -132,7 +132,7 @@ watch(
   }
 
   code {
-    background-color: rgb(var(--v-theme-divider1));
+    background-color: rgb(var(--v-theme-divider2));
     border-radius: 0.4rem;
     font-size: 0.85rem;
     padding: 0.25em 0.3em;

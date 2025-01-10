@@ -27,19 +27,14 @@ const confirm = () => {
       </span>
     </template>
 
-    <v-card class="pa-0">
+    <v-card class="pa-0 bg-canvas">
       <v-card-text>
         <div class="text-h4 text-textbody1">
           {{ promptText }}
         </div>
       </v-card-text>
       <template #actions>
-        <v-btn
-          variant="flat"
-          color="divider1"
-          class="text-canvas"
-          @click="dialog = false"
-        >
+        <v-btn variant="flat" color="treeview" @click="dialog = false">
           Cancel
         </v-btn>
 
