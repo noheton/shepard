@@ -49,10 +49,11 @@ services:
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api
-      AUTH_ORIGIN: ${FRONTEND_URL}
+      AUTH_ORIGIN: ${FRONTEND_URL}/api/auth
       NUXT_AUTH_SECRET: ${FRONTEND_AUTH_SECRET}
       NUXT_OIDC_CLIENT_ID: ${CLIENT_ID}
       NUXT_OIDC_ISSUER: ${OIDC_AUTHORITY}
+      SESSION_REFRESH_INTERVAL: ${SESSION_REFRESH_INTERVAL}
     depends_on:
       - backend
     networks:

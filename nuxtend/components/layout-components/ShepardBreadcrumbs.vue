@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { VBreadcrumbs } from "vuetify/components";
-
 interface ShepardBreadcrumbsProps {
   items: { title: string; to: string }[];
 }

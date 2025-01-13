@@ -17,6 +17,7 @@ export default NuxtAuthHandler({
       client: {
         token_endpoint_auth_method: "none",
       },
+
       idToken: true,
       checks: ["pkce", "state"],
       profile: profile => ({ id: profile.sub, ...profile }),
@@ -32,8 +33,11 @@ export default NuxtAuthHandler({
           refreshToken: account.refresh_token,
           userId: account.providerAccountId,
         } as typeof token;
-      } else if (Date.now() < token.expiresAt * 1000 - 30000 * 2) {
-        // 30000 since this is the session refresh interval
+      } else if (
+        Date.now() <
+        token.expiresAt * 1000 - runtimeConfig.sessionRefreshInterval * 2
+      ) {
+        // 30000 * 2 since this is double of the session refresh interval
         return token;
       } else {
         if (!token.refreshToken) throw new TypeError("Missing refresh_token");
@@ -85,12 +89,15 @@ export default NuxtAuthHandler({
     },
   },
   session: {
-    maxAge: 1800, // 30 min
+    maxAge: 1800, // 30 min - sets 'exp' field in token, but currently do not has an effect
+  },
+  pages: {
+    signIn: "/auth/signIn",
   },
   events: {
-    async signOut({ token }: { token: { idToken: string } }) {
+    async signOut(message) {
       const logOutUrl = await getLogoutUrl(OIDC_CONFIGURATION_URL);
-      logOutUrl.searchParams.set("id_token_hint", token.idToken);
+      logOutUrl.searchParams.set("id_token_hint", message.token.idToken);
       fetch(logOutUrl);
     },
   },

@@ -172,3 +172,18 @@ In this scenario we utilize the `token` object that was initialized in the first
 The `iat` and `exp` fields are specified by the official RFC 7519 (JWT) and are automatically set by Nuxt. For example, the `exp` field is calculated by adding `maxAge` config from the `NuxtAuthHandler` to the `iat` value (issued at). But we do not actually rely on these fields.
 +
 In this third scenario a new refresh token is requested from the OIDC provider. If there is an error due to an expired refresh token, the error is directly thrown. If everything is ok, the current `token` object is updated with a new `expiresAt` value, a new access token and if possible, a new refresh token. Then this new `token` object is returned.
+
+===== Authentication Middleware
+
+The global authentication is handled by a custom authentication middleware, which is defined in `middleware/authentication.global.ts`.
+This middleware protects most frontend pages (i.e., `/collections`) and therefore requires an authenticated user session before it can be shown. 
+If the user is not authenticated and therefore does not an authenticated user session, the middleware redirects the user to the OIDC's login page.
+When the user successfully logged in, they are redirected to the protected page, which now can be opened by the user.
+
+Not all pages need to be protected. 
+Pages that should not require an authenticated user session can be configured in the `middleware/publicEndpoints.ts` file.
+This defines a list of endpoints that do not require a logged in user, i.e., the shepard frontpage (`/`).
+
+As long as the user stays on the page and has a network connection to the OIDC provider, the user session is refreshed infinitely.
+When the user closes the browser or tab of the frontend, the session cannot be refreshed and the access token expires.
+In this case an error message should be shown (Invalid Authentication), which requires the user to either reload the page, click on the sign-in button or redirect to a different protected page to trigger the sign-in that creates a new user session.

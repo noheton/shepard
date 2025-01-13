@@ -1,5 +1,15 @@
 import vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
+function getSessionRefreshInterval(): number {
+  if (process.env.SESSION_REFRESH_INTERVAL) {
+    const interval: number = parseInt(process.env.SESSION_REFRESH_INTERVAL);
+    if (!Number.isNaN(interval)) {
+      return interval;
+    }
+  }
+  return 30000; // 30 secs default
+}
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-09-06",
   devtools: { enabled: true },
@@ -35,6 +45,7 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
+    originEnvKey: "AUTH_ORIGIN",
     provider: {
       type: "authjs",
       trustHost: false,
@@ -42,8 +53,9 @@ export default defineNuxtConfig({
       addDefaultCallbackUrl: true,
     },
     sessionRefresh: {
-      // how often the session is refreshed (querying a new refresh token)
-      enablePeriodically: 30000, // 30 secs
+      // how often the session is refreshed
+      // triggers jwt callback in NuxtAuthHandler
+      enablePeriodically: getSessionRefreshInterval(),
     },
   },
 
@@ -80,6 +92,7 @@ export default defineNuxtConfig({
     authSecret: "",
     oidcClientId: "",
     oidcIssuer: "",
+    sessionRefreshInterval: getSessionRefreshInterval(),
     public: {
       backendApiUrl: "",
     },

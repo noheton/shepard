@@ -26,16 +26,26 @@
   </v-app-bar>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { useTheme } from "vuetify";
 
 const { status, signOut, signIn, data } = useAuth();
 const theme = useTheme();
 
-const isSignedIn = computed(() => status.value === "authenticated").value;
+const isSignedIn = computed(
+  () => status.value === "authenticated" && !data.value?.error,
+).value;
 const authIcon = isSignedIn ? "mdi-logout" : "mdi-account";
 
-const handleAuth = () => (isSignedIn ? signOut(data.value) : signIn());
+const handleAuth = () => {
+  if (isSignedIn) {
+    const signInCookie = useCookie(signInRedirectCookie);
+    signInCookie.value = undefined;
+    signOut({ callbackUrl: "/" });
+    return;
+  }
+  signIn(undefined);
+};
 const toggleTheme = () => {
   theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
 };
