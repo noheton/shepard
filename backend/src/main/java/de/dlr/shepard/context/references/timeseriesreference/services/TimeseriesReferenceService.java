@@ -13,8 +13,7 @@ import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTime
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -32,6 +31,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @RequestScoped
 public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
@@ -43,7 +43,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   private TimeseriesContainerDAO timeseriesContainerDAO;
   private ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
   private UserDAO userDAO;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
   private DateHelper dateHelper;
   private PermissionsUtil permissionsUtil;
 
@@ -58,7 +58,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesContainerDAO timeseriesContainerDAO,
     ReferencedTimeseriesNodeEntityDAO timeseriesDAO,
     UserDAO userDAO,
-    VersionDAO versionDAO,
+    VersionService versionService,
     DateHelper dateHelper,
     PermissionsUtil permissionsUtil
   ) {
@@ -69,20 +69,20 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.timeseriesDAO = timeseriesDAO;
     this.userDAO = userDAO;
-    this.versionDAO = versionDAO;
+    this.versionService = versionService;
     this.dateHelper = dateHelper;
     this.permissionsUtil = permissionsUtil;
   }
 
   @Override
-  public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+  public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     var references = timeseriesReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
   @Override
-  public TimeseriesReference getReferenceByShepardId(long shepardId) {
-    var reference = timeseriesReferenceDAO.findByShepardId(shepardId);
+  public TimeseriesReference getReferenceByShepardId(long shepardId, UUID versionUID) {
+    var reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
       Log.errorf("Timeseries Reference with id %s is null or deleted", shepardId);
       return null;
@@ -141,8 +141,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = timeseriesReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
 

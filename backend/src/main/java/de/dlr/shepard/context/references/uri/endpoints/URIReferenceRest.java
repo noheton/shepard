@@ -14,12 +14,14 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -68,11 +70,13 @@ public class URIReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllUriReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = uriReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = uriReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<URIReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new URIReferenceIO(ref));
@@ -93,12 +97,14 @@ public class URIReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.URI_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getUriReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.URI_REFERENCE_ID) long referenceId
+    @PathParam(Constants.URI_REFERENCE_ID) long referenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var reference = uriReferenceService.getReferenceByShepardId(referenceId);
+    var reference = uriReferenceService.getReferenceByShepardId(referenceId, versionUID);
     return Response.ok(new URIReferenceIO(reference)).build();
   }
 

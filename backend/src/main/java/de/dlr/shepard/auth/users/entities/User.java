@@ -77,8 +77,8 @@ public class User implements HasId {
     if (!(obj instanceof User)) return false;
     User other = (User) obj;
     return (
-      HasId.equalsHelper(apiKeys, other.apiKeys) &&
-      HasId.equalsHelper(subscriptions, other.subscriptions) &&
+      HasId.areEqualSetsByUniqueId(apiKeys, other.apiKeys) &&
+      HasId.areEqualSetsByUniqueId(subscriptions, other.subscriptions) &&
       Objects.equals(email, other.email) &&
       Objects.equals(firstName, other.firstName) &&
       Objects.equals(lastName, other.lastName) &&

@@ -74,8 +74,8 @@ public class FileReferenceServiceTest {
   public void getFileReferenceByShepardIdTest_successful() {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    FileReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    FileReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -83,7 +83,7 @@ public class FileReferenceServiceTest {
   public void getFileReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    FileReference actual = service.getReferenceByShepardId(shepardId);
+    FileReference actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -93,7 +93,7 @@ public class FileReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    FileReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    FileReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertNull(actual);
   }
 
@@ -107,7 +107,7 @@ public class FileReferenceServiceTest {
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<FileReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
+    List<FileReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 
@@ -308,10 +308,10 @@ public class FileReferenceServiceTest {
     ref.setFileContainer(container);
     NamedInputStream result = new NamedInputStream(fileOID, null, "myInputStream", 123L);
 
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
-    NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username);
+    NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username, null);
 
     assertEquals(result, actual);
   }
@@ -321,8 +321,9 @@ public class FileReferenceServiceTest {
     String username = "Murat";
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15l);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () ->
+      service.getPayloadByShepardId(ref.getShepardId(), "oid", username, null)
     );
   }
 
@@ -335,8 +336,9 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15l);
     ref.setFileContainer(container);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    assertThrows(InvalidRequestException.class, () ->
+      service.getPayloadByShepardId(ref.getShepardId(), "oid", username, null)
     );
   }
 
@@ -348,9 +350,9 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(permissionsUtil.isAccessTypeAllowedForUser(20L, AccessType.Read, username)).thenReturn(false);
-    assertThrows(InvalidAuthException.class, () -> service.getPayloadByShepardId(15L, "oid", username));
+    assertThrows(InvalidAuthException.class, () -> service.getPayloadByShepardId(15L, "oid", username, null));
   }
 
   @Test
@@ -448,8 +450,8 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFiles(files);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    List<ShepardFile> actual = service.getFilesByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    List<ShepardFile> actual = service.getFilesByShepardId(ref.getShepardId(), null);
     assertEquals(files, actual);
   }
 }

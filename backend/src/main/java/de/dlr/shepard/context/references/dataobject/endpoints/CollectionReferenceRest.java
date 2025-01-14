@@ -15,12 +15,14 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -69,11 +71,13 @@ public class CollectionReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllCollectionReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<CollectionReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new CollectionReferenceIO(reference));
@@ -94,12 +98,14 @@ public class CollectionReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.COLLECTION_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getCollectionReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
+    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId);
+    var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId, versionUID);
     return Response.ok(new CollectionReferenceIO(result)).build();
   }
 
@@ -166,12 +172,14 @@ public class CollectionReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.COLLECTION_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getCollectionReferencePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
+    @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId);
+    var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId, versionUID);
     return payload != null ? Response.ok(new CollectionIO(payload)).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

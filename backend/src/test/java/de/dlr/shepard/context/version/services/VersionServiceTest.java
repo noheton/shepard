@@ -2,7 +2,6 @@ package de.dlr.shepard.context.version.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -102,14 +101,6 @@ public class VersionServiceTest extends BaseTestCase {
     service.createVersion(collectionId, versionIO, username);
     verify(versionDAO, times(2)).createOrUpdate(newVersionCaptor.capture());
     verify(collectionDAO, times(1)).createOrUpdate(any());
-  }
-
-  @Test
-  public void copyDataObjectsWithParentsAndPredecessorsTest() {
-    UUID sourceVersionUID = new UUID(0L, 1L);
-    UUID targetVersionUID = new UUID(0L, 1L);
-    when(versionDAO.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID)).thenReturn(true);
-    assertTrue(service.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID));
   }
 
   @Test

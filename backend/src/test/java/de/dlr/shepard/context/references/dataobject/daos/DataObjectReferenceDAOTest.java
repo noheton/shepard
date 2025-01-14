@@ -49,28 +49,4 @@ public class DataObjectReferenceDAOTest extends BaseTestCase {
     verify(session).query(DataObjectReference.class, query, Collections.emptyMap());
     assertEquals(List.of(ref), actual);
   }
-
-  @Test
-  public void findByDataObjectShepardIdTest() {
-    var obj = new DataObject(1L);
-    obj.setShepardId(11L);
-    var obj2 = new DataObject(100L);
-    obj2.setShepardId(1001L);
-    var ref = new DataObjectReference(2L);
-    ref.setShepardId(21L);
-    var ref2 = new DataObjectReference(3L);
-    ref.setShepardId(31L);
-    var ref3 = new DataObjectReference(4L);
-    ref3.setShepardId(41L);
-    ref.setDataObject(obj);
-    ref2.setDataObject(obj2);
-
-    String query =
-      "MATCH (d:DataObject)-[hr:has_reference]->(r:DataObjectReference { deleted: FALSE }) WHERE d.shepardId=11 MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)";
-    when(session.query(DataObjectReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref2, ref3));
-
-    var actual = dao.findByDataObjectShepardId(obj.getShepardId());
-    verify(session).query(DataObjectReference.class, query, Collections.emptyMap());
-    assertEquals(List.of(ref), actual);
-  }
 }

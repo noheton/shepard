@@ -13,8 +13,7 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.ShepardFile;
@@ -24,6 +23,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
@@ -33,7 +33,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   private FileContainerDAO containerDAO;
   private ShepardFileDAO fileDAO;
   private UserDAO userDAO;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
   private DateHelper dateHelper;
   private FileService fileService;
   private PermissionsUtil permissionsUtil;
@@ -47,7 +47,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     FileContainerDAO containerDAO,
     ShepardFileDAO fileDAO,
     UserDAO userDAO,
-    VersionDAO versionDAO,
+    VersionService versionService,
     DateHelper dateHelper,
     FileService fileService,
     PermissionsUtil permissionsUtil
@@ -55,23 +55,23 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     this.fileReferenceDAO = fileReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
     this.containerDAO = containerDAO;
+    this.versionService = versionService;
     this.fileDAO = fileDAO;
     this.userDAO = userDAO;
-    this.versionDAO = versionDAO;
     this.dateHelper = dateHelper;
     this.fileService = fileService;
     this.permissionsUtil = permissionsUtil;
   }
 
   @Override
-  public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+  public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     var references = fileReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
   @Override
-  public FileReference getReferenceByShepardId(long shepardId) {
-    FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId);
+  public FileReference getReferenceByShepardId(long shepardId, UUID versionUID) {
+    FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId, versionUID);
     if (fileReference == null || fileReference.isDeleted()) {
       Log.errorf("File Reference with id %s is null or deleted", shepardId);
       return null;
@@ -109,8 +109,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     var created = fileReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = fileReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
 
@@ -131,8 +130,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    * @param fileReferenceShepardId identifies the file reference
    * @return list of shepard files
    */
-  public List<ShepardFile> getFilesByShepardId(long fileReferenceShepardId) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
+  public List<ShepardFile> getFilesByShepardId(long fileReferenceShepardId, UUID versionUID) {
+    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId, versionUID);
     return reference.getFiles();
   }
 
@@ -146,8 +145,13 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    * @throws InvalidRequestException when container is not accessible
    * @throws InvalidAuthException when the user is not authorized to access the container
    */
-  public NamedInputStream getPayloadByShepardId(long fileReferenceShepardId, String oid, String username) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
+  public NamedInputStream getPayloadByShepardId(
+    long fileReferenceShepardId,
+    String oid,
+    String username,
+    UUID versionUID
+  ) {
+    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId, versionUID);
     if (
       reference.getFileContainer() == null || reference.getFileContainer().isDeleted()
     ) throw new InvalidRequestException("The file container in question is not accessible");

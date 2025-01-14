@@ -88,7 +88,7 @@ public class ExportService {
 
   private void fetchAndWriteTimeseriesReference(ExportBuilder builder, long referenceId, String username)
     throws IOException {
-    var reference = timeseriesReferenceService.getReferenceByShepardId(referenceId);
+    var reference = timeseriesReferenceService.getReferenceByShepardId(referenceId, null);
 
     builder.addReference(new TimeseriesReferenceIO(reference), reference.getCreatedBy());
 
@@ -104,7 +104,7 @@ public class ExportService {
   }
 
   private void fetchAndWriteFileReference(ExportBuilder builder, long referenceId, String username) throws IOException {
-    var reference = fileReferenceService.getReferenceByShepardId(referenceId);
+    var reference = fileReferenceService.getReferenceByShepardId(referenceId, null);
 
     builder.addReference(new FileReferenceIO(reference), reference.getCreatedBy());
 
@@ -122,7 +122,7 @@ public class ExportService {
 
   private void fetchAndWriteStructuredDataReference(ExportBuilder builder, long referenceId, String username)
     throws IOException {
-    var reference = structuredDataReferenceService.getReferenceByShepardId(referenceId);
+    var reference = structuredDataReferenceService.getReferenceByShepardId(referenceId, null);
 
     builder.addReference(new StructuredDataReferenceIO(reference), reference.getCreatedBy());
 
@@ -139,7 +139,7 @@ public class ExportService {
   }
 
   private void fetchAndWriteUriReference(ExportBuilder builder, long referenceId, String username) throws IOException {
-    var reference = uriReferenceService.getReferenceByShepardId(referenceId);
+    var reference = uriReferenceService.getReferenceByShepardId(referenceId, null);
 
     builder.addReference(new URIReferenceIO(reference), reference.getCreatedBy());
   }

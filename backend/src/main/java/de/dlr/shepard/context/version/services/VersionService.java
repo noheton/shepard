@@ -1,17 +1,17 @@
 package de.dlr.shepard.context.version.services;
 
 import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
-import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.context.version.io.VersionIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,18 +50,34 @@ public class VersionService {
     return versionDAO.find(versionUID);
   }
 
+  public Version attachToVersionOfVersionableEntityAndReturnVersion(long existingEntityId, long entityToAttachId) {
+    Version version = versionDAO.findVersionLightByNeo4jId(existingEntityId);
+    versionDAO.createLink(entityToAttachId, version.getUid());
+    return version;
+  }
+
+  private Collection copyCollectionForVersioning(Collection collection, Date createdAt, User createdBy) {
+    Collection collectionCopy = new Collection();
+    collectionCopy.setAnnotations(collection.getAnnotations());
+    collectionCopy.setAttributes(collection.getAttributes());
+    collectionCopy.setDescription(collection.getDescription());
+    collectionCopy.setName(collection.getName());
+    collectionCopy.setPermissions(collection.getPermissions());
+    collectionCopy.setShepardId(collection.getShepardId());
+    collectionCopy.setCreatedAt(createdAt);
+    collectionCopy.setCreatedBy(createdBy);
+    return collectionCopy;
+  }
+
   public Version createVersion(long collectionId, VersionIO version, String username) {
     Version HEADVersion = versionDAO.findHEADVersion(collectionId);
     var user = userDAO.find(username);
+    var date = dateHelper.getDate();
     Collection collection = collectionService.getCollectionByShepardId(collectionId, null);
-    Collection collectionCopy = new Collection(collection);
-    collectionCopy.setCreatedAt(dateHelper.getDate());
-    collectionCopy.setCreatedBy(user);
-    List<DataObject> dataObjectListCopy = new ArrayList<>();
-    collectionCopy.setDataObjects(dataObjectListCopy);
+    Collection collectionCopy = copyCollectionForVersioning(collection, date, user);
 
     Version newVersion = new Version();
-    newVersion.setCreatedAt(dateHelper.getDate());
+    newVersion.setCreatedAt(date);
     newVersion.setCreatedBy(user);
     newVersion.setDescription(version.getDescription());
     newVersion.setName(version.getName());
@@ -69,6 +85,10 @@ public class VersionService {
       newVersion.setPredecessor(HEADVersion.getPredecessor());
     }
 
+    if (HEADVersion.getPredecessor() != null) versionDAO.removeHasPredecessor(
+      HEADVersion.getUid(),
+      HEADVersion.getPredecessor().getUid()
+    );
     Version createdVersion = versionDAO.createOrUpdate(newVersion);
     HEADVersion.setPredecessor(createdVersion);
     versionDAO.createOrUpdate(HEADVersion);
@@ -78,12 +98,13 @@ public class VersionService {
 
     UUID HEADVersionUID = HEADVersion.getUid();
     UUID createdVersionUID = createdVersion.getUid();
-    copyDataObjectsWithParentsAndPredecessors(HEADVersionUID, createdVersionUID);
-
+    versionDAO.copyDataObjectsWithParentsAndPredecessors(HEADVersionUID, createdVersionUID);
+    versionDAO.copyDataObjectReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.copyCollectionReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.copyFileReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.copyStructuredDataReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.copyTimeseriesReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.copyURIReferences(HEADVersionUID, createdVersionUID);
     return createdVersion;
-  }
-
-  public boolean copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
-    return versionDAO.copyDataObjectsWithParentsAndPredecessors(sourceVersionUID, targetVersionUID);
   }
 }

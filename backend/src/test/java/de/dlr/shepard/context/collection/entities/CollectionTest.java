@@ -8,7 +8,6 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -27,25 +26,6 @@ public class CollectionTest extends BaseTestCase {
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(Version.class, new Version(new UUID(1L, 2L)), new Version(new UUID(3L, 4L)))
       .verify();
-  }
-
-  @Test
-  public void copyConstructorTest() {
-    Collection coll = new Collection();
-    coll.setAnnotations(null);
-    coll.setAttributes(null);
-    coll.setCreatedAt(new Date(100L));
-    coll.setCreatedBy(new User("karl"));
-    coll.setDataObjects(null);
-    coll.setDeleted(false);
-    coll.setDescription("description");
-    coll.setIncoming(null);
-    coll.setName("name");
-    coll.setPermissions(null);
-    coll.setShepardId(20L);
-    coll.setVersion(null);
-    Collection copy = new Collection(coll);
-    assertEquals(coll, copy);
   }
 
   @Test

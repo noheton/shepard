@@ -17,6 +17,7 @@ public class VersionableEntityTest extends BaseTestCase {
     EqualsVerifier.simple()
       .forClass(VersionableEntity.class)
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
+      .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .verify();
   }

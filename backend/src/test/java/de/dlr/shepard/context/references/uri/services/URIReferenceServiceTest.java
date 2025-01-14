@@ -49,8 +49,8 @@ public class URIReferenceServiceTest {
   public void getURIReferenceByShepardIdTest_successful() {
     URIReference ref = new URIReference(1L);
     ref.setShepardId(15L);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    URIReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    URIReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -58,7 +58,7 @@ public class URIReferenceServiceTest {
   public void getURIReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    URIReference actual = service.getReferenceByShepardId(shepardId);
+    URIReference actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -69,7 +69,7 @@ public class URIReferenceServiceTest {
     ref.setShepardId(shepardId);
     ref.setDeleted(true);
     when(dao.findByShepardId(shepardId)).thenReturn(ref);
-    URIReference actual = service.getReferenceByShepardId(shepardId);
+    URIReference actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -83,7 +83,7 @@ public class URIReferenceServiceTest {
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<URIReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
+    List<URIReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 

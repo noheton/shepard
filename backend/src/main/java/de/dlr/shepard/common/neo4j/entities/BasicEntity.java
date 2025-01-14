@@ -65,7 +65,7 @@ public class BasicEntity extends AbstractEntity {
       HasId.equalsHelper(createdBy, other.createdBy) &&
       HasId.equalsHelper(updatedBy, other.updatedBy) &&
       Objects.equals(name, other.name) &&
-      HasId.equalsHelper(annotations, other.annotations)
+      HasId.areEqualSetsByUniqueId(annotations, other.annotations)
     );
   }
 }

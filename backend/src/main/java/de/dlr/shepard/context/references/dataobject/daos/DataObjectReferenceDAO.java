@@ -7,6 +7,7 @@ import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 @RequestScoped
@@ -37,7 +38,7 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
     return result;
   }
 
-  public List<DataObjectReference> findByDataObjectShepardId(long dataObjectShepardId) {
+  public List<DataObjectReference> findByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     String query =
       String.format(
         "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d." + Constants.SHEPARD_ID + "=%d ",
@@ -45,12 +46,19 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
         dataObjectShepardId
       ) +
       CypherQueryHelper.getReturnPart("r");
+    StringBuffer queryBuffer = new StringBuffer();
+    queryBuffer.append("MATCH (v:Version)<-[:has_version]-(d:DataObject)-[hr:has_reference]->");
+    queryBuffer.append(CypherQueryHelper.getObjectPart("r", "DataObjectReference", false));
+    queryBuffer.append(" WHERE d." + Constants.SHEPARD_ID + "=" + dataObjectShepardId + " AND ");
+    if (versionUID == null) queryBuffer.append(CypherQueryHelper.getVersionHeadPart("v"));
+    else queryBuffer.append(CypherQueryHelper.getVersionPart("v", versionUID));
+    queryBuffer.append(" " + CypherQueryHelper.getReturnPart("r"));
+    query = queryBuffer.toString();
     var queryResult = findByQuery(query, Collections.emptyMap());
     List<DataObjectReference> result = StreamSupport.stream(queryResult.spliterator(), false)
       .filter(r -> r.getDataObject() != null)
       .filter(r -> r.getDataObject().getShepardId().equals(dataObjectShepardId))
       .toList();
-
     return result;
   }
 

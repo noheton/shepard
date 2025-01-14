@@ -10,12 +10,15 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
+import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
+import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
+import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,26 +26,29 @@ import java.util.UUID;
 public class DataObjectService {
 
   private DataObjectDAO dataObjectDAO;
+  private DataObjectReferenceDAO dataObjectReferenceDAO;
   private CollectionDAO collectionDAO;
   private UserDAO userDAO;
   private DateHelper dateHelper;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
 
   DataObjectService() {}
 
   @Inject
   public DataObjectService(
     DataObjectDAO dataObjectDAO,
+    DataObjectReferenceDAO dataObjectReferenceDAO,
     CollectionDAO collectionDAO,
     UserDAO userDAO,
     DateHelper dateHelper,
-    VersionDAO versionDAO
+    VersionService versionService
   ) {
     this.dataObjectDAO = dataObjectDAO;
+    this.dataObjectReferenceDAO = dataObjectReferenceDAO;
     this.collectionDAO = collectionDAO;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
-    this.versionDAO = versionDAO;
+    this.versionService = versionService;
   }
 
   /**
@@ -78,7 +84,8 @@ public class DataObjectService {
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
-    versionDAO.createLink(created.getId(), collection.getVersion().getUid());
+    //versionService.attachToVersion(created.getId(), collection.getVersion().getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(collectionShepardId, created.getShepardId());
     return created;
   }
 
@@ -103,6 +110,33 @@ public class DataObjectService {
       return null;
     }
     cutDeleted(ret);
+
+    HashSet<Long> incomingReferencesIdList = new HashSet<Long>();
+    for (DataObjectReference reference : ret.getIncoming()) incomingReferencesIdList.add(reference.getId());
+    List<DataObjectReference> completeIncomingReferences = new ArrayList<DataObjectReference>();
+    for (Long id : incomingReferencesIdList) completeIncomingReferences.add(dataObjectReferenceDAO.findByNeo4jId(id));
+
+    HashSet<Long> childrenIdList = new HashSet<Long>();
+    for (DataObject child : ret.getChildren()) childrenIdList.add(child.getId());
+    List<DataObject> completeChildren = new ArrayList<DataObject>();
+    for (Long id : childrenIdList) completeChildren.add(dataObjectDAO.findByNeo4jId(id));
+
+    HashSet<Long> predecessorsIdList = new HashSet<Long>();
+    for (DataObject predecessor : ret.getPredecessors()) predecessorsIdList.add(predecessor.getId());
+    List<DataObject> completePredecessors = new ArrayList<DataObject>();
+    for (Long id : predecessorsIdList) completePredecessors.add(dataObjectDAO.findByNeo4jId(id));
+
+    HashSet<Long> successorsIdList = new HashSet<Long>();
+    for (DataObject successor : ret.getSuccessors()) successorsIdList.add(successor.getId());
+    List<DataObject> completeSuccessors = new ArrayList<DataObject>();
+    for (Long id : successorsIdList) completeSuccessors.add(dataObjectDAO.findByNeo4jId(id));
+
+    ret.setChildren(completeChildren);
+    ret.setIncoming(completeIncomingReferences);
+    ret.setPredecessors(completePredecessors);
+    ret.setSuccessors(completeSuccessors);
+    if (ret.getParent() != null) ret.setParent(dataObjectDAO.findByNeo4jId(ret.getParent().getId()));
+
     return ret;
   }
 

@@ -15,12 +15,14 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -69,11 +71,13 @@ public class DataObjectReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllDataObjectReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = dataObjectReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = dataObjectReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<DataObjectReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new DataObjectReferenceIO(reference));
@@ -94,12 +98,14 @@ public class DataObjectReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getDataObjectReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
+    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = dataObjectReferenceService.getReferenceByShepardId(dataObjectReferenceId);
+    var result = dataObjectReferenceService.getReferenceByShepardId(dataObjectReferenceId, versionUID);
     return Response.ok(new DataObjectReferenceIO(result)).build();
   }
 
@@ -166,12 +172,14 @@ public class DataObjectReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getDataObjectReferencePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
+    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var payload = dataObjectReferenceService.getPayloadByShepardId(dataObjectReferenceId);
+    var payload = dataObjectReferenceService.getPayloadByShepardId(dataObjectReferenceId, versionUID);
     return payload != null ? Response.ok(new DataObjectIO(payload)).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

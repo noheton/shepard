@@ -6,6 +6,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import java.util.Date;
@@ -21,6 +22,7 @@ public class FileReferenceTest extends BaseTestCase {
       .forClass(FileReference.class)
       .withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
+      .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .verify();

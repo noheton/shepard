@@ -2,15 +2,18 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
+import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -21,33 +24,94 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DataObjectReferenceIT extends BaseTestCaseIT {
 
-  private static CollectionIO collection;
-  private static DataObjectIO dataObject;
-  private static DataObjectIO referenced;
+  private static CollectionIO collection1;
+  private static CollectionIO collection2;
+  private static DataObjectIO dataObject11;
+  private static DataObjectIO dataObject12;
+  private static DataObjectIO dataObject21;
+  private static DataObjectIO dataObject22;
 
-  private static String referencesURL;
+  private static UUID c1v1UID;
+
+  private static String c1d1referencesURL;
+  private static String c1d2referencesURL;
+  private static String c2d1referencesURL;
   private static RequestSpecification requestSpecification;
 
-  private static DataObjectReferenceIO reference;
+  private static DataObjectReferenceIO reference11to12;
+  private static DataObjectReferenceIO reference12to21;
+  private static DataObjectReferenceIO reference21to12;
 
   @BeforeAll
   public static void setUp() {
-    collection = createCollection("DataObjectReferenceTestCollection");
-    dataObject = createDataObject("DataObjectReference", collection.getId());
-    referenced = createDataObject("ReferencedDataObject", collection.getId());
+    collection1 = createCollection("1cDataObjectReferenceTestCollection");
+    collection2 = createCollection("2cDataObjectReferenceTestCollection");
+    dataObject11 = createDataObject("1c1dDataObject", collection1.getId());
+    dataObject12 = createDataObject("1c2dDataObject", collection1.getId());
+    dataObject21 = createDataObject("2c1dDataObject", collection2.getId());
+    dataObject22 = createDataObject("2c2dDataObject", collection2.getId());
 
-    referencesURL = String.format(
+    c1d1referencesURL = String.format(
       "/%s/%d/%s/%d/%s",
       Constants.COLLECTIONS,
-      collection.getId(),
+      collection1.getId(),
       Constants.DATA_OBJECTS,
-      dataObject.getId(),
+      dataObject11.getId(),
+      Constants.DATAOBJECT_REFERENCES
+    );
+    c1d2referencesURL = String.format(
+      "/%s/%d/%s/%d/%s",
+      Constants.COLLECTIONS,
+      collection1.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject12.getId(),
+      Constants.DATAOBJECT_REFERENCES
+    );
+    c2d1referencesURL = String.format(
+      "/%s/%d/%s/%d/%s",
+      Constants.COLLECTIONS,
+      collection2.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject21.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
     requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
+
+    var referenceToCreate = new DataObjectReferenceIO();
+    referenceToCreate.setName("reference12to21");
+    referenceToCreate.setRelationship("integrationtest");
+    referenceToCreate.setReferencedDataObjectId(dataObject21.getId());
+    reference12to21 = given()
+      .spec(requestSpecification)
+      .body(referenceToCreate)
+      .when()
+      .post(c1d2referencesURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectReferenceIO.class);
+
+    referenceToCreate = new DataObjectReferenceIO();
+    referenceToCreate.setName("reference21to12");
+    referenceToCreate.setRelationship("integrationtest");
+    referenceToCreate.setReferencedDataObjectId(dataObject12.getId());
+    reference21to12 = given()
+      .spec(requestSpecification)
+      .body(referenceToCreate)
+      .when()
+      .post(c2d1referencesURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectReferenceIO.class);
+
+    referenceToCreate = new DataObjectReferenceIO();
+    referenceToCreate.setName("reference21to22");
+    referenceToCreate.setRelationship("integrationtest");
+    referenceToCreate.setReferencedDataObjectId(dataObject22.getId());
   }
 
   @Test
@@ -56,26 +120,26 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var toCreate = new DataObjectReferenceIO();
     toCreate.setName("DataObjectReferenceDummy");
     toCreate.setRelationship("integrationtests");
-    toCreate.setReferencedDataObjectId(referenced.getId());
+    toCreate.setReferencedDataObjectId(dataObject12.getId());
 
     var actual = given()
       .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post(referencesURL)
+      .post(c1d1referencesURL)
       .then()
       .statusCode(201)
       .extract()
       .as(DataObjectReferenceIO.class);
-    reference = actual;
+    reference11to12 = actual;
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
     assertThat(actual.getCreatedBy()).isEqualTo(username);
-    assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
+    assertThat(actual.getDataObjectId()).isEqualTo(dataObject11.getId());
     assertThat(actual.getName()).isEqualTo("DataObjectReferenceDummy");
     assertThat(actual.getRelationship()).isEqualTo("integrationtests");
-    assertThat(actual.getReferencedDataObjectId()).isEqualTo(referenced.getId());
+    assertThat(actual.getReferencedDataObjectId()).isEqualTo(dataObject12.getId());
     assertThat(actual.getType()).isEqualTo("DataObjectReference");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -89,7 +153,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     toCreate.setRelationship("integrationtests");
     toCreate.setReferencedDataObjectId(-2);
 
-    given().spec(requestSpecification).body(toCreate).when().post(referencesURL).then().statusCode(400);
+    given().spec(requestSpecification).body(toCreate).when().post(c1d1referencesURL).then().statusCode(400);
   }
 
   @Test
@@ -98,12 +162,12 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get(referencesURL + "/" + reference.getId())
+      .get(c1d1referencesURL + "/" + reference11to12.getId())
       .then()
       .statusCode(200)
       .extract()
       .as(DataObjectReferenceIO.class);
-    assertThat(actual).isEqualTo(reference);
+    assertThat(actual).isEqualTo(reference11to12);
   }
 
   @Test
@@ -112,12 +176,12 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get(referencesURL)
+      .get(c1d1referencesURL)
       .then()
       .statusCode(200)
       .extract()
       .as(DataObjectReferenceIO[].class);
-    assertThat(actual).containsExactly(reference);
+    assertThat(actual).containsExactly(reference11to12);
   }
 
   @Test
@@ -126,9 +190,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var referencedURL = String.format(
       "/%s/%d/%s/%d",
       Constants.COLLECTIONS,
-      collection.getId(),
+      collection1.getId(),
       Constants.DATA_OBJECTS,
-      referenced.getId()
+      dataObject12.getId()
     );
     var actual = given()
       .spec(requestSpecification)
@@ -138,7 +202,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(DataObjectIO.class);
-    assertThat(actual.getIncomingIds()).containsExactly(reference.getId());
+    assertEquals(actual.getIncomingIds().length, 2);
+    assertThat(actual.getIncomingIds()).contains(reference11to12.getId());
+    assertThat(actual.getIncomingIds()).contains(reference21to12.getId());
   }
 
   @Test
@@ -147,21 +213,122 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecification)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .get(String.format("%s/%d/%s", c1d1referencesURL, reference11to12.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200)
       .extract()
       .as(DataObjectIO.class);
 
-    assertThat(actual).usingRecursiveComparison().ignoringFields("incomingIds").isEqualTo(referenced);
-    assertThat(actual.getIncomingIds()).containsExactly(reference.getId());
+    assertThat(actual)
+      .usingRecursiveComparison()
+      .ignoringFields("incomingIds")
+      .ignoringFields("referenceIds")
+      .isEqualTo(dataObject12);
+    assertEquals(actual.getIncomingIds().length, 2);
+    assertThat(actual.getIncomingIds()).contains(reference11to12.getId());
+    assertThat(actual.getIncomingIds()).contains(reference21to12.getId());
   }
 
   @Test
   @Order(7)
   public void deleteDataObjectReferenceTest() {
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
+    given()
+      .spec(requestSpecification)
+      .when()
+      .delete(c1d1referencesURL + "/" + reference11to12.getId())
+      .then()
+      .statusCode(204);
 
-    given().spec(requestSpecification).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecification)
+      .when()
+      .get(c1d1referencesURL + "/" + reference11to12.getId())
+      .then()
+      .statusCode(404);
+  }
+
+  //@Test
+  @Order(8)
+  public void createNewVersionCollection1Test() {
+    String versionizeCollection1URL = "/" + Constants.COLLECTIONS + "/" + collection1.getId() + "/versions";
+    VersionIO inputVersion = new VersionIO();
+    inputVersion.setName("c1v1");
+    inputVersion.setDescription("first version of collection 1");
+    VersionIO actual = given()
+      .spec(requestSpecification)
+      .body(inputVersion)
+      .when()
+      .post(versionizeCollection1URL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(VersionIO.class);
+    assertEquals(actual.getName(), inputVersion.getName());
+    c1v1UID = actual.getUid();
+  }
+
+  //@Test
+  @Order(9)
+  public void incomingReferencesToDataObject12InHEADVersionTest() {
+    var referencedURL = String.format(
+      "/%s/%d/%s/%d",
+      Constants.COLLECTIONS,
+      collection1.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject12.getId()
+    );
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencedURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    assertThat(actual.getIncomingIds()).containsExactly(reference21to12.getId());
+  }
+
+  //@Test
+  @Order(10)
+  public void incomingReferencesToDataObject12InFirstVersionTest() {
+    var referencedURL = String.format(
+      "/%s/%d/%s/%d",
+      Constants.COLLECTIONS,
+      collection1.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject12.getId()
+    );
+    var actual = given()
+      .spec(requestSpecification)
+      .queryParam("versionUid", c1v1UID)
+      .when()
+      .get(referencedURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    assertEquals(actual.getIncomingIds().length, 0);
+  }
+
+  //@Test
+  @Order(11)
+  public void multipleIncomingReferencesToDataObject21InHEADVersion() {
+    var referencedURL = String.format(
+      "/%s/%d/%s/%d",
+      Constants.COLLECTIONS,
+      collection2.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject21.getId()
+    );
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencedURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    assertEquals(actual.getIncomingIds().length, 2);
+    assertThat(actual.getIncomingIds()).contains(reference12to21.getId());
   }
 }

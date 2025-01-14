@@ -17,8 +17,6 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.basicreference.daos.BasicReferenceDAO;
-import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
-import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import io.quarkus.test.InjectMock;
@@ -99,47 +97,6 @@ public class DataObjectServiceTest {
     dataObject.setParent(parent);
     DataObject dataObjectCut = new DataObject(2L);
     dataObjectCut.setShepardId(25L);
-
-    when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    DataObject returned = service.getDataObjectByShepardId(dataObject.getShepardId());
-    assertEquals(dataObjectCut, returned);
-  }
-
-  @Test
-  public void getDataObjectByShepardIdTest_deletedEntities() {
-    DataObject dataObjectNotDeleted = new DataObject(1L);
-    dataObjectNotDeleted.setShepardId(15L);
-    DataObject dataObjectDeleted = new DataObject(2L);
-    dataObjectDeleted.setShepardId(25L);
-    dataObjectDeleted.setDeleted(true);
-
-    DataObjectReference doRefNotDeleted = new DataObjectReference(6L);
-    doRefNotDeleted.setShepardId(65L);
-    DataObjectReference doRefDeleted = new DataObjectReference(7L);
-    doRefDeleted.setShepardId(75L);
-    doRefDeleted.setDeleted(true);
-
-    BasicReference refNotDeleted = new BasicReference(3L);
-    refNotDeleted.setShepardId(35L);
-    BasicReference refDeleted = new BasicReference(4L);
-    refDeleted.setShepardId(45L);
-    refDeleted.setDeleted(true);
-
-    DataObject dataObject = new DataObject(5L);
-    dataObject.setShepardId(55L);
-    dataObject.setChildren(List.of(dataObjectDeleted, dataObjectNotDeleted));
-    dataObject.setPredecessors(List.of(dataObjectDeleted, dataObjectNotDeleted));
-    dataObject.setSuccessors(List.of(dataObjectDeleted, dataObjectNotDeleted));
-    dataObject.setReferences(List.of(refDeleted, refNotDeleted));
-    dataObject.setIncoming(List.of(doRefDeleted, doRefNotDeleted));
-
-    DataObject dataObjectCut = new DataObject(dataObject.getId());
-    dataObjectCut.setShepardId(dataObject.getShepardId());
-    dataObjectCut.setChildren(List.of(dataObjectNotDeleted));
-    dataObjectCut.setPredecessors(List.of(dataObjectNotDeleted));
-    dataObjectCut.setSuccessors(List.of(dataObjectNotDeleted));
-    dataObjectCut.setReferences(List.of(refNotDeleted));
-    dataObjectCut.setIncoming(List.of(doRefNotDeleted));
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     DataObject returned = service.getDataObjectByShepardId(dataObject.getShepardId());

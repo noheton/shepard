@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.util;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.HashSet;
 import java.util.List;
 
 @FunctionalInterface
@@ -14,23 +15,31 @@ public interface HasId {
   String getUniqueId();
 
   /**
-   * This function compares two lists of objects. These lists are equal if both
-   * are sorted in the same way and each object is equal when compared by its
-   * unique ID. Other attributes are ignored.
+   * This function compares two lists of objects.
+   * These lists are considered equal iff the sets of their unique Ids are identical.
+   * In particular, this does not take the order of the elements and their multiplicity into account.
    *
    * @param a The first list
    * @param b The second list
-   * @return True of both lists are equal
+   * @return True iff both lists are equal by means described above
    */
-  static boolean equalsHelper(List<? extends HasId> a, List<? extends HasId> b) {
+  static boolean areEqualSetsByUniqueId(List<? extends HasId> a, List<? extends HasId> b) {
     if (a == null && b == null) return true;
     if (a == null || b == null) return false;
-    if (a.size() != b.size()) return false;
-    // TODO: Should we sort these lists?
+    HashSet<String> IdSetA = new HashSet<String>();
+    HashSet<String> IdSetB = new HashSet<String>();
+    boolean hasNullA = false;
+    boolean hasNullB = false;
     for (int i = 0; i < a.size(); i++) {
-      if (!equalsHelper(a.get(i), b.get(i))) return false;
+      if (a.get(i) != null) IdSetA.add(a.get(i).getUniqueId());
+      else hasNullA = true;
     }
-    return true;
+    for (int i = 0; i < b.size(); i++) {
+      if (b.get(i) != null) IdSetB.add(b.get(i).getUniqueId());
+      else hasNullB = true;
+    }
+    if ((hasNullA && !hasNullB) || (!hasNullA && hasNullB)) return false;
+    return IdSetA.equals(IdSetB);
   }
 
   /**

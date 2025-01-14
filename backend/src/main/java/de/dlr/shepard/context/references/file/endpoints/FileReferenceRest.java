@@ -15,12 +15,14 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -69,11 +71,13 @@ public class FileReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllFileReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = fileReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = fileReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<FileReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new FileReferenceIO(ref));
@@ -94,12 +98,14 @@ public class FileReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getFileReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long referenceId
+    @PathParam(Constants.FILE_REFERENCE_ID) long referenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ref = fileReferenceService.getReferenceByShepardId(referenceId);
+    var ref = fileReferenceService.getReferenceByShepardId(referenceId, versionUID);
     return Response.ok(new FileReferenceIO(ref)).build();
   }
 
@@ -171,16 +177,19 @@ public class FileReferenceRest {
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   @Parameter(name = Constants.OID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getFilePayload(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.OID) String oid,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     var payload = fileReferenceService.getPayloadByShepardId(
       fileReferenceId,
       oid,
-      securityContext.getUserPrincipal().getName()
+      securityContext.getUserPrincipal().getName(),
+      versionUID
     );
     return payload != null
       ? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
@@ -203,12 +212,14 @@ public class FileReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getFiles(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long fileId
+    @PathParam(Constants.FILE_REFERENCE_ID) long fileId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ret = fileReferenceService.getFilesByShepardId(fileId);
+    var ret = fileReferenceService.getFilesByShepardId(fileId, versionUID);
     return Response.ok(ret).build();
   }
 }

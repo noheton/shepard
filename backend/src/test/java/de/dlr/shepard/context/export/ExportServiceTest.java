@@ -123,7 +123,7 @@ public class ExportServiceTest {
   public void exportTest_uriReference() throws IOException {
     var reference = hydrateReferenceMock(mock(URIReference.class), "URIReference");
     dataObject.addReference(reference);
-    when(uriReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+    when(uriReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -146,7 +146,7 @@ public class ExportServiceTest {
   public void exportTest_timeseriesReference() throws IOException {
     var reference = hydrateReferenceMock(mock(TimeseriesReference.class), "TimeseriesReference");
     dataObject.addReference(reference);
-    when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+    when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -169,7 +169,7 @@ public class ExportServiceTest {
   public void exportTest_fileReference() throws IOException {
     var reference = hydrateReferenceMock(mock(FileReference.class), "FileReference");
     dataObject.addReference(reference);
-    when(fileReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+    when(fileReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -192,7 +192,7 @@ public class ExportServiceTest {
   public void exportTest_structuredDataReference() throws IOException {
     var reference = hydrateReferenceMock(mock(StructuredDataReference.class), "StructuredDataReference");
     dataObject.addReference(reference);
-    when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+    when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (

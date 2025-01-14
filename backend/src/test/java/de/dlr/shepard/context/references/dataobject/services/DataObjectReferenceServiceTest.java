@@ -51,8 +51,8 @@ public class DataObjectReferenceServiceTest {
   public void getDataObjectReferenceByShepardIdTest_successful() {
     DataObjectReference ref = new DataObjectReference(1L);
     ref.setShepardId(15L);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -60,7 +60,7 @@ public class DataObjectReferenceServiceTest {
   public void getDataObjectReferenceByShepardIdTest_notFound() {
     Long shepardId = 1L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    var actual = service.getReferenceByShepardId(shepardId);
+    var actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -70,7 +70,7 @@ public class DataObjectReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertNull(actual);
   }
 
@@ -86,8 +86,8 @@ public class DataObjectReferenceServiceTest {
     ref3.setShepardId(35L);
     ref3.setDeleted(true);
     dataObject.setReferences(List.of(ref1, ref2, ref3));
-    when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<DataObjectReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
+    when(dao.findByDataObjectShepardId(dataObject.getShepardId(), null)).thenReturn(List.of(ref1, ref2));
+    List<DataObjectReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 
@@ -226,9 +226,9 @@ public class DataObjectReferenceServiceTest {
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
     reference.setReferencedDataObject(referenced);
-    when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
-    when(dataObjectDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
-    var actual = service.getPayloadByShepardId(reference.getShepardId());
+    when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(dataObjectDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    var actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertEquals(referenced, actual);
   }
 
@@ -240,9 +240,9 @@ public class DataObjectReferenceServiceTest {
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
     reference.setReferencedDataObject(referenced);
-    when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
-    when(dataObjectDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
-    DataObject actual = service.getPayloadByShepardId(reference.getShepardId());
+    when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(dataObjectDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    DataObject actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertNull(actual);
   }
 }

@@ -13,7 +13,7 @@ import de.dlr.shepard.context.references.structureddata.daos.StructuredDataRefer
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
@@ -23,6 +23,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class StructuredDataReferenceService
@@ -34,6 +35,7 @@ public class StructuredDataReferenceService
   private StructuredDataDAO structuredDataDAO;
   private UserDAO userDAO;
   private VersionDAO versionDAO;
+  private VersionService versionService;
   private DateHelper dateHelper;
   private StructuredDataService structuredDataService;
   private PermissionsUtil permissionsUtil;
@@ -45,6 +47,7 @@ public class StructuredDataReferenceService
     StructuredDataReferenceDAO structuredDataReferenceDAO,
     DataObjectDAO dataObjectDAO,
     StructuredDataContainerDAO containerDAO,
+    VersionService versionService,
     StructuredDataDAO structuredDataDAO,
     UserDAO userDAO,
     VersionDAO versionDAO,
@@ -59,6 +62,7 @@ public class StructuredDataReferenceService
     this.userDAO = userDAO;
     this.versionDAO = versionDAO;
     this.dateHelper = dateHelper;
+    this.versionService = versionService;
     this.structuredDataService = structuredDataService;
     this.permissionsUtil = permissionsUtil;
   }
@@ -93,13 +97,15 @@ public class StructuredDataReferenceService
     StructuredDataReference created = structuredDataReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = structuredDataReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
 
   @Override
-  public List<StructuredDataReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+  public List<StructuredDataReference> getAllReferencesByDataObjectShepardId(
+    long dataObjectShepardId,
+    UUID versionUID
+  ) {
     var references = structuredDataReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
@@ -112,8 +118,8 @@ public class StructuredDataReferenceService
    * @return the StructuredDataReference with the given id or null
    */
   @Override
-  public StructuredDataReference getReferenceByShepardId(long shepardId) {
-    StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId);
+  public StructuredDataReference getReferenceByShepardId(long shepardId, UUID versionUID) {
+    StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId, versionUID);
     if (structuredDataReference == null || structuredDataReference.isDeleted()) {
       Log.errorf("Structured Data Reference with id %s is null or deleted", shepardId);
       return null;

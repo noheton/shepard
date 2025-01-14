@@ -111,11 +111,11 @@ public class Permissions implements HasId {
       Objects.equals(permissionType, other.permissionType) &&
       Objects.equals(readerGroups, other.readerGroups) &&
       Objects.equals(writerGroups, other.writerGroups) &&
-      HasId.equalsHelper(entities, other.entities) &&
+      HasId.areEqualSetsByUniqueId(entities, other.entities) &&
       HasId.equalsHelper(owner, other.owner) &&
-      HasId.equalsHelper(reader, other.reader) &&
-      HasId.equalsHelper(writer, other.writer) &&
-      HasId.equalsHelper(manager, other.manager)
+      HasId.areEqualSetsByUniqueId(reader, other.reader) &&
+      HasId.areEqualSetsByUniqueId(writer, other.writer) &&
+      HasId.areEqualSetsByUniqueId(manager, other.manager)
     );
   }
 

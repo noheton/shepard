@@ -77,8 +77,8 @@ public class StructuredDataReferenceServiceTest {
   public void getStructuredDataReferenceByShepardIdTest_successful() {
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15L);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -86,7 +86,7 @@ public class StructuredDataReferenceServiceTest {
   public void getStructuredDataReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    StructuredDataReference actual = service.getReferenceByShepardId(shepardId);
+    StructuredDataReference actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -96,7 +96,7 @@ public class StructuredDataReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertNull(actual);
   }
 
@@ -110,7 +110,10 @@ public class StructuredDataReferenceServiceTest {
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<StructuredDataReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
+    List<StructuredDataReference> actual = service.getAllReferencesByDataObjectShepardId(
+      dataObject.getShepardId(),
+      null
+    );
     assertEquals(List.of(ref1, ref2), actual);
   }
 

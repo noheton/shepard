@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -75,11 +76,13 @@ public class TimeseriesReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllTimeseriesReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = timeseriesReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = timeseriesReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<TimeseriesReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new TimeseriesReferenceIO(reference));
@@ -101,12 +104,14 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = timeseriesReferenceService.getReferenceByShepardId(timeseriesId);
+    var result = timeseriesReferenceService.getReferenceByShepardId(timeseriesId, versionUID);
 
     return Response.ok(new TimeseriesReferenceIO(result)).build();
   }

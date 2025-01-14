@@ -6,6 +6,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
+import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -18,6 +19,7 @@ public class DataObjectTest extends BaseTestCase {
     EqualsVerifier.simple()
       .forClass(DataObject.class)
       .withPrefabValues(Collection.class, new Collection(1L), new Collection(2L))
+      .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
       .withPrefabValues(DataObjectReference.class, new DataObjectReference(1L), new DataObjectReference(2L))
       .withPrefabValues(BasicReference.class, new BasicReference(1L), new BasicReference(2L))

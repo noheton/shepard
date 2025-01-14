@@ -49,24 +49,39 @@ public class HasIdTest {
 
   @Test
   public void equalsHelpersTest_bothNull() {
-    assertTrue(HasId.equalsHelper((List<HasId>) null, (List<HasId>) null));
+    assertTrue(HasId.areEqualSetsByUniqueId((List<HasId>) null, (List<HasId>) null));
   }
 
   @Test
   public void equalsHelpersTest_oneNull() {
-    assertFalse(HasId.equalsHelper(null, List.of(aDiffers)));
-    assertFalse(HasId.equalsHelper(List.of(a), null));
+    assertFalse(HasId.areEqualSetsByUniqueId(null, List.of(aDiffers)));
+    assertFalse(HasId.areEqualSetsByUniqueId(List.of(a), null));
   }
 
   @Test
   public void equalsHelpersTest_equal() {
     List<HasId> nullList = new ArrayList<>();
     nullList.add(null);
-    assertTrue(HasId.equalsHelper(List.of(a), List.of(aEquals)));
-    assertFalse(HasId.equalsHelper(List.of(a), List.of(aDiffers)));
-    assertFalse(HasId.equalsHelper(nullList, List.of(aDiffers)));
-    assertFalse(HasId.equalsHelper(List.of(a, aDiffers), List.of(aDiffers)));
-    assertFalse(HasId.equalsHelper(List.of(a, aDiffers), List.of(aDiffers, aEquals)));
+    assertTrue(HasId.areEqualSetsByUniqueId(List.of(a), List.of(aEquals)));
+    assertFalse(HasId.areEqualSetsByUniqueId(List.of(a), List.of(aDiffers)));
+    assertFalse(HasId.areEqualSetsByUniqueId(nullList, List.of(aDiffers)));
+    assertFalse(HasId.areEqualSetsByUniqueId(List.of(a, aDiffers), List.of(aDiffers)));
+    assertTrue(HasId.areEqualSetsByUniqueId(List.of(a, aDiffers), List.of(aDiffers, aEquals)));
+    assertTrue(HasId.areEqualSetsByUniqueId(List.of(a), List.of(a, a)));
+    assertTrue(HasId.areEqualSetsByUniqueId(List.of(aEquals), List.of(a, a, aEquals)));
+    ArrayList<HasId> listWithNull = new ArrayList<HasId>();
+    listWithNull.add(a);
+    listWithNull.add(null);
+    ArrayList<HasId> anotherListWithNull = new ArrayList<HasId>();
+    anotherListWithNull.add(null);
+    anotherListWithNull.add(a);
+    anotherListWithNull.add(null);
+    ArrayList<HasId> thirdListWithNull = new ArrayList<HasId>();
+    thirdListWithNull.add(aDiffers);
+    thirdListWithNull.add(null);
+    assertFalse(HasId.areEqualSetsByUniqueId(List.of(a), listWithNull));
+    assertTrue(HasId.areEqualSetsByUniqueId(listWithNull, anotherListWithNull));
+    assertFalse(HasId.areEqualSetsByUniqueId(anotherListWithNull, thirdListWithNull));
   }
 
   @Test

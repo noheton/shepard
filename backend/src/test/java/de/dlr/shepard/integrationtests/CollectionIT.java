@@ -209,8 +209,8 @@ public class CollectionIT extends BaseTestCaseIT {
     given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
   }
 
-  //@Test
-  //@Order(12)
+  @Test
+  @Order(12)
   public void getinitialHEADVersion() {
     var payload = new CollectionIO();
     VersionizedCollectionName = "VersionizedCollection";
@@ -240,8 +240,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(HEADVersion.getDescription(), "HEAD version");
   }
 
-  //@Test
-  //@Order(13)
+  @Test
+  @Order(13)
   public void createNewVersion() {
     VersionIO newVersion = new VersionIO();
     newVersion.setName("first version");
@@ -259,8 +259,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(firstVersion.getDescription(), newVersion.getDescription());
   }
 
-  //@Test
-  //@Order(14)
+  @Test
+  @Order(14)
   public void createSecondVersion() {
     VersionIO newVersion = new VersionIO();
     newVersion.setName("second version");
@@ -278,8 +278,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(secondVersion.getDescription(), newVersion.getDescription());
   }
 
-  //@Test
-  //@Order(15)
+  @Test
+  @Order(15)
   public void getAllVersions() {
     VersionIO[] versions = given()
       .spec(requestSpecification)
@@ -306,8 +306,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertNull(firstVersionCandidate.getPredecessorUUID());
   }
 
-  //@Test
-  //@Order(16)
+  @Test
+  @Order(16)
   public void modifyHEADCollection() {
     CollectionIO newVersionizedCollection = new CollectionIO();
     newVersionizedCollectionName = "updated versionized collection";
@@ -325,8 +325,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(actual.getId(), VersionizedCollectionShepardId);
   }
 
-  //@Test
-  //@Order(17)
+  @Test
+  @Order(17)
   public void retrieveModifiedHEADCollection() {
     CollectionIO actual = given()
       .spec(requestSpecification)
@@ -339,8 +339,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(actual.getName(), newVersionizedCollectionName);
   }
 
-  //@Test
-  //@Order(18)
+  @Test
+  @Order(18)
   public void retrieveSecondVersion() {
     VersionIO actual = given()
       .spec(requestSpecification)
@@ -353,8 +353,8 @@ public class CollectionIT extends BaseTestCaseIT {
     assertEquals(actual, secondVersion);
   }
 
-  //@Test
-  //@Order(19)
+  @Test
+  @Order(19)
   public void retrieveSecondVersionOfCollection() {
     CollectionIO actual = given()
       .spec(requestSpecification)

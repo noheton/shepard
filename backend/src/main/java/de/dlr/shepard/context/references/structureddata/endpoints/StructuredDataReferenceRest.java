@@ -15,12 +15,14 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -69,11 +71,13 @@ public class StructuredDataReferenceRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getAllStructuredDataReferences(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = structuredDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId);
+    var references = structuredDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
     var result = new ArrayList<StructuredDataReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new StructuredDataReferenceIO(ref));
@@ -94,12 +98,14 @@ public class StructuredDataReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
   public Response getStructuredDataReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long referenceId
+    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long referenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ref = structuredDataReferenceService.getReferenceByShepardId(referenceId);
+    var ref = structuredDataReferenceService.getReferenceByShepardId(referenceId, versionUID);
     return Response.ok(new StructuredDataReferenceIO(ref)).build();
   }
 

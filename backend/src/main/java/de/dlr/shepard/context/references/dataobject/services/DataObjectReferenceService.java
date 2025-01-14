@@ -10,19 +10,20 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class DataObjectReferenceService implements IReferenceService<DataObjectReference, DataObjectReferenceIO> {
 
   private DataObjectReferenceDAO dataObjectReferenceDAO;
   private DataObjectDAO dataObjectDAO;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
   private UserDAO userDAO;
   private DateHelper dateHelper;
 
@@ -32,26 +33,26 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
   public DataObjectReferenceService(
     DataObjectReferenceDAO dataObjectReferenceDAO,
     DataObjectDAO dataObjectDAO,
-    VersionDAO versionDAO,
+    VersionService versionService,
     UserDAO userDAO,
     DateHelper dateHelper
   ) {
     this.dataObjectReferenceDAO = dataObjectReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
-    this.versionDAO = versionDAO;
+    this.versionService = versionService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
   }
 
   @Override
-  public List<DataObjectReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
-    var references = dataObjectReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
+  public List<DataObjectReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
+    var references = dataObjectReferenceDAO.findByDataObjectShepardId(dataObjectShepardId, versionUID);
     return references;
   }
 
   @Override
-  public DataObjectReference getReferenceByShepardId(long dataObjectReferenceShepardId) {
-    var reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId);
+  public DataObjectReference getReferenceByShepardId(long dataObjectReferenceShepardId, UUID versionUID) {
+    var reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
       Log.errorf("Data Object Reference with id %s is null or deleted", dataObjectReferenceShepardId);
       return null;
@@ -86,8 +87,11 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     DataObjectReference created = dataObjectReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    Version version = versionService.attachToVersionOfVersionableEntityAndReturnVersion(
+      dataObject.getId(),
+      created.getId()
+    );
+    created.setVersion(version);
     return created;
   }
 
@@ -102,11 +106,11 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     return true;
   }
 
-  public DataObject getPayloadByShepardId(long dataObjectReferenceShepardId) {
-    DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId);
-    DataObject dataObject = dataObjectDAO.findByShepardId(reference.getReferencedDataObject().getShepardId());
+  public DataObject getPayloadByShepardId(long dataObjectReferenceShepardId, UUID versionUID) {
+    DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId, versionUID);
+    DataObject dataObject = dataObjectDAO.findByNeo4jId(reference.getReferencedDataObject().getId());
     if (dataObject.isDeleted()) {
-      Log.errorf("Data Object with id %s is deleted", reference.getReferencedDataObject().getId());
+      Log.errorf("Data Object with id %s is deleted", reference.getReferencedDataObject().getShepardId());
       return null;
     }
     return dataObject;

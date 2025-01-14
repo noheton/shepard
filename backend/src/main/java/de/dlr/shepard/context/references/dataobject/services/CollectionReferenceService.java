@@ -12,12 +12,12 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.dataobject.daos.CollectionReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class CollectionReferenceService implements IReferenceService<CollectionReference, CollectionReferenceIO> {
@@ -25,7 +25,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
   private CollectionReferenceDAO collectionReferenceDAO;
   private DataObjectDAO dataObjectDAO;
   private CollectionDAO collectionDAO;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
   private UserDAO userDAO;
   private DateHelper dateHelper;
 
@@ -36,27 +36,27 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     CollectionReferenceDAO collectionReferenceDAO,
     DataObjectDAO dataObjectDAO,
     CollectionDAO collectionDAO,
-    VersionDAO versionDAO,
+    VersionService versionService,
     UserDAO userDAO,
     DateHelper dateHelper
   ) {
     this.collectionReferenceDAO = collectionReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
     this.collectionDAO = collectionDAO;
-    this.versionDAO = versionDAO;
+    this.versionService = versionService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
   }
 
   @Override
-  public List<CollectionReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+  public List<CollectionReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     var references = collectionReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
   @Override
-  public CollectionReference getReferenceByShepardId(long collectionReferenceShepardId) {
-    var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
+  public CollectionReference getReferenceByShepardId(long collectionReferenceShepardId, UUID versionUID) {
+    var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
       Log.errorf("Collection Reference with id %s is null or deleted", collectionReferenceShepardId);
       return null;
@@ -93,8 +93,7 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     CollectionReference created = collectionReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = collectionReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
 
@@ -109,11 +108,11 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     return true;
   }
 
-  public Collection getPayloadByShepardId(long collectionReferenceShepardId) {
-    var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId);
-    var collection = collectionDAO.findByShepardId(reference.getReferencedCollection().getShepardId());
+  public Collection getPayloadByShepardId(long collectionReferenceShepardId, UUID versionUID) {
+    var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId, versionUID);
+    var collection = collectionDAO.findByNeo4jId(reference.getReferencedCollection().getId());
     if (collection.isDeleted()) {
-      Log.errorf("Collection with id %s is deleted", reference.getReferencedCollection().getId());
+      Log.errorf("Collection with id %s is deleted", reference.getReferencedCollection().getShepardId());
       return null;
     }
     return collection;

@@ -86,8 +86,8 @@ public class TimeseriesReferenceServiceTest {
   public void getTimeseriesReferenceByShepardIdTest_successful() {
     TimeseriesReference ref = new TimeseriesReference(1L);
     ref.setShepardId(15L);
-    when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    TimeseriesReference actual = referenceService.getReferenceByShepardId(ref.getShepardId());
+    when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    TimeseriesReference actual = referenceService.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -96,16 +96,16 @@ public class TimeseriesReferenceServiceTest {
     TimeseriesReference ref = new TimeseriesReference(1L);
     ref.setShepardId(15L);
     ref.setDeleted(true);
-    when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    TimeseriesReference actual = referenceService.getReferenceByShepardId(ref.getShepardId());
+    when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    TimeseriesReference actual = referenceService.getReferenceByShepardId(ref.getShepardId(), null);
     assertNull(actual);
   }
 
   @Test
   public void getTimeseriesReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
-    when(timeseriesReferenceDAO.findByShepardId(shepardId)).thenReturn(null);
-    TimeseriesReference actual = referenceService.getReferenceByShepardId(shepardId);
+    when(timeseriesReferenceDAO.findByShepardId(shepardId, null)).thenReturn(null);
+    TimeseriesReference actual = referenceService.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -115,8 +115,8 @@ public class TimeseriesReferenceServiceTest {
     TimeseriesReference ref = new TimeseriesReference(20L);
     ref.setShepardId(shepardId);
     ref.setDeleted(true);
-    when(timeseriesReferenceDAO.findByShepardId(shepardId)).thenReturn(ref);
-    TimeseriesReference actual = referenceService.getReferenceByShepardId(shepardId);
+    when(timeseriesReferenceDAO.findByShepardId(shepardId, null)).thenReturn(ref);
+    TimeseriesReference actual = referenceService.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -131,7 +131,8 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setReferences(List.of(ref1, ref2));
     when(timeseriesReferenceDAO.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
     List<TimeseriesReference> actual = referenceService.getAllReferencesByDataObjectShepardId(
-      dataObject.getShepardId()
+      dataObject.getShepardId(),
+      null
     );
     assertEquals(List.of(ref1, ref2), actual);
   }

@@ -42,6 +42,15 @@ public class Version implements HasId {
   @Relationship(type = Constants.HAS_PREDECESSOR)
   private Version predecessor;
 
+  /**
+   * For testing purposes only
+   *
+   * @param username identifies the user
+   */
+  public Version(String name) {
+    this.name = name;
+  }
+
   public Version(String name, String description, Date createdAt, User createdBy, Version predecessor) {
     this.name = name;
     this.description = description;

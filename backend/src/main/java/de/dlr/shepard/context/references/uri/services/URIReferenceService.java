@@ -7,12 +7,12 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.uri.daos.URIReferenceDAO;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @RequestScoped
 public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
@@ -20,7 +20,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
   private URIReferenceDAO uRIReferenceDAO;
   private DataObjectDAO dataObjectDAO;
   private UserDAO userDAO;
-  private VersionDAO versionDAO;
+  private VersionService versionService;
   private DateHelper dateHelper;
 
   URIReferenceService() {}
@@ -30,25 +30,25 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     URIReferenceDAO uRIReferenceDAO,
     DataObjectDAO dataObjectDAO,
     UserDAO userDAO,
-    VersionDAO versionDAO,
+    VersionService versionService,
     DateHelper dateHelper
   ) {
     this.uRIReferenceDAO = uRIReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
     this.userDAO = userDAO;
-    this.versionDAO = versionDAO;
+    this.versionService = versionService;
     this.dateHelper = dateHelper;
   }
 
   @Override
-  public List<URIReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId) {
+  public List<URIReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     var references = uRIReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
   @Override
-  public URIReference getReferenceByShepardId(long uriReferenceShepardId) {
-    var reference = uRIReferenceDAO.findByShepardId(uriReferenceShepardId);
+  public URIReference getReferenceByShepardId(long uriReferenceShepardId, UUID versionUID) {
+    var reference = uRIReferenceDAO.findByShepardId(uriReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
       Log.errorf("URI Reference with id %s is null or deleted", uriReferenceShepardId);
       return null;
@@ -75,8 +75,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     var created = uRIReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = uRIReferenceDAO.createOrUpdate(created);
-    Version version = versionDAO.findVersionLightByNeo4jId(dataObject.getId());
-    versionDAO.createLink(created.getId(), version.getUid());
+    versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
 

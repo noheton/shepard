@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.endpoints.DataObjectAttributes;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -14,6 +15,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -88,7 +90,6 @@ public class DataObjectIT extends BaseTestCaseIT {
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
-
     var aInput = new DataObjectIO();
     aInput.setName("a");
     aDataObject = given()
@@ -561,7 +562,15 @@ public class DataObjectIT extends BaseTestCaseIT {
 
     assertThat(actual.getUpdatedAt()).isNotNull();
     assertThat(actual.getUpdatedBy()).isEqualTo(username);
-    assertThat(actual).usingRecursiveComparison().ignoringFields("updatedBy", "updatedAt").isEqualTo(dataObject);
+    assertThat(actual)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt", "childrenIds")
+      .isEqualTo(dataObject);
+    HashSet<Long> childrenActual = new HashSet<Long>();
+    for (int i = 0; i < actual.getChildrenIds().length; i++) childrenActual.add(actual.getChildrenIds()[i]);
+    HashSet<Long> childrenDataObject = new HashSet<Long>();
+    for (int i = 0; i < dataObject.getChildrenIds().length; i++) childrenDataObject.add(dataObject.getChildrenIds()[i]);
+    assertEquals(childrenActual, childrenDataObject);
     dataObject = actual;
   }
 
@@ -584,7 +593,6 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(actual).usingRecursiveComparison().ignoringFields("updatedBy", "updatedAt").isEqualTo(successorAndChild);
     successorAndChild = actual;
 
-    dataObject.setChildrenIds(new long[] { child.getId() });
     DataObjectIO oldParent = given()
       .spec(requestSpecification)
       .when()
@@ -765,8 +773,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(response).containsExactly(fDataObject, eDataObject, dDataObject);
   }
 
-  //@Test
-  //@Order(25)
+  @Test
+  @Order(25)
   public void getHEADVersion() {
     VersionIO[] HEADVersion = given()
       .spec(versioningRequestSpecification)
@@ -780,8 +788,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     HEADVersionUID = HEADVersion[0].getUid();
   }
 
-  //@Test
-  //@Order(26)
+  @Test
+  @Order(26)
   public void createFirstVersion() {
     VersionIO firstVersionInput = new VersionIO();
     firstVersionInput.setName("first version");
@@ -800,8 +808,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     firstVersionUID = firstVersion.getUid();
   }
 
-  //@Test
-  //@Order(27)
+  @Test
+  @Order(27)
   public void putFirstVersionizedDataObject() {
     String newName = "first versionized DataObject with new name";
     firstVersionizedDataobject.setName(newName);
@@ -817,8 +825,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertEquals(newName, actual.getName());
   }
 
-  //@Test
-  //@Order(28)
+  @Test
+  @Order(28)
   public void differentFirstVersionizedDataObjects() {
     DataObjectIO firstDataObjectFirstVersion = given()
       .spec(versioningRequestSpecification)
@@ -850,8 +858,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertNotEquals(firstDataObjectExpliciteHEADVersion.getName(), firstDataObjectFirstVersion.getName());
   }
 
-  //@Test
-  //@Order(29)
+  @Test
+  @Order(29)
   public void predecessorsInFirstVersion() {
     DataObjectIO thirdDataObjectFirstVersion = given()
       .spec(versioningRequestSpecification)
@@ -868,8 +876,8 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertEquals(actualPredecessorId, expectedPredecessorId);
   }
 
-  //@Test
-  //@Order(30)
+  @Test
+  @Order(30)
   public void parentInFirstVersion() {
     DataObjectIO secondDataObjectFirstVersion = given()
       .spec(versioningRequestSpecification)
@@ -885,9 +893,10 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertEquals(actualParentId, expectedParentId);
   }
 
-  //@Test
-  //@Order(31)
+  @Test
+  @Order(31)
   public void deleteFirstVersionizedDataObject() {
+    System.out.println("starting test 31");
     given()
       .spec(versioningRequestSpecification)
       .when()
@@ -902,11 +911,12 @@ public class DataObjectIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(DataObjectIO[].class);
-    assertEquals(2, response.length);
+    if (VersioningFeatureToggle.isEnabled()) assertEquals(2, response.length);
+    else assertEquals(5, response.length);
   }
 
-  //@Test
-  //@Order(32)
+  @Test
+  @Order(32)
   public void getDataObjectsOfFirstVersion() {
     DataObjectIO[] response = given()
       .spec(versioningRequestSpecification)

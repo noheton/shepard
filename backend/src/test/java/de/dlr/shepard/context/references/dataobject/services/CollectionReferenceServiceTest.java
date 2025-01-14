@@ -56,8 +56,8 @@ public class CollectionReferenceServiceTest {
   public void getCollectionReferenceByShepardIdTest_successful() {
     CollectionReference ref = new CollectionReference(1L);
     ref.setShepardId(15L);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    CollectionReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    CollectionReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -65,7 +65,7 @@ public class CollectionReferenceServiceTest {
   public void getCollectionReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    CollectionReference actual = service.getReferenceByShepardId(shepardId);
+    CollectionReference actual = service.getReferenceByShepardId(shepardId, null);
     assertNull(actual);
   }
 
@@ -75,7 +75,7 @@ public class CollectionReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    CollectionReference actual = service.getReferenceByShepardId(ref.getShepardId());
+    CollectionReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
     assertNull(actual);
   }
 
@@ -89,7 +89,7 @@ public class CollectionReferenceServiceTest {
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<CollectionReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId());
+    List<CollectionReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 
@@ -312,9 +312,9 @@ public class CollectionReferenceServiceTest {
     CollectionReference reference = new CollectionReference(1L);
     reference.setShepardId(15L);
     reference.setReferencedCollection(referenced);
-    when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
-    when(collectionDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
-    Collection actual = service.getPayloadByShepardId(reference.getShepardId());
+    when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(collectionDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    Collection actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertEquals(referenced, actual);
   }
 
@@ -327,9 +327,9 @@ public class CollectionReferenceServiceTest {
     reference.setShepardId(15L);
     reference.setReferencedCollection(referenced);
 
-    when(dao.findByShepardId(reference.getShepardId())).thenReturn(reference);
-    when(collectionDAO.findByShepardId(referenced.getShepardId())).thenReturn(referenced);
-    Collection actual = service.getPayloadByShepardId(reference.getShepardId());
+    when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(collectionDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    Collection actual = service.getPayloadByShepardId(reference.getShepardId(), null);
 
     assertNull(actual);
   }
