@@ -34,5 +34,6 @@ defineProps<{ title: string; count?: number }>();
 <style scoped>
 .no-padding-bottom ::v-deep .v-expansion-panel-text__wrapper {
   padding-bottom: 0;
+  padding-top: 16px;
 }
 </style>

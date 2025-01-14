@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import {
-  type Collection,
-  CollectionApi,
-  type DataObject,
-  DataObjectApi,
-  type ResponseError,
-} from "@dlr-shepard/backend-client";
+import { useCollection } from "~/composables/collection";
+import { useCounter } from "~/composables/counter";
+import { useDataObject } from "~/composables/dataObject";
+import { useDataReferencesByDataObject } from "~/composables/dataReferences";
 import {
   collectionsPath,
   dataObjectsPathFragment,
@@ -17,47 +14,22 @@ const route = useRoute();
 const collectionId = parseInt(route.params.collectionId as string);
 const dataObjectId = parseInt(route.params.dataObjectId as string);
 
-const collection = ref<Collection | undefined>(undefined);
-const dataObject = ref<DataObject | undefined>(undefined);
-const numberOfLabJournalEntries = ref<number | undefined>(undefined);
-
-function fetchCollection() {
-  createApiInstance(CollectionApi)
-    .getCollection({ collectionId })
-    .then(response => {
-      collection.value = response;
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching collection");
-    });
-}
-
-async function fetchDataObject() {
-  createApiInstance(DataObjectApi)
-    .getDataObject({
-      collectionId: collectionId,
-      dataObjectId: dataObjectId,
-    })
-    .then(response => {
-      dataObject.value = response;
-    })
-    .catch(error => {
-      handleError(error, "getDataObject");
-    });
-}
-
-async function onLabJournalCountChanged(count: number) {
-  numberOfLabJournalEntries.value = count;
-}
-
-fetchCollection();
-fetchDataObject();
+const { collection } = useCollection(collectionId);
+const { dataObject } = useDataObject(collectionId, dataObjectId);
+const { dataReferences } = useDataReferencesByDataObject(
+  collectionId,
+  dataObjectId,
+);
+const {
+  counter: numberOfLabJournalEntries,
+  updateCount: onLabJournalCountChanged,
+} = useCounter();
 </script>
 
 <template>
   <div style="max-width: 1000px">
     <v-container fluid class="pa-0 fill-height" max-width="1000px">
-      <v-row v-if="!!collection && !!dataObject" no-gutters>
+      <v-row v-if="!!collection && !!dataObject && !!dataReferences" no-gutters>
         <v-col cols="12">
           <LayoutComponentsShepardBreadcrumbs
             :items="[
@@ -107,6 +79,14 @@ fetchDataObject();
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>
+                </EntityExpansionPanelItem>
+                <EntityExpansionPanelItem
+                  title="Data"
+                  :count="dataReferences.length"
+                >
+                  <DataObjectDataReferencesTable
+                    :data-references="dataReferences"
+                  />
                 </EntityExpansionPanelItem>
               </EntityExpansionPanels>
             </v-row>

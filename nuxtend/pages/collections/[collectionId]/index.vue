@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
-import { CollectionApi, DataObjectApi } from "@dlr-shepard/backend-client";
+import { useCollection } from "~/composables/collection";
+import { useCounter } from "~/composables/counter";
+import { useDataObjectMapByCollection } from "~/composables/dataObjectList";
 import { collectionsPath } from "../../../utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -8,41 +9,13 @@ definePageMeta({ layout: "collection" });
 const route = useRoute();
 const collectionId = parseInt(route.params.collectionId as string);
 
-const numberOfLabJournalEntries = ref<number | undefined>(undefined);
-const collection = ref<Collection | undefined>(undefined);
+const {
+  counter: numberOfLabJournalEntries,
+  updateCount: onLabJournalCountChanged,
+} = useCounter();
 
-const dataObjectsMap = ref<Map<number, string>>(new Map<number, string>());
-
-function fetchCollection(collectionId: number) {
-  createApiInstance(CollectionApi)
-    .getCollection({ collectionId })
-    .then(response => {
-      collection.value = response;
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching collection");
-    });
-}
-
-function fetchDataObjectsByCollectionId(collectionId: number) {
-  createApiInstance(DataObjectApi)
-    .getAllDataObjects({ collectionId })
-    .then(response => {
-      response.forEach(dataObject => {
-        dataObjectsMap.value.set(dataObject.id, dataObject.name);
-      });
-    })
-    .catch(e => {
-      handleError(e as ResponseError, "fetching dataobjects");
-    });
-}
-
-async function onLabJournalCountChanged(count: number) {
-  numberOfLabJournalEntries.value = count;
-}
-
-fetchCollection(collectionId);
-fetchDataObjectsByCollectionId(collectionId);
+const { collection } = useCollection(collectionId);
+const { dataObjectsMap } = useDataObjectMapByCollection(collectionId);
 </script>
 
 <template>

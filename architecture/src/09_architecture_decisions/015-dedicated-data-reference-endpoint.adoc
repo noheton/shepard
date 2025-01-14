@@ -1,0 +1,34 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-015 Dedicated Endpoint for Data References
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|14.01.2025
+|Status|Done
+|Context|
+With the new frontend, we create some new views of data.
+For example, we show all references to data (files, timeseries or structured data) in one table as so-called data references.
+This is different from the previous API design, where each reference type has it's own endpoint and leads to several API calls to fetch all relevant data for the view.
+
+Additionally in the data reference example, we need to fetch the container name for each reference in a separate API call.
+
+|Possible Alternatives|
+1. We accept the number of API calls and leave the API as is
+
+** this way, the design philosophy of the API stays as is
+** this may lead to performance issues for data objects with a lot of references
+
+2. We change the API and add a dedicated endpoint
+
+** This changes the design of the API
+** To keep the API philosophy consistent, this should be thought through.
+Options could include a dedicated API for the frontend, separated endpoints or a general change of approach for the API.
+
+|Decision|
+We go with option 1 as we don't expect to have data objects with tons of references and do not want to re-design the API right now.
+
+|Consequences|
+There may be performance issues on the data object detail page for data objects with lots of references.
+|===

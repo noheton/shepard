@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import {
-  CollectionApi,
-  DataObjectApi,
-  type Collection,
-  type DataObject,
-} from "@dlr-shepard/backend-client";
+import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import { useCollection } from "~/composables/collection";
+import { useDataObjectListByCollection } from "~/composables/dataObjectList";
 import {
   getCollectionRouterParamsFromRoute,
   isTreeViewItem,
   mapToTreeViewItems,
   type CollectionRouteParams,
-  type TreeViewItem,
 } from "./collectionUtils";
 
 interface CollectionSidebarProps {
@@ -23,32 +19,13 @@ const router = useRouter();
 const route = useRoute();
 
 const collectionId = props.collectionRouteParams.collectionId;
-const items = ref<TreeViewItem[] | undefined>(undefined);
+const { collection: currentCollection } = useCollection(collectionId);
+const { dataObjectsList: items } = useDataObjectListByCollection(
+  collectionId,
+  -1,
+);
 const activatedIds = ref<number[]>([]);
-const currentCollection = ref<Collection | undefined>();
 const isCollectionHeaderFocused = ref<boolean>(false);
-
-async function fetchCollection() {
-  createApiInstance(CollectionApi)
-    .getCollection({ collectionId })
-    .then(response => {
-      currentCollection.value = response;
-    })
-    .catch(error => {
-      handleError(error, "getCollection");
-    });
-}
-
-async function fetchRootDataObjectsOfCollection() {
-  createApiInstance(DataObjectApi)
-    .getAllDataObjects({ collectionId, parentId: -1 })
-    .then(response => {
-      items.value = mapToTreeViewItems(response);
-    })
-    .catch(error => {
-      handleError(error, "getAllDataObjects");
-    });
-}
 
 async function fetchChildren(item: unknown) {
   if (!isTreeViewItem(item)) return;
@@ -106,9 +83,6 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
     activatedIds.value = [];
   }
 }
-
-fetchRootDataObjectsOfCollection();
-fetchCollection();
 </script>
 
 <template>
