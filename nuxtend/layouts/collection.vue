@@ -14,7 +14,7 @@ const routeParams = getCollectionRouterParamsFromRoute(route.params)!;
         <v-col cols="3">
           <CollectionSidebar :collection-route-params="routeParams" />
         </v-col>
-        <v-col cols="9" class="pa-8"><slot /></v-col>
+        <v-col cols="9" class="pa-8 overflow-x-auto"><slot /></v-col>
       </v-row>
     </v-container>
   </DefaultLayout>
