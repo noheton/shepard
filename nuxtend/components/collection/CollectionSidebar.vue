@@ -24,6 +24,8 @@ const { dataObjectsList: items } = useDataObjectListByCollection(
   collectionId,
   -1,
 );
+// according to documentation (https://vuetifyjs.com/en/api/v-treeview/#props-activated) the activated treeview items are a list of ids
+// in our case we can assume that this array always contains one id
 const activatedIds = ref<number[]>([]);
 const isCollectionHeaderFocused = ref<boolean>(false);
 
@@ -88,7 +90,7 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
 <template>
   <div class="bg-treeview elevation-4" style="height: 100%">
     <div class="px-6 pt-6 pb-1 text-body-2 text-uppercase">Collection</div>
-    <CollectionSideBarEntry
+    <CollectionSideBarHeader
       :is-focused="isCollectionHeaderFocused"
       :to="collectionsPath + `${collectionId}`"
       height="40px"
@@ -100,7 +102,7 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
       >
         {{ currentCollection?.name }}
       </div>
-    </CollectionSideBarEntry>
+    </CollectionSideBarHeader>
     <v-divider thickness="1" />
 
     <div class="px-6 pt-6">
@@ -108,26 +110,58 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
     </div>
     <v-treeview
       v-if="!!items"
-      class="bg-treeview"
+      class="treeview"
       :items="items"
       item-value="id"
+      :item-props="true"
       :load-children="fetchChildren"
       activatable
       :activated="activatedIds"
       active-strategy="single-independent"
-      color="primary"
       density="compact"
+      active-class="treeview-active"
       mandatory
       collapse-icon="mdi-chevron-down"
       expand-icon="mdi-chevron-right"
       @update:activated="onActivated"
-    />
+    >
+      <template #title="{ item }">
+        <CollectionSideBarEntry
+          :title="item.title"
+          :is-focused="activatedIds.includes(item.id)"
+          :to="
+            collectionsPath +
+            `${collectionId}` +
+            dataObjectsPathFragment +
+            `${item.id}`
+          "
+        />
+      </template>
+    </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
   </div>
 </template>
 
-<style>
+<style lang="css">
+.treeview {
+  background-color: rgb(var(--v-theme-treeview));
+}
+
+.treeview-active {
+  background-color: rgb(var(--v-theme-focus1));
+}
+
+/* Remove gray-dark overlay from treeview items */
+.v-list-item--active > .v-list-item__overlay {
+  visibility: hidden;
+}
+
 .v-list-item--density-compact.v-list-item--one-line {
   min-height: unset;
+}
+
+.v-list-item {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>

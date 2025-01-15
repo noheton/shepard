@@ -1,40 +1,33 @@
 <script lang="ts" setup>
-interface SidebarEntryBackground {
+interface SidebarEntry {
   isFocused: boolean;
-  height: string;
-  to?: string;
+  title: string;
+  to: string;
 }
-const props = defineProps<SidebarEntryBackground>();
+const props = defineProps<SidebarEntry>();
 </script>
 
 <template>
-  <v-card
-    flat
-    hover
-    rounded="0"
-    :height="props.height"
-    :to="props.to"
-    :color="
-      props.isFocused
-        ? 'rgb(var(--v-theme-focus1))'
-        : 'rgb(var(--v-theme-treeview))'
-    "
-    class="d-flex ga-0"
-  >
-    <div
-      class="card-focus-start"
-      :style="{ visibility: isFocused ? 'visible' : 'hidden' }"
-    />
-    <v-card-item class="w-100">
-      <slot />
-    </v-card-item>
-  </v-card>
+  <NuxtLink :to="props.to" class="link-button">
+    <span
+      class="link-text"
+      :style="{ fontWeight: isFocused ? 'bold' : 'normal' }"
+    >
+      {{ props.title }}
+    </span>
+  </NuxtLink>
 </template>
 
 <style lang="scss" scoped>
-.card-focus-start {
-  background-color: rgb(var(--v-theme-primary));
-  min-width: 4px;
-  max-width: 4px;
+.link-button {
+  color: rgb(var(--v-theme-textbody1));
+  justify-content: left;
+  display: inline-flex;
+  min-height: 40px;
+  width: 100%;
+  text-decoration: none;
+}
+.link-text {
+  align-content: center;
 }
 </style>
