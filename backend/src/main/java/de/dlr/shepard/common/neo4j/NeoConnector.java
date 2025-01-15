@@ -1,23 +1,6 @@
 package de.dlr.shepard.common.neo4j;
 
-import de.dlr.shepard.auth.apikey.entities.ApiKey;
-import de.dlr.shepard.auth.permission.entities.Permissions;
-import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.IConnector;
-import de.dlr.shepard.context.collection.entities.Collection;
-import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
-import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.context.references.uri.entities.URIReference;
-import de.dlr.shepard.context.version.entities.Version;
-import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.data.structureddata.entities.StructuredData;
-import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.logging.Log;
 import java.util.Collections;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -72,26 +55,7 @@ public class NeoConnector implements IConnector {
       .build();
     while (true) {
       try {
-        sessionFactory = new SessionFactory(
-          configuration,
-          Version.class.getPackageName(),
-          SemanticAnnotation.class.getPackageName(),
-          FileReference.class.getPackageName(),
-          FileContainer.class.getPackageName(),
-          StructuredData.class.getPackageName(),
-          StructuredDataReference.class.getPackageName(),
-          URIReference.class.getPackageName(),
-          Collection.class.getPackageName(),
-          CollectionReference.class.getPackageName(),
-          LabJournalEntry.class.getPackageName(),
-          Timeseries.class.getPackageName(),
-          User.class.getPackageName(),
-          ApiKey.class.getPackageName(),
-          Permissions.class.getPackageName(),
-          Subscription.class.getPackageName(),
-          InfluxTimeseries.class.getPackageName(),
-          TimeseriesReference.class.getPackageName()
-        );
+        sessionFactory = new SessionFactory(configuration, "de.dlr.shepard");
         return true;
       } catch (ConnectionException ex) {
         Log.warn("Cannot connect to neo4j database. Retrying...");
