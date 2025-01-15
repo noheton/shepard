@@ -25,7 +25,7 @@ const { dataObjectsList: items } = useDataObjectListByCollection(
   -1,
 );
 // according to documentation (https://vuetifyjs.com/en/api/v-treeview/#props-activated) the activated treeview items are a list of ids
-// in our case we can assume that this array always contains one id
+// in our case we can assume that this array always only contains one id
 const activatedIds = ref<number[]>([]);
 const isCollectionHeaderFocused = ref<boolean>(false);
 

@@ -22,7 +22,9 @@ export default defineNuxtRouteMiddleware(to => {
   // /auth/signIn and /_nuxt/ routes are not saved as cookie values here, since they are returned in the check before
   // Setting this cookie is workaround to a problem that is further explained here: https://gitlab.com/dlr-shepard/shepard/-/issues/399
   if (to.path != "/") {
-    const redirectCookie = useCookie(signInRedirectCookie);
+    const redirectCookie = useCookie(signInRedirectCookie, {
+      sameSite: "strict",
+    });
     redirectCookie.value = to.path;
   }
 
