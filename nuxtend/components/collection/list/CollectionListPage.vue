@@ -114,7 +114,7 @@ onMounted(() => {
       </v-card>
     </v-menu>
 
-    <CollectionSortingOptions
+    <CollectionListSortingOptions
       :max-objects="totalPages"
       :current-page="currentPage"
       :filter-options="filterOptions"
