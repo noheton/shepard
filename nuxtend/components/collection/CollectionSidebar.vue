@@ -133,9 +133,11 @@ async function deleteDataObject(dataObjectId: number) {
         />
       </template>
       <template #append="{ item }">
-        <CollectionSidebarTreeviewItemContextMenu
-          :delete-item="() => deleteDataObject(item.id)"
-        />
+        <CollectionSidebarTreeviewItemContextMenu>
+          <CollectionSidebarDeleteDataObjectButton
+            :delete-item="() => deleteDataObject(item.id)"
+          />
+        </CollectionSidebarTreeviewItemContextMenu>
       </template>
     </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
