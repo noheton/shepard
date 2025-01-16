@@ -28,8 +28,11 @@ In the Neo4j UI, the applied migrations form a chain when querying `MATCH (n) RE
 ===== Transactions
 
 Code modifying our database should use transactions to avoid leaving the database in an inconsistent state in case of errors.
+Also, queries that modify the database (insert, update, delete) must run in a transaction, otherwise an exception will be thrown.
 
 This can be done using the `@Transactional` annotation on methods.
+Using the `@Transactional` annotation in repositories led to unexpected behaviour.
+We recommend to use the `@Transactional` annotation on the business level (the services) or directly in the REST endpoints.
 In the quarkus documentation it is recommended to mark methods at the application entry boundaries with this annotation, e.g. the REST endpoints.
 
 More information can be found link:https://quarkus.io/guides/hibernate-orm#setting-up-and-configuring-hibernate-orm[here].
