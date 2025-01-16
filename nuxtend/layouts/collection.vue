@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import { getCollectionRouterParamsFromRoute } from "~/components/collection/collectionUtils";
 import DefaultLayout from "~/components/layout-components/DefaultLayout.vue";
-
-const route = useRouter().currentRoute.value;
-
-const routeParams = getCollectionRouterParamsFromRoute(route.params)!;
 </script>
 
 <template>
@@ -12,7 +7,7 @@ const routeParams = getCollectionRouterParamsFromRoute(route.params)!;
     <v-container fluid class="pa-0 fill-height align-start overflow-x-auto">
       <v-row no-gutters class="fill-height">
         <v-col cols="3">
-          <CollectionSidebar :collection-route-params="routeParams" />
+          <CollectionSidebar />
         </v-col>
         <v-col cols="9" class="pa-8"><slot /></v-col>
       </v-row>

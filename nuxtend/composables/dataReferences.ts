@@ -7,11 +7,11 @@ import {
   StructuredDataReferenceApi,
   TimeseriesContainerApi,
   TimeseriesReferenceApi,
-  type FileReference,
-  type StructuredDataReference,
-  type TimeseriesReference,
 } from "@dlr-shepard/backend-client";
-import type { DataReference } from "~/components/data-object/data/DataObjectDataReferencesTable.vue";
+import type {
+  DataReference,
+  DataReferenceWithoutContainerName,
+} from "~/components/data-object/data/dataReference";
 
 export function useDataReferencesByDataObject(
   collectionId: number,
@@ -95,7 +95,7 @@ export function useDataReferencesByDataObject(
   }
 
   async function addContainerName(
-    ref: TimeseriesReference | FileReference | StructuredDataReference,
+    ref: DataReferenceWithoutContainerName,
   ): Promise<DataReference> {
     if (instanceOfTimeseriesReference(ref))
       return {

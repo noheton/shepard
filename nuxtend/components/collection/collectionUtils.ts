@@ -31,8 +31,8 @@ export function mapToTreeViewItems(dataObjects: DataObject[]): TreeViewItem[] {
 }
 
 export interface CollectionRouteParams {
-  collectionId: number;
-  dataObjectId: number | undefined;
+  collectionId?: number;
+  dataObjectId?: number;
 }
 
 /**
@@ -42,7 +42,7 @@ export interface CollectionRouteParams {
  */
 export function getCollectionRouterParamsFromRoute(
   routeParams: RouteParamsGeneric,
-): CollectionRouteParams | undefined {
+): CollectionRouteParams {
   let collectionId: number | null = null;
   let dataObjectId: number | undefined = undefined;
 
@@ -52,7 +52,7 @@ export function getCollectionRouterParamsFromRoute(
   ) {
     collectionId = parseInt(routeParams.collectionId);
   } else {
-    return undefined;
+    return {};
   }
 
   if (

@@ -26,12 +26,16 @@ export function useDataObjectMapByCollection(collectionId: number) {
 }
 
 export function useDataObjectListByCollection(
-  collectionId: number,
+  collectionId?: number,
   parentId?: number,
 ) {
   const dataObjectsList = ref<TreeViewItem[] | undefined>(undefined);
 
-  async function fetchDataObjectsOfCollection() {
+  async function fetchDataObjectsOfCollection(
+    collectionId?: number,
+    parentId?: number,
+  ) {
+    if (!collectionId) return;
     createApiInstance(DataObjectApi)
       .getAllDataObjects({ collectionId, parentId })
       .then(response => {
@@ -42,7 +46,7 @@ export function useDataObjectListByCollection(
       });
   }
 
-  fetchDataObjectsOfCollection();
+  fetchDataObjectsOfCollection(collectionId, parentId);
 
-  return { dataObjectsList };
+  return { dataObjectsList, fetchDataObjectsOfCollection };
 }

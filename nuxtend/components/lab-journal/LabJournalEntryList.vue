@@ -79,15 +79,7 @@ fetchRoles();
       :user-roles="userRoles"
       @deleted="onLabJournalDeleted(index)"
     />
-    <div v-if="entries.length === 0" class="text-center">
-      <v-img
-        src="../../assets/empty_list.svg"
-        height="77"
-        width="77"
-        class="mx-auto"
-      />
-      <span class="text-body-2 text-textbody2">No entry yet</span>
-    </div>
+    <CommonEmptyListIcon v-if="entries.length === 0" label="No entry yet" />
   </div>
   <LayoutComponentsCenteredLoadingSpinner v-else />
 </template>

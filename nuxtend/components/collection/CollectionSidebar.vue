@@ -1,38 +1,33 @@
 <script setup lang="ts">
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
-import { useCollection } from "~/composables/collection";
-import { useDataObjectListByCollection } from "~/composables/dataObjectList";
 import {
-  getCollectionRouterParamsFromRoute,
   isTreeViewItem,
   mapToTreeViewItems,
   type CollectionRouteParams,
 } from "./collectionUtils";
 
-interface CollectionSidebarProps {
-  collectionRouteParams: CollectionRouteParams;
-}
-
-const props = defineProps<CollectionSidebarProps>();
-
 const router = useRouter();
-const route = useRoute();
 
-const collectionId = props.collectionRouteParams.collectionId;
-const { collection: currentCollection } = useCollection(collectionId);
-const { dataObjectsList: items } = useDataObjectListByCollection(
-  collectionId,
-  -1,
-);
-// according to documentation (https://vuetifyjs.com/en/api/v-treeview/#props-activated) the activated treeview items are a list of ids
-// in our case we can assume that this array always only contains one id
-const activatedIds = ref<number[]>([]);
-const isCollectionHeaderFocused = ref<boolean>(false);
+const onRouteChange = (newParams: CollectionRouteParams) => {
+  if (
+    newParams.collectionId &&
+    collection.value?.id !== newParams.collectionId
+  ) {
+    refetchCollectionAndChildren(newParams.collectionId);
+  }
+};
+const { routeParams, activeDataObjectId, isCollectionHeaderFocused } =
+  useCollectionSidebarFocus(onRouteChange);
+const { collectionId } = routeParams.value;
+
+const { collection, children, refetchCollectionAndChildren } =
+  useCollectionWithChildren(collectionId);
 
 async function fetchChildren(item: unknown) {
   if (!isTreeViewItem(item)) return;
   // Do not load if no childrenIds or children already loaded
   if (!item.childrenIds?.length || item.children?.length) return;
+  if (!collectionId) return;
 
   if (Array.isArray(item?.childrenIds)) {
     const dataObjectsToAdd = await Promise.all(
@@ -56,33 +51,10 @@ function fetchDataObject(
 }
 
 function onActivated(activeItems: unknown) {
-  if (Array.isArray(activeItems) && activeItems.length) {
+  if (collectionId && Array.isArray(activeItems) && activeItems.length) {
     router.push(
       collectionsPath + collectionId + dataObjectsPathFragment + activeItems[0],
     );
-    activatedIds.value = activeItems;
-  }
-}
-
-watch(
-  () => route.params,
-  () => {
-    const routeParams = getCollectionRouterParamsFromRoute(route.params)!;
-    switchFocusOnParams(routeParams);
-  },
-);
-
-onMounted(() => {
-  switchFocusOnParams(props.collectionRouteParams);
-});
-
-function switchFocusOnParams(routeParams: CollectionRouteParams) {
-  if (routeParams.dataObjectId) {
-    isCollectionHeaderFocused.value = false;
-    activatedIds.value = [routeParams.dataObjectId];
-  } else if (routeParams.collectionId) {
-    isCollectionHeaderFocused.value = true;
-    activatedIds.value = [];
   }
 }
 </script>
@@ -100,7 +72,7 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
         class="ml-1 text-h4"
         style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
       >
-        {{ currentCollection?.name }}
+        {{ collection?.name }}
       </div>
     </CollectionSideBarHeader>
     <v-divider thickness="1" />
@@ -109,14 +81,14 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
       <div class="text-body-2 text-uppercase">Contents</div>
     </div>
     <v-treeview
-      v-if="!!items"
+      v-if="!!children"
       class="treeview"
-      :items="items"
+      :items="children"
       item-value="id"
       :item-props="true"
       :load-children="fetchChildren"
       activatable
-      :activated="activatedIds"
+      :activated="[activeDataObjectId]"
       active-strategy="single-independent"
       density="compact"
       active-class="treeview-active"
@@ -128,7 +100,7 @@ function switchFocusOnParams(routeParams: CollectionRouteParams) {
       <template #title="{ item }">
         <CollectionSideBarEntry
           :title="item.title"
-          :is-focused="activatedIds.includes(item.id)"
+          :is-focused="activeDataObjectId === item.id"
           :to="
             collectionsPath +
             `${collectionId}` +

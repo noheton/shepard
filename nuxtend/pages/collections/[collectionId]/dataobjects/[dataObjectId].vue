@@ -20,6 +20,7 @@ const { dataReferences } = useDataReferencesByDataObject(
   collectionId,
   dataObjectId,
 );
+const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
 const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
@@ -29,7 +30,12 @@ const {
 <template>
   <div style="max-width: 1000px">
     <v-container fluid class="pa-0 fill-height" max-width="1000px">
-      <v-row v-if="!!collection && !!dataObject && !!dataReferences" no-gutters>
+      <v-row
+        v-if="
+          !!collection && !!dataObject && !!dataReferences && !!relatedEntities
+        "
+        no-gutters
+      >
         <v-col cols="12">
           <LayoutComponentsShepardBreadcrumbs
             :items="[
@@ -86,6 +92,14 @@ const {
                 >
                   <DataObjectDataReferencesTable
                     :data-references="dataReferences"
+                  />
+                </EntityExpansionPanelItem>
+                <EntityExpansionPanelItem
+                  title="Relationships"
+                  :count="relatedEntities.length"
+                >
+                  <DataObjectRelationshipsTable
+                    :related-entities="relatedEntities"
                   />
                 </EntityExpansionPanelItem>
               </EntityExpansionPanels>
