@@ -71,7 +71,7 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
       />
     </template>
     <template #bottom>
-      <v-divider :thickness="8" />
+      <v-divider :thickness="8" color="divider2" opacity="1" />
       <v-pagination v-model="page" :length="pageCount" />
     </template>
   </CommonDataTable>

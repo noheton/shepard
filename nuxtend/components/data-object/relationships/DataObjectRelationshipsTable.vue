@@ -57,6 +57,7 @@ const headers = [
     items-per-page="-1"
     :items="tableItems"
     :headers="headers"
+    hide-default-footer
   >
     <template
       #[`item.relationship`]="{
@@ -89,7 +90,6 @@ const headers = [
         :created-by="value.createdBy"
       />
     </template>
-    <template #bottom />
   </CommonDataTable>
 </template>
 
