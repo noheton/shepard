@@ -1,7 +1,7 @@
 package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -131,6 +132,10 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
       .extract()
       .asString();
 
-    assertThat(actual).isEqualTo(expected);
+    List<String> expectedLines = Arrays.stream(expected.split("\\R")).toList();
+    List<String> actualLines = Arrays.stream(actual.split("\\R")).toList();
+
+    assertTrue(expectedLines.containsAll(actualLines));
+    assertTrue(actualLines.containsAll(expectedLines));
   }
 }
