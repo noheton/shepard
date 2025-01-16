@@ -177,7 +177,7 @@ In this third scenario a new refresh token is requested from the OIDC provider. 
 
 The global authentication is handled by a custom authentication middleware, which is defined in `middleware/authentication.global.ts`.
 This middleware protects most frontend pages (i.e., `/collections`) and therefore requires an authenticated user session before it can be shown. 
-If the user is not authenticated and therefore does not an authenticated user session, the middleware redirects the user to the OIDC's login page.
+If the user is not authenticated and therefore does not have an authenticated user session, the middleware redirects the user to the OIDC's login page.
 When the user successfully logged in, they are redirected to the protected page, which now can be opened by the user.
 
 Not all pages need to be protected. 
