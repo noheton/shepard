@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import { useCollectionSidebarFocus } from "~/composables/collectionSidebarFocus";
+import { useCollectionWithChildren } from "~/composables/collectionWithChildren";
+import CollectionSidebarTreeviewItemContextMenu from "./CollectionSidebarTreeviewItemContextMenu.vue";
 import {
   isTreeViewItem,
   mapToTreeViewItems,
@@ -57,6 +60,26 @@ function onActivated(activeItems: unknown) {
     );
   }
 }
+
+async function deleteDataObject(dataObjectId: number) {
+  if (!collectionId) return;
+  const deletionSuccessful = await createApiInstance(DataObjectApi)
+    .deleteDataObject({
+      collectionId: collectionId,
+      dataObjectId: dataObjectId,
+    })
+    .then(() => true)
+    .catch(error => {
+      handleError(error, "deleteDataObject");
+      return false;
+    });
+  if (!deletionSuccessful) return;
+  // TODO: Refetch/update without losing opened elements
+  refetchCollectionAndChildren(collectionId);
+  if (activeDataObjectId.value === dataObjectId) {
+    router.push(collectionsPath + collectionId);
+  }
+}
 </script>
 
 <template>
@@ -109,12 +132,17 @@ function onActivated(activeItems: unknown) {
           "
         />
       </template>
+      <template #append="{ item }">
+        <CollectionSidebarTreeviewItemContextMenu
+          :delete-item="() => deleteDataObject(item.id)"
+        />
+      </template>
     </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
   </div>
 </template>
 
-<style lang="css">
+<style lang="css" scoped>
 .treeview {
   background-color: rgb(var(--v-theme-treeview));
 }
