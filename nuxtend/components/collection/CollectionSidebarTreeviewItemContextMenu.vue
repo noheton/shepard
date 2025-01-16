@@ -1,9 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  deleteItem: () => Promise<void>;
-}>();
-</script>
-
 <template>
   <v-menu class="pa-0">
     <template #activator="{ props }">
@@ -17,18 +11,7 @@ defineProps<{
     </template>
     <v-list>
       <v-list-item color="canvas" density="compact">
-        <CommonConfirmationDialog
-          prompt-text="Are you sure you want to delete this item?"
-          confirm-button-text="Delete"
-          @confirmed="deleteItem()"
-        >
-          <v-btn
-            class="text-textbody1 text-body-1"
-            prepend-icon="mdi-delete-outline"
-            text="Delete"
-            color="canvas"
-          />
-        </CommonConfirmationDialog>
+        <slot />
       </v-list-item>
     </v-list>
   </v-menu>
