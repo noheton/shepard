@@ -65,6 +65,7 @@ onMounted(() => {
   <div style="max-width: 1200px">
     <v-container fluid class="pa-0 fill-height" max-width="1200px">
       <v-row no-gutters>
+        <v-col cols="12" no-gutters><CollectionListDataTable /></v-col>
         <v-col cols="12" class="pa-0 pt-16 pb-14" no-gutters>
           <h1 class="text-h1">Explore Collections</h1>
         </v-col>
