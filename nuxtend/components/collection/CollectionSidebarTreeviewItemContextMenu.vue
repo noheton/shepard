@@ -11,6 +11,7 @@
     </template>
     <v-list>
       <v-list-item color="canvas" density="compact">
+        <!-- Todo: That should also work with a list of context menu entries -->
         <slot />
       </v-list-item>
     </v-list>

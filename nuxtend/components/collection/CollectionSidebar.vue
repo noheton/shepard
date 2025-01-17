@@ -26,6 +26,11 @@ const { collectionId } = routeParams.value;
 const { collection, children, refetchCollectionAndChildren } =
   useCollectionWithChildren(collectionId);
 
+// Todo: activeDataObjectId cannot be used because user can select
+// edit from context menu without activating it
+const showEditDataObjectDialog = ref(false);
+const editDataObjectId = ref(0);
+
 async function fetchChildren(item: unknown) {
   if (!isTreeViewItem(item)) return;
   // Do not load if no childrenIds or children already loaded
@@ -137,10 +142,26 @@ async function deleteDataObject(dataObjectId: number) {
           <CollectionSidebarDeleteDataObjectButton
             :delete-item="() => deleteDataObject(item.id)"
           />
+          <v-btn
+            class="text-textbody1 text-body-1"
+            prepend-icon="mdi-pencil-outline"
+            text="Edit"
+            color="canvas"
+            @click="
+              editDataObjectId = item.id;
+              showEditDataObjectDialog = true;
+            "
+          />
         </CollectionSidebarTreeviewItemContextMenu>
       </template>
     </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
+    <DataObjectDataEditDialog
+      v-if="showEditDataObjectDialog"
+      v-model:show-dialog="showEditDataObjectDialog"
+      :collection-id="collectionId ?? 0"
+      :data-object-id="editDataObjectId"
+    />
   </div>
 </template>
 
