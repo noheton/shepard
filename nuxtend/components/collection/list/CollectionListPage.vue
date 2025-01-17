@@ -5,16 +5,10 @@ import {
   type DataObjectAttributes,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
-import { refDebounced, useStorage } from "@vueuse/core";
+import { useStorage } from "@vueuse/core";
 import type { FilterChangedData, FilterOptions } from "~/utils/helpers";
-import { useSearchCollections } from "~/utils/InlineSearchCollections";
-import CollectionList from "./CollectionList.vue";
 
-const router = useRouter();
-
-const filterInput = ref("");
 const entities = ref<BasicEntity[]>([]);
-const page = ref(1);
 const totalPages = ref(1);
 
 const filterOptions = useStorage<FilterOptions>(
@@ -62,76 +56,56 @@ function filterChanged(options: FilterChangedData) {
   fetchCollections();
 }
 
-const filterInputDebounced = refDebounced(filterInput, 700);
-
-const { results, totalResults } = useSearchCollections(filterInputDebounced);
-
 onMounted(() => {
   fetchCollections();
 });
 </script>
 
 <template>
-  <div
-    :style="{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      width: '60%',
-    }"
-  >
-    <div
-      :style="{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: '5px',
-        width: '100%',
-      }"
-    >
-      <h4 :style="{ padding: '12px' }">Explore Collections</h4>
-      <!-- <v-btn icon="mdi-plus" color="primary" /> -->
-    </div>
-    <v-menu :close-on-content-click="false">
-      <template #activator="{ props }">
-        <v-text-field
-          id="userFormInput"
-          v-model="filterInput"
-          placeholder="Name, Username, ID or Description"
-          :style="{ width: '100%', marginTop: '5px' }"
-          v-bind="props"
-        />
-      </template>
-
-      <v-card>
-        <v-card-title>
-          <h3>Result set ({{ totalResults }} total)</h3>
-        </v-card-title>
-        <template v-for="result in results" :key="result.id">
-          <v-card @click="router.push('/collections/' + result.id)">
-            <CollectionListItemContent :collection="result" />
-          </v-card>
-        </template>
-      </v-card>
-    </v-menu>
-
-    <CollectionListSortingOptions
-      :max-objects="totalPages"
-      :current-page="currentPage"
-      :filter-options="filterOptions"
-      @filter-changed="options => filterChanged(options)"
-    />
-    <div :style="{ marginTop: '10px', width: '100%' }">
-      <CollectionList
-        :pagination-length="totalPages"
-        :max-objects="filterOptions.perPage"
-        :collections="entities"
-        :page="page"
-      />
-      <v-pagination
-        v-model="currentPage"
-        :length="totalPages"
-        @update:model-value="fetchCollections(currentPage)"
-      />
-    </div>
+  <div style="max-width: 1200px">
+    <v-container fluid class="pa-0 fill-height" max-width="1200px">
+      <v-row no-gutters>
+        <v-col cols="12" class="pa-0 pt-16 pb-14" no-gutters>
+          <h1 class="text-h1">Explore Collections</h1>
+        </v-col>
+        <v-col cols="12" no-gutters><CollectionListActionsBar /></v-col>
+        <v-col cols="12" no-gutters>
+          <CollectionListSortingOptions
+            :max-objects="totalPages"
+            :current-page="currentPage"
+            :filter-options="filterOptions"
+            @filter-changed="options => filterChanged(options)"
+          />
+        </v-col>
+        <v-col cols="12" no-gutters>
+          <CommonDataTable
+            :items="entities"
+            :headers="[
+              { title: 'ID', value: 'id' },
+              { title: 'Name', value: 'name' },
+              {
+                title: 'Last changed',
+                key: 'lastChanged',
+                value: (item: BasicEntity) => {
+                  if (item.updatedAt) return toShortDateString(item.updatedAt);
+                  return toShortDateString(item.createdAt);
+                },
+              },
+              { title: 'Created by', value: 'createdBy' },
+            ]"
+            items-per-page="-1"
+          >
+            <template #bottom>
+              <v-divider :thickness="8" color="divider2" opacity="1" />
+              <v-pagination
+                v-model="currentPage"
+                :length="totalPages"
+                @update:model-value="fetchCollections(currentPage)"
+              />
+            </template>
+          </CommonDataTable>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
