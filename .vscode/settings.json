@@ -28,6 +28,7 @@
     "registerables",
     "structureddata",
     "Timeseries",
+    "Treeview",
     "usergroup",
     "usergroups",
     "Versionz",

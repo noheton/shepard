@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import { useCollection } from "~/composables/collection";
-import { useCounter } from "~/composables/counter";
-import { useDataObjectMapByCollection } from "~/composables/dataObjectList";
 import { collectionsPath } from "../../../utils/constants";
 
 definePageMeta({ layout: "collection" });
 
-const route = useRoute();
-const collectionId = parseInt(route.params.collectionId as string);
+const { routeParams } = useCollectionRouteParams();
 
 const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-const { collection } = useCollection(collectionId);
-const { dataObjectsMap } = useDataObjectMapByCollection(collectionId);
+const { collection } = useFetchCollection(routeParams.value.collectionId);
+const { dataObjectsMap } = useFetchDataObjectMapByCollection(
+  routeParams.value.collectionId,
+);
 </script>
 
 <template>
@@ -31,7 +29,7 @@ const { dataObjectsMap } = useDataObjectMapByCollection(collectionId);
               },
               {
                 title: `Collection '${collection.name}'`,
-                to: collectionsPath + collectionId,
+                to: collectionsPath + routeParams.collectionId,
               },
             ]"
           />
@@ -58,7 +56,7 @@ const { dataObjectsMap } = useDataObjectMapByCollection(collectionId);
                 >
                   <div class="pt-4">
                     <CollectionLabJournalEntryList
-                      :collection-id="collectionId"
+                      :collection-id="routeParams.collectionId"
                       :data-object-map="dataObjectsMap"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />

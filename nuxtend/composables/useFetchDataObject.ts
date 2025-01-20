@@ -9,7 +9,7 @@ export interface DataObjectSanitized extends DataObject {
   description: string;
 }
 
-export function useDataObject(collectionId: number, dataObjectId: number) {
+export function useFetchDataObject(collectionId: number, dataObjectId: number) {
   const dataObject = ref<DataObjectSanitized | undefined>(undefined);
 
   function fetchDataObject() {

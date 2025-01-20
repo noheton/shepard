@@ -12,7 +12,10 @@ const showDialog = defineModel<boolean>("showDialog", {
   default: false,
 });
 
-const { dataObject } = useDataObject(props.collectionId, props.dataObjectId);
+const { dataObject } = useFetchDataObject(
+  props.collectionId,
+  props.dataObjectId,
+);
 const isValid = ref(false);
 const nameRules = [
   (value: unknown) => {

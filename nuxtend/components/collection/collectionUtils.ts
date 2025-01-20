@@ -1,39 +1,61 @@
 import type { RouteParamsGeneric } from "#vue-router";
 import type { DataObject } from "@dlr-shepard/backend-client";
 
-export interface TreeViewItem {
+export interface TreeviewItem {
   id: number;
   title: string;
-  children: TreeViewItem[] | undefined;
+  children: TreeviewItem[] | undefined;
   childrenIds: number[] | undefined;
+  parent: TreeviewItem | undefined;
+  parentId: number | undefined;
 }
 
-export function isTreeViewItem(
-  treeViewItem: unknown,
-): treeViewItem is TreeViewItem {
-  const item = treeViewItem as TreeViewItem;
+export function isTreeviewItem(
+  treeviewItem: unknown,
+): treeviewItem is TreeviewItem {
+  const item = treeviewItem as TreeviewItem;
   return item.id !== undefined && item.title !== undefined;
 }
 
-export function mapToTreeViewItem(dataObject: DataObject): TreeViewItem {
+export function mapToTreeviewItem(
+  dataObject: DataObject,
+  parentItem: TreeviewItem | undefined,
+): TreeviewItem {
   return {
     id: dataObject.id ?? 0,
     title: dataObject.name ?? "",
     childrenIds: dataObject.childrenIds,
     children: dataObject.childrenIds?.length
-      ? ([] as TreeViewItem[])
+      ? ([] as TreeviewItem[])
       : undefined,
+    parent: parentItem,
+    parentId: dataObject.parentId ?? undefined,
   };
 }
 
-export function mapToTreeViewItems(dataObjects: DataObject[]): TreeViewItem[] {
-  return dataObjects.map(mapToTreeViewItem);
+/**
+ * Map multiple child dataobjects to Treeview items with a single parent
+ */
+export function mapToTreeviewItems(
+  dataObjects: DataObject[],
+  parentItem: TreeviewItem | undefined,
+): TreeviewItem[] {
+  return dataObjects.map(dataObject =>
+    mapToTreeviewItem(dataObject, parentItem),
+  );
 }
 
 export interface CollectionRouteParams {
-  collectionId?: number;
+  collectionId: number;
   dataObjectId?: number;
 }
+
+export const isCollectionRouteParams = (
+  routeParams: Partial<CollectionRouteParams>,
+): routeParams is CollectionRouteParams => {
+  if (!routeParams.collectionId) return false;
+  return true;
+};
 
 /**
  * A helper function to parse the router parameter to create an instance of `CollectionRouteParams`.
@@ -42,25 +64,34 @@ export interface CollectionRouteParams {
  */
 export function getCollectionRouterParamsFromRoute(
   routeParams: RouteParamsGeneric,
-): CollectionRouteParams {
-  let collectionId: number | null = null;
-  let dataObjectId: number | undefined = undefined;
+): Partial<CollectionRouteParams> {
+  return {
+    collectionId: parseCollectionId(routeParams),
+    dataObjectId: parseDataObjectId(routeParams),
+  };
+}
 
+function parseCollectionId(
+  routeParams: RouteParamsGeneric,
+): number | undefined {
   if (
     routeParams.collectionId &&
-    typeof routeParams.collectionId === "string"
+    typeof routeParams.collectionId === "string" &&
+    !Number.isNaN(routeParams.collectionId)
   ) {
-    collectionId = parseInt(routeParams.collectionId);
-  } else {
-    return {};
+    return parseInt(routeParams.collectionId);
   }
+  return undefined;
+}
 
+function parseDataObjectId(
+  routeParams: RouteParamsGeneric,
+): number | undefined {
   if (
     routeParams.dataObjectId &&
     typeof routeParams.dataObjectId === "string"
   ) {
-    dataObjectId = parseInt(routeParams.dataObjectId);
+    return parseInt(routeParams.dataObjectId);
   }
-
-  return { collectionId: collectionId, dataObjectId: dataObjectId };
+  return undefined;
 }

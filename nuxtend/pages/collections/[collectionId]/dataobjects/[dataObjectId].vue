@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { useCollection } from "~/composables/collection";
-import { useCounter } from "~/composables/counter";
-import { useDataObject } from "~/composables/dataObject";
-import { useDataReferencesByDataObject } from "~/composables/dataReferences";
+import type { CollectionRouteParams } from "~/components/collection/collectionUtils";
 import {
   collectionsPath,
   dataObjectsPathFragment,
@@ -10,12 +7,14 @@ import {
 
 definePageMeta({ layout: "collection" });
 
-const route = useRoute();
-const collectionId = parseInt(route.params.collectionId as string);
-const dataObjectId = parseInt(route.params.dataObjectId as string);
+const { routeParams } = useCollectionRouteParams();
 
-const { collection } = useCollection(collectionId);
-const { dataObject } = useDataObject(collectionId, dataObjectId);
+// We cast this because this page will only be invoked with a data object id.
+const { collectionId, dataObjectId } =
+  routeParams.value as CollectionRouteParams & { dataObjectId: number };
+
+const { collection } = useFetchCollection(collectionId);
+const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 const { dataReferences } = useDataReferencesByDataObject(
   collectionId,
   dataObjectId,

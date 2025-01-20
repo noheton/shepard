@@ -1,7 +1,8 @@
 import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
 import { CollectionApi } from "@dlr-shepard/backend-client";
+import type { CollectionRouteParams } from "~/components/collection/collectionUtils";
 
-export function useCollection(collectionId?: number) {
+export function useFetchCollection(collectionId?: number) {
   const collection = ref<Collection | undefined>(undefined);
 
   function fetchCollection(collectionId?: number) {
@@ -20,3 +21,22 @@ export function useCollection(collectionId?: number) {
 
   return { collection, fetchCollection };
 }
+
+export const useFetchCollectionOfRouteParams = (
+  routeParams: Ref<CollectionRouteParams>,
+) => {
+  const { collection, fetchCollection } = useFetchCollection(
+    routeParams.value.collectionId,
+  );
+
+  watch(routeParams, () => {
+    if (
+      routeParams.value.collectionId &&
+      collection.value?.id !== routeParams.value.collectionId
+    ) {
+      fetchCollection(routeParams.value.collectionId);
+    }
+  });
+
+  return { collection };
+};
