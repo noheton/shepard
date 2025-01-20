@@ -2,6 +2,7 @@ package de.dlr.shepard.common.util;
 
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
+import de.dlr.shepard.common.search.container.BasicContainerAttributes;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,6 +44,10 @@ public class CypherQueryHelper {
     return "SKIP $offset LIMIT $size";
   }
 
+  public static String getPaginationPart(PaginationHelper paginationParams) {
+    return String.format("SKIP %d LIMIT %d", paginationParams.getOffset(), paginationParams.getSize());
+  }
+
   public static String getReturnPart(String entity) {
     return getReturnPart(entity, Neighborhood.EVERYTHING, 1);
   }
@@ -55,7 +60,32 @@ public class CypherQueryHelper {
     return getReturnPart(entity, neighborhood, 1);
   }
 
+  public static String getReturnPart(String entity, Neighborhood neighborhood, QueryParamHelper params) {
+    return getReturnPart(entity, neighborhood, 1, params);
+  }
+
+  public static String getReturnCountPart(String entity, Neighborhood neighborhood) {
+    return (getNeighborhoodPart(entity, neighborhood, 1) + " RETURN " + String.format("COUNT(%s)", entity));
+  }
+
   public static String getReturnPart(String entity, Neighborhood neighborhood, int depth) {
+    return (
+      getNeighborhoodPart(entity, neighborhood, depth) +
+      " RETURN " +
+      String.format("%s, nodes(path), relationships(path)", entity)
+    );
+  }
+
+  public static String getReturnPart(String entity, Neighborhood neighborhood, int depth, QueryParamHelper params) {
+    return (
+      getNeighborhoodPart(entity, neighborhood, depth) +
+      (params.hasPagination() ? " " + CypherQueryHelper.getPaginationPart(params.getPagination()) : "") +
+      " RETURN " +
+      String.format("%s, nodes(path), relationships(path)", entity)
+    );
+  }
+
+  private static String getNeighborhoodPart(String entity, Neighborhood neighborhood, int depth) {
     // Clamp the depth between 1 and 3 nodes
     depth = Math.max(1, Math.min(3, depth));
     String match =
@@ -64,12 +94,7 @@ public class CypherQueryHelper {
         case OUTGOING -> "path=(%s)-[*0..%d]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
         case ESSENTIAL -> "path=(%s)-[*0..%d]->(n) WHERE n:Permission OR n:User";
       };
-    var result =
-      "MATCH " +
-      String.format(match, entity, depth) +
-      " RETURN " +
-      String.format("%s, nodes(path), relationships(path)", entity);
-    return result;
+    return "MATCH " + String.format(match, entity, depth);
   }
 
   public static String getReturnPartLight(String entity) {
@@ -80,6 +105,10 @@ public class CypherQueryHelper {
     String ret;
     boolean isString = orderByAttribute.isString();
     if (!isString) ret = "ORDER BY " + variable + "." + orderByAttribute;
+    else if (
+      orderByAttribute instanceof BasicContainerAttributes &&
+      ((BasicContainerAttributes) orderByAttribute) == BasicContainerAttributes.containerType
+    ) ret = "ORDER BY LABELS(" + variable + ")";
     else ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
     if (orderDesc != null && orderDesc) ret = ret + " DESC";
     return ret;

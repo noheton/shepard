@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.common.exceptions.ShepardParserException;
+import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.unified.SearchScope;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -459,7 +461,13 @@ public class Neo4jEmitterTest {
   public void emitStructuredDataContainerSelectionQueryTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
-    String neo4jQuery = Neo4jEmitter.emitStructuredDataContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.STRUCTUREDDATA,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (sdc:StructuredDataContainer) WHERE (sdc.`name` = \"MyName\") AND (sdc.deleted = FALSE) AND (NOT exists((sdc)-[:has_permissions]->(:Permissions)) OR exists((sdc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"MarxKarl\" })) OR exists((sdc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((sdc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((sdc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"MarxKarl\"})))";
     assertEquals(expected, neo4jQuery);
@@ -469,7 +477,13 @@ public class Neo4jEmitterTest {
   public void emitTimeseriesContainerSelectionQueryTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
-    String neo4jQuery = Neo4jEmitter.emitTimeseriesContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.TIMESERIES,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (tsc:TimeseriesContainer) WHERE (tsc.`name` = \"MyName\") AND (tsc.deleted = FALSE) AND (NOT exists((tsc)-[:has_permissions]->(:Permissions)) OR exists((tsc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"MarxKarl\" })) OR exists((tsc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((tsc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((tsc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"MarxKarl\"})))";
     assertEquals(expected, neo4jQuery);
@@ -479,7 +493,13 @@ public class Neo4jEmitterTest {
   public void emitFileContainerSelectionQueryTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE (fc.`name` = \"MyName\") AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -489,7 +509,13 @@ public class Neo4jEmitterTest {
   public void emitFileContainerSelectionQueryIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE (id(fc)= \"MyName\") AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -499,7 +525,13 @@ public class Neo4jEmitterTest {
   public void emitFileContainerSelectionQueryInTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [1,2], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE (id(fc)IN [1, 2]) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -509,7 +541,13 @@ public class Neo4jEmitterTest {
   public void emitFileContainerSelectionQueryInEmptyTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE (id(fc)IN []) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -519,7 +557,13 @@ public class Neo4jEmitterTest {
   public void emitFileContainerSelectionQueryNotTest() {
     String JSONQuery = "{\"NOT\":{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE (NOT((fc.`name` = \"MyName\"))) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -531,7 +575,13 @@ public class Neo4jEmitterTest {
       "{\"AND\":[{\"property\": \"createdBy\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"updatedBy\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc) - [:created_by] -> (u) WHERE u.username = \"MyName\" }) AND (EXISTS {MATCH (fc) - [:updated_by] -> (u) WHERE u.username = \"MyName\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -543,7 +593,13 @@ public class Neo4jEmitterTest {
       "{\"OR\":[{\"property\": \"valueIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"propertyIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc) - [] -> (sem:SemanticAnnotation) WHERE (sem.valueIRI = \"MyName\")}) OR (EXISTS {MATCH (fc) - [] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI = \"MyName\")})) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -555,7 +611,13 @@ public class Neo4jEmitterTest {
       "{\"OR\":[{\"property\": \"referencedCollectionId\", \"value\": \"5\", \"operator\": \"eq\"}," +
       "{\"property\": \"referencedDataObjectId\", \"value\": \"6\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc)-[:points_to]->(refCol:Collection) WHERE refCol.shepardId = \"5\" }) OR (EXISTS {MATCH (fc)-[:points_to]->(refDo:DataObject) WHERE refDo.shepardId = \"6\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
@@ -568,7 +630,13 @@ public class Neo4jEmitterTest {
       "{\"property\": \"structuredDataContainerId\", \"value\": \"6\", \"operator\": \"eq\"}," +
       "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    String neo4jQuery = Neo4jEmitter.emitFileContainerSelectionQuery(JSONQuery, userName);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.FILE,
+      queryParamHelper,
+      userName
+    );
     String expected =
       "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc)-[:is_in_container]->(refCon:FileContainer) WHERE id(refCon) = \"5\" }) OR (EXISTS {MATCH (fc)-[:is_in_container]->(refCon:StructuredDataContainer) WHERE id(refCon) = \"6\" }) OR (EXISTS {MATCH (fc)-[:is_in_container]->(refCon:TimeseriesContainer) WHERE id(refCon) = \"7\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);

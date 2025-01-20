@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ShepardParserException;
+import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.unified.SearchScope;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.Iterator;
 import java.util.List;
@@ -314,24 +316,6 @@ public class Neo4jEmitter {
     return ret;
   }
 
-  private static String emitFileContainerMatchPart() {
-    String ret = "";
-    ret = ret + "MATCH (" + Constants.FILECONTAINER_IN_QUERY + ":FileContainer)";
-    return ret;
-  }
-
-  private static String emitTimeseriesContainerMatchPart() {
-    String ret = "";
-    ret = ret + "MATCH (" + Constants.TIMESERIESCONTAINER_IN_QUERY + ":TimeseriesContainer)";
-    return ret;
-  }
-
-  private static String emitStructuredDataContainerMatchPart() {
-    String ret = "";
-    ret = ret + "MATCH (" + Constants.STRUCTUREDDATACONTAINER_IN_QUERY + ":StructuredDataContainer)";
-    return ret;
-  }
-
   private static String emitCollectionDataObjectMatchPart() {
     String ret =
       "MATCH (" +
@@ -410,37 +394,29 @@ public class Neo4jEmitter {
     return ret;
   }
 
-  public static String emitFileContainerSelectionQuery(String JSONQuery, String userName) {
-    return emitContainerSelectionQuery(JSONQuery, userName, Constants.FILECONTAINER_IN_QUERY);
-  }
-
-  public static String emitTimeseriesContainerSelectionQuery(String JSONQuery, String userName) {
-    return emitContainerSelectionQuery(JSONQuery, userName, Constants.TIMESERIESCONTAINER_IN_QUERY);
-  }
-
-  public static String emitStructuredDataContainerSelectionQuery(String JSONQuery, String userName) {
-    return emitContainerSelectionQuery(JSONQuery, userName, Constants.STRUCTUREDDATACONTAINER_IN_QUERY);
-  }
-
-  private static String emitContainerSelectionQuery(String JSONQuery, String userName, String containerType) {
-    String ret = "";
-    switch (containerType) {
-      case Constants.STRUCTUREDDATACONTAINER_IN_QUERY:
-        ret = ret + emitStructuredDataContainerMatchPart();
-        break;
-      case Constants.TIMESERIESCONTAINER_IN_QUERY:
-        ret = ret + emitTimeseriesContainerMatchPart();
-        break;
-      case Constants.FILECONTAINER_IN_QUERY:
-        ret = ret + emitFileContainerMatchPart();
-        break;
-    }
+  public static String emitContainerSelectionQuery(
+    String JSONQuery,
+    ContainerType containerType,
+    QueryParamHelper params,
+    String userName
+  ) {
+    String ret = "MATCH (" + containerType.getTypeAlias() + ":" + containerType.getTypeName() + ")";
     ret = ret + " WHERE ";
-    ret = ret + emitNeo4j(JSONQuery, containerType);
+    ret = ret + emitNeo4j(JSONQuery, containerType.getTypeAlias());
     ret = ret + " AND ";
-    ret = ret + emitNotDeletedPart(containerType);
+    ret = ret + emitNotDeletedPart(containerType.getTypeAlias());
     ret = ret + " AND ";
-    ret = ret + CypherQueryHelper.getReadableByQuery(containerType, userName);
+    ret = ret + CypherQueryHelper.getReadableByQuery(containerType.getTypeAlias(), userName);
+    if (params.hasOrderByAttribute()) {
+      ret +=
+        " " +
+        CypherQueryHelper.getOrderByPart(
+          containerType.getTypeAlias(),
+          params.getOrderByAttribute(),
+          params.getOrderDesc()
+        );
+    }
+
     return ret;
   }
 

@@ -3,7 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.dlr.shepard.common.search.container.ContainerQueryType;
+import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.container.ContainerSearchBody;
 import de.dlr.shepard.common.search.container.ContainerSearchParams;
 import de.dlr.shepard.common.search.container.ContainerSearchResult;
@@ -141,7 +141,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
   @Order(1)
   public void test1SearchFileContainers() {
     String query = "{\"property\": \"name\", \"value\": \"container1\", \"operator\": \"eq\"}";
-    ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.FILE);
+    ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.FILE);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
       .spec(searchRequestSpec)
@@ -168,7 +168,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
   @Order(2)
   public void testSearchStructuredDataContainersByContains() {
     String query = "{\"property\": \"name\", \"value\": \"ontainer1\", \"operator\": \"contains\"}";
-    ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.STRUCTUREDDATA);
+    ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.STRUCTUREDDATA);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
       .spec(searchRequestSpec)
@@ -195,7 +195,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
   @Order(2)
   public void testSearchTimeseriesContainersByContains() {
     String query = "{\"property\": \"name\", \"value\": \"ontainer1\", \"operator\": \"contains\"}";
-    ContainerSearchParams params = new ContainerSearchParams(query, ContainerQueryType.TIMESERIES);
+    ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.TIMESERIES);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
       .spec(searchRequestSpec)

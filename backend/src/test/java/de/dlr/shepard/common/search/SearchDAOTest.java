@@ -5,6 +5,8 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.neo4j.entities.BasicContainer;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
@@ -57,36 +59,37 @@ public class SearchDAOTest extends BaseTestCase {
 
   @Test
   public void findFileContainersTest() {
-    var fileContainers = List.of(new FileContainer(1L));
+    List<BasicContainer> fileContainers = List.of(new FileContainer(1L));
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH fc MATCH path=(fc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN fc, nodes(path), relationships(path)";
-    when(session.query(FileContainer.class, query, Collections.emptyMap())).thenReturn(fileContainers);
-    var actual = dao.findFileContainers(selectionQuery, "fc");
+    when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(fileContainers);
+    var actual = dao.findContainers(selectionQuery, queryParamHelper, "fc");
     assertEquals(fileContainers, actual);
   }
 
   @Test
   public void findStructuredDataContainersTest() {
-    var structuredDataContainers = List.of(new StructuredDataContainer(1L));
+    List<BasicContainer> structuredDataContainers = List.of(new StructuredDataContainer(1L));
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH sd MATCH path=(sd)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN sd, nodes(path), relationships(path)";
-    when(session.query(StructuredDataContainer.class, query, Collections.emptyMap())).thenReturn(
-      structuredDataContainers
-    );
-    var actual = dao.findStructuredDataContainers(selectionQuery, "sd");
+    when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(structuredDataContainers);
+    var actual = dao.findContainers(selectionQuery, queryParamHelper, "sd");
     assertEquals(structuredDataContainers, actual);
   }
 
   @Test
   public void findTimeseriesContainersTest() {
-    var timeseriesContainers = List.of(new TimeseriesContainer(1L));
+    List<BasicContainer> timeseriesContainers = List.of(new TimeseriesContainer(1L));
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH ts MATCH path=(ts)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN ts, nodes(path), relationships(path)";
-    when(session.query(TimeseriesContainer.class, query, Collections.emptyMap())).thenReturn(timeseriesContainers);
-    var actual = dao.findTimeseriesContainers(selectionQuery, "ts");
+    when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(timeseriesContainers);
+    var actual = dao.findContainers(selectionQuery, queryParamHelper, "ts");
     assertEquals(timeseriesContainers, actual);
   }
 

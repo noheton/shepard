@@ -1,5 +1,6 @@
 package de.dlr.shepard.common.search;
 
+import de.dlr.shepard.common.search.container.BasicContainerAttributes;
 import de.dlr.shepard.common.search.container.ContainerSearchBody;
 import de.dlr.shepard.common.search.container.ContainerSearchResult;
 import de.dlr.shepard.common.search.container.ContainerSearcher;
@@ -10,6 +11,7 @@ import de.dlr.shepard.common.search.user.UserSearchBody;
 import de.dlr.shepard.common.search.user.UserSearchResult;
 import de.dlr.shepard.common.search.user.UserSearcher;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -18,6 +20,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -25,6 +28,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -81,19 +85,35 @@ public class SearchRest {
     content = @Content(schema = @Schema(implementation = ContainerSearchResult.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
   public Response searchContainers(
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))
-    ) @Valid ContainerSearchBody containerSearchBody
+    ) @Valid ContainerSearchBody containerSearchBody,
+    @QueryParam(Constants.QP_PAGE) Integer page,
+    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicContainerAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
     Log.infof(
-      "Search for containers of type %s with query: %s",
+      "Search for page %d and size %d of containers of type %s ordering by %s with query: %s",
+      page,
+      size,
       containerSearchBody.getSearchParams().getQueryType(),
+      orderBy,
       containerSearchBody.getSearchParams().getQuery()
     );
+
+    var paginationParams = new QueryParamHelper();
+    if (page != null && size != null) paginationParams = paginationParams.withPageAndSize(page, size);
+    if (orderBy != null) paginationParams = paginationParams.withOrderByAttribute(orderBy, orderDesc);
     ContainerSearchResult ret = containerSearcher.search(
       containerSearchBody,
+      paginationParams,
       securityContext.getUserPrincipal().getName()
     );
     return Response.ok(ret).build();

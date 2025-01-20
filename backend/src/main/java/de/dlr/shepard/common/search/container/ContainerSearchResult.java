@@ -12,9 +12,11 @@ import lombok.NoArgsConstructor;
 public class ContainerSearchResult extends ASearchResults<ContainerSearchParams> {
 
   private BasicContainerIO[] results;
+  private Integer totalResults;
 
-  public ContainerSearchResult(BasicContainerIO[] results, ContainerSearchParams searchParams) {
+  public ContainerSearchResult(BasicContainerIO[] results, ContainerSearchParams searchParams, Integer total) {
     super(searchParams);
     this.results = results;
+    this.totalResults = total;
   }
 }

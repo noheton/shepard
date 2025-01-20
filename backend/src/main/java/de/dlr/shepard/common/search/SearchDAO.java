@@ -2,14 +2,13 @@ package de.dlr.shepard.common.search;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
+import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
-import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,36 +46,18 @@ public class SearchDAO {
     return ret;
   }
 
-  public List<FileContainer> findFileContainers(String selectionQuery, String containerVariable) {
-    String query = selectionQuery + emitContainerReturnPart(containerVariable);
-    Iterable<FileContainer> fileContainers = session.query(FileContainer.class, query, Collections.emptyMap());
-    List<FileContainer> ret = new ArrayList<>();
-    fileContainers.forEach(ret::add);
+  public List<BasicContainer> findContainers(String selectionQuery, QueryParamHelper params, String containerVariable) {
+    String query = selectionQuery + emitContainerReturnPart(containerVariable, params);
+    Iterable<BasicContainer> basicContainers = session.query(BasicContainer.class, query, Collections.emptyMap());
+    List<BasicContainer> ret = new ArrayList<>();
+    basicContainers.forEach(ret::add);
     return ret;
   }
 
-  public List<StructuredDataContainer> findStructuredDataContainers(String selectionQuery, String containerVariable) {
-    String query = selectionQuery + emitContainerReturnPart(containerVariable);
-    Iterable<StructuredDataContainer> structuredDataContainers = session.query(
-      StructuredDataContainer.class,
-      query,
-      Collections.emptyMap()
-    );
-    List<StructuredDataContainer> ret = new ArrayList<>();
-    structuredDataContainers.forEach(ret::add);
-    return ret;
-  }
-
-  public List<TimeseriesContainer> findTimeseriesContainers(String selectionQuery, String containerVariable) {
-    String query = selectionQuery + emitContainerReturnPart(containerVariable);
-    Iterable<TimeseriesContainer> timeseriesContainers = session.query(
-      TimeseriesContainer.class,
-      query,
-      Collections.emptyMap()
-    );
-    List<TimeseriesContainer> ret = new ArrayList<>();
-    timeseriesContainers.forEach(ret::add);
-    return ret;
+  public Integer getContainerTotalCount(String selectionQuery, QueryParamHelper params, String containerVariable) {
+    String query = selectionQuery + emitTotalCountReturnPart(containerVariable);
+    Iterable<Integer> containerTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
+    return containerTotalCountIterable.iterator().next();
   }
 
   public List<User> findUsers(String selectionQuery, String userVariable) {
@@ -87,9 +68,21 @@ public class SearchDAO {
     return ret;
   }
 
-  private String emitContainerReturnPart(String containerVariable) {
+  private String emitTotalCountReturnPart(String containerVariable) {
     return (
-      " WITH " + containerVariable + " " + CypherQueryHelper.getReturnPart(containerVariable, Neighborhood.ESSENTIAL)
+      " WITH " +
+      containerVariable +
+      " " +
+      CypherQueryHelper.getReturnCountPart(containerVariable, Neighborhood.ESSENTIAL)
+    );
+  }
+
+  private String emitContainerReturnPart(String containerVariable, QueryParamHelper params) {
+    return (
+      " WITH " +
+      containerVariable +
+      " " +
+      CypherQueryHelper.getReturnPart(containerVariable, Neighborhood.ESSENTIAL, params)
     );
   }
 

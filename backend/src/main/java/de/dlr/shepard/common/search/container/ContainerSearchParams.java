@@ -1,5 +1,6 @@
 package de.dlr.shepard.common.search.container;
 
+import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.ASearchParams;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -14,9 +15,9 @@ public class ContainerSearchParams extends ASearchParams {
 
   @Valid
   @NotNull
-  private ContainerQueryType queryType;
+  private ContainerType queryType;
 
-  public ContainerSearchParams(String query, ContainerQueryType queryType) {
+  public ContainerSearchParams(String query, ContainerType queryType) {
     super(query);
     this.queryType = queryType;
   }

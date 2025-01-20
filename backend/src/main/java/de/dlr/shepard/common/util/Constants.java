@@ -133,6 +133,7 @@ public class Constants {
   public static final String FILECONTAINER_IN_QUERY = "fc";
   public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
   public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
+  public static final String BASICCONTAINER_IN_QUERY = "bc";
   public static final String USER_IN_QUERY = "user";
 
   // Relationships
