@@ -57,7 +57,6 @@ const headers = [
     items-per-page="-1"
     :items="tableItems"
     :headers="headers"
-    hide-default-footer
   >
     <template
       #[`item.relationship`]="{
@@ -90,6 +89,9 @@ const headers = [
         :created-by="value.createdBy"
       />
     </template>
+    <template #bottom>
+      <div class="bottom-border" />
+    </template>
   </CommonDataTable>
 </template>
 
@@ -97,6 +99,14 @@ const headers = [
 .v-table {
   :deep(tbody) > tr > td:first-of-type {
     background-color: rgb(var(--v-theme-divider2));
+  }
+}
+
+.v-table {
+  :deep(.bottom-border) {
+    transition: inherit;
+    border-bottom: thin solid
+      rgba(var(--v-border-color), var(--v-border-opacity));
   }
 }
 </style>
