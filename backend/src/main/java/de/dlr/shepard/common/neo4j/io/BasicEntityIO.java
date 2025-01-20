@@ -7,6 +7,7 @@ import de.dlr.shepard.context.version.entities.VersionableEntity;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -74,5 +75,29 @@ public class BasicEntityIO implements HasId {
   @Override
   public String getUniqueId() {
     return id.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null) return false;
+    if (this.getClass() != o.getClass()) return false;
+    BasicEntityIO other = (BasicEntityIO) o;
+    return (
+      Objects.equals(id, other.id) &&
+      Objects.equals(createdAt, other.createdAt) &&
+      Objects.equals(createdBy, other.createdBy) &&
+      Objects.equals(updatedAt, other.updatedAt) &&
+      Objects.equals(updatedBy, other.updatedBy) &&
+      Objects.equals(name, other.name)
+    );
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 0;
+    result = prime * result + Objects.hash(id, createdAt, createdBy, updatedAt, updatedBy, name);
+    return result;
   }
 }

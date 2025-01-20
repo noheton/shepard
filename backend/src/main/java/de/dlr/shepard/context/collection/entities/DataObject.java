@@ -95,27 +95,6 @@ public class DataObject extends AbstractDataObject {
     if (!super.equals(obj)) return false;
     if (!(obj instanceof DataObject)) return false;
     DataObject other = (DataObject) obj;
-    System.out.println("testing further");
-    System.out.println(
-      "HasId.equalsHelper(collection, other.collection): " + HasId.equalsHelper(collection, other.collection)
-    );
-    System.out.println(
-      "HasId.equalsHelper(references, other.references): " + HasId.areEqualSetsByUniqueId(references, other.references)
-    );
-    System.out.println(
-      "HasId.equalsHelper(predecessors, other.predecessors): " +
-      HasId.areEqualSetsByUniqueId(predecessors, other.predecessors)
-    );
-    System.out.println(
-      "HasId.equalsHelper(successors, other.successors): " + HasId.areEqualSetsByUniqueId(successors, other.successors)
-    );
-    System.out.println("HasId.equalsHelper(parent, other.parent): " + HasId.equalsHelper(parent, other.parent));
-    System.out.println(
-      "HasId.equalsHelper(children, other.children): " + HasId.areEqualSetsByUniqueId(children, other.children)
-    );
-    System.out.println(
-      "HasId.equalsHelper(incoming, other.incoming): " + HasId.areEqualSetsByUniqueId(incoming, other.incoming)
-    );
     return (
       HasId.equalsHelper(collection, other.collection) &&
       HasId.areEqualSetsByUniqueId(references, other.references) &&

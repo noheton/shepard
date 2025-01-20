@@ -3,6 +3,7 @@ package de.dlr.shepard.common.util;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 @FunctionalInterface
 public interface HasId {
@@ -40,6 +41,26 @@ public interface HasId {
     }
     if ((hasNullA && !hasNullB) || (!hasNullA && hasNullB)) return false;
     return IdSetA.equals(IdSetB);
+  }
+
+  static boolean areEqualSets(long[] firstArray, long[] secondArray) {
+    if (firstArray == null && secondArray == null) return true;
+    if (firstArray == null || secondArray == null) return false;
+    HashSet<Long> firstArraySet = new HashSet<Long>();
+    HashSet<Long> secondArraySet = new HashSet<Long>();
+    for (int i = 0; i < firstArray.length; i++) firstArraySet.add(firstArray[i]);
+    for (int i = 0; i < secondArray.length; i++) secondArraySet.add(secondArray[i]);
+    return firstArraySet.equals(secondArraySet);
+  }
+
+  static boolean areEqualSets(String[] firstArray, String[] secondArray) {
+    if (firstArray == null && secondArray == null) return true;
+    if (firstArray == null || secondArray == null) return false;
+    HashSet<String> firstArraySet = new HashSet<String>();
+    HashSet<String> secondArraySet = new HashSet<String>();
+    for (int i = 0; i < firstArray.length; i++) firstArraySet.add(firstArray[i]);
+    for (int i = 0; i < secondArray.length; i++) secondArraySet.add(secondArray[i]);
+    return firstArraySet.equals(secondArraySet);
   }
 
   /**
@@ -83,5 +104,19 @@ public interface HasId {
   static int hashcodeHelper(HasId a) {
     if (a == null) return 0;
     return a.getUniqueId().hashCode();
+  }
+
+  static int hashcodeHelper(long[] array) {
+    if (array == null) return Objects.hash(array);
+    HashSet<Long> arrayAsHashSet = new HashSet<Long>();
+    for (int i = 0; i < array.length; i++) arrayAsHashSet.add(array[i]);
+    return arrayAsHashSet.hashCode();
+  }
+
+  static int hashcodeHelper(String[] array) {
+    if (array == null) return Objects.hash(array);
+    HashSet<String> arrayAsHashSet = new HashSet<String>();
+    for (int i = 0; i < array.length; i++) arrayAsHashSet.add(array[i]);
+    return arrayAsHashSet.hashCode();
   }
 }

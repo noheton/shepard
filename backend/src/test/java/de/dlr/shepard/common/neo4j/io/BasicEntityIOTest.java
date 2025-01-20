@@ -12,6 +12,7 @@ import de.dlr.shepard.context.version.entities.VersionableEntity;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.Date;
 import java.util.List;
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 public class BasicEntityIOTest {
@@ -29,6 +30,11 @@ public class BasicEntityIOTest {
     public EntityIO(VersionableEntity entity) {
       super(entity);
     }
+  }
+
+  @Test
+  public void equalsContract() {
+    EqualsVerifier.simple().forClass(BasicEntityIO.class).verify();
   }
 
   @Test

@@ -2,7 +2,6 @@ package de.dlr.shepard.auth.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.dlr.shepard.auth.security.JWTPrincipal;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 

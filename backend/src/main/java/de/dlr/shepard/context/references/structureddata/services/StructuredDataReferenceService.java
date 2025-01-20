@@ -12,7 +12,6 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.structureddata.daos.StructuredDataReferenceDAO;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
-import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
@@ -34,7 +33,6 @@ public class StructuredDataReferenceService
   private StructuredDataContainerDAO containerDAO;
   private StructuredDataDAO structuredDataDAO;
   private UserDAO userDAO;
-  private VersionDAO versionDAO;
   private VersionService versionService;
   private DateHelper dateHelper;
   private StructuredDataService structuredDataService;
@@ -50,7 +48,6 @@ public class StructuredDataReferenceService
     VersionService versionService,
     StructuredDataDAO structuredDataDAO,
     UserDAO userDAO,
-    VersionDAO versionDAO,
     DateHelper dateHelper,
     StructuredDataService structuredDataService,
     PermissionsUtil permissionsUtil
@@ -60,7 +57,6 @@ public class StructuredDataReferenceService
     this.containerDAO = containerDAO;
     this.structuredDataDAO = structuredDataDAO;
     this.userDAO = userDAO;
-    this.versionDAO = versionDAO;
     this.dateHelper = dateHelper;
     this.versionService = versionService;
     this.structuredDataService = structuredDataService;

@@ -896,7 +896,6 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(31)
   public void deleteFirstVersionizedDataObject() {
-    System.out.println("starting test 31");
     given()
       .spec(versioningRequestSpecification)
       .when()

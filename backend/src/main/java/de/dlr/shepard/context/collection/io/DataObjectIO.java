@@ -1,14 +1,14 @@
 package de.dlr.shepard.context.collection.io;
 
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
+import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import java.util.Objects;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(name = "DataObject")
 public class DataObjectIO extends AbstractDataObjectIO {
@@ -42,5 +42,37 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.childrenIds = extractShepardIds(dataObject.getChildren());
     this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
     this.incomingIds = extractShepardIds(dataObject.getIncoming());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!super.equals(o)) return false;
+    if (!(o instanceof DataObjectIO)) return false;
+    DataObjectIO other = (DataObjectIO) o;
+    return (
+      collectionId == other.collectionId &&
+      HasId.areEqualSets(referenceIds, other.referenceIds) &&
+      HasId.areEqualSets(successorIds, other.successorIds) &&
+      HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
+      HasId.areEqualSets(childrenIds, other.childrenIds) &&
+      Objects.equals(parentId, other.parentId) &&
+      HasId.areEqualSets(incomingIds, other.incomingIds)
+    );
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = super.hashCode();
+    result = prime * result + ((Long) collectionId).hashCode();
+    result = prime * result + HasId.hashcodeHelper(referenceIds);
+    result = prime * result + HasId.hashcodeHelper(successorIds);
+    result = prime * result + HasId.hashcodeHelper(childrenIds);
+    result = prime * result + HasId.hashcodeHelper(incomingIds);
+    result = prime * result + HasId.hashcodeHelper(predecessorIds);
+    result = prime * result + Objects.hashCode(parentId);
+
+    return result;
   }
 }

@@ -5,7 +5,6 @@ import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
-import de.dlr.shepard.context.version.entities.Version;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
