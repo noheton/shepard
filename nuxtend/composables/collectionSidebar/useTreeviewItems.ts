@@ -16,9 +16,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
         // initial load of dataobject from a collection - no parents possible
-        treeviewItems.value = response.map(item =>
-          mapToTreeviewItem(item, undefined),
-        );
+        treeviewItems.value = response.map(item => mapToTreeviewItem(item));
       })
       .catch(error => {
         handleError(error, "getAllDataObjects");
@@ -114,12 +112,11 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     }
     if (item.children?.length) return;
 
-    const children = (
-      await createApiInstance(DataObjectApi).getAllDataObjects({
-        parentId: item.id,
-        collectionId: routeParams.value.collectionId,
-      })
-    ).map(dataObject => mapToTreeviewItem(dataObject, item));
+    const children = await fetchChildrenOfItem(
+      routeParams.value.collectionId,
+      item.id,
+      item,
+    );
 
     item.children = children;
     item.childrenIds = children.map(c => c.id);
@@ -175,6 +172,10 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
    * @param itemId Id of the item to delete
    */
   async function deleteItem(itemId: number) {
+    const childrenOfDeletedItem = await fetchChildrenOfItem(
+      routeParams.value.collectionId,
+      itemId,
+    );
     const deletionSuccessful = await createApiInstance(DataObjectApi)
       .deleteDataObject({
         collectionId: routeParams.value.collectionId,
@@ -187,14 +188,17 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       });
     if (!deletionSuccessful) return;
 
-    removeItemFromTree(itemId);
+    await removeItemFromTree(itemId, childrenOfDeletedItem);
 
     if (routeParams.value.dataObjectId === itemId) {
       router.push(collectionsPath + routeParams.value.collectionId);
     }
   }
 
-  function removeItemFromTree(itemId: number) {
+  function removeItemFromTree(
+    itemId: number,
+    childrenOfDeletedItem: TreeviewItem[],
+  ) {
     const deletedItemWithPath = getItemIfLoaded(itemId);
 
     // This should not happen as the item needs to be loaded for the delete button to be rendered
@@ -203,9 +207,13 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     const { item } = deletedItemWithPath;
 
     // Move orphaned children to top level
-    if (item.children) {
-      treeviewItems.value?.push(...item.children);
-    }
+    treeviewItems.value?.push(
+      ...childrenOfDeletedItem.map(child => ({
+        ...child,
+        parent: undefined,
+        parentId: undefined,
+      })),
+    );
 
     const parent = item.parent;
 
@@ -246,4 +254,17 @@ export async function fetchTreeviewItem(
     }),
     parentItem,
   );
+}
+
+export async function fetchChildrenOfItem(
+  collectionId: number,
+  parentId: number,
+  parentItem?: TreeviewItem,
+): Promise<TreeviewItem[]> {
+  return (
+    await createApiInstance(DataObjectApi).getAllDataObjects({
+      parentId,
+      collectionId,
+    })
+  ).map(item => mapToTreeviewItem(item, parentItem));
 }

@@ -9,9 +9,13 @@ export interface TreeviewItem {
   parentId: number | undefined;
 }
 
+/**
+ * @param dataObject The data object to be mapped
+ * @param parentItem If present and the id matches dataObject.parentId the item will be attached as parent
+ */
 export function mapToTreeviewItem(
   dataObject: DataObject,
-  parentItem: TreeviewItem | undefined,
+  parentItem?: TreeviewItem,
 ): TreeviewItem {
   return {
     id: dataObject.id,
