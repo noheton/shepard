@@ -117,22 +117,23 @@ const editDataObjectId = ref(0);
 .treeview {
   background-color: rgb(var(--v-theme-treeview));
 }
+.bg-treeview {
+  :deep(.treeview-active) {
+    background-color: rgb(var(--v-theme-focus1));
+  }
 
-.treeview-active {
-  background-color: rgb(var(--v-theme-focus1));
-}
+  /* Remove gray-dark overlay from treeview items */
+  :deep(.v-list-item--active) > .v-list-item__overlay {
+    visibility: hidden;
+  }
 
-/* Remove gray-dark overlay from treeview items */
-.v-list-item--active > .v-list-item__overlay {
-  visibility: hidden;
-}
+  :deep(.v-list-item--density-compact.v-list-item--one-line) {
+    min-height: unset;
+  }
 
-.v-list-item--density-compact.v-list-item--one-line {
-  min-height: unset;
-}
-
-.v-list-item {
-  padding-top: 0;
-  padding-bottom: 0;
+  :deep(.v-list-item) {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }
 </style>
