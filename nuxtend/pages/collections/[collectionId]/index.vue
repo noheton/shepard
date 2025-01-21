@@ -49,6 +49,9 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(
                   :count="Object.keys(collection.attributes ?? {}).length"
                 >
                   <EntityAttributes :entity="collection" />
+                  <template #append>
+                    <EntityAttributesEditDialog :entity="collection" />
+                  </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
                   title="Lab Journal"

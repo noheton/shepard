@@ -24,6 +24,10 @@ defineProps<{ title: string; count?: number }>();
       >
         ({{ count }})
       </div>
+      <div>
+        <!-- Todo: Styling -->
+        <slot name="append" />
+      </div>
     </v-expansion-panel-title>
     <v-expansion-panel-text class="no-padding-bottom">
       <slot />
