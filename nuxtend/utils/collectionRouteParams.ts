@@ -1,49 +1,4 @@
-import type { RouteParamsGeneric } from "#vue-router";
-import type { DataObject } from "@dlr-shepard/backend-client";
-
-export interface TreeviewItem {
-  id: number;
-  title: string;
-  children: TreeviewItem[] | undefined;
-  childrenIds: number[] | undefined;
-  parent: TreeviewItem | undefined;
-  parentId: number | undefined;
-}
-
-export function isTreeviewItem(
-  treeviewItem: unknown,
-): treeviewItem is TreeviewItem {
-  const item = treeviewItem as TreeviewItem;
-  return item.id !== undefined && item.title !== undefined;
-}
-
-export function mapToTreeviewItem(
-  dataObject: DataObject,
-  parentItem: TreeviewItem | undefined,
-): TreeviewItem {
-  return {
-    id: dataObject.id ?? 0,
-    title: dataObject.name ?? "",
-    childrenIds: dataObject.childrenIds,
-    children: dataObject.childrenIds?.length
-      ? ([] as TreeviewItem[])
-      : undefined,
-    parent: parentItem,
-    parentId: dataObject.parentId ?? undefined,
-  };
-}
-
-/**
- * Map multiple child dataobjects to Treeview items with a single parent
- */
-export function mapToTreeviewItems(
-  dataObjects: DataObject[],
-  parentItem: TreeviewItem | undefined,
-): TreeviewItem[] {
-  return dataObjects.map(dataObject =>
-    mapToTreeviewItem(dataObject, parentItem),
-  );
-}
+import type { RouteParamsGeneric } from "vue-router";
 
 export interface CollectionRouteParams {
   collectionId: number;
@@ -62,7 +17,8 @@ export const isCollectionRouteParams = (
  * @param routeParams - RouteParamsGeneric
  * @returns Returns `undefined` if the collectionId was not present in the route params, else returns an instance of `CollectionRouteParams`
  */
-export function getCollectionRouterParamsFromRoute(
+
+export function parseCollectionRouteParams(
   routeParams: RouteParamsGeneric,
 ): Partial<CollectionRouteParams> {
   return {

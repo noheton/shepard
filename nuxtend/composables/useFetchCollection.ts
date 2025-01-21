@@ -1,6 +1,6 @@
 import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
 import { CollectionApi } from "@dlr-shepard/backend-client";
-import type { CollectionRouteParams } from "~/components/collection/collectionUtils";
+import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 
 export function useFetchCollection(collectionId?: number) {
   const collection = ref<Collection | undefined>(undefined);

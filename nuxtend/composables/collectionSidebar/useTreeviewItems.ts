@@ -1,11 +1,9 @@
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import {
   mapToTreeviewItem,
-  mapToTreeviewItems,
-  type CollectionRouteParams,
   type TreeviewItem,
-} from "~/components/collection/collectionUtils";
-import { useOpenedItems } from "./useOpenedItems";
+} from "~/composables/collectionSidebar/treeviewItem";
+import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const router = useRouter();
@@ -18,7 +16,9 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
         // initial load of dataobject from a collection - no parents possible
-        treeviewItems.value = mapToTreeviewItems(response, undefined);
+        treeviewItems.value = response.map(item =>
+          mapToTreeviewItem(item, undefined),
+        );
       })
       .catch(error => {
         handleError(error, "getAllDataObjects");
@@ -109,13 +109,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     }
     if (item.children?.length) return;
 
-    const children = mapToTreeviewItems(
+    const children = (
       await createApiInstance(DataObjectApi).getAllDataObjects({
         parentId: item.id,
         collectionId: routeParams.value.collectionId,
-      }),
-      item,
-    );
+      })
+    ).map(dataObject => mapToTreeviewItem(dataObject, item));
 
     item.children = children;
     item.childrenIds = children.map(c => c.id);

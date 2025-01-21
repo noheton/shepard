@@ -2,11 +2,15 @@ export function useOpenedItems() {
   const openedTreeviewItems = ref<number[]>([]);
 
   function addOpen(toBeOpened: number[]) {
-    const diffIdList = toBeOpened.filter(
-      pId => !openedTreeviewItems.value.some(oId => oId === pId),
-    );
-    openedTreeviewItems.value.push(...diffIdList);
+    openedTreeviewItems.value = uniqueNumbersOf([
+      ...openedTreeviewItems.value,
+      ...toBeOpened,
+    ]);
   }
 
   return { openedTreeviewItems, addOpen };
+}
+
+function uniqueNumbersOf(array: number[]): number[] {
+  return [...new Set(array)];
 }

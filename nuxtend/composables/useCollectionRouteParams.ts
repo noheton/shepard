@@ -1,13 +1,13 @@
 import {
-  getCollectionRouterParamsFromRoute,
   isCollectionRouteParams,
+  parseCollectionRouteParams,
   type CollectionRouteParams,
-} from "~/components/collection/collectionUtils";
+} from "~/utils/collectionRouteParams";
 
 export function useCollectionRouteParams() {
   const router = useRouter();
   const initialRoute = router.currentRoute.value;
-  const initialParams = getCollectionRouterParamsFromRoute(initialRoute.params);
+  const initialParams = parseCollectionRouteParams(initialRoute.params);
 
   if (!isCollectionRouteParams(initialParams)) {
     router.replace(collectionsPath);
@@ -22,7 +22,7 @@ export function useCollectionRouteParams() {
   watch(
     () => route.params,
     () => {
-      const newParams = getCollectionRouterParamsFromRoute(route.params);
+      const newParams = parseCollectionRouteParams(route.params);
       if (!isCollectionRouteParams(newParams)) {
         router.replace(collectionsPath);
         return;

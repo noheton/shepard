@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CollectionRouteParams } from "~/components/collection/collectionUtils";
+import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 import {
   collectionsPath,
   dataObjectsPathFragment,
