@@ -8,10 +8,10 @@ import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const router = useRouter();
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
+  const loading = ref<boolean>(true);
   const { openedTreeviewItems, addOpen } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
-    if (!collectionId) return;
     createApiInstance(DataObjectApi)
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
@@ -25,15 +25,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       });
   }
 
-  fetchTreeviewItems(routeParams.value.collectionId);
-
   async function expandAndLoadItem(itemId: number) {
     const itemWithPath = getItemIfLoaded(itemId);
     if (itemWithPath) {
       addOpen(itemWithPath.pathFromRoot);
       return;
     }
-
     const parentIds = await getPathToActiveItem(
       routeParams.value.collectionId,
       itemId,
@@ -44,21 +41,29 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     addOpen(parentIds);
   }
 
-  if (routeParams.value.dataObjectId) {
-    expandAndLoadItem(routeParams.value.dataObjectId);
+  async function initialLoad() {
+    loading.value = true;
+    await fetchTreeviewItems(routeParams.value.collectionId);
+    if (routeParams.value.dataObjectId) {
+      await expandAndLoadItem(routeParams.value.dataObjectId);
+    }
+    loading.value = false;
   }
 
-  watch(routeParams, (_, oldParams) => {
+  initialLoad();
+
+  watch(routeParams, async (_, oldParams) => {
+    loading.value = true;
     if (
       routeParams.value.collectionId &&
       oldParams.collectionId !== routeParams.value.collectionId
     ) {
-      fetchTreeviewItems(routeParams.value.collectionId);
+      await fetchTreeviewItems(routeParams.value.collectionId);
     }
-
     if (routeParams.value.dataObjectId) {
-      expandAndLoadItem(routeParams.value.dataObjectId);
+      await expandAndLoadItem(routeParams.value.dataObjectId);
     }
+    loading.value = false;
   });
 
   /**
@@ -223,6 +228,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   return {
     treeviewItems,
     openedTreeviewItems,
+    loading,
     loadChildrenOfItem,
     deleteItem,
   };

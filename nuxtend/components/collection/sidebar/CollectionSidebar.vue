@@ -2,8 +2,13 @@
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
 const { collection } = useFetchCollectionOfRouteParams(routeParams);
-const { treeviewItems, openedTreeviewItems, loadChildrenOfItem, deleteItem } =
-  useTreeviewItems(routeParams);
+const {
+  treeviewItems,
+  openedTreeviewItems,
+  loading,
+  loadChildrenOfItem,
+  deleteItem,
+} = useTreeviewItems(routeParams);
 
 async function onOpenClicked(expandGroup: {
   id: unknown;
@@ -57,7 +62,7 @@ const editDataObjectId = ref(0);
       <div class="text-body-2 text-uppercase">Contents</div>
     </div>
     <v-treeview
-      v-if="!!treeviewItems"
+      v-if="!loading && !!treeviewItems"
       v-model:opened="openedTreeviewItems"
       :items="treeviewItems"
       class="treeview"
