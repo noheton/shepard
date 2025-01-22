@@ -81,6 +81,7 @@ public class VersionService {
     newVersion.setCreatedBy(user);
     newVersion.setDescription(version.getDescription());
     newVersion.setName(version.getName());
+    newVersion.setHEADVersion(false);
     if (HEADVersion.getPredecessor() != null) {
       newVersion.setPredecessor(HEADVersion.getPredecessor());
     }

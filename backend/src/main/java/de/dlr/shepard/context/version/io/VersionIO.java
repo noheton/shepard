@@ -20,6 +20,8 @@ public class VersionIO {
 
   private String description;
 
+  private boolean isHEADVersion;
+
   @JsonFormat(shape = JsonFormat.Shape.STRING)
   @Schema(readOnly = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
@@ -33,6 +35,7 @@ public class VersionIO {
   public VersionIO(Version version) {
     this.uid = version.getUid();
     this.name = version.getName();
+    this.isHEADVersion = version.isHEADVersion();
     this.description = version.getDescription();
     this.createdAt = version.getCreatedAt();
     this.createdBy = version.getCreatedBy().getUsername();

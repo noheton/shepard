@@ -32,6 +32,8 @@ public class Version implements HasId {
 
   private String description;
 
+  private boolean isHEADVersion;
+
   @DateLong
   private Date createdAt;
 
@@ -64,6 +66,7 @@ public class Version implements HasId {
     this.description = description;
     this.createdAt = createdAt;
     this.createdBy = createdBy;
+    this.isHEADVersion = true;
   }
 
   /**
@@ -84,7 +87,7 @@ public class Version implements HasId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(createdAt, uid, name, description);
+    result = prime * result + Objects.hash(createdAt, uid, name, description, isHEADVersion);
     result = prime * result + HasId.hashcodeHelper(createdBy);
     result = prime * result + HasId.hashcodeHelper(predecessor);
     return result;
@@ -97,6 +100,7 @@ public class Version implements HasId {
     Version other = (Version) obj;
     return (
       Objects.equals(createdAt, other.createdAt) &&
+      Objects.equals(isHEADVersion, other.isHEADVersion) &&
       HasId.equalsHelper(createdBy, other.createdBy) &&
       Objects.equals(description, other.description) &&
       Objects.equals(uid, other.uid) &&

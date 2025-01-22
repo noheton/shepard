@@ -144,7 +144,7 @@ public class CypherQueryHelper {
 
   public static String getVersionHeadPart(String variable) {
     if (VersioningFeatureToggle.isEnabled()) {
-      return "(NOT exists ((" + variable + ")<-[:has_predecessor]-(:Version)))";
+      return "(" + variable + ".isHEADVersion = true)";
     }
     return "(1=1)";
   }
