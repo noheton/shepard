@@ -5,6 +5,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
+import org.influxdb.InfluxDBException;
 
 @RequestScoped
 class PayloadReader implements Callable<Object> {
@@ -56,8 +57,9 @@ class PayloadReader implements Callable<Object> {
       for (int i = 0; i < migrationService.numberOfSaverThreads; i++) {
         migrationService.getPayloadWriteQueue().put(payloadWriteTaskPoisonPill);
       }
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | InfluxDBException e) {
       // Cancel the task
+      Log.errorf("Error while loading payloads from influx.", e.getMessage());
       Thread.currentThread().interrupt();
     }
     return "PayloadReader Done!";
