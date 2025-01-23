@@ -170,12 +170,7 @@ public class InfluxDBConnector implements IConnector {
     Log.debugf("Influx Query: %s", query.getCommand());
     QueryResult queryResult;
 
-    try {
-      queryResult = influxDB.query(query);
-    } catch (InfluxDBException e) {
-      queryResult = null;
-      Log.errorf("Could not parse query: %s", query.getCommand());
-    }
+    queryResult = influxDB.query(query);
     if (InfluxUtil.isQueryResultValid(queryResult)) {
       return InfluxUtil.extractPayload(queryResult, timeseries);
     }
