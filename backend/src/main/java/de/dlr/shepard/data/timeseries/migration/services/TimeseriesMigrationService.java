@@ -159,6 +159,7 @@ public class TimeseriesMigrationService {
   }
 
   @Transactional(value = TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
   protected void deleteMigrationTaskAndTimeseries(int migrationTaskId, long containerId) {
     timeseriesService.deleteTimeseriesByContainerId(containerId);
     migrationTaskRepository.deleteById(migrationTaskId);
