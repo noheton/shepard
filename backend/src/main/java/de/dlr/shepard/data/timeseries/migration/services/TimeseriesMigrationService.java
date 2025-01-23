@@ -127,7 +127,7 @@ public class TimeseriesMigrationService {
   }
 
   public void runMigrations() {
-    deleteFailedMigrations();
+    deleteNotFinishedMigrations();
 
     createMigrationTaskForEachContainer();
     var tasks = getPlannedMigrationTasks();
@@ -144,14 +144,15 @@ public class TimeseriesMigrationService {
     compressAllDataPoints();
   }
 
-  private void deleteFailedMigrations() {
-    var tasksWithErrors = getMigrationTasks(true);
-    if (tasksWithErrors.size() > 0) {
+  private void deleteNotFinishedMigrations() {
+    var tasksNotFinished = migrationTaskRepository.find("state <> 'Finished'").list();
+
+    if (tasksNotFinished.size() > 0) {
       Log.infof(
-        "There are %d migration tasks that have an error. The migration process is repeated.",
-        tasksWithErrors.size()
+        "There are %d migration tasks that are not finished yet. The migration process is repeated.",
+        tasksNotFinished.size()
       );
-      for (var task : tasksWithErrors) {
+      for (var task : tasksNotFinished) {
         Log.infof("Timeseries for container %s will be deleted now.", task.getContainerId());
         deleteMigrationTaskAndTimeseries(task.getId(), task.getContainerId());
       }
