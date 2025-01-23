@@ -36,11 +36,11 @@ class PayloadWriter implements Callable<Object> {
       while (true) {
         PayloadWriteTask task = queue.take();
         if (task.isLastTask) break;
-        Log.debugf(
+        Log.infof(
           "started PayloadWriteTask: %s for container %s, of %s points",
           task.taskId,
           task.container.getId(),
-          task.payload.getPoints().size() + ""
+          task.payload.getPoints().size()
         );
         saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
       }
