@@ -145,14 +145,15 @@ public class TimeseriesMigrationService {
   }
 
   private void deleteNotFinishedMigrations() {
-    var tasksNotFinished = migrationTaskRepository.find("state <> 'Finished'").list();
+    var tasksToDelete = migrationTaskRepository.find("state <> 'Finished'").list();
+    tasksToDelete.addAll(getMigrationTasks(true));
 
-    if (tasksNotFinished.size() > 0) {
+    if (tasksToDelete.size() > 0) {
       Log.infof(
         "There are %d migration tasks that are not finished yet. The migration process is repeated.",
-        tasksNotFinished.size()
+        tasksToDelete.size()
       );
-      for (var task : tasksNotFinished) {
+      for (var task : tasksToDelete) {
         Log.infof("Timeseries for container %s will be deleted now.", task.getContainerId());
         deleteMigrationTaskAndTimeseries(task.getId(), task.getContainerId());
       }
