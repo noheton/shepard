@@ -1,41 +1,39 @@
 <script setup lang="ts">
-import { CollectionApi, type Collection } from "@dlr-shepard/backend-client";
+import {
+  CollectionApi,
+  type Collection,
+  type UpdateCollectionRequest,
+} from "@dlr-shepard/backend-client";
 
 const dialog = ref<boolean>(false);
 
 interface EntityAttributesEditDialogProps {
-  entity: Collection;
+  collection: Collection;
 }
 
 const props = defineProps<EntityAttributesEditDialogProps>();
 
-function mapAttributes() {
-  if (!props.entity.attributes) return;
-  const keys = Object.keys(props.entity.attributes);
-  const attributesMapped = new Map<string, string>();
-  keys.forEach(key => {
-    if (!props.entity.attributes) return;
-    attributesMapped.set(key, props.entity.attributes[key] ?? "");
-  });
-  return attributesMapped;
-}
+const updatedCollection = ref<
+  UpdateCollectionRequest["collection"] & {
+    attributes: { [key: string]: string };
+  }
+>({
+  name: props.collection.name,
+  attributes: props.collection.attributes ?? {},
+});
 
-const mappedAttributes = ref(mapAttributes());
-
-function addAttribute() {
-  if (!mappedAttributes.value) return;
-  mappedAttributes.value.set("", "");
+function deleteAttribute(index: string) {
+  const { [index]: removed, ...newAttributes } =
+    updatedCollection.value.attributes;
+  updatedCollection.value.attributes = newAttributes;
 }
 
 async function saveChanges() {
   //Todo: Proper handling of request
   createApiInstance(CollectionApi)
     .updateCollection({
-      collectionId: props.entity.id,
-      collection: {
-        ...mappedAttributes.value,
-        ...props.entity,
-      },
+      collectionId: props.collection.id,
+      collection: updatedCollection.value,
     })
     .then()
     .catch(error => error);
@@ -59,14 +57,18 @@ async function saveChanges() {
     </template>
     <v-card class="pa-0 bg-canvas" title="Add / Edit Attributes">
       <v-card-text>
-        <div v-for="(attribute, index) in mappedAttributes" :key="index">
-          <v-row :key="index">
+        <div
+          v-for="(attribute, index) in updatedCollection.attributes"
+          :key="index"
+        >
+          <v-row>
             <v-col>
               <!-- Todo: Add v-models to textfield with key-value pair -->
               <v-text-field label="Key" variant="outlined" density="compact" />
             </v-col>
             <v-col>
               <v-text-field
+                v-model="updatedCollection.attributes[index]"
                 label="Value"
                 variant="outlined"
                 density="compact"
@@ -77,7 +79,7 @@ async function saveChanges() {
                 class="text-textbody1 text-body-1"
                 icon="mdi-delete-outline"
                 color="canvas"
-                @click="addAttribute"
+                @click="deleteAttribute(index.toString())"
               />
             </v-col>
           </v-row>

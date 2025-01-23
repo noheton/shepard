@@ -50,7 +50,7 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(
                 >
                   <EntityAttributes :entity="collection" />
                   <template #append>
-                    <EntityAttributesEditDialog :entity="collection" />
+                    <EntityAttributesEditDialog :collection="collection" />
                   </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
