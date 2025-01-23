@@ -43,7 +43,7 @@ export function measuring_throughput_for_single_data_point(data: { containerId: 
 
 /**
  * Measuring the maximum throughput if we insert multiple data points as fast as possible.
- * The batch size can be adjustest for testing purpose.
+ * The batch size can be adjusted for testing purpose.
  */
 
 export function measuring_throughput_for_multiple_data_points(data: { containerId: number }) {

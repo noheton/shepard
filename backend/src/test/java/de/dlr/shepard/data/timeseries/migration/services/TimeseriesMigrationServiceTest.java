@@ -56,7 +56,6 @@ public class TimeseriesMigrationServiceTest {
 
   @BeforeEach
   public void setup() {
-    migrationTaskRepository.deleteAll();
     this.container = createTimeseriesContainerAndInfluxDbForTesting();
   }
 

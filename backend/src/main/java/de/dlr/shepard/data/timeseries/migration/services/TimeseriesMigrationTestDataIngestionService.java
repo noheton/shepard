@@ -8,6 +8,7 @@ import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeserie
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class TimeseriesMigrationTestDataIngestionService {
 
   TimeseriesContainerDAO timeseriesContainerDao;
 
-  private int PAYLOAD_MAX_SIZE = 10000;
+  private int PAYLOAD_MAX_SIZE = 200000;
 
   @Inject
   TimeseriesMigrationTestDataIngestionService(
@@ -45,6 +46,7 @@ public class TimeseriesMigrationTestDataIngestionService {
     if (influxConnector.databaseExist(databaseName)) {
       throw new ShepardProcessingException("Database already exists: " + databaseName);
     }
+    Log.infof("ingestTestData started, size: %s, databaseName: %s", datasetSize, databaseName);
     var containerName = String.format("Container-%d", System.currentTimeMillis());
     TimeseriesContainer entity = new TimeseriesContainer();
     entity.setDatabase(databaseName);
@@ -56,12 +58,14 @@ public class TimeseriesMigrationTestDataIngestionService {
     int remainingDataSize = datasetSize;
     long timeOffset = 0;
     while (remainingDataSize > 0) {
+      Log.infof("ingestTestData, remaining: %s", remainingDataSize);
       int payloadSize = Math.min(PAYLOAD_MAX_SIZE, remainingDataSize);
       InfluxTimeseriesPayload payload = getRandomPayload(dataPointValueType, payloadSize, timeOffset);
       influxConnector.saveTimeseriesPayload(databaseName, payload);
       remainingDataSize -= payloadSize;
       timeOffset += payloadSize;
     }
+    Log.infof("ingestTestData finished, databaseName: %s", databaseName);
     return entity;
   }
 
@@ -74,7 +78,7 @@ public class TimeseriesMigrationTestDataIngestionService {
     List<InfluxPoint> points = new ArrayList<>();
 
     IntStream.range(0, payloadSize).forEach(i -> {
-      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 1000_000));
+      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 1_000_000_000));
     });
     InfluxTimeseriesPayload payload = new InfluxTimeseriesPayload(timeseries, points);
     return payload;

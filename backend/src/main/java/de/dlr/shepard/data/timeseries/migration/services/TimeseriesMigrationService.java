@@ -1,31 +1,38 @@
 package de.dlr.shepard.data.timeseries.migration.services;
 
-import static de.dlr.shepard.common.util.InfluxDataMapper.mapToTimeseries;
-import static de.dlr.shepard.common.util.InfluxDataMapper.mapToTimeseriesDataPoints;
-import static de.dlr.shepard.common.util.InfluxDataMapper.mapToValueType;
-
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxSingleValuedUnaryFunction;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesDataType;
-import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesService;
 import de.dlr.shepard.data.timeseries.migration.model.MigrationState;
 import de.dlr.shepard.data.timeseries.migration.model.MigrationTaskEntity;
 import de.dlr.shepard.data.timeseries.migration.model.MigrationTaskState;
 import de.dlr.shepard.data.timeseries.migration.repositories.MigrationTaskRepository;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
+import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.context.ManagedExecutor;
 
 @RequestScoped
 public class TimeseriesMigrationService {
@@ -35,8 +42,28 @@ public class TimeseriesMigrationService {
   private InfluxDBConnector influxConnector;
   private InfluxTimeseriesService influxTimeseriesService;
   private TimeseriesService timeseriesService;
+  private TimeseriesDataPointRepository timeseriesDataPointRepository;
 
-  @ConfigProperty(name = "shepard.migration-mode.timeseries-slice-duration", defaultValue = "60000000000")
+  private PayloadReader payloadReader;
+  private PayloadWriter payloadWriter;
+
+  @Inject
+  ManagedExecutor executor;
+
+  final int numberOfReaderThreads = 1;
+  final int numberOfSaverThreads = 4;
+  private final BlockingQueue<PayloadWriteTask> payloadWriteQueue = new LinkedBlockingQueue<>(10);
+  private final Queue<PayloadReadTask> payloadReadQueue = new ConcurrentLinkedQueue<>();
+
+  public Queue<PayloadReadTask> getPayloadReadQueue() {
+    return payloadReadQueue;
+  }
+
+  public BlockingQueue<PayloadWriteTask> getPayloadWriteQueue() {
+    return payloadWriteQueue;
+  }
+
+  @ConfigProperty(name = "shepard.migration-mode.timeseries-slice-duration", defaultValue = "600000000000")
   long sliceDuration;
 
   @Inject
@@ -45,13 +72,19 @@ public class TimeseriesMigrationService {
     MigrationTaskRepository migrationTaskRepository,
     InfluxDBConnector influxConnector,
     TimeseriesService timeseriesService,
-    InfluxTimeseriesService influxTimeseriesService
+    InfluxTimeseriesService influxTimeseriesService,
+    TimeseriesDataPointRepository timeseriesDataPointRepository,
+    PayloadReader payloadReader,
+    PayloadWriter payloadWriter
   ) {
     this.timeseriesContainerService = timeseriesContainerService;
     this.migrationTaskRepository = migrationTaskRepository;
     this.influxConnector = influxConnector;
     this.timeseriesService = timeseriesService;
     this.influxTimeseriesService = influxTimeseriesService;
+    this.timeseriesDataPointRepository = timeseriesDataPointRepository;
+    this.payloadReader = payloadReader;
+    this.payloadWriter = payloadWriter;
   }
 
   public List<MigrationTaskEntity> getMigrationTasks(boolean onlyShowErrors) {
@@ -94,6 +127,8 @@ public class TimeseriesMigrationService {
   }
 
   public void runMigrations() {
+    deleteFailedMigrations();
+
     createMigrationTaskForEachContainer();
     var tasks = getPlannedMigrationTasks();
     Log.info("Starting migrations...");
@@ -106,10 +141,43 @@ public class TimeseriesMigrationService {
         persistError(task, ex.getMessage());
       }
     }
+    compressAllDataPoints();
+  }
+
+  private void deleteFailedMigrations() {
+    var tasksWithErrors = getMigrationTasks(true);
+    if (tasksWithErrors.size() > 0) {
+      Log.infof(
+        "There are %d migration tasks that have an error. The migration process is repeated.",
+        tasksWithErrors.size()
+      );
+      for (var task : tasksWithErrors) {
+        Log.infof("Timeseries for container %s will be deleted now.", task.getContainerId());
+        deleteMigrationTaskAndTimeseries(task.getId(), task.getContainerId());
+      }
+    }
+  }
+
+  @Transactional(value = TxType.REQUIRES_NEW)
+  protected void deleteMigrationTaskAndTimeseries(int migrationTaskId, long containerId) {
+    timeseriesService.deleteTimeseriesByContainerId(containerId);
+    migrationTaskRepository.deleteById(migrationTaskId);
+  }
+
+  @Transactional(value = TxType.REQUIRES_NEW)
+  @TransactionConfiguration(
+    timeoutFromConfigProperty = "shepard.migration-mode.compression.transaction-timeout",
+    timeout = 6000
+  )
+  protected void compressAllDataPoints() {
+    Log.info("Starting compression of timeseries table...");
+    timeseriesDataPointRepository.compressAllChunks();
+    Log.info("Finished compression of timeseries table.");
   }
 
   protected void migrateTask(MigrationTaskEntity task) throws Exception {
     setStateToRunning(task);
+    Log.infof("Start with migration of container %s now.", task.getContainerId());
 
     var container = timeseriesContainerService.getContainer(task.getContainerId());
 
@@ -120,6 +188,7 @@ public class TimeseriesMigrationService {
     }
 
     var timeseriesAvailable = influxConnector.getTimeseriesAvailable(databaseName);
+    Log.infof("We found %s timeserieses for container %s", timeseriesAvailable.size(), task.getContainerId());
 
     for (InfluxTimeseries influxTimeseries : timeseriesAvailable) {
       var influxTimeseriesDataType = influxConnector.getTimeseriesDataType(
@@ -127,10 +196,12 @@ public class TimeseriesMigrationService {
         influxTimeseries.getMeasurement(),
         influxTimeseries.getField()
       );
+
       migratePayloads(container, databaseName, influxTimeseries, influxTimeseriesDataType);
     }
 
     setStateToFinished(task);
+    Log.infof("Finished migration of container %s", task.getContainerId());
   }
 
   private List<MigrationTaskEntity> getPlannedMigrationTasks() {
@@ -259,52 +330,64 @@ public class TimeseriesMigrationService {
     return (payload.getPoints().size() > 0) ? payload.getPoints().get(0).getTimeInNanoseconds() : 0;
   }
 
-  /**
-   * Copy all payloads from a InfluxTimeseries to the TimeseriesContainer.
-   * This method will try to do the copy in batches based on time based slices. The slice duration is defined in env. [shepard.migration-mode.timeseries-slice-duration]
-   */
   private void migratePayloads(
     TimeseriesContainer container,
     String databaseName,
     InfluxTimeseries influxTimeseries,
     InfluxTimeseriesDataType influxTimeseriesDataType
-  ) {
+  ) throws Exception {
     var firstTimestamp = getFirstTimestampOfPayload(databaseName, influxTimeseries);
     var lastTimestamp = getLastTimestampOfPayload(databaseName, influxTimeseries);
+    Log.infof("Doing migration from %s to %s of container %s", firstTimestamp, lastTimestamp, container.getId());
 
     long currentStartTimestamp = firstTimestamp - 1;
 
+    payloadReadQueue.clear();
     while (currentStartTimestamp < lastTimestamp) {
       long currentEndTimestamp = Math.min(currentStartTimestamp + sliceDuration, lastTimestamp);
 
-      var payload =
-        this.influxTimeseriesService.getTimeseriesPayload(
-            currentStartTimestamp,
-            currentEndTimestamp,
-            databaseName,
-            influxTimeseries,
-            null,
-            null,
-            null
-          );
-
-      saveDataPoints(container, influxTimeseries, influxTimeseriesDataType, payload);
+      payloadReadQueue.add(
+        new PayloadReadTask(
+          currentStartTimestamp,
+          currentEndTimestamp,
+          influxTimeseries,
+          container,
+          databaseName,
+          influxTimeseriesDataType,
+          false
+        )
+      );
       currentStartTimestamp = currentEndTimestamp;
     }
-  }
 
-  @Transactional(Transactional.TxType.REQUIRES_NEW)
-  protected void saveDataPoints(
-    TimeseriesContainer container,
-    InfluxTimeseries influxTimeseries,
-    InfluxTimeseriesDataType influxTimeseriesDataType,
-    InfluxTimeseriesPayload payload
-  ) {
-    timeseriesService.saveDataPoints(
-      container.getId(),
-      mapToTimeseries(influxTimeseries),
-      mapToTimeseriesDataPoints(payload.getPoints()),
-      mapToValueType(influxTimeseriesDataType)
-    );
+    PayloadReadTask readTaskPoisonPill = new PayloadReadTask(0, 0, null, null, null, null, true);
+    for (int i = 0; i < numberOfReaderThreads; i++) {
+      payloadReadQueue.add(readTaskPoisonPill);
+    }
+    Log.infof("Finished preparing read queue of %s read tasks.", payloadReadQueue.size());
+    // Insure tasks queue is empty
+    payloadWriteQueue.clear();
+
+    List<Callable<Object>> tasks = new ArrayList<>();
+
+    for (int i = 0; i < numberOfReaderThreads; i++) {
+      tasks.add(payloadReader);
+    }
+    Log.infof("Creating writers...");
+    for (int i = 0; i < numberOfSaverThreads; i++) {
+      tasks.add(payloadWriter);
+    }
+    try {
+      Log.infof("Starting executor service...");
+      List<Future<Object>> futures = executor.invokeAll(tasks);
+      for (Future<Object> future : futures) {
+        future.get();
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      Log.errorf("Error while executing tasks in parallel.", e.getMessage());
+      throw new Exception(e.getMessage());
+    } finally {
+      payloadWriteQueue.clear();
+    }
   }
 }

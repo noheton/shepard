@@ -44,10 +44,6 @@ public class TimeseriesMigrationInitService {
       logThatMigrationModeCanBeDisabled();
       return false;
     }
-    if (migrationState == MigrationState.HasErrors) {
-      logThatMigrationStateHasErrors();
-      return false;
-    }
     runMigrations();
     return false;
   }

@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 @RequestScoped
 public class TimeseriesDataPointRepository {
 
-  private final int INSERT_BATCH_SIZE = 1000;
+  private final int INSERT_BATCH_SIZE = 20000;
 
   @PersistenceContext
   EntityManager entityManager;
@@ -30,6 +30,12 @@ public class TimeseriesDataPointRepository {
       Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
       query.executeUpdate();
     }
+  }
+
+  public void compressAllChunks() {
+    var sqlString = "SELECT compress_chunk(c) FROM show_chunks('timeseries_data_points') c;";
+    Query query = entityManager.createNativeQuery(sqlString);
+    query.getResultList();
   }
 
   public List<TimeseriesDataPoint> queryDataPoints(

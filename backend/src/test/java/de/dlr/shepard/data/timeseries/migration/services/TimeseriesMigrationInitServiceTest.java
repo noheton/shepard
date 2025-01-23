@@ -50,7 +50,6 @@ public class TimeseriesMigrationInitServiceTest {
 
     boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
 
-    verify(timeseriesMigrationService, times(0)).runMigrations();
     assertEquals(false, actual);
   }
 
