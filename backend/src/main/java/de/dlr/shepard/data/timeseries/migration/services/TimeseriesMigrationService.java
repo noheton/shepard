@@ -331,6 +331,10 @@ public class TimeseriesMigrationService {
     return (payload.getPoints().size() > 0) ? payload.getPoints().get(0).getTimeInNanoseconds() : 0;
   }
 
+  /**
+   * Copy all payloads from a InfluxTimeseries to the TimeseriesContainer.
+   * This method will try to do the copy in batches based on time based slices. The slice duration is defined in env. [shepard.migration-mode.timeseries-slice-duration]
+   */
   private void migratePayloads(
     TimeseriesContainer container,
     String databaseName,
