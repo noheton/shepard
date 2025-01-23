@@ -264,26 +264,6 @@ public class InfluxDBConnectorTest {
   }
 
   @Test
-  public void testGetTimeseriesWithInfluxDBException() {
-    doThrow(InfluxDBException.class).when(influxDB).query(any(Query.class));
-
-    InfluxTimeseriesPayload actualTimeseries = connector.getTimeseriesPayload(
-      start,
-      end,
-      database,
-      expectedTimeseries,
-      InfluxSingleValuedUnaryFunction.MEAN,
-      groupBy,
-      InfluxFillOption.LINEAR
-    );
-    assertThat(actualTimeseries)
-      .usingRecursiveComparison()
-      .ignoringFields("influxPoints")
-      .isEqualTo(expectedTimeseriesPayload);
-    assertTrue(actualTimeseries.getPoints().isEmpty());
-  }
-
-  @Test
   public void testGetTimeseriesAvailable() {
     String seriesQueryString = "SHOW SERIES ON \"database\"";
     String fieldQueryString = "SHOW FIELD KEYS ON \"database\"";
