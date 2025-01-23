@@ -53,10 +53,7 @@ public class ShepardMain implements QuarkusApplication {
   @Override
   @ActivateRequestContext
   public int run(String... args) throws Exception {
-    boolean shepardShouldTerminate = migrationInitService.orchestrateMigrations();
-
-    if (shepardShouldTerminate) return 1;
-
+    migrationInitService.orchestrateMigrations();
     Quarkus.waitForExit();
     return 0;
   }

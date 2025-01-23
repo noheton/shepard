@@ -1,6 +1,5 @@
 package de.dlr.shepard.data.timeseries.migration.services;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,66 +22,61 @@ public class TimeseriesMigrationInitServiceTest {
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "true")
-  public void orchestrateMigrations_MigrationModeEnabledNoMigrationNeeded_dontTerminate() {
+  public void orchestrateMigrations_noMigrationNeeded_dontRunMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.NotNeeded);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(0)).runMigrations();
-    assertEquals(false, actual);
   }
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "true")
-  public void orchestrateMigrations_MigrationModeEnabledMigrationNeeded_dontTerminate() {
+  public void orchestrateMigrations_migrationNeeded_runMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.Needed);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(1)).runMigrations();
-    assertEquals(false, actual);
   }
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "true")
-  public void orchestrateMigrations_MigrationModeEnabledMigrationErrors_dontTerminate() {
+  public void orchestrateMigrations_migrationErrors_runMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.HasErrors);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
-    assertEquals(false, actual);
+    verify(timeseriesMigrationService, times(1)).runMigrations();
   }
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "false")
-  public void orchestrateMigrations_MigrationModeDisabledNoMigrationNeeded_dontTerminate() {
+  public void orchestrateMigrations_migrationModeDisabledNoMigrationNeeded_dontRunMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.NotNeeded);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(0)).runMigrations();
-    assertEquals(false, actual);
   }
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "false")
-  public void orchestrateMigrations_MigrationModeDisabledMigrationNeeded_terminate() {
+  public void orchestrateMigrations_migrationModeDisabledMigrationNeeded_dontRunMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.Needed);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(0)).runMigrations();
-    assertEquals(true, actual);
   }
 
   @Test
   @TestConfigProperty(key = "shepard.migration-mode.enabled", value = "false")
-  public void orchestrateMigrations_MigrationModeDisabledMigrationErrors_terminate() {
+  public void orchestrateMigrations_migrationModeDisabledMigrationErrors_dontRunMigrations() {
     when(timeseriesMigrationService.getMigrationState()).thenReturn(MigrationState.HasErrors);
 
-    boolean actual = timeseriesMigrationInitService.orchestrateMigrations();
+    timeseriesMigrationInitService.orchestrateMigrations();
 
     verify(timeseriesMigrationService, times(0)).runMigrations();
-    assertEquals(true, actual);
   }
 }

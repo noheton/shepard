@@ -26,26 +26,25 @@ public class TimeseriesMigrationInitService {
   /**
    * @return true if shepard should terminate
    */
-  public boolean orchestrateMigrations() {
+  public void orchestrateMigrations() {
     if (MigrationModeToggle.isActive()) {
-      return runMigrationsIfNecessary();
+      runMigrationsIfNecessary();
+    } else {
+      assertShepardCanRunNormally();
     }
-
-    return !assertShepardCanRunNormally();
   }
 
   /**
    * @return true if shepard should terminate
    */
-  private boolean runMigrationsIfNecessary() {
+  private void runMigrationsIfNecessary() {
     MigrationState migrationState = timeseriesMigrationService.getMigrationState();
 
     if (migrationState == MigrationState.NotNeeded) {
       logThatMigrationModeCanBeDisabled();
-      return false;
+      return;
     }
     runMigrations();
-    return false;
   }
 
   /**
