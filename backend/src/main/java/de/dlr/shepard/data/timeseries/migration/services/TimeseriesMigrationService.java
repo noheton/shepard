@@ -367,9 +367,8 @@ public class TimeseriesMigrationService {
       currentStartTimestamp = currentEndTimestamp;
     }
 
-    PayloadReadTask readTaskPoisonPill = new PayloadReadTask(0, 0, null, null, null, null, true);
     for (int i = 0; i < numberOfReaderThreads; i++) {
-      payloadReadQueue.add(readTaskPoisonPill);
+      payloadReadQueue.add(PayloadReadTask.poisonPill);
     }
     Log.infof("Finished preparing read queue of %s read tasks.", payloadReadQueue.size());
     // Insure tasks queue is empty
@@ -377,13 +376,16 @@ public class TimeseriesMigrationService {
 
     List<Callable<Object>> tasks = new ArrayList<>();
 
-    for (int i = 0; i < numberOfReaderThreads; i++) {
-      tasks.add(payloadReader);
-    }
     Log.infof("Creating writers...");
     for (int i = 0; i < numberOfSaverThreads; i++) {
       tasks.add(payloadWriter);
     }
+
+    Log.infof("Creating readers...");
+    for (int i = 0; i < numberOfReaderThreads; i++) {
+      tasks.add(payloadReader);
+    }
+
     try {
       Log.infof("Starting executor service...");
       List<Future<Object>> futures = executor.invokeAll(tasks);
@@ -395,6 +397,17 @@ public class TimeseriesMigrationService {
       throw new Exception(e.getMessage());
     } finally {
       payloadWriteQueue.clear();
+    }
+  }
+
+  void addWriterPoisonPills() {
+    try {
+      for (int i = 0; i < numberOfSaverThreads; i++) {
+        getPayloadWriteQueue().put(PayloadWriteTask.poisonPill);
+      }
+    } catch (InterruptedException e) {
+      Log.errorf("Payload write queue interrupted.", e.getMessage());
+      Thread.currentThread().interrupt();
     }
   }
 }

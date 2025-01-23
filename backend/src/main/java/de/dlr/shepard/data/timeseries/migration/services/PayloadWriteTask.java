@@ -9,6 +9,8 @@ public class PayloadWriteTask {
 
   private static int taskIdCounter = 0;
 
+  public static final PayloadWriteTask poisonPill = new PayloadWriteTask(null, null, null, null, true);
+
   InfluxTimeseriesPayload payload;
   InfluxTimeseriesDataType dataType;
   InfluxTimeseries influxTimeseries;

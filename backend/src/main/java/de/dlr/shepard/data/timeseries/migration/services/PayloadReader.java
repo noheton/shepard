@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.migration.services;
 
+import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -32,7 +33,7 @@ class PayloadReader implements Callable<Object> {
           payloadReadTask.startTimestamp,
           payloadReadTask.endTimestamp
         );
-        var payload =
+        InfluxTimeseriesPayload payload =
           this.influxTimeseriesService.getTimeseriesPayload(
               payloadReadTask.startTimestamp,
               payloadReadTask.endTimestamp,
@@ -52,15 +53,13 @@ class PayloadReader implements Callable<Object> {
         );
         migrationService.getPayloadWriteQueue().put(payloadTask);
       }
-      // Notify
-      PayloadWriteTask payloadWriteTaskPoisonPill = new PayloadWriteTask(null, null, null, null, true);
-      for (int i = 0; i < migrationService.numberOfSaverThreads; i++) {
-        migrationService.getPayloadWriteQueue().put(payloadWriteTaskPoisonPill);
-      }
-    } catch (InterruptedException | InfluxDBException e) {
+    } catch (InterruptedException e) {
       // Cancel the task
-      Log.errorf("Error while loading payloads from influx.", e.getMessage());
       Thread.currentThread().interrupt();
+    } catch (InfluxDBException e) {
+      throw e;
+    } finally {
+      migrationService.addWriterPoisonPills();
     }
     return "PayloadReader Done!";
   }

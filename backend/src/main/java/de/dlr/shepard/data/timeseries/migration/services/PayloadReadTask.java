@@ -8,6 +8,16 @@ class PayloadReadTask {
 
   private static int taskIdCounter = 0;
 
+  public static final PayloadReadTask poisonPill = new PayloadReadTask(
+    taskIdCounter,
+    taskIdCounter,
+    null,
+    null,
+    null,
+    null,
+    true
+  );
+
   long startTimestamp;
   long endTimestamp;
   InfluxTimeseries influxTimeseries;
