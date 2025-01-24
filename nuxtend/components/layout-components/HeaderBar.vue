@@ -16,6 +16,18 @@
       >
         Collections
       </v-btn>
+      <v-btn
+        to="/containers"
+        :style="{
+          fontSize: '16px',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          lineHeight: '26px',
+          textTransform: 'none',
+        }"
+      >
+        Containers
+      </v-btn>
     </v-app-bar-title>
     <template #append>
       <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />

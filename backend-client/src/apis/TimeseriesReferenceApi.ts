@@ -58,6 +58,7 @@ export interface ExportTimeseriesPayloadRequest {
 export interface GetAllTimeseriesReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface GetTimeseriesPayloadRequest {
@@ -76,6 +77,7 @@ export interface GetTimeseriesReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     timeseriesReferenceId: number;
+    versionUid?: string;
 }
 
 /**
@@ -306,6 +308,10 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -447,6 +453,10 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

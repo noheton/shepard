@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  BasicContainerAttributes,
   ContainerSearchBody,
   ContainerSearchResult,
   ResponseBody,
@@ -23,6 +24,8 @@ import type {
   UserSearchResult,
 } from '../models/index';
 import {
+    BasicContainerAttributesFromJSON,
+    BasicContainerAttributesToJSON,
     ContainerSearchBodyFromJSON,
     ContainerSearchBodyToJSON,
     ContainerSearchResultFromJSON,
@@ -43,6 +46,10 @@ export interface SearchRequest {
 
 export interface SearchContainersRequest {
     containerSearchBody: ContainerSearchBody;
+    page?: number;
+    size?: number;
+    orderBy?: BasicContainerAttributes;
+    orderDesc?: boolean;
 }
 
 export interface SearchUsersRequest {
@@ -114,6 +121,22 @@ export class SearchApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['orderBy'] = requestParameters['orderBy'];
+        }
+
+        if (requestParameters['orderDesc'] != null) {
+            queryParameters['orderDesc'] = requestParameters['orderDesc'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

@@ -424,6 +424,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -497,6 +503,33 @@
         "tags" : [ "search" ],
         "description" : "Search containers",
         "operationId" : "searchContainers",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "orderBy",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/BasicContainerAttributes"
+          }
+        }, {
+          "name" : "orderDesc",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -923,6 +956,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -1529,6 +1568,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -1885,6 +1930,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -2108,6 +2159,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -2280,6 +2337,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -2662,6 +2725,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -3112,6 +3181,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -3354,6 +3429,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -3430,6 +3511,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -3816,6 +3903,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -3992,6 +4085,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -4088,6 +4187,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -4265,6 +4370,12 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
           }
         } ],
         "responses" : {
@@ -4925,6 +5036,12 @@
             "format" : "int64",
             "type" : "integer"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -5454,6 +5571,12 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -5645,6 +5768,10 @@
           }
         }
       },
+      "BasicContainerAttributes" : {
+        "enum" : [ "createdAt", "createdBy", "type", "id", "name" ],
+        "type" : "string"
+      },
       "HasId" : {
         "type" : "object",
         "properties" : {
@@ -5724,6 +5851,9 @@
           "name" : {
             "pattern" : "\\S",
             "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ContainerType"
           },
           "oid" : {
             "type" : "string",
@@ -5932,6 +6062,10 @@
             "items" : {
               "$ref" : "#/components/schemas/BasicContainer"
             }
+          },
+          "totalResults" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         }
       },
@@ -6103,6 +6237,9 @@
           "name" : {
             "pattern" : "\\S",
             "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ContainerType"
           },
           "database" : {
             "type" : "string",
@@ -6650,6 +6787,9 @@
           "name" : {
             "pattern" : "\\S",
             "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ContainerType"
           }
         }
       },
@@ -6691,6 +6831,9 @@
           "name" : {
             "pattern" : "\\S",
             "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ContainerType"
           },
           "oid" : {
             "type" : "string",
@@ -6761,6 +6904,10 @@
           }
         }
       },
+      "ContainerType" : {
+        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA", "BASIC" ],
+        "type" : "string"
+      },
       "ShepardFile" : {
         "type" : "object",
         "properties" : {
@@ -6804,7 +6951,7 @@
             "type" : "string"
           },
           "queryType" : {
-            "$ref" : "#/components/schemas/ContainerQueryType"
+            "$ref" : "#/components/schemas/ContainerType"
           }
         }
       },
@@ -6924,10 +7071,6 @@
       },
       "BasicReferenceAttributes" : {
         "enum" : [ "createdAt", "updatedAt", "name", "type" ],
-        "type" : "string"
-      },
-      "ContainerQueryType" : {
-        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA" ],
         "type" : "string"
       },
       "SearchScope" : {

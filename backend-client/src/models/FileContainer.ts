@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { ContainerType } from './ContainerType';
+import {
+    ContainerTypeFromJSON,
+    ContainerTypeFromJSONTyped,
+    ContainerTypeToJSON,
+} from './ContainerType';
+
 /**
  * 
  * @export
@@ -57,11 +64,19 @@ export interface FileContainer {
     name: string;
     /**
      * 
+     * @type {ContainerType}
+     * @memberof FileContainer
+     */
+    type?: ContainerType;
+    /**
+     * 
      * @type {string}
      * @memberof FileContainer
      */
     readonly oid: string;
 }
+
+
 
 /**
  * Check if a given object implements the FileContainer interface.
@@ -93,6 +108,7 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
+        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
     };
 }
@@ -104,6 +120,7 @@ export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'
     return {
         
         'name': value['name'],
+        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

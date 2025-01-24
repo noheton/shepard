@@ -40,18 +40,21 @@ export interface DeleteCollectionReferenceRequest {
 export interface GetAllCollectionReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface GetCollectionReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     collectionReferenceId: number;
+    versionUid?: string;
 }
 
 export interface GetCollectionReferencePayloadRequest {
     collectionId: number;
     dataObjectId: number;
     collectionReferenceId: number;
+    versionUid?: string;
 }
 
 /**
@@ -199,6 +202,10 @@ export class CollectionReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -258,6 +265,10 @@ export class CollectionReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -316,6 +327,10 @@ export class CollectionReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

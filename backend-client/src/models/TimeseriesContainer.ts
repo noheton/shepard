@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { ContainerType } from './ContainerType';
+import {
+    ContainerTypeFromJSON,
+    ContainerTypeFromJSONTyped,
+    ContainerTypeToJSON,
+} from './ContainerType';
+
 /**
  * 
  * @export
@@ -57,11 +64,19 @@ export interface TimeseriesContainer {
     name: string;
     /**
      * 
+     * @type {ContainerType}
+     * @memberof TimeseriesContainer
+     */
+    type?: ContainerType;
+    /**
+     * 
      * @type {string}
      * @memberof TimeseriesContainer
      */
     readonly database: string;
 }
+
+
 
 /**
  * Check if a given object implements the TimeseriesContainer interface.
@@ -93,6 +108,7 @@ export function TimeseriesContainerFromJSONTyped(json: any, ignoreDiscriminator:
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
+        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
         'database': json['database'],
     };
 }
@@ -104,6 +120,7 @@ export function TimeseriesContainerToJSON(value?: Omit<TimeseriesContainer, 'id'
     return {
         
         'name': value['name'],
+        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

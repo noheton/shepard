@@ -40,6 +40,7 @@ export interface DeleteStructuredDataReferenceRequest {
 export interface GetAllStructuredDataReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface GetSpecificStructuredDataPayloadRequest {
@@ -59,6 +60,7 @@ export interface GetStructuredDataReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     structuredDataReferenceId: number;
+    versionUid?: string;
 }
 
 /**
@@ -205,6 +207,10 @@ export class StructuredDataReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -389,6 +395,10 @@ export class StructuredDataReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

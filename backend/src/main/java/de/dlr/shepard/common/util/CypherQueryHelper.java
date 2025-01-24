@@ -107,7 +107,7 @@ public class CypherQueryHelper {
     if (!isString) ret = "ORDER BY " + variable + "." + orderByAttribute;
     else if (
       orderByAttribute instanceof BasicContainerAttributes &&
-      ((BasicContainerAttributes) orderByAttribute) == BasicContainerAttributes.containerType
+      ((BasicContainerAttributes) orderByAttribute) == BasicContainerAttributes.type
     ) ret = "ORDER BY LABELS(" + variable + ")";
     else ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
     if (orderDesc != null && orderDesc) ret = ret + " DESC";

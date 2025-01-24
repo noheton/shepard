@@ -6,13 +6,13 @@ import java.util.List;
 public enum BasicContainerAttributes implements OrderByAttribute {
   createdAt,
   createdBy,
-  containerType,
+  type,
   id,
   name;
 
   private static List<BasicContainerAttributes> stringList = List.of(
     BasicContainerAttributes.name,
-    BasicContainerAttributes.containerType,
+    BasicContainerAttributes.type,
     BasicContainerAttributes.createdBy
   );
 

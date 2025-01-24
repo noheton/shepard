@@ -37,12 +37,14 @@ export interface DeleteUriReferenceRequest {
 export interface GetAllUriReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface GetUriReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     uriReferenceId: number;
+    versionUid?: string;
 }
 
 /**
@@ -190,6 +192,10 @@ export class UriReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -248,6 +254,10 @@ export class UriReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

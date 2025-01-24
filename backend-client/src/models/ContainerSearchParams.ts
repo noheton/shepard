@@ -13,12 +13,12 @@
  */
 
 import { mapValues } from '../runtime';
-import type { ContainerQueryType } from './ContainerQueryType';
+import type { ContainerType } from './ContainerType';
 import {
-    ContainerQueryTypeFromJSON,
-    ContainerQueryTypeFromJSONTyped,
-    ContainerQueryTypeToJSON,
-} from './ContainerQueryType';
+    ContainerTypeFromJSON,
+    ContainerTypeFromJSONTyped,
+    ContainerTypeToJSON,
+} from './ContainerType';
 
 /**
  * 
@@ -34,10 +34,10 @@ export interface ContainerSearchParams {
     query: string;
     /**
      * 
-     * @type {ContainerQueryType}
+     * @type {ContainerType}
      * @memberof ContainerSearchParams
      */
-    queryType: ContainerQueryType;
+    queryType: ContainerType;
 }
 
 
@@ -62,7 +62,7 @@ export function ContainerSearchParamsFromJSONTyped(json: any, ignoreDiscriminato
     return {
         
         'query': json['query'],
-        'queryType': ContainerQueryTypeFromJSON(json['queryType']),
+        'queryType': ContainerTypeFromJSON(json['queryType']),
     };
 }
 
@@ -73,7 +73,7 @@ export function ContainerSearchParamsToJSON(value?: ContainerSearchParams | null
     return {
         
         'query': value['query'],
-        'queryType': ContainerQueryTypeToJSON(value['queryType']),
+        'queryType': ContainerTypeToJSON(value['queryType']),
     };
 }
 

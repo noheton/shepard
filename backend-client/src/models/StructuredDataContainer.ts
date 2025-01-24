@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { ContainerType } from './ContainerType';
+import {
+    ContainerTypeFromJSON,
+    ContainerTypeFromJSONTyped,
+    ContainerTypeToJSON,
+} from './ContainerType';
+
 /**
  * 
  * @export
@@ -57,11 +64,19 @@ export interface StructuredDataContainer {
     name: string;
     /**
      * 
+     * @type {ContainerType}
+     * @memberof StructuredDataContainer
+     */
+    type?: ContainerType;
+    /**
+     * 
      * @type {string}
      * @memberof StructuredDataContainer
      */
     readonly oid: string;
 }
+
+
 
 /**
  * Check if a given object implements the StructuredDataContainer interface.
@@ -93,6 +108,7 @@ export function StructuredDataContainerFromJSONTyped(json: any, ignoreDiscrimina
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
+        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
     };
 }
@@ -104,6 +120,7 @@ export function StructuredDataContainerToJSON(value?: Omit<StructuredDataContain
     return {
         
         'name': value['name'],
+        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

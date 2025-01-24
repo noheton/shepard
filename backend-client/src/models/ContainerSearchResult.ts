@@ -44,6 +44,12 @@ export interface ContainerSearchResult {
      * @memberof ContainerSearchResult
      */
     results?: Array<BasicContainer>;
+    /**
+     * 
+     * @type {number}
+     * @memberof ContainerSearchResult
+     */
+    totalResults?: number;
 }
 
 /**
@@ -65,6 +71,7 @@ export function ContainerSearchResultFromJSONTyped(json: any, ignoreDiscriminato
         
         'searchParams': json['searchParams'] == null ? undefined : ContainerSearchParamsFromJSON(json['searchParams']),
         'results': json['results'] == null ? undefined : ((json['results'] as Array<any>).map(BasicContainerFromJSON)),
+        'totalResults': json['totalResults'] == null ? undefined : json['totalResults'],
     };
 }
 
@@ -76,6 +83,7 @@ export function ContainerSearchResultToJSON(value?: ContainerSearchResult | null
         
         'searchParams': ContainerSearchParamsToJSON(value['searchParams']),
         'results': value['results'] == null ? undefined : ((value['results'] as Array<any>).map(BasicContainerToJSON)),
+        'totalResults': value['totalResults'],
     };
 }
 

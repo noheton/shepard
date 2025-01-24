@@ -40,6 +40,7 @@ export interface DeleteFileReferenceRequest {
 export interface GetAllFileReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
 }
 
 export interface GetFilePayloadRequest {
@@ -47,18 +48,21 @@ export interface GetFilePayloadRequest {
     dataObjectId: number;
     fileReferenceId: number;
     oid: string;
+    versionUid?: string;
 }
 
 export interface GetFileReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     fileReferenceId: number;
+    versionUid?: string;
 }
 
 export interface GetFilesRequest {
     collectionId: number;
     dataObjectId: number;
     fileReferenceId: number;
+    versionUid?: string;
 }
 
 /**
@@ -206,6 +210,10 @@ export class FileReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -272,6 +280,10 @@ export class FileReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -331,6 +343,10 @@ export class FileReferenceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
         if (this.configuration && this.configuration.apiKey) {
@@ -389,6 +405,10 @@ export class FileReferenceApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

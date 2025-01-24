@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { ContainerType } from './ContainerType';
+import {
+    ContainerTypeFromJSON,
+    ContainerTypeFromJSONTyped,
+    ContainerTypeToJSON,
+} from './ContainerType';
+
 /**
  * 
  * @export
@@ -55,7 +62,15 @@ export interface BasicContainer {
      * @memberof BasicContainer
      */
     name: string;
+    /**
+     * 
+     * @type {ContainerType}
+     * @memberof BasicContainer
+     */
+    type?: ContainerType;
 }
+
+
 
 /**
  * Check if a given object implements the BasicContainer interface.
@@ -86,6 +101,7 @@ export function BasicContainerFromJSONTyped(json: any, ignoreDiscriminator: bool
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
+        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
     };
 }
 
@@ -96,6 +112,7 @@ export function BasicContainerToJSON(value?: Omit<BasicContainer, 'id'|'createdA
     return {
         
         'name': value['name'],
+        'type': ContainerTypeToJSON(value['type']),
     };
 }
 
