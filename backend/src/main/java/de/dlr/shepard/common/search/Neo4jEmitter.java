@@ -138,9 +138,9 @@ public class Neo4jEmitter {
     if (notIdProperties.contains(property)) return emitSimplePropertyPart(node, variable);
     String ret = "(";
     if (property.equals("id")) ret = ret + "id(" + variable + ")";
-    else ret = ret + variable + ".`" + property + "` ";
+    else ret = ret + "toLower(" + variable + ".`" + property + "`) ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
-    ret = ret + emitValuePart(node);
+    ret = ret + emitValuePart(node).toLowerCase();
     ret = ret + ")";
     return ret;
   }
@@ -215,9 +215,9 @@ public class Neo4jEmitter {
         case "updatedBy" -> "updated_by";
         default -> "";
       };
-    ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE u.username ";
+    ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE toLower(u.username) ";
     ret = ret + emitOperatorString(node.get(Constants.OP_OPERATOR)) + " ";
-    ret = ret + node.get(Constants.OP_VALUE) + " ";
+    ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
     ret = ret + "})";
     return ret;
   }
