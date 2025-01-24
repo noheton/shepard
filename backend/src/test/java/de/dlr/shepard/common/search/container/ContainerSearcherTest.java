@@ -42,6 +42,30 @@ public class ContainerSearcherTest {
   ContainerSearcher containerSearcher;
 
   @Test
+  public void searchBasicContainerTest() {
+    String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
+    ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.BASIC);
+    ContainerSearchBody searchBody = new ContainerSearchBody(params);
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String username = "EngelsFriedrich";
+    String neo4jFileSelectionQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONquery,
+      ContainerType.BASIC,
+      queryParamHelper,
+      username
+    );
+    BasicContainer contRes = new BasicContainer(5L);
+    List<BasicContainer> contResList = new ArrayList<>();
+    contResList.add(contRes);
+    when(
+      searchDAO.findContainers(neo4jFileSelectionQuery, queryParamHelper, Constants.BASICCONTAINER_IN_QUERY)
+    ).thenReturn(contResList);
+    var actual = containerSearcher.search(searchBody, queryParamHelper, username);
+    assertThat(actual.getResults()).containsExactly(new BasicContainerIO(contRes));
+    assertThat(actual.getSearchParams()).isEqualTo(params);
+  }
+
+  @Test
   public void searchFileContainerTest() {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.FILE);

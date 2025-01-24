@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.common.exceptions.ShepardParserException;
 import de.dlr.shepard.common.neo4j.entities.ContainerType;
+import de.dlr.shepard.common.search.container.BasicContainerAttributes;
 import de.dlr.shepard.common.search.unified.SearchScope;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.common.util.TraversalRules;
@@ -639,6 +640,25 @@ public class Neo4jEmitterTest {
     );
     String expected =
       "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc)-[:is_in_container]->(refCon:FileContainer) WHERE id(refCon) = \"5\" }) OR (EXISTS {MATCH (fc)-[:is_in_container]->(refCon:StructuredDataContainer) WHERE id(refCon) = \"6\" }) OR (EXISTS {MATCH (fc)-[:is_in_container]->(refCon:TimeseriesContainer) WHERE id(refCon) = \"7\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
+    assertEquals(expected, neo4jQuery);
+  }
+
+  @Test
+  public void emitBasicContainerSortedSelectionContainerTest() {
+    String JSONQuery =
+      "{\"OR\":[{\"property\": \"fileContainerId\", \"value\": \"5\", \"operator\": \"eq\"}," +
+      "{\"property\": \"structuredDataContainerId\", \"value\": \"6\", \"operator\": \"eq\"}," +
+      "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
+    String userName = "GatesWilliam";
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String neo4jQuery = Neo4jEmitter.emitContainerSelectionQuery(
+      JSONQuery,
+      ContainerType.BASIC,
+      queryParamHelper.withOrderByAttribute(BasicContainerAttributes.name, null),
+      userName
+    );
+    String expected =
+      "MATCH (bc:BasicContainer) WHERE ((EXISTS {MATCH (bc)-[:is_in_container]->(refCon:FileContainer) WHERE id(refCon) = \"5\" }) OR (EXISTS {MATCH (bc)-[:is_in_container]->(refCon:StructuredDataContainer) WHERE id(refCon) = \"6\" }) OR (EXISTS {MATCH (bc)-[:is_in_container]->(refCon:TimeseriesContainer) WHERE id(refCon) = \"7\" })) AND (bc.deleted = FALSE) AND (NOT exists((bc)-[:has_permissions]->(:Permissions)) OR exists((bc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((bc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((bc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((bc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"}))) ORDER BY toLower(bc.name)";
     assertEquals(expected, neo4jQuery);
   }
 

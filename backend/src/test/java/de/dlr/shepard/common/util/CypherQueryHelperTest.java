@@ -3,6 +3,7 @@ package de.dlr.shepard.common.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
+import de.dlr.shepard.common.search.container.BasicContainerAttributes;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.context.collection.endpoints.DataObjectAttributes;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,15 @@ public class CypherQueryHelperTest {
   }
 
   @Test
+  public void getOrderByPartTestByType() {
+    String variable = "c";
+    OrderByAttribute orderByAttribute = BasicContainerAttributes.type;
+    Boolean orderDesc = null;
+    var actual = CypherQueryHelper.getOrderByPart(variable, orderByAttribute, orderDesc);
+    assertEquals("ORDER BY LABELS(c)", actual);
+  }
+
+  @Test
   public void getObjectPartTest_WithName() {
     String variable = "c";
     String type = "Collection";
@@ -107,9 +117,22 @@ public class CypherQueryHelperTest {
   }
 
   @Test
-  public void getPaginationPartTest_WithPagination() {
+  public void getPaginationPartTest_NoParams() {
     var actual = CypherQueryHelper.getPaginationPart();
     assertEquals("SKIP $offset LIMIT $size", actual);
+  }
+
+  @Test
+  public void getPaginationPartTest_WithParams() {
+    PaginationHelper pagnationParam = new PaginationHelper(1, 10);
+    var actual = CypherQueryHelper.getPaginationPart(pagnationParam);
+    assertEquals("SKIP 10 LIMIT 10", actual);
+  }
+
+  @Test
+  public void getReturnCountPartTest() {
+    var actual = CypherQueryHelper.getReturnCountPart("c", Neighborhood.ESSENTIAL);
+    assertEquals("MATCH path=(c)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN COUNT(c)", actual);
   }
 
   @Test

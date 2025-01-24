@@ -13,6 +13,7 @@ import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,30 @@ public class SearchDAOTest extends BaseTestCase {
     when(session.query(BasicReference.class, query, Collections.emptyMap())).thenReturn(references);
     var actual = dao.findReferences("Match bla", "ref");
     assertEquals(references, actual);
+  }
+
+  @Test
+  public void getContainerTotalCountTest() {
+    int containerCount = 1;
+    Iterable<Integer> countIterable = () -> Arrays.stream(new Integer[] { containerCount }).iterator();
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String selectionQuery = "MATCH bla";
+    String query = "MATCH bla WITH bc MATCH path=(bc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN COUNT(bc)";
+    when(session.query(Integer.class, query, Collections.emptyMap())).thenReturn(countIterable);
+    var actual = dao.getContainerTotalCount(selectionQuery, queryParamHelper, "bc");
+    assertEquals(containerCount, actual);
+  }
+
+  @Test
+  public void findBasicContainersTest() {
+    List<BasicContainer> basicContainers = List.of(new BasicContainer(1L));
+    QueryParamHelper queryParamHelper = new QueryParamHelper();
+    String selectionQuery = "MATCH bla";
+    String query =
+      "MATCH bla WITH bc MATCH path=(bc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN bc, nodes(path), relationships(path)";
+    when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(basicContainers);
+    var actual = dao.findContainers(selectionQuery, queryParamHelper, "bc");
+    assertEquals(basicContainers, actual);
   }
 
   @Test
