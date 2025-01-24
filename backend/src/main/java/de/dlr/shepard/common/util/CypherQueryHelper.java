@@ -110,6 +110,7 @@ public class CypherQueryHelper {
       ((BasicContainerAttributes) orderByAttribute) == BasicContainerAttributes.type
     ) ret = "ORDER BY LABELS(" + variable + ")";
     else ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
+    if (orderByAttribute.toString() == "id") ret = "ORDER BY id(" + variable + ")";
     if (orderDesc != null && orderDesc) ret = ret + " DESC";
     return ret;
   }
