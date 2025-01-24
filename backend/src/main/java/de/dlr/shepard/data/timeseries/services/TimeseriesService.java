@@ -11,6 +11,8 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
@@ -125,7 +127,8 @@ public class TimeseriesService {
    * @param dataType                 The data type that values in this timeseries will have
    * @return created timeseries
    */
-  @Transactional
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
   public TimeseriesEntity saveDataPoints(
     long timeseriesContainerId,
     Timeseries timeseries,
@@ -155,7 +158,11 @@ public class TimeseriesService {
 
     // create new timeseries because it does not exist
     TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
-    this.timeseriesRepository.upsert(containerId, timeseriesEntity);
+    QuarkusTransaction.requiringNew()
+      .run(() -> {
+        this.timeseriesRepository.upsert(containerId, timeseriesEntity);
+      });
+
     var found = this.timeseriesRepository.findTimeseries(containerId, timeseries);
     return found.get();
   }
