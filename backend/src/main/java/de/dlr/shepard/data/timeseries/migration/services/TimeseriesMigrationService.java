@@ -51,9 +51,12 @@ public class TimeseriesMigrationService {
   ManagedExecutor executor;
 
   final int numberOfReaderThreads = 1;
-  final int numberOfSaverThreads = 4;
-  private final BlockingQueue<PayloadWriteTask> payloadWriteQueue = new LinkedBlockingQueue<>(5);
-  private final Queue<PayloadReadTask> payloadReadQueue = new ConcurrentLinkedQueue<>();
+
+  @ConfigProperty(name = "shepard.migration-mode.number-of-writer-threads", defaultValue = "2")
+  int numberOfWriterThreads;
+
+  private final BlockingQueue<PayloadWriteTask> payloadWriteQueue;
+  private final Queue<PayloadReadTask> payloadReadQueue;
 
   public Queue<PayloadReadTask> getPayloadReadQueue() {
     return payloadReadQueue;
@@ -85,6 +88,9 @@ public class TimeseriesMigrationService {
     this.timeseriesDataPointRepository = timeseriesDataPointRepository;
     this.payloadReader = payloadReader;
     this.payloadWriter = payloadWriter;
+
+    payloadWriteQueue = new LinkedBlockingQueue<>(numberOfWriterThreads + 1);
+    payloadReadQueue = new ConcurrentLinkedQueue<>();
   }
 
   public List<MigrationTaskEntity> getMigrationTasks(boolean onlyShowErrors) {
@@ -377,7 +383,7 @@ public class TimeseriesMigrationService {
     List<Callable<Object>> tasks = new ArrayList<>();
 
     Log.infof("Creating writers...");
-    for (int i = 0; i < numberOfSaverThreads; i++) {
+    for (int i = 0; i < numberOfWriterThreads; i++) {
       tasks.add(payloadWriter);
     }
 
@@ -402,7 +408,7 @@ public class TimeseriesMigrationService {
 
   void addWriterPoisonPills() {
     try {
-      for (int i = 0; i < numberOfSaverThreads; i++) {
+      for (int i = 0; i < numberOfWriterThreads; i++) {
         getPayloadWriteQueue().put(PayloadWriteTask.poisonPill);
       }
     } catch (InterruptedException e) {
