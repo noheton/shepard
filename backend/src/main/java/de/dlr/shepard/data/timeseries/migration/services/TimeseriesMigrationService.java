@@ -52,7 +52,7 @@ public class TimeseriesMigrationService {
 
   final int numberOfReaderThreads = 1;
   final int numberOfSaverThreads = 4;
-  private final BlockingQueue<PayloadWriteTask> payloadWriteQueue = new LinkedBlockingQueue<>(10);
+  private final BlockingQueue<PayloadWriteTask> payloadWriteQueue = new LinkedBlockingQueue<>(5);
   private final Queue<PayloadReadTask> payloadReadQueue = new ConcurrentLinkedQueue<>();
 
   public Queue<PayloadReadTask> getPayloadReadQueue() {
