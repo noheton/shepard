@@ -10,6 +10,7 @@ import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeserie
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
+import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -52,6 +53,7 @@ class PayloadWriter implements Callable<Object> {
   }
 
   @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
   protected void saveDataPoints(
     TimeseriesContainer container,
     InfluxTimeseries influxTimeseries,
