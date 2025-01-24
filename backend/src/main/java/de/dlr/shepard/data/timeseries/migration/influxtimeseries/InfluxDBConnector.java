@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
@@ -51,7 +53,11 @@ public class InfluxDBConnector implements IConnector {
       String username = ConfigProvider.getConfig().getValue("influx.username", String.class);
       String password = ConfigProvider.getConfig().getValue("influx.password", String.class);
 
-      influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password);
+      OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(600, TimeUnit.SECONDS);
+
+      influxDB = InfluxDBFactory.connect(String.format("http://%s", host), username, password, okHttpClientBuilder);
     }
 
     influxDB.enableBatch(
