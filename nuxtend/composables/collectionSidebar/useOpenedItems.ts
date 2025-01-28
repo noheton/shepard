@@ -8,9 +8,11 @@ export function useOpenedItems() {
     ]);
   }
 
-  return { openedTreeviewItems, addOpen };
-}
+  function close(itemId: number) {
+    openedTreeviewItems.value = openedTreeviewItems.value.filter(
+      id => id !== itemId,
+    );
+  }
 
-function uniqueNumbersOf(array: number[]): number[] {
-  return [...new Set(array)];
+  return { openedTreeviewItems, addOpen, close };
 }

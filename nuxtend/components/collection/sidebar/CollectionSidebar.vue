@@ -1,12 +1,14 @@
 <script setup lang="ts">
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
-const { collection } = useFetchCollectionOfRouteParams(routeParams);
+const { collection, isAllowedToEditCollection, isAllowedToEditPermissions } =
+  useFetchCollectionOfRouteParams(routeParams);
 const {
   treeviewItems,
   openedTreeviewItems,
   loading,
   loadChildrenOfItem,
+  refreshItems,
   deleteItem,
 } = useTreeviewItems(routeParams);
 
@@ -33,11 +35,6 @@ function onActivated(activeItems: unknown) {
     );
   }
 }
-
-// Todo: activeDataObjectId cannot be used because user can select
-// edit from context menu without activating it
-const showEditDataObjectDialog = ref(false);
-const editDataObjectId = ref(0);
 </script>
 
 <template>
@@ -45,17 +42,11 @@ const editDataObjectId = ref(0);
     <div class="px-6 pt-6 pb-1 text-body-2 text-uppercase">Collection</div>
     <CollectionSidebarHeader
       :is-focused="routeParams.dataObjectId === undefined"
-      :to="collectionsPath + `${routeParams.collectionId}`"
       height="40px"
-      class="mb-4"
-    >
-      <div
-        class="ml-1 text-h4"
-        style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-      >
-        {{ collection?.name }}
-      </div>
-    </CollectionSidebarHeader>
+      :collection="collection"
+      :is-allowed-to-edit-collection="isAllowedToEditCollection"
+      :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
+    />
     <v-divider thickness="1" />
 
     <div class="px-6 pt-6">
@@ -91,40 +82,30 @@ const editDataObjectId = ref(0);
         />
       </template>
       <template #append="{ item }">
-        <CollectionSidebarTreeviewItemContextMenu>
-          <CollectionSidebarDeleteDataObjectButton
-            :delete-item="() => deleteItem(item.id)"
-          />
-          <v-btn
-            class="text-textbody1 text-body-1"
-            prepend-icon="mdi-pencil-outline"
-            text="Edit"
-            color="canvas"
-            @click="
-              editDataObjectId = item.id;
-              showEditDataObjectDialog = true;
-            "
-          />
-        </CollectionSidebarTreeviewItemContextMenu>
+        <CollectionSidebarItemContextMenu
+          v-if="isAllowedToEditCollection"
+          :collection-id="routeParams.collectionId"
+          :data-object-id="item.id"
+          :parent-id="item.parentId"
+          :delete-item="() => deleteItem(item.id)"
+          :item-name="item.title"
+          class="sidebar-item-context-menu"
+          @data-object-updated="refreshItems"
+        />
       </template>
     </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
-    <DataObjectDataEditDialog
-      v-if="showEditDataObjectDialog"
-      v-model:show-dialog="showEditDataObjectDialog"
-      :collection-id="collection?.id ?? 0"
-      :data-object-id="editDataObjectId"
-    />
   </div>
 </template>
 
-<style lang="css" scoped>
+<style lang="scss" scoped>
 .treeview {
   background-color: rgb(var(--v-theme-treeview));
 }
 .bg-treeview {
   :deep(.treeview-active) {
     background-color: rgb(var(--v-theme-focus1));
+    border-left: 5px solid rgb(var(--v-theme-primary)) !important;
   }
 
   /* Remove gray-dark overlay from treeview items */
@@ -139,6 +120,16 @@ const editDataObjectId = ref(0);
   :deep(.v-list-item) {
     padding-top: 0;
     padding-bottom: 0;
+    border-left: 5px solid transparent;
+  }
+
+  // TODO: Make this still visible when the context menu is opened
+  :deep(.sidebar-item-context-menu) {
+    visibility: hidden;
+  }
+
+  :deep(.v-list-item:hover) .sidebar-item-context-menu {
+    visibility: visible;
   }
 }
 </style>

@@ -9,10 +9,7 @@ const props = defineProps<SidebarEntry>();
 
 <template>
   <NuxtLink :to="props.to" class="link-button">
-    <span
-      class="link-text"
-      :style="{ fontWeight: isFocused ? 'bold' : 'normal' }"
-    >
+    <span class="link-text">
       {{ props.title }}
     </span>
   </NuxtLink>

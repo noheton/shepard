@@ -1,12 +1,25 @@
-import type { Collection, ResponseError } from "@dlr-shepard/backend-client";
+import type {
+  Collection,
+  ResponseError,
+  Roles,
+} from "@dlr-shepard/backend-client";
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 
-export function useFetchCollection(collectionId?: number) {
+export function useFetchCollection(collectionId: number) {
+  const lastUsedId = ref<number>(collectionId);
   const collection = ref<Collection | undefined>(undefined);
+  const collectionRoles = ref<Roles | undefined>(undefined);
 
-  function fetchCollection(collectionId?: number) {
-    if (!collectionId) return;
+  const isAllowedToEditCollection = computed(() => {
+    return collectionRoles.value?.owner || collectionRoles.value?.writer;
+  });
+  const isAllowedToEditPermissions = computed(() => {
+    return collectionRoles.value?.owner || collectionRoles.value?.manager;
+  });
+
+  function fetchCollection(collectionId: number) {
+    lastUsedId.value = collectionId;
     createApiInstance(CollectionApi)
       .getCollection({ collectionId })
       .then(response => {
@@ -15,19 +28,39 @@ export function useFetchCollection(collectionId?: number) {
       .catch(e => {
         handleError(e as ResponseError, "fetching collection");
       });
+    createApiInstance(CollectionApi)
+      .getCollectionRoles({ collectionId })
+      .then(response => {
+        collectionRoles.value = response;
+      })
+      .catch(e => {
+        handleError(e as ResponseError, "fetching collection roles");
+      });
   }
 
   fetchCollection(collectionId);
 
-  return { collection, fetchCollection };
+  onCollectionUpdated(() => {
+    fetchCollection(lastUsedId.value);
+  });
+
+  return {
+    collection,
+    isAllowedToEditCollection,
+    isAllowedToEditPermissions,
+    fetchCollection,
+  };
 }
 
 export const useFetchCollectionOfRouteParams = (
   routeParams: Ref<CollectionRouteParams>,
 ) => {
-  const { collection, fetchCollection } = useFetchCollection(
-    routeParams.value.collectionId,
-  );
+  const {
+    collection,
+    isAllowedToEditCollection,
+    isAllowedToEditPermissions,
+    fetchCollection,
+  } = useFetchCollection(routeParams.value.collectionId);
 
   watch(routeParams, () => {
     if (
@@ -38,5 +71,13 @@ export const useFetchCollectionOfRouteParams = (
     }
   });
 
-  return { collection };
+  const refreshCollection = () =>
+    fetchCollection(routeParams.value.collectionId);
+
+  return {
+    collection,
+    isAllowedToEditCollection,
+    isAllowedToEditPermissions,
+    refreshCollection,
+  };
 };

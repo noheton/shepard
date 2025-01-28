@@ -9,10 +9,10 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const router = useRouter();
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
-  const { openedTreeviewItems, addOpen } = useOpenedItems();
+  const { openedTreeviewItems, addOpen, close } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
-    createApiInstance(DataObjectApi)
+    await createApiInstance(DataObjectApi)
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
         // initial load of dataobject from a collection - no parents possible
@@ -23,27 +23,33 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       });
   }
 
-  async function expandAndLoadItem(itemId: number) {
-    const itemWithPath = getItemIfLoaded(itemId);
+  /**
+   * @param openLoadedItems will only load and not expand items if disabled, for example to preserve opened state after refreshing
+   */
+  async function loadAndExpandUpToItem(
+    itemId: number,
+    openLoadedItems: boolean = true,
+  ) {
+    const itemWithPath = getItemWithPathIfLoaded(itemId);
     if (itemWithPath) {
-      addOpen(itemWithPath.pathFromRoot);
+      if (openLoadedItems) addOpen(itemWithPath.pathFromRoot);
       return;
     }
-    const parentIds = await getPathToActiveItem(
+    const parentIds = await getPathToItem(
       routeParams.value.collectionId,
       itemId,
     );
     for (const id of parentIds) {
       await loadChildrenOfItem(id);
     }
-    addOpen(parentIds);
+    if (openLoadedItems) addOpen(parentIds);
   }
 
   async function initialLoad() {
     loading.value = true;
     await fetchTreeviewItems(routeParams.value.collectionId);
     if (routeParams.value.dataObjectId) {
-      await expandAndLoadItem(routeParams.value.dataObjectId);
+      await loadAndExpandUpToItem(routeParams.value.dataObjectId);
     }
     loading.value = false;
   }
@@ -59,10 +65,20 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       await fetchTreeviewItems(routeParams.value.collectionId);
     }
     if (routeParams.value.dataObjectId) {
-      await expandAndLoadItem(routeParams.value.dataObjectId);
+      await loadAndExpandUpToItem(routeParams.value.dataObjectId);
     }
     loading.value = false;
   });
+
+  async function refreshItems() {
+    loading.value = true;
+    await fetchTreeviewItems(routeParams.value.collectionId);
+    for (const openedItem of openedTreeviewItems.value) {
+      await loadAndExpandUpToItem(openedItem, false);
+      await loadChildrenOfItem(openedItem);
+    }
+    loading.value = false;
+  }
 
   /**
    * Searches for item in the already loaded tree
@@ -70,7 +86,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
    * @param itemId Id of the item to be found
    * @returns The item and the path from the root to the item (excluding the id of the item itself). Undefined if the item can't be found in the tree.
    */
-  function getItemIfLoaded(
+  function getItemWithPathIfLoaded(
     itemId: number,
   ): { item: TreeviewItem; pathFromRoot: number[] } | undefined {
     function getTreeviewItemInSubtree(
@@ -104,7 +120,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
    * @param itemId Id of the item with children to expand (must be already loaded)
    */
   async function loadChildrenOfItem(itemId: number) {
-    const item = getItemIfLoaded(itemId)?.item;
+    const item = getItemWithPathIfLoaded(itemId)?.item;
 
     if (!item) return;
     if (!item.childrenIds?.length) {
@@ -125,7 +141,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   /**
    * @returns List of numbers representing the path to the item (excluding the id of the item itself)
    */
-  async function getPathToActiveItem(
+  async function getPathToItem(
     collectionId: number,
     itemId: number,
   ): Promise<number[]> {
@@ -134,7 +150,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       if (currentRoot === undefined) {
         return [];
       }
-      const currentRootItemWithPath = getItemIfLoaded(currentRoot);
+      const currentRootItemWithPath = getItemWithPathIfLoaded(currentRoot);
       if (currentRootItemWithPath) {
         return [...currentRootItemWithPath.pathFromRoot, ...currentPath];
       }
@@ -172,64 +188,17 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
    * @param itemId Id of the item to delete
    */
   async function deleteItem(itemId: number) {
-    const childrenOfDeletedItem = await fetchChildrenOfItem(
+    const deletionSuccessful = deleteDataObject(
       routeParams.value.collectionId,
       itemId,
     );
-    const deletionSuccessful = await createApiInstance(DataObjectApi)
-      .deleteDataObject({
-        collectionId: routeParams.value.collectionId,
-        dataObjectId: itemId,
-      })
-      .then(() => true)
-      .catch(error => {
-        handleError(error, "deleteDataObject");
-        return false;
-      });
+
     if (!deletionSuccessful) return;
 
-    await removeItemFromTree(itemId, childrenOfDeletedItem);
-
+    close(itemId);
+    refreshItems();
     if (routeParams.value.dataObjectId === itemId) {
       router.push(collectionsPath + routeParams.value.collectionId);
-    }
-  }
-
-  function removeItemFromTree(
-    itemId: number,
-    childrenOfDeletedItem: TreeviewItem[],
-  ) {
-    const deletedItemWithPath = getItemIfLoaded(itemId);
-
-    // This should not happen as the item needs to be loaded for the delete button to be rendered
-    if (!deletedItemWithPath || !treeviewItems.value) return;
-
-    const { item } = deletedItemWithPath;
-
-    // Move orphaned children to top level
-    treeviewItems.value?.push(
-      ...childrenOfDeletedItem.map(child => ({
-        ...child,
-        parent: undefined,
-        parentId: undefined,
-      })),
-    );
-
-    const parent = item.parent;
-
-    if (parent === undefined) {
-      // Remove item if it was on top level
-      treeviewItems.value = treeviewItems.value?.filter(
-        child => child.id !== item.id,
-      );
-    } else if (parent && parent.children && parent.childrenIds) {
-      // Remove item from children of it's parent
-      parent.children = parent.children.filter(child => child.id !== item.id);
-      parent.childrenIds = parent.childrenIds.filter(id => id !== item.id);
-      if (parent.children.length === 0 || parent.childrenIds.length === 0) {
-        parent.children = undefined;
-        parent.childrenIds = undefined;
-      }
     }
   }
 
@@ -238,11 +207,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     openedTreeviewItems,
     loading,
     loadChildrenOfItem,
+    refreshItems,
     deleteItem,
   };
 };
 
-export async function fetchTreeviewItem(
+async function fetchTreeviewItem(
   collectionId: number,
   dataObjectId: number,
   parentItem?: TreeviewItem,
@@ -256,7 +226,7 @@ export async function fetchTreeviewItem(
   );
 }
 
-export async function fetchChildrenOfItem(
+async function fetchChildrenOfItem(
   collectionId: number,
   parentId: number,
   parentItem?: TreeviewItem,
@@ -267,4 +237,20 @@ export async function fetchChildrenOfItem(
       collectionId,
     })
   ).map(item => mapToTreeviewItem(item, parentItem));
+}
+
+async function deleteDataObject(
+  collectionId: number,
+  dataObjectId: number,
+): Promise<boolean> {
+  return createApiInstance(DataObjectApi)
+    .deleteDataObject({
+      collectionId: collectionId,
+      dataObjectId: dataObjectId,
+    })
+    .then(() => true)
+    .catch(error => {
+      handleError(error, "deleteDataObject");
+      return false;
+    });
 }

@@ -25,6 +25,7 @@ const title = `${toShortDateString(model.value.createdAt)} | by ${model.value.cr
 const isEditing = ref<boolean>(false);
 const isExpanded = ref<boolean>(false);
 const isHovering = ref<boolean>(false);
+const showDeleteDialog = ref<boolean>(false);
 
 async function startEditing(event: Event) {
   event.stopPropagation();
@@ -135,30 +136,34 @@ const getUpdatedInfoString = computed(() => {
           :disabled="isEditing"
           @click="startEditing"
         />
-        <CommonConfirmationDialog
-          prompt-text="Are you sure you want to delete this item?"
-          confirm-button-text="Delete"
-          @confirmed="deleteEntry"
-        >
+        <template v-if="(isHovering || isExpanded) && isAllowedToEdit()">
           <v-icon
-            v-if="(isHovering || isExpanded) && isAllowedToEdit()"
             icon="mdi-delete-outline"
             size="24"
             color="info"
             style="cursor: pointer"
+            @click="showDeleteDialog = true"
           />
-        </CommonConfirmationDialog>
+          <CommonConfirmationDialog
+            v-model:show-dialog="showDeleteDialog"
+            prompt-text="Are you sure you want to delete this item?"
+            confirm-button-text="Delete"
+            @confirmed="deleteEntry"
+          />
+        </template>
       </span>
     </div>
 
     <!-- text editor -->
-    <LabJournalEditor
-      v-model="model.journalContent"
-      class="pr-2 pl-4"
-      :initial-content="model.journalContent"
-      :is-editable="isEditing"
-      :is-preview-collapsed="!isExpanded"
-    />
+    <div class="mx-4">
+      <CommonEditor
+        v-model="model.journalContent"
+        class="pr-2 pl-4"
+        :initial-content="model.journalContent"
+        :is-editable="isEditing"
+        :is-preview-collapsed="!isExpanded"
+      />
+    </div>
 
     <div
       v-if="isExpanded && model.updatedAt != undefined && !isEditing"
@@ -208,5 +213,9 @@ const getUpdatedInfoString = computed(() => {
 
 .updated-info-text {
   color: rgb(var(--v-theme-textbody2));
+}
+
+:deep(.tiptap) {
+  min-height: 6lh;
 }
 </style>

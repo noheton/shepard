@@ -1,4 +1,4 @@
-import { handleError } from "@/utils/error-handling";
+import { handleError } from "~/utils/errorBus";
 
 import {
   QueryType,

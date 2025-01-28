@@ -24,6 +24,9 @@ const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
 } = useCounter();
+
+const showAttributeEditDialog = ref(false);
+const showDescriptionEditDialog = ref(false);
 </script>
 
 <template>
@@ -66,12 +69,70 @@ const {
               <EntityExpansionPanels>
                 <EntityExpansionPanelItem title="Description">
                   <EntityDescription :entity="dataObject" />
+                  <template #append>
+                    <EntityExpansionPanelTitleButton
+                      text="Edit"
+                      icon="mdi-pencil-outline"
+                      @click="() => (showDescriptionEditDialog = true)"
+                    />
+                    <DataObjectEditDialog
+                      v-model:show-dialog="showDescriptionEditDialog"
+                      :collection-id="collectionId"
+                      :data-object-id="dataObjectId"
+                      :parent-id="dataObject.parentId ?? undefined"
+                      title="Edit Description"
+                    >
+                      <template
+                        #inputs="{ updatedDataObject, updateDataObject }"
+                      >
+                        <CommonInputDescription
+                          :description="updatedDataObject.description"
+                          @description-changed="
+                            description =>
+                              updateDataObject({
+                                ...updatedDataObject,
+                                description,
+                              })
+                          "
+                        />
+                      </template>
+                    </DataObjectEditDialog>
+                  </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                 >
                   <EntityAttributes :entity="dataObject" />
+                  <template #append>
+                    <EntityExpansionPanelTitleButton
+                      text="Add/Edit"
+                      icon="mdi-plus-circle"
+                      @click="() => (showAttributeEditDialog = true)"
+                    />
+                    <DataObjectEditDialog
+                      v-model:show-dialog="showAttributeEditDialog"
+                      :collection-id="collectionId"
+                      :data-object-id="dataObjectId"
+                      :parent-id="dataObject.parentId ?? undefined"
+                      title="Add / Edit Attributes"
+                    >
+                      <template
+                        #inputs="{ updatedDataObject, updateDataObject }"
+                      >
+                        <CommonInputAttributes
+                          :attributes="updatedDataObject.attributes ?? {}"
+                          @attributes-changed="
+                            attributes =>
+                              updateDataObject({
+                                ...updatedDataObject,
+                                attributes,
+                              })
+                          "
+                        />
+                      </template>
+                    </DataObjectEditDialog>
+                  </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
                   title="Lab Journal"

@@ -12,17 +12,28 @@ import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { defineProps, type ShallowRef } from "vue";
 
 interface TextEditorProps {
-  content: string;
+  isEditable: boolean;
+  isPreviewCollapsed?: boolean;
 }
 
 const props = defineProps<TextEditorProps>();
 
+const model = defineModel<string>();
+
+const editorClassObject = computed(() => ({
+  "editor-is-editable": props.isEditable,
+  "editor-not-editable": !props.isEditable,
+  "preview-is-collapsed": !!props.isPreviewCollapsed,
+}));
+
 const editor: ShallowRef<Editor | undefined> = useEditor({
-  content: props.content,
-
+  content: model.value,
   extensions: [
-    StarterKit,
-
+    StarterKit.configure({
+      heading: {
+        levels: [3],
+      },
+    }),
     Underline,
     TextAlign.configure({
       types: ["heading", "paragraph"],
@@ -40,17 +51,61 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
     TableHeader,
     TableCell,
   ],
-  editable: false,
+  editable: props.isEditable,
   autofocus: true,
+  onUpdate: ({ editor }) => {
+    model.value = editor.getHTML();
+  },
   injectCSS: true,
 });
+
+watch(model, newContent => {
+  if (editor.value) {
+    const isSame = editor.value.getHTML() === newContent;
+
+    if (isSame) {
+      return;
+    }
+    if (newContent) {
+      editor.value?.commands.setContent(newContent, false);
+    }
+  }
+});
+
+watch(
+  () => props.isEditable,
+  newIsEditState => {
+    if (editor.value) {
+      editor.value.setEditable(newIsEditState);
+      if (newIsEditState) {
+        editor.value.commands.focus();
+      }
+    }
+  },
+);
 </script>
 
 <template>
-  <editor-content :editor="editor" class="editor-not-editable" />
+  <div class="h-100 d-flex flex-column flex-nowrap ga-1 w-100">
+    <CommonEditorToolbar
+      v-if="editor"
+      :editor="editor"
+      :is-toolbar-shown="isEditable"
+    />
+    <editor-content :editor="editor" :class="editorClassObject" />
+  </div>
 </template>
 
 <style scoped lang="scss">
+.editor-is-editable {
+  border: 1px solid rgb(var(--v-theme-divider1));
+  border-radius: 4px;
+  :deep(.tiptap) {
+    min-height: 6lh;
+    padding: 8px;
+  }
+}
+
 .editor-not-editable {
   border: none;
   :deep(.tiptap) {
@@ -58,14 +113,16 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
   }
 }
 
+.preview-is-collapsed {
+  max-height: 6lh;
+  mask-image: linear-gradient(to bottom, white, transparent);
+  overflow: hidden;
+}
+
 :deep(.tiptap) {
   flex: 1;
-  min-height: 6lh;
   border-radius: 4px;
 
-  // We apply the same style for all headlines to support old descriptions with h1/h2.
-  h1,
-  h2,
   h3 {
     // these are the 'text-subtitle-1' class settings
     font-size: 1.25rem;

@@ -1,9 +1,17 @@
 import type { ResponseError } from "@dlr-shepard/backend-client";
-import { useEventBus } from "@vueuse/core";
+import { useEventBus, type EventBusKey } from "@vueuse/core";
 import log from "loglevel";
-import { errorKey, type ErrorType } from "./event-bus";
 
-const bus = useEventBus(errorKey);
+const errorKey: EventBusKey<{ error: ErrorType; situation: string }> =
+  Symbol("error-key");
+
+const errorBus = useEventBus(errorKey);
+
+export type ErrorType = {
+  status: number;
+  exception: string;
+  message: string;
+};
 
 function isErrorType(error: object): error is ErrorType {
   return "status" in error && "exception" in error && "message" in error;
@@ -46,7 +54,7 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
 export function handleError(e: ResponseError, situation: string) {
   parseResponseError(e as ResponseError).then(parsedError => {
     log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
-    bus.emit({
+    errorBus.emit({
       situation: situation,
       error: parsedError,
     });
@@ -58,3 +66,9 @@ export function logError(e: ResponseError, situation: string) {
     log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
   });
 }
+
+export const onError = (
+  listener: (e: { error: ErrorType; situation: string }) => void,
+) => {
+  errorBus.on(listener);
+};

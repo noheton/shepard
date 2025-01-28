@@ -31,5 +31,7 @@ export function useFetchDataObject(collectionId: number, dataObjectId: number) {
 
   fetchDataObject();
 
+  onDataObjectUpdated(fetchDataObject);
+
   return { dataObject };
 }

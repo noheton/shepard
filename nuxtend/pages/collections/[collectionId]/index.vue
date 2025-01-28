@@ -14,6 +14,9 @@ const { collection } = useFetchCollection(routeParams.value.collectionId);
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(
   routeParams.value.collectionId,
 );
+
+const showAttributeEditDialog = ref(false);
+const showDescriptionEditDialog = ref(false);
 </script>
 
 <template>
@@ -43,12 +46,66 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(
               <EntityExpansionPanels>
                 <EntityExpansionPanelItem title="Description">
                   <EntityDescription :entity="collection" />
+                  <template #append>
+                    <EntityExpansionPanelTitleButton
+                      text="Edit"
+                      icon="mdi-pencil-outline"
+                      @click="() => (showDescriptionEditDialog = true)"
+                    />
+                    <CollectionEditDialog
+                      v-model:show-dialog="showDescriptionEditDialog"
+                      :collection="collection"
+                      title="Edit Description"
+                    >
+                      <template
+                        #inputs="{ updatedCollection, updateCollection }"
+                      >
+                        <CommonInputDescription
+                          :description="updatedCollection.description"
+                          @description-changed="
+                            description =>
+                              updateCollection({
+                                ...updatedCollection,
+                                description,
+                              })
+                          "
+                        />
+                      </template>
+                    </CollectionEditDialog>
+                  </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(collection.attributes ?? {}).length"
                 >
                   <EntityAttributes :entity="collection" />
+                  <template #append>
+                    <EntityExpansionPanelTitleButton
+                      text="Add/Edit"
+                      icon="mdi-plus-circle"
+                      @click="() => (showAttributeEditDialog = true)"
+                    />
+                    <CollectionEditDialog
+                      v-model:show-dialog="showAttributeEditDialog"
+                      :collection="collection"
+                      title="Add / Edit Attributes"
+                    >
+                      <template
+                        #inputs="{ updatedCollection, updateCollection }"
+                      >
+                        <CommonInputAttributes
+                          :attributes="updatedCollection.attributes"
+                          @attributes-changed="
+                            attributes =>
+                              updateCollection({
+                                ...updatedCollection,
+                                attributes,
+                              })
+                          "
+                        />
+                      </template>
+                    </CollectionEditDialog>
+                  </template>
                 </EntityExpansionPanelItem>
                 <EntityExpansionPanelItem
                   title="Lab Journal"

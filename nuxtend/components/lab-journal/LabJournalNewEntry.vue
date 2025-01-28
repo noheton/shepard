@@ -57,10 +57,12 @@ async function saveNewLabJournalEntry() {
     @update:focused="isCreatingNew = true"
   />
   <div v-if="!!isCreatingNew" id="labJournalNewEntry">
-    <LabJournalEditor
-      v-model="newLabJournalEntryModel.journalContent"
-      :is-editable="true"
-    />
+    <div class="mx-4">
+      <CommonEditor
+        v-model="newLabJournalEntryModel.journalContent"
+        :is-editable="true"
+      />
+    </div>
 
     <div id="newEntryControlButtons">
       <v-btn variant="flat" color="treeview" @click="resetNewLabJournalEntry">

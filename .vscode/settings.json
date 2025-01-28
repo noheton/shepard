@@ -27,6 +27,8 @@
     "Quarkus",
     "registerables",
     "structureddata",
+    "textbody",
+    "Texteditor",
     "Timeseries",
     "Treeview",
     "usergroup",

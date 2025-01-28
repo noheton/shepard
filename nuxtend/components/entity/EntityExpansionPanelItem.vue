@@ -7,9 +7,8 @@ defineProps<{ title: string; count?: number }>();
     <v-expansion-panel-title
       v-slot="slotProps"
       min-height="32"
-      class="pl-0 py-0"
-      :expand-icon="() => null"
-      :collapse-icon="() => null"
+      class="px-0 py-0"
+      hide-actions
     >
       <v-icon
         :icon="slotProps.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'"
@@ -24,6 +23,10 @@ defineProps<{ title: string; count?: number }>();
       >
         ({{ count }})
       </div>
+      <v-spacer />
+      <div v-if="slotProps.expanded">
+        <slot name="append" />
+      </div>
     </v-expansion-panel-title>
     <v-expansion-panel-text class="no-padding-bottom">
       <slot />
@@ -35,5 +38,8 @@ defineProps<{ title: string; count?: number }>();
 .no-padding-bottom ::v-deep .v-expansion-panel-text__wrapper {
   padding-bottom: 0;
   padding-top: 16px;
+}
+:deep(.v-expansion-panel-text__wrapper) {
+  padding-left: 30.5px;
 }
 </style>
