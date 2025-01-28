@@ -64,6 +64,7 @@ const headers = [
     }"
     :headers="headers"
     :items="serverItems"
+    :items-per-page="itemsPerPage"
     :loading="loading"
   >
     <template #[`item.type`]="{ value }: { value: ContainerFilterType }">
