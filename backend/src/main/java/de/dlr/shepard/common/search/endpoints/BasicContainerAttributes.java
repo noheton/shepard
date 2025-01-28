@@ -1,0 +1,27 @@
+package de.dlr.shepard.common.search.endpoints;
+
+import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
+import java.util.List;
+
+public enum BasicContainerAttributes implements OrderByAttribute {
+  createdAt,
+  createdBy,
+  type,
+  id,
+  name;
+
+  private static List<BasicContainerAttributes> stringList = List.of(
+    BasicContainerAttributes.name,
+    BasicContainerAttributes.type,
+    BasicContainerAttributes.createdBy
+  );
+
+  private boolean isString(BasicContainerAttributes dataObjectAttribute) {
+    return stringList.contains(dataObjectAttribute);
+  }
+
+  @Override
+  public boolean isString() {
+    return isString(this);
+  }
+}

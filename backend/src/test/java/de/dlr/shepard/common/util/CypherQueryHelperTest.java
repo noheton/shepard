@@ -3,7 +3,7 @@ package de.dlr.shepard.common.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
-import de.dlr.shepard.common.search.container.BasicContainerAttributes;
+import de.dlr.shepard.common.search.endpoints.BasicContainerAttributes;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.context.collection.endpoints.DataObjectAttributes;
 import org.junit.jupiter.api.Test;

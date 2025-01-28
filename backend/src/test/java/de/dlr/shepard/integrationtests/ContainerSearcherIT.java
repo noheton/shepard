@@ -4,9 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.common.neo4j.entities.ContainerType;
-import de.dlr.shepard.common.search.container.ContainerSearchBody;
-import de.dlr.shepard.common.search.container.ContainerSearchParams;
-import de.dlr.shepard.common.search.container.ContainerSearchResult;
+import de.dlr.shepard.common.search.io.ContainerSearchBody;
+import de.dlr.shepard.common.search.io.ContainerSearchParams;
+import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;

@@ -4,9 +4,9 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.auth.users.io.UserIO;
-import de.dlr.shepard.common.search.user.UserSearchBody;
-import de.dlr.shepard.common.search.user.UserSearchParams;
-import de.dlr.shepard.common.search.user.UserSearchResult;
+import de.dlr.shepard.common.search.io.UserSearchBody;
+import de.dlr.shepard.common.search.io.UserSearchParams;
+import de.dlr.shepard.common.search.io.UserSearchResult;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;

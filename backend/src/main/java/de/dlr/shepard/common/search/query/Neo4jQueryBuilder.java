@@ -1,0 +1,635 @@
+package de.dlr.shepard.common.search.query;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.common.exceptions.ShepardParserException;
+import de.dlr.shepard.common.neo4j.entities.ContainerType;
+import de.dlr.shepard.common.search.io.SearchScope;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.CypherQueryHelper;
+import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.TraversalRules;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+public class Neo4jQueryBuilder {
+
+  private static final List<String> booleanOperators = List.of(
+    Constants.JSON_AND,
+    Constants.JSON_OR,
+    Constants.JSON_NOT,
+    Constants.JSON_XOR
+  );
+  private static final List<String> opAttributes = List.of(
+    Constants.OP_PROPERTY,
+    Constants.OP_VALUE,
+    Constants.OP_OPERATOR
+  );
+  private static final List<String> notIdProperties = List.of(
+    "createdBy",
+    "updatedBy",
+    "valueIRI",
+    "propertyIRI",
+    "referencedCollectionId",
+    "referencedDataObjectId",
+    "fileContainerId",
+    "structuredDataContainerId",
+    "timeseriesContainerId"
+  );
+
+  private static String getNeo4jString(String jsonquery, String variable) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
+    } catch (JsonProcessingException e) {
+      throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
+    }
+    return getNeo4jString(jsonNode, variable);
+  }
+
+  private static String getNeo4jWithShepardIdString(String jsonquery, String variable) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
+    } catch (JsonProcessingException e) {
+      throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
+    }
+    return getNeo4jWithShepardIdString(jsonNode, variable);
+  }
+
+  private static String getNeo4jString(JsonNode rootNode, String variable) {
+    String op = "";
+    try {
+      op = rootNode.fieldNames().next();
+    } catch (NoSuchElementException e) {
+      throw new ShepardParserException("error in parsing" + e.getMessage());
+    }
+    if (opAttributes.contains(op)) {
+      return primitiveClause(rootNode, variable);
+    }
+    return complexClause(rootNode, op, variable);
+  }
+
+  private static String getNeo4jWithShepardIdString(JsonNode rootNode, String variable) {
+    String op = "";
+    try {
+      op = rootNode.fieldNames().next();
+    } catch (NoSuchElementException e) {
+      throw new ShepardParserException("error in parsing" + e.getMessage());
+    }
+    if (opAttributes.contains(op)) {
+      return primitiveClauseWithShepardId(rootNode, variable);
+    }
+    return complexClauseWithShepardId(rootNode, op, variable);
+  }
+
+  private static String complexClause(JsonNode node, String operator, String variable) {
+    if (!booleanOperators.contains(operator)) throw new ShepardParserException("unknown boolean operator: " + operator);
+    if (operator.equals(Constants.JSON_NOT)) return notClause(node, variable);
+    else return multaryClause(node, operator, variable);
+  }
+
+  private static String complexClauseWithShepardId(JsonNode node, String operator, String variable) {
+    if (!booleanOperators.contains(operator)) throw new ShepardParserException("unknown boolean operator: " + operator);
+    if (operator.equals(Constants.JSON_NOT)) return notClauseWithShepardId(node, variable);
+    else return multaryClauseWithShepardId(node, operator, variable);
+  }
+
+  private static String multaryClause(JsonNode node, String operator, String variable) {
+    Iterator<JsonNode> argumentsArray = node.get(operator).elements();
+    String firstArgument = getNeo4jString(argumentsArray.next(), variable);
+    String ret = "(" + firstArgument;
+    while (argumentsArray.hasNext()) {
+      ret = ret + " " + operator + " " + getNeo4jString(argumentsArray.next(), variable);
+    }
+    ret = ret + ")";
+    return ret;
+  }
+
+  private static String multaryClauseWithShepardId(JsonNode node, String operator, String variable) {
+    Iterator<JsonNode> argumentsArray = node.get(operator).elements();
+    String firstArgument = getNeo4jWithShepardIdString(argumentsArray.next(), variable);
+    String ret = "(" + firstArgument;
+    while (argumentsArray.hasNext()) {
+      ret = ret + " " + operator + " " + getNeo4jWithShepardIdString(argumentsArray.next(), variable);
+    }
+    ret = ret + ")";
+    return ret;
+  }
+
+  private static String notClause(JsonNode node, String variable) {
+    JsonNode body = node.get(Constants.JSON_NOT);
+    return "(NOT(" + getNeo4jString(body, variable) + "))";
+  }
+
+  private static String notClauseWithShepardId(JsonNode node, String variable) {
+    JsonNode body = node.get(Constants.JSON_NOT);
+    return "(NOT(" + getNeo4jWithShepardIdString(body, variable) + "))";
+  }
+
+  private static String primitiveClause(JsonNode node, String variable) {
+    String property = node.get(Constants.OP_PROPERTY).textValue();
+    property = changeAttributesDelimiter(property);
+
+    if (notIdProperties.contains(property)) return simplePropertyPart(node, variable);
+    String ret = "(";
+    if (property.equals("id")) ret = ret + "id(" + variable + ")";
+    else ret = ret + "toLower(" + variable + ".`" + property + "`) ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + valuePart(node).toLowerCase();
+    ret = ret + ")";
+    return ret;
+  }
+
+  private static String primitiveClauseWithShepardId(JsonNode node, String variable) {
+    String property = node.get(Constants.OP_PROPERTY).textValue();
+    property = changeAttributesDelimiter(property);
+
+    if (notIdProperties.contains(property)) return simplePropertyPart(node, variable);
+    String ret = "(";
+    if (property.equals("id")) ret = ret + variable + "." + Constants.SHEPARD_ID + " ";
+    else ret = ret + variable + ".`" + property + "` ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + valuePart(node);
+    ret = ret + ")";
+    return ret;
+  }
+
+  /**
+   * This is a fix described in: https://gitlab.com/dlr-shepard/shepard/-/issues/389
+   * We use new delimiter characters for attributes ('||'), but want to support the old search functionality using '.' as a delimiter.
+   * @param property
+   * @return property string, if it contained 'attributes.', it is going to be replaced by 'attributes||'
+   */
+  private static String changeAttributesDelimiter(String property) {
+    if (property.startsWith("attributes.")) {
+      return property.replaceFirst("attributes.", "attributes||");
+    }
+    return property;
+  }
+
+  private static String valuePart(JsonNode node) {
+    String ret = "";
+    if (node.get(Constants.OP_OPERATOR).textValue().equals(Constants.JSON_IN)) {
+      ret = ret + "[";
+      Iterator<JsonNode> setArray = node.get(Constants.OP_VALUE).elements();
+      if (setArray.hasNext()) {
+        ret = ret + setArray.next();
+        while (setArray.hasNext()) ret = ret + ", " + setArray.next();
+        ret = ret + "]";
+      } else {
+        ret = ret + "]";
+      }
+    } else ret = ret + node.get(Constants.OP_VALUE);
+    return ret;
+  }
+
+  private static String simplePropertyPart(JsonNode node, String variable) {
+    String property = node.get(Constants.OP_PROPERTY).textValue();
+    // search for creating user
+    if (property.equals("createdBy") || property.equals("updatedBy")) return byPart(node, variable);
+    // for SemanticAnnotationIRIs
+    if (property.equals("valueIRI") || property.equals("propertyIRI")) return iRIPart(node, variable);
+    // for CollectionReferences
+    if (property.equals("referencedCollectionId")) return referencedCollectionIdPart(node, variable);
+    // for DataObjectReferences
+    if (property.equals("referencedDataObjectId")) return referencedDataObjectIdPart(node, variable);
+    // for FileReferences
+    if (property.equals("fileContainerId")) return fileContainerIdPart(node, variable);
+    // for StructuredDataReferences
+    if (property.equals("structuredDataContainerId")) return structuredDataContainerIdPart(node, variable);
+    // for TimeseriesReferences
+    if (property.equals("timeseriesContainerId")) return timeseriesContainerIdPart(node, variable);
+    return null;
+  }
+
+  private static String byPart(JsonNode node, String variable) {
+    String ret = "(";
+    String by =
+      switch (node.get(Constants.OP_PROPERTY).textValue()) {
+        case "createdBy" -> "created_by";
+        case "updatedBy" -> "updated_by";
+        default -> "";
+      };
+    ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE toLower(u.username) ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
+    ret = ret + "})";
+    return ret;
+  }
+
+  private static String iRIPart(JsonNode node, String variable) {
+    String ret = "(";
+    String iriType = node.get(Constants.OP_PROPERTY).textValue();
+    ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem." + iriType + " ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE);
+    ret = ret + ")})";
+    return ret;
+  }
+
+  private static String timeseriesContainerIdPart(JsonNode node, String variable) {
+    return containerIdPart(node, variable, "TimeseriesContainer");
+  }
+
+  private static String structuredDataContainerIdPart(JsonNode node, String variable) {
+    return containerIdPart(node, variable, "StructuredDataContainer");
+  }
+
+  private static String fileContainerIdPart(JsonNode node, String variable) {
+    return containerIdPart(node, variable, "FileContainer");
+  }
+
+  private static String containerIdPart(JsonNode node, String variable, String containerType) {
+    String ret = "(";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.IS_IN_CONTAINER +
+      "]->(refCon:" +
+      containerType +
+      ") WHERE id(refCon) ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE) + " ";
+    ret = ret + "})";
+    return ret;
+  }
+
+  private static String referencedDataObjectIdPart(JsonNode node, String variable) {
+    String ret = "(";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.POINTS_TO +
+      "]->(refDo:DataObject) WHERE refDo." +
+      Constants.SHEPARD_ID +
+      " ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE) + " ";
+    ret = ret + "})";
+    return ret;
+  }
+
+  private static String referencedCollectionIdPart(JsonNode node, String variable) {
+    String ret = "(";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ")-[:" +
+      Constants.POINTS_TO +
+      "]->(refCol:Collection) WHERE refCol." +
+      Constants.SHEPARD_ID +
+      " ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE) + " ";
+    ret = ret + "})";
+    return ret;
+  }
+
+  private static String operatorString(JsonNode node) {
+    String operator = node.textValue();
+    return switch (operator) {
+      case Constants.JSON_EQ -> "=";
+      case Constants.JSON_CONTAINS -> "contains";
+      case Constants.JSON_GT -> ">";
+      case Constants.JSON_LT -> "<";
+      case Constants.JSON_GE -> ">=";
+      case Constants.JSON_LE -> "<=";
+      case Constants.JSON_IN -> "IN";
+      case Constants.JSON_NE -> "<>";
+      default -> throw new ShepardParserException("unknown comparison operator " + operator);
+    };
+  }
+
+  private static String collectionMatchPart() {
+    String ret = "";
+    ret = ret + "MATCH (" + Constants.COLLECTION_IN_QUERY + ":Collection)";
+    return ret;
+  }
+
+  private static String collectionDataObjectMatchPart() {
+    String ret =
+      "MATCH (" +
+      Constants.COLLECTION_IN_QUERY +
+      ":Collection)-[:has_dataobject]->(" +
+      Constants.DATAOBJECT_IN_QUERY +
+      ":DataObject)";
+    return ret;
+  }
+
+  private static String collectionIdWherePart(Long collectionId) {
+    String ret = "(" + Constants.COLLECTION_IN_QUERY + "." + Constants.SHEPARD_ID + " = " + collectionId + ")";
+    return ret;
+  }
+
+  private static String notDeletedPart(String variable) {
+    String ret = "(" + variable + ".deleted = FALSE)";
+    return ret;
+  }
+
+  private static String collectionDataObjectIdWherePart(Long collectionId, Long dataObjectId) {
+    String ret =
+      "(" +
+      Constants.COLLECTION_IN_QUERY +
+      "." +
+      Constants.SHEPARD_ID +
+      " = " +
+      collectionId +
+      " AND " +
+      Constants.DATAOBJECT_IN_QUERY +
+      "." +
+      Constants.SHEPARD_ID +
+      " = " +
+      dataObjectId +
+      ")";
+    return ret;
+  }
+
+  private static String collectionDataObjectTraversalIdWherePart(Long collectionId, Long dataObjectId) {
+    String ret =
+      "(" +
+      Constants.COLLECTION_IN_QUERY +
+      "." +
+      Constants.SHEPARD_ID +
+      " = " +
+      collectionId +
+      " AND d." +
+      Constants.SHEPARD_ID +
+      " = " +
+      dataObjectId +
+      ")";
+    return ret;
+  }
+
+  private static String referenceMatchPart() {
+    String ret =
+      "MATCH (" +
+      Constants.COLLECTION_IN_QUERY +
+      ":Collection)-[:has_dataobject]->(" +
+      Constants.DATAOBJECT_IN_QUERY +
+      ":DataObject)-[:has_reference]->(" +
+      Constants.REFERENCE_IN_QUERY +
+      ":BasicReference)";
+    return ret;
+  }
+
+  public static String collectionSelectionQuery(String searchBodyQuery, String userName) {
+    String ret = "";
+    ret = ret + collectionMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.COLLECTION_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.COLLECTION_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(userName);
+    return ret;
+  }
+
+  public static String containerSelectionQuery(
+    String JSONQuery,
+    ContainerType containerType,
+    QueryParamHelper params,
+    String userName
+  ) {
+    String ret = "MATCH (" + containerType.getTypeAlias() + ":" + containerType.getTypeName() + ")";
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jString(JSONQuery, containerType.getTypeAlias());
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(containerType.getTypeAlias());
+    ret = ret + " AND ";
+    ret = ret + CypherQueryHelper.getReadableByQuery(containerType.getTypeAlias(), userName);
+    if (params.hasOrderByAttribute()) {
+      ret +=
+        " " +
+        CypherQueryHelper.getOrderByPart(
+          containerType.getTypeAlias(),
+          params.getOrderByAttribute(),
+          params.getOrderDesc()
+        );
+    }
+
+    return ret;
+  }
+
+  public static String collectionDataObjectSelectionQuery(Long collectionId, String searchBodyQuery, String username) {
+    String ret = "";
+    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionIdWherePart(collectionId);
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String collectionDataObjectDataObjectSelectionQuery(
+    SearchScope scope,
+    TraversalRules traversalRule,
+    String searchBodyQuery,
+    String username
+  ) {
+    String ret = "";
+    ret = ret + collectionDataObjectDataObjectMatchPart(traversalRule);
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionDataObjectTraversalIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String collectionDataObjectDataObjectSelectionQuery(
+    SearchScope scope,
+    String searchBodyQuery,
+    String username
+  ) {
+    String ret = "";
+    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionDataObjectIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String dataObjectSelectionQuery(String searchBodyQuery, String username) {
+    String ret = "";
+    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String basicReferenceSelectionQuery(String searchBodyQuery, String username) {
+    String ret = "";
+    ret = ret + referenceMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String collectionBasicReferenceSelectionQuery(
+    String searchBodyQuery,
+    Long collectionId,
+    String username
+  ) {
+    String ret = "";
+    ret = ret + referenceMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionIdWherePart(collectionId);
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String collectionDataObjectReferenceSelectionQuery(
+    SearchScope scope,
+    String searchBodyQuery,
+    String username
+  ) {
+    String ret = "";
+    ret = ret + referenceMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionDataObjectIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  public static String collectionDataObjectBasicReferenceSelectionQuery(
+    SearchScope scope,
+    TraversalRules traversalRule,
+    String searchBodyQuery,
+    String username
+  ) {
+    String ret = "";
+    ret = ret + collectionDataObjectBasicReferenceMatchPart(traversalRule);
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + collectionDataObjectTraversalIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + " AND ";
+    ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
+    ret = ret + " AND ";
+    ret = ret + readableByPart(username);
+    return ret;
+  }
+
+  private static String collectionDataObjectDataObjectMatchPart(TraversalRules traversalRule) {
+    String ret =
+      switch (traversalRule) {
+        case children -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)";
+        case parents -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)";
+        case successors -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)";
+        case predecessors -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)";
+        default -> "";
+      };
+    return ret;
+  }
+
+  private static String collectionDataObjectBasicReferenceMatchPart(TraversalRules traversalRule) {
+    String ret =
+      switch (traversalRule) {
+        case children -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)-[:has_reference]->(" +
+        Constants.REFERENCE_IN_QUERY +
+        ":BasicReference)";
+        case parents -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)-[:has_reference]->(" +
+        Constants.REFERENCE_IN_QUERY +
+        ":BasicReference)";
+        case successors -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)-[:has_reference]->(" +
+        Constants.REFERENCE_IN_QUERY +
+        ":BasicReference)";
+        case predecessors -> "MATCH (" +
+        Constants.COLLECTION_IN_QUERY +
+        ":Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(" +
+        Constants.DATAOBJECT_IN_QUERY +
+        ":DataObject)-[:has_reference]->(" +
+        Constants.REFERENCE_IN_QUERY +
+        ":BasicReference)";
+        default -> "";
+      };
+    return ret;
+  }
+
+  private static String readableByPart(String username) {
+    String variable = Constants.COLLECTION_IN_QUERY;
+    return CypherQueryHelper.getReadableByQuery(variable, username);
+  }
+
+  public static String userSelectionQuery(String query) {
+    String ret = "";
+    ret = ret + userMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jString(query, Constants.USER_IN_QUERY);
+    return ret;
+  }
+
+  private static String userMatchPart() {
+    String ret = "";
+    ret = ret + "MATCH (" + Constants.USER_IN_QUERY + ":User)";
+    return ret;
+  }
+}

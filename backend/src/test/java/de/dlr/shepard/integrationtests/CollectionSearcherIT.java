@@ -5,12 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
-import de.dlr.shepard.common.search.unified.QueryType;
-import de.dlr.shepard.common.search.unified.ResponseBody;
-import de.dlr.shepard.common.search.unified.ResultTriple;
-import de.dlr.shepard.common.search.unified.SearchBody;
-import de.dlr.shepard.common.search.unified.SearchParams;
-import de.dlr.shepard.common.search.unified.SearchScope;
+import de.dlr.shepard.common.search.io.QueryType;
+import de.dlr.shepard.common.search.io.ResponseBody;
+import de.dlr.shepard.common.search.io.ResultTriple;
+import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.SearchParams;
+import de.dlr.shepard.common.search.io.SearchScope;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.TraversalRules;
 import de.dlr.shepard.context.collection.io.CollectionIO;

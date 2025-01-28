@@ -2,7 +2,7 @@ package de.dlr.shepard.common.util;
 
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
-import de.dlr.shepard.common.search.container.BasicContainerAttributes;
+import de.dlr.shepard.common.search.endpoints.BasicContainerAttributes;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
