@@ -24,7 +24,6 @@ const headers = [
   {
     title: "ID",
     key: "id",
-    sort: () => {},
   },
   {
     title: "Name",

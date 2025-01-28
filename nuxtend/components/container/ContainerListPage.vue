@@ -36,8 +36,8 @@ watch(
 );
 
 function resetDataTableOptions() {
-  dataTableOptions.value.page = 1;
-  dataTableOptions.value.sortByAttributes = [];
+  if (dataTableOptions.value.page === 1) searchContainers();
+  else dataTableOptions.value.page = 1;
 }
 
 function onSelectUpdate() {
