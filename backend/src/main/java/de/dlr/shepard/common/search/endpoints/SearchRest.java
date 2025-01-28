@@ -6,9 +6,9 @@ import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.UserSearchBody;
 import de.dlr.shepard.common.search.io.UserSearchResult;
-import de.dlr.shepard.common.search.services.ContainerSearcher;
-import de.dlr.shepard.common.search.services.Searcher;
-import de.dlr.shepard.common.search.services.UserSearcher;
+import de.dlr.shepard.common.search.services.ContainerSearchService;
+import de.dlr.shepard.common.search.services.SearchService;
+import de.dlr.shepard.common.search.services.UserSearchService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import io.quarkus.logging.Log;
@@ -41,14 +41,14 @@ public class SearchRest {
   @Context
   private SecurityContext securityContext;
 
-  private Searcher searcher;
-  private UserSearcher userSearcher;
-  private ContainerSearcher containerSearcher;
+  private SearchService searcher;
+  private UserSearchService userSearcher;
+  private ContainerSearchService containerSearcher;
 
   SearchRest() {}
 
   @Inject
-  public SearchRest(Searcher searcher, UserSearcher userSearcher, ContainerSearcher containerSearcher) {
+  public SearchRest(SearchService searcher, UserSearchService userSearcher, ContainerSearchService containerSearcher) {
     this.searcher = searcher;
     this.userSearcher = userSearcher;
     this.containerSearcher = containerSearcher;

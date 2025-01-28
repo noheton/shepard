@@ -7,21 +7,21 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
 @RequestScoped
-public class Searcher {
+public class SearchService {
 
-  private StructuredDataSearcher structuredDataSearcher;
-  private CollectionSearcher collectionSearcher;
-  private DataObjectSearcher dataObjectSearcher;
-  private ReferenceSearcher referenceSearcher;
+  private StructuredDataSearchService structuredDataSearcher;
+  private CollectionSearchService collectionSearcher;
+  private DataObjectSearchService dataObjectSearcher;
+  private ReferenceSearchService referenceSearcher;
 
-  Searcher() {}
+  SearchService() {}
 
   @Inject
-  public Searcher(
-    StructuredDataSearcher structuredDataSearcher,
-    CollectionSearcher collectionSearcher,
-    DataObjectSearcher dataObjectSearcher,
-    ReferenceSearcher referenceSearcher
+  public SearchService(
+    StructuredDataSearchService structuredDataSearcher,
+    CollectionSearchService collectionSearcher,
+    DataObjectSearchService dataObjectSearcher,
+    ReferenceSearchService referenceSearcher
   ) {
     this.structuredDataSearcher = structuredDataSearcher;
     this.collectionSearcher = collectionSearcher;

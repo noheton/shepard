@@ -16,13 +16,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-public class UserSearcherTest extends BaseTestCase {
+public class UserSearchServiceTest extends BaseTestCase {
 
   @Mock
   private SearchDAO searchDAO;
 
   @InjectMocks
-  private UserSearcher userSearcher;
+  private UserSearchService userSearcher;
 
   @Test
   public void searchFileContainerTest() {

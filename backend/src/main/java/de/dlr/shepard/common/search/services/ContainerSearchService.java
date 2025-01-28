@@ -14,14 +14,14 @@ import jakarta.inject.Inject;
 import java.util.List;
 
 @RequestScoped
-public class ContainerSearcher {
+public class ContainerSearchService {
 
   private SearchDAO searchDAO;
 
-  ContainerSearcher() {}
+  ContainerSearchService() {}
 
   @Inject
-  public ContainerSearcher(SearchDAO searchDAO) {
+  public ContainerSearchService(SearchDAO searchDAO) {
     this.searchDAO = searchDAO;
   }
 

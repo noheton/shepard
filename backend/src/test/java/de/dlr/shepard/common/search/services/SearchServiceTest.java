@@ -24,22 +24,22 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
-public class SearcherTest {
+public class SearchServiceTest {
 
   @InjectMock
-  StructuredDataSearcher structuredDataSearcher;
+  StructuredDataSearchService structuredDataSearcher;
 
   @InjectMock
-  CollectionSearcher collectionSearcher;
+  CollectionSearchService collectionSearcher;
 
   @InjectMock
-  DataObjectSearcher dataObjectSearcher;
+  DataObjectSearchService dataObjectSearcher;
 
   @InjectMock
-  ReferenceSearcher referenceSearcher;
+  ReferenceSearchService referenceSearcher;
 
   @Inject
-  Searcher searcher;
+  SearchService searcher;
 
   @Test
   public void invalidQueryTest() {

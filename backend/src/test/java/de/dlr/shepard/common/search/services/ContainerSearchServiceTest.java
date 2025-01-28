@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
-public class ContainerSearcherTest {
+public class ContainerSearchServiceTest {
 
   @InjectMock
   TimeseriesContainerDAO timeseriesContainerDAO;
@@ -41,7 +41,7 @@ public class ContainerSearcherTest {
   SearchDAO searchDAO;
 
   @Inject
-  ContainerSearcher containerSearcher;
+  ContainerSearchService containerSearcher;
 
   @Test
   public void searchBasicContainerTest() {

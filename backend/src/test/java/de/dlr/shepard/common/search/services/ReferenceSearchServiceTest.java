@@ -3,7 +3,6 @@ package de.dlr.shepard.common.search.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.QueryType;
@@ -17,6 +16,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.TraversalRules;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
@@ -28,13 +28,13 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @QuarkusComponentTest
-public class DataObjectSearcherTest extends BaseTestCase {
+public class ReferenceSearchServiceTest {
 
   @InjectMock
   SearchDAO searchDAO;
 
   @Inject
-  DataObjectSearcher dataObjectSearcher;
+  ReferenceSearchService referenceSearcher;
 
   private static String query = String.format(
     """
@@ -62,16 +62,19 @@ public class DataObjectSearcherTest extends BaseTestCase {
     collection.setShepardId(collection.getId());
     var dataObject = new DataObject(2L);
     dataObject.setShepardId(dataObject.getId());
+    var reference = new BasicReference(3L);
+    reference.setShepardId(reference.getId());
     dataObject.setCollection(collection);
+    reference.setDataObject(dataObject);
     SearchScope[] scopes = { scope };
-    SearchParams searchParams = new SearchParams(query, QueryType.DataObject);
+    SearchParams searchParams = new SearchParams(query, QueryType.Reference);
     SearchBody searchBody = new SearchBody(scopes, searchParams);
-    when(searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY)).thenReturn(List.of(dataObject));
-    ResultTriple resultTriple = new ResultTriple(1L, 2L);
+    when(searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY)).thenReturn(List.of(reference));
+    ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
-    BasicEntityIO[] results = { new BasicEntityIO(dataObject) };
+    BasicEntityIO[] results = { new BasicEntityIO(reference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = dataObjectSearcher.search(searchBody, userName);
+    var actual = referenceSearcher.search(searchBody, userName);
     assertEquals(responseBody, actual);
   }
 
@@ -83,10 +86,10 @@ public class DataObjectSearcherTest extends BaseTestCase {
     var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
     var scope4 = new SearchScope(1L, 2L, traversalRules);
 
-    var query1 = Neo4jQueryBuilder.dataObjectSelectionQuery(query, userName);
-    var query2 = Neo4jQueryBuilder.collectionDataObjectSelectionQuery(1L, query, userName);
-    var query3 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(scope3, query, userName);
-    var query4 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    var query1 = Neo4jQueryBuilder.basicReferenceSelectionQuery(query, userName);
+    var query2 = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(query, 1L, userName);
+    var query3 = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQuery(scope3, query, userName);
+    var query4 = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQuery(
       scope4,
       traversalRules[0],
       query,
@@ -106,12 +109,12 @@ public class DataObjectSearcherTest extends BaseTestCase {
   @Test
   public void test_invalid() {
     SearchScope[] scopes = { new SearchScope(null, 2L, new TraversalRules[0]) };
-    SearchParams searchParams = new SearchParams(query, QueryType.DataObject);
+    SearchParams searchParams = new SearchParams(query, QueryType.Reference);
     SearchBody searchBody = new SearchBody(scopes, searchParams);
     ResultTriple[] resultTriples = {};
     BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = dataObjectSearcher.search(searchBody, userName);
+    var actual = referenceSearcher.search(searchBody, userName);
     assertEquals(responseBody, actual);
   }
 }

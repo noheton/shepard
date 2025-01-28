@@ -26,18 +26,18 @@ import java.util.Set;
 import org.bson.Document;
 
 @RequestScoped
-public class StructuredDataSearcher {
+public class StructuredDataSearchService {
 
   private StructuredDataReferenceDAO structuredDataReferenceDAO;
 
-  public StructuredDataSearcher() {}
+  public StructuredDataSearchService() {}
 
   @Inject
   @Named("mongoDatabase")
   MongoDatabase mongoDatabase;
 
   @Inject
-  public StructuredDataSearcher(StructuredDataReferenceDAO structuredDataReferenceDAO) {
+  public StructuredDataSearchService(StructuredDataReferenceDAO structuredDataReferenceDAO) {
     this.structuredDataReferenceDAO = structuredDataReferenceDAO;
   }
 

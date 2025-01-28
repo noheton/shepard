@@ -35,7 +35,7 @@ import org.bson.Document;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
-public class StructuredDataSearcherTest extends BaseTestCase {
+public class StructuredDataSearchServiceTest extends BaseTestCase {
 
   @InjectMock
   StructuredDataReferenceDAO structuredDataReferenceDAO;
@@ -57,7 +57,7 @@ public class StructuredDataSearcherTest extends BaseTestCase {
   Document firstDocument;
 
   @Inject
-  StructuredDataSearcher structuredDataSearcher;
+  StructuredDataSearchService structuredDataSearcher;
 
   @Test
   public void getStructuredDataResponseTest() {

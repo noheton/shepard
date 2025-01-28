@@ -11,14 +11,14 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
 @RequestScoped
-public class UserSearcher {
+public class UserSearchService {
 
   private SearchDAO searchDAO;
 
-  UserSearcher() {}
+  UserSearchService() {}
 
   @Inject
-  public UserSearcher(SearchDAO searchDAO) {
+  public UserSearchService(SearchDAO searchDAO) {
     this.searchDAO = searchDAO;
   }
 

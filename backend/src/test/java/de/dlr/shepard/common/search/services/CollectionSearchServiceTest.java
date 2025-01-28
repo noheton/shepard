@@ -21,13 +21,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
-public class CollectionSearcherTest {
+public class CollectionSearchServiceTest {
 
   @InjectMock
   SearchDAO searchDAO;
 
   @Inject
-  CollectionSearcher collectionSearcher;
+  CollectionSearchService collectionSearcher;
 
   @Test
   public void test() {
