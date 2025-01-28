@@ -83,6 +83,7 @@ const attributeRules = [
     <v-btn
       text="Add Attributes"
       color="treeview"
+      variant="flat"
       prepend-icon="mdi-plus-circle"
       @click="attributesArray.push({ key: '', value: '' })"
     />

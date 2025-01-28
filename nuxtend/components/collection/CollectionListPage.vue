@@ -9,6 +9,7 @@ import { refDebounced, useStorage } from "@vueuse/core";
 import type { FilterChangedData, FilterOptions } from "~/utils/helpers";
 import { useSearchCollections } from "~/utils/InlineSearchCollections";
 import CollectionList from "./CollectionList.vue";
+import CollectionCreateDialog from "./create/CollectionCreateDialog.vue";
 
 const router = useRouter();
 
@@ -66,6 +67,8 @@ const filterInputDebounced = refDebounced(filterInput, 700);
 
 const { results, totalResults } = useSearchCollections(filterInputDebounced);
 
+const showCreateDialog = ref(false);
+
 onMounted(() => {
   fetchCollections();
 });
@@ -89,7 +92,14 @@ onMounted(() => {
       }"
     >
       <h4 :style="{ padding: '12px' }">Explore Collections</h4>
-      <!-- <v-btn icon="mdi-plus" color="primary" /> -->
+      <v-btn color="primary" @click="showCreateDialog = true">
+        <template #prepend><v-icon icon="mdi-plus-circle" /></template>
+        Create new collection
+      </v-btn>
+      <CollectionCreateDialog
+        v-model:show-dialog="showCreateDialog"
+        @collection-created="id => router.push(collectionsPath + id)"
+      />
     </div>
     <v-menu :close-on-content-click="false">
       <template #activator="{ props }">
