@@ -9,7 +9,6 @@ const {
   loading,
   loadChildrenOfItem,
   refreshItems,
-  deleteItem,
 } = useTreeviewItems(routeParams);
 
 async function onOpenClicked(expandGroup: {
@@ -35,6 +34,8 @@ function onActivated(activeItems: unknown) {
     );
   }
 }
+
+const createDataObjectDialogOpened = ref<boolean>(false);
 </script>
 
 <template>
@@ -49,8 +50,20 @@ function onActivated(activeItems: unknown) {
     />
     <v-divider thickness="1" />
 
-    <div class="px-6 pt-6">
+    <div class="px-6 pt-6 d-flex" :style="{ alignItems: 'center' }">
       <div class="text-body-2 text-uppercase">Contents</div>
+      <v-spacer />
+      <div>
+        <v-btn
+          density="compact"
+          variant="text"
+          icon="mdi-plus-circle"
+          color="primary"
+          class="pa-0"
+          size="small"
+          @click="createDataObjectDialogOpened = true"
+        />
+      </div>
     </div>
     <v-treeview
       v-if="!loading && !!treeviewItems"
@@ -87,15 +100,38 @@ function onActivated(activeItems: unknown) {
           :collection-id="routeParams.collectionId"
           :data-object-id="item.id"
           :parent-id="item.parentId"
-          :delete-item="() => deleteItem(item.id)"
           :item-name="item.title"
           class="sidebar-item-context-menu"
+          @data-object-created="refreshItems"
           @data-object-updated="refreshItems"
+          @data-object-deleted="
+            refreshItems();
+            if (routeParams.dataObjectId === item.id) {
+              router.push(collectionsPath + routeParams.collectionId);
+            }
+          "
         />
       </template>
     </v-treeview>
     <LayoutComponentsCenteredLoadingSpinner v-else />
+    <div class="px-6 pt-6 d-flex" :style="{ alignItems: 'center' }">
+      <v-btn
+        density="compact"
+        variant="text"
+        color="primary"
+        class="pa-0"
+        @click="createDataObjectDialogOpened = true"
+      >
+        <template #prepend><v-icon icon="mdi-plus-circle" /></template>
+        Add new data object
+      </v-btn>
+    </div>
   </div>
+  <DataObjectCreateDialog
+    v-model:show-dialog="createDataObjectDialogOpened"
+    :collection-id="routeParams.collectionId"
+    @data-object-created="refreshItems"
+  />
 </template>
 
 <style lang="scss" scoped>

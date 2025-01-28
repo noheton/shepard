@@ -6,10 +6,9 @@ import {
 import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
-  const router = useRouter();
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
-  const { openedTreeviewItems, addOpen, close } = useOpenedItems();
+  const { openedTreeviewItems, addOpen } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
     await createApiInstance(DataObjectApi)
@@ -182,33 +181,12 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     return getPathFromRootTo([activeChild.parentId]);
   }
 
-  /**
-   * Deletes a data object in the backend and updates the tree accordingly.
-   *
-   * @param itemId Id of the item to delete
-   */
-  async function deleteItem(itemId: number) {
-    const deletionSuccessful = deleteDataObject(
-      routeParams.value.collectionId,
-      itemId,
-    );
-
-    if (!deletionSuccessful) return;
-
-    close(itemId);
-    refreshItems();
-    if (routeParams.value.dataObjectId === itemId) {
-      router.push(collectionsPath + routeParams.value.collectionId);
-    }
-  }
-
   return {
     treeviewItems,
     openedTreeviewItems,
     loading,
     loadChildrenOfItem,
     refreshItems,
-    deleteItem,
   };
 };
 
@@ -237,20 +215,4 @@ async function fetchChildrenOfItem(
       collectionId,
     })
   ).map(item => mapToTreeviewItem(item, parentItem));
-}
-
-async function deleteDataObject(
-  collectionId: number,
-  dataObjectId: number,
-): Promise<boolean> {
-  return createApiInstance(DataObjectApi)
-    .deleteDataObject({
-      collectionId: collectionId,
-      dataObjectId: dataObjectId,
-    })
-    .then(() => true)
-    .catch(error => {
-      handleError(error, "deleteDataObject");
-      return false;
-    });
 }

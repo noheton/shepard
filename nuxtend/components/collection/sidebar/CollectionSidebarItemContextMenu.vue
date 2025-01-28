@@ -1,15 +1,38 @@
 <script setup lang="ts">
+import { DataObjectApi } from "@dlr-shepard/backend-client";
+
 const props = defineProps<{
   collectionId: number;
   dataObjectId: number;
   parentId?: number;
   itemName: string;
-  deleteItem: () => Promise<void>;
 }>();
-const emit = defineEmits(["data-object-updated"]);
+const emit = defineEmits([
+  "data-object-updated",
+  "data-object-created",
+  "data-object-deleted",
+]);
 
 const showEditDialog = ref(false);
+const showCreateDialog = ref(false);
 const showDeleteDialog = ref(false);
+
+async function deleteItem() {
+  const deletionSuccessful = await createApiInstance(DataObjectApi)
+    .deleteDataObject({
+      collectionId: props.collectionId,
+      dataObjectId: props.dataObjectId,
+    })
+    .then(() => true)
+    .catch(error => {
+      handleError(error, "deleteDataObject");
+      return false;
+    });
+
+  if (!deletionSuccessful) return;
+
+  emit("data-object-deleted");
+}
 
 const dialogTitle = `Edit "${props.itemName}"`;
 </script>
@@ -29,6 +52,20 @@ const dialogTitle = `Edit "${props.itemName}"`;
           onClick: () => (showDeleteDialog = true),
         },
       ]"
+    />
+    <v-btn
+      icon="mdi-plus"
+      v-bind="props"
+      variant="plain"
+      density="compact"
+      color="primary"
+      @click.prevent.stop="showCreateDialog = true"
+    />
+    <DataObjectCreateDialog
+      v-model:show-dialog="showCreateDialog"
+      :collection-id="collectionId"
+      :parent-id="dataObjectId"
+      @data-object-created="emit('data-object-created')"
     />
     <DataObjectEditDialog
       v-if="showEditDialog"
