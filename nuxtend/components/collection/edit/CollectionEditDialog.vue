@@ -79,6 +79,7 @@ async function saveChanges() {
 
 <template>
   <EntityDialog
+    v-if="showDialog"
     v-model:show-dialog="showDialog"
     :title="title"
     :loading="isAllowedToEditPermissions && !updatedPermissions"
