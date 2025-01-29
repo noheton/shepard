@@ -62,6 +62,10 @@ public class TimeseriesMigrationService {
     return payloadReadQueue;
   }
 
+  public int getPayloadReadQueueSize() {
+    return payloadReadQueue.size();
+  }
+
   public BlockingQueue<PayloadWriteTask> getPayloadWriteQueue() {
     return payloadWriteQueue;
   }
@@ -377,7 +381,7 @@ public class TimeseriesMigrationService {
       payloadReadQueue.add(PayloadReadTask.poisonPill);
     }
     Log.infof("Finished preparing read queue of %s read tasks.", payloadReadQueue.size());
-    // Insure tasks queue is empty
+    // Ensure tasks queue is empty
     payloadWriteQueue.clear();
 
     List<Callable<Object>> tasks = new ArrayList<>();

@@ -36,8 +36,9 @@ class PayloadWriter implements Callable<Object> {
         PayloadWriteTask task = queue.take();
         if (task.isLastTask) break;
         Log.infof(
-          "started PayloadWriteTask: %s for container %s, of %s points",
+          "started PayloadWriteTask: %s of %s for container %s with %s points.",
           task.taskId,
+          migrationService.getPayloadReadQueueSize(),
           task.container.getId(),
           task.payload.getPoints().size()
         );

@@ -91,14 +91,16 @@ public class TimeseriesMigrationInitService {
   }
 
   private void logThatMigrationModeCanBeDisabled() {
-    Log.warn("No migration necessary. Please restart shepard without migration mode. Exiting...");
+    Log.warn(
+      "No migration necessary. Please restart shepard without migration mode. Endpoints are deactivated and cannot be used."
+    );
   }
 
   private void logThatMigrationStateHasErrors() {
     Log.error(
       "Migrations ran with errors. " +
       "You can retrieve the current migration status in migration mode at \"<backend-url>/shepard/api/temp/migrations/state\". " +
-      "Please try again after cleaning your TimescaleDB instance."
+      "Please try again after cleaning your TimescaleDB instance and activate the migration mode if it is not active yet."
     );
   }
 
