@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {
+  BasicContainerAttributes,
   ContainerType,
   SearchApi,
   type BasicContainer,
-  type BasicContainerAttributes,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
 import ContainerTypeSelect from "./ContainerTypeSelect.vue";
@@ -22,7 +22,9 @@ const dataTableOptions = ref<{
   sortByAttributes: { key: BasicContainerAttributes; order: string }[];
 }>({
   page: 1,
-  sortByAttributes: [],
+  sortByAttributes: [
+    { key: BasicContainerAttributes.CreatedAt, order: "desc" },
+  ],
 });
 
 const searchQuery = computed(() => buildQueryString(searchText.value));
