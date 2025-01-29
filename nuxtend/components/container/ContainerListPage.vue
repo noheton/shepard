@@ -141,3 +141,9 @@ searchContainers();
     </v-container>
   </div>
 </template>
+
+<style lang="scss" scoped>
+:deep(.v-field--variant-outlined.v-field--focused .v-field__outline) {
+  --v-field-border-width: 1px;
+}
+</style>

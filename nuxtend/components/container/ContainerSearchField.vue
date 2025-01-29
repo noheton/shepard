@@ -14,6 +14,7 @@ const emit = defineEmits(["onSearch"]);
     width="599px"
     style="box-shadow: 0px 12px 30px 0px rgba(16, 24, 40, 0.05)"
     @keydown.enter="emit('onSearch')"
+    @click:clear="emit('onSearch')"
   >
     <template #append-inner>
       <v-btn
@@ -26,12 +27,12 @@ const emit = defineEmits(["onSearch"]);
   </v-text-field>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .v-input--density-compact {
   --v-input-control-height: 42px;
 }
 
 :deep(.v-field--appended) {
-  padding-inline-end: 4px;
+  padding-inline-end: 3px;
 }
 </style>

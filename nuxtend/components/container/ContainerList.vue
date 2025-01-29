@@ -30,7 +30,7 @@ const headers = [
     key: BasicContainerAttributes.Name,
   },
   {
-    title: "Type",
+    title: "Container type",
     key: BasicContainerAttributes.Type,
     cellProps: {
       class: "text-textbody2",
