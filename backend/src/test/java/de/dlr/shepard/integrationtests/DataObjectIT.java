@@ -197,7 +197,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void postDataObjectTest_Successful() {
-    // try out different attribute keys that should be valid
+    // TODO: try out different attribute keys that should be valid
     var attributes = Map.of(
       "a",
       "1",
@@ -776,156 +776,172 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(25)
   public void getHEADVersion() {
-    VersionIO[] HEADVersion = given()
-      .spec(versioningRequestSpecification)
-      .when()
-      .get(versionizedCollectionURL + "/versions")
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(VersionIO[].class);
-    assertEquals(HEADVersion.length, 1);
-    HEADVersionUID = HEADVersion[0].getUid();
+    if (VersioningFeatureToggle.isEnabled()) {
+      VersionIO[] HEADVersion = given()
+        .spec(versioningRequestSpecification)
+        .when()
+        .get(versionizedCollectionURL + "/versions")
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(VersionIO[].class);
+      assertEquals(HEADVersion.length, 1);
+      HEADVersionUID = HEADVersion[0].getUid();
+    }
   }
 
   @Test
   @Order(26)
   public void createFirstVersion() {
-    VersionIO firstVersionInput = new VersionIO();
-    firstVersionInput.setName("first version");
-    firstVersionInput.setDescription("first version");
-    VersionIO firstVersion = given()
-      .spec(versioningRequestSpecification)
-      .body(firstVersionInput)
-      .when()
-      .post(versionizedCollectionURL + "/versions")
-      .then()
-      .statusCode(201)
-      .extract()
-      .as(VersionIO.class);
-    assertEquals(firstVersionInput.getName(), firstVersion.getName());
-    assertEquals(firstVersionInput.getDescription(), firstVersion.getDescription());
-    firstVersionUID = firstVersion.getUid();
+    if (VersioningFeatureToggle.isEnabled()) {
+      VersionIO firstVersionInput = new VersionIO();
+      firstVersionInput.setName("first version");
+      firstVersionInput.setDescription("first version");
+      VersionIO firstVersion = given()
+        .spec(versioningRequestSpecification)
+        .body(firstVersionInput)
+        .when()
+        .post(versionizedCollectionURL + "/versions")
+        .then()
+        .statusCode(201)
+        .extract()
+        .as(VersionIO.class);
+      assertEquals(firstVersionInput.getName(), firstVersion.getName());
+      assertEquals(firstVersionInput.getDescription(), firstVersion.getDescription());
+      firstVersionUID = firstVersion.getUid();
+    }
   }
 
   @Test
   @Order(27)
   public void putFirstVersionizedDataObject() {
-    String newName = "first versionized DataObject with new name";
-    firstVersionizedDataobject.setName(newName);
-    DataObjectIO actual = given()
-      .spec(versioningRequestSpecification)
-      .body(firstVersionizedDataobject)
-      .when()
-      .put(versioningURL + "/" + firstVersionizedDataobject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    assertEquals(newName, actual.getName());
+    if (VersioningFeatureToggle.isEnabled()) {
+      String newName = "first versionized DataObject with new name";
+      firstVersionizedDataobject.setName(newName);
+      DataObjectIO actual = given()
+        .spec(versioningRequestSpecification)
+        .body(firstVersionizedDataobject)
+        .when()
+        .put(versioningURL + "/" + firstVersionizedDataobject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      assertEquals(newName, actual.getName());
+    }
   }
 
   @Test
   @Order(28)
   public void differentFirstVersionizedDataObjects() {
-    DataObjectIO firstDataObjectFirstVersion = given()
-      .spec(versioningRequestSpecification)
-      .queryParam("versionUid", firstVersionUID.toString())
-      .when()
-      .get(versioningURL + "/" + firstVersionizedDataobject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    DataObjectIO firstDataObjectExpliciteHEADVersion = given()
-      .spec(versioningRequestSpecification)
-      .queryParam("versionUid", HEADVersionUID.toString())
-      .when()
-      .get(versioningURL + "/" + firstVersionizedDataobject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    DataObjectIO firstDataObjectImpliciteHEADVersion = given()
-      .spec(versioningRequestSpecification)
-      .when()
-      .get(versioningURL + "/" + firstVersionizedDataobject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    assertEquals(firstDataObjectExpliciteHEADVersion.getName(), firstDataObjectImpliciteHEADVersion.getName());
-    assertNotEquals(firstDataObjectExpliciteHEADVersion.getName(), firstDataObjectFirstVersion.getName());
+    if (VersioningFeatureToggle.isEnabled()) {
+      DataObjectIO firstDataObjectFirstVersion = given()
+        .spec(versioningRequestSpecification)
+        .queryParam("versionUid", firstVersionUID.toString())
+        .when()
+        .get(versioningURL + "/" + firstVersionizedDataobject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      DataObjectIO firstDataObjectExpliciteHEADVersion = given()
+        .spec(versioningRequestSpecification)
+        .queryParam("versionUid", HEADVersionUID.toString())
+        .when()
+        .get(versioningURL + "/" + firstVersionizedDataobject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      DataObjectIO firstDataObjectImpliciteHEADVersion = given()
+        .spec(versioningRequestSpecification)
+        .when()
+        .get(versioningURL + "/" + firstVersionizedDataobject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      assertEquals(firstDataObjectExpliciteHEADVersion.getName(), firstDataObjectImpliciteHEADVersion.getName());
+      assertNotEquals(firstDataObjectExpliciteHEADVersion.getName(), firstDataObjectFirstVersion.getName());
+    }
   }
 
   @Test
   @Order(29)
   public void predecessorsInFirstVersion() {
-    DataObjectIO thirdDataObjectFirstVersion = given()
-      .spec(versioningRequestSpecification)
-      .queryParam("versionUid", firstVersionUID.toString())
-      .when()
-      .get(versioningURL + "/" + thirdVersionizedDataObject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    assertEquals(1, thirdDataObjectFirstVersion.getPredecessorIds().length);
-    long actualPredecessorId = thirdDataObjectFirstVersion.getPredecessorIds()[0];
-    long expectedPredecessorId = secondVersionizedDataObject.getId();
-    assertEquals(actualPredecessorId, expectedPredecessorId);
+    if (VersioningFeatureToggle.isEnabled()) {
+      DataObjectIO thirdDataObjectFirstVersion = given()
+        .spec(versioningRequestSpecification)
+        .queryParam("versionUid", firstVersionUID.toString())
+        .when()
+        .get(versioningURL + "/" + thirdVersionizedDataObject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      assertEquals(1, thirdDataObjectFirstVersion.getPredecessorIds().length);
+      long actualPredecessorId = thirdDataObjectFirstVersion.getPredecessorIds()[0];
+      long expectedPredecessorId = secondVersionizedDataObject.getId();
+      assertEquals(actualPredecessorId, expectedPredecessorId);
+    }
   }
 
   @Test
   @Order(30)
   public void parentInFirstVersion() {
-    DataObjectIO secondDataObjectFirstVersion = given()
-      .spec(versioningRequestSpecification)
-      .queryParam("versionUid", firstVersionUID.toString())
-      .when()
-      .get(versioningURL + "/" + secondVersionizedDataObject.getId())
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO.class);
-    long actualParentId = secondDataObjectFirstVersion.getParentId();
-    long expectedParentId = firstVersionizedDataobject.getId();
-    assertEquals(actualParentId, expectedParentId);
+    if (VersioningFeatureToggle.isEnabled()) {
+      DataObjectIO secondDataObjectFirstVersion = given()
+        .spec(versioningRequestSpecification)
+        .queryParam("versionUid", firstVersionUID.toString())
+        .when()
+        .get(versioningURL + "/" + secondVersionizedDataObject.getId())
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO.class);
+      long actualParentId = secondDataObjectFirstVersion.getParentId();
+      long expectedParentId = firstVersionizedDataobject.getId();
+      assertEquals(actualParentId, expectedParentId);
+    }
   }
 
   @Test
   @Order(31)
   public void deleteFirstVersionizedDataObject() {
-    given()
-      .spec(versioningRequestSpecification)
-      .when()
-      .delete(versioningURL + "/" + firstVersionizedDataobject.getId())
-      .then()
-      .statusCode(204);
-    DataObjectIO[] response = given()
-      .spec(versioningRequestSpecification)
-      .when()
-      .get(versioningURL)
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO[].class);
-    if (VersioningFeatureToggle.isEnabled()) assertEquals(2, response.length);
-    else assertEquals(5, response.length);
+    if (VersioningFeatureToggle.isEnabled()) {
+      given()
+        .spec(versioningRequestSpecification)
+        .when()
+        .delete(versioningURL + "/" + firstVersionizedDataobject.getId())
+        .then()
+        .statusCode(204);
+      DataObjectIO[] response = given()
+        .spec(versioningRequestSpecification)
+        .when()
+        .get(versioningURL)
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO[].class);
+      if (VersioningFeatureToggle.isEnabled()) assertEquals(2, response.length);
+      else assertEquals(5, response.length);
+    }
   }
 
   @Test
   @Order(32)
   public void getDataObjectsOfFirstVersion() {
-    DataObjectIO[] response = given()
-      .spec(versioningRequestSpecification)
-      .queryParam("versionUid", firstVersionUID)
-      .when()
-      .get(versioningURL)
-      .then()
-      .statusCode(200)
-      .extract()
-      .as(DataObjectIO[].class);
-    assertEquals(3, response.length);
+    if (VersioningFeatureToggle.isEnabled()) {
+      DataObjectIO[] response = given()
+        .spec(versioningRequestSpecification)
+        .queryParam("versionUid", firstVersionUID)
+        .when()
+        .get(versioningURL)
+        .then()
+        .statusCode(200)
+        .extract()
+        .as(DataObjectIO[].class);
+      assertEquals(3, response.length);
+    }
   }
 }

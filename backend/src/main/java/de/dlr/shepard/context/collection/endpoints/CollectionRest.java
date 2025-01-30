@@ -12,9 +12,6 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.export.ExportService;
-import de.dlr.shepard.context.version.entities.Version;
-import de.dlr.shepard.context.version.io.VersionIO;
-import de.dlr.shepard.context.version.services.VersionService;
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -35,7 +32,6 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -50,13 +46,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
+@IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "false")
 public class CollectionRest {
 
   private CollectionService collectionService;
   private ExportService exportService;
   private PermissionsService permissionsService;
   private PermissionsUtil permissionsUtil;
-  private VersionService versionService;
 
   @Context
   private SecurityContext securityContext;
@@ -68,14 +64,12 @@ public class CollectionRest {
     CollectionService collectionService,
     ExportService exportService,
     PermissionsService permissionsService,
-    PermissionsUtil permissionsUtil,
-    VersionService versionService
+    PermissionsUtil permissionsUtil
   ) {
     this.collectionService = collectionService;
     this.exportService = exportService;
     this.permissionsService = permissionsService;
     this.permissionsUtil = permissionsUtil;
-    this.versionService = versionService;
   }
 
   @GET
@@ -113,74 +107,6 @@ public class CollectionRest {
       result.add(new CollectionIO(collection));
     }
     return Response.ok(result).build();
-  }
-
-  @GET
-  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)
-  @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Get versions")
-  @APIResponse(
-    description = "ok",
-    responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = VersionIO.class))
-  )
-  @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.COLLECTION_ID)
-  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
-  public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    List<Version> versions = versionService.getAllVersions(collectionId);
-    var result = new ArrayList<VersionIO>(versions.size());
-    for (var version : versions) {
-      result.add(new VersionIO(version));
-    }
-    return Response.ok(result).build();
-  }
-
-  @GET
-  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS + "/{" + Constants.VERSION_UID + "}")
-  @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Get version")
-  @APIResponse(
-    description = "ok",
-    responseCode = "200",
-    content = @Content(schema = @Schema(implementation = VersionIO.class))
-  )
-  @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.COLLECTION_ID)
-  @Parameter(name = Constants.VERSION_UID)
-  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
-  public Response getVersion(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.VERSION_UID) UUID versionUID
-  ) {
-    Version version = versionService.getVersion(versionUID);
-    return Response.ok(new VersionIO(version)).build();
-  }
-
-  @POST
-  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)
-  @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Create a new version")
-  @APIResponse(
-    description = "created",
-    responseCode = "201",
-    content = @Content(schema = @Schema(implementation = VersionIO.class))
-  )
-  @Parameter(name = Constants.COLLECTION_ID)
-  @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
-  public Response createVersion(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @RequestBody(
-      required = true,
-      content = @Content(schema = @Schema(implementation = VersionIO.class))
-    ) @Valid VersionIO version
-  ) {
-    Version newVersion = versionService.createVersion(
-      collectionId,
-      version,
-      securityContext.getUserPrincipal().getName()
-    );
-    return Response.ok(new VersionIO(newVersion)).status(Status.CREATED).build();
   }
 
   @GET
