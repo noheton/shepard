@@ -12,6 +12,8 @@ interface CollectionSidebarHeaderProps {
 }
 const props = defineProps<CollectionSidebarHeaderProps>();
 
+const showContextMenuButton = ref<boolean>(false);
+
 const showEditDialog = ref(false);
 const dialogTitle = `Edit "${props.collection?.name}"`;
 </script>
@@ -45,7 +47,7 @@ const dialogTitle = `Edit "${props.collection?.name}"`;
             white-space: nowrap;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
           "
         >
           {{ collection.name }}
@@ -55,7 +57,11 @@ const dialogTitle = `Edit "${props.collection?.name}"`;
               isAllowedToEditPermissions !== undefined
             "
           >
-            <div class="header-context-menu">
+            <CollectionSidebarDisplayChildrenOnHover
+              :display-children-without-hover="
+                showContextMenuButton || showEditDialog
+              "
+            >
               <CommonContextMenu
                 :items="[
                   {
@@ -64,63 +70,55 @@ const dialogTitle = `Edit "${props.collection?.name}"`;
                     onClick: () => (showEditDialog = true),
                   },
                 ]"
+                @expansion-state-changed="e => (showContextMenuButton = e)"
               />
-              <CollectionEditDialog
-                v-if="showEditDialog"
-                v-model:show-dialog="showEditDialog"
-                :collection="collection"
-                :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
-                :title="dialogTitle"
+            </CollectionSidebarDisplayChildrenOnHover>
+            <CollectionEditDialog
+              v-if="showEditDialog"
+              v-model:show-dialog="showEditDialog"
+              v-model:show-context-menu-button="showContextMenuButton"
+              :collection="collection"
+              :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
+              :title="dialogTitle"
+            >
+              <template
+                #inputs="{
+                  collectionId,
+                  updateCollection,
+                  updatePermissions,
+                  updatedCollection,
+                  updatedPermissions,
+                }"
               >
-                <template
-                  #inputs="{
-                    collectionId,
-                    updateCollection,
-                    updatePermissions,
-                    updatedCollection,
-                    updatedPermissions,
-                  }"
-                >
-                  <CommonInputName
-                    :name="updatedCollection.name"
-                    @name-changed="
-                      name => updateCollection({ ...updatedCollection, name })
-                    "
-                  />
-                  <CommonInputDescription
-                    :description="updatedCollection.description"
-                    @description-changed="
-                      description =>
-                        updateCollection({ ...updatedCollection, description })
-                    "
-                  />
-                  <CollectionEditPermissionsInput
-                    v-if="isAllowedToEditPermissions"
-                    :updated-permissions="updatedPermissions"
-                    :collection-id="collectionId"
-                    :update-permissions="updatePermissions"
-                  />
-                  <v-row>
-                    <div class="text-body-3 text-textbody2">
-                      *mandatory fields
-                    </div>
-                  </v-row>
-                </template>
-              </CollectionEditDialog>
-            </div>
+                <CommonInputName
+                  :name="updatedCollection.name"
+                  @name-changed="
+                    name => updateCollection({ ...updatedCollection, name })
+                  "
+                />
+                <CommonInputDescription
+                  :description="updatedCollection.description"
+                  @description-changed="
+                    description =>
+                      updateCollection({ ...updatedCollection, description })
+                  "
+                />
+                <CollectionEditPermissionsInput
+                  v-if="isAllowedToEditPermissions"
+                  :updated-permissions="updatedPermissions"
+                  :collection-id="collectionId"
+                  :update-permissions="updatePermissions"
+                />
+                <v-row>
+                  <div class="text-body-3 text-textbody2">
+                    *mandatory fields
+                  </div>
+                </v-row>
+              </template>
+            </CollectionEditDialog>
           </template>
         </div>
       </template>
     </v-card-item>
   </v-card>
 </template>
-
-<style lang="scss" scoped>
-.header-context-menu {
-  visibility: hidden;
-}
-
-:deep(.v-card-item:hover) .header-context-menu {
-  visibility: visible;
-}
-</style>

@@ -17,7 +17,6 @@ const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
-
 const updatedCollection = ref<UpdatedCollection>({
   name: props.collection.name,
   attributes: props.collection.attributes ?? {},

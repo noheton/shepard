@@ -101,7 +101,6 @@ const createDataObjectDialogOpened = ref<boolean>(false);
           :data-object-id="item.id"
           :parent-id="item.parentId"
           :item-name="item.title"
-          class="sidebar-item-context-menu"
           @data-object-created="refreshItems"
           @data-object-updated="refreshItems"
           @data-object-deleted="
@@ -157,15 +156,6 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     padding-top: 0;
     padding-bottom: 0;
     border-left: 5px solid transparent;
-  }
-
-  // TODO: Make this still visible when the context menu is opened
-  :deep(.sidebar-item-context-menu) {
-    visibility: hidden;
-  }
-
-  :deep(.v-list-item:hover) .sidebar-item-context-menu {
-    visibility: visible;
   }
 }
 </style>

@@ -38,7 +38,7 @@ const emit = defineEmits(["submit"]);
                 color="primary"
                 variant="flat"
                 class="ml-4"
-                @click="() => emit('submit')"
+                @click="emit('submit')"
               >
                 Save Changes
               </v-btn>

@@ -1,6 +1,14 @@
 <script setup lang="ts">
 defineProps<{
-  items: { label: string; onClick: () => void; icon: string }[];
+  items: {
+    label: string;
+    onClick: () => void;
+    icon: string;
+  }[];
+}>();
+
+const emit = defineEmits<{
+  (e: "expansion-state-changed", value: boolean): void;
 }>();
 </script>
 
@@ -13,9 +21,9 @@ defineProps<{
         variant="plain"
         density="compact"
         color="primary"
-        @click.stop
-        @click.prevent
+        @click.stop.prevent
       />
+      {{ emit("expansion-state-changed", props["aria-expanded"] === "true") }}
     </template>
     <v-list>
       <v-list-item
