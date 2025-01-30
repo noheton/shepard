@@ -15,7 +15,7 @@ const itemsPerPage = 20;
 const serverItems = ref<BasicContainer[]>([]);
 const pageCount = ref<number>(0);
 const loading = ref<boolean>(true);
-const selectedFilter = ref<ContainerFilterType | null>(null);
+const selectedFilter = ref<ContainerFilterType | null | undefined>(undefined);
 const searchText = ref<string | null>(null);
 const dataTableOptions = ref<{
   page: number;
@@ -95,11 +95,7 @@ searchContainers();
         <v-col cols="12" no-gutters>
           <div class="d-flex align-baseline">
             <h1 class="text-h1 pr-4">Containers</h1>
-            <v-tooltip
-              location="end"
-              :open-on-click="true"
-              :open-on-hover="false"
-            >
+            <v-tooltip location="end">
               <template #activator="{ props }">
                 <v-icon icon="mdi-information-outline" v-bind="props" />
               </template>
