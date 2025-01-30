@@ -93,21 +93,19 @@ searchContainers();
     <v-container fluid>
       <v-row no-gutters>
         <v-col cols="12" no-gutters>
-          <div class="d-flex align-baseline">
+          <CommonTooltip>
             <h1 class="text-h1 pr-4">Containers</h1>
-            <v-tooltip location="end">
-              <template #activator="{ props }">
-                <v-icon icon="mdi-information-outline" v-bind="props" />
-              </template>
-              <span>
+            <template #content>
+              <div>
                 The data you reference in your project collections is stored in
                 containers.
-                <br />
+              </div>
+              <div>
                 There are different types of containers for the different types
                 of data they store.
-              </span>
-            </v-tooltip>
-          </div>
+              </div>
+            </template>
+          </CommonTooltip>
         </v-col>
       </v-row>
       <v-row no-gutters>
