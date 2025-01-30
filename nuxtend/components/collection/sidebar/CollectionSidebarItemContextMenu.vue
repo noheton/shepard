@@ -34,8 +34,6 @@ async function deleteItem() {
 
   emit("data-object-deleted");
 }
-
-const dialogTitle = `Edit "${props.itemName}"`;
 </script>
 
 <template>
@@ -83,7 +81,7 @@ const dialogTitle = `Edit "${props.itemName}"`;
     :collection-id="collectionId"
     :data-object-id="dataObjectId"
     :parent-id="parentId"
-    :title="dialogTitle"
+    :title="`Edit &quot;${itemName}&quot;`"
     @data-object-updated="emit('data-object-updated')"
   >
     <template

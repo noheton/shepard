@@ -14,6 +14,7 @@ import { defineProps, type ShallowRef } from "vue";
 interface TextEditorProps {
   isEditable: boolean;
   isPreviewCollapsed?: boolean;
+  autofocus?: boolean;
 }
 
 const props = defineProps<TextEditorProps>();
@@ -52,7 +53,7 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
     TableCell,
   ],
   editable: props.isEditable,
-  autofocus: true,
+  autofocus: props.autofocus ?? false,
   onUpdate: ({ editor }) => {
     model.value = editor.getHTML();
   },

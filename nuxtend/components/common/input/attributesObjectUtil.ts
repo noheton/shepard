@@ -9,4 +9,6 @@ export const getAttributesArrayOfObject = (attributes: {
 export const getObjectOfAttributesArray = (
   attrArr: { key: string; value: string }[],
 ): { [key: string]: string } =>
-  attrArr.reduce((prev, curr) => ({ ...prev, [curr.key]: curr.value }), {});
+  attrArr
+    .filter(attr => !!attr.key)
+    .reduce((prev, curr) => ({ ...prev, [curr.key]: curr.value }), {});

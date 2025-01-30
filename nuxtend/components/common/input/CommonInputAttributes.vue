@@ -22,10 +22,7 @@ function updateAttribute(
 
 watch(
   attributesArray,
-  arr => {
-    console.log("updated", arr);
-    emit("attributesChanged", getObjectOfAttributesArray(arr));
-  },
+  arr => emit("attributesChanged", getObjectOfAttributesArray(arr)),
   { deep: true },
 );
 

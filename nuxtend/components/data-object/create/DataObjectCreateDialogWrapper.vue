@@ -24,8 +24,11 @@ const dataObjectToCreate = ref<DataObjectToCreate>({
   attributes: {},
   predecessorIds: [],
 });
+
+const form = useTemplateRef("form");
 function updateDataObjectToCreate(newValue: DataObjectToCreate) {
   dataObjectToCreate.value = newValue;
+  form.value?.validate();
 }
 
 const isValid = ref<boolean>(true);
@@ -72,7 +75,7 @@ async function createDataObject() {
     @submit="createDataObject"
   >
     <template #form>
-      <v-form v-if="!!dataObjectToCreate" v-model="isValid">
+      <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
         <slot
           name="inputs"
           :collection-id="collectionId"

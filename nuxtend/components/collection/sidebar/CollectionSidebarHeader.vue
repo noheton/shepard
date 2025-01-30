@@ -15,7 +15,6 @@ const props = defineProps<CollectionSidebarHeaderProps>();
 const showContextMenuButton = ref<boolean>(false);
 
 const showEditDialog = ref(false);
-const dialogTitle = `Edit "${props.collection?.name}"`;
 </script>
 
 <template>
@@ -79,7 +78,7 @@ const dialogTitle = `Edit "${props.collection?.name}"`;
               v-model:show-context-menu-button="showContextMenuButton"
               :collection="collection"
               :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
-              :title="dialogTitle"
+              :title="`Edit &quot;${collection.name}&quot;`"
             >
               <template
                 #inputs="{

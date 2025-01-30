@@ -61,6 +61,7 @@ async function saveNewLabJournalEntry() {
       <CommonEditor
         v-model="newLabJournalEntryModel.journalContent"
         :is-editable="true"
+        :autofocus="true"
       />
     </div>
 

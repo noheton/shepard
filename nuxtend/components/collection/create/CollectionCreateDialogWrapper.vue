@@ -17,8 +17,10 @@ const emit = defineEmits<{
   (e: "collection-created", value: number): void;
 }>();
 
+const form = useTemplateRef("form");
 function updateCollectionToCreate(newValue: CollectionToCreate) {
   collectionToCreate.value = newValue;
+  form.value?.validate();
 }
 
 const permissionType = ref<PermissionType>(PermissionType.Private);
@@ -81,13 +83,14 @@ async function saveChanges() {
 
 <template>
   <EntityDialog
+    v-if="showDialog"
     v-model:show-dialog="showDialog"
     title="Create Collection"
     :submit-disabled="!isValid"
     @submit="saveChanges"
   >
     <template #form>
-      <v-form v-model="isValid">
+      <v-form ref="form" v-model="isValid">
         <slot
           name="inputs"
           :collection="collectionToCreate"

@@ -21,8 +21,11 @@ const { dataObject } = useFetchDataObject(
   props.dataObjectId,
 );
 const updatedDataObject = ref<UpdatedDataObject | undefined>(undefined);
+
+const form = useTemplateRef("form");
 function updateDataObject(newValue: UpdatedDataObject) {
   updatedDataObject.value = newValue;
+  form.value?.validate();
 }
 
 const isValid = ref<boolean>(true);
@@ -78,7 +81,7 @@ async function saveChanges() {
     @submit="saveChanges"
   >
     <template #form>
-      <v-form v-if="!!updatedDataObject" v-model="isValid">
+      <v-form v-if="!!updatedDataObject" ref="form" v-model="isValid">
         <slot
           name="inputs"
           :collection-id="collectionId"

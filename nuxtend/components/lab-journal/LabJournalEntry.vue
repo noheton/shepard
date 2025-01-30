@@ -162,6 +162,7 @@ const getUpdatedInfoString = computed(() => {
         :initial-content="model.journalContent"
         :is-editable="isEditing"
         :is-preview-collapsed="!isExpanded"
+        :autofocus="true"
       />
     </div>
 

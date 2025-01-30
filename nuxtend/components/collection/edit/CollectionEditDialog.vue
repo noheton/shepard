@@ -23,8 +23,11 @@ const updatedCollection = ref<UpdatedCollection>({
   description: props.collection.description ?? "",
 });
 
+const form = useTemplateRef("form");
+
 function updateCollection(newValue: UpdatedCollection) {
   updatedCollection.value = newValue;
+  form.value?.validate();
 }
 
 const updatedPermissions = ref<UpdatedPermissions>(undefined);
@@ -86,7 +89,7 @@ async function saveChanges() {
     @submit="saveChanges"
   >
     <template #form>
-      <v-form v-model="isValid">
+      <v-form ref="form" v-model="isValid" validate-on="invalid-input eager">
         <slot
           name="inputs"
           :collection-id="collection.id"
