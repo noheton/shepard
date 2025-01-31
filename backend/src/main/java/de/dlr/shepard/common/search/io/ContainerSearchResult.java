@@ -4,13 +4,17 @@ import de.dlr.shepard.common.neo4j.io.BasicContainerIO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ContainerSearchResult extends ASearchResults<ContainerSearchParams> {
 
+  @Schema(required = true)
   private BasicContainerIO[] results;
+
+  @Schema(required = true)
   private Integer totalResults;
 
   public ContainerSearchResult(BasicContainerIO[] results, ContainerSearchParams searchParams, Integer total) {

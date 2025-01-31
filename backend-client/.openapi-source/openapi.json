@@ -2004,44 +2004,6 @@
         }
       }
     },
-    "/collections/{collectionId}/versions/{versionUid}" : {
-      "get" : {
-        "tags" : [ "collection" ],
-        "description" : "Get version",
-        "operationId" : "getVersion",
-        "parameters" : [ {
-          "name" : "collectionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        }, {
-          "name" : "versionUid",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "ok",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Version"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "not found"
-          }
-        }
-      }
-    },
     "/structuredDataContainers" : {
       "get" : {
         "tags" : [ "structuredDataContainer" ],
@@ -2439,76 +2401,6 @@
           },
           "404" : {
             "description" : "not found"
-          }
-        }
-      }
-    },
-    "/collections/{collectionId}/versions" : {
-      "get" : {
-        "tags" : [ "collection" ],
-        "description" : "Get versions",
-        "operationId" : "getVersions",
-        "parameters" : [ {
-          "name" : "collectionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "ok",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Version"
-                  }
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "not found"
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "collection" ],
-        "description" : "Create a new version",
-        "operationId" : "createVersion",
-        "parameters" : [ {
-          "name" : "collectionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Version"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "created",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Version"
-                }
-              }
-            }
           }
         }
       }
@@ -5798,6 +5690,9 @@
           "description" : {
             "type" : "string"
           },
+          "isHEADVersion" : {
+            "type" : "boolean"
+          },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string",
@@ -5814,6 +5709,9 @@
               "$ref" : "#/components/schemas/UUID"
             } ],
             "readOnly" : true
+          },
+          "hEADVersion" : {
+            "type" : "boolean"
           }
         }
       },
@@ -6052,6 +5950,7 @@
         }
       },
       "ContainerSearchResult" : {
+        "required" : [ "results", "totalResults" ],
         "type" : "object",
         "properties" : {
           "searchParams" : {

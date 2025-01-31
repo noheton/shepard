@@ -19,7 +19,6 @@ import type {
   DataObjectAttributes,
   Permissions,
   Roles,
-  Version,
 } from '../models/index';
 import {
     CollectionFromJSON,
@@ -30,17 +29,10 @@ import {
     PermissionsToJSON,
     RolesFromJSON,
     RolesToJSON,
-    VersionFromJSON,
-    VersionToJSON,
 } from '../models/index';
 
 export interface CreateCollectionRequest {
     collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'dataObjectIds'|'incomingIds'>;
-}
-
-export interface CreateVersionRequest {
-    collectionId: number;
-    version: Omit<Version, 'uid'|'createdAt'|'createdBy'|'predecessorUUID'>;
 }
 
 export interface DeleteCollectionRequest {
@@ -74,15 +66,6 @@ export interface GetCollectionPermissionsRequest {
 }
 
 export interface GetCollectionRolesRequest {
-    collectionId: number;
-}
-
-export interface GetVersionRequest {
-    collectionId: number;
-    versionUid: string;
-}
-
-export interface GetVersionsRequest {
     collectionId: number;
 }
 
@@ -141,61 +124,6 @@ export class CollectionApi extends runtime.BaseAPI {
      */
     async createCollection(requestParameters: CreateCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Collection> {
         const response = await this.createCollectionRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Create a new version
-     */
-    async createVersionRaw(requestParameters: CreateVersionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Version>> {
-        if (requestParameters['collectionId'] == null) {
-            throw new runtime.RequiredError(
-                'collectionId',
-                'Required parameter "collectionId" was null or undefined when calling createVersion().'
-            );
-        }
-
-        if (requestParameters['version'] == null) {
-            throw new runtime.RequiredError(
-                'version',
-                'Required parameter "version" was null or undefined when calling createVersion().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/collections/{collectionId}/versions`.replace(`{${"collectionId"}}`, encodeURIComponent(String(requestParameters['collectionId']))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: VersionToJSON(requestParameters['version']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => VersionFromJSON(jsonValue));
-    }
-
-    /**
-     * Create a new version
-     */
-    async createVersion(requestParameters: CreateVersionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Version> {
-        const response = await this.createVersionRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -537,103 +465,6 @@ export class CollectionApi extends runtime.BaseAPI {
      */
     async getCollectionRoles(requestParameters: GetCollectionRolesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Roles> {
         const response = await this.getCollectionRolesRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get version
-     */
-    async getVersionRaw(requestParameters: GetVersionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Version>> {
-        if (requestParameters['collectionId'] == null) {
-            throw new runtime.RequiredError(
-                'collectionId',
-                'Required parameter "collectionId" was null or undefined when calling getVersion().'
-            );
-        }
-
-        if (requestParameters['versionUid'] == null) {
-            throw new runtime.RequiredError(
-                'versionUid',
-                'Required parameter "versionUid" was null or undefined when calling getVersion().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/collections/{collectionId}/versions/{versionUid}`.replace(`{${"collectionId"}}`, encodeURIComponent(String(requestParameters['collectionId']))).replace(`{${"versionUid"}}`, encodeURIComponent(String(requestParameters['versionUid']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => VersionFromJSON(jsonValue));
-    }
-
-    /**
-     * Get version
-     */
-    async getVersion(requestParameters: GetVersionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Version> {
-        const response = await this.getVersionRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Get versions
-     */
-    async getVersionsRaw(requestParameters: GetVersionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Version>>> {
-        if (requestParameters['collectionId'] == null) {
-            throw new runtime.RequiredError(
-                'collectionId',
-                'Required parameter "collectionId" was null or undefined when calling getVersions().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/collections/{collectionId}/versions`.replace(`{${"collectionId"}}`, encodeURIComponent(String(requestParameters['collectionId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(VersionFromJSON));
-    }
-
-    /**
-     * Get versions
-     */
-    async getVersions(requestParameters: GetVersionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Version>> {
-        const response = await this.getVersionsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

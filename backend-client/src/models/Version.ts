@@ -39,6 +39,12 @@ export interface Version {
     description?: string;
     /**
      * 
+     * @type {boolean}
+     * @memberof Version
+     */
+    isHEADVersion?: boolean;
+    /**
+     * 
      * @type {Date}
      * @memberof Version
      */
@@ -55,6 +61,12 @@ export interface Version {
      * @memberof Version
      */
     readonly predecessorUUID?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Version
+     */
+    hEADVersion?: boolean;
 }
 
 /**
@@ -78,9 +90,11 @@ export function VersionFromJSONTyped(json: any, ignoreDiscriminator: boolean): V
         'uid': json['uid'],
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'isHEADVersion': json['isHEADVersion'] == null ? undefined : json['isHEADVersion'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
         'predecessorUUID': json['predecessorUUID'] == null ? undefined : json['predecessorUUID'],
+        'hEADVersion': json['hEADVersion'] == null ? undefined : json['hEADVersion'],
     };
 }
 
@@ -92,6 +106,8 @@ export function VersionToJSON(value?: Omit<Version, 'uid'|'createdAt'|'createdBy
         
         'name': value['name'],
         'description': value['description'],
+        'isHEADVersion': value['isHEADVersion'],
+        'hEADVersion': value['hEADVersion'],
     };
 }
 

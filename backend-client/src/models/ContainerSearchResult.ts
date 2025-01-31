@@ -43,19 +43,21 @@ export interface ContainerSearchResult {
      * @type {Array<BasicContainer>}
      * @memberof ContainerSearchResult
      */
-    results?: Array<BasicContainer>;
+    results: Array<BasicContainer>;
     /**
      * 
      * @type {number}
      * @memberof ContainerSearchResult
      */
-    totalResults?: number;
+    totalResults: number;
 }
 
 /**
  * Check if a given object implements the ContainerSearchResult interface.
  */
 export function instanceOfContainerSearchResult(value: object): value is ContainerSearchResult {
+    if (!('results' in value) || value['results'] === undefined) return false;
+    if (!('totalResults' in value) || value['totalResults'] === undefined) return false;
     return true;
 }
 
@@ -70,8 +72,8 @@ export function ContainerSearchResultFromJSONTyped(json: any, ignoreDiscriminato
     return {
         
         'searchParams': json['searchParams'] == null ? undefined : ContainerSearchParamsFromJSON(json['searchParams']),
-        'results': json['results'] == null ? undefined : ((json['results'] as Array<any>).map(BasicContainerFromJSON)),
-        'totalResults': json['totalResults'] == null ? undefined : json['totalResults'],
+        'results': ((json['results'] as Array<any>).map(BasicContainerFromJSON)),
+        'totalResults': json['totalResults'],
     };
 }
 
@@ -82,7 +84,7 @@ export function ContainerSearchResultToJSON(value?: ContainerSearchResult | null
     return {
         
         'searchParams': ContainerSearchParamsToJSON(value['searchParams']),
-        'results': value['results'] == null ? undefined : ((value['results'] as Array<any>).map(BasicContainerToJSON)),
+        'results': ((value['results'] as Array<any>).map(BasicContainerToJSON)),
         'totalResults': value['totalResults'],
     };
 }

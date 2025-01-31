@@ -51,13 +51,8 @@ export function useSearchContainers(
         ...orderByParams,
       })
       .then(response => {
-        if (
-          response.results !== undefined &&
-          response.totalResults !== undefined
-        ) {
-          serverItems.value = response.results;
-          pageCount.value = Math.ceil(response.totalResults / itemsPerPage);
-        }
+        serverItems.value = response.results;
+        pageCount.value = Math.ceil(response.totalResults / itemsPerPage);
         loading.value = false;
       })
       .catch(e => {
