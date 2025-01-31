@@ -182,10 +182,10 @@ public class TimeseriesMigrationService {
     timeoutFromConfigProperty = "shepard.migration-mode.compression.transaction-timeout",
     timeout = 6000
   )
-  protected void compressAllDataPoints() {
-    Log.info("Starting compression of timeseries table...");
+  public void compressAllDataPoints() {
+    Log.info("Starting compression of timeseries data point table...");
     timeseriesDataPointRepository.compressAllChunks();
-    Log.info("Finished compression of timeseries table.");
+    Log.info("Finished compression of timeseries data point table.");
   }
 
   protected void migrateTask(MigrationTaskEntity task) throws Exception {
@@ -355,7 +355,12 @@ public class TimeseriesMigrationService {
   ) throws Exception {
     var firstTimestamp = getFirstTimestampOfPayload(databaseName, influxTimeseries);
     var lastTimestamp = getLastTimestampOfPayload(databaseName, influxTimeseries);
-    Log.infof("Doing migration from %s to %s of container %s", firstTimestamp, lastTimestamp, container.getId());
+    Log.infof(
+      "Doing migration from timestamp %s to %s of container %s",
+      firstTimestamp,
+      lastTimestamp,
+      container.getId()
+    );
 
     long currentStartTimestamp = firstTimestamp - 1;
 
@@ -386,18 +391,22 @@ public class TimeseriesMigrationService {
 
     List<Callable<Object>> tasks = new ArrayList<>();
 
-    Log.infof("Creating writers...");
+    Log.debug("Creating writers...");
     for (int i = 0; i < numberOfWriterThreads; i++) {
       tasks.add(payloadWriter);
     }
 
-    Log.infof("Creating readers...");
+    Log.debug("Creating readers...");
     for (int i = 0; i < numberOfReaderThreads; i++) {
       tasks.add(payloadReader);
     }
 
     try {
-      Log.infof("Starting executor service...");
+      Log.infof(
+        "Starting migration with %s reader threads and %s writer threads...",
+        numberOfReaderThreads,
+        numberOfWriterThreads
+      );
       List<Future<Object>> futures = executor.invokeAll(tasks);
       for (Future<Object> future : futures) {
         future.get();

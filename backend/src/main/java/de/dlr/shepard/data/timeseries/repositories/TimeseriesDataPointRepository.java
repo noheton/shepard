@@ -7,6 +7,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
+import io.micrometer.core.annotation.Timed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -24,6 +25,7 @@ public class TimeseriesDataPointRepository {
   @PersistenceContext
   EntityManager entityManager;
 
+  @Timed(value = "shepard.timeseries-data-point.insert")
   public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
@@ -32,12 +34,14 @@ public class TimeseriesDataPointRepository {
     }
   }
 
+  @Timed(value = "shepard.timeseries-data-point.compression")
   public void compressAllChunks() {
     var sqlString = "SELECT compress_chunk(c) FROM show_chunks('timeseries_data_points') c;";
     Query query = entityManager.createNativeQuery(sqlString);
     query.getResultList();
   }
 
+  @Timed(value = "shepard.timeseries-data-point.query")
   public List<TimeseriesDataPoint> queryDataPoints(
     int timeseriesId,
     DataPointValueType valueType,

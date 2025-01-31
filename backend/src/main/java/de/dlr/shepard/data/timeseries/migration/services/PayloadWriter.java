@@ -18,19 +18,20 @@ import java.util.concurrent.Callable;
 @RequestScoped
 class PayloadWriter implements Callable<Object> {
 
+  private static int compressionBatchSize = 10;
+  private TimeseriesMigrationService migrationService;
+  private TimeseriesService timeseriesService;
+
   @Inject
   PayloadWriter(TimeseriesMigrationService migrationService, TimeseriesService timeseriesService) {
     this.migrationService = migrationService;
     this.timeseriesService = timeseriesService;
   }
 
-  private TimeseriesMigrationService migrationService;
-
-  private TimeseriesService timeseriesService;
-
   @Override
   public Object call() {
     try {
+      var initialQueueSize = migrationService.getPayloadReadQueueSize();
       BlockingQueue<PayloadWriteTask> queue = migrationService.getPayloadWriteQueue();
       while (true) {
         PayloadWriteTask task = queue.take();
@@ -38,11 +39,13 @@ class PayloadWriter implements Callable<Object> {
         Log.infof(
           "started PayloadWriteTask: %s of %s for container %s with %s points.",
           task.taskId,
-          migrationService.getPayloadReadQueueSize(),
+          initialQueueSize,
           task.container.getId(),
           task.payload.getPoints().size()
         );
         saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
+
+        if (task.taskId % compressionBatchSize == 0) runCompression();
       }
     } catch (InterruptedException e) {
       Log.error(e);
@@ -63,5 +66,13 @@ class PayloadWriter implements Callable<Object> {
       mapToTimeseriesDataPoints(payload.getPoints()),
       mapToValueType(influxTimeseriesDataType)
     );
+  }
+
+  private void runCompression() {
+    try {
+      migrationService.compressAllDataPoints();
+    } catch (Exception e) {
+      Log.warnf("Compression had an error but we still continue with data migration. %s", e.toString());
+    }
   }
 }

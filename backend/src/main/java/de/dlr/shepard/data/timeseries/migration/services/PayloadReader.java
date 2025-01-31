@@ -27,7 +27,7 @@ class PayloadReader implements Callable<Object> {
       while (true) {
         PayloadReadTask payloadReadTask = migrationService.getPayloadReadQueue().poll();
         if (payloadReadTask.isLastTask) break;
-        Log.infof(
+        Log.debugf(
           "started PayloadReadTask: %s, from %s to %s",
           payloadReadTask.taskId,
           payloadReadTask.startTimestamp,

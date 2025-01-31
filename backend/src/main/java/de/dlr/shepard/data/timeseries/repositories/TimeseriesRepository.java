@@ -2,6 +2,7 @@ package de.dlr.shepard.data.timeseries.repositories;
 
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -61,6 +62,7 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
     if (rowCount > 1) throw new RuntimeException("Upsert has changed multiple rows.");
   }
 
+  @Timed(value = "shepard.timeseries.delete")
   public void deleteByContainerId(long containerId) {
     var rowCount = entityManager
       .createQuery("delete from TimeseriesEntity where containerId = :containerId")
