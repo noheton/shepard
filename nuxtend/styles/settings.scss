@@ -89,5 +89,8 @@
 
   // card overrides
   $card-actions-padding: 24px,
-  $button-card-actions-margin: 12px
+  $button-card-actions-margin: 12px,
+
+  // tooltip overrides
+  $tooltip-background-color: rgb(var(--v-theme-textbody1))
 );
