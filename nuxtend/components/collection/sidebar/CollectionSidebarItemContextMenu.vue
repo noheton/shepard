@@ -91,8 +91,11 @@ async function deleteItem() {
         updatedDataObject,
       }"
     >
+      <v-row class="pt-8" />
       <v-row>
-        <div class="text-subtitle-2">Properties</div>
+        <v-col class="pb-1">
+          <div class="text-subtitle-2">Properties</div>
+        </v-col>
       </v-row>
       <CommonInputName
         :name="updatedDataObject.name"
@@ -104,11 +107,11 @@ async function deleteItem() {
           description => updateDataObject({ ...updatedDataObject, description })
         "
       />
+      <CommonInputMandatoryFieldHint />
       <v-row>
-        <div class="text-body-3 text-textbody2">*mandatory fields</div>
-      </v-row>
-      <v-row class="pt-8">
-        <div class="text-subtitle-2">Relationships</div>
+        <v-col class="pt-8 pb-1">
+          <div class="text-subtitle-2">Relationships</div>
+        </v-col>
       </v-row>
       <DataObjectEditParentInput
         :collection-id="editedDataObjectCollectionId"

@@ -60,6 +60,7 @@ const showDescriptionEditDialog = ref(false);
                       <template
                         #inputs="{ updatedCollection, updateCollection }"
                       >
+                        <v-row class="pt-8" />
                         <CommonInputDescription
                           :description="updatedCollection.description"
                           @description-changed="
@@ -93,6 +94,7 @@ const showDescriptionEditDialog = ref(false);
                       <template
                         #inputs="{ updatedCollection, updateCollection }"
                       >
+                        <v-row class="pt-8" />
                         <CommonInputAttributes
                           :attributes="updatedCollection.attributes"
                           @attributes-changed="

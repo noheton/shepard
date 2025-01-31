@@ -89,6 +89,7 @@ const showEditDialog = ref(false);
                   updatedPermissions,
                 }"
               >
+                <v-row class="pt-8" />
                 <CommonInputName
                   :name="updatedCollection.name"
                   @name-changed="
@@ -108,11 +109,7 @@ const showEditDialog = ref(false);
                   :collection-id="collectionId"
                   :update-permissions="updatePermissions"
                 />
-                <v-row>
-                  <div class="text-body-3 text-textbody2">
-                    *mandatory fields
-                  </div>
-                </v-row>
+                <CommonInputMandatoryFieldHint />
               </template>
             </CollectionEditDialog>
           </template>

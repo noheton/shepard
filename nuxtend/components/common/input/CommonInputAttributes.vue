@@ -39,8 +39,8 @@ const attributeRules = [
 
 <template>
   <template v-for="({ key, value }, index) in attributesArray" :key="index">
-    <v-row class="pb-3 align-center">
-      <v-col class="py-0 pl-0 pr-2">
+    <v-row align="center">
+      <v-col class="pr-1 pb-0">
         <v-text-field
           :model-value="key"
           :rules="attributeRules"
@@ -53,7 +53,7 @@ const attributeRules = [
           "
         />
       </v-col>
-      <v-col class="py-0 px-2">
+      <v-col class="pr-1 pb-0">
         <v-text-field
           :model-value="value"
           label="Value"
@@ -65,7 +65,7 @@ const attributeRules = [
           "
         />
       </v-col>
-      <v-col cols="auto" class="py-0 pr-0 pl-2">
+      <v-col cols="1" class="pb-0">
         <v-btn
           class="text-textbody1 text-body-1"
           icon="mdi-delete-outline"
@@ -76,13 +76,15 @@ const attributeRules = [
       </v-col>
     </v-row>
   </template>
-  <v-row class="pt-1">
-    <v-btn
-      text="Add Attributes"
-      color="treeview"
-      variant="flat"
-      prepend-icon="mdi-plus-circle"
-      @click="attributesArray.push({ key: '', value: '' })"
-    />
+  <v-row>
+    <v-col class="pt-4">
+      <v-btn
+        text="Add Attributes"
+        color="treeview"
+        variant="flat"
+        prepend-icon="mdi-plus-circle"
+        @click="attributesArray.push({ key: '', value: '' })"
+      />
+    </v-col>
   </v-row>
 </template>

@@ -28,8 +28,11 @@ const emit = defineEmits(["data-object-created"]);
       }"
     >
       <!-- TODO: Display as stepper -->
+      <v-row class="pt-8" />
       <v-row>
-        <div class="text-subtitle-2">Properties</div>
+        <v-col>
+          <div class="text-subtitle-2">Properties</div>
+        </v-col>
       </v-row>
       <CommonInputName
         :name="updatedDataObject.name"
@@ -41,11 +44,11 @@ const emit = defineEmits(["data-object-created"]);
           description => updateDataObject({ ...updatedDataObject, description })
         "
       />
-      <v-row>
-        <div class="text-body-3 text-textbody2">*mandatory fields</div>
-      </v-row>
+      <CommonInputMandatoryFieldHint />
       <v-row class="pt-8">
-        <div class="text-subtitle-2">Relationships</div>
+        <v-col>
+          <div class="text-subtitle-2">Relationships</div>
+        </v-col>
       </v-row>
       <DataObjectEditParentInput
         :collection-id="editedDataObjectCollectionId"
@@ -63,7 +66,9 @@ const emit = defineEmits(["data-object-created"]);
         "
       />
       <v-row class="pt-8">
-        <div class="text-subtitle-2">Attributes</div>
+        <v-col>
+          <div class="text-subtitle-2">Attributes</div>
+        </v-col>
       </v-row>
       <CommonInputAttributes
         :attributes="updatedDataObject.attributes ?? {}"

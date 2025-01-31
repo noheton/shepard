@@ -6,12 +6,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <v-row class="pt-4 pb-4">
-    <DataObjectEditSearchAutocomplete
-      input-label="Parent"
-      :initial-data-object-id="parentId"
-      :collection-id="collectionId"
-      @search-ended="id => emit('parentChanged', id)"
-    />
+  <v-row>
+    <v-col>
+      <DataObjectEditSearchAutocomplete
+        input-label="Parent"
+        :initial-data-object-id="parentId"
+        :collection-id="collectionId"
+        @search-ended="id => emit('parentChanged', id)"
+      />
+    </v-col>
   </v-row>
 </template>

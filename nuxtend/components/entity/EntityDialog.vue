@@ -19,33 +19,38 @@ const emit = defineEmits(["submit"]);
       <template #title>
         <div class="d-flex justify-space-between align-baseline">
           <div class="text-h4">{{ title }}</div>
-          <v-btn variant="plain" icon="mdi-close" @click="showDialog = false" />
+          <v-btn
+            variant="plain"
+            density="compact"
+            icon="mdi-close"
+            @click="showDialog = false"
+          />
         </div>
       </template>
       <template #text>
-        <v-container>
-          <slot name="form" />
-        </v-container>
+        <slot name="form" />
       </template>
       <template #actions>
-        <v-container>
-          <v-row justify="end">
-            <v-spacer />
-            <v-col cols="auto">
-              <v-btn variant="flat" @click="showDialog = false">Cancel</v-btn>
-              <v-btn
-                :disabled="submitDisabled"
-                color="primary"
-                variant="flat"
-                class="ml-4"
-                @click="emit('submit')"
-              >
-                Save Changes
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-container>
+        <v-row justify="end">
+          <v-spacer />
+          <v-col cols="auto">
+            <v-btn variant="flat" color="treeview" @click="showDialog = false">
+              Cancel
+            </v-btn>
+            <v-btn
+              :disabled="submitDisabled"
+              color="primary"
+              variant="flat"
+              class="ml-4"
+              @click="emit('submit')"
+            >
+              Save Changes
+            </v-btn>
+          </v-col>
+        </v-row>
       </template>
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped></style>

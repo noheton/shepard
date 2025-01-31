@@ -11,15 +11,17 @@ const nameRules = [
 </script>
 
 <template>
-  <v-row class="pt-4 pb-4">
-    <v-text-field
-      :model-value="name"
-      :rules="nameRules"
-      label="Name*"
-      variant="outlined"
-      density="compact"
-      require
-      @update:model-value="newName => emit('nameChanged', newName)"
-    />
+  <v-row>
+    <v-col>
+      <v-text-field
+        :model-value="name"
+        :rules="nameRules"
+        label="Name*"
+        variant="outlined"
+        density="compact"
+        require
+        @update:model-value="newName => emit('nameChanged', newName)"
+      />
+    </v-col>
   </v-row>
 </template>

@@ -23,6 +23,7 @@ const emit = defineEmits<{
       }"
     >
       <!-- TODO: Add stepper -->
+      <v-row class="pt-8" />
       <CommonInputName
         :name="collection.name"
         @name-changed="name => updateCollection({ ...collection, name })"
@@ -37,11 +38,11 @@ const emit = defineEmits<{
         :permission-type="permissionType"
         :update-permission-type="updatePermissionType"
       />
-      <v-row>
-        <div class="text-body-3 text-textbody2">*mandatory fields</div>
-      </v-row>
+      <CommonInputMandatoryFieldHint />
       <v-row class="pt-8">
-        <div class="text-subtitle-2">Attributes</div>
+        <v-col>
+          <div class="text-subtitle-2">Attributes</div>
+        </v-col>
       </v-row>
       <CommonInputAttributes
         :attributes="collection.attributes"

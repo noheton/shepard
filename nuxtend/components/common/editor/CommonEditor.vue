@@ -87,7 +87,7 @@ watch(
 </script>
 
 <template>
-  <div class="h-100 d-flex flex-column flex-nowrap ga-1 w-100">
+  <div class="d-flex flex-column flex-nowrap ga-1 w-100">
     <CommonEditorToolbar
       v-if="editor"
       :editor="editor"
