@@ -94,6 +94,7 @@ function mapToSearchResultAutoCompleteItem(
     variant="outlined"
     no-data-text="No Search Results"
     clearable
+    color="primary"
     return-object
     hide-details
     @update:model-value="onSelection"

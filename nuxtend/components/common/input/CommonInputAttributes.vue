@@ -40,37 +40,38 @@ const attributeRules = [
 <template>
   <template v-for="({ key, value }, index) in attributesArray" :key="index">
     <v-row align="center">
-      <v-col class="pr-1 pb-0">
+      <v-col cols="12" class="pb-1 d-flex">
         <v-text-field
           :model-value="key"
           :rules="attributeRules"
           label="Key"
           variant="outlined"
           density="compact"
+          color="primary"
           hide-details
           @update:model-value="
             newKey => updateAttribute(index, { key: newKey, value })
           "
         />
-      </v-col>
-      <v-col class="pr-1 pb-0">
+        <div :style="{ width: '8px' }" />
         <v-text-field
           :model-value="value"
           label="Value"
           variant="outlined"
           density="compact"
+          color="primary"
           hide-details
           @update:model-value="
             newValue => updateAttribute(index, { key, value: newValue })
           "
         />
-      </v-col>
-      <v-col cols="1" class="pb-0">
+
         <v-btn
           class="text-textbody1 text-body-1"
           icon="mdi-delete-outline"
-          variant="text"
           size="compact"
+          variant="text"
+          :style="{ width: '48px' }"
           @click="attributesArray.splice(index, 1)"
         />
       </v-col>

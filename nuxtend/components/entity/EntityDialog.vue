@@ -18,7 +18,7 @@ const emit = defineEmits(["submit"]);
     <v-card :loading="loading">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">
-          <div class="text-h4">{{ title }}</div>
+          <div class="text-h4 text-wrap">{{ title }}</div>
           <v-btn
             variant="plain"
             density="compact"

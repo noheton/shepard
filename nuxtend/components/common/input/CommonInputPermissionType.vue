@@ -11,13 +11,14 @@ defineProps<CollectionEditDialogProps>();
 
 <template>
   <v-row>
-    <v-col>
+    <v-col class="pt-2">
       <v-select
         :model-value="permissionType"
         :items="Object.values(PermissionType)"
         label="Permissions*"
         variant="outlined"
         density="compact"
+        color="primary"
         require
         hide-details
         @update:model-value="

@@ -93,8 +93,8 @@ async function deleteItem() {
     >
       <v-row class="pt-8" />
       <v-row>
-        <v-col class="pb-1">
-          <div class="text-subtitle-2">Properties</div>
+        <v-col class="pb-2">
+          <div class="text-subtitle-1">Properties</div>
         </v-col>
       </v-row>
       <CommonInputName
@@ -109,8 +109,8 @@ async function deleteItem() {
       />
       <CommonInputMandatoryFieldHint />
       <v-row>
-        <v-col class="pt-8 pb-1">
-          <div class="text-subtitle-2">Relationships</div>
+        <v-col class="pt-8 pb-2">
+          <div class="text-subtitle-1">Relationships</div>
         </v-col>
       </v-row>
       <DataObjectEditParentInput

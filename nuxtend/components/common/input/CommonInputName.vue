@@ -12,7 +12,7 @@ const nameRules = [
 
 <template>
   <v-row>
-    <v-col>
+    <v-col class="pb-0">
       <v-text-field
         :model-value="name"
         :rules="nameRules"
@@ -20,6 +20,8 @@ const nameRules = [
         variant="outlined"
         density="compact"
         require
+        color="primary"
+        hide-details
         @update:model-value="newName => emit('nameChanged', newName)"
       />
     </v-col>

@@ -8,7 +8,7 @@ const emit = defineEmits<{
 <template>
   <v-row>
     <template v-for="(predecessorDO, index) in predecessorIds" :key="index">
-      <v-col cols="11" class="pt-1">
+      <v-col cols="12" class="pt-1 d-flex">
         <DataObjectEditSearchAutocomplete
           :key="predecessorDO"
           input-label="Predecessor"
@@ -24,11 +24,9 @@ const emit = defineEmits<{
             }
           "
         />
-      </v-col>
-      <v-col cols="1" class="pt-1">
         <v-btn
           icon="mdi-delete-outline"
-          variant="plain"
+          variant="text"
           @click="
             emit(
               'predecessorsChanged',

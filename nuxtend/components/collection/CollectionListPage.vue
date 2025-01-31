@@ -106,6 +106,7 @@ onMounted(() => {
         <v-text-field
           id="userFormInput"
           v-model="filterInput"
+          color="primary"
           placeholder="Name, Username, ID or Description"
           :style="{ width: '100%', marginTop: '5px' }"
           v-bind="props"
