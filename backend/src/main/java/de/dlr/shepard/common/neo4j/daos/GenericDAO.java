@@ -8,6 +8,7 @@ import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import io.quarkus.logging.Log;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.cypher.query.Pagination;
@@ -219,6 +220,22 @@ public abstract class GenericDAO<T> {
     ret += " AND " + CypherQueryHelper.getReadableByQuery(collectionVar, username);
     ret += " " + CypherQueryHelper.getReturnPart(retVar, Neighborhood.EVERYTHING);
     return ret;
+  }
+
+  public void deleteHasSuccessorRelation(long fromId, long toId) {
+    deleteFromToRelation(fromId, toId, Constants.HAS_SUCCESSOR);
+  }
+
+  private void deleteFromToRelation(long fromId, long toId, String relationName) {
+    String query = String.format(
+      "MATCH (a:%s)-[r:%s]->(b:%s) WHERE id(a) = %s AND id(b) = %s DELETE r;",
+      getEntityType().getSimpleName(),
+      relationName,
+      getEntityType().getSimpleName(),
+      fromId,
+      toId
+    );
+    session.query(query, new HashMap<String, String>());
   }
 
   public abstract Class<T> getEntityType();

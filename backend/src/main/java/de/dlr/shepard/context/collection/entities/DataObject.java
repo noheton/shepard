@@ -27,7 +27,7 @@ public class DataObject extends AbstractDataObject {
   @Relationship(type = Constants.HAS_REFERENCE)
   private List<BasicReference> references = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_SUCCESSOR)
+  @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.OUTGOING)
   private List<DataObject> successors = new ArrayList<>();
 
   @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.INCOMING)

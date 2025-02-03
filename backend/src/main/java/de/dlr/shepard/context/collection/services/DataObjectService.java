@@ -191,12 +191,24 @@ public class DataObjectService {
         dataObjectDAO.createOrUpdate(oldParent);
       }
     }
-
+    if (old.getPredecessors() != null) {
+      List<DataObject> oldPredecessors = findRelatedDataObjectsByShepardIds(
+        old.getCollection().getShepardId(),
+        old.getPredecessors().stream().mapToLong(DataObject::getId).toArray(),
+        dataObjectShepardId
+      );
+      oldPredecessors.forEach(predecessor -> {
+        if (predecessor.getSuccessors() != null) {
+          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getId(), old.getId());
+        }
+      });
+    }
     List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(
       old.getCollection().getShepardId(),
       dataObject.getPredecessorIds(),
       dataObjectShepardId
     );
+
     old.setAttributes(dataObject.getAttributes());
     old.setDescription(dataObject.getDescription());
     old.setName(dataObject.getName());
