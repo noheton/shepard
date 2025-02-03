@@ -1,9 +1,6 @@
 import { DataObjectApi } from "@dlr-shepard/backend-client";
-import {
-  mapToTreeviewItem,
-  type TreeviewItem,
-} from "~/composables/collectionSidebar/treeviewItem";
-import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
+import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
+import { useOpenedItems } from "./useOpenedItems";
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);

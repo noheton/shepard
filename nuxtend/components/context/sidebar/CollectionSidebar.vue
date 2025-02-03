@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTreeviewItems } from "./useTreeviewItems";
+
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
 const { collection, isAllowedToEditCollection, isAllowedToEditPermissions } =

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TitleAndMetadataDisplay from "~/components/context/display-components/TitleAndMetadataDisplay.vue";
 import { collectionsPath } from "../../../utils/constants";
 
 definePageMeta({ layout: "collection" });

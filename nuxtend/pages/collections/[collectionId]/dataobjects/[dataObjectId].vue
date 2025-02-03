@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import TitleAndMetadataDisplay from "~/components/context/display-components/TitleAndMetadataDisplay.vue";
-import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 import {
   collectionsPath,
   dataObjectsPathFragment,
