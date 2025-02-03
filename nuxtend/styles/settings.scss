@@ -59,6 +59,8 @@
       "weight": 400,
       "line-height": 1rem,
       "text-transform": none,
+      // This fixes the issue of null font-family in textbody-3
+      "font-family": "Work Sans",
     ),
     "overline": (
       "size": 0.875rem,
