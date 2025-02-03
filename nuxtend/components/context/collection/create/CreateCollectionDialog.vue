@@ -85,11 +85,13 @@ async function saveChanges() {
   <StepperDialog
     v-model:show-dialog="showDialog"
     title="Create Collection"
+    :steps="['Collection Properties', 'Additional Information']"
     :submit-disabled="!isValid"
     @submit="saveChanges"
   >
     <template #step1-form>
       <v-form ref="form" v-model="isValid">
+        <div class="text-subtitle-2 pt-6">Collection Properties</div>
         <v-row class="pt-4" />
         <NameInput
           :name="collectionToCreate.name"
@@ -113,6 +115,7 @@ async function saveChanges() {
     </template>
     <template #step2-form>
       <v-form ref="form" v-model="isValid">
+        <div class="text-subtitle-2 pt-6 pb-3">Additional Information</div>
         <AttributesInput
           :attributes="collectionToCreate.attributes"
           @attributes-changed="

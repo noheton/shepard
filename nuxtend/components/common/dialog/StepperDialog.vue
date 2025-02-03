@@ -1,6 +1,7 @@
 <script setup lang="ts">
 interface StepperDialogProps {
   title: string;
+  steps: string[];
   loading?: boolean;
   submitDisabled: boolean;
 }
@@ -29,17 +30,15 @@ const currentStep = ref<number>(1);
           v-model:model-value="currentStep"
           class="d-flex flex-column"
           min-height="426px"
-          :items="['Collection Properties', 'Additional Information']"
+          :items="steps"
           selected-class="selected-step"
           flat
         >
           <template #[`item.1`]>
-            <div class="text-subtitle-2 pt-6">Collection Properties</div>
             <slot name="step1-form" />
           </template>
 
           <template #[`item.2`]>
-            <div class="text-subtitle-2 pt-6 pb-3">Additional Information</div>
             <slot name="step2-form" />
           </template>
           <v-spacer />

@@ -66,13 +66,14 @@ async function createDataObject() {
 </script>
 
 <template>
-  <Dialog
+  <StepperDialog
     v-model:show-dialog="showDialog"
     title="Create Data Object"
+    :steps="['Properties / Relationships', 'Attributes']"
     :submit-disabled="!isValid"
     @submit="createDataObject"
   >
-    <template #form>
+    <template #step1-form>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
         <v-row class="pt-8" />
         <v-row>
@@ -118,11 +119,11 @@ async function createDataObject() {
               })
           "
         />
-        <v-row class="pt-8">
-          <v-col>
-            <div class="text-subtitle-2">Attributes</div>
-          </v-col>
-        </v-row>
+      </v-form>
+    </template>
+    <template #step2-form>
+      <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
+        <div class="text-subtitle-2 pt-6 pb-3">Attributes</div>
         <AttributesInput
           :attributes="dataObjectToCreate.attributes ?? {}"
           @attributes-changed="
@@ -135,5 +136,5 @@ async function createDataObject() {
         />
       </v-form>
     </template>
-  </Dialog>
+  </StepperDialog>
 </template>
