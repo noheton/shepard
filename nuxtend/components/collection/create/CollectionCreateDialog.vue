@@ -11,19 +11,19 @@ const emit = defineEmits<{
 
 <template>
   <CollectionCreateDialogWrapper
+    v-if="showDialog"
     v-model:show-dialog="showDialog"
     @collection-created="id => emit('collection-created', id)"
   >
     <template
-      #inputs="{
+      #step1-inputs="{
         updateCollection,
         collection,
         updatePermissionType,
         permissionType,
       }"
     >
-      <!-- TODO: Add stepper -->
-      <v-row class="pt-8" />
+      <v-row class="pt-4" />
       <CommonInputName
         :name="collection.name"
         @name-changed="name => updateCollection({ ...collection, name })"
@@ -39,11 +39,8 @@ const emit = defineEmits<{
         :update-permission-type="updatePermissionType"
       />
       <CommonInputMandatoryFieldHint />
-      <v-row class="pt-8">
-        <v-col>
-          <div class="text-subtitle-2">Attributes</div>
-        </v-col>
-      </v-row>
+    </template>
+    <template #step2-inputs="{ updateCollection, collection }">
       <CommonInputAttributes
         :attributes="collection.attributes"
         @attributes-changed="

@@ -82,17 +82,16 @@ async function saveChanges() {
 </script>
 
 <template>
-  <EntityDialog
-    v-if="showDialog"
+  <EntityDialogStepper
     v-model:show-dialog="showDialog"
     title="Create Collection"
     :submit-disabled="!isValid"
     @submit="saveChanges"
   >
-    <template #form>
+    <template #step1-form>
       <v-form ref="form" v-model="isValid">
         <slot
-          name="inputs"
+          name="step1-inputs"
           :collection="collectionToCreate"
           :permission-type="permissionType"
           :update-collection="updateCollectionToCreate"
@@ -100,5 +99,14 @@ async function saveChanges() {
         />
       </v-form>
     </template>
-  </EntityDialog>
+    <template #step2-form>
+      <v-form ref="form" v-model="isValid">
+        <slot
+          name="step2-inputs"
+          :collection="collectionToCreate"
+          :update-collection="updateCollectionToCreate"
+        />
+      </v-form>
+    </template>
+  </EntityDialogStepper>
 </template>
