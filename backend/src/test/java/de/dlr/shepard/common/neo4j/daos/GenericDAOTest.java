@@ -3,9 +3,11 @@ package de.dlr.shepard.common.neo4j.daos;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -234,5 +236,14 @@ public class GenericDAOTest extends BaseTestCase {
       "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(col) = 1 AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
     String actual = dao.getSearchForReachableReferencesQuery(collectionId, userName);
     assertEquals(expected, actual);
+  }
+
+  @Test
+  public void deleteHasSuccessorRelationTest() {
+    long fromId = 1;
+    long toId = 2;
+    dao.deleteHasSuccessorRelation(fromId, toId);
+    String expected = "MATCH (a:TestObject)-[r:has_successor]->(b:TestObject) WHERE id(a) = 1 AND id(b) = 2 DELETE r;";
+    verify(session).query(eq(expected), any());
   }
 }
