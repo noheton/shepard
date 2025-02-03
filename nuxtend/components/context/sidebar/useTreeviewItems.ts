@@ -119,8 +119,9 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     const item = getItemWithPathIfLoaded(itemId)?.item;
 
     if (!item) return;
-    if (!item.childrenIds?.length) {
-      item.children = [];
+    if (!item.childrenIds || item.childrenIds.length === 0) {
+      item.children = undefined;
+      return;
     }
     if (item.children?.length) return;
 
