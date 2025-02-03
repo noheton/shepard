@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit/EditDataObjectDescriptionDialog.vue";
 import {
   collectionsPath,
   dataObjectsPathFragment,
@@ -77,65 +78,31 @@ const showDescriptionEditDialog = ref(false);
                       icon="mdi-pencil-outline"
                       @click="() => (showDescriptionEditDialog = true)"
                     />
-                    <DataObjectEditDialog
+                    <EditDataObjectDescriptionDialog
+                      v-if="showDescriptionEditDialog"
                       v-model:show-dialog="showDescriptionEditDialog"
                       :collection-id="collectionId"
                       :data-object-id="dataObjectId"
-                      :parent-id="dataObject.parentId ?? undefined"
-                      title="Edit Description"
-                    >
-                      <template
-                        #inputs="{ updatedDataObject, updateDataObject }"
-                      >
-                        <v-row class="pt-8" />
-                        <DescriptionInput
-                          :description="updatedDataObject.description"
-                          @description-changed="
-                            description =>
-                              updateDataObject({
-                                ...updatedDataObject,
-                                description,
-                              })
-                          "
-                        />
-                      </template>
-                    </DataObjectEditDialog>
+                    />
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                 >
-                  <EntityAttributes :entity="dataObject" />
+                  <AttributesDisplay :entity="dataObject" />
                   <template #append>
                     <ExpansionPanelTitleButton
                       text="Add/Edit"
                       icon="mdi-plus-circle"
                       @click="() => (showAttributeEditDialog = true)"
                     />
-                    <DataObjectEditDialog
+                    <EditDataObjectAttributesDialog
+                      v-if="showAttributeEditDialog"
                       v-model:show-dialog="showAttributeEditDialog"
                       :collection-id="collectionId"
                       :data-object-id="dataObjectId"
-                      :parent-id="dataObject.parentId ?? undefined"
-                      title="Add / Edit Attributes"
-                    >
-                      <template
-                        #inputs="{ updatedDataObject, updateDataObject }"
-                      >
-                        <v-row class="pt-8" />
-                        <AttributesInput
-                          :attributes="updatedDataObject.attributes ?? {}"
-                          @attributes-changed="
-                            attributes =>
-                              updateDataObject({
-                                ...updatedDataObject,
-                                attributes,
-                              })
-                          "
-                        />
-                      </template>
-                    </DataObjectEditDialog>
+                    />
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem

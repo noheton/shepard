@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import RichTextEditor from "~/components/common/editor/RichTextEditor.vue";
-
 interface DescriptionDisplayProps {
   entity: { description?: string | null };
 }

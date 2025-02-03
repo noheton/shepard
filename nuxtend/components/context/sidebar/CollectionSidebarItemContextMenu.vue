@@ -69,67 +69,22 @@ async function deleteItem() {
       @click.prevent.stop="showCreateDialog = true"
     />
   </DisplayChildrenOnHover>
-  <DataObjectCreateDialog
+  <CreateDataObjectDialog
+    v-if="showCreateDialog"
     v-model:show-dialog="showCreateDialog"
     :collection-id="collectionId"
     :parent-id="dataObjectId"
     @data-object-created="emit('data-object-created')"
   />
-  <DataObjectEditDialog
+  <EditDataObjectDialog
     v-if="showEditDialog"
     v-model:show-dialog="showEditDialog"
     :collection-id="collectionId"
     :data-object-id="dataObjectId"
-    :parent-id="parentId"
-    :title="`Edit &quot;${itemName}&quot;`"
+    :item-name="itemName"
     @data-object-updated="emit('data-object-updated')"
-  >
-    <template
-      #inputs="{
-        collectionId: editedDataObjectCollectionId,
-        updateDataObject,
-        updatedDataObject,
-      }"
-    >
-      <v-row class="pt-8" />
-      <v-row>
-        <v-col class="pb-2">
-          <div class="text-subtitle-1">Properties</div>
-        </v-col>
-      </v-row>
-      <NameInput
-        :name="updatedDataObject.name"
-        @name-changed="name => updateDataObject({ ...updatedDataObject, name })"
-      />
-      <DescriptionInput
-        :description="updatedDataObject.description"
-        @description-changed="
-          description => updateDataObject({ ...updatedDataObject, description })
-        "
-      />
-      <MandatoryFieldHint />
-      <v-row>
-        <v-col class="pt-8 pb-2">
-          <div class="text-subtitle-1">Relationships</div>
-        </v-col>
-      </v-row>
-      <DataObjectEditParentInput
-        :collection-id="editedDataObjectCollectionId"
-        :parent-id="updatedDataObject.parentId"
-        @parent-changed="
-          parentId => updateDataObject({ ...updatedDataObject, parentId })
-        "
-      />
-      <DataObjectEditPredecessorInput
-        :collection-id="editedDataObjectCollectionId"
-        :predecessor-ids="updatedDataObject.predecessorIds ?? []"
-        @predecessors-changed="
-          predecessorIds =>
-            updateDataObject({ ...updatedDataObject, predecessorIds })
-        "
-      />
-    </template>
-  </DataObjectEditDialog>
+  />
+
   <ConfirmationDialog
     v-model:show-dialog="showDeleteDialog"
     prompt-text="Are you sure you want to delete this item?"

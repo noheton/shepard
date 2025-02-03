@@ -2,15 +2,14 @@
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
 
-interface DataObjectCreateDialogWrapperProps {
+interface CreateDataObjectDialogProps {
   collectionId: number;
   parentId?: number;
-  title: string;
 }
 
 const router = useRouter();
 
-const props = defineProps<DataObjectCreateDialogWrapperProps>();
+const props = defineProps<CreateDataObjectDialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -67,22 +66,74 @@ async function createDataObject() {
 </script>
 
 <template>
-  <CommonDialog
-    v-if="showDialog"
+  <Dialog
     v-model:show-dialog="showDialog"
-    :title="title"
+    title="Create Data Object"
     :submit-disabled="!isValid"
     @submit="createDataObject"
   >
     <template #form>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
-        <slot
-          name="inputs"
+        <v-row class="pt-8" />
+        <v-row>
+          <v-col>
+            <div class="text-subtitle-2">Properties</div>
+          </v-col>
+        </v-row>
+        <NameInput
+          :name="dataObjectToCreate.name"
+          @name-changed="
+            name => updateDataObjectToCreate({ ...dataObjectToCreate, name })
+          "
+        />
+        <DescriptionInput
+          :description="dataObjectToCreate.description"
+          @description-changed="
+            description =>
+              updateDataObjectToCreate({ ...dataObjectToCreate, description })
+          "
+        />
+        <MandatoryFieldHint />
+        <v-row class="pt-8">
+          <v-col>
+            <div class="text-subtitle-2">Relationships</div>
+          </v-col>
+        </v-row>
+        <ParentInput
           :collection-id="collectionId"
-          :updated-data-object="dataObjectToCreate"
-          :update-data-object="updateDataObjectToCreate"
+          :parent-id="dataObjectToCreate.parentId"
+          @parent-changed="
+            parentId =>
+              updateDataObjectToCreate({ ...dataObjectToCreate, parentId })
+          "
+        />
+        <PredecessorInput
+          :collection-id="collectionId"
+          :predecessor-ids="dataObjectToCreate.predecessorIds ?? []"
+          @predecessors-changed="
+            predecessorIds =>
+              updateDataObjectToCreate({
+                ...dataObjectToCreate,
+                predecessorIds,
+              })
+          "
+        />
+        <v-row class="pt-8">
+          <v-col>
+            <div class="text-subtitle-2">Attributes</div>
+          </v-col>
+        </v-row>
+        <AttributesInput
+          :attributes="dataObjectToCreate.attributes ?? {}"
+          @attributes-changed="
+            attributes =>
+              updateDataObjectToCreate({
+                ...dataObjectToCreate,
+                attributes,
+              })
+          "
         />
       </v-form>
     </template>
-  </CommonDialog>
+  </Dialog>
 </template>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import RichTextEditor from "../editor/RichTextEditor.vue";
-
 defineProps<{ description: string }>();
 const emit = defineEmits<{ (e: "descriptionChanged", value: string): void }>();
 </script>

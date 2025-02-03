@@ -1,11 +1,11 @@
 <script setup lang="ts">
-interface EntityDialogStepperProps {
+interface StepperDialogProps {
   title: string;
   loading?: boolean;
   submitDisabled: boolean;
 }
 
-defineProps<EntityDialogStepperProps>();
+defineProps<StepperDialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -25,7 +25,6 @@ const currentStep = ref<number>(1);
         </div>
       </template>
       <template #text>
-        <!-- TODO: Make grey stepper background on top full width -->
         <v-stepper
           v-model:model-value="currentStep"
           class="d-flex flex-column"

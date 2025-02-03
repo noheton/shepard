@@ -128,7 +128,8 @@ const createDataObjectDialogOpened = ref<boolean>(false);
       </v-btn>
     </div>
   </div>
-  <DataObjectCreateDialog
+  <CreateDataObjectDialog
+    v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
     :collection-id="routeParams.collectionId"
     @data-object-created="refreshItems"

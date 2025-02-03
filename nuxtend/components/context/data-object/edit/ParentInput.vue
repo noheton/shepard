@@ -8,7 +8,7 @@ const emit = defineEmits<{
 <template>
   <v-row>
     <v-col>
-      <DataObjectEditSearchAutocomplete
+      <SearchAutocomplete
         input-label="Parent"
         :initial-data-object-id="parentId"
         :collection-id="collectionId"

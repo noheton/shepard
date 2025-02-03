@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { UpdatedPermissions } from "./collectionEditTypes";
 
-interface CollectionEditPermissionsInputProps {
+interface CollectionPermissionsInputProps {
   collectionId: number;
   updatedPermissions: UpdatedPermissions;
   updatePermissions: (newValue: UpdatedPermissions) => void;
 }
 
-const props = defineProps<CollectionEditPermissionsInputProps>();
+const props = defineProps<CollectionPermissionsInputProps>();
 
 const { collectionPermissions } = useFetchCollectionPermissions(
   props.collectionId,
