@@ -6,7 +6,7 @@ const emit = defineEmits<{ (e: "descriptionChanged", value: string): void }>();
 <template>
   <v-row>
     <v-col>
-      <div class="text-body-2 text-textbody2 pb-2">Description</div>
+      <div class="text-body-2 text-medium-emphasis pb-2">Description</div>
       <RichTextEditor
         :model-value="description"
         :initial-content="description"
