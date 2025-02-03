@@ -8,7 +8,7 @@ interface CollectionSidebarHeaderProps {
   isAllowedToEditCollection?: boolean;
   isAllowedToEditPermissions?: boolean;
 }
-const props = defineProps<CollectionSidebarHeaderProps>();
+defineProps<CollectionSidebarHeaderProps>();
 
 const showContextMenuButton = ref<boolean>(false);
 
@@ -20,19 +20,9 @@ const showEditDialog = ref(false);
     flat
     hover
     rounded="0"
-    :height="props.height"
-    :color="
-      props.isFocused
-        ? 'rgb(var(--v-theme-focus1))'
-        : 'rgb(var(--v-theme-treeview))'
-    "
+    :height="height"
     :to="collectionsPath + `${collection?.id}`"
-    :style="{
-      borderLeft: props.isFocused
-        ? '5px solid rgb(var(--v-theme-primary))'
-        : '5px solid rgb(var(--v-theme-treeview))',
-    }"
-    class="d-flex ga-0 mb-4"
+    :class="`d-flex ga-0 mb-4 ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
   >
     <v-card-item class="w-100">
       <template v-if="!!collection">
@@ -70,49 +60,27 @@ const showEditDialog = ref(false);
                 @expansion-state-changed="e => (showContextMenuButton = e)"
               />
             </DisplayChildrenOnHover>
-            <CollectionEditDialog
+            <EditCollectionDialog
               v-if="showEditDialog"
               v-model:show-dialog="showEditDialog"
-              v-model:show-context-menu-button="showContextMenuButton"
               :collection="collection"
               :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
-              :title="`Edit &quot;${collection.name}&quot;`"
-            >
-              <template
-                #inputs="{
-                  collectionId,
-                  updateCollection,
-                  updatePermissions,
-                  updatedCollection,
-                  updatedPermissions,
-                }"
-              >
-                <v-row class="pt-8" />
-                <NameInput
-                  :name="updatedCollection.name"
-                  @name-changed="
-                    name => updateCollection({ ...updatedCollection, name })
-                  "
-                />
-                <DescriptionInput
-                  :description="updatedCollection.description"
-                  @description-changed="
-                    description =>
-                      updateCollection({ ...updatedCollection, description })
-                  "
-                />
-                <CollectionEditPermissionsInput
-                  v-if="isAllowedToEditPermissions"
-                  :updated-permissions="updatedPermissions"
-                  :collection-id="collectionId"
-                  :update-permissions="updatePermissions"
-                />
-                <MandatoryFieldHint />
-              </template>
-            </CollectionEditDialog>
+            />
           </template>
         </div>
       </template>
     </v-card-item>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.sidebar-item {
+  background-color: rgb(var(--v-theme-treeview));
+  border-left: 5px solid rgb(var(--v-theme-treeview));
+}
+
+.sidebar-item-focused {
+  background-color: rgb(var(--v-theme-focus1));
+  border-left: 5px solid rgb(var(--v-theme-primary));
+}
+</style>

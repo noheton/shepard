@@ -1,11 +1,11 @@
 <script setup lang="ts">
-interface CommonDialogProps {
+interface DialogProps {
   title: string;
   loading?: boolean;
   submitDisabled: boolean;
 }
 
-defineProps<CommonDialogProps>();
+defineProps<DialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -15,7 +15,7 @@ const emit = defineEmits(["submit"]);
 
 <template>
   <v-dialog v-model="showDialog" persistent max-width="600">
-    <v-card :loading="loading">
+    <v-card :loading="loading" color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">
           <div class="text-h4 text-wrap">{{ title }}</div>

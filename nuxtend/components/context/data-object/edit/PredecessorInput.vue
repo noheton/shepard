@@ -9,7 +9,7 @@ const emit = defineEmits<{
   <v-row>
     <template v-for="(predecessorDO, index) in predecessorIds" :key="index">
       <v-col cols="12" class="pt-1 d-flex">
-        <DataObjectEditSearchAutocomplete
+        <SearchAutocomplete
           :key="predecessorDO"
           input-label="Predecessor"
           :initial-data-object-id="predecessorDO ?? undefined"

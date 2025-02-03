@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { UpdatedPermissions } from "./collectionEditTypes";
 
-interface CollectionEditPermissionsInputProps {
+interface CollectionPermissionsInputProps {
   collectionId: number;
   updatedPermissions: UpdatedPermissions;
   updatePermissions: (newValue: UpdatedPermissions) => void;
 }
 
-const props = defineProps<CollectionEditPermissionsInputProps>();
+const props = defineProps<CollectionPermissionsInputProps>();
 
 const { collectionPermissions } = useFetchCollectionPermissions(
   props.collectionId,
@@ -15,15 +15,7 @@ const { collectionPermissions } = useFetchCollectionPermissions(
 
 watch(collectionPermissions, () => {
   if (collectionPermissions.value) {
-    props.updatePermissions({
-      manager: collectionPermissions.value.manager,
-      owner: collectionPermissions.value.owner,
-      reader: collectionPermissions.value.reader,
-      writer: collectionPermissions.value.writer,
-      permissionType: collectionPermissions.value.permissionType,
-      readerGroupIds: collectionPermissions.value.readerGroupIds,
-      writerGroupIds: collectionPermissions.value.writerGroupIds,
-    });
+    props.updatePermissions(collectionPermissions.value);
   }
 });
 </script>

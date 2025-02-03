@@ -96,6 +96,7 @@ onMounted(() => {
         Create new collection
       </v-btn>
       <CreateCollectionDialog
+        v-if="showCreateDialog"
         v-model:show-dialog="showCreateDialog"
         @collection-created="id => router.push(collectionsPath + id)"
       />

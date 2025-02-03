@@ -49,11 +49,11 @@ const attributeRules = [
           density="compact"
           color="primary"
           hide-details
+          class="pr-2"
           @update:model-value="
             newKey => updateAttribute(index, { key: newKey, value })
           "
         />
-        <div :style="{ width: '8px' }" />
         <v-text-field
           :model-value="value"
           label="Value"
@@ -61,17 +61,17 @@ const attributeRules = [
           density="compact"
           color="primary"
           hide-details
+          class="pr-2"
           @update:model-value="
             newValue => updateAttribute(index, { key, value: newValue })
           "
         />
-
         <v-btn
           class="text-textbody1 text-body-1"
           icon="mdi-delete-outline"
           size="compact"
           variant="text"
-          :style="{ width: '48px' }"
+          :style="{ width: '40px' }"
           @click="attributesArray.splice(index, 1)"
         />
       </v-col>

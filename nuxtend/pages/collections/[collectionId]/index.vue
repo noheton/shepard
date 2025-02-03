@@ -55,27 +55,11 @@ const showDescriptionEditDialog = ref(false);
                       icon="mdi-pencil-outline"
                       @click="() => (showDescriptionEditDialog = true)"
                     />
-                    <CollectionEditDialog
+                    <EditCollectionDescriptionDialog
+                      v-if="showDescriptionEditDialog"
                       v-model:show-dialog="showDescriptionEditDialog"
                       :collection="collection"
-                      title="Edit Description"
-                    >
-                      <template
-                        #inputs="{ updatedCollection, updateCollection }"
-                      >
-                        <v-row class="pt-8" />
-                        <DescriptionInput
-                          :description="updatedCollection.description"
-                          @description-changed="
-                            description =>
-                              updateCollection({
-                                ...updatedCollection,
-                                description,
-                              })
-                          "
-                        />
-                      </template>
-                    </CollectionEditDialog>
+                    />
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
@@ -89,27 +73,11 @@ const showDescriptionEditDialog = ref(false);
                       icon="mdi-plus-circle"
                       @click="() => (showAttributeEditDialog = true)"
                     />
-                    <CollectionEditDialog
+                    <EditCollectionAttributesDialog
+                      v-if="showAttributeEditDialog"
                       v-model:show-dialog="showAttributeEditDialog"
                       :collection="collection"
-                      title="Add / Edit Attributes"
-                    >
-                      <template
-                        #inputs="{ updatedCollection, updateCollection }"
-                      >
-                        <v-row class="pt-8" />
-                        <AttributesInput
-                          :attributes="updatedCollection.attributes"
-                          @attributes-changed="
-                            attributes =>
-                              updateCollection({
-                                ...updatedCollection,
-                                attributes,
-                              })
-                          "
-                        />
-                      </template>
-                    </CollectionEditDialog>
+                    />
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem

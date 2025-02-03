@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { compareNullableStrings } from "./compareNullableStrings";
-import DataObjectRelationshipsTypeCell from "./DataObjectRelationshipsTypeCell.vue";
 import type { RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { mapRelatedEntityToRelationshipTableElement } from "./relationshipTableElementMappingUtil";
