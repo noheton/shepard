@@ -612,6 +612,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(DataObjectIO.class);
+    assertThat(oldParent.getChildrenIds()).doesNotContain(actual.getId());
     assertThat(newParent).isEqualTo(successor);
   }
 
