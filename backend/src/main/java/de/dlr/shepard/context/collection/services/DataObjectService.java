@@ -183,7 +183,7 @@ public class DataObjectService {
     if (old.getParent() != null) {
       DataObject oldParent = findRelatedDataObjectByShepardId(
         old.getCollection().getShepardId(),
-        old.getParent().getId(),
+        old.getParent().getShepardId(),
         dataObjectShepardId
       );
       if (oldParent != null && oldParent.getChildren() != null) {
@@ -194,12 +194,12 @@ public class DataObjectService {
     if (old.getPredecessors() != null) {
       List<DataObject> oldPredecessors = findRelatedDataObjectsByShepardIds(
         old.getCollection().getShepardId(),
-        old.getPredecessors().stream().mapToLong(DataObject::getId).toArray(),
+        old.getPredecessors().stream().mapToLong(DataObject::getShepardId).toArray(),
         dataObjectShepardId
       );
       oldPredecessors.forEach(predecessor -> {
         if (predecessor.getSuccessors() != null) {
-          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getId(), old.getId());
+          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
         }
       });
     }

@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.daos.UserDAO;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @QuarkusComponentTest
 public class DataObjectServiceTest {
@@ -439,9 +443,10 @@ public class DataObjectServiceTest {
     DataObject parent = new DataObject(3L);
     parent.setShepardId(35L);
     parent.setCollection(collection);
-    DataObject predecessor = new DataObject(4L);
-    predecessor.setShepardId(45L);
-    predecessor.setCollection(collection);
+    DataObject aPredecessor = new DataObject(4L);
+    aPredecessor.setShepardId(45L);
+    aPredecessor.setCollection(collection);
+    List<DataObject> predecessors = List.of(aPredecessor);
 
     DataObjectIO input = new DataObjectIO() {
       {
@@ -450,7 +455,7 @@ public class DataObjectServiceTest {
         setDescription("newDesc");
         setName("newName");
         setParentId(parent.getShepardId());
-        setPredecessorIds(new long[] { predecessor.getShepardId() });
+        setPredecessorIds(predecessors.stream().mapToLong(DataObject::getShepardId).toArray());
       }
     };
     DataObject old = new DataObject() {
@@ -463,6 +468,7 @@ public class DataObjectServiceTest {
         setId(1L);
         setShepardId(1L);
         setCollection(collection);
+        setPredecessors(predecessors);
       }
     };
     DataObject updated = new DataObject() {
@@ -475,7 +481,7 @@ public class DataObjectServiceTest {
         setUpdatedAt(updateDate);
         setUpdatedBy(updateUser);
         setParent(parent);
-        setPredecessors(List.of(predecessor));
+        setPredecessors(predecessors);
         setId(old.getId());
         setShepardId(old.getShepardId());
         setCollection(collection);
@@ -484,12 +490,92 @@ public class DataObjectServiceTest {
 
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
-    when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
+    when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
+    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(dao.createOrUpdate(updated)).thenReturn(updated);
+    predecessors.forEach(predecessor -> when(dao.createOrUpdate(predecessor)).thenReturn(predecessor));
+    predecessors.forEach(predecessor -> when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor));
+
+    var actual = service.updateDataObjectByShepardId(old.getShepardId(), input, updateUser.getUsername());
+    predecessors.forEach(predecessor -> verify(dao, atLeast(1)).findByShepardId(predecessor.getShepardId()));
+    predecessors.forEach(predecessor ->
+      verify(dao).deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId())
+    );
+    assertEquals(updated, actual);
+  }
+
+  @Test
+  public void updateDataObjectByShepardIdTest_UpdateParent() {
+    Collection collection = new Collection(100L);
+    collection.setShepardId(1005L);
+    User user = new User("bob");
+    Date date = new Date(23);
+    User updateUser = new User("claus");
+    Date updateDate = new Date(43);
+    DataObject parent = new DataObject(3L);
+    parent.setShepardId(35L);
+    parent.setCollection(collection);
+    DataObject oldParent = new DataObject(3L);
+    oldParent.setShepardId(35L);
+    oldParent.setCollection(collection);
+    @SuppressWarnings("unchecked")
+    List<DataObject> children = Mockito.mock(List.class);
+    oldParent.setChildren(children);
+
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setId(1L);
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("newDesc");
+        setName("newName");
+        setParentId(parent.getShepardId());
+      }
+    };
+    DataObject old = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setId(1L);
+        setShepardId(1L);
+        setCollection(collection);
+        setParent(oldParent);
+      }
+    };
+
+    oldParent.addChild(old);
+    DataObject updated = new DataObject() {
+      {
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("newDesc");
+        setName("newName");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setUpdatedAt(updateDate);
+        setUpdatedBy(updateUser);
+        setParent(parent);
+        setId(old.getId());
+        setShepardId(old.getShepardId());
+        setCollection(collection);
+      }
+    };
+
+    DataObject oldParentSpy = spy(oldParent);
+    when(oldParentSpy.getChildren()).thenReturn(children);
+
+    when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+    when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
+    when(dao.findByShepardId(oldParent.getShepardId())).thenReturn(oldParent);
     when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
     when(dateHelper.getDate()).thenReturn(updateDate);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
     var actual = service.updateDataObjectByShepardId(old.getShepardId(), input, updateUser.getUsername());
+    verify(children).remove(old);
+    verify(dao).createOrUpdate(oldParent);
+
     assertEquals(updated, actual);
   }
 
