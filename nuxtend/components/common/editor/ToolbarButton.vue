@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface ButtonProps {
+interface ToolbarButtonProps {
   btnText?: string;
   tooltipText: string;
   icon?: string;
@@ -20,7 +20,7 @@ interface ButtonProps {
 
 const toggle = defineModel<number | null>();
 
-const props = defineProps<ButtonProps>();
+const props = defineProps<ToolbarButtonProps>();
 
 watch(toggle, (newVal, _) => {
   if (props.isTogglingDisabled && newVal != null) {

@@ -1,3 +1,3 @@
 <template>
-  <LayoutComponentsDefaultLayout><slot /></LayoutComponentsDefaultLayout>
+  <DefaultLayout><slot /></DefaultLayout>
 </template>

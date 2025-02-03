@@ -27,5 +27,5 @@ onMounted(() => {
 </script>
 
 <template>
-  <LayoutComponentsCenteredLoadingSpinner />
+  <CenteredLoadingSpinner />
 </template>

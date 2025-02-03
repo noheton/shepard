@@ -14,7 +14,7 @@ import type {
   Predecessor,
   RelatedEntity,
   Successor,
-} from "~/components/data-object/relationships/relatedEntity";
+} from "~/components/context/data-object/relationships/relatedEntity";
 
 export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   const relatedEntities = ref<RelatedEntity[] | undefined>(undefined);

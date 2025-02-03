@@ -11,7 +11,7 @@ import {
 import type {
   DataReference,
   DataReferenceWithoutContainerName,
-} from "~/components/data-object/data/dataReference";
+} from "~/components/context/data-object/data/dataReference";
 
 export function useDataReferencesByDataObject(
   collectionId: number,

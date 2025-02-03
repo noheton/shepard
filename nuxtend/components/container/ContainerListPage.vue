@@ -18,7 +18,7 @@ const { serverItems, pageCount, loading } = useSearchContainers(
         <v-col cols="12" no-gutters>
           <div class="d-flex align-baseline">
             <h1 class="text-h1 pr-4">Containers</h1>
-            <CommonTooltip>
+            <Tooltip>
               <div>
                 The data you reference in your project collections is stored in
                 containers.
@@ -27,7 +27,7 @@ const { serverItems, pageCount, loading } = useSearchContainers(
                 There are different types of containers for the different types
                 of data they store.
               </div>
-            </CommonTooltip>
+            </Tooltip>
           </div>
         </v-col>
       </v-row>

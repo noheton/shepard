@@ -7,7 +7,7 @@ export interface MenuListEntry {
   callBackFn: (() => boolean) | ((options: never) => boolean) | undefined;
 }
 
-interface MenuProps {
+interface ToolbarMenuProps {
   baseIcon: string;
   btnText?: string;
   tooltipText: string;
@@ -26,7 +26,7 @@ interface MenuProps {
   menuIconSize: string;
 }
 
-const props = defineProps<MenuProps>();
+const props = defineProps<ToolbarMenuProps>();
 </script>
 <template>
   <v-menu open-on-hover :disabled="props.disabled">

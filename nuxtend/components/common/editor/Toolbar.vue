@@ -179,7 +179,7 @@ const alignmentMenuEntries = [
     class="d-flex py-0 gc-2 justify-end pr-0"
   >
     <!-- Marker Controls (bold, italic, ...)-->
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="boldState"
       icon="mdi-format-bold"
       tooltip-text="Bold"
@@ -189,7 +189,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="italicState"
       icon="mdi-format-italic"
       tooltip-text="Italic"
@@ -199,7 +199,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="underlineState"
       icon="mdi-format-underline"
       tooltip-text="Underline"
@@ -209,7 +209,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="codeState"
       icon="mdi-code-tags"
       tooltip-text="Code"
@@ -219,7 +219,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="headingState"
       btn-text="Heading"
       tooltip-text="Heading"
@@ -236,7 +236,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Text Alignment Menu-->
-    <CommonEditorToolbarMenu
+    <ToolbarMenu
       :base-icon="alignmentMenuIcon"
       menu-icon-size="small"
       tooltip-text="Alignment"
@@ -246,7 +246,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Link Controls (set link, unlink)-->
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="linkState"
       icon="mdi-link"
       tooltip-text="Set Link"
@@ -256,7 +256,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       :disabled="linkState === null"
       :is-toggling-disabled="true"
       icon="mdi-link-off"
@@ -270,7 +270,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- List Controls-->
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="bulletListState"
       icon="mdi-format-list-bulleted"
       tooltip-text="Bullet List"
@@ -280,7 +280,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <CommonEditorToolbarButton
+    <ToolbarButton
       v-model="orderedListState"
       icon="mdi-format-list-numbered"
       tooltip-text="Numbered List"
@@ -293,7 +293,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Table Menu-->
-    <CommonEditorToolbarMenu
+    <ToolbarMenu
       base-icon="mdi-table"
       menu-icon-size="small"
       tooltip-text="Table"

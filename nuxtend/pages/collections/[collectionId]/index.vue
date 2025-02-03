@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TitleAndMetadataDisplay from "~/components/context/display-components/TitleAndMetadataDisplay.vue";
 import { collectionsPath } from "../../../utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -24,7 +25,7 @@ const showDescriptionEditDialog = ref(false);
     <v-container fluid class="pa-0 fill-height">
       <v-row v-if="!!collection" no-gutters>
         <v-col cols="12">
-          <LayoutComponentsShepardBreadcrumbs
+          <ShepardBreadcrumbs
             :items="[
               {
                 title: 'Collections',
@@ -40,14 +41,17 @@ const showDescriptionEditDialog = ref(false);
         <v-col cols="12">
           <v-container fluid class="pa-0">
             <v-row no-gutters>
-              <EntityTitle :entity="collection" id-label="Collection ID" />
+              <TitleAndMetadataDisplay
+                :entity="collection"
+                id-label="Collection ID"
+              />
             </v-row>
             <v-row no-gutters>
-              <EntityExpansionPanels>
-                <EntityExpansionPanelItem title="Description">
-                  <EntityDescription :entity="collection" />
+              <ExpansionPanels>
+                <ExpansionPanelItem title="Description">
+                  <DescriptionDisplay :entity="collection" />
                   <template #append>
-                    <EntityExpansionPanelTitleButton
+                    <ExpansionPanelTitleButton
                       text="Edit"
                       icon="mdi-pencil-outline"
                       @click="() => (showDescriptionEditDialog = true)"
@@ -61,7 +65,7 @@ const showDescriptionEditDialog = ref(false);
                         #inputs="{ updatedCollection, updateCollection }"
                       >
                         <v-row class="pt-8" />
-                        <CommonInputDescription
+                        <DescriptionInput
                           :description="updatedCollection.description"
                           @description-changed="
                             description =>
@@ -74,14 +78,14 @@ const showDescriptionEditDialog = ref(false);
                       </template>
                     </CollectionEditDialog>
                   </template>
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(collection.attributes ?? {}).length"
                 >
-                  <EntityAttributes :entity="collection" />
+                  <AttributesDisplay :entity="collection" />
                   <template #append>
-                    <EntityExpansionPanelTitleButton
+                    <ExpansionPanelTitleButton
                       text="Add/Edit"
                       icon="mdi-plus-circle"
                       @click="() => (showAttributeEditDialog = true)"
@@ -95,7 +99,7 @@ const showDescriptionEditDialog = ref(false);
                         #inputs="{ updatedCollection, updateCollection }"
                       >
                         <v-row class="pt-8" />
-                        <CommonInputAttributes
+                        <AttributesInput
                           :attributes="updatedCollection.attributes"
                           @attributes-changed="
                             attributes =>
@@ -108,8 +112,8 @@ const showDescriptionEditDialog = ref(false);
                       </template>
                     </CollectionEditDialog>
                   </template>
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
                   title="Lab Journal"
                   :count="numberOfLabJournalEntries"
                 >
@@ -120,13 +124,13 @@ const showDescriptionEditDialog = ref(false);
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>
-                </EntityExpansionPanelItem>
-              </EntityExpansionPanels>
+                </ExpansionPanelItem>
+              </ExpansionPanels>
             </v-row>
           </v-container>
         </v-col>
       </v-row>
-      <LayoutComponentsCenteredLoadingSpinner v-else />
+      <CenteredLoadingSpinner v-else />
     </v-container>
   </div>
 </template>

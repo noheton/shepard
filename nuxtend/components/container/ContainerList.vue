@@ -88,7 +88,7 @@ function onPageChange() {
 </script>
 
 <template>
-  <CommonDataTable
+  <DataTable
     v-model:sort-by="sortByAttributes"
     :header-props="{
       class: 'text-subtitle-2',
@@ -118,7 +118,7 @@ function onPageChange() {
         @update:model-value="onPageChange"
       />
     </template>
-  </CommonDataTable>
+  </DataTable>
 </template>
 
 <style scoped lang="scss">

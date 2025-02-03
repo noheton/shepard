@@ -26,6 +26,8 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  components: [{ path: "~/components", pathPrefix: false }],
+
   modules: [
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", config => {

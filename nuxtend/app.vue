@@ -2,6 +2,6 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <NotificationError />
-  <NotificationSuccess />
+  <ErrorNotification />
+  <SuccessNotification />
 </template>

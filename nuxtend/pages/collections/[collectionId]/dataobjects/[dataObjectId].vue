@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TitleAndMetadataDisplay from "~/components/context/display-components/TitleAndMetadataDisplay.vue";
 import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
 import {
   collectionsPath,
@@ -39,7 +40,7 @@ const showDescriptionEditDialog = ref(false);
         no-gutters
       >
         <v-col cols="12">
-          <LayoutComponentsShepardBreadcrumbs
+          <ShepardBreadcrumbs
             :items="[
               {
                 title: 'Collections',
@@ -63,14 +64,17 @@ const showDescriptionEditDialog = ref(false);
         <v-col cols="12">
           <v-container fluid class="pa-0" max-width="1000px">
             <v-row no-gutters>
-              <EntityTitle :entity="dataObject" id-label="Data Object ID" />
+              <TitleAndMetadataDisplay
+                :entity="dataObject"
+                id-label="Data Object ID"
+              />
             </v-row>
             <v-row no-gutters>
-              <EntityExpansionPanels>
-                <EntityExpansionPanelItem title="Description">
-                  <EntityDescription :entity="dataObject" />
+              <ExpansionPanels>
+                <ExpansionPanelItem title="Description">
+                  <DescriptionDisplay :entity="dataObject" />
                   <template #append>
-                    <EntityExpansionPanelTitleButton
+                    <ExpansionPanelTitleButton
                       text="Edit"
                       icon="mdi-pencil-outline"
                       @click="() => (showDescriptionEditDialog = true)"
@@ -86,7 +90,7 @@ const showDescriptionEditDialog = ref(false);
                         #inputs="{ updatedDataObject, updateDataObject }"
                       >
                         <v-row class="pt-8" />
-                        <CommonInputDescription
+                        <DescriptionInput
                           :description="updatedDataObject.description"
                           @description-changed="
                             description =>
@@ -99,14 +103,14 @@ const showDescriptionEditDialog = ref(false);
                       </template>
                     </DataObjectEditDialog>
                   </template>
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                 >
                   <EntityAttributes :entity="dataObject" />
                   <template #append>
-                    <EntityExpansionPanelTitleButton
+                    <ExpansionPanelTitleButton
                       text="Add/Edit"
                       icon="mdi-plus-circle"
                       @click="() => (showAttributeEditDialog = true)"
@@ -122,7 +126,7 @@ const showDescriptionEditDialog = ref(false);
                         #inputs="{ updatedDataObject, updateDataObject }"
                       >
                         <v-row class="pt-8" />
-                        <CommonInputAttributes
+                        <AttributesInput
                           :attributes="updatedDataObject.attributes ?? {}"
                           @attributes-changed="
                             attributes =>
@@ -135,41 +139,38 @@ const showDescriptionEditDialog = ref(false);
                       </template>
                     </DataObjectEditDialog>
                   </template>
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
                   title="Lab Journal"
                   :count="numberOfLabJournalEntries"
                 >
                   <div class="pt-4">
-                    <LabJournalEntryList
+                    <DataObjectLabJournalEntryList
                       :collection-id="collectionId"
                       :data-object-id="dataObject.id"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
-                  title="Data"
-                  :count="dataReferences.length"
-                >
+                </ExpansionPanelItem>
+                <ExpansionPanelItem title="Data" :count="dataReferences.length">
                   <DataObjectDataReferencesTable
                     :data-references="dataReferences"
                   />
-                </EntityExpansionPanelItem>
-                <EntityExpansionPanelItem
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
                   title="Relationships"
                   :count="relatedEntities.length"
                 >
                   <DataObjectRelationshipsTable
                     :related-entities="relatedEntities"
                   />
-                </EntityExpansionPanelItem>
-              </EntityExpansionPanels>
+                </ExpansionPanelItem>
+              </ExpansionPanels>
             </v-row>
           </v-container>
         </v-col>
       </v-row>
-      <LayoutComponentsCenteredLoadingSpinner v-else />
+      <CenteredLoadingSpinner v-else />
     </v-container>
   </div>
 </template>
