@@ -10,7 +10,7 @@
   $typography: (
     "h1": (
       "size": 3rem,
-      "weight": 600,
+      "weight": 500,
       "line-height": 3.75rem,
     ),
     "h2": (
@@ -59,12 +59,19 @@
       "weight": 400,
       "line-height": 1rem,
       "text-transform": none,
-      "font-family": "Work Sans",
+    ),
+    "overline": (
+      "size": 0.875rem,
+      "weight": 400,
+      "line-height": 1rem,
+      "letter-spacing": 0.56px,
+      "text-transform": uppercase,
     ),
     "button": (
       "size": 0.875rem,
       "weight": 500,
       "line-height": 2.6,
+      "letter-spacing": 1.25px,
       "text-transform": uppercase,
     )
   ),

@@ -9,11 +9,11 @@ defineProps<ShepardBreadcrumbsProps>();
 <template>
   <v-breadcrumbs :items="items" class="pl-0">
     <template #divider>
-      <div class="text-body-1 text-low-emphasis">/</div>
+      <div class="text-body-2 text-low-emphasis">/</div>
     </template>
     <template #item="{ item }">
       <v-breadcrumbs-item
-        class="pa-0"
+        class="text-body-2 pa-0"
         :to="item.to"
         :disabled="item.disabled"
         nuxt

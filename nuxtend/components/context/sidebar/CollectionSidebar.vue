@@ -42,7 +42,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
 
 <template>
   <div class="bg-treeview elevation-4" style="height: 100%">
-    <div class="px-6 pt-6 pb-1 text-body-2 text-uppercase">Collection</div>
+    <div class="px-6 pt-6 pb-1 text-textbody1 text-overline">Collection</div>
     <CollectionSidebarHeader
       :is-focused="routeParams.dataObjectId === undefined"
       height="40px"
@@ -53,7 +53,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     <v-divider thickness="1" />
 
     <div class="px-6 pt-6 d-flex" :style="{ alignItems: 'center' }">
-      <div class="text-body-2 text-uppercase">Contents</div>
+      <div class="text-textbody1 text-overline">Contents</div>
       <v-spacer />
       <div>
         <v-btn
