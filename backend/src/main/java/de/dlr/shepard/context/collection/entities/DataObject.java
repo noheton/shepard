@@ -33,7 +33,7 @@ public class DataObject extends AbstractDataObject {
   @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.INCOMING)
   private List<DataObject> predecessors = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_CHILD)
+  @Relationship(type = Constants.HAS_CHILD, direction = Direction.OUTGOING)
   private List<DataObject> children = new ArrayList<>();
 
   @Relationship(type = Constants.HAS_CHILD, direction = Direction.INCOMING)
@@ -68,6 +68,7 @@ public class DataObject extends AbstractDataObject {
 
   public void addChild(DataObject child) {
     children.add(child);
+    child.setParent(this);
   }
 
   public void addIncoming(DataObjectReference dataObjectReference) {

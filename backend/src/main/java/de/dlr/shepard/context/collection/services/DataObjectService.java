@@ -180,6 +180,18 @@ public class DataObjectService {
       dataObject.getParentId(),
       dataObjectShepardId
     );
+    if (old.getParent() != null) {
+      DataObject oldParent = findRelatedDataObjectByShepardId(
+        old.getCollection().getShepardId(),
+        old.getParent().getId(),
+        dataObjectShepardId
+      );
+      if (oldParent != null && oldParent.getChildren() != null) {
+        oldParent.getChildren().remove(old);
+        dataObjectDAO.createOrUpdate(oldParent);
+      }
+    }
+
     List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(
       old.getCollection().getShepardId(),
       dataObject.getPredecessorIds(),
