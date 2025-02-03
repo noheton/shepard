@@ -9,22 +9,25 @@ public class PayloadWriteTask {
 
   private static int taskIdCounter = 0;
 
-  public static final PayloadWriteTask poisonPill = new PayloadWriteTask(null, null, null, null, true);
+  public static final PayloadWriteTask poisonPill = new PayloadWriteTask(taskIdCounter, null, null, null, null, true);
 
   InfluxTimeseriesPayload payload;
   InfluxTimeseriesDataType dataType;
   InfluxTimeseries influxTimeseries;
   TimeseriesContainer container;
   int taskId;
+  int runningNumber;
   boolean isLastTask;
 
   public PayloadWriteTask(
+    int runningNumber,
     InfluxTimeseriesPayload payload,
     InfluxTimeseriesDataType dataType,
     InfluxTimeseries influxTimeseries,
     TimeseriesContainer container,
     boolean isLastTask
   ) {
+    this.runningNumber = runningNumber;
     this.payload = payload;
     this.dataType = dataType;
     this.influxTimeseries = influxTimeseries;

@@ -365,11 +365,13 @@ public class TimeseriesMigrationService {
     long currentStartTimestamp = firstTimestamp - 1;
 
     payloadReadQueue.clear();
+    int runningNumber = 1;
     while (currentStartTimestamp < lastTimestamp) {
       long currentEndTimestamp = Math.min(currentStartTimestamp + sliceDuration, lastTimestamp);
 
       payloadReadQueue.add(
         new PayloadReadTask(
+          runningNumber++,
           currentStartTimestamp,
           currentEndTimestamp,
           influxTimeseries,

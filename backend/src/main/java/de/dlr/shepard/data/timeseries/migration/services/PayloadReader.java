@@ -45,6 +45,7 @@ class PayloadReader implements Callable<Object> {
             );
 
         PayloadWriteTask payloadTask = new PayloadWriteTask(
+          payloadReadTask.runningNumber,
           payload,
           payloadReadTask.influxTimeseriesDataType,
           payloadReadTask.influxTimeseries,

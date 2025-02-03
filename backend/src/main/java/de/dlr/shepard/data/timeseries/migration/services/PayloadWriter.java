@@ -38,7 +38,7 @@ class PayloadWriter implements Callable<Object> {
         if (task.isLastTask) break;
         Log.infof(
           "started PayloadWriteTask: %s of %s for container %s with %s points.",
-          task.taskId,
+          task.runningNumber,
           initialQueueSize,
           task.container.getId(),
           task.payload.getPoints().size()

@@ -11,6 +11,7 @@ class PayloadReadTask {
   public static final PayloadReadTask poisonPill = new PayloadReadTask(
     taskIdCounter,
     taskIdCounter,
+    taskIdCounter,
     null,
     null,
     null,
@@ -25,9 +26,11 @@ class PayloadReadTask {
   String databaseName;
   InfluxTimeseriesDataType influxTimeseriesDataType;
   int taskId;
+  int runningNumber; // running number starting with 1 for each container
   boolean isLastTask = false;
 
   public PayloadReadTask(
+    int runningNumber,
     long startTimestamp,
     long endTimestamp,
     InfluxTimeseries influxTimeseries,
@@ -36,6 +39,7 @@ class PayloadReadTask {
     InfluxTimeseriesDataType influxTimeseriesDataType,
     boolean isLastTask
   ) {
+    this.runningNumber = runningNumber;
     this.startTimestamp = startTimestamp;
     this.endTimestamp = endTimestamp;
     this.influxTimeseries = influxTimeseries;

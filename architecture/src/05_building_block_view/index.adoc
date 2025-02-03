@@ -372,8 +372,14 @@ The data point table is managed directly using custom queries, since we want to 
 [[migration-from-influx]]
 ===== Migration from InfluxDB
 
-Shepard can be started in migration mode by setting the property `shepard.migration-mode.enabled` to true.
-For example, the following command starts the dev mode in migration mode:
+In order to run a shepard version > 4.0.0 you have to migrate the timeseries data from influxdb to timescaledb.
+To start the migration, add the following property to application.properties file: `shepard.migration-mode.enabled=true`.
+During the migration, the shepard instance cannot be used for other purposes and most of the REST endpoints are deactivated.
+The duration of the migration is highly dependent on the number of records and the system resources.
+To give an example the migration of 1 billion timeseries records needs additional 50 GB of disk space and takes about 2 days.
+The progress is printed to the console and there is also a temporary endpoint that can be used to get the current state of the migration.
+
+The following command starts the dev mode in migration mode:
 
 ```bash
 ./mvnw quarkus:dev -Dshepard.migration-mode.enabled=true
@@ -406,8 +412,28 @@ This entity must have the finished status and no errors.
 In this case, all data was migrated successfully.
 This also means that new instances have no need for migration, as they don't have timeseries containers yet.
 
+.In case of errors
+
+Errors are stored in the database and can be accessed via a temporary REST endpoint.
+The errors must be fixed and shepard must be restarted in order to repeat the migration.
+Errors can happen if the system resources are not sufficient like empty disk space.
+It can also happen that incorrect data stored is stored in database that was valid with an earlier version of shepard.
+In this case the error contains a hint what went wrong and in which container the problem occurred.
+
+.Retry Strategy
+
+After the problem was fixed, the docker container has to be restarted.
+Shepard will automatically repeat the migration step for all containers that are not in `Finished` state or if there was an error.
+Shepard will NOT repeat the migration for any containers that were migrated successfully.
+
 .Rollback Strategy
 
-Since we require the migrations to be run before starting a post-4.0.0 instance of shepard, the TimescaleDB must be empty before the migrations.
-The migration progress is persisted in the TimescaleDB.
-In case of errors, the migration can be re-run by deleting the data in the timescaledb (or removing the timescale container including it's volumes).
+If something get totally wrong and you got into an inconsistent state, the whole timescaledb can be deleted together with it's volumes.
+With the next restart of shepard, the migration process starts from the beginning.
+Data in the influxdb is not modified during the migration.
+It can be repeated as often as needed.
+
+.Delete the influxdb
+
+After the migration process is completed successfully, it is safe to delete the influxdb and it's volumes.
+Nevertheless we recommend to create a backup of the whole influxdb or just move the content of the volumes to a save place.
