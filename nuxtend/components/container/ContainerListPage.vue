@@ -17,7 +17,7 @@ const { serverItems, pageCount, loading } = useSearchContainers(
       <v-row no-gutters>
         <v-col cols="12" no-gutters>
           <div class="d-flex align-baseline">
-            <h1 class="text-h1 pr-4">Containers</h1>
+            <h1 class="text-h1 text-textbody1 pr-4">Containers</h1>
             <Tooltip>
               <div>
                 The data you reference in your project collections is stored in

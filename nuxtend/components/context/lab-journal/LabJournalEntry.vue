@@ -111,7 +111,7 @@ const getUpdatedInfoString = computed(() => {
       />
       <span
         id="lab-journal-title"
-        class="pa-2 pr-0"
+        class="pa-2 pr-0 text-textbody1 text-subtitle-2"
         :class="{ clickable: !isEditing }"
         @click="toggleExpanded"
       >
@@ -169,7 +169,7 @@ const getUpdatedInfoString = computed(() => {
 
     <div
       v-if="isExpanded && model.updatedAt != undefined && !isEditing"
-      class="pl-8 py-2 updated-info-text"
+      class="pl-8 py-2 text-textbody2 text-subtitle-2"
     >
       {{ getUpdatedInfoString }}
     </div>
@@ -211,10 +211,6 @@ const getUpdatedInfoString = computed(() => {
 
 .clickable {
   cursor: pointer;
-}
-
-.updated-info-text {
-  color: rgb(var(--v-theme-textbody2));
 }
 
 :deep(.tiptap) {

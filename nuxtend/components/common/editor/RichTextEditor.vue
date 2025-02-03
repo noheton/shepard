@@ -120,6 +120,13 @@ watch(
   flex: 1;
   border-radius: 4px;
 
+  // these are the 'text body 1' class settings
+  p {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5rem;
+  }
+
   h3 {
     // these are the 'text-subtitle-1' class settings
     font-size: 1.25rem;
