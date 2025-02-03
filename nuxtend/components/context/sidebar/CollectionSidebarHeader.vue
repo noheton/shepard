@@ -8,7 +8,7 @@ interface CollectionSidebarHeaderProps {
   isAllowedToEditCollection?: boolean;
   isAllowedToEditPermissions?: boolean;
 }
-const props = defineProps<CollectionSidebarHeaderProps>();
+defineProps<CollectionSidebarHeaderProps>();
 
 const showContextMenuButton = ref<boolean>(false);
 
@@ -20,19 +20,9 @@ const showEditDialog = ref(false);
     flat
     hover
     rounded="0"
-    :height="props.height"
-    :color="
-      props.isFocused
-        ? 'rgb(var(--v-theme-focus1))'
-        : 'rgb(var(--v-theme-treeview))'
-    "
+    :height="height"
     :to="collectionsPath + `${collection?.id}`"
-    :style="{
-      borderLeft: props.isFocused
-        ? '5px solid rgb(var(--v-theme-primary))'
-        : '5px solid rgb(var(--v-theme-treeview))',
-    }"
-    class="d-flex ga-0 mb-4"
+    :class="`d-flex ga-0 mb-4 ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
   >
     <v-card-item class="w-100">
       <template v-if="!!collection">
@@ -82,3 +72,15 @@ const showEditDialog = ref(false);
     </v-card-item>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.sidebar-item {
+  background-color: rgb(var(--v-theme-treeview));
+  border-left: 5px solid rgb(var(--v-theme-treeview));
+}
+
+.sidebar-item-focused {
+  background-color: rgb(var(--v-theme-focus1));
+  border-left: 5px solid rgb(var(--v-theme-primary));
+}
+</style>

@@ -30,7 +30,8 @@ export function useEditDataObject(
           ...dataObjectToSave,
           predecessorIds: uniqueNumbersOf(
             // clean up possible remaining placeholder entries
-            dataObjectToSave.predecessorIds?.filter(entry => entry != -1) ?? [],
+            dataObjectToSave.predecessorIds?.filter(entry => entry !== -1) ??
+              [],
           ),
         },
       })

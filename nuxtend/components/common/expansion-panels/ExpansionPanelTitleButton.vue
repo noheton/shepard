@@ -5,10 +5,11 @@ const emit = defineEmits(["click"]);
 
 <template>
   <v-btn
-    class="text-body-1 pr-0"
+    class="text-body-1"
     :text="text"
     variant="text"
     color="primary"
+    height="32px"
     density="compact"
     :prepend-icon="icon"
     @click.prevent.stop="() => emit('click')"
