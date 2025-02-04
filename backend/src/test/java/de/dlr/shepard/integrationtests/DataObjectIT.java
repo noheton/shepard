@@ -944,4 +944,91 @@ public class DataObjectIT extends BaseTestCaseIT {
       assertEquals(3, response.length);
     }
   }
+
+  @Test
+  public void putDataObjectTest_RemoveParentAndPredecessor() {
+    DataObjectIO parent = new DataObjectIO();
+    parent.setName("10001 Parent");
+    parent = given()
+      .spec(requestSpecification)
+      .body(parent)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    DataObjectIO predecessor = new DataObjectIO();
+    predecessor.setName("10001 predecessor");
+    predecessor = given()
+      .spec(requestSpecification)
+      .body(predecessor)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    DataObjectIO dataObject = new DataObjectIO();
+    dataObject.setName("ChildAndSuccessorDummy");
+    dataObject.setParentId(parent.getId());
+    dataObject.setPredecessorIds(new long[] { predecessor.getId() });
+
+    dataObject = given()
+      .spec(requestSpecification)
+      .body(dataObject)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    dataObject.setPredecessorIds(new long[] {});
+
+    dataObject = given()
+      .spec(requestSpecification)
+      .body(dataObject)
+      .when()
+      .put(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    dataObject = given()
+      .spec(requestSpecification)
+      .when()
+      .get(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    assertThat(dataObject.getPredecessorIds()).isEmpty();
+
+    dataObject.setParentId(null);
+    dataObject = given()
+      .spec(requestSpecification)
+      .body(dataObject)
+      .when()
+      .put(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    dataObject = given()
+      .spec(requestSpecification)
+      .when()
+      .get(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    assertThat(dataObject.getParentId()).isEqualTo(null);
+  }
 }
