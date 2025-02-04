@@ -132,6 +132,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
 
   fetchAndMergeRelatedEntities();
 
+  onDataObjectUpdated(fetchAndMergeRelatedEntities);
+
   return { relatedEntities };
 }
 

@@ -138,5 +138,7 @@ export function useDataReferencesByDataObject(
 
   fetchAndMergeReferences();
 
+  onDataObjectUpdated(fetchAndMergeReferences);
+
   return { dataReferences };
 }
