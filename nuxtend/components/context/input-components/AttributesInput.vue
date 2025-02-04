@@ -37,47 +37,48 @@ const attributeRules = [
 </script>
 
 <template>
-  <template v-for="({ key, value }, index) in attributesArray" :key="index">
-    <v-row align="center">
-      <v-col cols="12" class="pb-1 d-flex">
-        <v-text-field
-          :model-value="key"
-          :rules="attributeRules"
-          label="Key"
-          variant="outlined"
-          density="compact"
-          color="primary"
-          hide-details
-          class="pr-2"
-          @update:model-value="
-            newKey => updateAttribute(index, { key: newKey, value })
-          "
-        />
-        <v-text-field
-          :model-value="value"
-          label="Value"
-          variant="outlined"
-          density="compact"
-          color="primary"
-          hide-details
-          class="pr-2"
-          @update:model-value="
-            newValue => updateAttribute(index, { key, value: newValue })
-          "
-        />
-        <v-btn
-          class="text-textbody1 text-body-1"
-          icon="mdi-delete-outline"
-          size="compact"
-          variant="text"
-          :style="{ width: '40px' }"
-          @click="attributesArray.splice(index, 1)"
-        />
-      </v-col>
-    </v-row>
-  </template>
-  <v-row>
-    <v-col class="pt-4">
+  <v-row align="center">
+    <v-col
+      v-for="({ key, value }, index) in attributesArray"
+      :key="index"
+      cols="12"
+      :class="`d-flex ${index !== 0 ? 'py-2' : 'pb-2'}`"
+    >
+      <v-text-field
+        :model-value="key"
+        :rules="attributeRules"
+        label="Key"
+        variant="outlined"
+        density="compact"
+        color="primary"
+        hide-details
+        class="pr-2"
+        @update:model-value="
+          newKey => updateAttribute(index, { key: newKey, value })
+        "
+      />
+      <v-text-field
+        :model-value="value"
+        label="Value"
+        variant="outlined"
+        density="compact"
+        color="primary"
+        hide-details
+        class="pr-2"
+        @update:model-value="
+          newValue => updateAttribute(index, { key, value: newValue })
+        "
+      />
+      <v-btn
+        class="text-textbody1 text-body-1"
+        icon="mdi-delete-outline"
+        size="compact"
+        variant="text"
+        :style="{ width: '40px' }"
+        @click="attributesArray.splice(index, 1)"
+      />
+    </v-col>
+    <v-col class="pt-3">
       <v-btn
         text="Add Attributes"
         color="treeview"

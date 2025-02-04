@@ -37,15 +37,32 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
   >
     <template #form>
       <v-form ref="form" v-model="isValid" validate-on="invalid-input eager">
-        <v-row class="pt-8" />
-        <NameInput v-model:name="updatedCollection.name" />
-        <DescriptionInput v-model:description="updatedCollection.description" />
-        <CollectionPermissionsInput
-          v-if="isAllowedToEditPermissions"
-          v-model:permissions="updatedPermissions"
-          :collection-id="collection.id"
-        />
-        <MandatoryFieldHint />
+        <v-row class="pt-8">
+          <v-col class="pb-0">
+            <NameInput v-model:name="updatedCollection.name" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <DescriptionInput
+              v-model:description="updatedCollection.description"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-2">
+            <CollectionPermissionsInput
+              v-if="isAllowedToEditPermissions"
+              v-model:permissions="updatedPermissions"
+              :collection-id="collection.id"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-1">
+            <MandatoryFieldHint />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </Dialog>

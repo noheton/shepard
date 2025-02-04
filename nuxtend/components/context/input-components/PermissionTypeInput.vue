@@ -7,36 +7,32 @@ const permissionType = defineModel<PermissionType>("permissionType", {
 </script>
 
 <template>
-  <v-row>
-    <v-col class="pt-2">
-      <v-select
-        v-model:model-value="permissionType"
-        :items="Object.values(PermissionType)"
-        label="Permissions*"
-        variant="outlined"
-        density="compact"
-        color="primary"
-        require
-        hide-details
-      >
-        <template #item="{ props: listItemProps, item }">
-          <v-list-item
-            v-bind="listItemProps"
-            :title="
-              item.value === PermissionType.PublicReadable
-                ? 'Public Readable'
-                : item.value
-            "
-          />
-        </template>
-        <template #selection="{ item }">
-          {{
-            item.value === PermissionType.PublicReadable
-              ? "Public Readable"
-              : item.value
-          }}
-        </template>
-      </v-select>
-    </v-col>
-  </v-row>
+  <v-select
+    v-model:model-value="permissionType"
+    :items="Object.values(PermissionType)"
+    label="Permissions*"
+    variant="outlined"
+    density="compact"
+    color="primary"
+    require
+    hide-details
+  >
+    <template #item="{ props: listItemProps, item }">
+      <v-list-item
+        v-bind="listItemProps"
+        :title="
+          item.value === PermissionType.PublicReadable
+            ? 'Public Readable'
+            : item.value
+        "
+      />
+    </template>
+    <template #selection="{ item }">
+      {{
+        item.value === PermissionType.PublicReadable
+          ? "Public Readable"
+          : item.value
+      }}
+    </template>
+  </v-select>
 </template>

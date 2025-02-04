@@ -5,21 +5,17 @@ const description = defineModel<string>("description", {
 </script>
 
 <template>
-  <v-row>
-    <v-col>
-      <div class="text-body-2 text-medium-emphasis pb-2">Description</div>
-      <RichTextEditor
-        v-model:model-value="description"
-        :initial-content="description"
-        is-editable
-        class="editor-border"
-      />
-    </v-col>
-  </v-row>
+  <div class="text-body-2 text-medium-emphasis pb-2">Description</div>
+  <RichTextEditor
+    v-model:model-value="description"
+    :initial-content="description"
+    is-editable
+    class="editor-border"
+  />
 </template>
 
 <style lang="scss" scoped>
-:deep(.editor-border) {
+.editor-border {
   border: 1px solid rgb(var(--v-theme-divider1));
   border-radius: 4px;
   padding-top: 4px;

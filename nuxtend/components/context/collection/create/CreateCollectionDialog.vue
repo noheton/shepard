@@ -81,20 +81,49 @@ async function saveChanges() {
   >
     <template #form-content-step-1>
       <v-form ref="form" v-model="isValid">
-        <div class="text-subtitle-2 pt-6">Collection Properties</div>
-        <v-row class="pt-4" />
-        <NameInput v-model:name="collectionToCreate.name" />
-        <DescriptionInput
-          v-model:description="collectionToCreate.description"
-        />
-        <PermissionTypeInput v-model:permission-type="permissionType" />
-        <MandatoryFieldHint />
+        <v-row>
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-2">Collection Properties</div>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pb-0">
+            <NameInput v-model:name="collectionToCreate.name" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <DescriptionInput
+              v-model:description="collectionToCreate.description"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-2">
+            <PermissionTypeInput v-model:permission-type="permissionType" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-1">
+            <MandatoryFieldHint />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
     <template #form-content-step-2>
       <v-form ref="form" v-model="isValid">
-        <div class="text-subtitle-2 pt-6 pb-3">Additional Information</div>
-        <AttributesInput v-model:attributes="collectionToCreate.attributes" />
+        <v-row>
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-2">Additional Information</div>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <AttributesInput
+              v-model:attributes="collectionToCreate.attributes"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </StepperDialog>

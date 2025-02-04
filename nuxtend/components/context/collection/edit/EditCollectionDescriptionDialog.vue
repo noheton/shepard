@@ -32,8 +32,13 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
   >
     <template #form>
       <v-form ref="form" v-model="isValid" validate-on="invalid-input eager">
-        <v-row class="pt-8" />
-        <DescriptionInput v-model:description="updatedCollection.description" />
+        <v-row class="pt-8">
+          <v-col>
+            <DescriptionInput
+              v-model:description="updatedCollection.description"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </Dialog>

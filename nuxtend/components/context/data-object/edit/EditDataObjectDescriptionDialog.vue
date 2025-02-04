@@ -37,8 +37,13 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
   >
     <template #form>
       <v-form v-if="!!updatedDataObject" ref="form" v-model="isValid">
-        <v-row class="pt-8" />
-        <DescriptionInput v-model:description="updatedDataObject.description" />
+        <v-row class="pt-8">
+          <v-col>
+            <DescriptionInput
+              v-model:description="updatedDataObject.description"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </Dialog>

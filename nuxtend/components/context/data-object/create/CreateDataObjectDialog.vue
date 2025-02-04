@@ -70,36 +70,65 @@ async function createDataObject() {
   >
     <template #form-content-step-1>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
-        <v-row class="pt-8" />
-        <v-row>
+        <v-row class="pt-8">
           <v-col>
             <div class="text-subtitle-2">Properties</div>
           </v-col>
         </v-row>
-        <NameInput v-model:name="dataObjectToCreate.name" />
-        <DescriptionInput
-          v-model:description="dataObjectToCreate.description"
-        />
-        <MandatoryFieldHint />
+        <v-row>
+          <v-col class="pb-0">
+            <NameInput v-model:name="dataObjectToCreate.name" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <DescriptionInput
+              v-model:description="dataObjectToCreate.description"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-1">
+            <MandatoryFieldHint />
+          </v-col>
+        </v-row>
         <v-row class="pt-8">
           <v-col>
             <div class="text-subtitle-2">Relationships</div>
           </v-col>
         </v-row>
-        <ParentInput
-          v-model:parent-id="dataObjectToCreate.parentId"
-          :collection-id="collectionId"
-        />
-        <PredecessorInput
-          v-model:predecessor-ids="dataObjectToCreate.predecessorIds"
-          :collection-id="collectionId"
-        />
+        <v-row>
+          <v-col class="pb-2">
+            <ParentInput
+              v-model:parent-id="dataObjectToCreate.parentId"
+              :collection-id="collectionId"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-2">
+            <PredecessorInput
+              v-model:predecessor-ids="dataObjectToCreate.predecessorIds"
+              :collection-id="collectionId"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
     <template #form-content-step-2>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
-        <div class="text-subtitle-2 pt-6 pb-3">Attributes</div>
-        <AttributesInput v-model:attributes="dataObjectToCreate.attributes" />
+        <v-row>
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-2">Attributes</div>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12">
+            <AttributesInput
+              v-model:attributes="dataObjectToCreate.attributes"
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </StepperDialog>

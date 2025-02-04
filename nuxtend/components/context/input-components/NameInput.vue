@@ -12,18 +12,14 @@ const nameRules = [
 </script>
 
 <template>
-  <v-row>
-    <v-col class="pb-0">
-      <v-text-field
-        v-model:model-value="name"
-        :rules="nameRules"
-        label="Name*"
-        variant="outlined"
-        density="compact"
-        require
-        color="primary"
-        hide-details
-      />
-    </v-col>
-  </v-row>
+  <v-text-field
+    v-model:model-value="name"
+    :rules="nameRules"
+    label="Name*"
+    variant="outlined"
+    density="compact"
+    require
+    color="primary"
+    hide-details
+  />
 </template>
