@@ -4,7 +4,8 @@ import { useSearchContainers } from "./useSearchContainers";
 
 const itemsPerPage = 20;
 
-const { serverItems, pageCount, loading } = useSearchContainers(itemsPerPage);
+const { serverItems, pageCount, loading, searchResultHint } =
+  useSearchContainers(itemsPerPage);
 </script>
 
 <template>
@@ -29,7 +30,7 @@ const { serverItems, pageCount, loading } = useSearchContainers(itemsPerPage);
       </v-row>
       <v-row no-gutters>
         <v-col cols="6" class="pt-14">
-          <ContainerSearchField />
+          <ContainerSearchField :search-result-hint="searchResultHint" />
         </v-col>
       </v-row>
       <v-row no-gutters>

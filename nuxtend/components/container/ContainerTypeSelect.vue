@@ -42,7 +42,7 @@ function onSelectUpdate() {
     prepend-inner-icon="mdi-filter-variant"
     :list-props="{
       density: 'compact',
-      bgColor: 'white',
+      bgColor: 'canvas',
     }"
     :items="filters"
     color="primary"

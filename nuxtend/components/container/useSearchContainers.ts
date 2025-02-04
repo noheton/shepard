@@ -15,6 +15,7 @@ export function useSearchContainers(itemsPerPage: number) {
   const serverItems = ref<BasicContainer[]>([]);
   const pageCount = ref<number>(0);
   const loading = ref<boolean>(true);
+  const searchResultHint = ref<string | undefined>(undefined);
 
   const { queryParams } = useContainerListRouteParams();
 
@@ -52,6 +53,10 @@ export function useSearchContainers(itemsPerPage: number) {
       .then(response => {
         serverItems.value = response.results;
         pageCount.value = Math.ceil(response.totalResults / itemsPerPage);
+        searchResultHint.value = getSearchResultHint(
+          queryParams.value.searchText,
+          serverItems.value.length,
+        );
         loading.value = false;
       })
       .catch(e => {
@@ -77,5 +82,15 @@ export function useSearchContainers(itemsPerPage: number) {
     pageCount,
     loading,
     searchContainers,
+    searchResultHint,
   };
+}
+
+function getSearchResultHint(
+  searchText: string | undefined,
+  resultCount: number,
+) {
+  return searchText
+    ? `Found ${resultCount} results for "${searchText}"`
+    : undefined;
 }
