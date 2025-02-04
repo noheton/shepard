@@ -60,7 +60,41 @@ services:
     restart: unless-stopped
     volumes:
       - ../infrastructure/docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
+  postgis:
+    image: postgis/postgis:16-3.5
+    container_name: postgis
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB-postgres}
+      POSTGRES_USER: ${POSTGRES_USER-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD-password}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER-shepard}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW-shepard_secret}
+    ports:
+      - "5433:5432"
+    volumes:
+      - ../infrastructure/docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
+      - postgis_data:/var/lib/postgresql/data
+    networks:
+      - shepard
+    restart: unless-stopped
 
+  pgvector:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: pgvector
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB-postgres}
+      POSTGRES_USER: ${POSTGRES_USER-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD-password}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER-shepard}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW-shepard_secret}
+    ports:
+      - "5434:5432"
+    volumes:
+      - ../infrastructure/docker-entrypoint-initdb.d/pgvector/00-init-pgvector-db.sh:/docker-entrypoint-initdb.d/00-init-pgvector-db.sh
+      - pgvector_data:/var/lib/postgresql/data
+    networks:
+      - shepard
+    restart: unless-stopped
   influxdb:
     image: influxdb:1.8
     environment:
@@ -130,3 +164,6 @@ services:
 
 networks:
   shepard:
+volumes:
+  postgis_data:
+  pgvector_data:
