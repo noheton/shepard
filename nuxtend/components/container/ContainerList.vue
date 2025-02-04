@@ -19,27 +19,21 @@ const headers = [
   {
     title: "Name",
     key: BasicContainerAttributes.Name,
+    cellProps: {
+      class: "text-semibold",
+    },
   },
   {
     title: "Container Type",
     key: BasicContainerAttributes.Type,
-    cellProps: {
-      class: "text-textbody2",
-    },
   },
   {
     title: "Created by",
     key: BasicContainerAttributes.CreatedBy,
-    cellProps: {
-      class: "text-textbody2",
-    },
   },
   {
     title: "Created at",
     key: BasicContainerAttributes.CreatedAt,
-    cellProps: {
-      class: "text-textbody2",
-    },
   },
 ];
 
@@ -91,10 +85,10 @@ function onPageChange() {
   <DataTable
     v-model:sort-by="sortByAttributes"
     :header-props="{
-      class: 'text-subtitle-2',
+      class: 'text-subtitle-2 text-textbody1',
     }"
     :cell-props="{
-      class: 'text-body-1',
+      class: 'text-body-1 text-textbody1',
     }"
     :headers="headers"
     :items="serverItems"
@@ -102,6 +96,9 @@ function onPageChange() {
     :loading="loading"
     @update:sort-by="onSortBy"
   >
+    <template #[`item.id`]="{ value }: { value: ContainerFilterType }">
+      #{{ value }}
+    </template>
     <template #[`item.type`]="{ value }: { value: ContainerFilterType }">
       {{ ContainerTypeName[value] }}
     </template>

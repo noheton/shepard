@@ -42,9 +42,10 @@ function onSelectUpdate() {
     prepend-inner-icon="mdi-filter-variant"
     :list-props="{
       density: 'compact',
+      bgColor: 'white',
     }"
     :items="filters"
-    item-color="primary"
+    color="primary"
     density="compact"
     variant="outlined"
     @update:model-value="onSelectUpdate"

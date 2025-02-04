@@ -25,6 +25,7 @@ function onSearch() {
     v-model="searchText"
     :clearable="true"
     density="compact"
+    color="primary"
     placeholder="Search"
     variant="outlined"
     :hide-details="true"
