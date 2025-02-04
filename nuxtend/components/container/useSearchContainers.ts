@@ -11,13 +11,12 @@ import {
 } from "~/components/container/containerSortByAttribute";
 import type { ContainerFilterType } from "~/components/container/containerTypeFilter";
 
-export function useSearchContainers(
-  queryParams: globalThis.Ref<ContainerListQueryParams>,
-  itemsPerPage: number,
-) {
+export function useSearchContainers(itemsPerPage: number) {
   const serverItems = ref<BasicContainer[]>([]);
   const pageCount = ref<number>(0);
   const loading = ref<boolean>(true);
+
+  const { queryParams } = useContainerListRouteParams();
 
   const searchQuery = computed(() =>
     buildQueryString(queryParams.value.searchText ?? null),

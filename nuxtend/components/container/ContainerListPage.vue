@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import ContainerTypeSelect from "./ContainerTypeSelect.vue";
+import { useSearchContainers } from "./useSearchContainers";
 
 const itemsPerPage = 20;
 
-const { queryParams } = useContainerListRouteParams();
-
-const { serverItems, pageCount, loading } = useSearchContainers(
-  queryParams,
-  itemsPerPage,
-);
+const { serverItems, pageCount, loading } = useSearchContainers(itemsPerPage);
 </script>
 
 <template>
