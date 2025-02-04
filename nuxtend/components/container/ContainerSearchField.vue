@@ -32,7 +32,7 @@ function onSearch() {
     :clearable="true"
     density="compact"
     color="primary"
-    placeholder="Search"
+    placeholder="Search by ID, Name or Created by"
     variant="outlined"
     hide-details="auto"
     width="599px"
