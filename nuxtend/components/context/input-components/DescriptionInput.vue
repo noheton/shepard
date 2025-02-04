@@ -1,6 +1,7 @@
 <script setup lang="ts">
-defineProps<{ description: string }>();
-const emit = defineEmits<{ (e: "descriptionChanged", value: string): void }>();
+const description = defineModel<string>("description", {
+  required: true,
+});
 </script>
 
 <template>
@@ -8,13 +9,10 @@ const emit = defineEmits<{ (e: "descriptionChanged", value: string): void }>();
     <v-col>
       <div class="text-body-2 text-medium-emphasis pb-2">Description</div>
       <RichTextEditor
-        :model-value="description"
+        v-model:model-value="description"
         :initial-content="description"
         is-editable
         class="editor-border"
-        @update:model-value="
-          newDescription => emit('descriptionChanged', newDescription)
-        "
       />
     </v-col>
   </v-row>

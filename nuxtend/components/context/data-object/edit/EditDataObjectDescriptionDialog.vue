@@ -13,14 +13,18 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const isValid = ref<boolean>(true);
-const { saveChanges, updatedDataObject, updateDataObject, loading } =
-  useEditDataObject(props.collectionId, props.dataObjectId, isValid, () => {
+const { saveChanges, updatedDataObject, loading } = useEditDataObject(
+  props.collectionId,
+  props.dataObjectId,
+  isValid,
+  () => {
     showDialog.value = false;
-  });
+  },
+);
 
 const form = useTemplateRef("form");
 
-watch(updatedDataObject, () => form.value?.validate());
+watch(updatedDataObject, () => form.value?.validate(), { deep: true });
 </script>
 
 <template>
@@ -34,18 +38,7 @@ watch(updatedDataObject, () => form.value?.validate());
     <template #form>
       <v-form v-if="!!updatedDataObject" ref="form" v-model="isValid">
         <v-row class="pt-8" />
-        <DescriptionInput
-          :description="updatedDataObject.description"
-          @description-changed="
-            description => {
-              if (updatedDataObject)
-                updateDataObject({
-                  ...updatedDataObject,
-                  description,
-                });
-            }
-          "
-        />
+        <DescriptionInput v-model:description="updatedDataObject.description" />
       </v-form>
     </template>
   </Dialog>

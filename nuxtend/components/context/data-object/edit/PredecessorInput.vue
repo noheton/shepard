@@ -1,8 +1,9 @@
 <script setup lang="ts">
-defineProps<{ collectionId: number; predecessorIds: number[] }>();
-const emit = defineEmits<{
-  (e: "predecessorsChanged", value: number[]): void;
-}>();
+defineProps<{ collectionId: number }>();
+
+const predecessorIds = defineModel<number[]>("predecessorIds", {
+  required: true,
+});
 </script>
 
 <template>
@@ -17,22 +18,14 @@ const emit = defineEmits<{
           @search-ended="
             (id: number | null) => {
               const newValue = id ?? -1;
-              emit(
-                'predecessorsChanged',
-                predecessorIds.map((p, i) => (i !== index ? p : newValue)),
-              );
+              predecessorIds[index] = newValue;
             }
           "
         />
         <v-btn
           icon="mdi-delete-outline"
           variant="text"
-          @click="
-            emit(
-              'predecessorsChanged',
-              predecessorIds.filter((_, i) => i !== index),
-            )
-          "
+          @click="predecessorIds = predecessorIds.filter((_, i) => i !== index)"
         />
       </v-col>
     </template>
@@ -44,7 +37,7 @@ const emit = defineEmits<{
         prepend-icon="mdi-plus-circle"
         variant="flat"
         style="background-color: rgb(var(--v-theme-treeview))"
-        @click="emit('predecessorsChanged', [...predecessorIds, -1])"
+        @click="predecessorIds.push(-1)"
       >
         Add Predecessor
       </v-btn>

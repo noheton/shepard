@@ -13,15 +13,14 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const isValid = ref(true);
-const form = useTemplateRef("form");
-
-const { updatedCollection, updateCollection, saveChanges } = useEditCollection(
+const { updatedCollection, saveChanges } = useEditCollection(
   props.collection,
   () => (showDialog.value = false),
   isValid,
 );
 
-watch(updatedCollection, () => form.value?.validate());
+const form = useTemplateRef("form");
+watch(updatedCollection, () => form.value?.validate(), { deep: true });
 </script>
 
 <template>
@@ -34,16 +33,7 @@ watch(updatedCollection, () => form.value?.validate());
     <template #form>
       <v-form ref="form" v-model="isValid" validate-on="invalid-input eager">
         <v-row class="pt-8" />
-        <DescriptionInput
-          :description="updatedCollection.description"
-          @description-changed="
-            description =>
-              updateCollection({
-                ...updatedCollection,
-                description,
-              })
-          "
-        />
+        <DescriptionInput v-model:description="updatedCollection.description" />
       </v-form>
     </template>
   </Dialog>

@@ -3,11 +3,13 @@ import type { UpdatedPermissions } from "./collectionEditTypes";
 
 interface CollectionPermissionsInputProps {
   collectionId: number;
-  updatedPermissions: UpdatedPermissions;
-  updatePermissions: (newValue: UpdatedPermissions) => void;
 }
 
 const props = defineProps<CollectionPermissionsInputProps>();
+
+const updatedPermissions = defineModel<UpdatedPermissions>("permissions", {
+  required: true,
+});
 
 const { collectionPermissions } = useFetchCollectionPermissions(
   props.collectionId,
@@ -15,7 +17,7 @@ const { collectionPermissions } = useFetchCollectionPermissions(
 
 watch(collectionPermissions, () => {
   if (collectionPermissions.value) {
-    props.updatePermissions(collectionPermissions.value);
+    updatedPermissions.value = collectionPermissions.value;
   }
 });
 </script>
@@ -23,15 +25,6 @@ watch(collectionPermissions, () => {
 <template>
   <PermissionTypeInput
     v-if="updatedPermissions"
-    :permission-type="updatedPermissions.permissionType"
-    :update-permission-type="
-      newPermissionType => {
-        if (!!updatedPermissions)
-          updatePermissions({
-            ...updatedPermissions,
-            permissionType: newPermissionType,
-          });
-      }
-    "
+    v-model:permission-type="updatedPermissions.permissionType"
   />
 </template>

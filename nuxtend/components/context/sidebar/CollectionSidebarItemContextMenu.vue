@@ -81,7 +81,7 @@ async function deleteItem() {
     v-model:show-dialog="showEditDialog"
     :collection-id="collectionId"
     :data-object-id="dataObjectId"
-    :item-name="itemName"
+    :data-object-name="itemName"
     @data-object-updated="emit('data-object-updated')"
   />
 

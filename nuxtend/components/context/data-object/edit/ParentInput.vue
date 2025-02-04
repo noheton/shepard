@@ -1,8 +1,9 @@
 <script setup lang="ts">
-defineProps<{ collectionId: number; parentId: number | null }>();
-const emit = defineEmits<{
-  (e: "parentChanged", value: number | null): void;
-}>();
+defineProps<{ collectionId: number }>();
+
+const parentId = defineModel<number | null>("parentId", {
+  required: true,
+});
 </script>
 
 <template>
@@ -12,7 +13,7 @@ const emit = defineEmits<{
         input-label="Parent"
         :initial-data-object-id="parentId"
         :collection-id="collectionId"
-        @search-ended="id => emit('parentChanged', id)"
+        @search-ended="id => (parentId = id)"
       />
     </v-col>
   </v-row>

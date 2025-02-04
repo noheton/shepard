@@ -4,13 +4,12 @@ import {
   getObjectOfAttributesArray,
 } from "./attributesObjectUtil";
 
-const props = defineProps<{ attributes: { [key: string]: string } }>();
-const emit = defineEmits<{
-  (e: "attributesChanged", value: { [key: string]: string }): void;
-}>();
+const attributes = defineModel<{ [key: string]: string }>("attributes", {
+  required: true,
+});
 
 const attributesArray = ref<{ key: string; value: string }[]>(
-  getAttributesArrayOfObject(props.attributes),
+  getAttributesArrayOfObject(attributes.value),
 );
 
 function updateAttribute(
@@ -22,7 +21,7 @@ function updateAttribute(
 
 watch(
   attributesArray,
-  arr => emit("attributesChanged", getObjectOfAttributesArray(arr)),
+  arr => (attributes.value = getObjectOfAttributesArray(arr)),
   { deep: true },
 );
 

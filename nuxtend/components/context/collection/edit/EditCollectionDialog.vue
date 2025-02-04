@@ -14,22 +14,16 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const isValid = ref(true);
+const { updatedCollection, updatedPermissions, saveChanges } =
+  useEditCollection(
+    props.collection,
+    () => (showDialog.value = false),
+    isValid,
+    props.isAllowedToEditPermissions,
+  );
+
 const form = useTemplateRef("form");
-
-const {
-  updatedCollection,
-  updateCollection,
-  updatedPermissions,
-  updatePermissions,
-  saveChanges,
-} = useEditCollection(
-  props.collection,
-  () => (showDialog.value = false),
-  isValid,
-  props.isAllowedToEditPermissions,
-);
-
-watch(updatedCollection, () => form.value?.validate());
+watch(updatedCollection, () => form.value?.validate(), { deep: true });
 </script>
 
 <template>
@@ -44,24 +38,12 @@ watch(updatedCollection, () => form.value?.validate());
     <template #form>
       <v-form ref="form" v-model="isValid" validate-on="invalid-input eager">
         <v-row class="pt-8" />
-        <NameInput
-          :name="updatedCollection.name"
-          @name-changed="
-            name => updateCollection({ ...updatedCollection, name })
-          "
-        />
-        <DescriptionInput
-          :description="updatedCollection.description"
-          @description-changed="
-            description =>
-              updateCollection({ ...updatedCollection, description })
-          "
-        />
+        <NameInput v-model:name="updatedCollection.name" />
+        <DescriptionInput v-model:description="updatedCollection.description" />
         <CollectionPermissionsInput
           v-if="isAllowedToEditPermissions"
-          :updated-permissions="updatedPermissions"
+          v-model:permissions="updatedPermissions"
           :collection-id="collection.id"
-          :update-permissions="updatePermissions"
         />
         <MandatoryFieldHint />
       </v-form>

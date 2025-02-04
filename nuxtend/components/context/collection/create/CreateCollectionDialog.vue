@@ -6,30 +6,20 @@ const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
+const emit = defineEmits<{
+  (e: "collection-created", value: number): void;
+}>();
 
 const collectionToCreate = ref<CollectionToCreate>({
   name: "",
   description: "",
   attributes: {},
 });
-
-const emit = defineEmits<{
-  (e: "collection-created", value: number): void;
-}>();
-
-const form = useTemplateRef("form");
-function updateCollectionToCreate(newValue: CollectionToCreate) {
-  collectionToCreate.value = newValue;
-  form.value?.validate();
-}
-
 const permissionType = ref<PermissionType>(PermissionType.Private);
 
-function updatePermissionType(newValue: PermissionType) {
-  permissionType.value = newValue;
-}
-
 const isValid = ref(true);
+const form = useTemplateRef("form");
+watch(collectionToCreate, () => form.value?.validate(), { deep: true });
 
 async function saveChanges() {
   if (isValid.value === false) return;
@@ -93,39 +83,18 @@ async function saveChanges() {
       <v-form ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6">Collection Properties</div>
         <v-row class="pt-4" />
-        <NameInput
-          :name="collectionToCreate.name"
-          @name-changed="
-            name => updateCollectionToCreate({ ...collectionToCreate, name })
-          "
-        />
+        <NameInput v-model:name="collectionToCreate.name" />
         <DescriptionInput
-          :description="collectionToCreate.description"
-          @description-changed="
-            description =>
-              updateCollectionToCreate({ ...collectionToCreate, description })
-          "
+          v-model:description="collectionToCreate.description"
         />
-        <PermissionTypeInput
-          :permission-type="permissionType"
-          :update-permission-type="updatePermissionType"
-        />
+        <PermissionTypeInput v-model:permission-type="permissionType" />
         <MandatoryFieldHint />
       </v-form>
     </template>
     <template #form-content-step-2>
       <v-form ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6 pb-3">Additional Information</div>
-        <AttributesInput
-          :attributes="collectionToCreate.attributes"
-          @attributes-changed="
-            attributes =>
-              updateCollectionToCreate({
-                ...collectionToCreate,
-                attributes,
-              })
-          "
-        />
+        <AttributesInput v-model:attributes="collectionToCreate.attributes" />
       </v-form>
     </template>
   </StepperDialog>

@@ -7,15 +7,21 @@ export function useEditDataObject(
   isValid: Ref<boolean>,
   onSuccess: () => void,
 ) {
-  const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
-
   const updatedDataObject = ref<UpdatedDataObject | undefined>(undefined);
 
+  const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
   const loading = computed(() => !dataObject && !updatedDataObject);
-
-  function updateDataObject(newValue: UpdatedDataObject) {
-    updatedDataObject.value = newValue;
-  }
+  watch(dataObject, newDo => {
+    if (newDo) {
+      updatedDataObject.value = {
+        name: newDo.name,
+        parentId: newDo.parentId,
+        attributes: newDo.attributes ?? {},
+        description: newDo.description,
+        predecessorIds: newDo.predecessorIds ?? [],
+      };
+    }
+  });
 
   async function saveChanges() {
     const dataObjectToSave = updatedDataObject.value;
@@ -47,22 +53,9 @@ export function useEditDataObject(
       });
   }
 
-  watch(dataObject, newDo => {
-    if (newDo) {
-      updateDataObject({
-        name: newDo.name,
-        parentId: newDo.parentId,
-        attributes: newDo.attributes,
-        description: newDo.description,
-        predecessorIds: newDo.predecessorIds,
-      });
-    }
-  });
-
   return {
-    saveChanges,
     updatedDataObject,
-    updateDataObject,
     loading,
+    saveChanges,
   };
 }

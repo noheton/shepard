@@ -15,16 +15,7 @@ export function useEditCollection(
     attributes: collection.attributes ?? {},
     description: collection.description ?? "",
   });
-
-  function updateCollection(newValue: UpdatedCollection) {
-    updatedCollection.value = newValue;
-  }
-
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
-
-  function updatePermissions(newValue: UpdatedPermissions) {
-    updatedPermissions.value = newValue;
-  }
 
   async function saveChanges() {
     if (isValid.value === false) return;
@@ -68,10 +59,7 @@ export function useEditCollection(
 
   return {
     updatedCollection,
-    updateCollection,
     updatedPermissions,
-    updatePermissions,
-    isValid,
     saveChanges,
   };
 }

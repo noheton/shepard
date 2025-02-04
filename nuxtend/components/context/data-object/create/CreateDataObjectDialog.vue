@@ -6,15 +6,14 @@ interface CreateDataObjectDialogProps {
   collectionId: number;
   parentId?: number;
 }
-
-const router = useRouter();
-
 const props = defineProps<CreateDataObjectDialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
 const emit = defineEmits(["data-object-created"]);
+
+const router = useRouter();
 
 const dataObjectToCreate = ref<DataObjectToCreate>({
   description: "",
@@ -24,13 +23,9 @@ const dataObjectToCreate = ref<DataObjectToCreate>({
   predecessorIds: [],
 });
 
-const form = useTemplateRef("form");
-function updateDataObjectToCreate(newValue: DataObjectToCreate) {
-  dataObjectToCreate.value = newValue;
-  form.value?.validate();
-}
-
 const isValid = ref<boolean>(true);
+const form = useTemplateRef("form");
+watch(dataObjectToCreate, () => form.value?.validate(), { deep: true });
 
 async function createDataObject() {
   const dataObjectToSave = dataObjectToCreate.value;
@@ -81,18 +76,9 @@ async function createDataObject() {
             <div class="text-subtitle-2">Properties</div>
           </v-col>
         </v-row>
-        <NameInput
-          :name="dataObjectToCreate.name"
-          @name-changed="
-            name => updateDataObjectToCreate({ ...dataObjectToCreate, name })
-          "
-        />
+        <NameInput v-model:name="dataObjectToCreate.name" />
         <DescriptionInput
-          :description="dataObjectToCreate.description"
-          @description-changed="
-            description =>
-              updateDataObjectToCreate({ ...dataObjectToCreate, description })
-          "
+          v-model:description="dataObjectToCreate.description"
         />
         <MandatoryFieldHint />
         <v-row class="pt-8">
@@ -101,39 +87,19 @@ async function createDataObject() {
           </v-col>
         </v-row>
         <ParentInput
+          v-model:parent-id="dataObjectToCreate.parentId"
           :collection-id="collectionId"
-          :parent-id="dataObjectToCreate.parentId"
-          @parent-changed="
-            parentId =>
-              updateDataObjectToCreate({ ...dataObjectToCreate, parentId })
-          "
         />
         <PredecessorInput
+          v-model:predecessor-ids="dataObjectToCreate.predecessorIds"
           :collection-id="collectionId"
-          :predecessor-ids="dataObjectToCreate.predecessorIds ?? []"
-          @predecessors-changed="
-            predecessorIds =>
-              updateDataObjectToCreate({
-                ...dataObjectToCreate,
-                predecessorIds,
-              })
-          "
         />
       </v-form>
     </template>
     <template #form-content-step-2>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6 pb-3">Attributes</div>
-        <AttributesInput
-          :attributes="dataObjectToCreate.attributes ?? {}"
-          @attributes-changed="
-            attributes =>
-              updateDataObjectToCreate({
-                ...dataObjectToCreate,
-                attributes,
-              })
-          "
-        />
+        <AttributesInput v-model:attributes="dataObjectToCreate.attributes" />
       </v-form>
     </template>
   </StepperDialog>
