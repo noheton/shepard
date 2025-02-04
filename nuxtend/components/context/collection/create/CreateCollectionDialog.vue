@@ -72,15 +72,15 @@ async function saveChanges() {
 </script>
 
 <template>
-  <StepperDialog
-    v-model:show-dialog="showDialog"
-    title="Create Collection"
-    :steps="['Collection Properties', 'Additional Information']"
-    :submit-disabled="!isValid"
-    @submit="saveChanges"
-  >
-    <template #form-content-step-1>
-      <v-form ref="form" v-model="isValid">
+  <v-form ref="form" v-model="isValid">
+    <StepperDialog
+      v-model:show-dialog="showDialog"
+      title="Create Collection"
+      :steps="['Collection Properties', 'Additional Information']"
+      :submit-disabled="!isValid"
+      @submit="saveChanges"
+    >
+      <template #form-content-step-1>
         <v-row>
           <v-col class="pt-9 pb-1">
             <div class="text-subtitle-2">Collection Properties</div>
@@ -108,10 +108,8 @@ async function saveChanges() {
             <MandatoryFieldHint />
           </v-col>
         </v-row>
-      </v-form>
-    </template>
-    <template #form-content-step-2>
-      <v-form ref="form" v-model="isValid">
+      </template>
+      <template #form-content-step-2>
         <v-row>
           <v-col class="pt-9 pb-1">
             <div class="text-subtitle-2">Additional Information</div>
@@ -124,7 +122,7 @@ async function saveChanges() {
             />
           </v-col>
         </v-row>
-      </v-form>
-    </template>
-  </StepperDialog>
+      </template>
+    </StepperDialog>
+  </v-form>
 </template>
