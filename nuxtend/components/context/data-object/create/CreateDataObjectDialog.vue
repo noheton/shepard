@@ -73,7 +73,7 @@ async function createDataObject() {
     :submit-disabled="!isValid"
     @submit="createDataObject"
   >
-    <template #step1-form>
+    <template #form-content-step-1>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
         <v-row class="pt-8" />
         <v-row>
@@ -121,7 +121,7 @@ async function createDataObject() {
         />
       </v-form>
     </template>
-    <template #step2-form>
+    <template #form-content-step-2>
       <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6 pb-3">Attributes</div>
         <AttributesInput

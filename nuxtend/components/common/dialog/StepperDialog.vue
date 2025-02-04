@@ -35,11 +35,11 @@ const currentStep = ref<number>(1);
           flat
         >
           <template #[`item.1`]>
-            <slot name="step1-form" />
+            <slot name="form-content-step-1" />
           </template>
 
           <template #[`item.2`]>
-            <slot name="step2-form" />
+            <slot name="form-content-step-2" />
           </template>
           <v-spacer />
           <template #actions>

@@ -89,7 +89,7 @@ async function saveChanges() {
     :submit-disabled="!isValid"
     @submit="saveChanges"
   >
-    <template #step1-form>
+    <template #form-content-step-1>
       <v-form ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6">Collection Properties</div>
         <v-row class="pt-4" />
@@ -113,7 +113,7 @@ async function saveChanges() {
         <MandatoryFieldHint />
       </v-form>
     </template>
-    <template #step2-form>
+    <template #form-content-step-2>
       <v-form ref="form" v-model="isValid">
         <div class="text-subtitle-2 pt-6 pb-3">Additional Information</div>
         <AttributesInput
