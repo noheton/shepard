@@ -24,7 +24,7 @@ const showDescriptionEditDialog = ref(false);
     <v-container fluid class="pa-0 fill-height">
       <v-row v-if="!!collection" no-gutters>
         <v-col cols="12">
-          <ShepardBreadcrumbs
+          <Breadcrumbs
             :items="[
               {
                 title: 'Collections',

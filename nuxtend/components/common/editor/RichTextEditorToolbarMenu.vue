@@ -7,7 +7,7 @@ export interface MenuListEntry {
   callBackFn: (() => boolean) | ((options: never) => boolean) | undefined;
 }
 
-interface ToolbarMenuProps {
+interface RichTextEditorToolbarMenuProps {
   baseIcon: string;
   btnText?: string;
   tooltipText: string;
@@ -26,7 +26,7 @@ interface ToolbarMenuProps {
   menuIconSize: string;
 }
 
-const props = defineProps<ToolbarMenuProps>();
+const props = defineProps<RichTextEditorToolbarMenuProps>();
 </script>
 <template>
   <v-menu open-on-hover :disabled="props.disabled">

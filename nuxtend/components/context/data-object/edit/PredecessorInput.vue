@@ -14,7 +14,7 @@ const predecessorIds = defineModel<number[]>("predecessorIds", {
       cols="12"
       :class="`d-flex ${index !== 0 ? 'pt-2' : ''} ${index + 1 !== predecessorIds.length ? 'pb-2' : 'pb-1'}`"
     >
-      <SearchAutocomplete
+      <DataObjectAutocomplete
         :key="predecessorDO"
         input-label="Predecessor"
         :initial-data-object-id="predecessorDO ?? undefined"

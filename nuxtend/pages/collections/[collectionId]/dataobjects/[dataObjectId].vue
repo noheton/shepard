@@ -39,7 +39,7 @@ const showDescriptionEditDialog = ref(false);
         no-gutters
       >
         <v-col cols="12">
-          <ShepardBreadcrumbs
+          <Breadcrumbs
             :items="[
               {
                 title: 'Collections',

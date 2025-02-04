@@ -1,9 +1,9 @@
 <script setup lang="ts">
-interface ShepardBreadcrumbsProps {
+interface BreadcrumbsProps {
   items: { title: string; to: string }[];
 }
 
-defineProps<ShepardBreadcrumbsProps>();
+defineProps<BreadcrumbsProps>();
 </script>
 
 <template>

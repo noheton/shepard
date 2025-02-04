@@ -2,12 +2,12 @@
 import type { Editor } from "@tiptap/vue-3";
 import { ref } from "vue";
 
-interface ToolbarProps {
+interface RichTextEditorToolbarProps {
   editor: Editor;
   isToolbarShown: boolean;
 }
 
-const props = defineProps<ToolbarProps>();
+const props = defineProps<RichTextEditorToolbarProps>();
 
 const boldState = ref<number | null>(null);
 const italicState = ref<number | null>(null);
@@ -179,7 +179,7 @@ const alignmentMenuEntries = [
     class="d-flex py-0 gc-2 justify-end pr-0"
   >
     <!-- Marker Controls (bold, italic, ...)-->
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="boldState"
       icon="mdi-format-bold"
       tooltip-text="Bold"
@@ -189,7 +189,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="italicState"
       icon="mdi-format-italic"
       tooltip-text="Italic"
@@ -199,7 +199,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="underlineState"
       icon="mdi-format-underline"
       tooltip-text="Underline"
@@ -209,7 +209,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="codeState"
       icon="mdi-code-tags"
       tooltip-text="Code"
@@ -219,7 +219,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="headingState"
       btn-text="Heading"
       tooltip-text="Heading"
@@ -236,7 +236,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Text Alignment Menu-->
-    <ToolbarMenu
+    <RichTextEditorToolbarMenu
       :base-icon="alignmentMenuIcon"
       menu-icon-size="small"
       tooltip-text="Alignment"
@@ -246,7 +246,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Link Controls (set link, unlink)-->
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="linkState"
       icon="mdi-link"
       tooltip-text="Set Link"
@@ -256,7 +256,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       :disabled="linkState === null"
       :is-toggling-disabled="true"
       icon="mdi-link-off"
@@ -270,7 +270,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- List Controls-->
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="bulletListState"
       icon="mdi-format-list-bulleted"
       tooltip-text="Bullet List"
@@ -280,7 +280,7 @@ const alignmentMenuEntries = [
         }
       "
     />
-    <ToolbarButton
+    <RichTextEditorToolbarButton
       v-model="orderedListState"
       icon="mdi-format-list-numbered"
       tooltip-text="Numbered List"
@@ -293,7 +293,7 @@ const alignmentMenuEntries = [
 
     <v-divider vertical />
     <!-- Table Menu-->
-    <ToolbarMenu
+    <RichTextEditorToolbarMenu
       base-icon="mdi-table"
       menu-icon-size="small"
       tooltip-text="Table"

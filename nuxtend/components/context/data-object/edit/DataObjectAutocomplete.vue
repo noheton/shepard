@@ -7,13 +7,13 @@ interface AutoCompleteItem {
   value?: DataObjectSearchResult;
 }
 
-interface DataObjectEditSearchAutocompleteProps {
+interface DataObjectAutocompleteProps {
   collectionId: number;
   initialDataObjectId: number | null;
   inputLabel: string;
 }
 
-const props = defineProps<DataObjectEditSearchAutocompleteProps>();
+const props = defineProps<DataObjectAutocompleteProps>();
 const emit = defineEmits<{
   (e: "searchEnded", value: number | null): void;
 }>();

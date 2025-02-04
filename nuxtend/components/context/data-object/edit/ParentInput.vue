@@ -7,7 +7,7 @@ const parentId = defineModel<number | null>("parentId", {
 </script>
 
 <template>
-  <SearchAutocomplete
+  <DataObjectAutocomplete
     input-label="Parent"
     :initial-data-object-id="parentId"
     :collection-id="collectionId"

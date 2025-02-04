@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface ToolbarButtonProps {
+interface RichTextEditorToolbarButtonProps {
   btnText?: string;
   tooltipText: string;
   icon?: string;
@@ -20,7 +20,7 @@ interface ToolbarButtonProps {
 
 const toggle = defineModel<number | null>();
 
-const props = defineProps<ToolbarButtonProps>();
+const props = defineProps<RichTextEditorToolbarButtonProps>();
 
 watch(toggle, (newVal, _) => {
   if (props.isTogglingDisabled && newVal != null) {

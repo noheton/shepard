@@ -88,7 +88,11 @@ watch(
 
 <template>
   <div class="d-flex flex-column flex-nowrap ga-1 w-100">
-    <Toolbar v-if="editor" :editor="editor" :is-toolbar-shown="isEditable" />
+    <RichTextEditorToolbar
+      v-if="editor"
+      :editor="editor"
+      :is-toolbar-shown="isEditable"
+    />
     <editor-content :editor="editor" :class="editorClassObject" />
   </div>
 </template>
