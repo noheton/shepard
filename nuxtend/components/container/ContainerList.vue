@@ -15,25 +15,37 @@ const headers = [
   {
     title: "ID",
     key: "id",
+    cellProps: {
+      class: "text-body-1",
+    },
   },
   {
     title: "Name",
     key: BasicContainerAttributes.Name,
     cellProps: {
-      class: "text-semibold",
+      class: "text-subtitle-2",
     },
   },
   {
     title: "Container Type",
     key: BasicContainerAttributes.Type,
+    cellProps: {
+      class: "text-body-1",
+    },
   },
   {
     title: "Created by",
     key: BasicContainerAttributes.CreatedBy,
+    cellProps: {
+      class: "text-body-1",
+    },
   },
   {
     title: "Created at",
     key: BasicContainerAttributes.CreatedAt,
+    cellProps: {
+      class: "text-body-1",
+    },
   },
 ];
 
@@ -88,7 +100,7 @@ function onPageChange() {
       class: 'text-subtitle-2 text-textbody1',
     }"
     :cell-props="{
-      class: 'text-body-1 text-textbody1',
+      class: 'text-textbody1',
     }"
     :headers="headers"
     :items="serverItems"

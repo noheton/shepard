@@ -39,7 +39,6 @@ function onSelectUpdate() {
     width="273px"
     clearable
     placeholder="Select container type"
-    prepend-inner-icon="mdi-filter-variant"
     :list-props="{
       density: 'compact',
       bgColor: 'canvas',
@@ -49,7 +48,15 @@ function onSelectUpdate() {
     density="compact"
     variant="outlined"
     @update:model-value="onSelectUpdate"
-  />
+  >
+    <template #prepend-inner>
+      <v-icon
+        icon="mdi-filter-variant"
+        :color="selectedFilterParam ? 'primary' : 'medium-emphasis'"
+        style="opacity: 1"
+      />
+    </template>
+  </v-select>
 </template>
 
 <style scoped lang="scss">

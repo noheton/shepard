@@ -70,9 +70,9 @@ const attributeRules = [
         "
       />
       <v-btn
-        class="text-textbody1 text-body-1"
         icon="mdi-delete-outline"
         size="compact"
+        color="medium-emphasis"
         variant="text"
         :style="{ width: '40px' }"
         @click="attributesArray.splice(index, 1)"

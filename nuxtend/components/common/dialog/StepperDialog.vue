@@ -18,7 +18,7 @@ const currentStep = ref<number>(1);
 
 <template>
   <v-dialog v-model="showDialog" persistent max-width="600">
-    <v-card>
+    <v-card color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">
           <div class="text-h4">{{ title }}</div>
@@ -32,6 +32,7 @@ const currentStep = ref<number>(1);
           min-height="426px"
           :items="steps"
           selected-class="selected-step"
+          bg-color="canvas"
           flat
         >
           <template #[`item.1`]>
@@ -43,7 +44,7 @@ const currentStep = ref<number>(1);
           </template>
           <v-spacer />
           <template #actions>
-            <div class="d-flex px-6">
+            <div class="d-flex px-6 mt-12">
               <v-btn
                 v-if="currentStep === 2"
                 :disabled="submitDisabled"

@@ -70,12 +70,12 @@ async function createDataObject() {
       @submit="createDataObject"
     >
       <template #form-content-step-1>
-        <v-row class="pt-8">
-          <v-col>
-            <div class="text-subtitle-2">Properties</div>
+        <v-row>
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-1">Properties</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col class="pb-0">
             <NameInput v-model:name="dataObjectToCreate.name" />
           </v-col>
@@ -92,12 +92,12 @@ async function createDataObject() {
             <MandatoryFieldHint />
           </v-col>
         </v-row>
-        <v-row class="pt-8">
-          <v-col>
-            <div class="text-subtitle-2">Relationships</div>
+        <v-row>
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-1">Relationships</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col class="pb-2">
             <ParentInput
               v-model:parent-id="dataObjectToCreate.parentId"
@@ -117,7 +117,7 @@ async function createDataObject() {
       <template #form-content-step-2>
         <v-row>
           <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-2">Attributes</div>
+            <div class="text-subtitle-1">Attributes</div>
           </v-col>
         </v-row>
         <v-row>

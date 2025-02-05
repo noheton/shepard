@@ -83,10 +83,10 @@ async function saveChanges() {
       <template #form-content-step-1>
         <v-row>
           <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-2">Collection Properties</div>
+            <div class="text-subtitle-1">Collection Properties</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col class="pb-0">
             <NameInput v-model:name="collectionToCreate.name" />
           </v-col>
@@ -112,7 +112,7 @@ async function saveChanges() {
       <template #form-content-step-2>
         <v-row>
           <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-2">Additional Information</div>
+            <div class="text-subtitle-1">Additional Information</div>
           </v-col>
         </v-row>
         <v-row>
