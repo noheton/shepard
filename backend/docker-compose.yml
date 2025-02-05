@@ -77,6 +77,7 @@ services:
     networks:
       - shepard
     restart: unless-stopped
+    profiles: [spatial-data-poc]
 
   pgvector:
     image: pgvector/pgvector:0.8.0-pg16
@@ -95,6 +96,7 @@ services:
     networks:
       - shepard
     restart: unless-stopped
+    profiles: [spatial-data-poc]
   influxdb:
     image: influxdb:1.8
     environment:
