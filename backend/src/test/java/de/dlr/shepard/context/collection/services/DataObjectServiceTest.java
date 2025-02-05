@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -573,8 +574,7 @@ public class DataObjectServiceTest {
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
     var actual = service.updateDataObjectByShepardId(old.getShepardId(), input, updateUser.getUsername());
-    verify(children).remove(old);
-    verify(dao).createOrUpdate(oldParent);
+    verify(dao).deleteHasChildRelation(anyLong(), anyLong());
 
     assertEquals(updated, actual);
   }

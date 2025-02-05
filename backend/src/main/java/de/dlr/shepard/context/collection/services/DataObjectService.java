@@ -175,47 +175,38 @@ public class DataObjectService {
   public DataObject updateDataObjectByShepardId(long dataObjectShepardId, DataObjectIO dataObject, String username) {
     DataObject old = dataObjectDAO.findByShepardId(dataObjectShepardId);
     User user = userDAO.find(username);
-    DataObject parent = findRelatedDataObjectByShepardId(
+
+    if (old.getParent() != null) {
+      dataObjectDAO.deleteHasChildRelation(old.getParent().getShepardId(), old.getShepardId());
+    }
+    if (old.getPredecessors() != null) {
+      old
+        .getPredecessors()
+        .forEach(predecessor -> {
+          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
+        });
+    }
+
+    DataObject newParent = findRelatedDataObjectByShepardId(
       old.getCollection().getShepardId(),
       dataObject.getParentId(),
       dataObjectShepardId
     );
-    if (old.getParent() != null) {
-      DataObject oldParent = findRelatedDataObjectByShepardId(
-        old.getCollection().getShepardId(),
-        old.getParent().getShepardId(),
-        dataObjectShepardId
-      );
-      if (oldParent != null && oldParent.getChildren() != null) {
-        oldParent.getChildren().remove(old);
-        dataObjectDAO.createOrUpdate(oldParent);
-      }
-    }
-    if (old.getPredecessors() != null) {
-      List<DataObject> oldPredecessors = findRelatedDataObjectsByShepardIds(
-        old.getCollection().getShepardId(),
-        old.getPredecessors().stream().mapToLong(DataObject::getShepardId).toArray(),
-        dataObjectShepardId
-      );
-      oldPredecessors.forEach(predecessor -> {
-        if (predecessor.getSuccessors() != null) {
-          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
-        }
-      });
-    }
-    List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(
+    List<DataObject> newPredecessors = findRelatedDataObjectsByShepardIds(
       old.getCollection().getShepardId(),
       dataObject.getPredecessorIds(),
       dataObjectShepardId
     );
 
-    old.setAttributes(dataObject.getAttributes());
-    old.setDescription(dataObject.getDescription());
+    old.setShepardId(old.getShepardId());
     old.setName(dataObject.getName());
-    old.setParent(parent);
-    old.setPredecessors(predecessors);
+    old.setDescription(dataObject.getDescription());
+    old.setAttributes(dataObject.getAttributes());
+    old.setParent(newParent);
+    old.setPredecessors(newPredecessors);
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
+
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
     return updated;

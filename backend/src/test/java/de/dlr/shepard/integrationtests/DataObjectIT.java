@@ -601,7 +601,9 @@ public class DataObjectIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(DataObjectIO.class);
-    assertThat(oldParent).isEqualTo(dataObject);
+    assertThat(oldParent).usingRecursiveComparison().ignoringFields("childrenIds").isEqualTo(dataObject);
+    assertThat(oldParent.getChildrenIds()).doesNotContain(successorAndChild.getId());
+    dataObject = oldParent;
 
     successor.setChildrenIds(new long[] { actual.getId() });
     DataObjectIO newParent = given()
@@ -641,7 +643,11 @@ public class DataObjectIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(DataObjectIO.class);
-    assertThat(newPredecessor).usingRecursiveComparison().ignoringFields("successorIds").isEqualTo(dataObject);
+    assertThat(newPredecessor)
+      .usingRecursiveComparison()
+      .ignoringFields("successorIds", "childrenIds")
+      .isEqualTo(dataObject);
+    assertThat(newPredecessor.getChildrenIds()).containsExactlyInAnyOrder(dataObject.getChildrenIds());
     assertThat(newPredecessor.getSuccessorIds()).containsExactlyInAnyOrder(successor.getId(), child.getId());
     dataObject = newPredecessor;
   }
@@ -1030,5 +1036,64 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     assertThat(dataObject.getParentId()).isEqualTo(null);
+  }
+
+  @Test
+  public void updateDataObject_deleteParentWhenPredecessorIsPresent_successfullyDeleteParent() {
+    // Arrange
+    var dataObjectAsParentAndPredecessorCreationPayload = new DataObjectIO();
+    dataObjectAsParentAndPredecessorCreationPayload.setName("dataObjectWithParentAndPredecessor");
+
+    DataObjectIO dataObjectAsParentAndPredecessor = given()
+      .spec(requestSpecification)
+      .body(dataObjectAsParentAndPredecessorCreationPayload)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    var dataObjectWithParentAndPredecessorCreationPayload = new DataObjectIO();
+    dataObjectWithParentAndPredecessorCreationPayload.setName("dataObjectWithParentAndPredecessor");
+    dataObjectWithParentAndPredecessorCreationPayload.setParentId(dataObjectAsParentAndPredecessor.getId());
+    dataObjectWithParentAndPredecessorCreationPayload.setPredecessorIds(
+      new long[] { dataObjectAsParentAndPredecessor.getId() }
+    );
+
+    DataObjectIO dataObjectWithParentAndPredecessor = given()
+      .spec(requestSpecification)
+      .body(dataObjectWithParentAndPredecessorCreationPayload)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act
+    dataObjectWithParentAndPredecessor.setParentId(null);
+
+    given()
+      .spec(requestSpecification)
+      .body(dataObjectWithParentAndPredecessor)
+      .when()
+      .put(dataObjectsURL + "/" + dataObjectWithParentAndPredecessor.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert
+    DataObjectIO updatedParent = given()
+      .spec(requestSpecification)
+      .when()
+      .get(dataObjectsURL + "/" + dataObjectWithParentAndPredecessor.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    assertEquals(null, updatedParent.getParentId());
   }
 }

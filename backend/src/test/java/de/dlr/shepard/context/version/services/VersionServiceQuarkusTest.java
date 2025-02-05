@@ -1,4 +1,4 @@
-package de.dlr.shepard.neo4Core.services;
+package de.dlr.shepard.context.version.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +30,6 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.context.version.io.VersionIO;
-import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileContainerService;

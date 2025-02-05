@@ -239,11 +239,20 @@ public class GenericDAOTest extends BaseTestCase {
   }
 
   @Test
+  public void deleteHasChildRelationTest() {
+    long fromId = 1;
+    long toId = 2;
+    dao.deleteHasChildRelation(fromId, toId);
+    String expected = "MATCH (a:TestObject {shepardId: 1})-[r:has_child]->(b:TestObject {shepardId: 2}) DELETE r";
+    verify(session).query(eq(expected), any());
+  }
+
+  @Test
   public void deleteHasSuccessorRelationTest() {
     long fromId = 1;
     long toId = 2;
     dao.deleteHasSuccessorRelation(fromId, toId);
-    String expected = "MATCH (a:TestObject)-[r:has_successor]->(b:TestObject) WHERE id(a) = 1 AND id(b) = 2 DELETE r;";
+    String expected = "MATCH (a:TestObject {shepardId: 1})-[r:has_successor]->(b:TestObject {shepardId: 2}) DELETE r";
     verify(session).query(eq(expected), any());
   }
 }

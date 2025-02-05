@@ -222,17 +222,27 @@ public abstract class GenericDAO<T> {
     return ret;
   }
 
-  public void deleteHasSuccessorRelation(long fromId, long toId) {
-    deleteFromToRelation(fromId, toId, Constants.HAS_SUCCESSOR);
+  /**
+   * Deletes the has_child relation between the parent and the child in neo4j
+   */
+  public void deleteHasChildRelation(long parentShepardId, long childShepardId) {
+    deleteRelation(parentShepardId, childShepardId, Constants.HAS_CHILD);
   }
 
-  private void deleteFromToRelation(long fromId, long toId, String relationName) {
+  /**
+   * Deletes the has_successor relation betweend the predecessor and the successor in neo4j
+   */
+  public void deleteHasSuccessorRelation(long predecessorShepardId, long successorShepardId) {
+    deleteRelation(predecessorShepardId, successorShepardId, Constants.HAS_SUCCESSOR);
+  }
+
+  private void deleteRelation(long fromId, long toId, String relationName) {
     String query = String.format(
-      "MATCH (a:%s)-[r:%s]->(b:%s) WHERE id(a) = %s AND id(b) = %s DELETE r;",
-      getEntityType().getSimpleName(),
-      relationName,
+      "MATCH (a:%s {shepardId: %s})-[r:%s]->(b:%s {shepardId: %s}) DELETE r",
       getEntityType().getSimpleName(),
       fromId,
+      relationName,
+      getEntityType().getSimpleName(),
       toId
     );
     session.query(query, new HashMap<String, String>());
