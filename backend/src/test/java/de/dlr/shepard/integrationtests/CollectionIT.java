@@ -384,4 +384,44 @@ public class CollectionIT extends BaseTestCaseIT {
       assertEquals(actual.getName(), VersionizedCollectionName);
     }
   }
+
+  @Test
+  public void updateCollection_deleteAttribute_successfullyDeleteAttribute() {
+    // Arrange
+    CollectionIO collectionIO = new CollectionIO();
+    collectionIO.setName("Some name");
+    collectionIO.setAttributes(Map.of("name", "my data object"));
+    CollectionIO collection = given()
+      .spec(requestSpecification)
+      .body(collectionIO)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act
+    collectionIO.setAttributes(Map.of());
+    given()
+      .spec(requestSpecification)
+      .body(collectionIO)
+      .when()
+      .put(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Assert
+    CollectionIO updatedCollection = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+    assertEquals(Map.of(), updatedCollection.getAttributes());
+  }
 }

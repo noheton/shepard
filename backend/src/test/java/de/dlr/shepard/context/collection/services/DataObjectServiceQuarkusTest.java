@@ -26,6 +26,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -248,5 +249,20 @@ public class DataObjectServiceQuarkusTest {
     DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
     assertEquals(null, actualDataObject.getParent());
     assertTrue(actualDataObject.getPredecessors().isEmpty());
+  }
+
+  @Test
+  public void deleteAttributesOfDataObject_success() {
+    // Arrange
+    DataObjectIO dataObjectIO = new DataObjectIOBuilder().setAttributes(Map.of("name", "my data object")).build();
+    DataObject dataObject = createDataObject(dataObjectIO);
+
+    // Act
+    dataObjectIO.setAttributes(Map.of());
+    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+
+    // Assert
+    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    assertEquals(Map.of(), actualDataObject.getAttributes());
   }
 }

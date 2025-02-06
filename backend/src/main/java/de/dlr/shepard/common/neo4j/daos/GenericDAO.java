@@ -118,7 +118,6 @@ public abstract class GenericDAO<T> {
     }
     Log.debugf("queryParams: %s", str.toString());
     Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
-    session.clear();
     return iter;
   }
 

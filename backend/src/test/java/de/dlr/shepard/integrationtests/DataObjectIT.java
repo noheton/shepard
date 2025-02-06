@@ -10,6 +10,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.endpoints.DataObjectAttributes;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.collection.services.DataObjectIOBuilder;
 import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
@@ -1095,5 +1096,43 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     assertEquals(null, updatedParent.getParentId());
+  }
+
+  @Test
+  public void updateDataObject_deleteAttribute_successfullyDeleteAttribute() {
+    // Arrange
+    DataObjectIO dataObjectIO = new DataObjectIOBuilder().setAttributes(Map.of("name", "my data object")).build();
+    DataObjectIO dataObject = given()
+      .spec(requestSpecification)
+      .body(dataObjectIO)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act
+    dataObjectIO.setAttributes(Map.of());
+    given()
+      .spec(requestSpecification)
+      .body(dataObjectIO)
+      .when()
+      .put(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert
+    DataObjectIO updatedDataObject = given()
+      .spec(requestSpecification)
+      .when()
+      .get(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    assertEquals(Map.of(), updatedDataObject.getAttributes());
   }
 }

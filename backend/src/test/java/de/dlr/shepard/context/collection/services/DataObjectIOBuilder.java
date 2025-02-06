@@ -1,12 +1,13 @@
 package de.dlr.shepard.context.collection.services;
 
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import java.util.Map;
 
 public class DataObjectIOBuilder {
 
   private DataObjectIO dataObjectIO;
 
-  DataObjectIOBuilder() {
+  public DataObjectIOBuilder() {
     this.dataObjectIO = new DataObjectIO();
     dataObjectIO.setName("Default name");
   }
@@ -23,6 +24,11 @@ public class DataObjectIOBuilder {
 
   public DataObjectIOBuilder setParentId(long parentId) {
     dataObjectIO.setParentId(parentId);
+    return this;
+  }
+
+  public DataObjectIOBuilder setAttributes(Map<String, String> attributes) {
+    dataObjectIO.setAttributes(attributes);
     return this;
   }
 
