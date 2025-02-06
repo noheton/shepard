@@ -55,7 +55,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     <div class="px-6 pt-6 d-flex" :style="{ alignItems: 'center' }">
       <div class="text-textbody1 text-overline">Contents</div>
       <v-spacer />
-      <div>
+      <div v-if="isAllowedToEditCollection">
         <v-btn
           density="compact"
           variant="text"
@@ -115,7 +115,11 @@ const createDataObjectDialogOpened = ref<boolean>(false);
       </template>
     </v-treeview>
     <CenteredLoadingSpinner v-else />
-    <div class="px-6 pt-6 d-flex" :style="{ alignItems: 'center' }">
+    <div
+      v-if="isAllowedToEditCollection"
+      class="px-6 pt-6 d-flex"
+      :style="{ alignItems: 'center' }"
+    >
       <v-btn
         density="compact"
         variant="text"
