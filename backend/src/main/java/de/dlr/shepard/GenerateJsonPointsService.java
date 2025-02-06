@@ -21,10 +21,10 @@ public class GenerateJsonPointsService {
 
       // Location
       ObjectNode locationNode = mapper.createObjectNode();
-      locationNode.put("x", getRandomDouble(random));
-      locationNode.put("y", getRandomDouble(random));
-      locationNode.put("z", getRandomDouble(random));
-      pointNode.set("location", locationNode);
+      pointNode.put("x", getRandomDouble(random));
+      pointNode.put("y", getRandomDouble(random));
+      pointNode.put("z", getRandomDouble(random));
+      //pointNode.set("location", locationNode);
 
       // Metadata
       ObjectNode metadataNode = mapper.createObjectNode();

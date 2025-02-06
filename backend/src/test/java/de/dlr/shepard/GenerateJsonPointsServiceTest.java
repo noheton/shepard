@@ -6,6 +6,6 @@ public class GenerateJsonPointsServiceTest {
 
   @Test
   public void generateJsonFileTest() {
-    GenerateJsonPointsService.generateJsonFile(1, "sample_points.json");
+    GenerateJsonPointsService.generateJsonFile(10, "sample_points.json");
   }
 }
