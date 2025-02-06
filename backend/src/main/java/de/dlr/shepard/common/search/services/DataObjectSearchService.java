@@ -34,13 +34,13 @@ public class DataObjectSearchService {
     for (SearchScope scope : scopes) {
       // no CollectionId and no DataObjectId given
       if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQuery(searchBodyQuery, userName);
+        String selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(searchBodyQuery, userName);
         var res = searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY);
         resultsSet.addAll(res);
       }
       // CollectionId given but no DataObjectId
       else if (scope.getCollectionId() != null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQuery(
+        String selectionQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(
           scope.getCollectionId(),
           searchBodyQuery,
           userName
@@ -53,7 +53,7 @@ public class DataObjectSearchService {
         // search according to TraversalRules
         if (scope.getTraversalRules().length != 0) {
           for (TraversalRules traversalRules : scope.getTraversalRules()) {
-            String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+            String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
               scope,
               traversalRules,
               searchBodyQuery,
@@ -65,7 +65,7 @@ public class DataObjectSearchService {
         }
         // no TraversalRules given
         else {
-          String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+          String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
             scope,
             searchBodyQuery,
             userName

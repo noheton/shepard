@@ -53,6 +53,23 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
   }
 
   public List<StructuredDataReference> findReachableReferencesByNeo4jId(
+    TraversalRules traversalRule,
+    long collectionShepardId,
+    long startShepardId,
+    String userName
+  ) {
+    String query = getSearchForReachableReferencesByNeo4jIdQuery(
+      traversalRule,
+      collectionShepardId,
+      startShepardId,
+      userName
+    );
+    var queryResult = findByQuery(query, Collections.emptyMap());
+    List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
+    return ret;
+  }
+
+  public List<StructuredDataReference> findReachableReferencesByNeo4jId(
     long collectionId,
     long startId,
     String userName

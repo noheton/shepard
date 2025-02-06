@@ -84,7 +84,6 @@ public class DataObjectService {
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
-    //versionService.attachToVersion(created.getId(), collection.getVersion().getUid());
     versionService.attachToVersionOfVersionableEntityAndReturnVersion(collectionShepardId, created.getShepardId());
     return created;
   }

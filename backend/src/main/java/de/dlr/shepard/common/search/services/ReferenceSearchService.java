@@ -33,13 +33,13 @@ public class ReferenceSearchService {
     for (SearchScope scope : scopes) {
       // no CollectionId and no DataObjectId given
       if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.basicReferenceSelectionQuery(searchBodyQuery, userName);
+        String selectionQuery = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(searchBodyQuery, userName);
         var res = searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY);
         resultsSet.addAll(res);
       }
       // CollectionId given but no DataObjectId
       else if (scope.getCollectionId() != null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(
+        String selectionQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(
           searchBodyQuery,
           scope.getCollectionId(),
           userName
@@ -52,7 +52,7 @@ public class ReferenceSearchService {
         // search according to TraversalRules
         if (scope.getTraversalRules().length != 0) {
           for (int j = 0; j < scope.getTraversalRules().length; j++) {
-            String selectionQuery = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQuery(
+            String selectionQuery = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQueryWithNeo4jId(
               scope,
               scope.getTraversalRules()[j],
               searchBodyQuery,
@@ -64,7 +64,7 @@ public class ReferenceSearchService {
         }
         // no TraversalRules given
         else {
-          String selectionQuery = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQuery(
+          String selectionQuery = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(
             scope,
             searchBodyQuery,
             userName

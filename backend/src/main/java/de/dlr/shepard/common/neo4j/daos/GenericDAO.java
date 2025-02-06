@@ -150,6 +150,21 @@ public abstract class GenericDAO<T> {
     return ret;
   }
 
+  public String getSearchForReachableReferencesByNeo4jIdQuery(
+    TraversalRules traversalRule,
+    long collectionShepardId,
+    long startShepardId,
+    String userName
+  ) {
+    String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
+    ret += getTraversalRulesPath(traversalRule);
+    ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
+    ret += getWithPart("ns", "ret");
+    ret += " WHERE id(d) = " + startShepardId + " AND id(col) = " + collectionShepardId;
+    ret += getReturnPart("ns", "ret", "col", userName);
+    return ret;
+  }
+
   private String getTraversalRulesPath(TraversalRules traversalRule) {
     if (traversalRule == null) return "(d:DataObject)";
     return switch (traversalRule) {

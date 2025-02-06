@@ -83,10 +83,10 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
     var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
     var scope4 = new SearchScope(1L, 2L, traversalRules);
 
-    var query1 = Neo4jQueryBuilder.dataObjectSelectionQuery(query, userName);
-    var query2 = Neo4jQueryBuilder.collectionDataObjectSelectionQuery(1L, query, userName);
-    var query3 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(scope3, query, userName);
-    var query4 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    var query1 = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(query, userName);
+    var query2 = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(1L, query, userName);
+    var query3 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(scope3, query, userName);
+    var query4 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope4,
       traversalRules[0],
       query,

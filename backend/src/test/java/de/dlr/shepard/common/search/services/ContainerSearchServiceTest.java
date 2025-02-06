@@ -50,7 +50,7 @@ public class ContainerSearchServiceTest {
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
-    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.BASIC,
       queryParamHelper,
@@ -74,7 +74,7 @@ public class ContainerSearchServiceTest {
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
-    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.FILE,
       queryParamHelper,
@@ -98,7 +98,7 @@ public class ContainerSearchServiceTest {
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
-    String neo4jTimeseriesQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jTimeseriesQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.TIMESERIES,
       queryParamHelper,
@@ -121,7 +121,7 @@ public class ContainerSearchServiceTest {
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
-    String neo4jStructuredDataSelectionQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jStructuredDataSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.STRUCTUREDDATA,
       queryParamHelper,

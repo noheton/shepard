@@ -32,7 +32,7 @@ public class ContainerSearchService {
   ) {
     ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
     QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
-    String neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       containerSearchParams.getQuery(),
       containerSearchParams.getQueryType(),
       params,

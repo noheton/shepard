@@ -19,7 +19,7 @@ public class Neo4jQueryBuilderTest {
 
   private static final String userName = "userName";
 
-  private static Stream<Arguments> emitCollectionDataObjectReferenceQuerySelectionTest() {
+  private static Stream<Arguments> emitCollectionDataObjectReferenceQuerySelectionWithNeo4jIdTest() {
     var queryEq = Arguments.of(
       """
       {
@@ -28,7 +28,7 @@ public class Neo4jQueryBuilderTest {
         "operator": "eq"
       }
       """,
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 1 AND do.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 1 AND id(do) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryNe = Arguments.of(
       """
@@ -38,7 +38,7 @@ public class Neo4jQueryBuilderTest {
         "operator": "ne"
       }
       """,
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` <> \"MyName\") AND (col.shepardId = 1 AND do.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) <> \"myname\") AND (id(col) = 1 AND id(do) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
 
     return Stream.of(queryEq, queryNe);
@@ -46,42 +46,46 @@ public class Neo4jQueryBuilderTest {
 
   @ParameterizedTest
   @MethodSource
-  public void emitCollectionDataObjectReferenceQuerySelectionTest(String input, String expected) {
+  public void emitCollectionDataObjectReferenceQuerySelectionWithNeo4jIdTest(String input, String expected) {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQuery(scope, input, userName);
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(
+      scope,
+      input,
+      userName
+    );
     assertEquals(expected, neo4jQuery);
   }
 
-  private static Stream<Arguments> emitCollectionDataObjectBasicReferenceQuerySelectionTest() {
+  private static Stream<Arguments> emitCollectionDataObjectBasicReferenceQuerySelectionWithNeo4jIdTest() {
     var queryChildren = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.children,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryParents = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.parents,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var querySuccessors = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.successors,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryPredecessors = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.predecessors,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
 
     return Stream.of(queryChildren, queryParents, querySuccessors, queryPredecessors);
@@ -89,7 +93,7 @@ public class Neo4jQueryBuilderTest {
 
   @ParameterizedTest
   @MethodSource
-  public void emitCollectionDataObjectBasicReferenceQuerySelectionTest(
+  public void emitCollectionDataObjectBasicReferenceQuerySelectionWithNeo4jIdTest(
     String input,
     TraversalRules traversalRules,
     String expected
@@ -97,7 +101,7 @@ public class Neo4jQueryBuilderTest {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQueryWithNeo4jId(
       scope,
       traversalRules,
       input,
@@ -107,46 +111,58 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitCollectionBasicReferenceSelectionQueryTest() {
+  public void emitCollectionBasicReferenceSelectionQueryWithNeo4jIdTest() {
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(searchBodyQuery, 4L, userName);
+    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(
+      searchBodyQuery,
+      4L,
+      userName
+    );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (col.shepardId = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (id(col) = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionBasicReferenceSelectionQueryValueIRITest() {
+  public void emitCollectionBasicReferenceSelectionQueryValueIRIWithNeo4jIdTest() {
     String searchBodyQuery =
       """
       { "property": "valueIRI", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(searchBodyQuery, 4L, userName);
+    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(
+      searchBodyQuery,
+      4L,
+      userName
+    );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (EXISTS {MATCH (br) - [] -> (sem:SemanticAnnotation) WHERE (sem.valueIRI = \"MyName\")}) AND (col.shepardId = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (EXISTS {MATCH (br) - [] -> (sem:SemanticAnnotation) WHERE (sem.valueIRI = \"MyName\")}) AND (id(col) = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionBasicReferenceSelectionQueryPropertyIRITest() {
+  public void emitCollectionBasicReferenceSelectionQueryPropertyIRIWithNeo4jIdTest() {
     String searchBodyQuery =
       """
       { "property": "propertyIRI", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(searchBodyQuery, 4L, userName);
+    String neo4jQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(
+      searchBodyQuery,
+      4L,
+      userName
+    );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (EXISTS {MATCH (br) - [] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI = \"MyName\")}) AND (col.shepardId = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (EXISTS {MATCH (br) - [] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI = \"MyName\")}) AND (id(col) = 4) AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitBasicReferenceSelectionQueryTest() {
+  public void emitBasicReferenceSelectionQueryWithNeo4jIdTest() {
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.basicReferenceSelectionQuery(searchBodyQuery, userName);
+    String neo4jQuery = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(searchBodyQuery, userName);
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (br.`name` = \"MyName\") AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject)-[:has_reference]->(br:BasicReference) WHERE (toLower(br.`name`) = \"myname\") AND (br.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
@@ -156,87 +172,87 @@ public class Neo4jQueryBuilderTest {
       """
       {
       "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.dataObjectSelectionQuery(searchBodyQuery, userName);
+    String neo4jQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(searchBodyQuery, userName);
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionDataObjectDataObjectSelectionQueryTest() {
+  public void emitCollectionDataObjectDataObjectSelectionQueryWithNeo4jIdTest() {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope,
       searchBodyQuery,
       userName
     );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND do.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(do) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionDataObjectDataObjectSelectionQueryChildrenTest() {
+  public void emitCollectionDataObjectDataObjectSelectionQueryChildrenWithNeo4jIdTest() {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope,
       TraversalRules.children,
       searchBodyQuery,
       userName
     );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionDataObjectDataObjectSelectionQueryPredecessorsTest() {
+  public void emitCollectionDataObjectDataObjectSelectionQueryPredecessorsWithNeo4jTest() {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope,
       TraversalRules.predecessors,
       searchBodyQuery,
       userName
     );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitCollectionDataObjectQueryTest() {
+  public void emitCollectionDataObjectQueryWithNeo4jIdTest() {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
     String searchBodyQuery =
       """
       { "property": "name", "value": "MyName", "operator": "eq" }""";
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(
       scope.getCollectionId(),
       searchBodyQuery,
       userName
     );
     String expected =
-      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
+      "MATCH (col:Collection)-[:has_dataobject]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
-  private static Stream<Arguments> emitCollectionQueryTest() {
+  private static Stream<Arguments> emitCollectionQueryWithNeo4jIdTest() {
     var queryEq = Arguments.of(
       """
       {
@@ -244,7 +260,7 @@ public class Neo4jQueryBuilderTest {
          "value":"MyName",
          "operator":"eq"
       }""",
-      "MATCH (col:Collection) WHERE (col.`name` = \"MyName\") AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (toLower(col.`name`) = \"myname\") AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryOrGtContains = Arguments.of(
       """
@@ -262,7 +278,7 @@ public class Neo4jQueryBuilderTest {
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") OR (col.`attributes||b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((col.createdAt > \"2021-05-12\") OR (toLower(col.`attributes||b`) contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryAndGtContains = Arguments.of(
       """
@@ -280,7 +296,7 @@ public class Neo4jQueryBuilderTest {
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((col.`createdAt` > \"2021-05-12\") AND (col.`attributes||b` contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((col.createdAt > \"2021-05-12\") AND (toLower(col.`attributes||b`) contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryNot = Arguments.of(
       """
@@ -291,7 +307,7 @@ public class Neo4jQueryBuilderTest {
             "operator":"contains"
          }
       }""",
-      "MATCH (col:Collection) WHERE (NOT((col.`attributes||b` contains \"abc\"))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (NOT((toLower(col.`attributes||b`) contains \"abc\"))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryAndReferencedCollectionIdReferencedDataObjectId = Arguments.of(
       """
@@ -309,7 +325,7 @@ public class Neo4jQueryBuilderTest {
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((EXISTS {MATCH (col)-[:points_to]->(refCol:Collection) WHERE refCol.shepardId <= \"2021-05-12\" }) AND (EXISTS {MATCH (col)-[:points_to]->(refDo:DataObject) WHERE refDo.shepardId contains \"abc\" })) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((EXISTS {MATCH (col)-[:points_to]->(refCol:Collection) WHERE id(refCol) <= \"2021-05-12\" }) AND (EXISTS {MATCH (col)-[:points_to]->(refDo:DataObject) WHERE id(refDo) contains \"abc\" })) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryAndCreatedByGtUpdatedBy = Arguments.of(
       """
@@ -363,7 +379,7 @@ public class Neo4jQueryBuilderTest {
             }
          ]
       }""",
-      "MATCH (col:Collection) WHERE ((EXISTS {MATCH (col)-[:is_in_container]->(refCon:TimeseriesContainer) WHERE id(refCon) > \"2021-05-12\" }) AND (col.shepardId contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE ((EXISTS {MATCH (col)-[:is_in_container]->(refCon:TimeseriesContainer) WHERE id(refCon) > \"2021-05-12\" }) AND (id(col) contains \"abc\")) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryNotIn = Arguments.of(
       """
@@ -378,7 +394,7 @@ public class Neo4jQueryBuilderTest {
             "operator":"in"
          }
       }""",
-      "MATCH (col:Collection) WHERE (NOT((col.`attributes||b` IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (NOT((toLower(col.`attributes||b`) IN [1, 2, \"e\"]))) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryIn = Arguments.of(
       """
@@ -387,7 +403,7 @@ public class Neo4jQueryBuilderTest {
          "value": [],
          "operator":"in"
       }""",
-      "MATCH (col:Collection) WHERE (col.`attributes||b` IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection) WHERE (toLower(col.`attributes||b`) IN []) AND (col.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
 
     return Stream.of(
@@ -406,46 +422,46 @@ public class Neo4jQueryBuilderTest {
 
   @ParameterizedTest
   @MethodSource
-  public void emitCollectionQueryTest(String input, String expected) {
-    String neo4jQuery = Neo4jQueryBuilder.collectionSelectionQuery(input, userName);
+  public void emitCollectionQueryWithNeo4jIdTest(String input, String expected) {
+    String neo4jQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(input, userName);
     assertEquals(expected, neo4jQuery);
   }
 
-  private static Stream<Arguments> emitCollectionDataObjectDataObjectSelectionQueryTraversalTest() {
+  private static Stream<Arguments> emitCollectionDataObjectDataObjectSelectionQueryTraversalWithNeo4jIdTest() {
     var queryParents = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.parents,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_child*0..]-(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryChildren = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.children,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var queryPredecessors = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq"}
       """,
       TraversalRules.predecessors,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)<-[:has_successor*0..]-(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     var querySuccessors = Arguments.of(
       """
       { "property": "name", "value": "MyName", "operator": "eq" }
       """,
       TraversalRules.successors,
-      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(do:DataObject) WHERE (do.`name` = \"MyName\") AND (col.shepardId = 1 AND d.shepardId = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
+      "MATCH (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_successor*0..]->(do:DataObject) WHERE (toLower(do.`name`) = \"myname\") AND (id(col) = 1 AND id(d) = 2) AND (do.deleted = FALSE) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"userName\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"userName\"})))"
     );
     return Stream.of(queryParents, queryChildren, queryPredecessors, querySuccessors);
   }
 
   @ParameterizedTest
   @MethodSource
-  public void emitCollectionDataObjectDataObjectSelectionQueryTraversalTest(
+  public void emitCollectionDataObjectDataObjectSelectionQueryTraversalWithNeo4jIdTest(
     String input,
     TraversalRules traversalRules,
     String expected
@@ -453,7 +469,7 @@ public class Neo4jQueryBuilderTest {
     SearchScope scope = new SearchScope();
     scope.setCollectionId(1L);
     scope.setDataObjectId(2L);
-    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope,
       traversalRules,
       input,
@@ -463,11 +479,11 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitStructuredDataContainerSelectionQueryTest() {
+  public void emitStructuredDataContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.STRUCTUREDDATA,
       queryParamHelper,
@@ -479,11 +495,11 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitTimeseriesContainerSelectionQueryTest() {
+  public void emitTimeseriesContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.TIMESERIES,
       queryParamHelper,
@@ -495,11 +511,11 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitFileContainerSelectionQueryTest() {
+  public void emitFileContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
@@ -511,59 +527,59 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitFileContainerSelectionQueryIdTest() {
+  public void emitFileContainerSelectionQueryWithNeo4jIdIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
       userName
     );
     String expected =
-      "MATCH (fc:FileContainer) WHERE (id(fc)= \"myname\") AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
+      "MATCH (fc:FileContainer) WHERE (id(fc) = \"MyName\") AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitFileContainerSelectionQueryInTest() {
+  public void emitFileContainerSelectionQueryInWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [1,2], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
       userName
     );
     String expected =
-      "MATCH (fc:FileContainer) WHERE (id(fc)IN [1, 2]) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
+      "MATCH (fc:FileContainer) WHERE (id(fc) IN [1, 2]) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitFileContainerSelectionQueryInEmptyTest() {
+  public void emitFileContainerSelectionQueryInEmptyWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
       userName
     );
     String expected =
-      "MATCH (fc:FileContainer) WHERE (id(fc)IN []) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
+      "MATCH (fc:FileContainer) WHERE (id(fc) IN []) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
   @Test
-  public void emitFileContainerSelectionQueryNotTest() {
+  public void emitFileContainerSelectionQueryNotWithNeo4jIdTest() {
     String JSONQuery = "{\"NOT\":{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
@@ -575,13 +591,13 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitFileContainerSelectionQueryAndTest() {
+  public void emitFileContainerSelectionQueryAndWithNeo4jIdTest() {
     String JSONQuery =
       "{\"AND\":[{\"property\": \"createdBy\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"updatedBy\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
@@ -593,13 +609,13 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitFileContainerSelectionQueryOrTest() {
+  public void emitFileContainerSelectionQueryOrWithNeo4jIdTest() {
     String JSONQuery =
       "{\"OR\":[{\"property\": \"valueIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"propertyIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
@@ -611,20 +627,20 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
-  public void emitFileContainerSelectionQueryCollectionDataObjectTest() {
+  public void emitFileContainerSelectionQueryCollectionDataObjectWithNeo4jIdTest() {
     String JSONQuery =
       "{\"OR\":[{\"property\": \"referencedCollectionId\", \"value\": \"5\", \"operator\": \"eq\"}," +
       "{\"property\": \"referencedDataObjectId\", \"value\": \"6\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
       userName
     );
     String expected =
-      "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc)-[:points_to]->(refCol:Collection) WHERE refCol.shepardId = \"5\" }) OR (EXISTS {MATCH (fc)-[:points_to]->(refDo:DataObject) WHERE refDo.shepardId = \"6\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
+      "MATCH (fc:FileContainer) WHERE ((EXISTS {MATCH (fc)-[:points_to]->(refCol:Collection) WHERE id(refCol) = \"5\" }) OR (EXISTS {MATCH (fc)-[:points_to]->(refDo:DataObject) WHERE id(refDo) = \"6\" })) AND (fc.deleted = FALSE) AND (NOT exists((fc)-[:has_permissions]->(:Permissions)) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"GatesWilliam\" })) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((fc)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((fc)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"GatesWilliam\"})))";
     assertEquals(expected, neo4jQuery);
   }
 
@@ -636,7 +652,7 @@ public class Neo4jQueryBuilderTest {
       "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
       queryParamHelper,
@@ -655,7 +671,7 @@ public class Neo4jQueryBuilderTest {
       "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
     QueryParamHelper queryParamHelper = new QueryParamHelper();
-    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQuery(
+    String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.BASIC,
       queryParamHelper.withOrderByAttribute(BasicContainerAttributes.name, null),
@@ -677,13 +693,17 @@ public class Neo4jQueryBuilderTest {
   @Test
   public void invalidJsonTest() {
     String JSONQuery = "}";
-    assertThrows(ShepardParserException.class, () -> Neo4jQueryBuilder.collectionSelectionQuery(JSONQuery, userName));
+    assertThrows(ShepardParserException.class, () ->
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+    );
   }
 
   @Test
   public void emptyJsonTest() {
     String JSONQuery = "{}";
-    assertThrows(ShepardParserException.class, () -> Neo4jQueryBuilder.collectionSelectionQuery(JSONQuery, userName));
+    assertThrows(ShepardParserException.class, () ->
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+    );
   }
 
   @Test
@@ -692,7 +712,7 @@ public class Neo4jQueryBuilderTest {
       """
       { "property": "name", "value": "MyName", "operator": "bla" }""";
     assertThrows(ShepardParserException.class, () ->
-      Neo4jQueryBuilder.collectionSelectionQuery(searchBodyQuery, userName)
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(searchBodyQuery, userName)
     );
   }
 
@@ -701,6 +721,8 @@ public class Neo4jQueryBuilderTest {
     String JSONQuery =
       """
       { "invalid": { "property": "name", "value": "MyName", "operator": "eq" } }""";
-    assertThrows(ShepardParserException.class, () -> Neo4jQueryBuilder.collectionSelectionQuery(JSONQuery, userName));
+    assertThrows(ShepardParserException.class, () ->
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+    );
   }
 }

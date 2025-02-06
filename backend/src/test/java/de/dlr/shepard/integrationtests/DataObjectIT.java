@@ -198,7 +198,6 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void postDataObjectTest_Successful() {
-    // TODO: try out different attribute keys that should be valid
     var attributes = Map.of(
       "a",
       "1",

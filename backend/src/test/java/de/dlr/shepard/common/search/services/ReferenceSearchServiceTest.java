@@ -86,10 +86,10 @@ public class ReferenceSearchServiceTest {
     var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
     var scope4 = new SearchScope(1L, 2L, traversalRules);
 
-    var query1 = Neo4jQueryBuilder.basicReferenceSelectionQuery(query, userName);
-    var query2 = Neo4jQueryBuilder.collectionBasicReferenceSelectionQuery(query, 1L, userName);
-    var query3 = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQuery(scope3, query, userName);
-    var query4 = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQuery(
+    var query1 = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(query, userName);
+    var query2 = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(query, 1L, userName);
+    var query3 = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(scope3, query, userName);
+    var query4 = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQueryWithNeo4jId(
       scope4,
       traversalRules[0],
       query,

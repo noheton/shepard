@@ -95,7 +95,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
@@ -143,7 +143,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
     when(
-      structuredDataReferenceDAO.findReachableReferencesByShepardId(
+      structuredDataReferenceDAO.findReachableReferencesByNeo4jId(
         TraversalRules.children,
         collectionId,
         dataObjectId,
@@ -201,7 +201,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, "user1")).thenReturn(
       List.of(sdReference)
     );
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
@@ -325,7 +325,7 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, "user1")).thenReturn(
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, "user1")).thenReturn(
       List.of(sdReference)
     );
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);

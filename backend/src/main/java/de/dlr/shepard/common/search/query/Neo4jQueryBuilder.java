@@ -32,6 +32,12 @@ public class Neo4jQueryBuilder {
     "updatedBy",
     "valueIRI",
     "propertyIRI",
+    "createdAt",
+    "updatedAt"
+  );
+
+  private static final List<String> IdProperties = List.of(
+    "id",
     "referencedCollectionId",
     "referencedDataObjectId",
     "fileContainerId",
@@ -39,7 +45,7 @@ public class Neo4jQueryBuilder {
     "timeseriesContainerId"
   );
 
-  private static String getNeo4jString(String jsonquery, String variable) {
+  private static String getNeo4jWithNeo4jIdString(String jsonquery, String variable) {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = null;
     try {
@@ -47,21 +53,10 @@ public class Neo4jQueryBuilder {
     } catch (JsonProcessingException e) {
       throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
     }
-    return getNeo4jString(jsonNode, variable);
+    return getNeo4jStringWithNeo4jId(jsonNode, variable);
   }
 
-  private static String getNeo4jWithShepardIdString(String jsonquery, String variable) {
-    ObjectMapper objectMapper = new ObjectMapper();
-    JsonNode jsonNode = null;
-    try {
-      jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
-    } catch (JsonProcessingException e) {
-      throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
-    }
-    return getNeo4jWithShepardIdString(jsonNode, variable);
-  }
-
-  private static String getNeo4jString(JsonNode rootNode, String variable) {
+  private static String getNeo4jStringWithNeo4jId(JsonNode rootNode, String variable) {
     String op = "";
     try {
       op = rootNode.fieldNames().next();
@@ -69,92 +64,42 @@ public class Neo4jQueryBuilder {
       throw new ShepardParserException("error in parsing" + e.getMessage());
     }
     if (opAttributes.contains(op)) {
-      return primitiveClause(rootNode, variable);
+      return primitiveClauseWithNeo4jId(rootNode, variable);
     }
-    return complexClause(rootNode, op, variable);
+    return complexClauseWithNeo4jId(rootNode, op, variable);
   }
 
-  private static String getNeo4jWithShepardIdString(JsonNode rootNode, String variable) {
-    String op = "";
-    try {
-      op = rootNode.fieldNames().next();
-    } catch (NoSuchElementException e) {
-      throw new ShepardParserException("error in parsing" + e.getMessage());
-    }
-    if (opAttributes.contains(op)) {
-      return primitiveClauseWithShepardId(rootNode, variable);
-    }
-    return complexClauseWithShepardId(rootNode, op, variable);
-  }
-
-  private static String complexClause(JsonNode node, String operator, String variable) {
+  private static String complexClauseWithNeo4jId(JsonNode node, String operator, String variable) {
     if (!booleanOperators.contains(operator)) throw new ShepardParserException("unknown boolean operator: " + operator);
-    if (operator.equals(Constants.JSON_NOT)) return notClause(node, variable);
-    else return multaryClause(node, operator, variable);
+    if (operator.equals(Constants.JSON_NOT)) return notClauseWithNeo4jId(node, variable);
+    else return multaryClauseWithNeo4jId(node, operator, variable);
   }
 
-  private static String complexClauseWithShepardId(JsonNode node, String operator, String variable) {
-    if (!booleanOperators.contains(operator)) throw new ShepardParserException("unknown boolean operator: " + operator);
-    if (operator.equals(Constants.JSON_NOT)) return notClauseWithShepardId(node, variable);
-    else return multaryClauseWithShepardId(node, operator, variable);
-  }
-
-  private static String multaryClause(JsonNode node, String operator, String variable) {
+  private static String multaryClauseWithNeo4jId(JsonNode node, String operator, String variable) {
     Iterator<JsonNode> argumentsArray = node.get(operator).elements();
-    String firstArgument = getNeo4jString(argumentsArray.next(), variable);
+    String firstArgument = getNeo4jStringWithNeo4jId(argumentsArray.next(), variable);
     String ret = "(" + firstArgument;
     while (argumentsArray.hasNext()) {
-      ret = ret + " " + operator + " " + getNeo4jString(argumentsArray.next(), variable);
+      ret = ret + " " + operator + " " + getNeo4jStringWithNeo4jId(argumentsArray.next(), variable);
     }
     ret = ret + ")";
     return ret;
   }
 
-  private static String multaryClauseWithShepardId(JsonNode node, String operator, String variable) {
-    Iterator<JsonNode> argumentsArray = node.get(operator).elements();
-    String firstArgument = getNeo4jWithShepardIdString(argumentsArray.next(), variable);
-    String ret = "(" + firstArgument;
-    while (argumentsArray.hasNext()) {
-      ret = ret + " " + operator + " " + getNeo4jWithShepardIdString(argumentsArray.next(), variable);
-    }
-    ret = ret + ")";
-    return ret;
-  }
-
-  private static String notClause(JsonNode node, String variable) {
+  private static String notClauseWithNeo4jId(JsonNode node, String variable) {
     JsonNode body = node.get(Constants.JSON_NOT);
-    return "(NOT(" + getNeo4jString(body, variable) + "))";
+    return "(NOT(" + getNeo4jStringWithNeo4jId(body, variable) + "))";
   }
 
-  private static String notClauseWithShepardId(JsonNode node, String variable) {
-    JsonNode body = node.get(Constants.JSON_NOT);
-    return "(NOT(" + getNeo4jWithShepardIdString(body, variable) + "))";
-  }
-
-  private static String primitiveClause(JsonNode node, String variable) {
+  private static String primitiveClauseWithNeo4jId(JsonNode node, String variable) {
     String property = node.get(Constants.OP_PROPERTY).textValue();
     property = changeAttributesDelimiter(property);
-
-    if (notIdProperties.contains(property)) return simplePropertyPart(node, variable);
+    if (notIdProperties.contains(property)) return simpleNotIdPropertyPart(node, variable);
+    if (IdProperties.contains(property)) return simpleIdPropertyPart(node, variable);
     String ret = "(";
-    if (property.equals("id")) ret = ret + "id(" + variable + ")";
-    else ret = ret + "toLower(" + variable + ".`" + property + "`) ";
+    ret = ret + "toLower(" + variable + ".`" + property + "`) ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + valuePart(node).toLowerCase();
-    ret = ret + ")";
-    return ret;
-  }
-
-  private static String primitiveClauseWithShepardId(JsonNode node, String variable) {
-    String property = node.get(Constants.OP_PROPERTY).textValue();
-    property = changeAttributesDelimiter(property);
-
-    if (notIdProperties.contains(property)) return simplePropertyPart(node, variable);
-    String ret = "(";
-    if (property.equals("id")) ret = ret + variable + "." + Constants.SHEPARD_ID + " ";
-    else ret = ret + variable + ".`" + property + "` ";
-    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
-    ret = ret + valuePart(node);
     ret = ret + ")";
     return ret;
   }
@@ -188,16 +133,25 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String simplePropertyPart(JsonNode node, String variable) {
+  private static String simpleNotIdPropertyPart(JsonNode node, String variable) {
     String property = node.get(Constants.OP_PROPERTY).textValue();
     // search for creating user
     if (property.equals("createdBy") || property.equals("updatedBy")) return byPart(node, variable);
+    // search for createdAt/updatedAt
+    if (property.equals("createdAt") || property.equals("updatedAt")) return atPart(node, variable);
     // for SemanticAnnotationIRIs
     if (property.equals("valueIRI") || property.equals("propertyIRI")) return iRIPart(node, variable);
+    return null;
+  }
+
+  private static String simpleIdPropertyPart(JsonNode node, String variable) {
+    String property = node.get(Constants.OP_PROPERTY).textValue();
+    // for simple id
+    if (property.equals("id")) return neo4jIdPart(node, variable);
     // for CollectionReferences
-    if (property.equals("referencedCollectionId")) return referencedCollectionIdPart(node, variable);
+    if (property.equals("referencedCollectionId")) return referencedCollectionNeo4jIdPart(node, variable);
     // for DataObjectReferences
-    if (property.equals("referencedDataObjectId")) return referencedDataObjectIdPart(node, variable);
+    if (property.equals("referencedDataObjectId")) return referencedDataObjectNeo4jIdPart(node, variable);
     // for FileReferences
     if (property.equals("fileContainerId")) return fileContainerIdPart(node, variable);
     // for StructuredDataReferences
@@ -219,6 +173,17 @@ public class Neo4jQueryBuilder {
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
     ret = ret + "})";
+    return ret;
+  }
+
+  private static String atPart(JsonNode node, String variable) {
+    String ret = "(";
+    String property = node.get(Constants.OP_PROPERTY).textValue();
+    if (property.equals("id")) ret = ret + "id(" + variable + ") ";
+    else ret = ret + variable + "." + property + " ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + valuePart(node).toLowerCase();
+    ret = ret + ")";
     return ret;
   }
 
@@ -261,37 +226,31 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String referencedDataObjectIdPart(JsonNode node, String variable) {
+  private static String referencedDataObjectNeo4jIdPart(JsonNode node, String variable) {
     String ret = "(";
-    ret =
-      ret +
-      "EXISTS {MATCH (" +
-      variable +
-      ")-[:" +
-      Constants.POINTS_TO +
-      "]->(refDo:DataObject) WHERE refDo." +
-      Constants.SHEPARD_ID +
-      " ";
+    ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO + "]->(refDo:DataObject) WHERE id(refDo) ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";
     return ret;
   }
 
-  private static String referencedCollectionIdPart(JsonNode node, String variable) {
+  private static String referencedCollectionNeo4jIdPart(JsonNode node, String variable) {
     String ret = "(";
     ret =
-      ret +
-      "EXISTS {MATCH (" +
-      variable +
-      ")-[:" +
-      Constants.POINTS_TO +
-      "]->(refCol:Collection) WHERE refCol." +
-      Constants.SHEPARD_ID +
-      " ";
+      ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO + "]->(refCol:Collection) WHERE id(refCol) ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";
+    return ret;
+  }
+
+  private static String neo4jIdPart(JsonNode node, String variable) {
+    String ret = "(";
+    ret = ret + "id(" + variable + ") ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + valuePart(node);
+    ret = ret + ")";
     return ret;
   }
 
@@ -310,13 +269,13 @@ public class Neo4jQueryBuilder {
     };
   }
 
-  private static String collectionMatchPart() {
+  private static String collectionMatchPartWithoutVersion() {
     String ret = "";
     ret = ret + "MATCH (" + Constants.COLLECTION_IN_QUERY + ":Collection)";
     return ret;
   }
 
-  private static String collectionDataObjectMatchPart() {
+  private static String collectionDataObjectMatchPartWithoutVersion() {
     String ret =
       "MATCH (" +
       Constants.COLLECTION_IN_QUERY +
@@ -326,8 +285,8 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String collectionIdWherePart(Long collectionId) {
-    String ret = "(" + Constants.COLLECTION_IN_QUERY + "." + Constants.SHEPARD_ID + " = " + collectionId + ")";
+  private static String collectionNeo4jIdWherePart(Long collectionId) {
+    String ret = "(id(" + Constants.COLLECTION_IN_QUERY + ") = " + collectionId + ")";
     return ret;
   }
 
@@ -336,41 +295,26 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String collectionDataObjectIdWherePart(Long collectionId, Long dataObjectId) {
+  private static String collectionDataObjectNeo4jIdWherePart(Long collectionId, Long dataObjectId) {
     String ret =
-      "(" +
+      "(id(" +
       Constants.COLLECTION_IN_QUERY +
-      "." +
-      Constants.SHEPARD_ID +
-      " = " +
+      ") = " +
       collectionId +
-      " AND " +
+      " AND id(" +
       Constants.DATAOBJECT_IN_QUERY +
-      "." +
-      Constants.SHEPARD_ID +
-      " = " +
+      ") = " +
       dataObjectId +
       ")";
     return ret;
   }
 
-  private static String collectionDataObjectTraversalIdWherePart(Long collectionId, Long dataObjectId) {
-    String ret =
-      "(" +
-      Constants.COLLECTION_IN_QUERY +
-      "." +
-      Constants.SHEPARD_ID +
-      " = " +
-      collectionId +
-      " AND d." +
-      Constants.SHEPARD_ID +
-      " = " +
-      dataObjectId +
-      ")";
+  private static String collectionDataObjectTraversalNeo4jIdWherePart(Long collectionId, Long dataObjectId) {
+    String ret = "(id(" + Constants.COLLECTION_IN_QUERY + ") = " + collectionId + " AND id(d) = " + dataObjectId + ")";
     return ret;
   }
 
-  private static String referenceMatchPart() {
+  private static String basicReferenceMatchPartWithoutVersion() {
     String ret =
       "MATCH (" +
       Constants.COLLECTION_IN_QUERY +
@@ -382,11 +326,11 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionSelectionQuery(String searchBodyQuery, String userName) {
+  public static String collectionSelectionQueryWithNeo4jId(String searchBodyQuery, String userName) {
     String ret = "";
-    ret = ret + collectionMatchPart();
+    ret = ret + collectionMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.COLLECTION_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.COLLECTION_IN_QUERY);
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.COLLECTION_IN_QUERY);
     ret = ret + " AND ";
@@ -394,7 +338,7 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String containerSelectionQuery(
+  public static String containerSelectionQueryWithNeo4jId(
     String JSONQuery,
     ContainerType containerType,
     QueryParamHelper params,
@@ -402,7 +346,7 @@ public class Neo4jQueryBuilder {
   ) {
     String ret = "MATCH (" + containerType.getTypeAlias() + ":" + containerType.getTypeName() + ")";
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jString(JSONQuery, containerType.getTypeAlias());
+    ret = ret + getNeo4jWithNeo4jIdString(JSONQuery, containerType.getTypeAlias());
     ret = ret + " AND ";
     ret = ret + notDeletedPart(containerType.getTypeAlias());
     ret = ret + " AND ";
@@ -416,17 +360,20 @@ public class Neo4jQueryBuilder {
           params.getOrderDesc()
         );
     }
-
     return ret;
   }
 
-  public static String collectionDataObjectSelectionQuery(Long collectionId, String searchBodyQuery, String username) {
+  public static String collectionDataObjectSelectionQueryWithNeo4jId(
+    Long collectionId,
+    String searchBodyQuery,
+    String username
+  ) {
     String ret = "";
-    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + collectionDataObjectMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionIdWherePart(collectionId);
+    ret = ret + collectionNeo4jIdWherePart(collectionId);
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
@@ -434,18 +381,18 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionDataObjectDataObjectSelectionQuery(
+  public static String collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
     SearchScope scope,
     TraversalRules traversalRule,
     String searchBodyQuery,
     String username
   ) {
     String ret = "";
-    ret = ret + collectionDataObjectDataObjectMatchPart(traversalRule);
+    ret = ret + collectionDataObjectDataObjectMatchPartWithoutVersion(traversalRule);
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionDataObjectTraversalIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + collectionDataObjectTraversalNeo4jIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
@@ -453,17 +400,17 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionDataObjectDataObjectSelectionQuery(
+  public static String collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
     SearchScope scope,
     String searchBodyQuery,
     String username
   ) {
     String ret = "";
-    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + collectionDataObjectMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionDataObjectIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + collectionDataObjectNeo4jIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
@@ -471,11 +418,11 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String dataObjectSelectionQuery(String searchBodyQuery, String username) {
+  public static String dataObjectSelectionQueryWithNeo4jId(String searchBodyQuery, String username) {
     String ret = "";
-    ret = ret + collectionDataObjectMatchPart();
+    ret = ret + collectionDataObjectMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.DATAOBJECT_IN_QUERY);
     ret = ret + " AND ";
@@ -483,11 +430,11 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String basicReferenceSelectionQuery(String searchBodyQuery, String username) {
+  public static String basicReferenceSelectionQueryWithNeo4jId(String searchBodyQuery, String username) {
     String ret = "";
-    ret = ret + referenceMatchPart();
+    ret = ret + basicReferenceMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
@@ -495,17 +442,17 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionBasicReferenceSelectionQuery(
+  public static String collectionBasicReferenceSelectionQueryWithNeo4jId(
     String searchBodyQuery,
     Long collectionId,
     String username
   ) {
     String ret = "";
-    ret = ret + referenceMatchPart();
+    ret = ret + basicReferenceMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionIdWherePart(collectionId);
+    ret = ret + collectionNeo4jIdWherePart(collectionId);
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
@@ -513,17 +460,17 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionDataObjectReferenceSelectionQuery(
+  public static String collectionDataObjectReferenceSelectionQueryWithNeo4jId(
     SearchScope scope,
     String searchBodyQuery,
     String username
   ) {
     String ret = "";
-    ret = ret + referenceMatchPart();
+    ret = ret + basicReferenceMatchPartWithoutVersion();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionDataObjectIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + collectionDataObjectNeo4jIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
@@ -531,18 +478,18 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionDataObjectBasicReferenceSelectionQuery(
+  public static String collectionDataObjectBasicReferenceSelectionQueryWithNeo4jId(
     SearchScope scope,
     TraversalRules traversalRule,
     String searchBodyQuery,
     String username
   ) {
     String ret = "";
-    ret = ret + collectionDataObjectBasicReferenceMatchPart(traversalRule);
+    ret = ret + collectionDataObjectBasicReferenceMatchPartWithoutVersion(traversalRule);
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jWithShepardIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
-    ret = ret + collectionDataObjectTraversalIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
+    ret = ret + collectionDataObjectTraversalNeo4jIdWherePart(scope.getCollectionId(), scope.getDataObjectId());
     ret = ret + " AND ";
     ret = ret + notDeletedPart(Constants.REFERENCE_IN_QUERY);
     ret = ret + " AND ";
@@ -550,7 +497,7 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String collectionDataObjectDataObjectMatchPart(TraversalRules traversalRule) {
+  private static String collectionDataObjectDataObjectMatchPartWithoutVersion(TraversalRules traversalRule) {
     String ret =
       switch (traversalRule) {
         case children -> "MATCH (" +
@@ -578,7 +525,7 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String collectionDataObjectBasicReferenceMatchPart(TraversalRules traversalRule) {
+  private static String collectionDataObjectBasicReferenceMatchPartWithoutVersion(TraversalRules traversalRule) {
     String ret =
       switch (traversalRule) {
         case children -> "MATCH (" +
@@ -623,7 +570,7 @@ public class Neo4jQueryBuilder {
     String ret = "";
     ret = ret + userMatchPart();
     ret = ret + " WHERE ";
-    ret = ret + getNeo4jString(query, Constants.USER_IN_QUERY);
+    ret = ret + getNeo4jWithNeo4jIdString(query, Constants.USER_IN_QUERY);
     return ret;
   }
 

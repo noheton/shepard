@@ -23,7 +23,7 @@ public class CollectionSearchService {
   }
 
   public ResponseBody search(SearchBody searchBody, String userName) {
-    String selectionQuery = Neo4jQueryBuilder.collectionSelectionQuery(
+    String selectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
       searchBody.getSearchParams().getQuery(),
       userName
     );

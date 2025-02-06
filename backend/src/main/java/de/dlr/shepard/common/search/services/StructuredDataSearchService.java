@@ -113,22 +113,25 @@ public class StructuredDataSearchService {
     }
     // no DataObjectId given
     if (searchScope.getDataObjectId() == null) {
-      ret.addAll(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionShepardId, userName));
+      ret.addAll(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionShepardId, userName));
     }
     // DataObjectId given
     else {
       long startShepardId = searchScope.getDataObjectId();
       // consider only start node
       if (traversalRules.length == 0) {
-        List<StructuredDataReference> reachableReferences =
-          structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionShepardId, startShepardId, userName);
+        List<StructuredDataReference> reachableReferences = structuredDataReferenceDAO.findReachableReferencesByNeo4jId(
+          collectionShepardId,
+          startShepardId,
+          userName
+        );
         ret.addAll(reachableReferences);
       }
       // search according to traversal rules
       else {
         for (TraversalRules traversalRule : traversalRules) {
           List<StructuredDataReference> reachableReferences =
-            structuredDataReferenceDAO.findReachableReferencesByShepardId(
+            structuredDataReferenceDAO.findReachableReferencesByNeo4jId(
               traversalRule,
               collectionShepardId,
               startShepardId,
