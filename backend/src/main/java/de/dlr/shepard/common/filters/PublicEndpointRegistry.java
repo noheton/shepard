@@ -5,7 +5,8 @@ import java.util.List;
 
 public class PublicEndpointRegistry {
 
-  private static final List<String> publicPaths = List.of("/versionz");
+  // TODO: Remove /spatialDataContainer
+  private static final List<String> publicPaths = List.of("/versionz", "/spatialDataContainer");
 
   public static boolean isRequestPathPublic(ContainerRequestContext requestContext) {
     return publicPaths
