@@ -47,10 +47,7 @@ const props = defineProps<RichTextEditorToolbarMenuProps>();
       </v-tooltip>
     </template>
 
-    <v-container
-      class="rounded elevation-12 overflow-hidden"
-      style="background-color: white"
-    >
+    <v-container class="rounded elevation-12 overflow-hidden bg-color-canvas">
       <v-row class="py-0">
         <v-col
           v-for="(item, index) in props.menuEntries"
@@ -74,3 +71,9 @@ const props = defineProps<RichTextEditorToolbarMenuProps>();
     </v-container>
   </v-menu>
 </template>
+
+<style lang="scss" scoped>
+:deep(.bg-color-canvas) {
+  background-color: rgb(var(--v-theme-canvas));
+}
+</style>
