@@ -84,5 +84,5 @@ fetchRoles();
       label="No entry yet"
     />
   </div>
-  <LayoutComponentsCenteredLoadingSpinner v-else />
+  <CenteredLoadingSpinner v-else />
 </template>

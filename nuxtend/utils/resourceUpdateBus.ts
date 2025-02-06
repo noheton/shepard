@@ -7,7 +7,8 @@ export const handleCollectionUpdate = () => {
 };
 
 export const onCollectionUpdated = (listener: () => void) => {
-  collectionBus.on(listener);
+  const stopListening = collectionBus.on(listener);
+  onUnmounted(stopListening);
 };
 
 const dataObjectBus = useEventBus("data-object-updated");
@@ -17,5 +18,6 @@ export const handleDataObjectUpdate = () => {
 };
 
 export const onDataObjectUpdated = (listener: () => void) => {
-  dataObjectBus.on(listener);
+  const stopListening = dataObjectBus.on(listener);
+  onUnmounted(stopListening);
 };
