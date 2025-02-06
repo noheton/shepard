@@ -36,9 +36,11 @@ const emit = defineEmits<{
         :key="index"
         density="compact"
         base-color="rgb(var(--v-theme-textbody1))"
-        :prepend-icon="icon"
         @click="onClick"
       >
+        <template #prepend>
+          <v-icon :icon="icon" color="textbody1" class="opacity-100" />
+        </template>
         <template #title>
           <span class="text-body-1 mr-8">{{ label }}</span>
         </template>

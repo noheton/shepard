@@ -43,7 +43,7 @@ export function useEditDataObject(
       })
       .then(_ => {
         emitSuccess(
-          `Successfully updated data object ${dataObjectToSave.name}`,
+          `Successfully updated data object "${dataObjectToSave.name}"`,
         );
         handleDataObjectUpdate();
         onSuccess();

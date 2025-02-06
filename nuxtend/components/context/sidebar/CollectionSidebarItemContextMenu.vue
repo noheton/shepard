@@ -32,6 +32,7 @@ async function deleteItem() {
 
   if (!deletionSuccessful) return;
 
+  emitSuccess(`Successfully deleted data object "${props.itemName}"`);
   emit("data-object-deleted");
 }
 </script>
@@ -84,7 +85,6 @@ async function deleteItem() {
     :data-object-name="itemName"
     @data-object-updated="emit('data-object-updated')"
   />
-
   <ConfirmationDialog
     v-model:show-dialog="showDeleteDialog"
     prompt-text="Are you sure you want to delete this item?"

@@ -44,7 +44,9 @@ async function createDataObject() {
       },
     })
     .then(response => {
-      emitSuccess(`Successfully updated data object ${dataObjectToSave.name}`);
+      emitSuccess(
+        `Successfully created data object "${dataObjectToSave.name}"`,
+      );
       emit("data-object-created");
       router.push(
         collectionsPath +
