@@ -10,7 +10,9 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-const { collection } = useFetchCollection(routeParams.value.collectionId);
+const { collection, isAllowedToEditCollection } = useFetchCollection(
+  routeParams.value.collectionId,
+);
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(
   routeParams.value.collectionId,
 );
@@ -49,7 +51,7 @@ const showDescriptionEditDialog = ref(false);
               <ExpansionPanels>
                 <ExpansionPanelItem title="Description">
                   <DescriptionDisplay :entity="collection" />
-                  <template #append>
+                  <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
                       text="Edit"
                       icon="mdi-pencil-outline"
@@ -67,7 +69,7 @@ const showDescriptionEditDialog = ref(false);
                   :count="Object.keys(collection.attributes ?? {}).length"
                 >
                   <AttributesDisplay :entity="collection" />
-                  <template #append>
+                  <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
                       text="Add/Edit"
                       icon="mdi-plus-circle"

@@ -13,7 +13,8 @@ const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId } =
   routeParams.value as CollectionRouteParams & { dataObjectId: number };
 
-const { collection } = useFetchCollection(collectionId);
+const { collection, isAllowedToEditCollection } =
+  useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 const { dataReferences } = useDataReferencesByDataObject(
   collectionId,
@@ -72,7 +73,7 @@ const showDescriptionEditDialog = ref(false);
               <ExpansionPanels>
                 <ExpansionPanelItem title="Description">
                   <DescriptionDisplay :entity="dataObject" />
-                  <template #append>
+                  <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
                       text="Edit"
                       icon="mdi-pencil-outline"
@@ -91,7 +92,7 @@ const showDescriptionEditDialog = ref(false);
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                 >
                   <AttributesDisplay :entity="dataObject" />
-                  <template #append>
+                  <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
                       text="Add/Edit"
                       icon="mdi-plus-circle"
