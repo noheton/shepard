@@ -30,12 +30,11 @@ const emit = defineEmits<{
         )
       }}
     </template>
-    <v-list>
+    <v-list bg-color="canvas">
       <v-list-item
         v-for="({ icon, label, onClick }, index) in items"
         :key="index"
         density="compact"
-        base-color="rgb(var(--v-theme-textbody1))"
         @click="onClick"
       >
         <template #prepend>
