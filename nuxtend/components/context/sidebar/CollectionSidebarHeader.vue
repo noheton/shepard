@@ -22,27 +22,37 @@ const showEditDialog = ref(false);
     rounded="0"
     :height="height"
     :to="collectionsPath + `${collection?.id}`"
-    :class="`d-flex ga-0 mb-4 ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
+    :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
   >
     <v-card-item class="w-100">
       <template v-if="!!collection">
         <div
           class="ml-1 text-h4"
           style="
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
             display: flex;
+            flex-wrap: nowrap;
             justify-content: space-between;
-            align-items: baseline;
+            align-items: stretch;
           "
         >
-          {{ collection.name }}
-          <template
+          <div
+            style="
+              min-width: 0;
+              flex: 1;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            "
+          >
+            {{ collection.name }}
+          </div>
+
+          <div
             v-if="
               isAllowedToEditCollection &&
               isAllowedToEditPermissions !== undefined
             "
+            style="flex-shrink: 0; margin-left: 10px"
           >
             <DisplayChildrenOnHover
               :display-children-without-hover="
@@ -66,7 +76,7 @@ const showEditDialog = ref(false);
               :collection="collection"
               :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
             />
-          </template>
+          </div>
         </div>
       </template>
     </v-card-item>

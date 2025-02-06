@@ -8,7 +8,7 @@ const props = defineProps<SidebarEntry>();
 </script>
 
 <template>
-  <NuxtLink :to="props.to" class="link-button">
+  <NuxtLink :to="props.to" class="link-button text-body-1">
     <span class="link-text">
       {{ props.title }}
     </span>
@@ -26,5 +26,7 @@ const props = defineProps<SidebarEntry>();
 }
 .link-text {
   align-content: center;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 </style>

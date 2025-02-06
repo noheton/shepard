@@ -46,29 +46,31 @@ async function deleteItem() {
       showDeleteDialog
     "
   >
-    <ContextMenu
-      :items="[
-        {
-          label: 'Edit',
-          icon: 'mdi-pencil-outline',
-          onClick: () => (showEditDialog = true),
-        },
-        {
-          label: 'Delete',
-          icon: 'mdi-delete-outline',
-          onClick: () => (showDeleteDialog = true),
-        },
-      ]"
-      @expansion-state-changed="e => (showContextMenuButton = e)"
-    />
-    <v-btn
-      icon="mdi-plus"
-      v-bind="props"
-      variant="plain"
-      density="compact"
-      color="primary"
-      @click.prevent.stop="showCreateDialog = true"
-    />
+    <div class="d-flex">
+      <ContextMenu
+        :items="[
+          {
+            label: 'Edit',
+            icon: 'mdi-pencil-outline',
+            onClick: () => (showEditDialog = true),
+          },
+          {
+            label: 'Delete',
+            icon: 'mdi-delete-outline',
+            onClick: () => (showDeleteDialog = true),
+          },
+        ]"
+        @expansion-state-changed="e => (showContextMenuButton = e)"
+      />
+      <v-btn
+        icon="mdi-plus"
+        v-bind="props"
+        variant="plain"
+        density="compact"
+        color="primary"
+        @click.prevent.stop="showCreateDialog = true"
+      />
+    </div>
   </DisplayChildrenOnHover>
   <CreateDataObjectDialog
     v-if="showCreateDialog"

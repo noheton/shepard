@@ -12,7 +12,10 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
         // initial load of dataobject from a collection - no parents possible
-        treeviewItems.value = response.map(item => mapToTreeviewItem(item));
+        treeviewItems.value = response
+          .map(item => mapToTreeviewItem(item))
+          .sort((itemA, itemB) => itemA.id - itemB.id);
+        // instead of sorting by 'createdAt' we can sort the treeview items by ID
       })
       .catch(error => {
         handleError(error, "getAllDataObjects");
@@ -212,5 +215,7 @@ async function fetchChildrenOfItem(
       parentId,
       collectionId,
     })
-  ).map(item => mapToTreeviewItem(item, parentItem));
+  )
+    .map(item => mapToTreeviewItem(item, parentItem))
+    .sort((itemA, itemB) => itemA.id - itemB.id);
 }

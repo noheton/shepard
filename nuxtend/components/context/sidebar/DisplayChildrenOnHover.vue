@@ -3,7 +3,16 @@ defineProps<{ displayChildrenWithoutHover: boolean }>();
 </script>
 
 <template>
-  <div :class="displayChildrenWithoutHover ? '' : 'display-on-hover'">
+  <div
+    style="
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-content: center;
+    "
+    :class="displayChildrenWithoutHover ? '' : 'display-on-hover'"
+  >
     <slot />
   </div>
 </template>
