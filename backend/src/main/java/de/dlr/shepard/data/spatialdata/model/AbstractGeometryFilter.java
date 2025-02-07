@@ -3,7 +3,6 @@ package de.dlr.shepard.data.spatialdata.model;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -27,7 +26,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
   }
 )
 @Data
-@NoArgsConstructor
 public abstract class AbstractGeometryFilter {
 
   private GeometryFilterType type;
