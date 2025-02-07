@@ -64,7 +64,7 @@ async function saveChanges() {
   if (!permissionsUpdateSuccess) return;
 
   emitSuccess(
-    `Successfully created collection ${collectionToCreate.value.name}`,
+    `Successfully created collection "${collectionToCreate.value.name}"`,
   );
   emit("collection-created", collectionId);
   showDialog.value = false;

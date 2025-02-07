@@ -51,7 +51,7 @@ export function useEditCollection(
     }
 
     emitSuccess(
-      `Successfully updated collection ${updatedCollection.value.name}`,
+      `Successfully updated collection "${updatedCollection.value.name}"`,
     );
     handleCollectionUpdate();
     onSuccess();
