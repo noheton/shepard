@@ -7,11 +7,12 @@ const props = defineProps<{
   parentId?: number;
   itemName: string;
 }>();
-const emit = defineEmits([
-  "data-object-updated",
-  "data-object-created",
-  "data-object-deleted",
-]);
+
+const emit = defineEmits<{
+  (
+    e: "data-object-created" | "data-object-updated" | "data-object-deleted",
+  ): void;
+}>();
 
 const showEditDialog = ref(false);
 const showCreateDialog = ref(false);

@@ -1,11 +1,11 @@
-import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { DataObjectApi, ResponseError } from "@dlr-shepard/backend-client";
 import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
-  const { openedTreeviewItems, addOpen } = useOpenedItems();
+  const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
     await createApiInstance(DataObjectApi)
@@ -134,6 +134,8 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       item,
     );
 
+    if (!children) return;
+
     item.children = children;
     item.childrenIds = children.map(c => c.id);
   }
@@ -161,7 +163,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
         undefined,
       );
 
-      if (!currentRootItem.parentId) return currentPath;
+      if (!currentRootItem?.parentId) return currentPath;
 
       // Abort if there is a parent/child cycle
       if (currentPath.some(id => id === currentRootItem.parentId)) return [];
@@ -178,7 +180,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
       undefined,
     );
 
-    if (!activeChild.parentId) return [];
+    if (!activeChild?.parentId) return [];
     return getPathFromRootTo([activeChild.parentId]);
   }
 
@@ -188,6 +190,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
     loading,
     loadChildrenOfItem,
     refreshItems,
+    collapseItem,
   };
 };
 
@@ -195,27 +198,40 @@ async function fetchTreeviewItem(
   collectionId: number,
   dataObjectId: number,
   parentItem?: TreeviewItem,
-) {
-  return mapToTreeviewItem(
-    await createApiInstance(DataObjectApi).getDataObject({
+): Promise<TreeviewItem | undefined> {
+  return createApiInstance(DataObjectApi)
+    .getDataObject({
       collectionId,
       dataObjectId,
-    }),
-    parentItem,
-  );
+    })
+    .then(response => mapToTreeviewItem(response, parentItem))
+    .catch(error => {
+      if (error instanceof ResponseError) {
+        handleError(error, "fetchTreeviewItem");
+      }
+      return undefined;
+    });
 }
 
 async function fetchChildrenOfItem(
   collectionId: number,
   parentId: number,
   parentItem?: TreeviewItem,
-): Promise<TreeviewItem[]> {
-  return (
-    await createApiInstance(DataObjectApi).getAllDataObjects({
+): Promise<TreeviewItem[] | undefined> {
+  return createApiInstance(DataObjectApi)
+    .getAllDataObjects({
       parentId,
       collectionId,
     })
-  )
-    .map(item => mapToTreeviewItem(item, parentItem))
-    .sort((itemA, itemB) => itemA.id - itemB.id);
+    .then(response =>
+      response
+        .map(item => mapToTreeviewItem(item, parentItem))
+        .sort((itemA, itemB) => itemA.id - itemB.id),
+    )
+    .catch(error => {
+      if (error instanceof ResponseError) {
+        handleError(error, "fetchChildrenOfItem");
+      }
+      return undefined;
+    });
 }

@@ -8,11 +8,11 @@ export function useOpenedItems() {
     ]);
   }
 
-  function close(itemId: number) {
+  function collapseItem(itemId: number) {
     openedTreeviewItems.value = openedTreeviewItems.value.filter(
       id => id !== itemId,
     );
   }
 
-  return { openedTreeviewItems, addOpen, close };
+  return { openedTreeviewItems, addOpen, collapseItem };
 }

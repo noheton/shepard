@@ -11,6 +11,7 @@ const {
   loading,
   loadChildrenOfItem,
   refreshItems,
+  collapseItem,
 } = useTreeviewItems(routeParams);
 
 async function onOpenClicked(expandGroup: {
@@ -34,6 +35,14 @@ function onActivated(activeItems: unknown) {
         dataObjectsPathFragment +
         activeItems[0],
     );
+  }
+}
+
+function onDeleted(deletedItemId: number) {
+  collapseItem(deletedItemId);
+  refreshItems();
+  if (routeParams.value.dataObjectId === deletedItemId) {
+    router.push(collectionsPath + routeParams.value.collectionId);
   }
 }
 
@@ -132,12 +141,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
               :item-name="item.title"
               @data-object-created="refreshItems"
               @data-object-updated="refreshItems"
-              @data-object-deleted="
-                refreshItems();
-                if (routeParams.dataObjectId === item.id) {
-                  router.push(collectionsPath + routeParams.collectionId);
-                }
-              "
+              @data-object-deleted="() => onDeleted(item.id)"
             />
           </template>
         </v-treeview>
