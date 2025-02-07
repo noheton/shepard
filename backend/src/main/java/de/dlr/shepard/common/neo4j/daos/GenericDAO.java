@@ -1,5 +1,14 @@
 package de.dlr.shepard.common.neo4j.daos;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.neo4j.ogm.cypher.Filter;
+import org.neo4j.ogm.cypher.query.Pagination;
+import org.neo4j.ogm.model.Result;
+import org.neo4j.ogm.session.Session;
+
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
@@ -7,13 +16,6 @@ import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import io.quarkus.logging.Log;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import org.neo4j.ogm.cypher.Filter;
-import org.neo4j.ogm.cypher.query.Pagination;
-import org.neo4j.ogm.model.Result;
-import org.neo4j.ogm.session.Session;
 
 public abstract class GenericDAO<T> {
 
@@ -252,7 +254,7 @@ public abstract class GenericDAO<T> {
 
   private void deleteRelation(long fromId, long toId, String relationName) {
     String query = String.format(
-      "MATCH (a:%s {shepardId: %s})-[r:%s]->(b:%s {shepardId: %s}) DELETE r",
+      "MATCH (a:%s {shepardId: %s})-[r:%s]->(b:%s {shepardId: %s}) DELETE r;",
       getEntityType().getSimpleName(),
       fromId,
       relationName,
