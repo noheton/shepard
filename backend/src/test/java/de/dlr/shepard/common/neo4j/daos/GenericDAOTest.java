@@ -10,10 +10,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.util.PaginationHelper;
+import de.dlr.shepard.common.util.TraversalRules;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
+import lombok.Data;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,11 +31,6 @@ import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.model.QueryStatistics;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
-
-import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.common.util.PaginationHelper;
-import de.dlr.shepard.common.util.TraversalRules;
-import lombok.Data;
 
 public class GenericDAOTest extends BaseTestCase {
 
