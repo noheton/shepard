@@ -5,11 +5,7 @@
     class="d-flex w-100 px-8 mt-8"
     style="flex-direction: column; align-items: center"
   >
-    <v-img
-      style="width: 80%; max-width: 320px"
-      class="px-16 mb-8"
-      src="../../../public/StartHereIcon.svg"
-    />
+    <StartHereIcon style="width: 80%; max-width: 320px" class="px-16 mb-8" />
 
     <p class="mb-4 text-h5" style="">Put your new collection to work!</p>
 

@@ -3,7 +3,6 @@ import type { Collection } from "@dlr-shepard/backend-client";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;
-  height?: string;
   collection?: Collection;
   isAllowedToEditCollection?: boolean;
   isAllowedToEditPermissions?: boolean;
@@ -16,11 +15,17 @@ const showEditDialog = ref(false);
 </script>
 
 <template>
+  <div
+    class="ml-6 text-textbody1 text-overline"
+    style="margin-top: 40px; margin-bottom: 4px"
+  >
+    Collection
+  </div>
   <v-card
     flat
     hover
     rounded="0"
-    :height="height"
+    style="min-height: 40px; max-height: 40px"
     :to="collectionsPath + `${collection?.id}`"
     :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
   >

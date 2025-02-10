@@ -51,18 +51,11 @@ const createDataObjectDialogOpened = ref<boolean>(false);
 
 <template>
   <div class="bg-treeview elevation-4 sidebar-container">
-    <div
-      class="ml-6 text-textbody1 text-overline"
-      style="margin-top: 40px; margin-bottom: 4px"
-    >
-      Collection
-    </div>
     <CollectionSidebarHeader
       :is-focused="routeParams.dataObjectId === undefined"
       :collection="collection"
       :is-allowed-to-edit-collection="isAllowedToEditCollection"
       :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
-      style="max-height: 40px; min-height: 40px"
     />
     <v-divider opacity="100" class="text-low-emphasis mt-4" thickness="1px" />
 
@@ -114,6 +107,14 @@ const createDataObjectDialogOpened = ref<boolean>(false);
           @update:activated="onActivated"
           @click:open="onOpenClicked"
         >
+          <template #prepend="{ item }">
+            <v-icon
+              v-if="item.childrenIds?.length === 0"
+              color="textbody1"
+              icon="mdi-circle-small"
+            />
+          </template>
+
           <template #title="{ item }">
             <CollectionSidebarEntry
               :title="item.title"
@@ -125,11 +126,6 @@ const createDataObjectDialogOpened = ref<boolean>(false);
                 `${item.id}`
               "
             />
-          </template>
-          <template #prepend="{ item }">
-            <v-icon v-if="item.childrenIds?.length === 0">
-              mdi-circle-small
-            </v-icon>
           </template>
 
           <template #append="{ item }">
@@ -198,6 +194,8 @@ const createDataObjectDialogOpened = ref<boolean>(false);
   overflow: auto;
   scrollbar-width: thin;
 
+  height: 100%;
+
   :deep(.v-list) {
     min-width: 100%;
   }
@@ -232,6 +230,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     margin-right: auto;
     padding-right: 16px;
     min-width: fit-content;
+    width: 100%;
   }
 
   :deep(.v-list-item__prepend) {
