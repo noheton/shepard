@@ -50,7 +50,10 @@ const createDataObjectDialogOpened = ref<boolean>(false);
 </script>
 
 <template>
-  <div class="bg-treeview elevation-4 sidebar-container">
+  <div
+    style="position: fixed; width: 100%; max-width: inherit"
+    class="bg-treeview elevation-4 sidebar-container"
+  >
     <CollectionSidebarHeader
       :is-focused="routeParams.dataObjectId === undefined"
       :collection="collection"
