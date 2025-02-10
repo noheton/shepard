@@ -8,11 +8,11 @@ const props = defineProps<{
   itemName: string;
 }>();
 
-const emit = defineEmits<{
-  (
-    e: "data-object-created" | "data-object-updated" | "data-object-deleted",
-  ): void;
-}>();
+const emit = defineEmits([
+  "data-object-created",
+  "data-object-updated",
+  "data-object-deleted",
+]);
 
 const showEditDialog = ref(false);
 const showCreateDialog = ref(false);
