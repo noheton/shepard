@@ -40,6 +40,7 @@ onError(e => {
   :deep(.v-overlay__content) {
     background-color: rgb(var(--v-theme-error));
     color: rgb(var(--v-theme-white));
+    word-wrap: anywhere;
   }
 }
 </style>

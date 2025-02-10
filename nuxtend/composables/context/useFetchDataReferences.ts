@@ -1,3 +1,9 @@
+import type {
+  FileReference,
+  ResponseError,
+  StructuredDataReference,
+  TimeseriesReference,
+} from "@dlr-shepard/backend-client";
 import {
   FileContainerApi,
   FileReferenceApi,
@@ -11,7 +17,8 @@ import {
 import type {
   DataReference,
   DataReferenceWithoutContainerName,
-} from "~/components/context/data-object/data/dataReference";
+  ReferencedContainerMeta,
+} from "~/components/context/display-components/data-references/dataReference";
 
 export function useDataReferencesByDataObject(
   collectionId: number,
@@ -19,102 +26,124 @@ export function useDataReferencesByDataObject(
 ) {
   const dataReferences = ref<Array<DataReference> | undefined>(undefined);
 
-  async function fetchTimeseriesReferences() {
+  async function fetchTimeseriesReferences(): Promise<TimeseriesReference[]> {
     return createApiInstance(TimeseriesReferenceApi)
       .getAllTimeseriesReferences({
         collectionId,
         dataObjectId,
       })
-      .then(response => {
-        return response;
-      })
       .catch(error => {
-        handleError(error, "getAllTimeseriesReferences");
+        handleError(error, "fetchTimeseriesReferences");
+        return [];
       });
   }
 
-  async function fetchFileReferences() {
+  async function fetchFileReferences(): Promise<FileReference[]> {
     return createApiInstance(FileReferenceApi)
       .getAllFileReferences({
         collectionId,
         dataObjectId,
       })
-      .then(response => {
-        return response;
-      })
       .catch(error => {
-        handleError(error, "getAllFileReferences");
+        handleError(error, "fetchFileReferences");
+        return [];
       });
   }
 
-  async function fetchStructuredDataReferences() {
+  async function fetchStructuredDataReferences(): Promise<
+    StructuredDataReference[]
+  > {
     return createApiInstance(StructuredDataReferenceApi)
       .getAllStructuredDataReferences({
         collectionId,
         dataObjectId,
       })
-      .then(response => {
-        return response;
-      })
       .catch(error => {
-        handleError(error, "getAllStructuredDataReferences");
+        handleError(error, "fetchStructuredDataReferences");
+        return [];
       });
   }
 
-  async function fetchTimeseriesContainerName(containerId: number) {
+  async function fetchTimeseriesContainerMeta(
+    containerId: number,
+  ): Promise<ReferencedContainerMeta> {
+    if (isDeleted(containerId))
+      return { referencedContainerAvailability: "deleted" };
     return createApiInstance(TimeseriesContainerApi)
       .getTimeseriesContainer({ timeseriesContainerId: containerId })
-      .then(response => {
-        return response.name;
+      .then((response): ReferencedContainerMeta => {
+        return {
+          referencedContainerName: response.name,
+          referencedContainerAvailability: "available",
+        };
       })
-      .catch(error => {
+      .catch((error: ResponseError) => {
+        if (error.response.status === 403)
+          return { referencedContainerAvailability: "forbidden" };
         handleError(error, "fetchTimeseriesContainerName");
+        return { referencedContainerAvailability: "error" };
       });
   }
 
-  async function fetchFileContainerName(containerId: number) {
+  async function fetchFileContainerMeta(
+    containerId: number,
+  ): Promise<ReferencedContainerMeta> {
+    if (isDeleted(containerId))
+      return { referencedContainerAvailability: "deleted" };
     return createApiInstance(FileContainerApi)
       .getFileContainer({ fileContainerId: containerId })
-      .then(response => {
-        return response.name;
+      .then((response): ReferencedContainerMeta => {
+        return {
+          referencedContainerName: response.name,
+          referencedContainerAvailability: "available",
+        };
       })
-      .catch(error => {
-        handleError(error, "fetchTimeseriesContainerName");
+      .catch((error: ResponseError) => {
+        if (error.response.status === 403)
+          return { referencedContainerAvailability: "forbidden" };
+        handleError(error, "fetchFileContainerName");
+        return { referencedContainerAvailability: "error" };
       });
   }
 
-  async function fetchStructuredDataContainerName(containerId: number) {
+  async function fetchStructuredDataContainerMeta(
+    containerId: number,
+  ): Promise<ReferencedContainerMeta> {
+    if (isDeleted(containerId))
+      return { referencedContainerAvailability: "deleted" };
     return createApiInstance(StructuredDataContainerApi)
       .getStructuredDataContainer({ structuredDataContainerId: containerId })
-      .then(response => {
-        return response.name;
+      .then((response): ReferencedContainerMeta => {
+        return {
+          referencedContainerName: response.name,
+          referencedContainerAvailability: "available",
+        };
       })
-      .catch(error => {
-        handleError(error, "fetchTimeseriesContainerName");
+      .catch((error: ResponseError) => {
+        if (error.response.status === 403)
+          return { referencedContainerAvailability: "forbidden" };
+        handleError(error, "fetchStructuredDataContainerName");
+        return { referencedContainerAvailability: "error" };
       });
   }
 
   async function addContainerName(
     ref: DataReferenceWithoutContainerName,
   ): Promise<DataReference> {
-    if (instanceOfTimeseriesReference(ref))
+    if (instanceOfTimeseriesReference(ref)) {
       return {
         ...ref,
-        referencedContainerName:
-          (await fetchTimeseriesContainerName(ref.timeseriesContainerId)) ?? "",
+        ...(await fetchTimeseriesContainerMeta(ref.timeseriesContainerId)),
       };
-    if (instanceOfFileReference(ref))
-      return {
-        ...ref,
-        referencedContainerName:
-          (await fetchFileContainerName(ref.fileContainerId)) ?? "",
-      };
+    }
+    if (instanceOfFileReference(ref)) {
+      return { ...ref, ...(await fetchFileContainerMeta(ref.fileContainerId)) };
+    }
     return {
       ...ref,
-      referencedContainerName:
-        (await fetchStructuredDataContainerName(
-          ref.structuredDataContainerId,
-        )) ?? "",
+      ...(await fetchStructuredDataContainerMeta(
+        ref.structuredDataContainerId,
+      )),
     };
   }
 
@@ -125,9 +154,6 @@ export function useDataReferencesByDataObject(
         fetchFileReferences(),
         fetchStructuredDataReferences(),
       ]);
-    if (!timeseriesReferences || !fileReferences || !structuredDataReferences) {
-      return;
-    }
     const references = [
       ...timeseriesReferences,
       ...fileReferences,

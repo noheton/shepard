@@ -108,11 +108,10 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
 
   public DataObject getPayloadByShepardId(long dataObjectReferenceShepardId, UUID versionUID) {
     DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId, versionUID);
-    DataObject dataObject = dataObjectDAO.findByNeo4jId(reference.getReferencedDataObject().getId());
-    if (dataObject.isDeleted()) {
-      Log.errorf("Data Object with id %s is deleted", reference.getReferencedDataObject().getShepardId());
-      return null;
+    if (reference.getReferencedDataObject() != null) {
+      return dataObjectDAO.findByNeo4jId(reference.getReferencedDataObject().getId());
     }
-    return dataObject;
+    Log.errorf("Data Object referenced by Data Object reference with id %s is deleted", reference.getId());
+    return null;
   }
 }

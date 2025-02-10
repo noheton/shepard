@@ -54,13 +54,7 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     :items-per-page="itemsPerPage"
   >
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
-      <DataObjectDataMetaCell
-        :id="value.id"
-        :container-id="value.containerId"
-        :container-name="value.containerName"
-        :file-count="value.fileCount"
-        :interval="value.interval"
-      />
+      <DataObjectDataMetaCell :meta="value" />
     </template>
     <template
       #[`item.created`]="{ value }: { value: DataTableElement['created'] }"

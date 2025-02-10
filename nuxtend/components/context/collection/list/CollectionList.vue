@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BasicEntity } from "@dlr-shepard/backend-client";
-import { collectionsPath } from "../../../utils/constants";
+import { collectionsPath } from "../../../../utils/constants";
 
 const router = useRouter();
 

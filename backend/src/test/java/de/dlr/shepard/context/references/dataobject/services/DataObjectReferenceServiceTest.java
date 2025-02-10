@@ -239,7 +239,6 @@ public class DataObjectReferenceServiceTest {
     referenced.setDeleted(true);
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
-    reference.setReferencedDataObject(referenced);
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
     when(dataObjectDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
     DataObject actual = service.getPayloadByShepardId(reference.getShepardId(), null);

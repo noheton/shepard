@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit/EditDataObjectDescriptionDialog.vue";
+import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
 import {
   collectionsPath,
   dataObjectsPathFragment,

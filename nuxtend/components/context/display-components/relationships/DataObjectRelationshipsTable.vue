@@ -33,7 +33,7 @@ const headers = [
     sort: (
       a: RelationshipTableElement["type"],
       b: RelationshipTableElement["type"],
-    ) => a.value.localeCompare(b.value),
+    ) => a.type.localeCompare(b.type),
   },
   {
     title: "Created",
@@ -66,7 +66,7 @@ const headers = [
     <template
       #[`item.type`]="{ value }: { value: RelationshipTableElement['type'] }"
     >
-      <DataObjectRelationshipsTypeCell :value="value" />
+      <TypeCell :value="value" />
     </template>
     <template
       #[`item.created`]="{

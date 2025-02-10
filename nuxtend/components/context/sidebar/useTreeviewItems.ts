@@ -18,6 +18,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
         // instead of sorting by 'createdAt' we can sort the treeview items by ID
       })
       .catch(error => {
+        treeviewItems.value = undefined;
         handleError(error, "getAllDataObjects");
       });
   }

@@ -45,9 +45,13 @@ function mapName(entity: RelatedEntity): RelationshipTableElement["name"] {
   if (instanceOfDataObjectReference(entity)) {
     return {
       value: entity.name,
-      path: `/collections/${entity.payload.collectionId}/dataobjects/${entity.payload.id}`,
+      path: entity.payload
+        ? `/collections/${entity.payload.collectionId}/dataobjects/${entity.payload.id}`
+        : undefined,
     };
   }
+
+  if (isDeleted(entity.referencedCollectionId)) return { value: entity.name };
 
   return {
     value: entity.name,
@@ -57,20 +61,42 @@ function mapName(entity: RelatedEntity): RelationshipTableElement["name"] {
 
 function mapType(entity: RelatedEntity): RelationshipTableElement["type"] {
   if (instanceOfURIReference(entity)) {
-    return { value: `Link` };
+    return { type: `Link` };
   }
   if (instanceOfDataObject(entity)) {
     return {
-      value: `Data Object (ID ${entity.id})`,
+      type: "Data Object",
+      id: entity.id,
     };
   }
   if (instanceOfDataObjectReference(entity)) {
+    if (isDeleted(entity.referencedDataObjectId))
+      return {
+        type: "Data Object Reference",
+        availability: "deleted",
+      };
+
+    if (!entity.payload)
+      return {
+        type: "Data Object Reference",
+        availability: "private",
+        id: entity.referencedDataObjectId,
+      };
+
     return {
-      value: `Data Object (ID ${entity.referencedDataObjectId})`,
-      collection: `In Collection ${entity.payload.collection.name} (ID: ${entity.payload.collectionId})`,
+      type: "Data Object Reference",
+      id: entity.referencedDataObjectId,
+      collectionId: entity.payload.collectionId,
+      collectionName: entity.payload.collection.name,
+      availability: "available",
     };
   }
+
+  if (isDeleted(entity.referencedCollectionId))
+    return { type: "Collection Reference", availability: "deleted" };
   return {
-    value: `Collection (ID ${entity.referencedCollectionId})`,
+    type: "Collection Reference",
+    id: entity.referencedCollectionId,
+    availability: "available",
   };
 }

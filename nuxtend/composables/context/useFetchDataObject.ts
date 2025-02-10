@@ -25,6 +25,7 @@ export function useFetchDataObject(collectionId: number, dataObjectId: number) {
         };
       })
       .catch(error => {
+        dataObject.value = undefined;
         handleError(error, "getDataObject");
       });
   }

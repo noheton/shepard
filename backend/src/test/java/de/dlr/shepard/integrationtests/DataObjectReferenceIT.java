@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 @QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -247,8 +249,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .statusCode(404);
   }
 
-  //@Test
+  @Test
   @Order(8)
+  @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void createNewVersionCollection1Test() {
     String versionizeCollection1URL = "/" + Constants.COLLECTIONS + "/" + collection1.getId() + "/versions";
     VersionIO inputVersion = new VersionIO();
@@ -267,8 +270,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     c1v1UID = actual.getUid();
   }
 
-  //@Test
+  @Test
   @Order(9)
+  @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InHEADVersionTest() {
     var referencedURL = String.format(
       "/%s/%d/%s/%d",
@@ -288,8 +292,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getIncomingIds()).containsExactly(reference21to12.getId());
   }
 
-  //@Test
+  @Test
   @Order(10)
+  @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InFirstVersionTest() {
     var referencedURL = String.format(
       "/%s/%d/%s/%d",
@@ -310,8 +315,9 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     assertEquals(actual.getIncomingIds().length, 0);
   }
 
-  //@Test
+  @Test
   @Order(11)
+  @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void multipleIncomingReferencesToDataObject21InHEADVersion() {
     var referencedURL = String.format(
       "/%s/%d/%s/%d",
@@ -330,5 +336,67 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
     assertEquals(actual.getIncomingIds().length, 2);
     assertThat(actual.getIncomingIds()).contains(reference12to21.getId());
+  }
+
+  @Test
+  public void getDataObjectReferencePayload_referencedDataObjectDeleted_returnsForbidden() {
+    // Arrange
+    CollectionIO collectionWithReferencingDataObject = createCollection("collectionWithReferencingDataObject");
+    DataObjectIO referencingDataObject = createDataObject(
+      "referencingDataObject",
+      collectionWithReferencingDataObject.getId()
+    );
+    CollectionIO collectionWithReferencedDataObject = createCollection("collectionWithReferencedDataObject");
+    DataObjectIO referencedDataObject = createDataObject(
+      "referencedDataObject",
+      collectionWithReferencedDataObject.getId()
+    );
+
+    String referencesURL = String.format(
+      "/%s/%d/%s/%d/%s",
+      Constants.COLLECTIONS,
+      collectionWithReferencingDataObject.getId(),
+      Constants.DATA_OBJECTS,
+      referencingDataObject.getId(),
+      Constants.DATAOBJECT_REFERENCES
+    );
+
+    DataObjectReferenceIO referenceToCreate = new DataObjectReferenceIO();
+    referenceToCreate.setName("reference");
+    referenceToCreate.setRelationship("integrationtest");
+    referenceToCreate.setReferencedDataObjectId(referencedDataObject.getId());
+    DataObjectReferenceIO reference = given()
+      .spec(requestSpecification)
+      .body(referenceToCreate)
+      .when()
+      .post(referencesURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectReferenceIO.class);
+
+    // Act
+    given()
+      .spec(requestSpecification)
+      .when()
+      .delete(
+        String.format(
+          "/%s/%d/%s/%d",
+          Constants.COLLECTIONS,
+          collectionWithReferencedDataObject.getId(),
+          Constants.DATA_OBJECTS,
+          referencedDataObject.getId()
+        )
+      )
+      .then()
+      .statusCode(204);
+
+    // Assert
+    given()
+      .spec(requestSpecification)
+      .when()
+      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .then()
+      .statusCode(404);
   }
 }

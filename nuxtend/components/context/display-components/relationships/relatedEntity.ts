@@ -7,7 +7,10 @@ import type {
 } from "@dlr-shepard/backend-client";
 
 export type DataObjectReferenceWithPayload = DataObjectReference & {
-  payload: DataObject & { collection: Collection };
+  payload?: DataObjectReferencePayload;
+};
+export type DataObjectReferencePayload = DataObject & {
+  collection: Collection;
 };
 export type Successor = DataObject & { type: "Successor" };
 export type Predecessor = DataObject & { type: "Predecessor" };

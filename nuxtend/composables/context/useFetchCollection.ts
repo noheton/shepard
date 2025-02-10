@@ -26,6 +26,7 @@ export function useFetchCollection(collectionId: number) {
         collection.value = response;
       })
       .catch(e => {
+        collection.value = undefined;
         handleError(e as ResponseError, "fetching collection");
       });
     createApiInstance(CollectionApi)
