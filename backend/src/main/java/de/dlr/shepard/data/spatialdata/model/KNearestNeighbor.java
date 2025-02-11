@@ -7,9 +7,9 @@ public class KNearestNeighbor extends AbstractGeometryFilter {
 
   private int k;
 
-  private Double x;
-  private Double y;
-  private Double z;
+  private double x;
+  private double y;
+  private double z;
 
   public KNearestNeighbor() {
     super(GeometryFilterType.K_NEAREST_NEIGHBOR);
