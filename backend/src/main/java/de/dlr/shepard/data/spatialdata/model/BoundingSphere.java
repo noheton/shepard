@@ -5,10 +5,10 @@ import lombok.Data;
 @Data
 public class BoundingSphere extends AbstractGeometryFilter {
 
-  private int r;
-  private int centerX;
-  private int centerY;
-  private int centerZ;
+  private double r;
+  private double centerX;
+  private double centerY;
+  private double centerZ;
 
   public BoundingSphere() {
     super(GeometryFilterType.BOUNDING_SPHERE);
