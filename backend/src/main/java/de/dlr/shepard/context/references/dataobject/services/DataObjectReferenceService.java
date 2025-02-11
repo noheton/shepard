@@ -111,7 +111,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     if (reference.getReferencedDataObject() != null) {
       return dataObjectDAO.findByNeo4jId(reference.getReferencedDataObject().getId());
     }
-    Log.errorf("Data Object referenced by Data Object reference with id %s is deleted", reference.getId());
+    Log.errorf("Data Object referenced by Data Object reference with id %s is deleted", reference.getShepardId());
     return null;
   }
 }

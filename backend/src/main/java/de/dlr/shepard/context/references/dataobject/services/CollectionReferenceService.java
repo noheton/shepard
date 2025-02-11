@@ -110,11 +110,10 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 
   public Collection getPayloadByShepardId(long collectionReferenceShepardId, UUID versionUID) {
     var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId, versionUID);
-    var collection = collectionDAO.findByNeo4jId(reference.getReferencedCollection().getId());
-    if (collection.isDeleted()) {
-      Log.errorf("Collection with id %s is deleted", reference.getReferencedCollection().getShepardId());
-      return null;
+    if (reference.getReferencedCollection() != null) {
+      return collectionDAO.findByNeo4jId(reference.getReferencedCollection().getId());
     }
-    return collection;
+    Log.errorf("Collection referenced by collection reference with id %s is deleted", reference.getShepardId());
+    return null;
   }
 }

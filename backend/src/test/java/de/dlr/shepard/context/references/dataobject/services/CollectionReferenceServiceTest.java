@@ -325,7 +325,6 @@ public class CollectionReferenceServiceTest {
     referenced.setDeleted(true);
     CollectionReference reference = new CollectionReference(1L);
     reference.setShepardId(15L);
-    reference.setReferencedCollection(referenced);
 
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
     when(collectionDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
