@@ -80,7 +80,7 @@ const currentStep = ref<number>(1);
                 variant="flat"
                 @click="() => emit('submit')"
               >
-                Save Changes
+                Create
               </v-btn>
             </div>
           </template>
