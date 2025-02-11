@@ -9,5 +9,9 @@ public class SpatialDataParamsIO {
 
   private AbstractGeometryFilter geometryFilter;
   private Map<String, Object> metadata;
-  private long timestamp;
+  private Long startTime;
+  private Long endTime;
+  private Integer limit;
+  private Integer offset;
+  private Integer skip;
 }
