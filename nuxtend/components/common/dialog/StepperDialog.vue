@@ -48,6 +48,7 @@ const currentStep = ref<number>(1);
               <v-btn
                 v-if="currentStep === 2"
                 :disabled="submitDisabled"
+                class="back-btn"
                 variant="flat"
                 color="treeview"
                 @click="currentStep = 1"
@@ -113,6 +114,15 @@ const currentStep = ref<number>(1);
     color: rgb(var(--v-theme-textbody1));
     .v-stepper-item__avatar {
       background-color: rgb(var(--v-theme-primary));
+    }
+  }
+
+  :deep(.v-btn--disabled.back-btn) {
+    .v-btn__content {
+      color: rgb(var(--v-theme-low-emphasis));
+    }
+    .v-btn__overlay {
+      color: rgb(var(--v-theme-divider2));
     }
   }
 }
