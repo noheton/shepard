@@ -33,6 +33,8 @@ public class GenerateJsonPointsService {
     try (FileWriter writer = new FileWriter(new File(fileName))) {
       writer.write("[");
 
+      long time = System.currentTimeMillis() * 1000;
+
       for (int i = 0; i < n; i++) {
         ObjectNode pointNode = mapper.createObjectNode();
 
@@ -40,6 +42,8 @@ public class GenerateJsonPointsService {
         pointNode.put("x", x);
         pointNode.put("y", y);
         pointNode.put("z", z);
+
+        pointNode.put("timestamp", time + i);
 
         x += precision;
 
