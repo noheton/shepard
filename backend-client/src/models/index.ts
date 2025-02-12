@@ -5,6 +5,7 @@ export * from './AbstractGeometryFilter';
 export * from './AggregateFunction';
 export * from './ApiKey';
 export * from './ApiKeyWithJWT';
+export * from './BasicCollectionAttributes';
 export * from './BasicContainer';
 export * from './BasicContainerAttributes';
 export * from './BasicEntity';

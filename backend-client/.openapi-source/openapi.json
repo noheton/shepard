@@ -4899,7 +4899,7 @@
           "name" : "orderBy",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/BasicContainerAttributes"
+            "$ref" : "#/components/schemas/BasicCollectionAttributes"
           }
         }, {
           "name" : "orderDesc",
@@ -7155,6 +7155,10 @@
         "format" : "date",
         "type" : "string",
         "example" : "2022-03-10"
+      },
+      "BasicCollectionAttributes" : {
+        "enum" : [ "updatedAt", "createdAt", "createdBy", "id", "name" ],
+        "type" : "string"
       },
       "SemanticRepository" : {
         "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type", "endpoint" ],

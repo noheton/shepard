@@ -106,7 +106,7 @@ public class SearchRest {
     ) @Valid CollectionSearchBody collectionSearchBody,
     @QueryParam(Constants.QP_PAGE) Integer page,
     @QueryParam(Constants.QP_SIZE) Integer size,
-    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicContainerAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicCollectionAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
     Log.infof(

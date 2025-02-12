@@ -33,6 +33,7 @@ src/models/AbstractGeometryFilter.ts
 src/models/AggregateFunction.ts
 src/models/ApiKey.ts
 src/models/ApiKeyWithJWT.ts
+src/models/BasicCollectionAttributes.ts
 src/models/BasicContainer.ts
 src/models/BasicContainerAttributes.ts
 src/models/BasicEntity.ts

@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime';
 import type {
+  BasicCollectionAttributes,
   BasicContainerAttributes,
   CollectionSearchBody,
   CollectionSearchResult,
@@ -26,6 +27,8 @@ import type {
   UserSearchResult,
 } from '../models/index';
 import {
+    BasicCollectionAttributesFromJSON,
+    BasicCollectionAttributesToJSON,
     BasicContainerAttributesFromJSON,
     BasicContainerAttributesToJSON,
     CollectionSearchBodyFromJSON,
@@ -54,7 +57,7 @@ export interface SearchCollectionsRequest {
     collectionSearchBody: CollectionSearchBody;
     page?: number;
     size?: number;
-    orderBy?: BasicContainerAttributes;
+    orderBy?: BasicCollectionAttributes;
     orderDesc?: boolean;
 }
 
