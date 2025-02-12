@@ -4,14 +4,12 @@ import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
-import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import io.quarkus.logging.Log;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.neo4j.ogm.cypher.Filter;
-import org.neo4j.ogm.cypher.query.Pagination;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
@@ -32,17 +30,6 @@ public abstract class GenericDAO<T> {
    */
   public Collection<T> findAll() {
     Collection<T> iter = session.loadAll(getEntityType(), DEPTH_ENTITY);
-    return iter;
-  }
-
-  /**
-   * Find all instances of a certain entity T
-   *
-   * @param page which page should be fetched
-   * @return an Iterable over the found entities
-   */
-  public Collection<T> findAll(PaginationHelper page) {
-    Collection<T> iter = session.loadAll(getEntityType(), new Pagination(page.getPage(), page.getSize()), DEPTH_ENTITY);
     return iter;
   }
 

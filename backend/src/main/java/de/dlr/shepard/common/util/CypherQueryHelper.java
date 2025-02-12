@@ -60,8 +60,8 @@ public class CypherQueryHelper {
     return getReturnPart(entity, neighborhood, 1);
   }
 
-  public static String getReturnPart(String entity, Neighborhood neighborhood, QueryParamHelper params) {
-    return getReturnPart(entity, neighborhood, 1, params);
+  public static String getReturnPart(String entity, Neighborhood neighborhood, PaginationHelper pagination) {
+    return getReturnPart(entity, neighborhood, 1, pagination);
   }
 
   public static String getReturnCountPart(String entity, Neighborhood neighborhood) {
@@ -76,10 +76,10 @@ public class CypherQueryHelper {
     );
   }
 
-  public static String getReturnPart(String entity, Neighborhood neighborhood, int depth, QueryParamHelper params) {
+  public static String getReturnPart(String entity, Neighborhood neighborhood, int depth, PaginationHelper pagination) {
     return (
       getNeighborhoodPart(entity, neighborhood, depth) +
-      (params.hasPagination() ? " " + CypherQueryHelper.getPaginationPart(params.getPagination()) : "") +
+      (pagination != null ? " " + CypherQueryHelper.getPaginationPart(pagination) : "") +
       " RETURN " +
       String.format("%s, nodes(path), relationships(path)", entity)
     );

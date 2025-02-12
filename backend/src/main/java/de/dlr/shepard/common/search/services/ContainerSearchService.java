@@ -8,7 +8,8 @@ import de.dlr.shepard.common.search.io.ContainerSearchParams;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.search.query.QueryValidator;
-import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.PaginationHelper;
+import de.dlr.shepard.common.util.SortingHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -27,7 +28,8 @@ public class ContainerSearchService {
 
   public ContainerSearchResult search(
     ContainerSearchBody containerSearchBody,
-    QueryParamHelper params,
+    PaginationHelper pagination,
+    SortingHelper sortOrder,
     String userName
   ) {
     ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
@@ -35,13 +37,12 @@ public class ContainerSearchService {
     String neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       containerSearchParams.getQuery(),
       containerSearchParams.getQueryType(),
-      params,
+      sortOrder,
       userName
     );
-    List<BasicContainerIO> resultList = findContainerList(neo4jSelectionQuery, containerSearchParams, params);
+    List<BasicContainerIO> resultList = findContainerList(neo4jSelectionQuery, containerSearchParams, pagination);
     Integer totalResultCount = searchDAO.getContainerTotalCount(
       neo4jSelectionQuery,
-      params,
       containerSearchParams.getQueryType().getTypeAlias()
     );
     BasicContainerIO[] resultArray = resultList.toArray(new BasicContainerIO[0]);
@@ -56,11 +57,11 @@ public class ContainerSearchService {
   private List<BasicContainerIO> findContainerList(
     String neo4jSelectionQuery,
     ContainerSearchParams searchParams,
-    QueryParamHelper params
+    PaginationHelper pagination
   ) {
     List<BasicContainer> resultContainers = searchDAO.findContainers(
       neo4jSelectionQuery,
-      params,
+      pagination,
       searchParams.getQueryType().getTypeAlias()
     );
     List<BasicContainerIO> ret = resultContainers.stream().map(BasicContainerIO::new).toList();

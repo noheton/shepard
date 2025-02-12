@@ -15,6 +15,7 @@ src/apis/ReferenceApi.ts
 src/apis/SearchApi.ts
 src/apis/SemanticAnnotationApi.ts
 src/apis/SemanticRepositoryApi.ts
+src/apis/SpatialDataContainerApi.ts
 src/apis/StructuredDataContainerApi.ts
 src/apis/StructuredDataReferenceApi.ts
 src/apis/SubscriptionApi.ts
@@ -28,6 +29,7 @@ src/apis/VersionzApi.ts
 src/apis/index.ts
 src/index.ts
 src/models/AbstractDataObject.ts
+src/models/AbstractGeometryFilter.ts
 src/models/AggregateFunction.ts
 src/models/ApiKey.ts
 src/models/ApiKeyWithJWT.ts
@@ -38,6 +40,9 @@ src/models/BasicReference.ts
 src/models/BasicReferenceAttributes.ts
 src/models/Collection.ts
 src/models/CollectionReference.ts
+src/models/CollectionSearchBody.ts
+src/models/CollectionSearchParams.ts
+src/models/CollectionSearchResult.ts
 src/models/ContainerAttributes.ts
 src/models/ContainerSearchBody.ts
 src/models/ContainerSearchParams.ts
@@ -47,10 +52,12 @@ src/models/DataObject.ts
 src/models/DataObjectAttributes.ts
 src/models/DataObjectReference.ts
 src/models/DataPointValueType.ts
+src/models/DatabaseType.ts
 src/models/Event.ts
 src/models/FileContainer.ts
 src/models/FileReference.ts
 src/models/FillOption.ts
+src/models/GeometryFilterType.ts
 src/models/GetAllApiKeys200ResponseInner.ts
 src/models/HasId.ts
 src/models/HealthCheck.ts
@@ -73,6 +80,8 @@ src/models/SemanticRepository.ts
 src/models/SemanticRepositoryAttributes.ts
 src/models/SemanticRepositoryType.ts
 src/models/ShepardFile.ts
+src/models/SpatialDataParamsIO.ts
+src/models/SpatialDataPoint.ts
 src/models/Status.ts
 src/models/StructuredData.ts
 src/models/StructuredDataContainer.ts

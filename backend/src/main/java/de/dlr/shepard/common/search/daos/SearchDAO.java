@@ -5,7 +5,7 @@ import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
-import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
@@ -25,11 +25,21 @@ public class SearchDAO {
     session = NeoConnector.getInstance().getNeo4jSession();
   }
 
-  public List<Collection> findCollections(String selectionQuery, String collectionVariable) {
-    String query = selectionQuery + emitCollectionReturnPart(collectionVariable);
+  public List<Collection> findCollections(
+    String selectionQuery,
+    PaginationHelper pagination,
+    String collectionVariable
+  ) {
+    String query = selectionQuery + emitCollectionReturnPart(collectionVariable, pagination);
     Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;
+  }
+
+  public Integer getCollectionTotalCount(String selectionQuery, String collectionVariable) {
+    String query = selectionQuery + emitTotalCountReturnPart(collectionVariable);
+    Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
+    return collectionTotalCountIterable.iterator().next();
   }
 
   public List<DataObject> findDataObjects(String selectionQuery, String dataObjectVariable) {
@@ -46,15 +56,19 @@ public class SearchDAO {
     return ret;
   }
 
-  public List<BasicContainer> findContainers(String selectionQuery, QueryParamHelper params, String containerVariable) {
-    String query = selectionQuery + emitContainerReturnPart(containerVariable, params);
+  public List<BasicContainer> findContainers(
+    String selectionQuery,
+    PaginationHelper pagination,
+    String containerVariable
+  ) {
+    String query = selectionQuery + emitContainerReturnPart(containerVariable, pagination);
     Iterable<BasicContainer> basicContainers = session.query(BasicContainer.class, query, Collections.emptyMap());
     List<BasicContainer> ret = new ArrayList<>();
     basicContainers.forEach(ret::add);
     return ret;
   }
 
-  public Integer getContainerTotalCount(String selectionQuery, QueryParamHelper params, String containerVariable) {
+  public Integer getContainerTotalCount(String selectionQuery, String containerVariable) {
     String query = selectionQuery + emitTotalCountReturnPart(containerVariable);
     Iterable<Integer> containerTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
     return containerTotalCountIterable.iterator().next();
@@ -77,21 +91,21 @@ public class SearchDAO {
     );
   }
 
-  private String emitContainerReturnPart(String containerVariable, QueryParamHelper params) {
+  private String emitContainerReturnPart(String containerVariable, PaginationHelper pagination) {
     return (
       " WITH " +
       containerVariable +
       " " +
-      CypherQueryHelper.getReturnPart(containerVariable, Neighborhood.ESSENTIAL, params)
+      CypherQueryHelper.getReturnPart(containerVariable, Neighborhood.ESSENTIAL, pagination)
     );
   }
 
-  private String emitCollectionReturnPart(String collectionVariable) {
+  private String emitCollectionReturnPart(String collectionVariable, PaginationHelper pagination) {
     return String.format(
-      " WITH %s MATCH path=(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
-      collectionVariable,
-      collectionVariable,
-      collectionVariable
+      " WITH " +
+      collectionVariable +
+      " " +
+      CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.ESSENTIAL, pagination)
     );
   }
 

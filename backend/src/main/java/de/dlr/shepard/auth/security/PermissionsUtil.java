@@ -68,7 +68,7 @@ public class PermissionsUtil {
       // usersearch and containersearch
       if (
         pathSegments.get(0).getPath().equals(Constants.SEARCH) &&
-        List.of(Constants.USERS, Constants.CONTAINERS).contains(pathSegments.get(1).getPath()) &&
+        List.of(Constants.USERS, Constants.CONTAINERS, Constants.COLLECTIONS).contains(pathSegments.get(1).getPath()) &&
         pathSegments.size() == 2
       ) return true;
       // non-numeric id

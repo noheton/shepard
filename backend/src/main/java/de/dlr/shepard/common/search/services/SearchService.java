@@ -1,8 +1,10 @@
 package de.dlr.shepard.common.search.services;
 
+import de.dlr.shepard.common.search.io.CollectionSearchBody;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.query.QueryValidator;
+import de.dlr.shepard.common.util.SortingHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
@@ -34,7 +36,9 @@ public class SearchService {
     ResponseBody ret =
       switch (searchBody.getSearchParams().getQueryType()) {
         case StructuredData -> structuredDataSearcher.search(searchBody, userName);
-        case Collection -> collectionSearcher.search(searchBody, userName);
+        case Collection -> collectionSearcher
+          .search(new CollectionSearchBody(searchBody), null, new SortingHelper(null, null), userName)
+          .toResponseBody();
         case DataObject -> dataObjectSearcher.search(searchBody, userName);
         case Reference -> referenceSearcher.search(searchBody, userName);
         default -> null;

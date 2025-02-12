@@ -7,7 +7,7 @@ import de.dlr.shepard.common.exceptions.ShepardParserException;
 import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.endpoints.BasicContainerAttributes;
 import de.dlr.shepard.common.search.io.SearchScope;
-import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -423,7 +423,11 @@ public class Neo4jQueryBuilderTest {
   @ParameterizedTest
   @MethodSource
   public void emitCollectionQueryWithNeo4jIdTest(String input, String expected) {
-    String neo4jQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(input, userName);
+    String neo4jQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
+      input,
+      userName,
+      new SortingHelper(null, null)
+    );
     assertEquals(expected, neo4jQuery);
   }
 
@@ -482,11 +486,10 @@ public class Neo4jQueryBuilderTest {
   public void emitStructuredDataContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.STRUCTUREDDATA,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -498,11 +501,10 @@ public class Neo4jQueryBuilderTest {
   public void emitTimeseriesContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "MarxKarl";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.TIMESERIES,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -514,11 +516,10 @@ public class Neo4jQueryBuilderTest {
   public void emitFileContainerSelectionQueryWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -530,11 +531,10 @@ public class Neo4jQueryBuilderTest {
   public void emitFileContainerSelectionQueryWithNeo4jIdIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -546,11 +546,10 @@ public class Neo4jQueryBuilderTest {
   public void emitFileContainerSelectionQueryInWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [1,2], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -562,11 +561,10 @@ public class Neo4jQueryBuilderTest {
   public void emitFileContainerSelectionQueryInEmptyWithNeo4jIdTest() {
     String JSONQuery = "{\"property\": \"id\", \"value\": [], \"operator\": \"in\"}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -578,11 +576,10 @@ public class Neo4jQueryBuilderTest {
   public void emitFileContainerSelectionQueryNotWithNeo4jIdTest() {
     String JSONQuery = "{\"NOT\":{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -596,11 +593,10 @@ public class Neo4jQueryBuilderTest {
       "{\"AND\":[{\"property\": \"createdBy\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"updatedBy\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -614,11 +610,10 @@ public class Neo4jQueryBuilderTest {
       "{\"OR\":[{\"property\": \"valueIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}," +
       "{\"property\": \"propertyIRI\", \"value\": \"MyName\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -632,11 +627,10 @@ public class Neo4jQueryBuilderTest {
       "{\"OR\":[{\"property\": \"referencedCollectionId\", \"value\": \"5\", \"operator\": \"eq\"}," +
       "{\"property\": \"referencedDataObjectId\", \"value\": \"6\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -651,11 +645,10 @@ public class Neo4jQueryBuilderTest {
       "{\"property\": \"structuredDataContainerId\", \"value\": \"6\", \"operator\": \"eq\"}," +
       "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       userName
     );
     String expected =
@@ -670,11 +663,10 @@ public class Neo4jQueryBuilderTest {
       "{\"property\": \"structuredDataContainerId\", \"value\": \"6\", \"operator\": \"eq\"}," +
       "{\"property\": \"timeseriesContainerId\", \"value\": \"7\", \"operator\": \"eq\"}]}";
     String userName = "GatesWilliam";
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String neo4jQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONQuery,
       ContainerType.BASIC,
-      queryParamHelper.withOrderByAttribute(BasicContainerAttributes.name, null),
+      new SortingHelper(BasicContainerAttributes.name, null),
       userName
     );
     String expected =
@@ -694,7 +686,7 @@ public class Neo4jQueryBuilderTest {
   public void invalidJsonTest() {
     String JSONQuery = "}";
     assertThrows(ShepardParserException.class, () ->
-      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName, new SortingHelper(null, null))
     );
   }
 
@@ -702,7 +694,7 @@ public class Neo4jQueryBuilderTest {
   public void emptyJsonTest() {
     String JSONQuery = "{}";
     assertThrows(ShepardParserException.class, () ->
-      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName, new SortingHelper(null, null))
     );
   }
 
@@ -712,7 +704,7 @@ public class Neo4jQueryBuilderTest {
       """
       { "property": "name", "value": "MyName", "operator": "bla" }""";
     assertThrows(ShepardParserException.class, () ->
-      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(searchBodyQuery, userName)
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(searchBodyQuery, userName, new SortingHelper(null, null))
     );
   }
 
@@ -722,7 +714,7 @@ public class Neo4jQueryBuilderTest {
       """
       { "invalid": { "property": "name", "value": "MyName", "operator": "eq" } }""";
     assertThrows(ShepardParserException.class, () ->
-      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName)
+      Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(JSONQuery, userName, new SortingHelper(null, null))
     );
   }
 }

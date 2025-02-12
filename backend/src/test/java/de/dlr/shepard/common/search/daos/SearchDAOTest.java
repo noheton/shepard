@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
-import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
@@ -32,9 +31,10 @@ public class SearchDAOTest extends BaseTestCase {
   @Test
   public void findCollectionsTest() {
     var collections = List.of(new Collection(1L));
-    String query = "Match bla WITH col MATCH path=(col)-[]->(u:User) RETURN col, nodes(path), relationships(path)";
+    String query =
+      "Match bla WITH col MATCH path=(col)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN col, nodes(path), relationships(path)";
     when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(collections);
-    var actual = dao.findCollections("Match bla", "col");
+    var actual = dao.findCollections("Match bla", null, "col");
     assertEquals(collections, actual);
   }
 
@@ -62,59 +62,54 @@ public class SearchDAOTest extends BaseTestCase {
   public void getContainerTotalCountTest() {
     int containerCount = 1;
     Iterable<Integer> countIterable = () -> Arrays.stream(new Integer[] { containerCount }).iterator();
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query = "MATCH bla WITH bc MATCH path=(bc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN COUNT(bc)";
     when(session.query(Integer.class, query, Collections.emptyMap())).thenReturn(countIterable);
-    var actual = dao.getContainerTotalCount(selectionQuery, queryParamHelper, "bc");
+    var actual = dao.getContainerTotalCount(selectionQuery, "bc");
     assertEquals(containerCount, actual);
   }
 
   @Test
   public void findBasicContainersTest() {
     List<BasicContainer> basicContainers = List.of(new BasicContainer(1L));
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH bc MATCH path=(bc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN bc, nodes(path), relationships(path)";
     when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(basicContainers);
-    var actual = dao.findContainers(selectionQuery, queryParamHelper, "bc");
+    var actual = dao.findContainers(selectionQuery, null, "bc");
     assertEquals(basicContainers, actual);
   }
 
   @Test
   public void findFileContainersTest() {
     List<BasicContainer> fileContainers = List.of(new FileContainer(1L));
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH fc MATCH path=(fc)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN fc, nodes(path), relationships(path)";
     when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(fileContainers);
-    var actual = dao.findContainers(selectionQuery, queryParamHelper, "fc");
+    var actual = dao.findContainers(selectionQuery, null, "fc");
     assertEquals(fileContainers, actual);
   }
 
   @Test
   public void findStructuredDataContainersTest() {
     List<BasicContainer> structuredDataContainers = List.of(new StructuredDataContainer(1L));
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH sd MATCH path=(sd)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN sd, nodes(path), relationships(path)";
     when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(structuredDataContainers);
-    var actual = dao.findContainers(selectionQuery, queryParamHelper, "sd");
+    var actual = dao.findContainers(selectionQuery, null, "sd");
     assertEquals(structuredDataContainers, actual);
   }
 
   @Test
   public void findTimeseriesContainersTest() {
     List<BasicContainer> timeseriesContainers = List.of(new TimeseriesContainer(1L));
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String selectionQuery = "MATCH bla";
     String query =
       "MATCH bla WITH ts MATCH path=(ts)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN ts, nodes(path), relationships(path)";
     when(session.query(BasicContainer.class, query, Collections.emptyMap())).thenReturn(timeseriesContainers);
-    var actual = dao.findContainers(selectionQuery, queryParamHelper, "ts");
+    var actual = dao.findContainers(selectionQuery, null, "ts");
     assertEquals(timeseriesContainers, actual);
   }
 

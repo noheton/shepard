@@ -8,7 +8,7 @@ import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.io.SearchScope;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
-import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.Iterator;
 import java.util.List;
@@ -105,10 +105,14 @@ public class Neo4jQueryBuilder {
   }
 
   /**
-   * This is a fix described in: https://gitlab.com/dlr-shepard/shepard/-/issues/389
-   * We use new delimiter characters for attributes ('||'), but want to support the old search functionality using '.' as a delimiter.
+   * This is a fix described in:
+   * https://gitlab.com/dlr-shepard/shepard/-/issues/389
+   * We use new delimiter characters for attributes ('||'), but want to support
+   * the old search functionality using '.' as a delimiter.
+   *
    * @param property
-   * @return property string, if it contained 'attributes.', it is going to be replaced by 'attributes||'
+   * @return property string, if it contained 'attributes.', it is going to be
+   * replaced by 'attributes||'
    */
   private static String changeAttributesDelimiter(String property) {
     if (property.startsWith("attributes.")) {
@@ -326,7 +330,11 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  public static String collectionSelectionQueryWithNeo4jId(String searchBodyQuery, String userName) {
+  public static String collectionSelectionQueryWithNeo4jId(
+    String searchBodyQuery,
+    String userName,
+    SortingHelper sortOrder
+  ) {
     String ret = "";
     ret = ret + collectionMatchPartWithoutVersion();
     ret = ret + " WHERE ";
@@ -335,13 +343,22 @@ public class Neo4jQueryBuilder {
     ret = ret + notDeletedPart(Constants.COLLECTION_IN_QUERY);
     ret = ret + " AND ";
     ret = ret + readableByPart(userName);
+    if (sortOrder.hasOrderByAttribute()) {
+      ret +=
+        " " +
+        CypherQueryHelper.getOrderByPart(
+          Constants.COLLECTION_IN_QUERY,
+          sortOrder.getOrderByAttribute(),
+          sortOrder.getOrderDesc()
+        );
+    }
     return ret;
   }
 
   public static String containerSelectionQueryWithNeo4jId(
     String JSONQuery,
     ContainerType containerType,
-    QueryParamHelper params,
+    SortingHelper sortOrder,
     String userName
   ) {
     String ret = "MATCH (" + containerType.getTypeAlias() + ":" + containerType.getTypeName() + ")";
@@ -351,13 +368,13 @@ public class Neo4jQueryBuilder {
     ret = ret + notDeletedPart(containerType.getTypeAlias());
     ret = ret + " AND ";
     ret = ret + CypherQueryHelper.getReadableByQuery(containerType.getTypeAlias(), userName);
-    if (params.hasOrderByAttribute()) {
+    if (sortOrder.hasOrderByAttribute()) {
       ret +=
         " " +
         CypherQueryHelper.getOrderByPart(
           containerType.getTypeAlias(),
-          params.getOrderByAttribute(),
-          params.getOrderDesc()
+          sortOrder.getOrderByAttribute(),
+          sortOrder.getOrderDesc()
         );
     }
     return ret;

@@ -16,6 +16,8 @@
 import * as runtime from '../runtime';
 import type {
   BasicContainerAttributes,
+  CollectionSearchBody,
+  CollectionSearchResult,
   ContainerSearchBody,
   ContainerSearchResult,
   ResponseBody,
@@ -26,6 +28,10 @@ import type {
 import {
     BasicContainerAttributesFromJSON,
     BasicContainerAttributesToJSON,
+    CollectionSearchBodyFromJSON,
+    CollectionSearchBodyToJSON,
+    CollectionSearchResultFromJSON,
+    CollectionSearchResultToJSON,
     ContainerSearchBodyFromJSON,
     ContainerSearchBodyToJSON,
     ContainerSearchResultFromJSON,
@@ -42,6 +48,14 @@ import {
 
 export interface SearchRequest {
     searchBody: SearchBody;
+}
+
+export interface SearchCollectionsRequest {
+    collectionSearchBody: CollectionSearchBody;
+    page?: number;
+    size?: number;
+    orderBy?: BasicContainerAttributes;
+    orderDesc?: boolean;
 }
 
 export interface SearchContainersRequest {
@@ -106,6 +120,70 @@ export class SearchApi extends runtime.BaseAPI {
      */
     async search(requestParameters: SearchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ResponseBody> {
         const response = await this.searchRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Search collections
+     */
+    async searchCollectionsRaw(requestParameters: SearchCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionSearchResult>> {
+        if (requestParameters['collectionSearchBody'] == null) {
+            throw new runtime.RequiredError(
+                'collectionSearchBody',
+                'Required parameter "collectionSearchBody" was null or undefined when calling searchCollections().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['orderBy'] = requestParameters['orderBy'];
+        }
+
+        if (requestParameters['orderDesc'] != null) {
+            queryParameters['orderDesc'] = requestParameters['orderDesc'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/search/collections`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: CollectionSearchBodyToJSON(requestParameters['collectionSearchBody']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionSearchResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Search collections
+     */
+    async searchCollections(requestParameters: SearchCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionSearchResult> {
+        const response = await this.searchCollectionsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

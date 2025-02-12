@@ -8,14 +8,19 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
+import de.dlr.shepard.common.search.io.CollectionSearchBody;
+import de.dlr.shepard.common.search.io.CollectionSearchParams;
+import de.dlr.shepard.common.search.io.CollectionSearchResult;
 import de.dlr.shepard.common.search.io.QueryType;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.ResultTriple;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.io.SearchScope;
+import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import io.quarkus.test.InjectMock;
@@ -48,7 +53,12 @@ public class SearchServiceTest {
     var params = new SearchParams("match invalid", QueryType.Collection);
     var searchBody = new SearchBody(scopes, params);
     assertThrows(InvalidBodyException.class, () -> searcher.search(searchBody, userName));
-    verify(collectionSearcher, never()).search(searchBody, userName);
+    verify(collectionSearcher, never()).search(
+      new CollectionSearchBody(searchBody),
+      null,
+      new SortingHelper(null, null),
+      userName
+    );
   }
 
   @Test
@@ -57,14 +67,19 @@ public class SearchServiceTest {
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("{}", QueryType.Collection);
     var searchBody = new SearchBody(scopes, params);
-    ResultTriple[] resultTriples = { new ResultTriple(1L) };
     Collection collection = new Collection(1L);
     collection.setShepardId(collection.getId());
-    BasicEntityIO[] results = { new BasicEntityIO(collection) };
-    var expected = new ResponseBody(resultTriples, results, params);
-    when(collectionSearcher.search(searchBody, userName)).thenReturn(expected);
+    CollectionIO[] results = { new CollectionIO(collection) };
+    var collectionSearchResultMock = new CollectionSearchResult(
+      results,
+      new CollectionSearchParams(params.getQuery()),
+      0
+    );
+    when(
+      collectionSearcher.search(new CollectionSearchBody(searchBody), null, new SortingHelper(null, null), userName)
+    ).thenReturn(collectionSearchResultMock);
     ResponseBody actual = searcher.search(searchBody, userName);
-    assertEquals(expected, actual);
+    assertEquals(collectionSearchResultMock.toResponseBody(), actual);
   }
 
   @Test

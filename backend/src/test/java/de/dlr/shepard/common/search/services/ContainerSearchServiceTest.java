@@ -11,7 +11,7 @@ import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchParams;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
@@ -48,21 +48,20 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.BASIC);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
     String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.BASIC,
-      queryParamHelper,
+      new SortingHelper(null, null),
       username
     );
     BasicContainer contRes = new BasicContainer(5L);
     List<BasicContainer> contResList = new ArrayList<>();
     contResList.add(contRes);
-    when(
-      searchDAO.findContainers(neo4jFileSelectionQuery, queryParamHelper, Constants.BASICCONTAINER_IN_QUERY)
-    ).thenReturn(contResList);
-    var actual = containerSearcher.search(searchBody, queryParamHelper, username);
+    when(searchDAO.findContainers(neo4jFileSelectionQuery, null, Constants.BASICCONTAINER_IN_QUERY)).thenReturn(
+      contResList
+    );
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null), username);
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(contRes));
     assertThat(actual.getSearchParams()).isEqualTo(params);
   }
@@ -72,21 +71,20 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.FILE);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
     String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.FILE,
-      queryParamHelper,
+      new SortingHelper(null, null),
       username
     );
     FileContainer fileRes = new FileContainer(5L);
     List<BasicContainer> fileResList = new ArrayList<>();
     fileResList.add(fileRes);
-    when(
-      searchDAO.findContainers(neo4jFileSelectionQuery, queryParamHelper, Constants.FILECONTAINER_IN_QUERY)
-    ).thenReturn(fileResList);
-    var actual = containerSearcher.search(searchBody, queryParamHelper, username);
+    when(searchDAO.findContainers(neo4jFileSelectionQuery, null, Constants.FILECONTAINER_IN_QUERY)).thenReturn(
+      fileResList
+    );
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null), username);
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(fileRes));
     assertThat(actual.getSearchParams()).isEqualTo(params);
   }
@@ -96,21 +94,20 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.TIMESERIES);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
     String neo4jTimeseriesQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.TIMESERIES,
-      queryParamHelper,
+      new SortingHelper(null, null),
       username
     );
     TimeseriesContainer timeRes1 = new TimeseriesContainer(5L);
     TimeseriesContainer timeRes2 = new TimeseriesContainer(8L);
     List<BasicContainer> timeResList = List.of(timeRes1, timeRes2);
-    when(
-      searchDAO.findContainers(neo4jTimeseriesQuery, queryParamHelper, Constants.TIMESERIESCONTAINER_IN_QUERY)
-    ).thenReturn(timeResList);
-    var actual = containerSearcher.search(searchBody, queryParamHelper, username);
+    when(searchDAO.findContainers(neo4jTimeseriesQuery, null, Constants.TIMESERIESCONTAINER_IN_QUERY)).thenReturn(
+      timeResList
+    );
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null), username);
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(timeRes1), new BasicContainerIO(timeRes2));
   }
 
@@ -119,25 +116,20 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\",\"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.STRUCTUREDDATA);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    QueryParamHelper queryParamHelper = new QueryParamHelper();
     String username = "EngelsFriedrich";
     String neo4jStructuredDataSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.STRUCTUREDDATA,
-      queryParamHelper,
+      new SortingHelper(null, null),
       username
     );
     StructuredDataContainer sdRes1 = new StructuredDataContainer(5L);
     StructuredDataContainer sdRes2 = new StructuredDataContainer(8L);
     List<BasicContainer> sdResList = List.of(sdRes1, sdRes2);
     when(
-      searchDAO.findContainers(
-        neo4jStructuredDataSelectionQuery,
-        queryParamHelper,
-        Constants.STRUCTUREDDATACONTAINER_IN_QUERY
-      )
+      searchDAO.findContainers(neo4jStructuredDataSelectionQuery, null, Constants.STRUCTUREDDATACONTAINER_IN_QUERY)
     ).thenReturn(sdResList);
-    var actual = containerSearcher.search(searchBody, queryParamHelper, username);
+    var actual = containerSearcher.search(searchBody, null, new SortingHelper(null, null), username);
     assertThat(actual.getResults()).containsExactly(new BasicContainerIO(sdRes1), new BasicContainerIO(sdRes2));
   }
 }

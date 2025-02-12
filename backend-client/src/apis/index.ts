@@ -13,6 +13,7 @@ export * from './ReferenceApi';
 export * from './SearchApi';
 export * from './SemanticAnnotationApi';
 export * from './SemanticRepositoryApi';
+export * from './SpatialDataContainerApi';
 export * from './StructuredDataContainerApi';
 export * from './StructuredDataReferenceApi';
 export * from './SubscriptionApi';

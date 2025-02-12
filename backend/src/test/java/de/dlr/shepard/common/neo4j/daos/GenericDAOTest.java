@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.List;
 import java.util.Map;
@@ -65,18 +64,6 @@ public class GenericDAOTest extends BaseTestCase {
     when(session.loadAll(TestObject.class, 1)).thenReturn(List.of(a, b));
     var actual = dao.findAll();
     assertEquals(List.of(a, b), actual);
-  }
-
-  @Test
-  public void findAllPaginationTest() {
-    var a = new TestObject(1);
-    var b = new TestObject(2);
-    var pagination = new PaginationHelper(3, 100);
-
-    when(session.loadAll(eq(TestObject.class), paginationCaptor.capture(), eq(1))).thenReturn(List.of(a, b));
-    var actual = dao.findAll(pagination);
-    assertEquals(List.of(a, b), actual);
-    assertEquals(" SKIP 300 LIMIT 100", paginationCaptor.getValue().toString());
   }
 
   @Test

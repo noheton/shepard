@@ -53,6 +53,15 @@ public class BasicEntityIO implements HasId {
     this.name = entity.getName();
   }
 
+  public BasicEntityIO(BasicEntityIO entity) {
+    this.id = entity.getId();
+    this.createdAt = entity.getCreatedAt();
+    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy() : null;
+    this.updatedAt = entity.getUpdatedAt();
+    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy() : null;
+    this.name = entity.getName();
+  }
+
   public BasicEntityIO(VersionableEntity entity) {
     this.id = entity.getShepardId();
     this.createdAt = entity.getCreatedAt();
