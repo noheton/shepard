@@ -42,6 +42,7 @@
     <assertj.version>3.26.3</assertj.version>
     <commons.version>2.18.0</commons.version>
     <equalsverifier.version>3.17.5</equalsverifier.version>
+    <hibernate.spatial.version>6.6.6.Final</hibernate.spatial.version>
     <influxdb.version>2.24</influxdb.version>
     <janino.version>3.1.12</janino.version>
     <jjwt.version>0.11.5</jjwt.version>
@@ -109,6 +110,11 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-validator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-spatial</artifactId>
+      <version>${hibernate.spatial.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

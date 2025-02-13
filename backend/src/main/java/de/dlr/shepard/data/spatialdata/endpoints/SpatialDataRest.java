@@ -4,9 +4,11 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.DatabaseType;
+import de.dlr.shepard.data.spatialdata.services.SpatialDataPostGisService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PATCH;
@@ -40,6 +42,9 @@ public class SpatialDataRest {
     this.spatialDataService = spatialDataService;
   }
 
+  @Inject
+  private SpatialDataPostGisService postGisService;
+
   @POST
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
@@ -59,11 +64,21 @@ public class SpatialDataRest {
       content = @Content(schema = @Schema(implementation = SpatialDataParamsIO.class))
     ) @Valid SpatialDataParamsIO spatialDataParams
   ) {
-    spatialDataService.getSpatialDataPoints(containerId, spatialDataParams, databaseType);
-    return Response.ok().build();
+    switch (databaseType) {
+      case PGVECTOR:
+        spatialDataService.getSpatialDataPoints(containerId, spatialDataParams);
+        return Response.ok().build();
+      case POSTGIS:
+        return Response.ok(
+          postGisService.getSpatialDataPointIOs(Math.toIntExact(containerId), spatialDataParams)
+        ).build();
+      default:
+        return Response.status(400).build();
+    }
   }
 
   @PATCH
+  @Transactional
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Adding data points to spatial data container")
@@ -82,7 +97,15 @@ public class SpatialDataRest {
       content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
     ) @Valid List<SpatialDataPointIO> dataPoints
   ) {
-    spatialDataService.createSpatialDataPoints(containerId, dataPoints, databaseType);
-    return Response.ok().build();
+    switch (databaseType) {
+      case PGVECTOR:
+        spatialDataService.createSpatialDataPoints(containerId, dataPoints);
+        return Response.ok().build();
+      case POSTGIS:
+        postGisService.createSpatialDataPoints(containerId, dataPoints);
+        return Response.ok().build();
+      default:
+        return Response.status(400).build();
+    }
   }
 }
