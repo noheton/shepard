@@ -19,15 +19,15 @@ public class GenerateJsonPointsService {
     ULTRASONIC,
   }
 
-  public static void generateJsonFile(int n, String fileName, Type type) {
+  public static void generateJsonFile(int n, String fileName, Type type, double startX, double startY, double startZ) {
     ObjectMapper mapper = new ObjectMapper();
     Random random = new Random();
 
     int track = 0; //increases every 1000 points
     int layer = 0; //increases every 100 tracks
-    double x = 0;
-    double y = 0;
-    double z = 0;
+    double x = startX;
+    double y = startY;
+    double z = startZ;
     double excitationFrequency = 0; //  1-10 khz <increasing every 1_000_000> points
 
     try (FileWriter writer = new FileWriter(new File(fileName))) {
@@ -84,7 +84,10 @@ public class GenerateJsonPointsService {
             break;
           case ULTRASONIC:
             metadataNode.put("excitation_frequency", excitationFrequency);
-            if (i % 1000_000 == 0) excitationFrequency++;
+            if (i % 1000 == 0) {
+              y += precision;
+              excitationFrequency++;
+            }
             ArrayNode ultrasonicDataArray = mapper.createArrayNode();
             IntStream.range(1, 500).forEach(s -> {
               ultrasonicDataArray.add(random.nextInt(100) - 50);
