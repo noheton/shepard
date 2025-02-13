@@ -4,8 +4,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.DatabaseType;
+import de.dlr.shepard.data.spatialdata.services.PGVectorSpatialDataService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPostGisService;
-import de.dlr.shepard.data.spatialdata.services.SpatialDataService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -35,10 +35,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SpatialDataRest {
 
-  private SpatialDataService spatialDataService;
+  private PGVectorSpatialDataService spatialDataService;
 
   @Inject
-  SpatialDataRest(SpatialDataService spatialDataService) {
+  SpatialDataRest(PGVectorSpatialDataService spatialDataService) {
     this.spatialDataService = spatialDataService;
   }
 

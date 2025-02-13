@@ -2,6 +2,7 @@ package de.dlr.shepard.data.spatialdata.io;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
@@ -42,7 +43,7 @@ public class SpatialDataPointIO {
     @NotEmpty Map<String, Object> measurements,
     Map<String, Object> metadata
   ) {
-    this.timestamp = timestamp;
+    this.timestamp = timestamp == null ? Instant.now().toEpochMilli() * 1_000_000 : timestamp;
     this.x = x;
     this.y = y;
     this.z = z;

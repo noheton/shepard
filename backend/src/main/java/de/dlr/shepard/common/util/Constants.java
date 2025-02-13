@@ -194,4 +194,5 @@ public class Constants {
   public static final String SPATIAL_DATA_CONTAINER = "spatialDataContainer";
   public static final String SPATIAL_DATA_CONTAINER_ID = "spatialDataContainerId";
   public static final String SPATIAL_DATA_DATABASE_TYPE = "databaseType";
+  public static final String SPATIAL_DATA_DATA_POINTS_TABLE_NAME_PGVECTOR = "points";
 }
