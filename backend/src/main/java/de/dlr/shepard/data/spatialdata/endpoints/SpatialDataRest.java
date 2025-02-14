@@ -117,7 +117,7 @@ public class SpatialDataRest {
   @Operation(description = "Deletes spatial data container and related spatial data.")
   @APIResponse(description = "ok", responseCode = "200")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
-  public Response deleteTimeseriesContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
+  public Response deleteSpatialContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
     postGisService.deleteContainer(containerId);
     spatialDataService.deleteContainer(containerId);
     return Response.status(Status.OK).build();
