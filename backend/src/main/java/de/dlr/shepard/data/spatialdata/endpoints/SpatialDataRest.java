@@ -68,8 +68,7 @@ public class SpatialDataRest {
   ) {
     switch (databaseType) {
       case PGVECTOR:
-        spatialDataService.getSpatialDataPoints(containerId, spatialDataParams);
-        return Response.ok().build();
+        return Response.ok(spatialDataService.getSpatialDataPoints(containerId, spatialDataParams)).build();
       case POSTGIS:
         return Response.ok(
           postGisService.getSpatialDataPointIOs(Math.toIntExact(containerId), spatialDataParams)
