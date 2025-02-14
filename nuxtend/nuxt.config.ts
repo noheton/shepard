@@ -82,6 +82,9 @@ export default defineNuxtConfig({
         sass: {
           api: "modern-compiler",
         },
+        scss: {
+          api: "modern-compiler",
+        },
       },
     },
     vue: {
