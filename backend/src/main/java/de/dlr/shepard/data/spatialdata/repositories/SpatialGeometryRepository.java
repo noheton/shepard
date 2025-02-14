@@ -90,66 +90,6 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    * If the point is part of the bounding box (i.e., on a bounding box corner) the bounding box check returns true
    */
   @SuppressWarnings("unchecked")
-  public List<SpatialGeometry> getByBoundingBox(long containerId, Coordinate bottomLeft, Coordinate topRight) {
-    return entityManager
-      .createNativeQuery(
-        "SELECT * FROM spatial_data WHERE container_id = :containerId AND geometry &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
-        SpatialGeometry.class
-      )
-      .setParameter("containerId", containerId)
-      .setParameter("x1", bottomLeft.x)
-      .setParameter("y1", bottomLeft.y)
-      .setParameter("z1", bottomLeft.z)
-      .setParameter("x2", topRight.x)
-      .setParameter("y2", topRight.y)
-      .setParameter("z2", topRight.z)
-      .getResultList();
-  }
-
-  @SuppressWarnings("unchecked")
-  public List<SpatialGeometry> getByBoundingSphere(long containerId, Coordinate coordinate, double radius) {
-    return entityManager
-      .createNativeQuery(
-        "SELECT * FROM spatial_data WHERE container_id = :containerId AND ST_3DMaxDistance(ST_MakePoint(:x1, :y1, :z1), geometry) <= :radius;",
-        SpatialGeometry.class
-      )
-      .setParameter("containerId", containerId)
-      .setParameter("x1", coordinate.x)
-      .setParameter("y1", coordinate.y)
-      .setParameter("z1", coordinate.z)
-      .setParameter("radius", radius)
-      .getResultList();
-  }
-
-  /**
-   * Runs a k-nearest-neighbor search on the spatial data.
-   * @param coordinate - Starting point for the KNN search
-   * @param k - number of returned points
-   */
-  @SuppressWarnings("unchecked")
-  public List<SpatialGeometry> getByKNN(long containerId, Coordinate coordinate, int k) {
-    return entityManager
-      .createNativeQuery(
-        "SELECT * FROM spatial_data WHERE container_id = :containerId ORDER BY geometry <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;",
-        SpatialGeometry.class
-      )
-      .setParameter("containerId", containerId)
-      .setParameter("x1", coordinate.x)
-      .setParameter("y1", coordinate.y)
-      .setParameter("z1", coordinate.z)
-      .setParameter("k", k)
-      .getResultList();
-  }
-
-  /*************** Functions with where clause  *******************/
-
-  /**
-   * Create an (axis-aligned) bounding box query request for spatial data.
-   * The request uses the ST_3DIntersects function, so when querying on single spatial points it acts like a bounding box.
-   *
-   * If the point is part of the bounding box (i.e., on a bounding box corner) the bounding box check returns true
-   */
-  @SuppressWarnings("unchecked")
   public List<SpatialGeometry> getByBoundingBox(
     long containerId,
     Coordinate bottomLeft,
@@ -234,7 +174,6 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
       .getResultList();
   }
 
-  // not tested yet
   private String buildWhereClause(
     Long containerId,
     Long timestampStart,

@@ -31,13 +31,21 @@ public class SpatialDataPostGisService {
   public List<SpatialDataPointIO> getSpatialDataPointIOs(int containerId, SpatialDataParamsIO spatialDataParamsIO) {
     switch (spatialDataParamsIO.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX -> {
-        return getByAABoundingBox(containerId, (AxisAlignedBoundingBox) spatialDataParamsIO.getGeometryFilter());
+        return getByAABoundingBox(
+          containerId,
+          (AxisAlignedBoundingBox) spatialDataParamsIO.getGeometryFilter(),
+          spatialDataParamsIO
+        );
       }
       case BOUNDING_SPHERE -> {
-        return getByBoundingSphere(containerId, (BoundingSphere) spatialDataParamsIO.getGeometryFilter());
+        return getByBoundingSphere(
+          containerId,
+          (BoundingSphere) spatialDataParamsIO.getGeometryFilter(),
+          spatialDataParamsIO
+        );
       }
       case K_NEAREST_NEIGHBOR -> {
-        return getByKNN(containerId, (KNearestNeighbor) spatialDataParamsIO.getGeometryFilter());
+        return getByKNN(containerId, (KNearestNeighbor) spatialDataParamsIO.getGeometryFilter(), spatialDataParamsIO);
       }
       case ORIENTED_BOUNDING_BOX -> throw new NotImplementedError("not implemented");
       default -> throw new Error("Unknown geometry filter type"); //TODO: implement proper error type here or handle no-set geometry filter
@@ -49,26 +57,63 @@ public class SpatialDataPostGisService {
     spatialGeometryRepository.deleteByContainerId(containerId);
   }
 
-  private List<SpatialDataPointIO> getByAABoundingBox(long containerId, AxisAlignedBoundingBox boundingBox) {
+  private List<SpatialDataPointIO> getByAABoundingBox(
+    long containerId,
+    AxisAlignedBoundingBox boundingBox,
+    SpatialDataParamsIO spatialDataParamsIO
+  ) {
     final Coordinate bottomLeft = new Coordinate(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ());
     final Coordinate topRight = new Coordinate(boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
-    return mapSpatialGeometries(spatialGeometryRepository.getByBoundingBox(containerId, bottomLeft, topRight));
+    return mapSpatialGeometries(
+      spatialGeometryRepository.getByBoundingBox(
+        containerId,
+        bottomLeft,
+        topRight,
+        spatialDataParamsIO.getStartTime(),
+        spatialDataParamsIO.getEndTime(),
+        spatialDataParamsIO.getMetadata()
+      )
+    );
   }
 
-  private List<SpatialDataPointIO> getByBoundingSphere(long containerId, BoundingSphere boundingSphere) {
+  private List<SpatialDataPointIO> getByBoundingSphere(
+    long containerId,
+    BoundingSphere boundingSphere,
+    SpatialDataParamsIO spatialDataParamsIO
+  ) {
     final Coordinate sphereCenter = new Coordinate(
       boundingSphere.getCenterX(),
       boundingSphere.getCenterY(),
       boundingSphere.getCenterZ()
     );
     return mapSpatialGeometries(
-      spatialGeometryRepository.getByBoundingSphere(containerId, sphereCenter, boundingSphere.getR())
+      spatialGeometryRepository.getByBoundingSphere(
+        containerId,
+        sphereCenter,
+        boundingSphere.getR(),
+        spatialDataParamsIO.getStartTime(),
+        spatialDataParamsIO.getEndTime(),
+        spatialDataParamsIO.getMetadata()
+      )
     );
   }
 
-  private List<SpatialDataPointIO> getByKNN(long containerId, KNearestNeighbor knn) {
+  private List<SpatialDataPointIO> getByKNN(
+    long containerId,
+    KNearestNeighbor knn,
+    SpatialDataParamsIO spatialDataParamsIO
+  ) {
     final Coordinate kCoordinate = new Coordinate(knn.getX(), knn.getY(), knn.getZ());
-    return mapSpatialGeometries(spatialGeometryRepository.getByKNN(containerId, kCoordinate, knn.getK()));
+    return mapSpatialGeometries(
+      spatialGeometryRepository.getByKNN(
+        containerId,
+        kCoordinate,
+        knn.getK(),
+        spatialDataParamsIO.getStartTime(),
+        spatialDataParamsIO.getEndTime(),
+        spatialDataParamsIO.getMetadata()
+      )
+    );
   }
 
   private List<SpatialDataPointIO> mapSpatialGeometries(List<SpatialGeometry> geometries) {

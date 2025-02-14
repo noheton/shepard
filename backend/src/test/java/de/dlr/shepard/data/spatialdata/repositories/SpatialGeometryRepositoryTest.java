@@ -132,7 +132,14 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(7)
   public void getByBoundingBox_returnsAllData_success() {
-    var data = repository.getByBoundingBox(containerId, new Coordinate(0, 0, 0), new Coordinate(9999, 9999, 9999));
+    var data = repository.getByBoundingBox(
+      containerId,
+      new Coordinate(0, 0, 0),
+      new Coordinate(9999, 9999, 9999),
+      null,
+      null,
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -176,7 +183,14 @@ public class SpatialGeometryRepositoryTest {
       new SpatialGeometry[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 }
     );
 
-    var data = repository.getByBoundingBox(containerId, new Coordinate(500, 500, 500), new Coordinate(700, 700, 700));
+    var data = repository.getByBoundingBox(
+      containerId,
+      new Coordinate(500, 500, 500),
+      new Coordinate(700, 700, 700),
+      null,
+      null,
+      null
+    );
 
     assertNotNull(data);
     assertEquals(4, result);
@@ -186,7 +200,14 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(9)
   public void getByBoundingBox_returnsNoData_success() {
-    var data = repository.getByBoundingBox(containerId, new Coordinate(-1, -1, -1), new Coordinate(-10, -10, -10));
+    var data = repository.getByBoundingBox(
+      containerId,
+      new Coordinate(-1, -1, -1),
+      new Coordinate(-10, -10, -10),
+      null,
+      null,
+      null
+    );
 
     assertNotNull(data);
     assertEquals(0, data.size());
@@ -196,7 +217,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(10)
   public void getByBoundingSphere_returnsAllData_success() {
-    var data = repository.getByBoundingSphere(containerId, new Coordinate(0, 0, 0), 9999);
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(0, 0, 0), 9999, null, null, null);
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -246,7 +267,7 @@ public class SpatialGeometryRepositoryTest {
       new SpatialGeometry[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 }
     );
 
-    var data = repository.getByBoundingSphere(containerId, new Coordinate(1666, 1666, 1666), 100);
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(1666, 1666, 1666), 100, null, null, null);
 
     assertNotNull(data);
     assertEquals(5, result);
@@ -256,7 +277,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(12)
   public void getByBoundingSphere_returnsNoData_success() {
-    var data = repository.getByBoundingSphere(containerId, new Coordinate(-10, -10, -10), 1);
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(-10, -10, -10), 1, null, null, null);
 
     assertNotNull(data);
     assertEquals(0, data.size());
@@ -266,7 +287,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(13)
   public void getByKNN_returnsAllData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 9999);
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 9999, null, null, null);
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -275,7 +296,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(14)
   public void getByKNN_returnsSomeData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(4, 4, 4), 3);
+    var data = repository.getByKNN(containerId, new Coordinate(4, 4, 4), 3, null, null, null);
 
     assertNotNull(data);
     assertEquals(3, data.size());
@@ -295,7 +316,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(15)
   public void getByKNN_returnsNoData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(-1, -1, -1), 0);
+    var data = repository.getByKNN(containerId, new Coordinate(-1, -1, -1), 0, null, null, null);
 
     assertNotNull(data);
     assertEquals(0, data.size());
