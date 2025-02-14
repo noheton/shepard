@@ -1,18 +1,17 @@
 import { BasicContainerAttributes } from "@dlr-shepard/backend-client";
-import { ContainerSortByOrderOptions } from "~/components/container/containerSortByAttribute";
+import {
+  parseContainerListQueryParams,
+  type ContainerListQueryParams,
+} from "./containerListQueryParams";
 
-export function useContainerListRouteParams() {
-  const router = useRouter();
-  const initialRoute = router.currentRoute.value;
-
-  const initialParams = parseContainerListQueryParams(initialRoute.query);
-
+export function useContainerListQueryParams() {
   const route = useRoute();
+  const initialParams = parseContainerListQueryParams(route.query);
   const queryParams = ref<ContainerListQueryParams>({
     ...initialParams,
     sortBy: initialParams.sortBy ?? {
       key: BasicContainerAttributes.CreatedAt,
-      order: ContainerSortByOrderOptions.DESC,
+      order: "desc",
     },
   });
 

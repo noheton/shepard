@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useContainerListQueryParams } from "./useContainerListQueryParams";
+import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 
-const { queryParams } = useContainerListQueryParams();
+const { queryParams } = useCollectionListQueryParams();
 const router = useRouter();
 
 defineProps<{
@@ -10,7 +10,7 @@ defineProps<{
 
 function onSearch(searchText: string | undefined) {
   router.push({
-    path: containersPath,
+    path: collectionsPath,
     query: {
       ...router.currentRoute.value.query,
       page: 1,

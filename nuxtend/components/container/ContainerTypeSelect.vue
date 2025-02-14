@@ -4,9 +4,10 @@ import {
   ContainerTypeName,
   type ContainerFilterType,
 } from "./containerTypeFilter";
+import { useContainerListQueryParams } from "./useContainerListQueryParams";
 
 const router = useRouter();
-const { queryParams } = useContainerListRouteParams();
+const { queryParams } = useContainerListQueryParams();
 
 const selectedFilter = ref<ContainerFilterType | null | undefined>(
   queryParams.value.selectedFilter,
@@ -47,6 +48,7 @@ function onSelectUpdate() {
     color="primary"
     density="compact"
     variant="outlined"
+    hide-details
     @update:model-value="onSelectUpdate"
   >
     <template #prepend-inner>

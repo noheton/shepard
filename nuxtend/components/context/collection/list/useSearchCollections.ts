@@ -1,25 +1,23 @@
 import type {
-  BasicContainer,
-  BasicContainerAttributes,
+  BasicCollectionAttributes,
+  Collection,
   ResponseError,
 } from "@dlr-shepard/backend-client";
-import { ContainerType, SearchApi } from "@dlr-shepard/backend-client";
-import type { ContainerFilterType } from "~/components/container/containerTypeFilter";
-import { useContainerListQueryParams } from "./useContainerListQueryParams";
+import { SearchApi } from "@dlr-shepard/backend-client";
+import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 
-export function useSearchContainers(itemsPerPage: number) {
-  const serverItems = ref<BasicContainer[]>([]);
+export function useSearchCollections(itemsPerPage: number) {
+  const serverItems = ref<Collection[]>([]);
   const pageCount = ref<number>(0);
   const loading = ref<boolean>(true);
   const searchResultHint = ref<string | undefined>(undefined);
 
-  const { queryParams } = useContainerListQueryParams();
+  const { queryParams } = useCollectionListQueryParams();
 
-  function searchContainers(
+  function searchCollections(
+    query: string,
     page: number,
-    sortByAttributes: SortBy<BasicContainerAttributes> | undefined,
-    searchQuery: string,
-    selectedFilter: ContainerFilterType | null | undefined,
+    sortByAttributes: SortBy<BasicCollectionAttributes> | undefined,
   ) {
     loading.value = true;
 
@@ -30,16 +28,12 @@ export function useSearchContainers(itemsPerPage: number) {
         }
       : null;
     createApiInstance(SearchApi)
-      .searchContainers({
-        containerSearchBody: {
-          searchParams: {
-            query: searchQuery,
-            queryType: selectedFilter ?? ContainerType.Basic,
-          },
-        },
+      .searchCollections({
+        collectionSearchBody: { searchParams: { query } },
         page: page - 1,
         size: itemsPerPage,
-        ...orderByParams,
+        orderBy: orderByParams?.orderBy,
+        orderDesc: orderByParams?.orderDesc,
       })
       .then(response => {
         serverItems.value = response.results;
@@ -51,18 +45,17 @@ export function useSearchContainers(itemsPerPage: number) {
         loading.value = false;
       })
       .catch(e => {
-        handleError(e as ResponseError, "searching containers");
+        handleError(e as ResponseError, "fetching collections");
       });
   }
 
   watch(
     queryParams,
     newParams => {
-      searchContainers(
+      searchCollections(
+        buildQueryString(newParams.searchText ?? null),
         newParams.page,
         newParams.sortBy,
-        buildQueryString(newParams.searchText ?? null),
-        newParams.selectedFilter,
       );
     },
     { immediate: true },
@@ -72,7 +65,7 @@ export function useSearchContainers(itemsPerPage: number) {
     serverItems,
     pageCount,
     loading,
-    searchContainers,
+    searchCollections,
     searchResultHint,
   };
 }

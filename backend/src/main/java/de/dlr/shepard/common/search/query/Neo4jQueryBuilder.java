@@ -273,12 +273,6 @@ public class Neo4jQueryBuilder {
     };
   }
 
-  private static String collectionMatchPartWithoutVersion() {
-    String ret = "";
-    ret = ret + "MATCH (" + Constants.COLLECTION_IN_QUERY + ":Collection)";
-    return ret;
-  }
-
   private static String collectionDataObjectMatchPartWithoutVersion() {
     String ret =
       "MATCH (" +
@@ -335,8 +329,7 @@ public class Neo4jQueryBuilder {
     String userName,
     SortingHelper sortOrder
   ) {
-    String ret = "";
-    ret = ret + collectionMatchPartWithoutVersion();
+    String ret = "MATCH (" + Constants.COLLECTION_IN_QUERY + ":Collection)";
     ret = ret + " WHERE ";
     ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.COLLECTION_IN_QUERY);
     ret = ret + " AND ";

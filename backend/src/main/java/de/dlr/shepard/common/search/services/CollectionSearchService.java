@@ -9,7 +9,6 @@ import de.dlr.shepard.common.search.query.QueryValidator;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.SortingHelper;
-import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -34,30 +33,21 @@ public class CollectionSearchService {
     String userName
   ) {
     CollectionSearchParams collectionSearchParams = collectionSearchBody.getSearchParams();
-    QueryValidator.checkQuery(collectionSearchBody.getSearchParams().getQuery());
-    String neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
-      collectionSearchParams.getQuery(),
-      userName,
-      sortOrder
-    );
-    List<CollectionIO> resultList = findCollectionList(neo4jSelectionQuery, pagination);
+    String query = collectionSearchParams.getQuery();
+    QueryValidator.checkQuery(query);
+    String neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(query, userName, sortOrder);
+    List<CollectionIO> resultList = searchDAO
+      .findCollections(neo4jSelectionQuery, pagination, Constants.COLLECTION_IN_QUERY)
+      .stream()
+      .map(CollectionIO::new)
+      .toList();
     Integer totalResultCount = searchDAO.getCollectionTotalCount(neo4jSelectionQuery, Constants.COLLECTION_IN_QUERY);
     CollectionIO[] resultArray = resultList.toArray(new CollectionIO[0]);
     CollectionSearchResult collectionSearchResult = new CollectionSearchResult(
       resultArray,
-      collectionSearchBody.getSearchParams(),
+      collectionSearchParams,
       totalResultCount
     );
     return collectionSearchResult;
-  }
-
-  private List<CollectionIO> findCollectionList(String neo4jSelectionQuery, PaginationHelper pagination) {
-    List<Collection> resultCollections = searchDAO.findCollections(
-      neo4jSelectionQuery,
-      pagination,
-      Constants.COLLECTION_IN_QUERY
-    );
-    List<CollectionIO> ret = resultCollections.stream().map(CollectionIO::new).toList();
-    return ret;
   }
 }

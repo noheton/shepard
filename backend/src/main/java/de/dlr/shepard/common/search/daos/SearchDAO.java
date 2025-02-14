@@ -37,7 +37,7 @@ public class SearchDAO {
   }
 
   public Integer getCollectionTotalCount(String selectionQuery, String collectionVariable) {
-    String query = selectionQuery + emitTotalCountReturnPart(collectionVariable);
+    String query = String.format("%s RETURN COUNT(%s)", selectionQuery, collectionVariable);
     Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
     return collectionTotalCountIterable.iterator().next();
   }
@@ -101,11 +101,12 @@ public class SearchDAO {
   }
 
   private String emitCollectionReturnPart(String collectionVariable, PaginationHelper pagination) {
-    return String.format(
+    return (
+      (pagination != null ? " " + CypherQueryHelper.getPaginationPart(pagination) : "") +
       " WITH " +
       collectionVariable +
       " " +
-      CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.ESSENTIAL, pagination)
+      CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.ESSENTIAL)
     );
   }
 

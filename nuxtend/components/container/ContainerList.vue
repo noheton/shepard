@@ -3,51 +3,11 @@ import {
   BasicContainerAttributes,
   type BasicContainer,
 } from "@dlr-shepard/backend-client";
-import type { ContainerSortByAttribute } from "./containerSortByAttribute";
 import {
   ContainerTypeName,
   type ContainerFilterType,
 } from "./containerTypeFilter";
-
-const router = useRouter();
-const { queryParams } = useContainerListRouteParams();
-const headers = [
-  {
-    title: "ID",
-    key: "id",
-    cellProps: {
-      class: "text-body-1",
-    },
-  },
-  {
-    title: "Name",
-    key: BasicContainerAttributes.Name,
-    cellProps: {
-      class: "text-subtitle-2",
-    },
-  },
-  {
-    title: "Container Type",
-    key: BasicContainerAttributes.Type,
-    cellProps: {
-      class: "text-body-1",
-    },
-  },
-  {
-    title: "Created by",
-    key: BasicContainerAttributes.CreatedBy,
-    cellProps: {
-      class: "text-body-1",
-    },
-  },
-  {
-    title: "Created at",
-    key: BasicContainerAttributes.CreatedAt,
-    cellProps: {
-      class: "text-body-1",
-    },
-  },
-];
+import { useContainerListQueryParams } from "./useContainerListQueryParams";
 
 defineProps<{
   itemsPerPage: number;
@@ -56,46 +16,84 @@ defineProps<{
   pageCount: number;
 }>();
 
-const pageModel = ref<number>(queryParams.value.page);
-const sortByAttributes = ref<ContainerSortByAttribute[]>(
-  queryParams.value.sortBy ? [queryParams.value.sortBy] : [],
-);
-
-const sortBySearchParam = computed(() => {
-  if (sortByAttributes.value[0])
-    return JSON.stringify(sortByAttributes.value[0]);
-  return undefined;
-});
-
-//watch page changes induced from search and filter components
-watch(
-  () => queryParams.value.page,
-  () => {
-    pageModel.value = queryParams.value.page;
+const router = useRouter();
+const { queryParams } = useContainerListQueryParams();
+const headers = [
+  {
+    title: "ID",
+    key: "id",
+    width: "10%",
+    cellProps: {
+      class: "text-body-1",
+    },
   },
-);
+  {
+    title: "Name",
+    key: BasicContainerAttributes.Name,
+    width: "30%",
+    cellProps: {
+      class: "text-subtitle-2 word-wrap-anywhere",
+    },
+  },
+  {
+    title: "Container Type",
+    key: BasicContainerAttributes.Type,
+    width: "20%",
+    cellProps: {
+      class: "text-body-1 word-wrap-anywhere",
+    },
+  },
+  {
+    title: "Created by",
+    key: BasicContainerAttributes.CreatedBy,
+    width: "20%",
+    cellProps: {
+      class: "text-body-1 word-wrap-anywhere",
+    },
+  },
+  {
+    title: "Created at",
+    key: BasicContainerAttributes.CreatedAt,
+    width: "20%",
+    cellProps: {
+      class: "text-body-1 word-wrap-anywhere",
+    },
+  },
+];
 
-function onSortBy() {
+function onSortBy(args: { key: string; order: "asc" | "desc" }[]) {
+  if (args[0]) {
+    router.push({
+      path: containersPath,
+      query: {
+        ...router.currentRoute.value.query,
+        page: 1,
+        sortBy: JSON.stringify(args[0]),
+      },
+    });
+    return;
+  }
   router.push({
     path: containersPath,
     query: {
       ...router.currentRoute.value.query,
-      sortBy: sortBySearchParam.value,
+      page: 1,
+      sortBy: undefined,
     },
   });
 }
 
-function onPageChange() {
+function onPageChange(page: number) {
   router.push({
     path: containersPath,
-    query: { ...router.currentRoute.value.query, page: pageModel.value },
+    query: { ...router.currentRoute.value.query, page },
   });
 }
 </script>
 
 <template>
   <DataTable
-    v-model:sort-by="sortByAttributes"
+    :sort-by="queryParams.sortBy ? [queryParams.sortBy] : []"
     :header-props="{
       class: 'text-subtitle-2 text-textbody1',
     }"
@@ -121,7 +119,7 @@ function onPageChange() {
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />
       <v-pagination
-        v-model="pageModel"
+        :model-value="queryParams.page ?? 0"
         :length="pageCount"
         :total-visible="6"
         @update:model-value="onPageChange"
@@ -134,6 +132,14 @@ function onPageChange() {
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));
+  }
+
+  :deep(.word-wrap-anywhere) {
+    word-wrap: anywhere;
+  }
+
+  :deep(tbody) > tr > td {
+    padding: 20px 24px !important;
   }
 }
 </style>

@@ -5,7 +5,5 @@ useHead({
 </script>
 
 <template>
-  <div :style="{ display: 'flex', justifyContent: 'center' }">
-    <CollectionListPage />
-  </div>
+  <CollectionListPage />
 </template>

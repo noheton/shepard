@@ -11,8 +11,8 @@ const { serverItems, pageCount, loading, searchResultHint } =
 <template>
   <div style="max-width: 1200px; margin: auto">
     <v-container fluid>
-      <v-row no-gutters>
-        <v-col cols="12" no-gutters>
+      <v-row>
+        <v-col cols="12" class="py-14">
           <div class="d-flex align-baseline">
             <h1 class="text-h1 text-textbody1 pr-4">Containers</h1>
             <Tooltip>
@@ -27,19 +27,13 @@ const { serverItems, pageCount, loading, searchResultHint } =
             </Tooltip>
           </div>
         </v-col>
-      </v-row>
-      <v-row no-gutters>
-        <v-col cols="6" class="pt-14">
+        <v-col cols="12" class="pb-4">
           <ContainerSearchField :search-result-hint="searchResultHint" />
         </v-col>
-      </v-row>
-      <v-row no-gutters>
-        <v-col cols="4" no-gutters class="pt-8">
+        <v-col cols="12" class="pt-4 pb-1">
           <ContainerTypeSelect />
         </v-col>
-      </v-row>
-      <v-row no-gutters>
-        <v-col cols="12" no-gutters class="pt-4">
+        <v-col cols="12">
           <ContainerList
             :items-per-page="itemsPerPage"
             :server-items="serverItems"
