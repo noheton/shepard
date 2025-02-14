@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -19,6 +20,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -107,5 +109,17 @@ public class SpatialDataRest {
       default:
         return Response.status(400).build();
     }
+  }
+
+  @DELETE
+  @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}")
+  @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
+  @Operation(description = "Deletes spatial data container and related spatial data.")
+  @APIResponse(description = "ok", responseCode = "200")
+  @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
+  public Response deleteTimeseriesContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
+    postGisService.deleteContainer(containerId);
+    spatialDataService.deleteContainer(containerId);
+    return Response.status(Status.OK).build();
   }
 }

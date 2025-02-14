@@ -10,6 +10,7 @@ import de.dlr.shepard.data.spatialdata.model.SpatialGeometry;
 import de.dlr.shepard.data.spatialdata.repositories.SpatialGeometryRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 import kotlin.NotImplementedError;
@@ -21,6 +22,7 @@ public class SpatialDataPostGisService {
   @Inject
   private SpatialGeometryRepository spatialGeometryRepository;
 
+  @Transactional
   public void createSpatialDataPoints(Long containerId, List<SpatialDataPointIO> dataPoints) {
     final List<SpatialGeometry> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
     spatialGeometryRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialGeometry[0]));
@@ -40,6 +42,11 @@ public class SpatialDataPostGisService {
       case ORIENTED_BOUNDING_BOX -> throw new NotImplementedError("not implemented");
       default -> throw new Error("Unknown geometry filter type"); //TODO: implement proper error type here or handle no-set geometry filter
     }
+  }
+
+  @Transactional
+  public void deleteContainer(long containerId) {
+    spatialGeometryRepository.deleteByContainerId(containerId);
   }
 
   private List<SpatialDataPointIO> getByAABoundingBox(long containerId, AxisAlignedBoundingBox boundingBox) {

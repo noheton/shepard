@@ -34,6 +34,11 @@ public class PGVectorSpatialDataService {
     pgVectorSpatialDataPointRepository.insert(mapSpatialDataPointIO(containerId, dataPoints));
   }
 
+  @Transactional
+  public void deleteContainer(long containerId) {
+    pgVectorSpatialDataPointRepository.deleteByContainerId(containerId);
+  }
+
   private List<PGVectorSpatialDataPoint> getPGVectorPoints(long containerId, SpatialDataParamsIO spatialDataParams) {
     switch (spatialDataParams.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX:
