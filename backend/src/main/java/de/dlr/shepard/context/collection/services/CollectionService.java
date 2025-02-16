@@ -88,6 +88,10 @@ public class CollectionService {
     return collections;
   }
 
+  public Collection getCollectionByShepardIdDepth2(long sheparId, UUID versionUID) {
+    return null;
+  }
+
   public Collection getCollectionByShepardId(long shepardId, UUID versionUID) {
     Collection ret;
     String errorMsg;

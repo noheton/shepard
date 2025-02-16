@@ -12,6 +12,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @RequestScoped
 public class CollectionDAO extends VersionableEntityDAO<Collection> {
@@ -94,6 +97,43 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
       }
     }
     return result;
+  }
+
+  public Collection findCollectionByShepardIdDepth2(long shepardId, UUID versionUID) {
+    Map<String, Object> paramsMap = new HashMap<>();
+    String query =
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version)" +
+      " WHERE o.shepardId in [" +
+      shepardId +
+      "] AND v.uid='" +
+      versionUID +
+      "'" +
+      " WITH o MATCH path=(o)-[]-(n), path2=(o)-[]-(n2:VersionableEntity)-[:has_version]-(ver) " +
+      "WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND (NOT EXISTS {(n)-[:has_version]->(noVer)})" +
+      " RETURN o, nodes(path), relationships(path),nodes(path2), relationships(path2)";
+    Iterable<Collection> result = findByQuery(query, paramsMap);
+    List<Collection> collectionsList = StreamSupport.stream(result.spliterator(), false).collect(Collectors.toList());
+    System.out.println("query: " + query);
+    System.out.println("Anzahl: " + collectionsList.size());
+    if (collectionsList.size() == 0) {
+      query =
+        "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version)" +
+        " WHERE o.shepardId in [" +
+        shepardId +
+        "] AND v.uid='" +
+        versionUID +
+        "'" +
+        " WITH o MATCH path=(o)-[]-(n) " +
+        "WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND (NOT EXISTS {(n)-[:has_version]->(noVer)})" +
+        " RETURN o, nodes(path), relationships(path)";
+      result = findByQuery(query, paramsMap);
+      collectionsList = StreamSupport.stream(result.spliterator(), false).collect(Collectors.toList());
+      System.out.println("second try.........");
+      System.out.println("query: " + query);
+      System.out.println("Anzahl: " + collectionsList.size());
+      if (collectionsList.size() == 0) return null;
+    }
+    return collectionsList.get(0);
   }
 
   /**
