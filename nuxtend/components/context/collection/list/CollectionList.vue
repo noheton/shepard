@@ -29,6 +29,14 @@ const headers = [
     },
   },
   {
+    title: "Created by",
+    key: "createdBy",
+    width: "20%",
+    cellProps: {
+      class: "text-body-1 word-wrap-anywhere",
+    },
+  },
+  {
     title: "Last changed",
     key: "updatedAt",
     width: "20%",
@@ -39,14 +47,6 @@ const headers = [
         (b?.valueOf() ?? currentPointInTimeInMillis)
       );
     },
-    cellProps: {
-      class: "text-body-1 word-wrap-anywhere",
-    },
-  },
-  {
-    title: "Created by",
-    key: "createdBy",
-    width: "20%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -106,6 +106,7 @@ function onPageChange(page: number) {
       >
         <template #[`item.id`]>#{{ rowProps.item.id }}</template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
+        <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
         <template #[`item.updatedAt`]>
           {{
             toShortDateString(
@@ -113,7 +114,6 @@ function onPageChange(page: number) {
             )
           }}
         </template>
-        <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
       </v-data-table-row>
     </template>
 
