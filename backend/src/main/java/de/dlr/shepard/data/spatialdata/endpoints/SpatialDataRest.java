@@ -6,9 +6,9 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.DatabaseType;
 import de.dlr.shepard.data.spatialdata.services.PGVectorSpatialDataService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPostGisService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -22,6 +22,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -46,6 +50,9 @@ public class SpatialDataRest {
 
   @Inject
   private SpatialDataPostGisService postGisService;
+
+  @Inject
+  ManagedExecutor executor;
 
   @POST
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
@@ -79,7 +86,6 @@ public class SpatialDataRest {
   }
 
   @PATCH
-  @Transactional
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Adding data points to spatial data container")
@@ -105,6 +111,30 @@ public class SpatialDataRest {
       case POSTGIS:
         postGisService.createSpatialDataPoints(containerId, dataPoints);
         return Response.ok().build();
+      case BOTH:
+        List<Callable<Object>> tasks = List.of(
+          () -> {
+            Log.info("Start inserting to PostGIS");
+            postGisService.createSpatialDataPoints(containerId, dataPoints);
+            Log.info("Finish inserting to PostGIS");
+            return "";
+          },
+          () -> {
+            Log.info("Start inserting to PGVector");
+            spatialDataService.createSpatialDataPoints(containerId, dataPoints);
+            Log.info("Finish inserting to PGVector");
+            return "";
+          }
+        );
+        try {
+          List<Future<Object>> futures = executor.invokeAll(tasks);
+          for (Future<Object> future : futures) {
+            future.get();
+          }
+          return Response.ok().build();
+        } catch (InterruptedException | ExecutionException e) {
+          Response.status(500).build();
+        }
       default:
         return Response.status(400).build();
     }
