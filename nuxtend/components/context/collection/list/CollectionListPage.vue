@@ -25,11 +25,14 @@ const showCreateDialog = ref(false);
         <v-spacer />
         <v-col cols="auto" class="pb-4" justify-self="end">
           <v-btn
-            color="primary"
+            class="bg-primary text-canvas"
+            variant="flat"
             :style="{ marginTop: '3px' }"
             @click="showCreateDialog = true"
           >
-            <template #prepend><v-icon icon="mdi-plus-circle" /></template>
+            <template #prepend>
+              <v-icon icon="mdi-plus-circle" color="canvas" />
+            </template>
             Create new collection
           </v-btn>
         </v-col>
