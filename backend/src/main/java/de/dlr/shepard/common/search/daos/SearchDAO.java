@@ -36,6 +36,12 @@ public class SearchDAO {
     return ret;
   }
 
+  public List<Collection> findCollections(String query) {
+    Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
+    var ret = StreamSupport.stream(collections.spliterator(), false).toList();
+    return ret;
+  }
+
   public Integer getCollectionTotalCount(String selectionQuery, String collectionVariable) {
     String query = String.format("%s RETURN COUNT(%s)", selectionQuery, collectionVariable);
     Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());

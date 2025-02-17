@@ -112,7 +112,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
 
     // Assert
-    assertThat(result.getResults().length).isEqualTo(pageSize);
+    assertThat(result.getResults().size()).isEqualTo(pageSize);
     assertThat(result.getTotalResults()).isEqualTo(numberOfCollections);
     assertThat(result.getSearchParams()).isEqualTo(params);
   }
@@ -158,7 +158,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
 
     // Assert
-    assertThat(result.getResults().length).isEqualTo(pageSize);
+    assertThat(result.getResults().size()).isEqualTo(pageSize);
     assertThat(result.getTotalResults()).isEqualTo(numberOfCollections);
     assertThat(result.getSearchParams()).isEqualTo(params);
   }
@@ -194,10 +194,10 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     );
 
     // Assert
-    assertThat(resultForUserOne.getResults().length).isEqualTo(0);
+    assertThat(resultForUserOne.getResults().size()).isEqualTo(0);
     assertThat(resultForUserOne.getSearchParams()).isEqualTo(params);
     assertThat(resultForUserOne.getTotalResults()).isEqualTo(0);
-    assertThat(resultForOtherUser.getResults().length).isEqualTo(1);
+    assertThat(resultForOtherUser.getResults().size()).isEqualTo(1);
     assertThat(resultForOtherUser.getSearchParams()).isEqualTo(params);
     assertThat(resultForOtherUser.getTotalResults()).isEqualTo(1);
   }
@@ -226,7 +226,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     );
 
     // Assert
-    assertThat(resultsOfLastPage.getResults().length).isEqualTo(numberOfItemsOnLastPage);
+    assertThat(resultsOfLastPage.getResults().size()).isEqualTo(numberOfItemsOnLastPage);
   }
 
   @Test
@@ -255,11 +255,11 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     );
 
     // Assert
-    assertThat(resultsSortedByNameDescending.getResults().length).isEqualTo(numberOfCollections);
-    assertTrue(resultsSortedByNameDescending.getResults()[0].getName().startsWith("2"));
-    assertTrue(resultsSortedByNameDescending.getResults()[2].getName().startsWith("0"));
-    assertThat(resultsSortedByNameAscending.getResults().length).isEqualTo(numberOfCollections);
-    assertTrue(resultsSortedByNameAscending.getResults()[0].getName().startsWith("0"));
-    assertTrue(resultsSortedByNameAscending.getResults()[2].getName().startsWith("2"));
+    assertThat(resultsSortedByNameDescending.getResults().size()).isEqualTo(numberOfCollections);
+    assertTrue(resultsSortedByNameDescending.getResults().get(0).getName().startsWith("2"));
+    assertTrue(resultsSortedByNameDescending.getResults().get(2).getName().startsWith("0"));
+    assertThat(resultsSortedByNameAscending.getResults().size()).isEqualTo(numberOfCollections);
+    assertTrue(resultsSortedByNameAscending.getResults().get(0).getName().startsWith("0"));
+    assertTrue(resultsSortedByNameAscending.getResults().get(2).getName().startsWith("2"));
   }
 }

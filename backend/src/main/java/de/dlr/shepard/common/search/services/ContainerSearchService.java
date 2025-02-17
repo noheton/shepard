@@ -45,9 +45,8 @@ public class ContainerSearchService {
       neo4jSelectionQuery,
       containerSearchParams.getQueryType().getTypeAlias()
     );
-    BasicContainerIO[] resultArray = resultList.toArray(new BasicContainerIO[0]);
     ContainerSearchResult containerSearchResult = new ContainerSearchResult(
-      resultArray,
+      resultList,
       containerSearchBody.getSearchParams(),
       totalResultCount
     );

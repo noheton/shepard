@@ -7,13 +7,8 @@ import type { LocationQueryRaw } from "vue-router";
 export function useCollectionListQueryParams() {
   const route = useRoute();
   const initialParams = parseCollectionListQueryParams(route.query);
-  const queryParams = ref<ListQueryParams<BasicCollectionAttributes>>({
-    ...initialParams,
-    sortBy: initialParams.sortBy ?? {
-      key: "updatedAt",
-      order: "desc",
-    },
-  });
+  const queryParams =
+    ref<ListQueryParams<BasicCollectionAttributes>>(initialParams);
 
   watch(
     () => route.query,

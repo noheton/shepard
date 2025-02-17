@@ -522,12 +522,14 @@
         }, {
           "name" : "orderBy",
           "in" : "query",
+          "description" : "Defaults to 'createdAt'",
           "schema" : {
             "$ref" : "#/components/schemas/BasicContainerAttributes"
           }
         }, {
           "name" : "orderDesc",
           "in" : "query",
+          "description" : "Defaults to 'true'",
           "schema" : {
             "type" : "boolean"
           }
@@ -3550,6 +3552,27 @@
         }
       }
     },
+    "/spatialDataContainer/{spatialDataContainerId}" : {
+      "delete" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Deletes spatial data container and related spatial data.",
+        "operationId" : "deleteSpatialContainer",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok"
+          }
+        }
+      }
+    },
     "/timeseriesContainers/{timeseriesContainerId}/export" : {
       "get" : {
         "tags" : [ "timeseriesContainer" ],
@@ -4879,7 +4902,7 @@
     "/search/collections" : {
       "post" : {
         "tags" : [ "search" ],
-        "description" : "Search collections",
+        "description" : "Search collections with paginated response",
         "operationId" : "searchCollections",
         "parameters" : [ {
           "name" : "page",
@@ -4898,12 +4921,14 @@
         }, {
           "name" : "orderBy",
           "in" : "query",
+          "description" : "Defaults to 'createdAt'",
           "schema" : {
             "$ref" : "#/components/schemas/BasicCollectionAttributes"
           }
         }, {
           "name" : "orderDesc",
           "in" : "query",
+          "description" : "Defaults to 'true'",
           "schema" : {
             "type" : "boolean"
           }
@@ -4928,9 +4953,6 @@
                 }
               }
             }
-          },
-          "404" : {
-            "description" : "not found"
           }
         }
       }

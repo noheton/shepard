@@ -59,7 +59,7 @@ export function useSearchContainers(itemsPerPage: number) {
     queryParams,
     newParams => {
       searchContainers(
-        newParams.page,
+        newParams.page ?? 1,
         newParams.sortBy,
         buildQueryString(newParams.searchText ?? null),
         newParams.selectedFilter,

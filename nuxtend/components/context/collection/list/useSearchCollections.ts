@@ -14,6 +14,9 @@ export function useSearchCollections(itemsPerPage: number) {
 
   const { queryParams } = useCollectionListQueryParams();
 
+  /**
+   * @param page Page to retrieve. Is 1-based.
+   */
   function searchCollections(
     query: string,
     page: number,
@@ -54,7 +57,7 @@ export function useSearchCollections(itemsPerPage: number) {
     newParams => {
       searchCollections(
         buildQueryString(newParams.searchText ?? null),
-        newParams.page,
+        newParams.page ?? 1,
         newParams.sortBy,
       );
     },

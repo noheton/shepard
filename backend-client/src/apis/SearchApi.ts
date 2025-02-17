@@ -127,7 +127,7 @@ export class SearchApi extends runtime.BaseAPI {
     }
 
     /**
-     * Search collections
+     * Search collections with paginated response
      */
     async searchCollectionsRaw(requestParameters: SearchCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionSearchResult>> {
         if (requestParameters['collectionSearchBody'] == null) {
@@ -183,7 +183,7 @@ export class SearchApi extends runtime.BaseAPI {
     }
 
     /**
-     * Search collections
+     * Search collections with paginated response
      */
     async searchCollections(requestParameters: SearchCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionSearchResult> {
         const response = await this.searchCollectionsRaw(requestParameters, initOverrides);

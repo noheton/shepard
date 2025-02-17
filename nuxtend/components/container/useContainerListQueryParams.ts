@@ -1,4 +1,3 @@
-import { BasicContainerAttributes } from "@dlr-shepard/backend-client";
 import {
   parseContainerListQueryParams,
   type ContainerListQueryParams,
@@ -7,13 +6,7 @@ import {
 export function useContainerListQueryParams() {
   const route = useRoute();
   const initialParams = parseContainerListQueryParams(route.query);
-  const queryParams = ref<ContainerListQueryParams>({
-    ...initialParams,
-    sortBy: initialParams.sortBy ?? {
-      key: BasicContainerAttributes.CreatedAt,
-      order: "desc",
-    },
-  });
+  const queryParams = ref<ContainerListQueryParams>(initialParams);
 
   watch(
     () => route.query,

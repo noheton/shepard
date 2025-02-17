@@ -34,6 +34,10 @@ export interface CreateSpatialDataPointsRequest {
     spatialDataPoint: Array<SpatialDataPoint>;
 }
 
+export interface DeleteSpatialContainerRequest {
+    spatialDataContainerId: number;
+}
+
 export interface GetSpatialDataPointsRequest {
     spatialDataContainerId: number;
     databaseType: DatabaseType;
@@ -109,6 +113,50 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     async createSpatialDataPoints(requestParameters: CreateSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SpatialDataPoint>> {
         const response = await this.createSpatialDataPointsRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Deletes spatial data container and related spatial data.
+     */
+    async deleteSpatialContainerRaw(requestParameters: DeleteSpatialContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['spatialDataContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainerId',
+                'Required parameter "spatialDataContainerId" was null or undefined when calling deleteSpatialContainer().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainer/{spatialDataContainerId}`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Deletes spatial data container and related spatial data.
+     */
+    async deleteSpatialContainer(requestParameters: DeleteSpatialContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteSpatialContainerRaw(requestParameters, initOverrides);
     }
 
     /**

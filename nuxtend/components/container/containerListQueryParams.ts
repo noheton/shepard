@@ -33,7 +33,7 @@ export function parseContainerListQueryParams(
     page: basicParams.page,
     searchText: basicParams.searchText,
     sortBy: {
-      key: basicParams.sortBy?.key,
+      key: basicParams.sortBy.key,
       order: basicParams.sortBy.order,
     },
     selectedFilter: parseSelectedFilter(queryParams),

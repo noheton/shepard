@@ -10,11 +10,13 @@ import de.dlr.shepard.common.search.io.UserSearchBody;
 import de.dlr.shepard.common.search.io.UserSearchResult;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.ContainerSearchService;
+import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.search.services.SearchService;
 import de.dlr.shepard.common.search.services.UserSearchService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.SortingHelper;
+import de.dlr.shepard.context.collection.io.CollectionIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -28,6 +30,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -88,17 +91,16 @@ public class SearchRest {
   @POST
   @Path("/" + Constants.COLLECTIONS)
   @Tag(name = Constants.SEARCH)
-  @Operation(description = "Search collections")
+  @Operation(description = "Search collections with paginated response")
   @APIResponse(
     description = "ok",
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionSearchResult.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
-  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
-  @Parameter(name = Constants.QP_ORDER_DESC)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
+  @Parameter(name = Constants.QP_ORDER_DESC, description = "Defaults to 'true'")
   public Response searchCollections(
     @RequestBody(
       required = true,
@@ -117,16 +119,22 @@ public class SearchRest {
       collectionSearchBody.getSearchParams().getQuery()
     );
 
-    PaginationHelper pagination = null;
-    if (page != null && size != null) pagination = new PaginationHelper(page, size);
-    SortingHelper sortingHelper = new SortingHelper(orderBy, orderDesc);
-    CollectionSearchResult ret = collectionSearchService.search(
-      collectionSearchBody,
-      pagination,
-      sortingHelper,
-      securityContext.getUserPrincipal().getName()
+    PaginatedCollectionList paginatedCollectionList = collectionSearchService.search(
+      collectionSearchBody.getSearchParams().getQuery(),
+      securityContext.getUserPrincipal().getName(),
+      Optional.ofNullable(page),
+      Optional.ofNullable(size),
+      Optional.ofNullable(orderBy).orElse(BasicCollectionAttributes.createdAt),
+      Optional.ofNullable(orderDesc).orElse(true)
     );
-    return Response.ok(ret).build();
+
+    CollectionSearchResult collectionSearchResult = new CollectionSearchResult(
+      paginatedCollectionList.getResults().stream().map(CollectionIO::new).toList(),
+      collectionSearchBody.getSearchParams(),
+      paginatedCollectionList.getTotalResults()
+    );
+
+    return Response.ok(collectionSearchResult).build();
   }
 
   @POST
@@ -141,8 +149,8 @@ public class SearchRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
-  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
-  @Parameter(name = Constants.QP_ORDER_DESC)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
+  @Parameter(name = Constants.QP_ORDER_DESC, description = "Defaults to 'true'")
   public Response searchContainers(
     @RequestBody(
       required = true,
@@ -164,7 +172,10 @@ public class SearchRest {
 
     PaginationHelper pagination = null;
     if (page != null && size != null) pagination = new PaginationHelper(page, size);
-    SortingHelper sortingHelper = new SortingHelper(orderBy, orderDesc);
+    SortingHelper sortingHelper = new SortingHelper(
+      Optional.ofNullable(orderBy).orElse(BasicContainerAttributes.createdAt),
+      Optional.ofNullable(orderDesc).orElse(true)
+    );
     ContainerSearchResult ret = containerSearchService.search(
       containerSearchBody,
       pagination,

@@ -2,6 +2,7 @@ package de.dlr.shepard.common.search.io;
 
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.context.collection.io.CollectionIO;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -13,23 +14,23 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class CollectionSearchResult extends ASearchResults<CollectionSearchParams> {
 
   @Schema(required = true)
-  private CollectionIO[] results;
+  private List<CollectionIO> results;
 
   @Schema(required = true)
   private Integer totalResults;
 
-  public CollectionSearchResult(CollectionIO[] results, CollectionSearchParams searchParams, Integer total) {
+  public CollectionSearchResult(List<CollectionIO> results, CollectionSearchParams searchParams, Integer total) {
     super(searchParams);
     this.results = results;
     this.totalResults = total;
   }
 
   public ResponseBody toResponseBody() {
-    ResultTriple[] resultTriples = new ResultTriple[this.results.length];
-    BasicEntityIO[] results = new BasicEntityIO[this.results.length];
-    for (int i = 0; i < this.results.length; i++) {
-      resultTriples[i] = new ResultTriple(this.results[i].getId());
-      results[i] = new BasicEntityIO(this.results[i]);
+    ResultTriple[] resultTriples = new ResultTriple[this.results.size()];
+    BasicEntityIO[] results = new BasicEntityIO[this.results.size()];
+    for (int i = 0; i < this.results.size(); i++) {
+      resultTriples[i] = new ResultTriple(this.results.get(i).getId());
+      results[i] = new BasicEntityIO(this.results.get(i));
     }
     ResponseBody responseBody = new ResponseBody(
       resultTriples,

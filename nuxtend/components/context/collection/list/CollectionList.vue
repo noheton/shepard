@@ -116,7 +116,7 @@ function onPageChange(page: number) {
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />
       <v-pagination
-        :model-value="queryParams.page ?? 0"
+        :model-value="queryParams.page ?? 1"
         :length="pageCount"
         :total-visible="6"
         @update:model-value="onPageChange"

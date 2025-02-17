@@ -1,7 +1,7 @@
 import type { LocationQueryRaw } from "vue-router";
 
 export interface ListQueryParams<SortByKey extends string = string> {
-  page: number;
+  page?: number;
   sortBy?: SortBy<SortByKey>;
   searchText?: string;
 }
@@ -16,7 +16,7 @@ export function parseListQueryParams(
   };
 }
 
-function parsePage(queryParams: LocationQueryRaw): number {
+function parsePage(queryParams: LocationQueryRaw): number | undefined {
   if (
     queryParams.page &&
     typeof queryParams.page === "string" &&
@@ -24,7 +24,7 @@ function parsePage(queryParams: LocationQueryRaw): number {
   ) {
     return parseInt(queryParams.page);
   }
-  return 1;
+  return undefined;
 }
 
 function parseSortBy(queryParams: LocationQueryRaw): SortBy | undefined {
