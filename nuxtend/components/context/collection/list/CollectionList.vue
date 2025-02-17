@@ -107,7 +107,11 @@ function onPageChange(page: number) {
         <template #[`item.id`]>#{{ rowProps.item.id }}</template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
         <template #[`item.updatedAt`]>
-          {{ toShortDateString(rowProps.item.updatedAt) }}
+          {{
+            toShortDateString(
+              rowProps.item.updatedAt ?? rowProps.item.createdAt,
+            )
+          }}
         </template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
       </v-data-table-row>
