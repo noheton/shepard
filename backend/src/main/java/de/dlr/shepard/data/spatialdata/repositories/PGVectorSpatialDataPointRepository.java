@@ -87,7 +87,7 @@ public class PGVectorSpatialDataPointRepository implements PanacheRepositoryBase
     Map<String, Object> metadata
   ) {
     String queryString = String.format(
-      "Select id, container_id, time, point, metadata, measurements FROM %s WHERE container_id = %s AND l2_distance(point, '[%s,%s,%s]') <= :radius %s",
+      "Select id, container_id, time, point, metadata, measurements FROM %s WHERE container_id = %s AND point <-> '[%s,%s,%s]' <= :radius %s",
       Constants.SPATIAL_DATA_DATA_POINTS_TABLE_NAME_PGVECTOR,
       containerId,
       centerX,
