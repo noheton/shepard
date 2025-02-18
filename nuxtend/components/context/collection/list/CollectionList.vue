@@ -37,15 +37,11 @@ const headers = [
     },
   },
   {
-    title: "Last changed",
-    key: "updatedAt",
+    title: "Created at",
+    key: "createdAt",
     width: "20%",
-    sort: (a: Date | null, b: Date | null) => {
-      const currentPointInTimeInMillis = Date.now();
-      return (
-        (a?.valueOf() ?? currentPointInTimeInMillis) -
-        (b?.valueOf() ?? currentPointInTimeInMillis)
-      );
+    sort: (a: Date, b: Date) => {
+      return a.valueOf() - b.valueOf();
     },
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
@@ -107,12 +103,8 @@ function onPageChange(page: number) {
         <template #[`item.id`]>#{{ rowProps.item.id }}</template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
-        <template #[`item.updatedAt`]>
-          {{
-            toShortDateString(
-              rowProps.item.updatedAt ?? rowProps.item.createdAt,
-            )
-          }}
+        <template #[`item.createdAt`]>
+          {{ toShortDateString(rowProps.item.createdAt) }}
         </template>
       </v-data-table-row>
     </template>
