@@ -25,13 +25,13 @@ export default defineNuxtRouteMiddleware(to => {
     const redirectCookie = useCookie(signInRedirectCookie, {
       sameSite: "strict",
     });
-    redirectCookie.value = to.path;
+    redirectCookie.value = to.fullPath;
   }
 
   // this handles the case that the user has an authenticated session, but the session contains an error
   if (data.value?.error) {
     return signIn(undefined, {
-      callbackUrl: to.path,
+      callbackUrl: to.fullPath,
     }) as ReturnType<typeof navigateTo>;
   }
 
@@ -42,6 +42,6 @@ export default defineNuxtRouteMiddleware(to => {
   }
 
   return signIn(undefined, {
-    callbackUrl: to.path,
+    callbackUrl: to.fullPath,
   }) as ReturnType<typeof navigateTo>;
 });

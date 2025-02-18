@@ -60,5 +60,6 @@ const handleAuth = () => {
 };
 const toggleTheme = () => {
   theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
+  localStorage.setItem("colorScheme", theme.global.name.value);
 };
 </script>

@@ -131,7 +131,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     return entityManager
       .createNativeQuery(
         String.format(
-          "SELECT * FROM spatial_data %s AND ST_3DMaxDistance(ST_MakePoint(:x1, :y1, :z1), geometry) <= :radius;",
+          "SELECT * FROM spatial_data %s AND ST_3DDWithin(geometry, ST_MakePoint(:x1, :y1, :z1), :radius);",
           whereClause
         ),
         SpatialGeometry.class
