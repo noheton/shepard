@@ -8,6 +8,7 @@ export function buildUri(relativePath: string): string {
 
 export function buildParamsWithApiKey(): Params {
   return {
+    timeout: "120s",
     headers: {
       "X-API-KEY": getSettings().API_KEY,
     },
