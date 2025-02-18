@@ -41,37 +41,6 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     return allResultCount;
   }
 
-  public SpatialGeometry getById(long id) {
-    return this.findById(id);
-  }
-
-  public List<SpatialGeometry> getAll() {
-    return this.listAll();
-  }
-
-  public List<SpatialGeometry> getAllCustom() {
-    var sb = new StringBuilder();
-    sb.append(
-      "SELECT data.id, data.containerId, data.time, data.geometry, data.metadata, data.measurements FROM SpatialGeometry data"
-    );
-
-    var query = entityManager.createQuery(sb.toString(), SpatialGeometry.class);
-
-    return query.getResultList();
-  }
-
-  /**
-   *
-   * @param Id entry Id to be deleted
-   * @return the number of rows deleted (expected to be one in this case)
-   */
-  public int deleteById(int Id) {
-    return entityManager
-      .createNativeQuery("DELETE FROM spatial_data WHERE id=:id;")
-      .setParameter("id", Id)
-      .executeUpdate();
-  }
-
   /**
    *
    * @param containerId to be used for deletion
@@ -98,13 +67,18 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Long timestampEnd,
     Map<String, Object> metadataFilter
   ) {
-    var whereClause = buildWhereClause(containerId, timestampStart, timestampEnd, metadataFilter);
+    var query = new NativeQueryStringBuilder()
+      .select("select * from spatial_data")
+      .addCondition("container_id", containerId)
+      .addTimeCondition("time", timestampStart, timestampEnd)
+      .addJsonCondition("metadata", metadataFilter)
+      .build();
 
     return entityManager
       .createNativeQuery(
         String.format(
-          "SELECT * FROM spatial_data %s AND geometry &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
-          whereClause
+          "%s AND geometry &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
+          query
         ),
         SpatialGeometry.class
       )
@@ -126,14 +100,16 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Long timestampEnd,
     Map<String, Object> metadataFilter
   ) {
-    var whereClause = buildWhereClause(containerId, timestampStart, timestampEnd, metadataFilter);
+    var query = new NativeQueryStringBuilder()
+      .select("select * from spatial_data")
+      .addCondition("container_id", containerId)
+      .addTimeCondition("time", timestampStart, timestampEnd)
+      .addJsonCondition("metadata", metadataFilter)
+      .build();
 
     return entityManager
       .createNativeQuery(
-        String.format(
-          "SELECT * FROM spatial_data %s AND ST_3DDWithin(geometry, ST_MakePoint(:x1, :y1, :z1), :radius);",
-          whereClause
-        ),
+        String.format("%s AND ST_3DDWithin(geometry, ST_MakePoint(:x1, :y1, :z1), :radius);", query),
         SpatialGeometry.class
       )
       .setParameter("x1", coordinate.x)
@@ -157,14 +133,16 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Long timestampEnd,
     Map<String, Object> metadataFilter
   ) {
-    var whereClause = buildWhereClause(containerId, timestampStart, timestampEnd, metadataFilter);
+    var query = new NativeQueryStringBuilder()
+      .select("select * from spatial_data")
+      .addCondition("container_id", containerId)
+      .addTimeCondition("time", timestampStart, timestampEnd)
+      .addJsonCondition("metadata", metadataFilter)
+      .build();
 
     return entityManager
       .createNativeQuery(
-        String.format(
-          "SELECT * FROM spatial_data %s ORDER BY geometry <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;",
-          whereClause
-        ),
+        String.format("%s ORDER BY geometry <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;", query),
         SpatialGeometry.class
       )
       .setParameter("k", k)
@@ -172,33 +150,5 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
       .setParameter("y1", coordinate.y)
       .setParameter("z1", coordinate.z)
       .getResultList();
-  }
-
-  private String buildWhereClause(
-    Long containerId,
-    Long timestampStart,
-    Long timestampEnd,
-    Map<String, Object> metadataFilter
-  ) {
-    if (containerId == null && timestampStart == null && timestampEnd == null && metadataFilter.size() == 0) return "";
-
-    var sb = new StringBuilder();
-    sb.append(String.format("WHERE (container_id = %s", containerId));
-
-    if (timestampStart != null && timestampEnd != null) {
-      sb.append(String.format(" AND time > %s AND time < %s", timestampStart, timestampEnd));
-    }
-
-    if (metadataFilter != null && metadataFilter.size() > 0) {
-      try {
-        var mapper = new ObjectMapper();
-        var filterAsString = mapper.writeValueAsString(metadataFilter);
-        sb.append(String.format(" AND metadata @> '%s'", filterAsString));
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
-    sb.append(")");
-    return sb.toString();
   }
 }
