@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.configuration.feature.toggles.LoadTestIngestionToggle;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.subscription.entities.Subscription;
@@ -121,6 +122,15 @@ public class UrlPathChecker {
    */
   public void assertIfIdsAreValid(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams) {
     String errorString;
+    // Allow load test data ingestion for all authenticated users
+    if (
+      LoadTestIngestionToggle.isActive() &&
+      pathSegments.size() > 1 &&
+      pathSegments.get(0).getPath().equals("collections") &&
+      pathSegments.get(1).getPath().equals("generate")
+    ) {
+      return;
+    }
     try {
       errorString = validateIds(pathSegments, queryParams);
     } catch (NumberFormatException e) {
