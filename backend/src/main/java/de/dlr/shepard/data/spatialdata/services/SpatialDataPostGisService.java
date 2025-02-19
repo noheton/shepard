@@ -125,8 +125,8 @@ public class SpatialDataPostGisService {
           geometry.getGeometry().getCoordinate().getX(),
           geometry.getGeometry().getCoordinate().getY(),
           geometry.getGeometry().getCoordinate().getZ(),
-          geometry.getMetadata(),
-          geometry.getMeasurements()
+          geometry.getMeasurements(),
+          geometry.getMetadata()
         )
       )
       .collect(Collectors.toList());
