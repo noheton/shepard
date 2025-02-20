@@ -14,4 +14,22 @@ public class SpatialDataParamsIO {
   private Integer limit;
   private Integer offset;
   private Integer skip;
+
+  public SpatialDataParamsIO(
+    AbstractGeometryFilter geometryFilter,
+    Map<String, Object> metadata,
+    Long startTime,
+    Long endTime,
+    Integer limit,
+    Integer offset,
+    Integer skip
+  ) {
+    this.geometryFilter = geometryFilter;
+    this.metadata = metadata;
+    this.startTime = startTime;
+    this.endTime = endTime;
+    this.limit = limit;
+    this.offset = offset;
+    this.skip = skip;
+  }
 }
