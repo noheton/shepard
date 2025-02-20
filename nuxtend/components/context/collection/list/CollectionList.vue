@@ -100,7 +100,7 @@ function onPageChange(page: number) {
         v-bind="rowProps"
         @click="router.push(collectionsPath + rowProps.item.id)"
       >
-        <template #[`item.id`]>#{{ rowProps.item.id }}</template>
+        <template #[`item.id`]>{{ rowProps.item.id }}</template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
         <template #[`item.createdAt`]>

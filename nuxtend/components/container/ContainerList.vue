@@ -107,7 +107,7 @@ function onPageChange(page: number) {
     @update:sort-by="onSortBy"
   >
     <template #[`item.id`]="{ value }: { value: ContainerFilterType }">
-      #{{ value }}
+      {{ value }}
     </template>
     <template #[`item.type`]="{ value }: { value: ContainerFilterType }">
       {{ ContainerTypeName[value] }}
