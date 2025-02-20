@@ -25,7 +25,6 @@ export * from './DataObject';
 export * from './DataObjectAttributes';
 export * from './DataObjectReference';
 export * from './DataPointValueType';
-export * from './DatabaseType';
 export * from './Event';
 export * from './FileContainer';
 export * from './FileReference';

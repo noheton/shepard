@@ -1,11 +1,6 @@
 import { check } from "k6";
 import { Options } from "k6/options";
-import {
-  DatabaseType,
-  filterByBoundingBox,
-  filterByBoundingSphere,
-  filterByKNearestNeighbor,
-} from "./util/spatial-helper";
+import { filterByBoundingBox, filterByBoundingSphere, filterByKNearestNeighbor } from "./util/spatial-helper";
 import { Metadata } from "./util/spatial-types";
 
 export const options: Options = {
@@ -48,8 +43,6 @@ const KNN = {
   z: 3,
 };
 
-const DB_TYPE = DatabaseType.PGVECTOR;
-
 export function setup(): { containerId: number } {
   //Using this specific container ID, since we uploaded data with the 'upload-spatial-data' script with this container id
   //const containerId = 123456789;
@@ -61,7 +54,6 @@ export function setup(): { containerId: number } {
 export function measure_bounding_box_filter(data: { containerId: number }) {
   const response = filterByBoundingBox(
     data.containerId,
-    DB_TYPE,
     BOUNDING_BOX.minX,
     BOUNDING_BOX.minY,
     BOUNDING_BOX.minZ,
@@ -85,7 +77,6 @@ export function measure_bounding_box_filter_with_metadata(data: { containerId: n
   };
   const response = filterByBoundingBox(
     data.containerId,
-    DB_TYPE,
     BOUNDING_BOX.minX,
     BOUNDING_BOX.minY,
     BOUNDING_BOX.minZ,
@@ -105,7 +96,6 @@ export function measure_bounding_box_filter_with_metadata(data: { containerId: n
 export function measure_bounding_sphere_filter(data: { containerId: number }) {
   const response = filterByBoundingSphere(
     data.containerId,
-    DB_TYPE,
     BOUNDING_SPHERE.r,
     BOUNDING_SPHERE.centerX,
     BOUNDING_SPHERE.centerY,
@@ -123,7 +113,7 @@ export function measure_bounding_sphere_filter(data: { containerId: number }) {
 
 /* k Nearest Neighbor */
 export function measure_knn_filter(data: { containerId: number }) {
-  const response = filterByKNearestNeighbor(data.containerId, DB_TYPE, KNN.k, KNN.x, KNN.y, KNN.z, undefined);
+  const response = filterByKNearestNeighbor(data.containerId, KNN.k, KNN.x, KNN.y, KNN.z, undefined);
   const responseBody = JSON.parse(String(response.body));
   if (Array.isArray(responseBody)) {
     console.log("Response length:", responseBody.length);

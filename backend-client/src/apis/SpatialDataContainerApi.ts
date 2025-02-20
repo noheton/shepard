@@ -15,13 +15,10 @@
 
 import * as runtime from '../runtime';
 import type {
-  DatabaseType,
   SpatialDataParamsIO,
   SpatialDataPoint,
 } from '../models/index';
 import {
-    DatabaseTypeFromJSON,
-    DatabaseTypeToJSON,
     SpatialDataParamsIOFromJSON,
     SpatialDataParamsIOToJSON,
     SpatialDataPointFromJSON,
@@ -30,7 +27,6 @@ import {
 
 export interface CreateSpatialDataPointsRequest {
     spatialDataContainerId: number;
-    databaseType: DatabaseType;
     spatialDataPoint: Array<SpatialDataPoint>;
 }
 
@@ -40,7 +36,6 @@ export interface DeleteSpatialContainerRequest {
 
 export interface GetSpatialDataPointsRequest {
     spatialDataContainerId: number;
-    databaseType: DatabaseType;
     spatialDataParamsIO?: SpatialDataParamsIO;
 }
 
@@ -60,13 +55,6 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['databaseType'] == null) {
-            throw new runtime.RequiredError(
-                'databaseType',
-                'Required parameter "databaseType" was null or undefined when calling createSpatialDataPoints().'
-            );
-        }
-
         if (requestParameters['spatialDataPoint'] == null) {
             throw new runtime.RequiredError(
                 'spatialDataPoint',
@@ -75,10 +63,6 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-
-        if (requestParameters['databaseType'] != null) {
-            queryParameters['databaseType'] = requestParameters['databaseType'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -170,18 +154,7 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['databaseType'] == null) {
-            throw new runtime.RequiredError(
-                'databaseType',
-                'Required parameter "databaseType" was null or undefined when calling getSpatialDataPoints().'
-            );
-        }
-
         const queryParameters: any = {};
-
-        if (requestParameters['databaseType'] != null) {
-            queryParameters['databaseType'] = requestParameters['databaseType'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

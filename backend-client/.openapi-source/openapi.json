@@ -4809,13 +4809,6 @@
             "format" : "int64",
             "type" : "integer"
           }
-        }, {
-          "name" : "databaseType",
-          "in" : "query",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/DatabaseType"
-          }
         } ],
         "requestBody" : {
           "content" : {
@@ -4857,13 +4850,6 @@
           "schema" : {
             "format" : "int64",
             "type" : "integer"
-          }
-        }, {
-          "name" : "databaseType",
-          "in" : "query",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/DatabaseType"
           }
         } ],
         "requestBody" : {
@@ -5679,10 +5665,6 @@
     "schemas" : {
       "DataObjectAttributes" : {
         "enum" : [ "createdAt", "updatedAt", "name" ],
-        "type" : "string"
-      },
-      "DatabaseType" : {
-        "enum" : [ "POSTGIS", "PGVECTOR" ],
         "type" : "string"
       },
       "RequestMethod" : {

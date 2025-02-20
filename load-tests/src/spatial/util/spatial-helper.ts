@@ -14,30 +14,17 @@ import {
 export const spatialUri = buildUri("/shepard/api/spatialDataContainer");
 const params = buildParamsWithApiKey();
 
-export enum DatabaseType {
-  POSTGIS = "POSTGIS",
-  PGVECTOR = "PGVECTOR",
-  BOTH = "BOTH",
-}
-
-export function addSpatialDataPoint(containerId: number, dbType: DatabaseType, numOfMeasurements: number = 100) {
+export function addSpatialDataPoint(containerId: number, numOfMeasurements: number = 100) {
   const dataPoint = generateSingleRandomSpatialDataPoint(numOfMeasurements);
   const spatialDataPayloadURL = spatialUri + `/${containerId}/payload`;
-  const queryParams = new Map<string, string>([["databaseType", dbType]]);
-  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, queryParams);
+  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
   return http.patch(spatialURL.toString(), JSON.stringify([dataPoint]), params);
 }
 
-export function addManySpatialDataPoints(
-  containerId: number,
-  dbType: DatabaseType,
-  numberOfPoints: number,
-  numOfMeasurements: number = 100,
-) {
+export function addManySpatialDataPoints(containerId: number, numberOfPoints: number, numOfMeasurements: number = 100) {
   const dataPoints = generateMultipleSpatialDataPoints(numberOfPoints, numOfMeasurements);
   const spatialDataPayloadURL = spatialUri + `/${containerId}/payload`;
-  const queryParams = new Map<string, string>([["databaseType", dbType]]);
-  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, queryParams);
+  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
   return http.patch(spatialURL.toString(), JSON.stringify(dataPoints), params);
 }
 
@@ -49,7 +36,6 @@ export function deleteSpatialDataPointsByContainerId(containerId: number) {
 
 export function filterByBoundingBox(
   containerId: number,
-  dbType: DatabaseType,
   minX: number,
   minY: number,
   minZ: number,
@@ -66,14 +52,12 @@ export function filterByBoundingBox(
   };
 
   const spatialDataPayloadURL = spatialUri + `/${containerId}/payload`;
-  const queryParams = new Map<string, string>([["databaseType", dbType]]);
-  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, queryParams);
+  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
   return http.post(spatialURL.toString(), JSON.stringify(filter), params);
 }
 
 export function filterByBoundingSphere(
   containerId: number,
-  dbType: DatabaseType,
   r: number,
   centerX: number,
   centerY: number,
@@ -90,14 +74,12 @@ export function filterByBoundingSphere(
   console.info(filter);
 
   const spatialDataPayloadURL = spatialUri + `/${containerId}/payload`;
-  const queryParams = new Map<string, string>([["databaseType", dbType]]);
-  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, queryParams);
+  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
   return http.post(spatialURL.toString(), JSON.stringify(filter), params);
 }
 
 export function filterByKNearestNeighbor(
   containerId: number,
-  dbType: DatabaseType,
   k: number,
   x: number,
   y: number,
@@ -112,11 +94,14 @@ export function filterByKNearestNeighbor(
   };
 
   const spatialDataPayloadURL = spatialUri + `/${containerId}/payload`;
-  const queryParams = new Map<string, string>([["databaseType", dbType]]);
-  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, queryParams);
+  const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
   return http.post(spatialURL.toString(), JSON.stringify(filter), params);
 }
 
+/**
+ * This function returns a proper URL object for a passed URL-string and adds a Map of query parameters to the URL object.
+ * @returns URL object
+ */
 function buildUrlWithQueryParams(apiUri: string, queryParams: Map<string, string> | undefined | null): URL {
   const url = new URL(apiUri);
   if (!queryParams) {

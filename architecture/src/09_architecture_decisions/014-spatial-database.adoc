@@ -11,7 +11,7 @@ ifndef::imagesdir[:imagesdir: ../../images]
 |Context|
 Spatial data can be collected either from data and measurements on robotic platforms or simulating data evolution or other sources. In addition to the normal retrieval filters, the collected data should be stored and retrieved in spatial context, for example retrieve part of the data which lies in a specific box or near to specific points.
 The retrieval should be performant, and provide various filters and options to strip the results as needed.
-Users must be able to combine spatial filters and filters on the structured meta data fields.
+Users must be able to combine spatial filters, filters on the structured meta data fields and filters on the timestamp by providing a duration filter.
 Shepard should be able to handle spatial data, efficiently with fast data ingestion and access and functionally that allows filtering to reduce client load.
 Spatial data could be collected from measurements on robotic platforms or simulation.
 
@@ -61,8 +61,8 @@ single-precision, half-precision, binary, and sparse vectors
 ! pgvector does not provide transformation functions, this has to implemented manually.
 
 !Indexing
-! 2D: Uses R-Tree index spatial index, spatial index used by default in some PostGIS functions (ST_3DDWithin), 3D: N-D indexes possible, however application of N-D index must be evaluated to be worthwhile, generally 3 index types possible: GIST, SP-GIST & BRIN (but we probably use GIST)
-! by default uses nearest-neighbor search (with perfect recall), custom added indexes use approximate nearest neighbor search (HNSW index, IVFFlat index)
+! 2D: Uses R-Tree index spatial index, spatial index used by default in some PostGIS functions (ST_3DDWithin), 3D: N-D indexes possible, however application of N-D index must be evaluated to be worthwhile, generally 3 index types possible: GIST, SP-GIST & BRIN (but we probably use GIST). Bounding box, bounding sphere and K-Nearest Neighbor searches directly supported by the GIST index.
+! by default uses nearest-neighbor search (with perfect recall), custom added indexes use approximate nearest neighbor search (HNSW index, IVFFlat index). K-Nearest Neighbor search supported by the index, but no bounding box or bounding sphere queries. This means a worse performance for bounding box and bounding sphere queries.
 
 !Setup
 ! community postGIS docker image, package install seems to be complicated, no need to activate extension when using docker image
@@ -85,21 +85,57 @@ single-precision, half-precision, binary, and sparse vectors
 ! regular minor releases every couple of months, not yet a stable major release (currently: 0.8.0), no information about support of older versions
 
 !Java quarkus support
-! Hibernate has spatial spatial data types support based on JTS and GeoLatte, and supports the basic geo functions. However it does not support the 3D functions provided by PostGIS.
-! Hibernate has Vector type support can be annotated in `Entity` class as `@JdbcTypeCode(SqlTypes.VECTOR)`. Quarkus has active extension that supports Vector Stores through LangChain4j, but it is more focused on embeddings, storing documents and performing similarity searches.
+! Hibernate has spatial spatial data types support based on JTS and GeoLatte, and supports the basic geo functions. However it does not support the 3D functions provided by PostGIS. So we do not use the hibernate spatial data types and only utilize native SQL queries.
+! Hibernate has Vector type support can be annotated in `Entity` class as `@JdbcTypeCode(SqlTypes.VECTOR)`. Quarkus has active extension that supports Vector Stores through LangChain4j, but it is more focused on embeddings, storing documents and performing similarity searches. So there is no direct support of types and functions for our use case.
 
 !Type Representation
 ! In the database, points are represented in their binary format, and have to be converted to readable string in order to see the values.
 ! Vector types are stored in more readable representation as array of comma separated values.
 
+!Performance Testing
+!Somedata
+!dada
+
 !===
+
+Performance Tests.
+
+Retrieval tests were performed on 7M points dataset.
+
+[cols="1a,2a,2a"]
+!===
+!Test Metric!postgis!pgvector
+!Number of added Single Data Points in 1min
+!2148
+!2106
+
+!Bounding Box filter (ca. 500 returned Points)
+!380ms
+!59000ms
+
+!Bounding Sphere filter (ca. 500 returned Points)
+!795ms
+!83000ms
+
+!KNN filter (k = 10)
+!53ms
+!45ms
+
+!Bounding Box with Metadata Filter (ca. 500 returned Points)
+!265ms
+!42000ms
+
+!===
+
 
 |Decision|
 
+Due to the drastic performance differences between PostGIS and PgVector, we decided to use PostGIS.
+While PostGIS queries always took less than one second per filter request, some PgVector queries took over a minute to filter and retrieve data.
 
-
-|Consequences|
-
+Another factor for our decision is the better support of 3D data points and 3D related functions by PostGIS.
+For example, the `ST_3DDistance` function properly utilizes the spatial index of PostGIS and provides everything you need for a bounding sphere query.
+While for PgVector the bounding sphere query has to be implemented by ourselves and is not able to utilize the vector index for the calculation.
 
 
 |===
