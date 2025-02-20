@@ -86,7 +86,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
     var container = containerDAO.findLightByNeo4jId(fileReference.getFileContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new FileReference();

@@ -63,7 +63,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
 
     var toCreate = new URIReference();
     toCreate.setCreatedAt(dateHelper.getDate());

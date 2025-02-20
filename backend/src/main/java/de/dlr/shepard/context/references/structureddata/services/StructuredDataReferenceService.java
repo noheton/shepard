@@ -70,7 +70,7 @@ public class StructuredDataReferenceService
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
     var container = containerDAO.findLightByNeo4jId(structuredDataReference.getStructuredDataContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new StructuredDataReference();

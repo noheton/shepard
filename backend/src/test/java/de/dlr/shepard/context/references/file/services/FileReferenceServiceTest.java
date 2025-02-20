@@ -162,7 +162,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -223,7 +223,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -249,7 +249,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
@@ -271,7 +271,7 @@ public class FileReferenceServiceTest {
     };
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(nullFileContainerId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())

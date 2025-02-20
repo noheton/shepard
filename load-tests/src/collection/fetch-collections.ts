@@ -1,6 +1,10 @@
 import { check } from "k6";
 import { Options } from "k6/options";
-import { getCollections, searchCollectionsDedicated } from "../utils/collection-helper";
+import {
+  getCollections,
+  isArrayWithOneCollectionOfThisName,
+  searchCollectionsDedicated,
+} from "../utils/collection-helper";
 
 export const options: Options = {
   scenarios: {
@@ -19,7 +23,7 @@ export const options: Options = {
 
 /**
  * Unfortunately, the get collections endpoint does only provide an exact match for the name parameter.
- * For that reason we have to manually set up the test data and compare the two endpoints querying the same data set.
+ * For that reason we can only test retrieval of a single collection in a controlled setting.
  */
 
 const testCollectionName = "Just testin 0";
@@ -34,14 +38,7 @@ export function measuring_get_collections() {
   check(response, {
     "got one collection via get": (r) => {
       const responseData = r.json();
-      if (!Array.isArray(responseData) || responseData.length !== 1) return false;
-      const returnedCollection = responseData.at(0);
-      return (
-        !!returnedCollection &&
-        typeof returnedCollection === "object" &&
-        "name" in returnedCollection &&
-        returnedCollection.name === testCollectionName
-      );
+      return isArrayWithOneCollectionOfThisName(responseData, testCollectionName);
     },
   });
 }
@@ -55,15 +52,7 @@ export function measuring_search_collections() {
       if (!(!!responseData && typeof responseData === "object" && "results" in responseData && responseData.results)) {
         return false;
       }
-      const responseResults = responseData.results;
-      if (!Array.isArray(responseResults) || responseResults.length !== 1) return false;
-      const returnedCollection = responseResults.at(0);
-      return (
-        !!returnedCollection &&
-        typeof returnedCollection === "object" &&
-        "name" in returnedCollection &&
-        returnedCollection.name === testCollectionName
-      );
+      return isArrayWithOneCollectionOfThisName(responseData.results, testCollectionName);
     },
   });
 }

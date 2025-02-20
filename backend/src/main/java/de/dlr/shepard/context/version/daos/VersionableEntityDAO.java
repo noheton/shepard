@@ -20,33 +20,16 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     return list.isEmpty() ? null : list.get(0);
   }
 
-  public List<T> findByShepardIds(List<Long> shepardIds) {
-    return findByShepardIds(shepardIds, false);
+  public T findByShepardId(Long shepardId, boolean light) {
+    List<T> list = findByShepardIds(List.of(shepardId), light);
+    return list.isEmpty() ? null : list.get(0);
   }
 
   public T findByShepardId(Long shepardId, UUID versionUID) {
     return findByShepardId(shepardId, versionUID, false);
   }
 
-  public T findLightByShepardId(Long shepardId) {
-    List<T> list = findByShepardIds(List.of(shepardId), true);
-    return list.isEmpty() ? null : list.get(0);
-  }
-
-  private List<T> findByShepardIds(List<Long> shepardIds, boolean light) {
-    Map<String, Object> paramsMap = new HashMap<>();
-    var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
-    String query = String.format(
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
-      CypherQueryHelper.getShepardIdsPart("o", shepardIds),
-      CypherQueryHelper.getVersionHeadPart("v")
-    );
-    query += returnPart;
-    Iterable<T> result = findByQuery(query, paramsMap);
-    return StreamSupport.stream(result.spliterator(), false).collect(Collectors.toList());
-  }
-
-  private T findByShepardId(Long shepardId, UUID versionUID, boolean light) {
+  public T findByShepardId(Long shepardId, UUID versionUID, boolean light) {
     Map<String, Object> paramsMap = new HashMap<>();
     var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
     String versionPart = "";
@@ -61,6 +44,23 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     Iterable<T> result = findByQuery(query, paramsMap);
     if (!result.iterator().hasNext()) return null;
     return result.iterator().next();
+  }
+
+  public List<T> findByShepardIds(List<Long> shepardIds) {
+    return findByShepardIds(shepardIds, false);
+  }
+
+  private List<T> findByShepardIds(List<Long> shepardIds, boolean light) {
+    Map<String, Object> paramsMap = new HashMap<>();
+    var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
+    String query = String.format(
+      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
+      CypherQueryHelper.getShepardIdsPart("o", shepardIds),
+      CypherQueryHelper.getVersionHeadPart("v")
+    );
+    query += returnPart;
+    Iterable<T> result = findByQuery(query, paramsMap);
+    return StreamSupport.stream(result.spliterator(), false).collect(Collectors.toList());
   }
 
   @Override

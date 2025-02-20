@@ -141,8 +141,8 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -169,8 +169,8 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectDAO.findLightByShepardId(nullDataObjectShepardId)).thenReturn(null);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(nullDataObjectShepardId, true)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );
@@ -192,8 +192,8 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectDAO.findLightByShepardId(referenced.getShepardId())).thenReturn(referenced);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );

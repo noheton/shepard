@@ -71,8 +71,8 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     String username
   ) {
     User user = userDAO.find(username);
-    DataObject dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
-    Collection referenced = collectionDAO.findLightByShepardId(collectionReference.getReferencedCollectionId());
+    DataObject dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    Collection referenced = collectionDAO.findByShepardId(collectionReference.getReferencedCollectionId(), true);
     if (referenced == null || referenced.isDeleted()) {
       throw new InvalidBodyException(
         String.format(

@@ -6,7 +6,6 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
-import de.dlr.shepard.common.configuration.feature.toggles.LoadTestIngestionToggle;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.subscription.entities.Subscription;
@@ -122,15 +121,6 @@ public class UrlPathChecker {
    */
   public void assertIfIdsAreValid(List<PathSegment> pathSegments, MultivaluedMap<String, String> queryParams) {
     String errorString;
-    // Allow load test data ingestion for all authenticated users
-    if (
-      LoadTestIngestionToggle.isActive() &&
-      pathSegments.size() > 1 &&
-      pathSegments.get(0).getPath().equals("collections") &&
-      pathSegments.get(1).getPath().equals("generate")
-    ) {
-      return;
-    }
     try {
       errorString = validateIds(pathSegments, queryParams);
     } catch (NumberFormatException e) {
@@ -155,7 +145,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.COLLECTIONS)) {
       long id = Long.parseLong(pathElems.get(Constants.COLLECTIONS));
-      collection = collectionService.getCollectionByShepardId(id, null);
+      collection = collectionService.getCollectionByShepardId(id, null, true);
       String error = checkCollection(collection);
       if (error != null) {
         return builder.append(error).toString();
@@ -317,6 +307,11 @@ public class UrlPathChecker {
     if (pathElems.containsKey(Constants.SEMANTIC_ANNOTATIONS)) {
       long id = Long.parseLong(pathElems.get(Constants.SEMANTIC_ANNOTATIONS));
       var annotation = semanticAnnotationService.getAnnotationByNeo4jId(id);
+      if (pathElems.containsKey(Constants.COLLECTIONS)) {
+        // We need the collection including neighbors to get the annotations
+        long collectionId = Long.parseLong(pathElems.get(Constants.COLLECTIONS));
+        collection = collectionService.getCollectionByShepardId(collectionId, null, false);
+      }
       String error = checkSemanticAnnotation(annotation, collection, dataObject, reference);
       if (error != null) {
         return builder.append(error).toString();

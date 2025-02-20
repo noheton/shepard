@@ -202,7 +202,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
     when(
       timeseriesDAO.find(
@@ -285,7 +285,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(
       timeseriesDAO.find(
@@ -326,7 +326,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())
@@ -352,7 +352,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())
@@ -377,7 +377,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(containerShepardId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())

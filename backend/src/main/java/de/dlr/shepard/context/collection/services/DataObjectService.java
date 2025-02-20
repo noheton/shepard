@@ -64,7 +64,7 @@ public class DataObjectService {
     DataObjectIO dataObject,
     String username
   ) {
-    Collection collection = collectionDAO.findByShepardId(collectionShepardId);
+    Collection collection = collectionDAO.findByShepardId(collectionShepardId, true);
     User user = userDAO.find(username);
     DataObject parent = findRelatedDataObjectByShepardId(collection.getShepardId(), dataObject.getParentId(), null);
     List<DataObject> predecessors = findRelatedDataObjectsByShepardIds(

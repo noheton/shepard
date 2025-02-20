@@ -208,7 +208,7 @@ public class CollectionServiceTest {
   public void getCollectionByShepardIdNoVersion() {
     Collection ret = new Collection(1L);
     long shepardId = 2L;
-    when(dao.findByShepardId(shepardId)).thenReturn(ret);
+    when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
     var result = service.getCollectionByShepardId(shepardId);
     assertEquals(ret, result);
   }
@@ -236,7 +236,7 @@ public class CollectionServiceTest {
     Collection ret = new Collection(1L);
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
-    when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
+    when(dao.findByShepardId(shepardId, versionUID, false)).thenReturn(ret);
     var result = service.getCollectionByShepardId(shepardId, versionUID);
     assertEquals(ret, result);
   }

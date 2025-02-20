@@ -6,7 +6,6 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
-import de.dlr.shepard.common.configuration.feature.toggles.LoadTestIngestionToggle;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PermissionType;
@@ -62,15 +61,6 @@ public class PermissionsUtil {
       return true;
     }
 
-    // Allow load test data ingestion for all authenticated users
-    if (
-      LoadTestIngestionToggle.isActive() &&
-      pathSegments.size() > 1 &&
-      pathSegments.get(0).getPath().equals("collections") &&
-      pathSegments.get(1).getPath().equals("generate")
-    ) {
-      return true;
-    }
     // Perform the generic check
     if (idSegment == null || idSegment.isBlank()) {
       // No id in path

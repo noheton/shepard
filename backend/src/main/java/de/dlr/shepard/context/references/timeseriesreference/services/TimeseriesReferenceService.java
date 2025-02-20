@@ -97,7 +97,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
+    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
     var container = timeseriesContainerDAO.findLightByNeo4jId(timeseriesReference.getTimeseriesContainerId());
     if (container == null || container.isDeleted()) {
       throw new InvalidBodyException(

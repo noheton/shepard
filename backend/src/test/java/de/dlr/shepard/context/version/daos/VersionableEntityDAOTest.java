@@ -95,7 +95,7 @@ public class VersionableEntityDAOTest extends BaseTestCase {
       CypherQueryHelper.getVersionHeadPart("v") +
       " WITH o RETURN o";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
-    VersionableEntity actual = dao.findLightByShepardId(ent.getShepardId());
+    VersionableEntity actual = dao.findByShepardId(ent.getShepardId(), true);
     assertEquals(ent, actual);
   }
 
@@ -107,7 +107,7 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     Map<String, Object> paramsMap = new HashMap<>();
     String query = "MATCH (o {deleted: FALSE}) WHERE o.shepardId = 11 WITH o RETURN o";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(Collections.emptyList());
-    VersionableEntity actual = dao.findLightByShepardId(ent.getShepardId());
+    VersionableEntity actual = dao.findByShepardId(ent.getShepardId(), true);
     assertEquals(null, actual);
   }
 }

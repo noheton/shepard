@@ -67,8 +67,8 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     String username
   ) {
     User user = userDAO.find(username);
-    DataObject dataObject = dataObjectDAO.findLightByShepardId(dataObjectShepardId);
-    DataObject referenced = dataObjectDAO.findLightByShepardId(dataObjectReference.getReferencedDataObjectId());
+    DataObject dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    DataObject referenced = dataObjectDAO.findByShepardId(dataObjectReference.getReferencedDataObjectId(), true);
     if (referenced == null || referenced.isDeleted()) {
       throw new InvalidBodyException(
         String.format(
