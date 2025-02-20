@@ -51,7 +51,7 @@ public class Neo4jQueryBuilder {
     try {
       jsonNode = objectMapper.readValue(jsonquery, JsonNode.class);
     } catch (JsonProcessingException e) {
-      throw new ShepardParserException("could not parse JSON\n" + e.getMessage());
+      throw new ShepardParserException("could not parse JSON " + e.getMessage());
     }
     return getNeo4jStringWithNeo4jId(jsonNode, variable);
   }
