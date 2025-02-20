@@ -97,14 +97,16 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionSearchResult.class))
   )
-  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_PAGE, description = "Pagination starts at 0")
   @Parameter(name = Constants.QP_SIZE)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "Defaults to 'true'")
   public Response searchCollections(
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = CollectionSearchBody.class))
+      content = @Content(schema = @Schema(implementation = CollectionSearchBody.class)),
+      description = "You can search by ID, name or createdBy. Connect search parameters like this: {\"OR\":[{\"property\":\"name\",\"value\":\"ABC\",\"operator\":\"contains\"},{\"property\":\"id\",\"value\":123,\"operator\":\"contains\"}]}\"" +
+      " "
     ) @Valid CollectionSearchBody collectionSearchBody,
     @QueryParam(Constants.QP_PAGE) Integer page,
     @QueryParam(Constants.QP_SIZE) Integer size,
@@ -147,7 +149,7 @@ public class SearchRest {
     content = @Content(schema = @Schema(implementation = ContainerSearchResult.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_PAGE, description = "Pagination starts at 0")
   @Parameter(name = Constants.QP_SIZE)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "Defaults to 'true'")
