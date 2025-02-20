@@ -1,8 +1,8 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.util.JsonConverter;
 import de.dlr.shepard.data.spatialdata.model.SpatialGeometry;
+import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.PersistenceUnit;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.RequestScoped;
@@ -14,9 +14,12 @@ import org.locationtech.jts.geom.Coordinate;
 @RequestScoped
 public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialGeometry, Long> {
 
+  private final int INSERT_BATCH_SIZE = 20000;
+
   @PersistenceUnit("spatial")
   EntityManager entityManager;
 
+  @Timed(value = "shepard.spatial-data.insert")
   public int insert(long containerId, SpatialGeometry geometry) {
     var sql =
       "INSERT INTO spatial_data (container_id, time, geometry, metadata, measurements) values (:container_id, :time, :geometry, CAST(:metadata AS JSONB), CAST(:measurements AS JSONB));";
@@ -31,10 +34,28 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     return resultCount;
   }
 
+  @Timed(value = "shepard.spatial-data.insert-many")
   public int insertMultiple(long containerId, SpatialGeometry[] geometry) {
-    int allResultCount = 0;
-    for (SpatialGeometry entry : geometry) {
-      allResultCount += insert(containerId, entry);
+    var allResultCount = 0;
+    var sql = new NativeInsertStatementBuilder()
+      .insert("INSERT INTO spatial_data (container_id, time, geometry, metadata, measurements)");
+
+    for (int i = 0; i < geometry.length; i += INSERT_BATCH_SIZE) {
+      int currentLimit = Math.min(i + INSERT_BATCH_SIZE, geometry.length);
+      for (int j = i; j < currentLimit; j++) {
+        sql.addValues(
+          String.format(
+            "%d, '%s', ST_GeomFromText('%s'), CAST('%s' AS JSONB), CAST('%s' AS JSONB)",
+            containerId,
+            geometry[j].getTime(),
+            geometry[j].getGeometry().toText(),
+            JsonConverter.convertToString(geometry[j].getMetadata()),
+            JsonConverter.convertToString(geometry[j].getMeasurements())
+          )
+        );
+      }
+      var query = entityManager.createNativeQuery(sql.build());
+      allResultCount += query.executeUpdate();
     }
 
     //TODO: trigger a vacuum - required as:https://postgis.net/workshops/postgis-intro/indexing.html#vacuuming
@@ -46,6 +67,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    * @param containerId to be used for deletion
    * @return the number of rows deleted
    */
+  @Timed(value = "shepard.spatial-data.delete-by-container")
   public int deleteByContainerId(long containerId) {
     return entityManager
       .createNativeQuery("DELETE FROM spatial_data WHERE container_id=:containerId;")
@@ -58,6 +80,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    * The request uses the '&&&'' indexed operator, that acts similar to the ST_Intersects function.
    * If the point is part of the bounding box (i.e., on a bounding box corner) the bounding box check returns true
    */
+  @Timed(value = "shepard.spatial-data.query-by-bounding-box")
   @SuppressWarnings("unchecked")
   public List<SpatialGeometry> getByBoundingBox(
     long containerId,
@@ -92,6 +115,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   }
 
   @SuppressWarnings("unchecked")
+  @Timed(value = "shepard.spatial-data.query-by-bounding-sphere")
   public List<SpatialGeometry> getByBoundingSphere(
     long containerId,
     Coordinate coordinate,
@@ -125,6 +149,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    * @param k - number of returned points
    */
   @SuppressWarnings("unchecked")
+  @Timed(value = "shepard.spatial-data.query-by-knn")
   public List<SpatialGeometry> getByKNN(
     long containerId,
     Coordinate coordinate,

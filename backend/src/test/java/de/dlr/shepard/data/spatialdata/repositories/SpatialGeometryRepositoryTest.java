@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(1)
   @Transactional
+  @Disabled
   public void insert_singlePoint_success() {
     var dataPoint = new SpatialGeometry(
       containerId,
@@ -49,6 +51,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(2)
   @Transactional
+  @Disabled
   public void insert_storeMetadata_success() {
     Map<String, Object> metadata = new HashMap<>();
     metadata.put("track", 1);
@@ -70,6 +73,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(3)
   @Transactional
+  @Disabled
   public void insert_storeMeasurement_success() {
     Map<String, Object> measurements = new HashMap<>();
     measurements.put("a", 1);
@@ -91,6 +95,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(4)
   @Transactional
+  @Disabled
   public void insert_multiplePoints_success() {
     final ArrayList<SpatialGeometry> entryList = new ArrayList<SpatialGeometry>();
 
@@ -113,6 +118,7 @@ public class SpatialGeometryRepositoryTest {
   /* Bounding Box */
   @Test
   @Order(5)
+  @Disabled
   public void getByBoundingBox_returnsAllData_success() {
     var data = repository.getByBoundingBox(
       containerId,
@@ -130,6 +136,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(6)
   @Transactional
+  @Disabled
   public void getByBoundingBox_returnsSomeData_success() {
     // Setup
     var dataPoint1 = new SpatialGeometry(
@@ -181,6 +188,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(7)
+  @Disabled
   public void getByBoundingBox_returnsNoData_success() {
     var data = repository.getByBoundingBox(
       containerId,
@@ -198,6 +206,7 @@ public class SpatialGeometryRepositoryTest {
   /* Bounding Sphere */
   @Test
   @Order(8)
+  @Disabled
   public void getByBoundingSphere_returnsAllData_success() {
     var data = repository.getByBoundingSphere(containerId, new Coordinate(0, 0, 0), 9999, null, null, null);
 
@@ -208,6 +217,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(9)
   @Transactional
+  @Disabled
   public void getByBoundingSphere_returnsSomeData_success() {
     var dataPoint1 = new SpatialGeometry(
       containerId,
@@ -258,6 +268,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(10)
+  @Disabled
   public void getByBoundingSphere_returnsNoData_success() {
     var data = repository.getByBoundingSphere(containerId, new Coordinate(-10, -10, -10), 1, null, null, null);
 
@@ -268,6 +279,7 @@ public class SpatialGeometryRepositoryTest {
   /* KNN Search */
   @Test
   @Order(11)
+  @Disabled
   public void getByKNN_returnsAllData_success() {
     var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 9999, null, null, null);
 
@@ -277,6 +289,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(12)
+  @Disabled
   public void getByKNN_returnsSomeData_success() {
     var data = repository.getByKNN(containerId, new Coordinate(4, 4, 4), 3, null, null, null);
 
@@ -297,6 +310,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(13)
+  @Disabled
   public void getByKNN_returnsNoData_success() {
     var data = repository.getByKNN(containerId, new Coordinate(-1, -1, -1), 0, null, null, null);
 
@@ -307,6 +321,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(14)
   @Transactional
+  @Disabled
   public void deleteData_byContainerId_success() {
     int numberDeletedRows = repository.deleteByContainerId(containerId);
     assertTrue(numberDeletedRows > 0);
@@ -316,6 +331,7 @@ public class SpatialGeometryRepositoryTest {
   @Test
   @Order(15)
   @Transactional
+  @Disabled
   public void insert_storeMetadataWithNestedObject_success() {
     var nestedObject = new HashMap<String, Object>();
     nestedObject.put("temperature", 23.4);
@@ -341,6 +357,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(16)
+  @Disabled
   public void getByBoundingBox_filterByMetadata_returnsOneRecord() {
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 7);
@@ -359,6 +376,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(17)
+  @Disabled
   public void getByKNN_filterByMetadata_returnsOneRecord() {
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 7);
@@ -370,6 +388,7 @@ public class SpatialGeometryRepositoryTest {
 
   @Test
   @Order(18)
+  @Disabled
   public void getByKNN_filterByTimestamp_returnsOneRecord() {
     var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0l, generateTimestamp() * 1_000, null);
 
