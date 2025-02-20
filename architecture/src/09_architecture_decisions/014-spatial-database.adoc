@@ -93,27 +93,27 @@ single-precision, half-precision, binary, and sparse vectors
 ! Vector types are stored in more readable representation as array of comma separated values.
 
 !Performance Testing
-!Somedata
-!dada
+!See Result Table below
+!See Result Table below
 
 !===
 
-Performance Tests.
+== Performance Tests
 
-Retrieval tests were performed on 7M points dataset.
+Performance tests were executed on an already created dataset that consists of 7Mio data points.
 
-[cols="1a,2a,2a"]
+[cols="2a,1a,1a"]
 !===
-!Test Metric!postgis!pgvector
-!Number of added Single Data Points in 1min
-!2148
-!2106
+!Performance Test Type!postgis!pgvector
+!Create single data points for 1 minute.
+!2148 new data points
+!2106 new data points
 
-!Bounding Box filter (ca. 500 returned Points)
+!Bounding Box filter (ca. 500 returned points)
 !380ms
 !59000ms
 
-!Bounding Sphere filter (ca. 500 returned Points)
+!Bounding Sphere filter (ca. 500 returned points)
 !795ms
 !83000ms
 
@@ -121,7 +121,7 @@ Retrieval tests were performed on 7M points dataset.
 !53ms
 !45ms
 
-!Bounding Box with Metadata Filter (ca. 500 returned Points)
+!Bounding Box with Metadata Filter (ca. 500 returned points)
 !265ms
 !42000ms
 
