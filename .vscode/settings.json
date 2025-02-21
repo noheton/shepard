@@ -26,6 +26,7 @@
     "openapi",
     "Quarkus",
     "registerables",
+    "spatialdata",
     "structureddata",
     "textbody",
     "Texteditor",

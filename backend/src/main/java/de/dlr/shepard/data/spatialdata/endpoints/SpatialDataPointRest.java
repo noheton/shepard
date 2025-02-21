@@ -4,7 +4,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
-import de.dlr.shepard.data.spatialdata.services.SpatialDataPostGisService;
+import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -38,10 +38,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.SPATIAL_DATA_CONTAINER)
 @RequestScoped
-public class SpatialDataRest {
+public class SpatialDataPointRest {
 
   @Inject
-  private SpatialDataPostGisService postGisService;
+  private SpatialDataPointService postGisService;
 
   @Inject
   ManagedExecutor executor;
@@ -85,7 +85,7 @@ public class SpatialDataRest {
         value = """
         {
           "type": "BOUNDING_SPHERE",
-          "r": 50,
+          "radius": 50,
           "centerX": 15,
           "centerY": 25,
           "centerZ": 20

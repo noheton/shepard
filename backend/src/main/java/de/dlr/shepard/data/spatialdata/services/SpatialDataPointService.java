@@ -6,8 +6,8 @@ import de.dlr.shepard.data.spatialdata.model.AxisAlignedBoundingBox;
 import de.dlr.shepard.data.spatialdata.model.BoundingSphere;
 import de.dlr.shepard.data.spatialdata.model.GeometryBuilder;
 import de.dlr.shepard.data.spatialdata.model.KNearestNeighbor;
-import de.dlr.shepard.data.spatialdata.model.SpatialGeometry;
-import de.dlr.shepard.data.spatialdata.repositories.SpatialGeometryRepository;
+import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
+import de.dlr.shepard.data.spatialdata.repositories.SpatialDataPointRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -17,15 +17,15 @@ import kotlin.NotImplementedError;
 import org.locationtech.jts.geom.Coordinate;
 
 @RequestScoped
-public class SpatialDataPostGisService {
+public class SpatialDataPointService {
 
   @Inject
-  private SpatialGeometryRepository spatialGeometryRepository;
+  private SpatialDataPointRepository spatialGeometryRepository;
 
   @Transactional
   public void createSpatialDataPoints(Long containerId, List<SpatialDataPointIO> dataPoints) {
-    final List<SpatialGeometry> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
-    spatialGeometryRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialGeometry[0]));
+    final List<SpatialDataPoint> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
+    spatialGeometryRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
   public List<SpatialDataPointIO> getSpatialDataPointIOs(int containerId, SpatialDataParamsIO spatialDataParamsIO) {
@@ -90,7 +90,7 @@ public class SpatialDataPostGisService {
       spatialGeometryRepository.getByBoundingSphere(
         containerId,
         sphereCenter,
-        boundingSphere.getR(),
+        boundingSphere.getRadius(),
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata()
@@ -116,15 +116,15 @@ public class SpatialDataPostGisService {
     );
   }
 
-  private List<SpatialDataPointIO> mapSpatialGeometries(List<SpatialGeometry> geometries) {
+  private List<SpatialDataPointIO> mapSpatialGeometries(List<SpatialDataPoint> geometries) {
     return geometries
       .stream()
       .map(geometry ->
         new SpatialDataPointIO(
           geometry.getTime(),
-          geometry.getGeometry().getCoordinate().getX(),
-          geometry.getGeometry().getCoordinate().getY(),
-          geometry.getGeometry().getCoordinate().getZ(),
+          geometry.getPosition().getCoordinate().getX(),
+          geometry.getPosition().getCoordinate().getY(),
+          geometry.getPosition().getCoordinate().getZ(),
           geometry.getMeasurements(),
           geometry.getMetadata()
         )
@@ -132,11 +132,11 @@ public class SpatialDataPostGisService {
       .collect(Collectors.toList());
   }
 
-  private List<SpatialGeometry> mapSpatialDataPointIO(Long containerId, List<SpatialDataPointIO> dataPoints) {
+  private List<SpatialDataPoint> mapSpatialDataPointIO(Long containerId, List<SpatialDataPointIO> dataPoints) {
     return dataPoints
       .stream()
       .map(point ->
-        new SpatialGeometry(
+        new SpatialDataPoint(
           containerId,
           point.getTimestamp(),
           GeometryBuilder.fromXYZ(point.getX(), point.getY(), point.getZ()),

@@ -13,10 +13,6 @@ public final class GeometryBuilder {
     return factory.createPoint(coordinate);
   }
 
-  public static Geometry fromCoordinates(Coordinate[] coordinates) {
-    return factory.createMultiPointFromCoords(coordinates);
-  }
-
   public static Geometry fromXYZ(double x, double y, double z) {
     return fromCoordinate(new Coordinate(x, y, z));
   }

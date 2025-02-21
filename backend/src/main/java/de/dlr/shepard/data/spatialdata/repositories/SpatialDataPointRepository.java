@@ -1,18 +1,18 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
 import de.dlr.shepard.common.util.JsonConverter;
-import de.dlr.shepard.data.spatialdata.model.SpatialGeometry;
+import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.PersistenceUnit;
-import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.persistence.EntityManager;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.locationtech.jts.geom.Coordinate;
 
 @RequestScoped
-public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialGeometry, Long> {
+public class SpatialDataPointRepository {
 
   private final int INSERT_BATCH_SIZE = 20000;
 
@@ -20,45 +20,56 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   EntityManager entityManager;
 
   @Timed(value = "shepard.spatial-data.insert")
-  public int insert(long containerId, SpatialGeometry geometry) {
-    var sql =
-      "INSERT INTO spatial_data (container_id, time, geometry, metadata, measurements) values (:container_id, :time, :geometry, CAST(:metadata AS JSONB), CAST(:measurements AS JSONB));";
+  public int insert(long containerId, SpatialDataPoint data) {
+    var sql = new NativeInsertStatementBuilder()
+      .insert("INSERT INTO spatial_data_points (container_id, time, position, metadata, measurements)")
+      .addValues(
+        String.format(
+          Locale.US,
+          "%d, '%s', ST_MakePoint(%f, %f, %f), CAST('%s' AS JSONB), CAST('%s' AS JSONB)",
+          containerId,
+          data.getTime(),
+          data.getPosition().getCoordinate().x,
+          data.getPosition().getCoordinate().y,
+          data.getPosition().getCoordinate().z,
+          JsonConverter.convertToString(data.getMetadata()),
+          JsonConverter.convertToString(data.getMeasurements())
+        )
+      )
+      .build();
+
     var query = entityManager.createNativeQuery(sql);
-    query.setParameter("container_id", containerId);
-    query.setParameter("time", geometry.getTime());
-    query.setParameter("geometry", geometry.getGeometry());
-    query.setParameter("metadata", JsonConverter.convertToString(geometry.getMetadata()));
-    query.setParameter("measurements", JsonConverter.convertToString(geometry.getMeasurements()));
     var resultCount = query.executeUpdate();
-    if (resultCount <= 0) throw new RuntimeException("SpatialGeometry was not stored in database.");
+    if (resultCount <= 0) throw new RuntimeException("SpatialData was not stored in database.");
     return resultCount;
   }
 
   @Timed(value = "shepard.spatial-data.insert-many")
-  public int insertMultiple(long containerId, SpatialGeometry[] geometry) {
+  public int insertMultiple(long containerId, SpatialDataPoint[] data) {
     var allResultCount = 0;
     var sql = new NativeInsertStatementBuilder()
-      .insert("INSERT INTO spatial_data (container_id, time, geometry, metadata, measurements)");
+      .insert("INSERT INTO spatial_data_points (container_id, time, position, metadata, measurements)");
 
-    for (int i = 0; i < geometry.length; i += INSERT_BATCH_SIZE) {
-      int currentLimit = Math.min(i + INSERT_BATCH_SIZE, geometry.length);
+    for (int i = 0; i < data.length; i += INSERT_BATCH_SIZE) {
+      int currentLimit = Math.min(i + INSERT_BATCH_SIZE, data.length);
       for (int j = i; j < currentLimit; j++) {
         sql.addValues(
           String.format(
-            "%d, '%s', ST_GeomFromText('%s'), CAST('%s' AS JSONB), CAST('%s' AS JSONB)",
+            Locale.US,
+            "%d, '%s', ST_MakePoint(%f, %f, %f), CAST('%s' AS JSONB), CAST('%s' AS JSONB)",
             containerId,
-            geometry[j].getTime(),
-            geometry[j].getGeometry().toText(),
-            JsonConverter.convertToString(geometry[j].getMetadata()),
-            JsonConverter.convertToString(geometry[j].getMeasurements())
+            data[j].getTime(),
+            data[j].getPosition().getCoordinate().x,
+            data[j].getPosition().getCoordinate().y,
+            data[j].getPosition().getCoordinate().z,
+            JsonConverter.convertToString(data[j].getMetadata()),
+            JsonConverter.convertToString(data[j].getMeasurements())
           )
         );
       }
       var query = entityManager.createNativeQuery(sql.build());
       allResultCount += query.executeUpdate();
     }
-
-    //TODO: trigger a vacuum - required as:https://postgis.net/workshops/postgis-intro/indexing.html#vacuuming
     return allResultCount;
   }
 
@@ -70,9 +81,20 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   @Timed(value = "shepard.spatial-data.delete-by-container")
   public int deleteByContainerId(long containerId) {
     return entityManager
-      .createNativeQuery("DELETE FROM spatial_data WHERE container_id=:containerId;")
+      .createNativeQuery("DELETE FROM spatial_data_points WHERE container_id=:containerId;")
       .setParameter("containerId", containerId)
       .executeUpdate();
+  }
+
+  @Timed(value = "shepard.spatial-data.get-by-container")
+  @SuppressWarnings("unchecked")
+  public List<SpatialDataPoint> getByContainerId(long containerId) {
+    var query = new NativeQueryStringBuilder()
+      .select("SELECT * FROM spatial_data_points")
+      .addWhereCondition("container_id", containerId)
+      .build();
+
+    return entityManager.createNativeQuery(query, SpatialDataPoint.class).getResultList();
   }
 
   /**
@@ -82,7 +104,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    */
   @Timed(value = "shepard.spatial-data.query-by-bounding-box")
   @SuppressWarnings("unchecked")
-  public List<SpatialGeometry> getByBoundingBox(
+  public List<SpatialDataPoint> getByBoundingBox(
     long containerId,
     Coordinate bottomLeft,
     Coordinate topRight,
@@ -91,7 +113,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Map<String, Object> metadataFilter
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("select * from spatial_data")
+      .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
@@ -100,10 +122,10 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     return entityManager
       .createNativeQuery(
         String.format(
-          "%s AND geometry &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
+          "%s AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
           query
         ),
-        SpatialGeometry.class
+        SpatialDataPoint.class
       )
       .setParameter("x1", bottomLeft.x)
       .setParameter("y1", bottomLeft.y)
@@ -116,7 +138,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
 
   @SuppressWarnings("unchecked")
   @Timed(value = "shepard.spatial-data.query-by-bounding-sphere")
-  public List<SpatialGeometry> getByBoundingSphere(
+  public List<SpatialDataPoint> getByBoundingSphere(
     long containerId,
     Coordinate coordinate,
     double radius,
@@ -125,7 +147,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Map<String, Object> metadataFilter
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("select * from spatial_data")
+      .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
@@ -133,8 +155,8 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
 
     return entityManager
       .createNativeQuery(
-        String.format("%s AND ST_3DDWithin(geometry, ST_MakePoint(:x1, :y1, :z1), :radius);", query),
-        SpatialGeometry.class
+        String.format("%s AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius);", query),
+        SpatialDataPoint.class
       )
       .setParameter("x1", coordinate.x)
       .setParameter("y1", coordinate.y)
@@ -150,7 +172,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
    */
   @SuppressWarnings("unchecked")
   @Timed(value = "shepard.spatial-data.query-by-knn")
-  public List<SpatialGeometry> getByKNN(
+  public List<SpatialDataPoint> getByKNN(
     long containerId,
     Coordinate coordinate,
     int k,
@@ -159,7 +181,7 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
     Map<String, Object> metadataFilter
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("select * from spatial_data")
+      .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
@@ -167,8 +189,8 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
 
     return entityManager
       .createNativeQuery(
-        String.format("%s ORDER BY geometry <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;", query),
-        SpatialGeometry.class
+        String.format("%s ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;", query),
+        SpatialDataPoint.class
       )
       .setParameter("k", k)
       .setParameter("x1", coordinate.x)

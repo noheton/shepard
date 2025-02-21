@@ -1,7 +1,11 @@
 package de.dlr.shepard.data.spatialdata.endpoints;
 
 import static java.util.Map.entry;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
 import de.dlr.shepard.data.spatialdata.model.AxisAlignedBoundingBox;
@@ -72,7 +76,7 @@ class SpatialDataParamParserTest {
       """
       {
         "type": "BOUNDING_SPHERE",
-        "r": 50,
+        "radius": 50,
         "centerX": 15,
         "centerY": 25,
         "centerZ": 20
@@ -83,7 +87,7 @@ class SpatialDataParamParserTest {
     assertEquals(GeometryFilterType.BOUNDING_SPHERE, filter.getType());
     assertTrue(filter instanceof BoundingSphere);
     BoundingSphere sphereFilter = (BoundingSphere) filter;
-    assertEquals(50, sphereFilter.getR());
+    assertEquals(50, sphereFilter.getRadius());
     assertEquals(15, sphereFilter.getCenterX());
     assertEquals(25, sphereFilter.getCenterY());
     assertEquals(20, sphereFilter.getCenterZ());

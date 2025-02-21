@@ -1,11 +1,13 @@
 package de.dlr.shepard.data.spatialdata.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class BoundingSphere extends AbstractGeometryFilter {
 
-  private double r;
+  private double radius;
   private double centerX;
   private double centerY;
   private double centerZ;
