@@ -92,9 +92,9 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   ) {
     var query = new NativeQueryStringBuilder()
       .select("select * from spatial_data")
-      .addCondition("container_id", containerId)
+      .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonCondition("metadata", metadataFilter)
+      .addJsonContainsCondition("metadata", metadataFilter)
       .build();
 
     return entityManager
@@ -126,9 +126,9 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   ) {
     var query = new NativeQueryStringBuilder()
       .select("select * from spatial_data")
-      .addCondition("container_id", containerId)
+      .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonCondition("metadata", metadataFilter)
+      .addJsonContainsCondition("metadata", metadataFilter)
       .build();
 
     return entityManager
@@ -160,9 +160,9 @@ public class SpatialGeometryRepository implements PanacheRepositoryBase<SpatialG
   ) {
     var query = new NativeQueryStringBuilder()
       .select("select * from spatial_data")
-      .addCondition("container_id", containerId)
+      .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonCondition("metadata", metadataFilter)
+      .addJsonContainsCondition("metadata", metadataFilter)
       .build();
 
     return entityManager

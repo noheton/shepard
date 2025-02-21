@@ -24,7 +24,7 @@ public class NativeInsertStatementBuilder {
 
   private void addValuesIfNecessary() {
     if (valuesAlreadyAdded == false) {
-      sb.append(" values ");
+      sb.append(" VALUES ");
       valuesAlreadyAdded = true;
     }
   }

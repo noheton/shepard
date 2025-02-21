@@ -11,7 +11,7 @@ public class NativeInsertStatementBuilderTest {
     NativeInsertStatementBuilder builder = new NativeInsertStatementBuilder();
     builder.insert("INSERT INTO table_name (column1, column2)").addValues("value1, value2");
     String result = builder.build();
-    assertEquals("INSERT INTO table_name (column1, column2) values (value1, value2);", result);
+    assertEquals("INSERT INTO table_name (column1, column2) VALUES (value1, value2);", result);
   }
 
   @Test
@@ -19,6 +19,6 @@ public class NativeInsertStatementBuilderTest {
     NativeInsertStatementBuilder builder = new NativeInsertStatementBuilder();
     builder.insert("INSERT INTO table_name (column1, column2)").addValues("value1, value2").addValues("value3, value4");
     String result = builder.build();
-    assertEquals("INSERT INTO table_name (column1, column2) values (value1, value2),(value3, value4);", result);
+    assertEquals("INSERT INTO table_name (column1, column2) VALUES (value1, value2),(value3, value4);", result);
   }
 }

@@ -13,13 +13,13 @@ public class NativeQueryStringBuilder {
     return this;
   }
 
-  public NativeQueryStringBuilder addCondition(String parameterName, Object value) {
+  public NativeQueryStringBuilder addWhereCondition(String parameterName, Object value) {
     if (value == null) return this;
     addWhereClauseIfNecessary();
     if (value.getClass() == String.class) {
-      query.append(String.format(" and %s = '%s'", parameterName, value));
+      query.append(String.format(" AND %s = '%s'", parameterName, value));
     } else {
-      query.append(String.format(" and %s = %s", parameterName, value));
+      query.append(String.format(" AND %s = %s", parameterName, value));
     }
     return this;
   }
@@ -28,22 +28,22 @@ public class NativeQueryStringBuilder {
     if (timestampStart == null && timestampEnd == null) return this;
     addWhereClauseIfNecessary();
     if (timestampStart != null) {
-      query.append(String.format(" and %s > %s", parameterName, timestampStart));
+      query.append(String.format(" AND %s > %s", parameterName, timestampStart));
     }
     if (timestampEnd != null) {
-      query.append(String.format(" and %s < %s", parameterName, timestampEnd));
+      query.append(String.format(" AND %s < %s", parameterName, timestampEnd));
     }
     return this;
   }
 
-  public NativeQueryStringBuilder addJsonCondition(String parameterName, Map<String, Object> filter) {
+  public NativeQueryStringBuilder addJsonContainsCondition(String parameterName, Map<String, Object> filter) {
     if (filter == null) return this;
     addWhereClauseIfNecessary();
 
     try {
       var mapper = new ObjectMapper();
       var filterAsString = mapper.writeValueAsString(filter);
-      query.append(String.format(" and %s @> '%s'", parameterName, filterAsString));
+      query.append(String.format(" AND %s @> '%s'", parameterName, filterAsString));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -56,7 +56,7 @@ public class NativeQueryStringBuilder {
 
   private void addWhereClauseIfNecessary() {
     if (whereClauseAdded) return;
-    query.append(" where 1 = 1");
+    query.append(" WHERE 1 = 1");
     whereClauseAdded = true;
   }
 }

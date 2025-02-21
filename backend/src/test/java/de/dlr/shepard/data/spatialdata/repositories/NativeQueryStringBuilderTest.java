@@ -10,18 +10,18 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_simpleSelectQuery_success() {
     var builder = new NativeQueryStringBuilder();
-    var current = builder.select("select * from table_name").build();
+    var current = builder.select("SELECT * FROM table_name").build();
 
-    var expected = "select * from table_name";
+    var expected = "SELECT * FROM table_name";
 
     assertEquals(expected, current);
   }
 
   @Test
   public void build_addOneCondition_success() {
-    var current = new NativeQueryStringBuilder().select("select * from table_name").addCondition("id", 1).build();
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addWhereCondition("id", 1).build();
 
-    var expected = "select * from table_name where 1 = 1 and id = 1";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1";
 
     assertEquals(expected, current);
   }
@@ -29,12 +29,12 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_addTwoConditions_success() {
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
-      .addCondition("id", 1)
-      .addCondition("role", "assistant")
+      .select("SELECT * FROM table_name")
+      .addWhereCondition("id", 1)
+      .addWhereCondition("role", "assistant")
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and id = 1 and role = 'assistant'";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND role = 'assistant'";
 
     assertEquals(expected, current);
   }
@@ -42,12 +42,12 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_addTimeCondition_success() {
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
-      .addCondition("id", 1)
+      .select("SELECT * FROM table_name")
+      .addWhereCondition("id", 1)
       .addTimeCondition("time", 123l, 234l)
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and id = 1 and time > 123 and time < 234";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND time > 123 AND time < 234";
 
     assertEquals(expected, current);
   }
@@ -55,11 +55,11 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_passOnlyTimestampStart_success() {
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
+      .select("SELECT * FROM table_name")
       .addTimeCondition("time", 123l, null)
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and time > 123";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time > 123";
 
     assertEquals(expected, current);
   }
@@ -67,11 +67,11 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_passOnlyTimestampEnd_success() {
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
+      .select("SELECT * FROM table_name")
       .addTimeCondition("time", null, 234l)
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and time < 234";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time < 234";
 
     assertEquals(expected, current);
   }
@@ -82,21 +82,24 @@ public class NativeQueryStringBuilderTest {
     jsonFilter.put("track", 2);
 
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
-      .addCondition("id", 1)
-      .addJsonCondition("meta", jsonFilter)
+      .select("SELECT * FROM table_name")
+      .addWhereCondition("id", 1)
+      .addJsonContainsCondition("meta", jsonFilter)
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and id = 1 and meta @> '{\"track\":2}'";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND meta @> '{\"track\":2}'";
 
     assertEquals(expected, current);
   }
 
   @Test
   public void build_passNullValueInCondition_isIgnored() {
-    var current = new NativeQueryStringBuilder().select("select * from table_name").addCondition("id", null).build();
+    var current = new NativeQueryStringBuilder()
+      .select("SELECT * FROM table_name")
+      .addWhereCondition("id", null)
+      .build();
 
-    var expected = "select * from table_name";
+    var expected = "SELECT * FROM table_name";
 
     assertEquals(expected, current);
   }
@@ -104,13 +107,13 @@ public class NativeQueryStringBuilderTest {
   @Test
   public void build_passNullValueInSecondCondition_isIgnored() {
     var current = new NativeQueryStringBuilder()
-      .select("select * from table_name")
-      .addCondition("id", 1)
-      .addJsonCondition("meta", null)
+      .select("SELECT * FROM table_name")
+      .addWhereCondition("id", 1)
+      .addJsonContainsCondition("meta", null)
       .addTimeCondition("time", null, null)
       .build();
 
-    var expected = "select * from table_name where 1 = 1 and id = 1";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1";
 
     assertEquals(expected, current);
   }
