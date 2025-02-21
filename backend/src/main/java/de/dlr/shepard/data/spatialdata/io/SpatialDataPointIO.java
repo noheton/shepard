@@ -5,12 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.Map;
 import lombok.Data;
-import lombok.Getter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data
 @Schema(name = "SpatialDataPoint")
-@Getter
 public class SpatialDataPointIO {
 
   @Schema(description = "Time in nanoseconds since unix epoch.")
