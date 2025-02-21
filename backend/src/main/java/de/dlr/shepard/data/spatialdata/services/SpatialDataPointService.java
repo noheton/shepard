@@ -53,7 +53,7 @@ public class SpatialDataPointService {
   }
 
   @Transactional
-  public void deleteContainer(long containerId) {
+  public void deleteByContainerId(long containerId) {
     spatialGeometryRepository.deleteByContainerId(containerId);
   }
 

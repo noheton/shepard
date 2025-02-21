@@ -15,6 +15,7 @@ import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -90,7 +91,8 @@ public class NeoConnector implements IConnector {
           Permissions.class.getPackageName(),
           Subscription.class.getPackageName(),
           InfluxTimeseries.class.getPackageName(),
-          TimeseriesReference.class.getPackageName()
+          TimeseriesReference.class.getPackageName(),
+          SpatialDataContainer.class.getPackageName()
         );
         return true;
       } catch (ConnectionException ex) {

@@ -18,6 +18,7 @@ import java.util.Optional;
 @RequestScoped
 public class SpatialDataContainerService {
 
+  SpatialDataPointService spatialDataPointService;
   SpatialDataContainerDAO containerDao;
   UserDAO userDao;
   PermissionsDAO permissionsDao;
@@ -25,11 +26,13 @@ public class SpatialDataContainerService {
 
   @Inject
   public SpatialDataContainerService(
+    SpatialDataPointService spatialDataPointService,
     SpatialDataContainerDAO containerDao,
     UserDAO userDao,
     PermissionsDAO permissionsDao,
     DateHelper dateHelper
   ) {
+    this.spatialDataPointService = spatialDataPointService;
     this.containerDao = containerDao;
     this.userDao = userDao;
     this.permissionsDao = permissionsDao;
@@ -78,10 +81,11 @@ public class SpatialDataContainerService {
     var user = userDao.find(username);
     var container = this.getContainer(containerId);
 
+    spatialDataPointService.deleteByContainerId(containerId);
+
     container.setDeleted(true);
     container.setUpdatedAt(dateHelper.getDate());
     container.setUpdatedBy(user);
     containerDao.createOrUpdate(container);
-    // Todo: delete spatial data related to that container
   }
 }

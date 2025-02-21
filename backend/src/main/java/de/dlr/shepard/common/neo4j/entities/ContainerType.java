@@ -2,6 +2,7 @@ package de.dlr.shepard.common.neo4j.entities;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 
@@ -31,6 +32,15 @@ public enum ContainerType {
 
     public String getTypeName() {
       return StructuredDataContainer.class.getSimpleName();
+    }
+  },
+  SPATIALDATA {
+    public String getTypeAlias() {
+      return Constants.SPATIALDATACONTAINER_IN_QUERY;
+    }
+
+    public String getTypeName() {
+      return SpatialDataContainer.class.getSimpleName();
     }
   },
   BASIC {

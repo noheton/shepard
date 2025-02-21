@@ -134,6 +134,7 @@ public class Constants {
   public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
   public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
   public static final String BASICCONTAINER_IN_QUERY = "bc";
+  public static final String SPATIALDATACONTAINER_IN_QUERY = "spdc";
   public static final String USER_IN_QUERY = "user";
 
   // Relationships
@@ -192,6 +193,7 @@ public class Constants {
 
   // spatial data
   public static final String SPATIAL_DATA_CONTAINER = "spatialDataContainer";
+  public static final String SPATIAL_DATA_CONTAINERS = "spatialDataContainers";
   public static final String SPATIAL_DATA_CONTAINER_ID = "spatialDataContainerId";
   public static final String SPATIAL_DATA_DATABASE_TYPE = "databaseType";
 }

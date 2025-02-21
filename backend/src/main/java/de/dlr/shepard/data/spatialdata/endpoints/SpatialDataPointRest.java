@@ -7,7 +7,6 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
-import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
@@ -42,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-@Path(Constants.SPATIAL_DATA_CONTAINER)
+@Path(Constants.SPATIAL_DATA_CONTAINERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -53,6 +52,8 @@ public class SpatialDataPointRest {
 
   @Context
   private SecurityContext securityContext;
+
+  SpatialDataPointRest() {}
 
   @Inject
   SpatialDataPointRest(SpatialDataPointService dataPointService, SpatialDataContainerService containerService) {
@@ -67,7 +68,7 @@ public class SpatialDataPointRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataContainer.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataContainerIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.QP_NAME)
@@ -86,6 +87,7 @@ public class SpatialDataPointRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
+
     var containers = containerService.getContainers(params, securityContext.getUserPrincipal().getName());
     var result = SpatialDataContainerIO.fromEntities(containers);
     return Response.ok(result).build();
@@ -115,7 +117,6 @@ public class SpatialDataPointRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SpatialDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
   @Transactional
   public Response createSpatialDataContainer(
     @RequestBody(

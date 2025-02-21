@@ -508,6 +508,7 @@
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
+          "description" : "Pagination starts at 0",
           "schema" : {
             "format" : "int32",
             "type" : "integer"
@@ -551,6 +552,170 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ContainerSearchResult"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/spatialDataContainers/{spatialDataContainerId}/payload" : {
+      "get" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Get spatial data by container id",
+        "operationId" : "getSpatialDataPoints",
+        "parameters" : [ {
+          "name" : "metadataFilter",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "geometryFilter",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "examples" : {
+            "K Nearest Neighbor" : {
+              "value" : {
+                "type" : "K_NEAREST_NEIGHBOR",
+                "k" : 5,
+                "x" : 10,
+                "y" : 20,
+                "z" : 30
+              }
+            },
+            "Bounding Box" : {
+              "value" : {
+                "type" : "AXIS_ALIGNED_BOUNDING_BOX",
+                "minX" : 0,
+                "minY" : 0,
+                "minZ" : 0,
+                "maxX" : 100,
+                "maxY" : 100,
+                "maxZ" : 100
+              }
+            },
+            "Bounding Sphere" : {
+              "value" : {
+                "type" : "BOUNDING_SPHERE",
+                "radius" : 50,
+                "centerX" : 15,
+                "centerY" : 25,
+                "centerZ" : 20
+              }
+            }
+          }
+        }, {
+          "name" : "startTime",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "endTime",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "skip",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SpatialDataPoint"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Adding data points to spatial data container",
+        "operationId" : "createSpatialDataPoints",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/SpatialDataPoint"
+                }
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SpatialDataPoint"
+                  }
                 }
               }
             }
@@ -981,6 +1146,59 @@
                 }
               }
             }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/spatialDataContainers/{spatialDataContainerId}" : {
+      "get" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Get spatial data container.",
+        "operationId" : "getSpatialDataContainer",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SpatialDataContainer"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Deletes spatial data container and related spatial data.",
+        "operationId" : "deleteSpatialDataContainer",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok"
           },
           "404" : {
             "description" : "not found"
@@ -3552,27 +3770,6 @@
         }
       }
     },
-    "/spatialDataContainer/{spatialDataContainerId}" : {
-      "delete" : {
-        "tags" : [ "spatialDataContainer" ],
-        "description" : "Deletes spatial data container and related spatial data.",
-        "operationId" : "deleteSpatialContainer",
-        "parameters" : [ {
-          "name" : "spatialDataContainerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "ok"
-          }
-        }
-      }
-    },
     "/timeseriesContainers/{timeseriesContainerId}/export" : {
       "get" : {
         "tags" : [ "timeseriesContainer" ],
@@ -3878,6 +4075,91 @@
           },
           "404" : {
             "description" : "not found"
+          }
+        }
+      }
+    },
+    "/spatialDataContainers" : {
+      "get" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Get spatial data containers.",
+        "operationId" : "getSpatialDataContainers",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "orderBy",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/ContainerAttributes"
+          }
+        }, {
+          "name" : "orderDesc",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SpatialDataContainer"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Create a new spatial data container.",
+        "operationId" : "createSpatialDataContainer",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SpatialDataContainer"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SpatialDataContainer"
+                }
+              }
+            }
           }
         }
       }
@@ -4796,95 +5078,6 @@
         }
       }
     },
-    "/spatialDataContainer/{spatialDataContainerId}/payload" : {
-      "post" : {
-        "tags" : [ "spatialDataContainer" ],
-        "description" : "Get spatial data by container id",
-        "operationId" : "getSpatialDataPoints",
-        "parameters" : [ {
-          "name" : "spatialDataContainerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/SpatialDataParamsIO"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/SpatialDataPoint"
-                  }
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "not found"
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "spatialDataContainer" ],
-        "description" : "Adding data points to spatial data container",
-        "operationId" : "createSpatialDataPoints",
-        "parameters" : [ {
-          "name" : "spatialDataContainerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/SpatialDataPoint"
-                }
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/SpatialDataPoint"
-                  }
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "not found"
-          }
-        }
-      }
-    },
     "/search/collections" : {
       "post" : {
         "tags" : [ "search" ],
@@ -4893,6 +5086,7 @@
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
+          "description" : "Pagination starts at 0",
           "schema" : {
             "format" : "int32",
             "type" : "integer"
@@ -4920,6 +5114,7 @@
           }
         } ],
         "requestBody" : {
+          "description" : "You can search by ID, name or createdBy. Connect search parameters like this: {\"OR\":[{\"property\":\"name\",\"value\":\"ABC\",\"operator\":\"contains\"},{\"property\":\"id\",\"value\":123,\"operator\":\"contains\"}]}\" ",
           "content" : {
             "application/json" : {
               "schema" : {
@@ -6159,10 +6354,51 @@
         "properties" : {
           "query" : {
             "pattern" : "\\S",
-            "type" : "string"
+            "type" : "string",
+            "example" : "{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"}"
           },
           "queryType" : {
             "$ref" : "#/components/schemas/QueryType"
+          }
+        }
+      },
+      "SpatialDataContainer" : {
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer",
+            "readOnly" : true
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "readOnly" : true
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string",
+            "readOnly" : true,
+            "example" : "2024-08-15T11:18:44.632+00:00",
+            "nullable" : true
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "readOnly" : true,
+            "nullable" : true
+          },
+          "name" : {
+            "pattern" : "\\S",
+            "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ContainerType"
           }
         }
       },
@@ -6544,7 +6780,8 @@
         "properties" : {
           "query" : {
             "pattern" : "\\S",
-            "type" : "string"
+            "type" : "string",
+            "example" : "{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"}"
           }
         }
       },
@@ -7040,7 +7277,7 @@
         }
       },
       "ContainerType" : {
-        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA", "BASIC" ],
+        "enum" : [ "FILE", "TIMESERIES", "STRUCTUREDDATA", "SPATIALDATA", "BASIC" ],
         "type" : "string"
       },
       "ShepardFile" : {
@@ -7083,7 +7320,8 @@
         "properties" : {
           "query" : {
             "pattern" : "\\S",
-            "type" : "string"
+            "type" : "string",
+            "example" : "{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"}"
           },
           "queryType" : {
             "$ref" : "#/components/schemas/ContainerType"
@@ -7227,38 +7465,6 @@
           }
         }
       },
-      "SpatialDataParamsIO" : {
-        "type" : "object",
-        "properties" : {
-          "geometryFilter" : {
-            "$ref" : "#/components/schemas/AbstractGeometryFilter"
-          },
-          "metadata" : {
-            "type" : "object",
-            "additionalProperties" : { }
-          },
-          "startTime" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "endTime" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "limit" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "offset" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "skip" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        }
-      },
       "BasicReferenceAttributes" : {
         "enum" : [ "createdAt", "updatedAt", "name", "type" ],
         "type" : "string"
@@ -7383,7 +7589,8 @@
         "properties" : {
           "query" : {
             "pattern" : "\\S",
-            "type" : "string"
+            "type" : "string",
+            "example" : "{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"}"
           }
         }
       },

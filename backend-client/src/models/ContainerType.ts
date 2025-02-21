@@ -21,6 +21,7 @@ export const ContainerType = {
     File: 'FILE',
     Timeseries: 'TIMESERIES',
     Structureddata: 'STRUCTUREDDATA',
+    Spatialdata: 'SPATIALDATA',
     Basic: 'BASIC'
 } as const;
 export type ContainerType = typeof ContainerType[keyof typeof ContainerType];

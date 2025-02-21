@@ -80,7 +80,7 @@ src/models/SemanticRepository.ts
 src/models/SemanticRepositoryAttributes.ts
 src/models/SemanticRepositoryType.ts
 src/models/ShepardFile.ts
-src/models/SpatialDataParamsIO.ts
+src/models/SpatialDataContainer.ts
 src/models/SpatialDataPoint.ts
 src/models/Status.ts
 src/models/StructuredData.ts

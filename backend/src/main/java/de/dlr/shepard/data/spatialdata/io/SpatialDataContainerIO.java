@@ -4,14 +4,12 @@ import de.dlr.shepard.common.neo4j.io.BasicContainerIO;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Getter;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-@Getter
-@Setter
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Schema(name = "SpatialDataContainer")
 public class SpatialDataContainerIO extends BasicContainerIO {
 

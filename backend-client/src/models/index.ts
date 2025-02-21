@@ -52,7 +52,7 @@ export * from './SemanticRepository';
 export * from './SemanticRepositoryAttributes';
 export * from './SemanticRepositoryType';
 export * from './ShepardFile';
-export * from './SpatialDataParamsIO';
+export * from './SpatialDataContainer';
 export * from './SpatialDataPoint';
 export * from './Status';
 export * from './StructuredData';

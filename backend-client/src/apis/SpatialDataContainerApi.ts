@@ -15,34 +15,107 @@
 
 import * as runtime from '../runtime';
 import type {
-  SpatialDataParamsIO,
+  ContainerAttributes,
+  SpatialDataContainer,
   SpatialDataPoint,
 } from '../models/index';
 import {
-    SpatialDataParamsIOFromJSON,
-    SpatialDataParamsIOToJSON,
+    ContainerAttributesFromJSON,
+    ContainerAttributesToJSON,
+    SpatialDataContainerFromJSON,
+    SpatialDataContainerToJSON,
     SpatialDataPointFromJSON,
     SpatialDataPointToJSON,
 } from '../models/index';
+
+export interface CreateSpatialDataContainerRequest {
+    spatialDataContainer: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
+}
 
 export interface CreateSpatialDataPointsRequest {
     spatialDataContainerId: number;
     spatialDataPoint: Array<SpatialDataPoint>;
 }
 
-export interface DeleteSpatialContainerRequest {
+export interface DeleteSpatialDataContainerRequest {
     spatialDataContainerId: number;
 }
 
-export interface GetSpatialDataPointsRequest {
+export interface GetSpatialDataContainerRequest {
     spatialDataContainerId: number;
-    spatialDataParamsIO?: SpatialDataParamsIO;
+}
+
+export interface GetSpatialDataContainersRequest {
+    name?: string;
+    page?: number;
+    size?: number;
+    orderBy?: ContainerAttributes;
+    orderDesc?: boolean;
+}
+
+export interface GetSpatialDataPointsRequest {
+    geometryFilter: string;
+    spatialDataContainerId: number;
+    metadataFilter?: string;
+    startTime?: number;
+    endTime?: number;
+    limit?: number;
+    offset?: number;
+    skip?: number;
 }
 
 /**
  * 
  */
 export class SpatialDataContainerApi extends runtime.BaseAPI {
+
+    /**
+     * Create a new spatial data container.
+     */
+    async createSpatialDataContainerRaw(requestParameters: CreateSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SpatialDataContainer>> {
+        if (requestParameters['spatialDataContainer'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainer',
+                'Required parameter "spatialDataContainer" was null or undefined when calling createSpatialDataContainer().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SpatialDataContainerToJSON(requestParameters['spatialDataContainer']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SpatialDataContainerFromJSON(jsonValue));
+    }
+
+    /**
+     * Create a new spatial data container.
+     */
+    async createSpatialDataContainer(requestParameters: CreateSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SpatialDataContainer> {
+        const response = await this.createSpatialDataContainerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Adding data points to spatial data container
@@ -81,7 +154,7 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/spatialDataContainer/{spatialDataContainerId}/payload`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            path: `/spatialDataContainers/{spatialDataContainerId}/payload`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
@@ -102,11 +175,11 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     /**
      * Deletes spatial data container and related spatial data.
      */
-    async deleteSpatialContainerRaw(requestParameters: DeleteSpatialContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async deleteSpatialDataContainerRaw(requestParameters: DeleteSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['spatialDataContainerId'] == null) {
             throw new runtime.RequiredError(
                 'spatialDataContainerId',
-                'Required parameter "spatialDataContainerId" was null or undefined when calling deleteSpatialContainer().'
+                'Required parameter "spatialDataContainerId" was null or undefined when calling deleteSpatialDataContainer().'
             );
         }
 
@@ -127,7 +200,7 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/spatialDataContainer/{spatialDataContainerId}`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            path: `/spatialDataContainers/{spatialDataContainerId}`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -139,26 +212,24 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     /**
      * Deletes spatial data container and related spatial data.
      */
-    async deleteSpatialContainer(requestParameters: DeleteSpatialContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.deleteSpatialContainerRaw(requestParameters, initOverrides);
+    async deleteSpatialDataContainer(requestParameters: DeleteSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteSpatialDataContainerRaw(requestParameters, initOverrides);
     }
 
     /**
-     * Get spatial data by container id
+     * Get spatial data container.
      */
-    async getSpatialDataPointsRaw(requestParameters: GetSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataPoint>>> {
+    async getSpatialDataContainerRaw(requestParameters: GetSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SpatialDataContainer>> {
         if (requestParameters['spatialDataContainerId'] == null) {
             throw new runtime.RequiredError(
                 'spatialDataContainerId',
-                'Required parameter "spatialDataContainerId" was null or undefined when calling getSpatialDataPoints().'
+                'Required parameter "spatialDataContainerId" was null or undefined when calling getSpatialDataContainer().'
             );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.apiKey) {
             headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
@@ -173,11 +244,148 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/spatialDataContainer/{spatialDataContainerId}/payload`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
-            method: 'POST',
+            path: `/spatialDataContainers/{spatialDataContainerId}`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
-            body: SpatialDataParamsIOToJSON(requestParameters['spatialDataParamsIO']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SpatialDataContainerFromJSON(jsonValue));
+    }
+
+    /**
+     * Get spatial data container.
+     */
+    async getSpatialDataContainer(requestParameters: GetSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SpatialDataContainer> {
+        const response = await this.getSpatialDataContainerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get spatial data containers.
+     */
+    async getSpatialDataContainersRaw(requestParameters: GetSpatialDataContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataContainer>>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['name'] != null) {
+            queryParameters['name'] = requestParameters['name'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['size'] != null) {
+            queryParameters['size'] = requestParameters['size'];
+        }
+
+        if (requestParameters['orderBy'] != null) {
+            queryParameters['orderBy'] = requestParameters['orderBy'];
+        }
+
+        if (requestParameters['orderDesc'] != null) {
+            queryParameters['orderDesc'] = requestParameters['orderDesc'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SpatialDataContainerFromJSON));
+    }
+
+    /**
+     * Get spatial data containers.
+     */
+    async getSpatialDataContainers(requestParameters: GetSpatialDataContainersRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SpatialDataContainer>> {
+        const response = await this.getSpatialDataContainersRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get spatial data by container id
+     */
+    async getSpatialDataPointsRaw(requestParameters: GetSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataPoint>>> {
+        if (requestParameters['geometryFilter'] == null) {
+            throw new runtime.RequiredError(
+                'geometryFilter',
+                'Required parameter "geometryFilter" was null or undefined when calling getSpatialDataPoints().'
+            );
+        }
+
+        if (requestParameters['spatialDataContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainerId',
+                'Required parameter "spatialDataContainerId" was null or undefined when calling getSpatialDataPoints().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['metadataFilter'] != null) {
+            queryParameters['metadataFilter'] = requestParameters['metadataFilter'];
+        }
+
+        if (requestParameters['geometryFilter'] != null) {
+            queryParameters['geometryFilter'] = requestParameters['geometryFilter'];
+        }
+
+        if (requestParameters['startTime'] != null) {
+            queryParameters['startTime'] = requestParameters['startTime'];
+        }
+
+        if (requestParameters['endTime'] != null) {
+            queryParameters['endTime'] = requestParameters['endTime'];
+        }
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
+
+        if (requestParameters['skip'] != null) {
+            queryParameters['skip'] = requestParameters['skip'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers/{spatialDataContainerId}/payload`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SpatialDataPointFromJSON));
