@@ -3,6 +3,7 @@ import { ContainerType } from "@dlr-shepard/backend-client";
 export enum ContainerTypeName {
   FILE = "File",
   TIMESERIES = "Timeseries",
+  SPATIALDATA = "Spatial data",
   STRUCTUREDDATA = "Structured data",
 }
 
