@@ -99,7 +99,7 @@ public class CollectionService {
       ret = collectionDAO.findByShepardId(shepardId);
       errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
     } else {
-      ret = collectionDAO.findByShepardId(shepardId, versionUID);
+      ret = collectionDAO.findCollectionByShepardIdDepth2(shepardId, versionUID);
       errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
