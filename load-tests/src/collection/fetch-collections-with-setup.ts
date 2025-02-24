@@ -8,7 +8,7 @@ import {
   isArrayWithOneCollectionOfThisName,
   searchCollectionsDedicated,
 } from "../utils/collection-helper";
-import { getIdFromResponse } from "../utils/timeseries-helper";
+import { getIdFromResponse } from "../utils/container-helper";
 
 export const options: Options = {
   scenarios: {

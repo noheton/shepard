@@ -1,9 +1,8 @@
-import { JSONValue } from "k6";
+// @ts-ignore Import module
+import { FormData } from "https://jslib.k6.io/formdata/0.0.2/index.js";
 import http from "k6/http";
-import { FormData } from "../utils/form-data";
-import { buildParamsWithApiKey } from "../utils/uri";
+import { buildParamsWithApiKey, buildUri } from "../../utils/uri";
 import { TimeseriesData, TimeseriesDataPoint, TimeseriesObject } from "./timeseries-types";
-import { buildUri } from "./uri";
 
 export const timeseriesUrl = buildUri("/shepard/api/timeseriesContainers");
 const params = buildParamsWithApiKey();
@@ -41,14 +40,6 @@ export function importTimeseriesCSV(containerId: number, csvString: string, file
 /*
   Helper Functions
 */
-
-export function getIdFromResponse(response: JSONValue): number {
-  if (response != null && typeof response == "object" && "id" in response) {
-    return response.id as number;
-  }
-  console.error(JSON.stringify(response));
-  throw new Error("Response body does not contain property 'id'.");
-}
 
 export function generateTimeseries(numberOfDataPoints: number): TimeseriesData {
   return {

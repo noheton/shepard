@@ -1,12 +1,12 @@
 import { check } from "k6";
 import { Options } from "k6/options";
+import { getIdFromResponse } from "../utils/container-helper";
 import {
   addTimeseriesData,
   createTimeseriesContainer,
   deleteTimeseriesContainer,
   generateTimeseries,
-  getIdFromResponse,
-} from "../utils/timeseries-helper";
+} from "./util/timeseries-helper";
 
 export const options: Options = {
   scenarios: {

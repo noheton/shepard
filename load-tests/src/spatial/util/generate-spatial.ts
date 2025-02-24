@@ -27,12 +27,12 @@ function generateRandomDataArray(length: number): number[] {
 export function generateSingleRandomSpatialDataPoint(lengthOfDataList: number = 100) {
   currentX += precision;
 
-  if (counter % 1000 === 0) {
+  if (counter % 100 === 0) {
     currentTrack++;
     currentY += precision;
   }
 
-  if (currentTrack % 100 === 0) {
+  if (currentTrack % 10 === 0) {
     currentLayer++;
     currentZ += precision;
   }

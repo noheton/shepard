@@ -1,6 +1,14 @@
 import { check } from "k6";
 import { Options } from "k6/options";
-import { filterByBoundingBox, filterByBoundingSphere, filterByKNearestNeighbor } from "./util/spatial-helper";
+import { getIdFromResponse } from "../utils/container-helper";
+import {
+  createSpatialDataContainer,
+  deleteSpatialDataContainer,
+  filterByBoundingBox,
+  filterByBoundingSphere,
+  filterByKNearestNeighbor,
+  uploadBulkSpatialData,
+} from "./util/spatial-helper";
 import { Metadata } from "./util/spatial-types";
 
 export const options: Options = {
@@ -9,13 +17,13 @@ export const options: Options = {
     default: {
       executor: "shared-iterations",
       vus: 1,
-      iterations: 10,
+      iterations: 20,
       // use function name here that should be executed
       // Options:
       // measure_bounding_box_filter || measure_bounding_box_filter_with_metadata
       // measure_bounding_sphere_filter
       // measure_knn_filter
-      exec: "measure_knn_filter",
+      exec: "measure_bounding_box_filter",
     },
   },
 };
@@ -30,10 +38,10 @@ const BOUNDING_BOX = {
 };
 
 const BOUNDING_SPHERE = {
-  r: 6,
-  centerX: 5,
-  centerY: 5,
-  centerZ: 5,
+  radius: 5,
+  centerX: 3,
+  centerY: 3,
+  centerZ: 3,
 };
 
 const KNN = {
@@ -43,11 +51,23 @@ const KNN = {
   z: 3,
 };
 
+const NUMBER_OF_DATAPOINTS = 100000;
+const UPLOAD_BATCH_SIZE = 250;
+const NUMBER_OF_MEASUREMENTS = 2;
+
 export function setup(): { containerId: number } {
-  //Using this specific container ID, since we uploaded data with the 'upload-spatial-data' script with this container id
-  //const containerId = 123456789;
-  const containerId = 2;
+  const containerName = "filter-load-test-" + Date.now();
+  const response = createSpatialDataContainer(containerName);
+  const containerId = getIdFromResponse(response.json());
+
+  uploadBulkSpatialData(containerId, NUMBER_OF_DATAPOINTS, UPLOAD_BATCH_SIZE, NUMBER_OF_MEASUREMENTS);
+
   return { containerId };
+}
+
+export function teardown(data: { containerId: number }) {
+  const response = deleteSpatialDataContainer(data.containerId);
+  check(response, { "deleted spatial data container": (r) => r.status === 200 });
 }
 
 /* Bounding Box */
@@ -96,7 +116,7 @@ export function measure_bounding_box_filter_with_metadata(data: { containerId: n
 export function measure_bounding_sphere_filter(data: { containerId: number }) {
   const response = filterByBoundingSphere(
     data.containerId,
-    BOUNDING_SPHERE.r,
+    BOUNDING_SPHERE.radius,
     BOUNDING_SPHERE.centerX,
     BOUNDING_SPHERE.centerY,
     BOUNDING_SPHERE.centerZ,

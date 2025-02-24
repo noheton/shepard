@@ -55,19 +55,19 @@ export function createBoundingBoxFilter(
 
 export interface BoundingSphere {
   type: string;
-  r: number;
+  radius: number;
   centerX: number;
   centerY: number;
   centerZ: number;
 }
 
 export function createBoundingSphereFilter(
-  r: number,
+  radius: number,
   centerX: number,
   centerY: number,
   centerZ: number,
 ): BoundingSphere {
-  return { type: "BOUNDING_SPHERE", r, centerX, centerY, centerZ };
+  return { type: "BOUNDING_SPHERE", radius, centerX, centerY, centerZ };
 }
 
 export interface KNearestNeighbor {

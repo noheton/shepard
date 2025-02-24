@@ -1,13 +1,13 @@
 import { check } from "k6";
 import { Options } from "k6/options";
+import { getIdFromResponse } from "../utils/container-helper";
 import {
   createTestMeasurement,
   createTimeseriesContainer,
   deleteTimeseriesContainer,
   generateCsvString,
-  getIdFromResponse,
   importTimeseriesCSV,
-} from "../utils/timeseries-helper";
+} from "./util/timeseries-helper";
 
 export const options: Options = {
   scenarios: {

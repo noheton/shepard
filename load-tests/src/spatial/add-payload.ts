@@ -1,6 +1,7 @@
 import { check } from "k6";
 import { Options } from "k6/options";
-import { addSpatialDataPoint, deleteSpatialDataPointsByContainerId } from "./util/spatial-helper";
+import { getIdFromResponse } from "../utils/container-helper";
+import { addSpatialDataPoint, createSpatialDataContainer, deleteSpatialDataContainer } from "./util/spatial-helper";
 
 export const options: Options = {
   teardownTimeout: "5m",
@@ -10,7 +11,7 @@ export const options: Options = {
       vus: 1,
       duration: "1m",
       // use function name here that should be executed
-      exec: "measuring_throughput_for_single_spatial_data_point_postgis",
+      exec: "measuring_throughput_for_single_spatial_data_point",
     },
   },
 };
@@ -18,19 +19,22 @@ export const options: Options = {
 const NUMBER_OF_MEASUREMENTS = 100;
 
 export function setup(): { containerId: number } {
-  const containerId = Math.floor(Math.random() * 1000);
+  const containerName = "load-test-" + Date.now();
+  const response = createSpatialDataContainer(containerName);
+  const containerId = getIdFromResponse(response.json());
+
   return { containerId };
 }
 
 export function teardown(data: { containerId: number }) {
-  const response = deleteSpatialDataPointsByContainerId(data.containerId);
-  check(response, { "deleted spatial data points": (r) => r.status === 200 });
+  const response = deleteSpatialDataContainer(data.containerId);
+  check(response, { "deleted spatial data container": (r) => r.status === 200 });
 }
 
 /**
  * Measuring the maximum throughput if we insert single data points as fast as possible.
  */
-export function measuring_throughput_for_single_spatial_data_point_postgis(data: { containerId: number }) {
+export function measuring_throughput_for_single_spatial_data_point(data: { containerId: number }) {
   const response = addSpatialDataPoint(data.containerId, NUMBER_OF_MEASUREMENTS);
   check(response, { "added spatial datapoint (PostGIS)": (r) => r.status === 200 });
 }
