@@ -71,7 +71,8 @@ public class SpatialDataPointService {
         topRight,
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata()
+        spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getLimit()
       )
     );
   }
@@ -93,7 +94,8 @@ public class SpatialDataPointService {
         boundingSphere.getRadius(),
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata()
+        spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getLimit()
       )
     );
   }

@@ -221,12 +221,14 @@ public class SpatialDataPointRest {
       Optional.ofNullable(metadataFilterParam)
     );
 
+    // TODO: Throw if geometry filter is empty
+
     SpatialDataParamsIO spatialDataParams = new SpatialDataParamsIO(
       geometryFilter.orElse(null),
       metadata.orElse(Collections.emptyMap()),
       startTime,
       endTime,
-      limit,
+      Optional.of(limit),
       offset,
       skip
     );

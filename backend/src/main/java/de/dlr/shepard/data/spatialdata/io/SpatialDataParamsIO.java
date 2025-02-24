@@ -2,6 +2,7 @@ package de.dlr.shepard.data.spatialdata.io;
 
 import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Data;
 
 @Data
@@ -11,7 +12,7 @@ public class SpatialDataParamsIO {
   private Map<String, Object> metadata;
   private Long startTime;
   private Long endTime;
-  private Integer limit;
+  private Optional<Integer> limit;
   private Integer offset;
   private Integer skip;
 
@@ -20,7 +21,7 @@ public class SpatialDataParamsIO {
     Map<String, Object> metadata,
     Long startTime,
     Long endTime,
-    Integer limit,
+    Optional<Integer> limit,
     Integer offset,
     Integer skip
   ) {

@@ -2,6 +2,7 @@ package de.dlr.shepard.data.spatialdata.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import java.util.Optional;
 
 public class NativeQueryStringBuilder {
 
@@ -50,8 +51,33 @@ public class NativeQueryStringBuilder {
     return this;
   }
 
+  public NativeQueryStringBuilder addLimitClause(Optional<Integer> limit) {
+    if (limit.isEmpty()) return this;
+    addWhereClauseIfNecessary();
+    query.append(String.format(" LIMIT %d", limit.get()));
+    return this;
+  }
+
+  public NativeQueryStringBuilder addKNNGeometryCondition() {
+    addWhereClauseIfNecessary();
+    query.append(" ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k");
+    return this;
+  }
+
+  public NativeQueryStringBuilder addAABBGeometryCondition() {
+    addWhereClauseIfNecessary();
+    query.append(" AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2))");
+    return this;
+  }
+
+  public NativeQueryStringBuilder addBSGeometryCondition() {
+    addWhereClauseIfNecessary();
+    query.append(" AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius)");
+    return this;
+  }
+
   public String build() {
-    return query.toString();
+    return query.append(";").toString();
   }
 
   private void addWhereClauseIfNecessary() {

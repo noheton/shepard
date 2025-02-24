@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.locationtech.jts.geom.Coordinate;
 
 @RequestScoped
@@ -110,23 +111,20 @@ public class SpatialDataPointRepository {
     Coordinate topRight,
     Long timestampStart,
     Long timestampEnd,
-    Map<String, Object> metadataFilter
+    Map<String, Object> metadataFilter,
+    Optional<Integer> limit
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
+      .addAABBGeometryCondition()
+      .addLimitClause(limit)
       .build();
 
     return entityManager
-      .createNativeQuery(
-        String.format(
-          "%s AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));",
-          query
-        ),
-        SpatialDataPoint.class
-      )
+      .createNativeQuery(query, SpatialDataPoint.class)
       .setParameter("x1", bottomLeft.x)
       .setParameter("y1", bottomLeft.y)
       .setParameter("z1", bottomLeft.z)
@@ -144,20 +142,20 @@ public class SpatialDataPointRepository {
     double radius,
     Long timestampStart,
     Long timestampEnd,
-    Map<String, Object> metadataFilter
+    Map<String, Object> metadataFilter,
+    Optional<Integer> limit
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
+      .addBSGeometryCondition()
+      .addLimitClause(limit)
       .build();
 
     return entityManager
-      .createNativeQuery(
-        String.format("%s AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius);", query),
-        SpatialDataPoint.class
-      )
+      .createNativeQuery(query, SpatialDataPoint.class)
       .setParameter("x1", coordinate.x)
       .setParameter("y1", coordinate.y)
       .setParameter("z1", coordinate.z)
@@ -185,13 +183,11 @@ public class SpatialDataPointRepository {
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
+      .addKNNGeometryCondition()
       .build();
 
     return entityManager
-      .createNativeQuery(
-        String.format("%s ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;", query),
-        SpatialDataPoint.class
-      )
+      .createNativeQuery(query, SpatialDataPoint.class)
       .setParameter("k", k)
       .setParameter("x1", coordinate.x)
       .setParameter("y1", coordinate.y)

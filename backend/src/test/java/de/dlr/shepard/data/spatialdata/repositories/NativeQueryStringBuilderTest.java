@@ -3,6 +3,7 @@ package de.dlr.shepard.data.spatialdata.repositories;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class NativeQueryStringBuilderTest {
@@ -12,7 +13,7 @@ public class NativeQueryStringBuilderTest {
     var builder = new NativeQueryStringBuilder();
     var current = builder.select("SELECT * FROM table_name").build();
 
-    var expected = "SELECT * FROM table_name";
+    var expected = "SELECT * FROM table_name;";
 
     assertEquals(expected, current);
   }
@@ -21,7 +22,7 @@ public class NativeQueryStringBuilderTest {
   public void build_addOneCondition_success() {
     var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addWhereCondition("id", 1).build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1;";
 
     assertEquals(expected, current);
   }
@@ -34,7 +35,7 @@ public class NativeQueryStringBuilderTest {
       .addWhereCondition("role", "assistant")
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND role = 'assistant'";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND role = 'assistant';";
 
     assertEquals(expected, current);
   }
@@ -47,7 +48,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", 123l, 234l)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND time > 123 AND time < 234";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND time > 123 AND time < 234;";
 
     assertEquals(expected, current);
   }
@@ -59,7 +60,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", 123l, null)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time > 123";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time > 123;";
 
     assertEquals(expected, current);
   }
@@ -71,7 +72,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", null, 234l)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time < 234";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time < 234;";
 
     assertEquals(expected, current);
   }
@@ -87,7 +88,7 @@ public class NativeQueryStringBuilderTest {
       .addJsonContainsCondition("meta", jsonFilter)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND meta @> '{\"track\":2}'";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND meta @> '{\"track\":2}';";
 
     assertEquals(expected, current);
   }
@@ -99,7 +100,7 @@ public class NativeQueryStringBuilderTest {
       .addWhereCondition("id", null)
       .build();
 
-    var expected = "SELECT * FROM table_name";
+    var expected = "SELECT * FROM table_name;";
 
     assertEquals(expected, current);
   }
@@ -113,7 +114,60 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", null, null)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1;";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_passEmptyLimit_success() {
+    var current = new NativeQueryStringBuilder()
+      .select("SELECT * FROM table_name")
+      .addLimitClause(Optional.empty())
+      .build();
+
+    var expected = "SELECT * FROM table_name;";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_passNonEmptyLimit_success() {
+    var current = new NativeQueryStringBuilder()
+      .select("SELECT * FROM table_name")
+      .addLimitClause(Optional.of(3))
+      .build();
+
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 LIMIT 3;";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_addBSGeometryCondition_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addBSGeometryCondition().build();
+
+    var expected =
+      "SELECT * FROM table_name WHERE 1 = 1 AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius);";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_addAABBGeometryCondition_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addAABBGeometryCondition().build();
+
+    var expected =
+      "SELECT * FROM table_name WHERE 1 = 1 AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_addKNNGeometryCondition_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addKNNGeometryCondition().build();
+
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;";
 
     assertEquals(expected, current);
   }
