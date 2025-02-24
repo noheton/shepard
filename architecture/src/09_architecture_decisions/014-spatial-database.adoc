@@ -5,8 +5,8 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [%autowidth.stretch]
 [cols="h,1a"]
 |===
-|Date|10.12.2024
-|Status|In progress
+|Date|19.02.2025
+|Status|Done
 
 |Context|
 Spatial data can be collected either from data and measurements on robotic platforms or simulating data evolution or other sources. In addition to the normal retrieval filters, the collected data should be stored and retrieved in spatial context, for example retrieve part of the data which lies in a specific box or near to specific points.
