@@ -228,7 +228,7 @@ public class SpatialDataPointRest {
       metadata.orElse(Collections.emptyMap()),
       startTime,
       endTime,
-      Optional.ofNullable(limit),
+      limit,
       offset,
       skip
     );

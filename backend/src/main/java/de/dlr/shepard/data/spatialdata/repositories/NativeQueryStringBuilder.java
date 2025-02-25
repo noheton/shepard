@@ -2,7 +2,6 @@ package de.dlr.shepard.data.spatialdata.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
-import java.util.Optional;
 
 public class NativeQueryStringBuilder {
 
@@ -51,10 +50,10 @@ public class NativeQueryStringBuilder {
     return this;
   }
 
-  public NativeQueryStringBuilder addLimitClause(Optional<Integer> limit) {
-    if (limit.isEmpty()) return this;
+  public NativeQueryStringBuilder addLimitClause(Integer limit) {
+    if (limit == null) return this;
     addWhereClauseIfNecessary();
-    query.append(String.format(" LIMIT %d", limit.get()));
+    query.append(String.format(" LIMIT %d", limit));
     return this;
   }
 

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -139,7 +138,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       null,
-      Optional.empty()
+      null
     );
 
     assertNotNull(data);
@@ -188,7 +187,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       null,
-      Optional.empty()
+      null
     );
 
     assertNotNull(data);
@@ -242,7 +241,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       null,
-      Optional.of(3)
+      3
     );
 
     assertNotNull(data);
@@ -259,7 +258,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       null,
-      Optional.empty()
+      null
     );
 
     assertNotNull(data);
@@ -269,15 +268,7 @@ public class SpatialDataPointRepositoryTest {
   /* Bounding Sphere */
   @Test
   public void getByBoundingSphere_returnsAllData_success() {
-    var data = repository.getByBoundingSphere(
-      containerId,
-      new Coordinate(0, 0, 0),
-      9999,
-      null,
-      null,
-      null,
-      Optional.empty()
-    );
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(0, 0, 0), 9999, null, null, null, null);
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -331,7 +322,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       null,
-      Optional.empty()
+      null
     );
 
     assertNotNull(data);
@@ -384,15 +375,7 @@ public class SpatialDataPointRepositoryTest {
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 }
     );
 
-    var data = repository.getByBoundingSphere(
-      containerId,
-      new Coordinate(1666, 1666, 1666),
-      100,
-      null,
-      null,
-      null,
-      Optional.of(3)
-    );
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(1666, 1666, 1666), 100, null, null, null, 3);
 
     assertNotNull(data);
     assertEquals(5, result);
@@ -401,15 +384,7 @@ public class SpatialDataPointRepositoryTest {
 
   @Test
   public void getByBoundingSphere_returnsNoData_success() {
-    var data = repository.getByBoundingSphere(
-      containerId,
-      new Coordinate(-10, -10, -10),
-      1,
-      null,
-      null,
-      null,
-      Optional.empty()
-    );
+    var data = repository.getByBoundingSphere(containerId, new Coordinate(-10, -10, -10), 1, null, null, null, null);
 
     assertNotNull(data);
     assertEquals(0, data.size());
@@ -511,7 +486,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       metadataFilter,
-      Optional.empty()
+      null
     );
 
     assertNotNull(data);

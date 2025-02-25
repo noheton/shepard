@@ -9,7 +9,6 @@ import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import org.locationtech.jts.geom.Coordinate;
 
 @RequestScoped
@@ -112,7 +111,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    Optional<Integer> limit
+    Integer limit
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
@@ -143,7 +142,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    Optional<Integer> limit
+    Integer limit
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")

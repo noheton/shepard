@@ -3,7 +3,6 @@ package de.dlr.shepard.data.spatialdata.repositories;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.HashMap;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class NativeQueryStringBuilderTest {
@@ -121,10 +120,7 @@ public class NativeQueryStringBuilderTest {
 
   @Test
   public void build_passEmptyLimit_success() {
-    var current = new NativeQueryStringBuilder()
-      .select("SELECT * FROM table_name")
-      .addLimitClause(Optional.empty())
-      .build();
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addLimitClause(null).build();
 
     var expected = "SELECT * FROM table_name;";
 
@@ -133,10 +129,7 @@ public class NativeQueryStringBuilderTest {
 
   @Test
   public void build_passNonEmptyLimit_success() {
-    var current = new NativeQueryStringBuilder()
-      .select("SELECT * FROM table_name")
-      .addLimitClause(Optional.of(3))
-      .build();
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addLimitClause(3).build();
 
     var expected = "SELECT * FROM table_name WHERE 1 = 1 LIMIT 3;";
 
