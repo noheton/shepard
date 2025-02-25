@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.spatialdata.model;
+package de.dlr.shepard.data.spatialdata.model.geometryFilter;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

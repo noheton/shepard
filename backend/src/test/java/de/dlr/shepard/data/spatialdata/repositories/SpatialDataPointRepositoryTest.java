@@ -14,6 +14,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -177,10 +178,8 @@ public class SpatialDataPointRepositoryTest {
       null,
       null
     );
-    var result = repository.insertMultiple(
-      containerId,
-      new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 }
-    );
+    var dataPoints = new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 };
+    var result = repository.insertMultiple(containerId, dataPoints);
 
     var data = repository.getByBoundingBox(
       containerId,
@@ -195,6 +194,8 @@ public class SpatialDataPointRepositoryTest {
     assertNotNull(data);
     assertEquals(4, result);
     assertEquals(4, data.size());
+
+    Arrays.stream(dataPoints).forEach(dataPoint -> assertTrue(data.contains(dataPoint)));
   }
 
   @Test
@@ -320,10 +321,8 @@ public class SpatialDataPointRepositoryTest {
       null,
       null
     );
-    var result = repository.insertMultiple(
-      containerId,
-      new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 }
-    );
+    var dataPoints = new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 };
+    var result = repository.insertMultiple(containerId, dataPoints);
 
     var data = repository.getByBoundingSphere(
       containerId,
@@ -338,6 +337,8 @@ public class SpatialDataPointRepositoryTest {
     assertNotNull(data);
     assertEquals(5, result);
     assertEquals(4, data.size());
+    dataPoints = new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 };
+    Arrays.stream(dataPoints).forEach(dataPoint -> assertTrue(data.contains(dataPoint)));
   }
 
   @Test
@@ -430,7 +431,7 @@ public class SpatialDataPointRepositoryTest {
     assertNotNull(data);
     assertEquals(3, data.size());
 
-    // the two nearest points from here should be (3,3,3), (5,5,5) and (4,4,4)
+    // the three nearest points from here should be (3,3,3), (5,5,5) and (4,4,4)
     for (SpatialDataPoint entry : data) {
       Log.info(entry.getPosition().getCoordinate());
       final var xCoord = entry.getPosition().getCoordinate().x;
@@ -523,27 +524,169 @@ public class SpatialDataPointRepositoryTest {
     var containerId = generateManagedContainerId();
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 7);
-    repository.insert(
-      containerId,
-      new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadataFilter, null)
-    );
+    var dataPoint = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadataFilter, null);
+    repository.insert(containerId, dataPoint);
 
     var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter);
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
+    assertTrue(data.get(0).equals(dataPoint));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByNestedMetadata_returnsOneRecord() {
+    var containerId = generateManagedContainerId();
+    var nestedObject = new HashMap<String, Object>();
+    nestedObject.put("temperature", 23.4);
+    nestedObject.put("humidity", 0.6);
+    nestedObject.put("room", "living room");
+
+    Map<String, Object> metadata = new HashMap<>();
+    metadata.put("track", 1);
+    metadata.put("layer", 7);
+    metadata.put("floatValue", 1.2345);
+    metadata.put("stringValue", "hello world");
+    metadata.put("sensors", nestedObject);
+    var dataPoint = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadata, null);
+    repository.insert(containerId, dataPoint);
+
+    var metadataFilter = new HashMap<String, Object>();
+    metadataFilter.put("layer", 7);
+    metadataFilter.put("sensors", Map.of("room", "living room", "humidity", 0.6));
+
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter);
+
+    assertNotNull(data);
+    assertTrue(data.size() == 1);
+    assertTrue(data.get(0).equals(dataPoint));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByNestedMetadata_returnsNoData() {
+    var containerId = generateManagedContainerId();
+    var nestedObject = new HashMap<String, Object>();
+    nestedObject.put("temperature", 23.4);
+    nestedObject.put("humidity", 0.6);
+    nestedObject.put("room", "living room");
+
+    Map<String, Object> metadata = new HashMap<>();
+    metadata.put("track", 1);
+    metadata.put("layer", 7);
+    metadata.put("floatValue", 1.2345);
+    metadata.put("stringValue", "hello world");
+    metadata.put("sensors", nestedObject);
+    var dataPoint = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadata, null);
+    repository.insert(containerId, dataPoint);
+
+    var metadataFilter = new HashMap<String, Object>();
+    metadataFilter.put("layer", 7);
+    metadataFilter.put("sensors", Map.of("room", "dining room", "humidity", 0.6));
+
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter);
+
+    assertNotNull(data);
+    assertTrue(data.size() == 0);
   }
 
   @Test
   @Transactional
   public void getByKNN_filterByTimestamp_returnsOneRecord() {
     var containerId = generateManagedContainerId();
-    repository.insert(containerId, new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null));
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
 
     var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0l, 2l, null);
 
     assertNotNull(data);
     assertEquals(1, data.size());
+    assertEquals(dataPoint1, data.get(0));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByTimestamp_returnsNoData() {
+    var containerId = generateManagedContainerId();
+    repository.insert(containerId, new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null));
+
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 2l, 4l, null);
+
+    assertNotNull(data);
+    assertEquals(0, data.size());
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByTimestampStart_returnsOneRecord() {
+    var containerId = generateManagedContainerId();
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0l, null, null);
+
+    assertNotNull(data);
+    assertEquals(1, data.size());
+    assertEquals(dataPoint1, data.get(0));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByTimestampEnd_returnsOneRecord() {
+    var containerId = generateManagedContainerId();
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, 2l, null);
+
+    assertNotNull(data);
+    assertEquals(1, data.size());
+    assertEquals(dataPoint1, data.get(0));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByMetadataAndTimestamp_returnsOneRecord() {
+    var containerId = generateManagedContainerId();
+    var metadata = new HashMap<String, Object>();
+    metadata.put("layer", 7);
+    metadata.put("track", 10);
+
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadata, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(2, 2, 2), metadata, null);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var metadataFilter = new HashMap<String, Object>();
+    metadataFilter.put("layer", 7);
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0L, 2L, metadataFilter);
+
+    assertNotNull(data);
+    assertTrue(data.size() == 1);
+    assertTrue(data.get(0).equals(dataPoint1));
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByMetadataAndTimestamp_returnsNoData() {
+    var containerId = generateManagedContainerId();
+    var metadata = new HashMap<String, Object>();
+    metadata.put("layer", 7);
+    metadata.put("track", 10);
+
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadata, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(2, 2, 2), metadata, null);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var metadataFilter = new HashMap<String, Object>();
+    metadataFilter.put("layer", 0);
+    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 10L, 20L, metadataFilter);
+
+    assertNotNull(data);
+    assertTrue(data.size() == 0);
   }
 
   private Long generateTimestamp() {

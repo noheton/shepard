@@ -1,6 +1,6 @@
 package de.dlr.shepard.data.spatialdata.io;
 
-import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.spatialdata.model;
+package de.dlr.shepard.data.spatialdata.model.geometryFilter;
 
 public enum GeometryFilterType {
   K_NEAREST_NEIGHBOR,

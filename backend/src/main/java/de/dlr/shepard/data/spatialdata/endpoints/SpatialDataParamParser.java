@@ -3,7 +3,7 @@ package de.dlr.shepard.data.spatialdata.endpoints;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import jakarta.ws.rs.BadRequestException;
 import java.util.Map;
 import java.util.Optional;
@@ -12,10 +12,10 @@ public final class SpatialDataParamParser {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
-  public static Optional<AbstractGeometryFilter> parseGeometryFilter(Optional<String> paramString) {
-    if (paramString.isEmpty()) return Optional.empty();
-    else try {
-      return Optional.of(objectMapper.readValue(paramString.get(), AbstractGeometryFilter.class));
+  public static AbstractGeometryFilter parseGeometryFilter(Optional<String> paramString) {
+    if (paramString.isEmpty()) throw new BadRequestException("Invalid geometry filter param");
+    try {
+      return objectMapper.readValue(paramString.get(), AbstractGeometryFilter.class);
     } catch (JsonProcessingException e) {
       throw new BadRequestException("Invalid geometry filter param");
     }

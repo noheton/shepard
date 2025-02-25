@@ -2,11 +2,11 @@ package de.dlr.shepard.data.spatialdata.services;
 
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
-import de.dlr.shepard.data.spatialdata.model.AxisAlignedBoundingBox;
-import de.dlr.shepard.data.spatialdata.model.BoundingSphere;
 import de.dlr.shepard.data.spatialdata.model.GeometryBuilder;
-import de.dlr.shepard.data.spatialdata.model.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AxisAlignedBoundingBox;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.BoundingSphere;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.repositories.SpatialDataPointRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -28,7 +28,7 @@ public class SpatialDataPointService {
     spatialGeometryRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
-  public List<SpatialDataPointIO> getSpatialDataPointIOs(int containerId, SpatialDataParamsIO spatialDataParamsIO) {
+  public List<SpatialDataPointIO> getSpatialDataPointIOs(long containerId, SpatialDataParamsIO spatialDataParamsIO) {
     switch (spatialDataParamsIO.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX -> {
         return getByAABoundingBox(
@@ -48,7 +48,7 @@ public class SpatialDataPointService {
         return getByKNN(containerId, (KNearestNeighbor) spatialDataParamsIO.getGeometryFilter(), spatialDataParamsIO);
       }
       case ORIENTED_BOUNDING_BOX -> throw new NotImplementedError("not implemented");
-      default -> throw new Error("Unknown geometry filter type"); //TODO: implement proper error type here or handle no-set geometry filter
+      default -> throw new Error("Unknown geometry filter type");
     }
   }
 

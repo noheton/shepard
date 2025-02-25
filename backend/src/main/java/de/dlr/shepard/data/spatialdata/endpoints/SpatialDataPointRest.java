@@ -6,7 +6,7 @@ import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
-import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
@@ -193,8 +193,8 @@ public class SpatialDataPointRest {
       ),
     }
   )
-  @Parameter(name = "startTime", required = false)
-  @Parameter(name = "endTime", required = false)
+  @Parameter(name = "startTime", required = false, description = "Start timestamp in nanoseconds, exclusive")
+  @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
   @Parameter(name = "limit", required = false)
   @Parameter(name = "offset", required = false)
   @Parameter(name = "skip", required = false)
@@ -214,7 +214,7 @@ public class SpatialDataPointRest {
     @QueryParam("offset") Integer offset,
     @QueryParam("skip") Integer skip
   ) {
-    Optional<AbstractGeometryFilter> geometryFilter = SpatialDataParamParser.parseGeometryFilter(
+    AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(
       Optional.ofNullable(geometryFilterParam)
     );
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(
@@ -224,7 +224,7 @@ public class SpatialDataPointRest {
     // TODO: Throw if geometry filter is empty
 
     SpatialDataParamsIO spatialDataParams = new SpatialDataParamsIO(
-      geometryFilter.orElse(null),
+      geometryFilter,
       metadata.orElse(Collections.emptyMap()),
       startTime,
       endTime,
@@ -233,9 +233,7 @@ public class SpatialDataPointRest {
       skip
     );
 
-    return Response.ok(
-      dataPointService.getSpatialDataPointIOs(Math.toIntExact(containerId), spatialDataParams)
-    ).build();
+    return Response.ok(dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams)).build();
   }
 
   @PATCH

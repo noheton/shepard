@@ -7,11 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import de.dlr.shepard.data.spatialdata.model.AbstractGeometryFilter;
-import de.dlr.shepard.data.spatialdata.model.AxisAlignedBoundingBox;
-import de.dlr.shepard.data.spatialdata.model.BoundingSphere;
-import de.dlr.shepard.data.spatialdata.model.GeometryFilterType;
-import de.dlr.shepard.data.spatialdata.model.KNearestNeighbor;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.AxisAlignedBoundingBox;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.BoundingSphere;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.GeometryFilterType;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +32,7 @@ class SpatialDataParamParserTest {
         "z": 30
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json)).orElse(null);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
     assertNotNull(filter);
     assertEquals(GeometryFilterType.K_NEAREST_NEIGHBOR, filter.getType());
     assertTrue(filter instanceof KNearestNeighbor);
@@ -57,7 +57,7 @@ class SpatialDataParamParserTest {
         "maxZ": 100
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json)).orElse(null);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
     assertNotNull(filter);
     assertEquals(GeometryFilterType.AXIS_ALIGNED_BOUNDING_BOX, filter.getType());
     assertTrue(filter instanceof AxisAlignedBoundingBox);
@@ -82,7 +82,7 @@ class SpatialDataParamParserTest {
         "centerZ": 20
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json)).orElse(null);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
     assertNotNull(filter);
     assertEquals(GeometryFilterType.BOUNDING_SPHERE, filter.getType());
     assertTrue(filter instanceof BoundingSphere);
@@ -174,8 +174,10 @@ class SpatialDataParamParserTest {
   }
 
   @Test
-  void testParse_geometryFilter_returnsNull() {
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.empty()).orElse(null);
-    assertNull(filter);
+  void testParse_geometryFilter_throwsException() {
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+      SpatialDataParamParser.parseGeometryFilter(Optional.empty());
+    });
+    assertEquals("Invalid geometry filter param", exception.getMessage());
   }
 }

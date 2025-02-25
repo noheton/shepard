@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Map;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -15,6 +16,7 @@ import org.locationtech.jts.geom.Geometry;
 
 @Getter
 @Setter
+@EqualsAndHashCode(exclude = "id")
 @Entity
 @Table(name = "spatial_data_points")
 public class SpatialDataPoint {
