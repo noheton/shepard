@@ -7,14 +7,6 @@ function random() {
   return x - Math.floor(x);
 }
 
-var currentLayer = 0;
-var currentTrack = 0;
-var precision = 0.01;
-var currentX = 0;
-var currentY = 0;
-var currentZ = 0;
-var counter = 0;
-
 function generateRandomDataArray(length: number): number[] {
   const dataArray: number[] = [];
   for (let i = 0; i < length; i++) {
@@ -23,19 +15,18 @@ function generateRandomDataArray(length: number): number[] {
   return dataArray;
 }
 
+const PRECISION = 0.1;
+const LAYER_STEP = 10;
+const TRACK_STEP = 1000;
+
 /** This generates a random spatial data point */
-export function generateSingleRandomSpatialDataPoint(lengthOfDataList: number = 100) {
-  currentX += precision;
+export function generateSingleRandomSpatialDataPoint(i: number, lengthOfDataList: number = 100) {
+  var currentTrack = i / TRACK_STEP;
+  var currentLayer = currentTrack / LAYER_STEP;
 
-  if (counter % 100 === 0) {
-    currentTrack++;
-    currentY += precision;
-  }
-
-  if (currentTrack % 10 === 0) {
-    currentLayer++;
-    currentZ += precision;
-  }
+  var currentX = (i % TRACK_STEP) * PRECISION;
+  var currentY = (currentTrack % LAYER_STEP) * PRECISION;
+  var currentZ = currentLayer * PRECISION;
 
   const point: SpatialDataPoint = {
     x: currentX,
@@ -67,7 +58,6 @@ export function generateSingleRandomSpatialDataPoint(lengthOfDataList: number = 
     },
   };
 
-  counter++;
   return point;
 }
 

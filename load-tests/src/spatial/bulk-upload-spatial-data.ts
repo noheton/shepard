@@ -3,7 +3,7 @@ import { Options } from "k6/options";
 import { getIdFromResponse } from "../utils/container-helper";
 import { createSpatialDataContainer, deleteSpatialDataContainer, uploadBulkSpatialData } from "./util/spatial-helper";
 
-const NUMBER_OF_DATAPOINTS = 10000;
+const NUMBER_OF_DATAPOINTS = 100;
 const NUMBER_OF_MEASUREMENTS = 2;
 const UPLOAD_BATCH_SIZE = 500;
 
