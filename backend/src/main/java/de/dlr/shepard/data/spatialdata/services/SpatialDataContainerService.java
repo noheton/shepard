@@ -39,9 +39,7 @@ public class SpatialDataContainerService {
     this.dateHelper = dateHelper;
   }
 
-  public List<SpatialDataContainer> getContainers() {
-    return containerDao.findAll().stream().filter(c -> c.isDeleted() == false).toList();
-  }
+  SpatialDataContainerService() {}
 
   public List<SpatialDataContainer> getContainers(QueryParamHelper params, String username) {
     var containers = containerDao.findAllSpatialContainers(params, username);

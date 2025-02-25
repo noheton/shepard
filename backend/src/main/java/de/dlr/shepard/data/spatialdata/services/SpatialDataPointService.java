@@ -19,13 +19,26 @@ import org.locationtech.jts.geom.Coordinate;
 @RequestScoped
 public class SpatialDataPointService {
 
+  private SpatialDataPointRepository spatialDataPointRepository;
+  private SpatialDataContainerService spatialDataContainerService;
+
   @Inject
-  private SpatialDataPointRepository spatialGeometryRepository;
+  public SpatialDataPointService(
+    SpatialDataPointRepository spatialGeometryRepository,
+    SpatialDataContainerService spatialDataContainerService
+  ) {
+    this.spatialDataPointRepository = spatialGeometryRepository;
+    this.spatialDataContainerService = spatialDataContainerService;
+  }
+
+  SpatialDataPointService() {}
 
   @Transactional
   public void createSpatialDataPoints(Long containerId, List<SpatialDataPointIO> dataPoints) {
+    spatialDataContainerService.getContainer(containerId);
+
     final List<SpatialDataPoint> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
-    spatialGeometryRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
+    spatialDataPointRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
   public List<SpatialDataPointIO> getSpatialDataPointIOs(long containerId, SpatialDataParamsIO spatialDataParamsIO) {
@@ -54,7 +67,7 @@ public class SpatialDataPointService {
 
   @Transactional
   public void deleteByContainerId(long containerId) {
-    spatialGeometryRepository.deleteByContainerId(containerId);
+    spatialDataPointRepository.deleteByContainerId(containerId);
   }
 
   private List<SpatialDataPointIO> getByAABoundingBox(
@@ -64,8 +77,8 @@ public class SpatialDataPointService {
   ) {
     final Coordinate bottomLeft = new Coordinate(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ());
     final Coordinate topRight = new Coordinate(boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
-    return mapSpatialGeometries(
-      spatialGeometryRepository.getByBoundingBox(
+    return mapSpatialDataPoints(
+      spatialDataPointRepository.getByBoundingBox(
         containerId,
         bottomLeft,
         topRight,
@@ -87,8 +100,8 @@ public class SpatialDataPointService {
       boundingSphere.getCenterY(),
       boundingSphere.getCenterZ()
     );
-    return mapSpatialGeometries(
-      spatialGeometryRepository.getByBoundingSphere(
+    return mapSpatialDataPoints(
+      spatialDataPointRepository.getByBoundingSphere(
         containerId,
         sphereCenter,
         boundingSphere.getRadius(),
@@ -106,8 +119,8 @@ public class SpatialDataPointService {
     SpatialDataParamsIO spatialDataParamsIO
   ) {
     final Coordinate kCoordinate = new Coordinate(knn.getX(), knn.getY(), knn.getZ());
-    return mapSpatialGeometries(
-      spatialGeometryRepository.getByKNN(
+    return mapSpatialDataPoints(
+      spatialDataPointRepository.getByKNN(
         containerId,
         kCoordinate,
         knn.getK(),
@@ -118,17 +131,17 @@ public class SpatialDataPointService {
     );
   }
 
-  private List<SpatialDataPointIO> mapSpatialGeometries(List<SpatialDataPoint> geometries) {
-    return geometries
+  private List<SpatialDataPointIO> mapSpatialDataPoints(List<SpatialDataPoint> dataPoints) {
+    return dataPoints
       .stream()
-      .map(geometry ->
+      .map(point ->
         new SpatialDataPointIO(
-          geometry.getTime(),
-          geometry.getPosition().getCoordinate().getX(),
-          geometry.getPosition().getCoordinate().getY(),
-          geometry.getPosition().getCoordinate().getZ(),
-          geometry.getMeasurements(),
-          geometry.getMetadata()
+          point.getTime(),
+          point.getPosition().getCoordinate().getX(),
+          point.getPosition().getCoordinate().getY(),
+          point.getPosition().getCoordinate().getZ(),
+          point.getMeasurements(),
+          point.getMetadata()
         )
       )
       .collect(Collectors.toList());
