@@ -22,6 +22,8 @@ public abstract class AbstractGeometryFilter {
 
   protected GeometryFilterType type;
 
+  public abstract boolean isValid();
+
   public AbstractGeometryFilter(GeometryFilterType type) {
     this.type = type;
   }

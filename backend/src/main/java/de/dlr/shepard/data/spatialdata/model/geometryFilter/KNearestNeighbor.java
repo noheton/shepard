@@ -16,4 +16,16 @@ public class KNearestNeighbor extends AbstractGeometryFilter {
   public KNearestNeighbor() {
     super(GeometryFilterType.K_NEAREST_NEIGHBOR);
   }
+
+  public void set(int k, double x, double y, double z) {
+    this.k = k;
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+
+  @Override
+  public boolean isValid() {
+    return k >= 0;
+  }
 }

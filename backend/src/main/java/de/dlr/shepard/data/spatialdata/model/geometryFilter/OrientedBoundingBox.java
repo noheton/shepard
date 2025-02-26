@@ -22,4 +22,9 @@ public class OrientedBoundingBox extends AbstractGeometryFilter {
   public OrientedBoundingBox() {
     super(GeometryFilterType.ORIENTED_BOUNDING_BOX);
   }
+
+  @Override
+  public boolean isValid() {
+    throw new UnsupportedOperationException("Unimplemented method 'isValid'");
+  }
 }

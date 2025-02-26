@@ -151,7 +151,24 @@ public class SpatialDataPointRest {
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Get spatial data by container id")
   @Parameter(name = Constants.SPATIAL_DATA_DATABASE_TYPE, required = true)
-  @Parameter(name = "metadataFilter", required = false)
+  @Parameter(
+    name = "metadataFilter",
+    required = false,
+    description = "This filter should be a stringified list of JSON object for exact match in metadata",
+    examples = {
+      @ExampleObject(
+        name = "metadata filter",
+        value = """
+        {
+          "track":1,
+          "layer":4,
+          "key":{
+            "subKey": "some data"
+          }
+        }"""
+      ),
+    }
+  )
   @Parameter(
     name = "geometryFilter",
     required = true,
@@ -220,8 +237,6 @@ public class SpatialDataPointRest {
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(
       Optional.ofNullable(metadataFilterParam)
     );
-
-    // TODO: Throw if geometry filter is empty
 
     SpatialDataParamsIO spatialDataParams = new SpatialDataParamsIO(
       geometryFilter,

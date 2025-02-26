@@ -13,11 +13,11 @@ public final class SpatialDataParamParser {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   public static AbstractGeometryFilter parseGeometryFilter(Optional<String> paramString) {
-    if (paramString.isEmpty()) throw new BadRequestException("Invalid geometry filter param");
+    if (paramString.isEmpty()) throw new BadRequestException("Invalid geometryFilter param");
     try {
       return objectMapper.readValue(paramString.get(), AbstractGeometryFilter.class);
     } catch (JsonProcessingException e) {
-      throw new BadRequestException("Invalid geometry filter param");
+      throw new BadRequestException("Invalid geometryFilter param");
     }
   }
 

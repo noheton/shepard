@@ -101,7 +101,7 @@ class SpatialDataParamParserTest {
       SpatialDataParamParser.parseGeometryFilter(Optional.of(invalidJson));
     });
 
-    assertEquals("Invalid geometry filter param", exception.getMessage());
+    assertEquals("Invalid geometryFilter param", exception.getMessage());
   }
 
   @Test
@@ -178,6 +178,6 @@ class SpatialDataParamParserTest {
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
       SpatialDataParamParser.parseGeometryFilter(Optional.empty());
     });
-    assertEquals("Invalid geometry filter param", exception.getMessage());
+    assertEquals("Invalid geometryFilter param", exception.getMessage());
   }
 }

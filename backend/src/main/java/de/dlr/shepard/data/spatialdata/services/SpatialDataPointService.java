@@ -100,6 +100,7 @@ public class SpatialDataPointService {
       boundingSphere.getCenterY(),
       boundingSphere.getCenterZ()
     );
+
     return mapSpatialDataPoints(
       spatialDataPointRepository.getByBoundingSphere(
         containerId,
