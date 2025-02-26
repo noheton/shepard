@@ -23,7 +23,7 @@ The migrations are executed by the MigrationsRunner at `src/main/java/de/dlr/she
 
 In the Neo4j UI, the applied migrations form a chain when querying `MATCH (n) RETURN n`. While migrations are applied a lock node is present that can be found using ``MATCH (n:`__Neo4jMigrationsLock`) RETURN n``.
 
-==== Postgres/TimescaleDB
+==== Postgres/TimescaleDB/PostGIS
 
 ===== Transactions
 

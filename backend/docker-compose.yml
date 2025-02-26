@@ -69,6 +69,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD-password}
       POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER-shepard}
       POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW-shepard_secret}
+    shm_size: "6GB"
     ports:
       - "5433:5432"
     volumes:
