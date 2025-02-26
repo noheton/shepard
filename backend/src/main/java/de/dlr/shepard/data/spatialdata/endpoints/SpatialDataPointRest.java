@@ -214,7 +214,7 @@ public class SpatialDataPointRest {
   @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
   @Parameter(name = "limit", required = false)
   @Parameter(name = "offset", required = false)
-  @Parameter(name = "skip", required = false)
+  @Parameter(name = "skip", required = false, description = "Returns every nth data point from the container")
   @APIResponse(
     description = "OK",
     responseCode = "200",

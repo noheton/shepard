@@ -164,4 +164,31 @@ public class NativeQueryStringBuilderTest {
 
     assertEquals(expected, current);
   }
+
+  @Test
+  public void build_passEmptySkip_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addSkipClause(null).build();
+
+    var expected = "SELECT * FROM table_name;";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_passNonEmptySkip_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addSkipClause(3).build();
+
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id % 3 = 0;";
+
+    assertEquals(expected, current);
+  }
+
+  @Test
+  public void build_passNonEmptySkipWith0_success() {
+    var current = new NativeQueryStringBuilder().select("SELECT * FROM table_name").addSkipClause(0).build();
+
+    var expected = "SELECT * FROM table_name;";
+
+    assertEquals(expected, current);
+  }
 }

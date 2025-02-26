@@ -75,6 +75,13 @@ public class NativeQueryStringBuilder {
     return this;
   }
 
+  public NativeQueryStringBuilder addSkipClause(Integer skip) {
+    if (skip == null || skip <= 0) return this;
+    addWhereClauseIfNecessary();
+    query.append(String.format(" AND id %% %d = 0", skip));
+    return this;
+  }
+
   public String build() {
     return query.append(";").toString();
   }

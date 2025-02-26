@@ -99,8 +99,10 @@ public class SpatialDataPointRepository {
 
   /**
    * Create an (axis-aligned) bounding box query request for spatial data.
-   * The request uses the '&&&'' indexed operator, that acts similar to the ST_Intersects function.
-   * If the point is part of the bounding box (i.e., on a bounding box corner) the bounding box check returns true
+   * The request uses the '&&&'' indexed operator, that acts similar to the
+   * ST_Intersects function.
+   * If the point is part of the bounding box (i.e., on a bounding box corner) the
+   * bounding box check returns true
    */
   @Timed(value = "shepard.spatial-data.query-by-bounding-box")
   @SuppressWarnings("unchecked")
@@ -111,7 +113,8 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    Integer limit
+    Integer limit,
+    Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
@@ -119,6 +122,7 @@ public class SpatialDataPointRepository {
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
       .addAABBGeometryCondition()
+      .addSkipClause(skip)
       .addLimitClause(limit)
       .build();
 
@@ -142,7 +146,8 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    Integer limit
+    Integer limit,
+    Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
@@ -150,6 +155,7 @@ public class SpatialDataPointRepository {
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
       .addBSGeometryCondition()
+      .addSkipClause(skip)
       .addLimitClause(limit)
       .build();
 
@@ -164,8 +170,9 @@ public class SpatialDataPointRepository {
 
   /**
    * Runs a k-nearest-neighbor search on the spatial data.
+   *
    * @param coordinate - Starting point for the KNN search
-   * @param k - number of returned points
+   * @param k          - number of returned points
    */
   @SuppressWarnings("unchecked")
   @Timed(value = "shepard.spatial-data.query-by-knn")
@@ -175,13 +182,15 @@ public class SpatialDataPointRepository {
     int k,
     Long timestampStart,
     Long timestampEnd,
-    Map<String, Object> metadataFilter
+    Map<String, Object> metadataFilter,
+    Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
       .select("SELECT * FROM spatial_data_points")
       .addWhereCondition("container_id", containerId)
       .addTimeCondition("time", timestampStart, timestampEnd)
       .addJsonContainsCondition("metadata", metadataFilter)
+      .addSkipClause(skip)
       .addKNNGeometryCondition()
       .build();
 

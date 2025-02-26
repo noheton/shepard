@@ -85,7 +85,8 @@ public class SpatialDataPointService {
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata(),
-        spatialDataParamsIO.getLimit()
+        spatialDataParamsIO.getLimit(),
+        spatialDataParamsIO.getSkip()
       )
     );
   }
@@ -109,7 +110,8 @@ public class SpatialDataPointService {
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata(),
-        spatialDataParamsIO.getLimit()
+        spatialDataParamsIO.getLimit(),
+        spatialDataParamsIO.getSkip()
       )
     );
   }
@@ -127,7 +129,8 @@ public class SpatialDataPointService {
         knn.getK(),
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata()
+        spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getSkip()
       )
     );
   }

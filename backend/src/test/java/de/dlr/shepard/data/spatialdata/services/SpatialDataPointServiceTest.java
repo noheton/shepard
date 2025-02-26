@@ -112,7 +112,8 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
-      eq(limit)
+      eq(limit),
+      eq(null)
     );
   }
 
@@ -144,7 +145,8 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
-      eq(limit)
+      eq(limit),
+      eq(null)
     );
   }
 
@@ -175,7 +177,8 @@ public class SpatialDataPointServiceTest {
       eq(k),
       eq(startTime),
       eq(endTime),
-      eq(metadataFilter)
+      eq(metadataFilter),
+      eq(null)
     );
   }
 
