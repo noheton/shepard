@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -66,5 +67,18 @@ public class UserIT extends BaseTestCaseIT {
       .extract()
       .as(UserIO.class);
     assertThat(actual).isEqualTo(user);
+  }
+
+  @Test
+  public void getUser_userDoesNotExist_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(usersURL + "/fake-user-id")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - User does not exist");
   }
 }

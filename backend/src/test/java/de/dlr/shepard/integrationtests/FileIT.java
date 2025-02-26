@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
@@ -102,6 +103,20 @@ public class FileIT extends BaseTestCaseIT {
       .as(FileContainerIO.class);
 
     assertThat(actual).isEqualTo(container);
+  }
+
+  @Test
+  public void getFileContainer_doesNotExist_notFound() {
+    var actual = given()
+      .spec(containerRequestSpec)
+      .when()
+      .get(containerURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Container does not exist");
   }
 
   @Test

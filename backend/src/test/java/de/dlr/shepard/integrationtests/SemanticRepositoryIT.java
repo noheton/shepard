@@ -3,8 +3,11 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.data.semantic.SemanticRepositoryType;
 import de.dlr.shepard.data.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.semantic.io.SemanticRepositoryIO;
@@ -25,28 +28,48 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class SemanticRepositoryIT extends BaseTestCaseIT {
 
   private static String repositoryURL;
-  private static RequestSpecification repositoryRequestSpec;
+  private static RequestSpecification requestSpecification;
 
   private static SemanticRepositoryIO repository;
-  private static SemanticAnnotationIO annotation;
+  private static SemanticAnnotationIO collectionAnnotation;
+  private static SemanticAnnotationIO dataObjectAnnotation;
+  private static SemanticAnnotationIO referenceAnnotation;
 
   private static CollectionIO collection;
-  private static String collectionURL;
-  private static RequestSpecification collectionRequestSpec;
+  private static DataObjectIO dataObject;
+  private static BasicReferenceIO dataObjectReference;
+  private static String collectionAnnotationURL;
+  private static String dataObjectAnnotationURL;
+  private static String referenceAnnotationURL;
 
   @BeforeAll
   public static void setUp() {
     repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
-    repositoryRequestSpec = new RequestSpecBuilder()
+    requestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws)
       .build();
     collection = createCollection("SemanticsCollection");
-    collectionURL = String.format("/%s/%d/semanticAnnotations", Constants.COLLECTIONS, collection.getId());
-    collectionRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    dataObject = createDataObject("SemanticDataObject", collection.getId());
+    dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId(), dataObject.getId());
+
+    collectionAnnotationURL = String.format("/%s/%d/semanticAnnotations", Constants.COLLECTIONS, collection.getId());
+    dataObjectAnnotationURL = String.format(
+      "/%s/%d/%s/%d/semanticAnnotations",
+      Constants.COLLECTIONS,
+      collection.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject.getId()
+    );
+    referenceAnnotationURL = String.format(
+      "/%s/%d/%s/%d/%s/%d/semanticAnnotations",
+      Constants.COLLECTIONS,
+      collection.getId(),
+      Constants.DATA_OBJECTS,
+      dataObject.getId(),
+      Constants.BASIC_REFERENCES,
+      dataObjectReference.getId()
+    );
   }
 
   @Test
@@ -58,7 +81,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
 
     var actual = given()
-      .spec(repositoryRequestSpec)
+      .spec(requestSpecification)
       .body(toCreate)
       .when()
       .post(repositoryURL)
@@ -82,7 +105,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(2)
   public void getSemanticRepositories() {
     var actual = given()
-      .spec(repositoryRequestSpec)
+      .spec(requestSpecification)
       .when()
       .get(repositoryURL)
       .then()
@@ -97,7 +120,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(3)
   public void getSemanticRepository() {
     var actual = given()
-      .spec(repositoryRequestSpec)
+      .spec(requestSpecification)
       .when()
       .get(repositoryURL + "/" + repository.getId())
       .then()
@@ -110,7 +133,49 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
 
   @Test
   @Order(4)
-  public void createSemanticAnnotation() {
+  public void getSemanticRepository_doesNotExist_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(repositoryURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - SemanticRepository does not exist");
+  }
+
+  @Test
+  @Order(5)
+  public void createCollectionSemanticAnnotation() {
+    var toCreate = new SemanticAnnotationIO();
+    toCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
+    toCreate.setPropertyRepositoryId(repository.getId());
+    toCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
+    toCreate.setValueRepositoryId(repository.getId());
+
+    collectionAnnotation = given()
+      .spec(requestSpecification)
+      .body(toCreate)
+      .when()
+      .post(collectionAnnotationURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(SemanticAnnotationIO.class);
+
+    assertThat(collectionAnnotation.getId()).isNotNull();
+    assertThat(collectionAnnotation.getName()).isEqualTo("ingredient::Almond milk");
+    assertThat(collectionAnnotation.getPropertyIRI()).isEqualTo("http://dbpedia.org/ontology/ingredient");
+    assertThat(collectionAnnotation.getPropertyRepositoryId()).isEqualTo(repository.getId());
+    assertThat(collectionAnnotation.getValueIRI()).isEqualTo("http://dbpedia.org/resource/Almond_milk");
+    assertThat(collectionAnnotation.getValueRepositoryId()).isEqualTo(repository.getId());
+  }
+
+  @Test
+  @Order(6)
+  public void createDataObjectSemanticAnnotation() {
     var toCreate = new SemanticAnnotationIO();
     toCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
     toCreate.setPropertyRepositoryId(repository.getId());
@@ -118,15 +183,15 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setValueRepositoryId(repository.getId());
 
     var actual = given()
-      .spec(collectionRequestSpec)
+      .spec(requestSpecification)
       .body(toCreate)
       .when()
-      .post(collectionURL)
+      .post(dataObjectAnnotationURL)
       .then()
       .statusCode(201)
       .extract()
       .as(SemanticAnnotationIO.class);
-    annotation = actual;
+    dataObjectAnnotation = actual;
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getName()).isEqualTo("ingredient::Almond milk");
@@ -137,52 +202,220 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
-  public void getSemanticAnnotations() {
+  @Order(7)
+  public void createReferenceSemanticAnnotation() {
+    var toCreate = new SemanticAnnotationIO();
+    toCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
+    toCreate.setPropertyRepositoryId(repository.getId());
+    toCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
+    toCreate.setValueRepositoryId(repository.getId());
+
     var actual = given()
-      .spec(collectionRequestSpec)
-      .get(collectionURL)
+      .spec(requestSpecification)
+      .body(toCreate)
+      .when()
+      .post(referenceAnnotationURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(SemanticAnnotationIO.class);
+    referenceAnnotation = actual;
+
+    assertThat(actual.getId()).isNotNull();
+    assertThat(actual.getName()).isEqualTo("ingredient::Almond milk");
+    assertThat(actual.getPropertyIRI()).isEqualTo("http://dbpedia.org/ontology/ingredient");
+    assertThat(actual.getPropertyRepositoryId()).isEqualTo(repository.getId());
+    assertThat(actual.getValueIRI()).isEqualTo("http://dbpedia.org/resource/Almond_milk");
+    assertThat(actual.getValueRepositoryId()).isEqualTo(repository.getId());
+  }
+
+  @Test
+  @Order(8)
+  public void getSemanticAnnotations() {
+    var actualCollectionAnnotations = given()
+      .spec(requestSpecification)
+      .get(collectionAnnotationURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO[].class);
+    var actualDataObjectAnnotations = given()
+      .spec(requestSpecification)
+      .get(dataObjectAnnotationURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO[].class);
+    var actualReferenceAnnotations = given()
+      .spec(requestSpecification)
+      .get(referenceAnnotationURL)
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO[].class);
 
-    assertThat(actual).contains(annotation);
+    assertThat(actualCollectionAnnotations).contains(collectionAnnotation);
+    assertThat(actualDataObjectAnnotations).contains(dataObjectAnnotation);
+    assertThat(actualReferenceAnnotations).contains(referenceAnnotation);
   }
 
   @Test
-  @Order(6)
+  @Order(9)
   public void getSemanticAnnotation() {
-    var actual = given()
-      .spec(collectionRequestSpec)
-      .get(collectionURL + "/" + annotation.getId())
+    var actualCollectionAnnotation = given()
+      .spec(requestSpecification)
+      .get(collectionAnnotationURL + "/" + collectionAnnotation.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO.class);
+    var actualDataObjectAnnotation = given()
+      .spec(requestSpecification)
+      .get(dataObjectAnnotationURL + "/" + dataObjectAnnotation.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO.class);
+    var actualReferenceAnnotation = given()
+      .spec(requestSpecification)
+      .get(referenceAnnotationURL + "/" + referenceAnnotation.getId())
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO.class);
 
-    assertThat(actual).isEqualTo(annotation);
+    assertThat(actualCollectionAnnotation).isEqualTo(collectionAnnotation);
+    assertThat(actualDataObjectAnnotation).isEqualTo(dataObjectAnnotation);
+    assertThat(actualReferenceAnnotation).isEqualTo(referenceAnnotation);
   }
 
   @Test
-  @Order(7)
+  @Order(10)
+  public void getSemanticAnnotation_doesNotExist_notFound() {
+    var actualCollectionAnnotation = given()
+      .spec(requestSpecification)
+      .get(collectionAnnotationURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    var actualDataObjectAnnotation = given()
+      .spec(requestSpecification)
+      .get(dataObjectAnnotationURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    var actualReferenceAnnotation = given()
+      .spec(requestSpecification)
+      .get(referenceAnnotationURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actualCollectionAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
+    assertThat(actualDataObjectAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
+    assertThat(actualReferenceAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
+  }
+
+  @Test
+  @Order(11)
+  public void getSemanticAnnotation_annotationOfSomethingElse_notFound() {
+    var actualCollectionAnnotation = given()
+      .spec(requestSpecification)
+      .get(collectionAnnotationURL + "/" + dataObjectAnnotation.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    var actualDataObjectAnnotation = given()
+      .spec(requestSpecification)
+      .get(dataObjectAnnotationURL + "/" + collectionAnnotation.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    var actualReferenceAnnotation = given()
+      .spec(requestSpecification)
+      .get(referenceAnnotationURL + "/" + collectionAnnotation.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actualCollectionAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - There is no association between annotation and collection"
+    );
+    assertThat(actualDataObjectAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - There is no association between annotation and dataObject"
+    );
+    assertThat(actualReferenceAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - There is no association between annotation and reference"
+    );
+  }
+
+  @Test
+  @Order(12)
   public void deleteSemanticAnnotation() {
-    given().spec(collectionRequestSpec).when().delete(collectionURL + "/" + annotation.getId()).then().statusCode(204);
-    given().spec(collectionRequestSpec).get(collectionURL + "/" + annotation.getId()).then().statusCode(404);
-    var actual = given()
-      .spec(collectionRequestSpec)
-      .get(collectionURL)
+    given()
+      .spec(requestSpecification)
+      .when()
+      .delete(collectionAnnotationURL + "/" + collectionAnnotation.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecification)
+      .when()
+      .delete(dataObjectAnnotationURL + "/" + dataObjectAnnotation.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecification)
+      .when()
+      .delete(referenceAnnotationURL + "/" + referenceAnnotation.getId())
+      .then()
+      .statusCode(204);
+    var actualCollectionAnnotations = given()
+      .spec(requestSpecification)
+      .get(collectionAnnotationURL)
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO[].class);
-    assertThat(actual).isEmpty();
+    assertThat(actualCollectionAnnotations).isEmpty();
+    var actualDataObjectAnnotation = given()
+      .spec(requestSpecification)
+      .get(dataObjectAnnotationURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO[].class);
+    assertThat(actualDataObjectAnnotation).isEmpty();
+    var actualReferenceAnnotations = given()
+      .spec(requestSpecification)
+      .get(referenceAnnotationURL)
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(SemanticAnnotationIO[].class);
+    assertThat(actualReferenceAnnotations).isEmpty();
   }
 
   @Test
-  @Order(8)
+  @Order(13)
+  public void getIllegalPath_notFound() {
+    given()
+      .spec(requestSpecification)
+      .get("/semanticAnnotations/" + referenceAnnotation.getId())
+      .then()
+      .statusCode(404);
+  }
+
+  @Test
+  @Order(14)
   public void deleteSemanticRepository() {
-    given().spec(repositoryRequestSpec).when().delete(repositoryURL + "/" + repository.getId()).then().statusCode(204);
-    given().spec(repositoryRequestSpec).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
+    given().spec(requestSpecification).when().delete(repositoryURL + "/" + repository.getId()).then().statusCode(204);
+    given().spec(requestSpecification).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
   }
 }

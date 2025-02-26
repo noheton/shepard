@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.endpoints.DataObjectAttributes;
@@ -656,7 +657,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(18)
   public void deleteDataObjectTest_Successful() {
     given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(204);
-
+    given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
     given().spec(requestSpecification).when().get(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
   }
 
@@ -949,6 +950,73 @@ public class DataObjectIT extends BaseTestCaseIT {
         .as(DataObjectIO[].class);
       assertEquals(3, response.length);
     }
+  }
+
+  @Test
+  public void getDataObject_wrongId_notFound() {
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(dataObjectsURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - DataObject does not exist");
+  }
+
+  @Test
+  public void getDataObject_privateCollection_forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    CollectionIO privateCollection = createCollection("private collection", otherUser.getApiKey());
+    DataObjectIO privateDataObject = createDataObject(
+      "private data object",
+      privateCollection.getId(),
+      otherUser.getApiKey()
+    );
+
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(
+        String.format(
+          "/%s/%d/%s/%d",
+          Constants.COLLECTIONS,
+          privateCollection.getId(),
+          Constants.DATA_OBJECTS,
+          privateDataObject.getId()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  public void getDataObject_wrongCollection_notFound() {
+    CollectionIO thisCollection = createCollection("private collection");
+    DataObjectIO thisDataObject = createDataObject("private data object", thisCollection.getId());
+    CollectionIO otherCollection = createCollection("private collection");
+
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(
+        String.format(
+          "/%s/%d/%s/%d",
+          Constants.COLLECTIONS,
+          otherCollection.getId(),
+          Constants.DATA_OBJECTS,
+          thisDataObject.getId()
+        )
+      )
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - There is no association between collection and dataObject");
   }
 
   @Test

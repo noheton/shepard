@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
@@ -98,6 +99,19 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .as(TimeseriesContainerIO.class);
 
     assertThat(actual).isEqualTo(container);
+  }
+
+  @Test
+  public void getTimeseriesContainer_doesNotExist_notFound() {
+    ErrorResponse actual = given()
+      .spec(containerRequestSpec)
+      .when()
+      .get(containerURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(actual.getMessage()).isEqualTo("Timeseries container with id 99999 not found.");
   }
 
   @Test

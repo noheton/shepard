@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
@@ -218,5 +219,19 @@ public class StructuredDataIT extends BaseTestCaseIT {
     given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 
     given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
+  }
+
+  @Test
+  public void getStructuredDataContainer_doesNotExist_notFound() {
+    var actual = given()
+      .spec(containerRequestSpec)
+      .when()
+      .get(containerURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Container does not exist");
   }
 }

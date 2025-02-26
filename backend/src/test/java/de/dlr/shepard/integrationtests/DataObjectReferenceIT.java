@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -188,6 +189,36 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(5)
+  public void getDataObjectReference_referenceDoesNotExist_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(c1d1referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(6)
+  public void getDataObjectReference_idBelongsToWrongDataObject_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(c1d1referencesURL + "/" + reference21to12.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(7)
   public void getDataObjectReferencedTest() {
     var referencedURL = String.format(
       "/%s/%d/%s/%d",
@@ -210,7 +241,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(6)
+  @Order(8)
   public void getDataObjectReferencePayloadTest() {
     var actual = given()
       .spec(requestSpecification)
@@ -232,7 +263,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(7)
+  @Order(9)
   public void deleteDataObjectReferenceTest() {
     given()
       .spec(requestSpecification)
@@ -250,7 +281,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(8)
+  @Order(10)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void createNewVersionCollection1Test() {
     String versionizeCollection1URL = "/" + Constants.COLLECTIONS + "/" + collection1.getId() + "/versions";
@@ -271,7 +302,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(9)
+  @Order(11)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InHEADVersionTest() {
     var referencedURL = String.format(
@@ -293,7 +324,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(10)
+  @Order(12)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InFirstVersionTest() {
     var referencedURL = String.format(
@@ -316,7 +347,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(11)
+  @Order(13)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void multipleIncomingReferencesToDataObject21InHEADVersion() {
     var referencedURL = String.format(

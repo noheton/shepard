@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -173,6 +174,67 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(4)
+  public void getTimeseriesReference_doesNotExist_notFound() {
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(5)
+  public void getTimeseriesReference_referenceBelongsToDifferentCollection_notFound() {
+    CollectionIO otherCollection = createCollection("otherCollection");
+    DataObjectIO otherDataObject = createDataObject("otherDataObject", otherCollection.getId());
+    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
+    var otherReferenceToCreate = new TimeseriesReferenceIO();
+    otherReferenceToCreate.setName("TimeseriesReferenceDummy");
+    otherReferenceToCreate.setStart(nanos - 1000000000L);
+    otherReferenceToCreate.setEnd(nanos + 1000000000L * numPoints);
+    otherReferenceToCreate.setReferencedTimeseriesList(
+      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
+    );
+    otherReferenceToCreate.setTimeseriesContainerId(container.getId());
+
+    TimeseriesReferenceIO otherReference = given()
+      .spec(referencesRequestSpec)
+      .body(otherReferenceToCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          otherCollection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.TIMESERIES_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(TimeseriesReferenceIO.class);
+
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/" + otherReference.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(6)
   public void getTimeseriesReferencePayload() {
     var actual = given()
       .spec(referencesRequestSpec)
@@ -187,10 +249,10 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(7)
   public void deleteReferences() {
     given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-
+    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
     given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
@@ -83,6 +84,21 @@ public class UserGroupIT extends BaseTestCaseIT {
 
   @Test
   @Order(3)
+  public void getUserGroup_doesNotExist_notFound() {
+    ErrorResponse response = given()
+      .spec(userGroupSpecification)
+      .when()
+      .get(userGroupURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - UserGroup does not exist");
+  }
+
+  @Test
+  @Order(4)
   public void getAllUserGroups() {
     UserGroupIO[] allUserGroups = given()
       .spec(userGroupSpecification)
@@ -96,7 +112,7 @@ public class UserGroupIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(4)
+  @Order(5)
   public void putUserGroup() {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("changedUserGroup");
@@ -118,7 +134,7 @@ public class UserGroupIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(6)
   public void deleteUserGroup() {
     given()
       .spec(userGroupSpecification)

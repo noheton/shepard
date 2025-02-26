@@ -8,6 +8,7 @@ import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -99,5 +100,62 @@ public class BaseTestCaseIT {
       .extract()
       .as(DataObjectIO.class);
     return dataObjectIOToReturn;
+  }
+
+  protected static DataObjectIO createDataObject(String name, long collectionId, ApiKey apiKey) {
+    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
+    var dataObjectSpecification = new RequestSpecBuilder()
+      .setContentType(ContentType.JSON)
+      .addHeader("X-API-KEY", apiKey.getJws())
+      .build();
+    DataObjectIO dataObjectIO = new DataObjectIO();
+    dataObjectIO.setName(name);
+    var dataObjectIOToReturn = given()
+      .spec(dataObjectSpecification)
+      .body(dataObjectIO)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+    return dataObjectIOToReturn;
+  }
+
+  protected static DataObjectReferenceIO createDataObjectReference(
+    long collectionId,
+    long dataObjectId,
+    long setReferencedDataObjectId
+  ) {
+    var dataObjectReferenceUrl =
+      "/" +
+      Constants.COLLECTIONS +
+      "/" +
+      collectionId +
+      "/" +
+      Constants.DATA_OBJECTS +
+      "/" +
+      dataObjectId +
+      "/" +
+      Constants.DATAOBJECT_REFERENCES +
+      "/";
+    var dataObjectReference = new DataObjectReferenceIO() {
+      {
+        setName("DataObjectReference");
+        setReferencedDataObjectId(setReferencedDataObjectId);
+        setRelationship("self_reference");
+      }
+    };
+    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
+    var created = given()
+      .spec(specification)
+      .body(dataObjectReference)
+      .when()
+      .post(dataObjectReferenceUrl)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectReferenceIO.class);
+    return created;
   }
 }

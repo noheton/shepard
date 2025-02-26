@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -36,7 +37,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
     collection = createCollection("BasicReferenceTestCollection");
     dataObject = createDataObject("BasicReferenceTestDataObject", collection.getId());
 
-    dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId());
+    dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId(), dataObject.getId());
     uriReference = createUriReference(collection.getId(), dataObject.getId());
 
     referencesURL = String.format(
@@ -79,6 +80,43 @@ public class BasicReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(2)
+  public void getReference_doesNotExist_notFound() {
+    ErrorResponse actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(3)
+  public void getReference_idBelongsToWrongDataObject_notFound() {
+    DataObjectIO otherDataObject = createDataObject("OtherStructuredDataReferenceTestDataObject", collection.getId());
+    DataObjectReferenceIO otherRef = createDataObjectReference(
+      collection.getId(),
+      otherDataObject.getId(),
+      dataObject.getId()
+    );
+
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/" + otherRef.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(4)
   public void getSecondReference_Successful() {
     BasicReferenceIO actual = given()
       .spec(requestSpecification)
@@ -102,7 +140,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(3)
+  @Order(5)
   public void getAllReferences_Successful() {
     BasicReferenceIO[] actual = given()
       .spec(requestSpecification)
@@ -117,7 +155,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(4)
+  @Order(6)
   public void deleteReferences_Successful() {
     given().spec(requestSpecification).when().delete(referencesURL + "/" + uriReference.getId()).then().statusCode(204);
 
@@ -164,39 +202,6 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       .statusCode(201)
       .extract()
       .as(URIReferenceIO.class);
-    return created;
-  }
-
-  private static DataObjectReferenceIO createDataObjectReference(long collectionId, long dataObjectId) {
-    var dataObjectReferenceUrl =
-      "/" +
-      Constants.COLLECTIONS +
-      "/" +
-      collectionId +
-      "/" +
-      Constants.DATA_OBJECTS +
-      "/" +
-      dataObjectId +
-      "/" +
-      Constants.DATAOBJECT_REFERENCES +
-      "/";
-    var dataObjectReference = new DataObjectReferenceIO() {
-      {
-        setName("DataObjectReference");
-        setReferencedDataObjectId(dataObject.getId());
-        setRelationship("self_reference");
-      }
-    };
-    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
-    var created = given()
-      .spec(specification)
-      .body(dataObjectReference)
-      .when()
-      .post(dataObjectReferenceUrl)
-      .then()
-      .statusCode(201)
-      .extract()
-      .as(DataObjectReferenceIO.class);
     return created;
   }
 }

@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -122,6 +123,21 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(5)
+  public void getCollectionReference_referenceDoesNotExist_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(6)
   public void getCollectionReferencedTest() {
     var referencedURL = String.format("/%s/%d", Constants.COLLECTIONS, referenced.getId());
     var actual = given()
@@ -136,7 +152,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(6)
+  @Order(7)
   public void getCollectionReferencePayloadTest() {
     var actual = given()
       .spec(requestSpecification)
@@ -152,10 +168,51 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(7)
+  @Order(8)
+  public void getCollectionReference_idBelongsToWrongDataObject_notFound() {
+    DataObjectIO otherDataObject = createDataObject("OtherStructuredDataReferenceTestDataObject", collection.getId());
+
+    var toCreate = new CollectionReferenceIO();
+    toCreate.setName("CollectionReferenceDummy");
+    toCreate.setRelationship("integrationtests");
+    toCreate.setReferencedCollectionId(referenced.getId());
+
+    CollectionReferenceIO otherRef = given()
+      .spec(requestSpecification)
+      .body(toCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          collection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.COLLECTION_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionReferenceIO.class);
+
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/" + otherRef.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(9)
   public void deleteCollectionReferenceTest() {
     given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-
+    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
     given().spec(requestSpecification).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

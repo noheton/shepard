@@ -1,7 +1,9 @@
 package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -11,6 +13,7 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -105,6 +108,65 @@ public class LabJournalIT extends BaseTestCaseIT {
 
   @Test
   @Order(3)
+  public void getLabJournal_exists_success() {
+    LabJournalEntryIO actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(labJournalURL + "/" + labJournal.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(LabJournalEntryIO.class);
+
+    assertThat(actual).isEqualTo(labJournal);
+  }
+
+  @Test
+  @Order(4)
+  public void getLabJournal_doesNotExist_notFound() {
+    ErrorResponse actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(labJournalURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - LabJournalEntry does not exist");
+  }
+
+  @Test
+  // Disabled since this needs to be fixed in https://gitlab.com/dlr-shepard/shepard/-/issues/508
+  @Disabled
+  @Order(5)
+  public void getLabJournals_noQueryParam_badRequest() {
+    given().spec(requestSpecification).when().get(labJournalURL).then().statusCode(400);
+  }
+
+  @Test
+  @Order(6)
+  public void getLabJournals_dataObjectDoesExist_success() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(labJournalURL + "?dataObjectId=" + dataObject.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(LabJournalEntryIO[].class);
+
+    assertThat(actual).contains(labJournal);
+  }
+
+  @Test
+  @Order(7)
+  public void getLabJournals_dataObjectDoesNotExist_notFound() {
+    given().spec(requestSpecification).when().get(labJournalURL + "?dataObjectId=99999").then().statusCode(404);
+  }
+
+  @Test
+  @Order(8)
   public void deleteLabJournal_Success() {
     given().spec(requestSpecification).when().delete(labJournalURL + "/" + labJournal.getId()).then().statusCode(204);
   }

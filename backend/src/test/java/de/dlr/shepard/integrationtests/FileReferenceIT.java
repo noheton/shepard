@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -153,6 +154,62 @@ public class FileReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(4)
+  public void getFileReference_referenceDoesNotExist_notFound() {
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(5)
+  public void getFileReference_idBelongsToWrongDataObject_notFound() {
+    DataObjectIO otherDataObject = createDataObject("OtherStructuredDataReferenceTestDataObject", collection.getId());
+
+    var toCreate = new FileReferenceIO();
+    toCreate.setName("FileReferenceDummy");
+    toCreate.setFileOids(new String[] { file.getOid() });
+    toCreate.setFileContainerId(container.getId());
+
+    FileReferenceIO otherRef = given()
+      .spec(referencesRequestSpec)
+      .body(toCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          collection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.FILE_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(FileReferenceIO.class);
+
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/" + otherRef.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(6)
   public void getFileReferencePayload() throws URISyntaxException, IOException {
     var actual = given()
       .spec(referencesRequestSpec)
@@ -167,10 +224,10 @@ public class FileReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(7)
   public void deleteReferences() {
     given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-
+    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
     given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

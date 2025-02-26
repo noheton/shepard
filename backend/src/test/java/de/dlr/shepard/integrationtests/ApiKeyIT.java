@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.apikey.io.ApiKeyIO;
 import de.dlr.shepard.auth.apikey.io.ApiKeyWithJWTIO;
 import de.dlr.shepard.common.util.Constants;
@@ -10,6 +11,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -35,7 +37,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
 
   @Test
   @Order(1)
-  public void createApiKeyTest() {
+  public void createApiKey_createNewKey_success() {
     var toCreate = new ApiKeyIO();
     toCreate.setName("ApiKeyDummy");
 
@@ -72,7 +74,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
 
   @Test
   @Order(2)
-  public void getApiKeyTest() {
+  public void getApiKey_getExistingKey_success() {
     var actual = given()
       .spec(requestSpecification)
       .when()
@@ -86,7 +88,82 @@ public class ApiKeyIT extends BaseTestCaseIT {
 
   @Test
   @Order(3)
-  public void getApiKeysTest() {
+  public void getApiKey_getNonExistingKey_notFound() {
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(apiKeyURL + "/" + UUID.randomUUID())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - ApiKey does not exist");
+  }
+
+  @Test
+  @Order(4)
+  public void getApiKey_getByKeyUuidOfOtherUser_notFound() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(apiKeyURL + "/" + otherUser.getApiKey().getUid())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - There is no association between apiKey and user");
+  }
+
+  @Test
+  @Order(5)
+  public void getApiKey_getKeyOfOtherUser_Forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(
+        String.format(
+          "/%s/%s/%s/%s",
+          Constants.USERS,
+          otherUser.getUser().getUsername(),
+          Constants.APIKEYS,
+          otherUser.getApiKey().getUid()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  @Order(6)
+  public void getApiKey_getNonExistingKeyOfOtherUser_Forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(
+        String.format(
+          "/%s/%s/%s/%s",
+          Constants.USERS,
+          otherUser.getUser().getUsername(),
+          Constants.APIKEYS,
+          UUID.randomUUID()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  @Order(7)
+  public void getApiKey_getAllKeys_existingKeyReturned() {
     var actual = given()
       .spec(requestSpecification)
       .when()
@@ -99,9 +176,61 @@ public class ApiKeyIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(4)
-  public void deleteApiKeyTest() {
+  @Order(8)
+  public void deleteApiKey_deleteExistingKey_success() {
     given().spec(requestSpecification).when().delete(apiKeyURL + "/" + apikey.getUid()).then().statusCode(204);
     given().spec(requestSpecification).when().get(apiKeyURL + "/" + apikey.getUid()).then().statusCode(404);
+  }
+
+  @Test
+  @Order(9)
+  public void deleteApiKey_deleteNonExistingKey_notFound() {
+    given().spec(requestSpecification).when().delete(apiKeyURL + "/" + UUID.randomUUID()).then().statusCode(404);
+  }
+
+  @Test
+  @Order(10)
+  public void deleteApiKey_deleteKeyOfOtherUser_Forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .delete(
+        String.format(
+          "/%s/%s/%s/%s",
+          Constants.USERS,
+          otherUser.getUser().getUsername(),
+          Constants.APIKEYS,
+          UUID.randomUUID()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  @Order(11)
+  public void deleteApiKey_deleteNonexistingKeyOfOtherUser_Forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .delete(
+        String.format(
+          "/%s/%s/%s/%s",
+          Constants.USERS,
+          otherUser.getUser().getUsername(),
+          Constants.APIKEYS,
+          otherUser.getApiKey().getUid()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
   }
 }

@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -107,9 +108,64 @@ public class URIReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(4)
+  public void getURIReference_referenceDoesNotExist_notFound() {
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(5)
+  public void getURIReference_idBelongsToWrongDataObject_notFound() {
+    DataObjectIO otherDataObject = createDataObject("OtherStructuredDataReferenceTestDataObject", collection.getId());
+
+    var toCreate = new URIReferenceIO();
+    toCreate.setName("URIReferenceDummy");
+    toCreate.setUri("http://MyAwesomeUrl.com");
+
+    URIReferenceIO otherRef = given()
+      .spec(requestSpecification)
+      .body(toCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          collection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.URI_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(URIReferenceIO.class);
+
+    var actual = given()
+      .spec(requestSpecification)
+      .when()
+      .get(referencesURL + "/" + otherRef.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(6)
   public void deleteURIReferenceTest() {
     given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-
+    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
     given().spec(requestSpecification).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

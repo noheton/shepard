@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -158,6 +159,77 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(4)
+  public void getStructuredDataReference_doesNotExist_notFound() {
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(5)
+  public void getStructuredDataReference_isIsCollectionId_notFound() {
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/" + collection.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+  }
+
+  @Test
+  @Order(6)
+  public void getStructuredDataReference_idBelongsToWrongDataObject_notFound() {
+    DataObjectIO otherDataObject = createDataObject("OtherStructuredDataReferenceTestDataObject", collection.getId());
+
+    StructuredDataReferenceIO toCreate = new StructuredDataReferenceIO();
+    toCreate.setName("StructuredDataReferenceDummy");
+    toCreate.setStructuredDataOids(new String[] { payload.getStructuredData().getOid() });
+    toCreate.setStructuredDataContainerId(container.getId());
+
+    StructuredDataReferenceIO otherRef = given()
+      .spec(referencesRequestSpec)
+      .body(toCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          collection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.STRUCTURED_DATA_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(StructuredDataReferenceIO.class);
+
+    var actual = given()
+      .spec(referencesRequestSpec)
+      .when()
+      .get(referencesURL + "/" + otherRef.getId())
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between dataObject and reference");
+  }
+
+  @Test
+  @Order(7)
   @SuppressWarnings("unchecked")
   public void getStructuredDataReferencePayload() throws JsonMappingException, JsonProcessingException {
     var actual = given()
@@ -185,10 +257,10 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(5)
+  @Order(8)
   public void deleteReferences() {
     given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-
+    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
     given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }
