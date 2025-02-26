@@ -20,7 +20,6 @@ import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
@@ -698,9 +697,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     tSerReferenceToCreate.setName("TimeseriesReferenceDummy");
     tSerReferenceToCreate.setStart(nanos - 1000000000L);
     tSerReferenceToCreate.setEnd(nanos + 1000000000L * numPoints);
-    tSerReferenceToCreate.setReferencedTimeseriesList(
-      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
-    );
+    tSerReferenceToCreate.setTimeseries(List.of(timeseriesWithDataPoints.getTimeseries()));
     tSerReferenceToCreate.setTimeseriesContainerId(tSerContainer.getId());
     tSerReference = given()
       .spec(tSerReferencesRequestSpec)

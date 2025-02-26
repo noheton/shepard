@@ -27,6 +27,7 @@ import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -145,20 +146,14 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    ReferencedTimeseriesNodeEntity timeseries = new ReferencedTimeseriesNodeEntity(
-      "meas",
-      "dev",
-      "loc",
-      "symName",
-      "field"
-    );
+    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
 
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setReferencedTimeseriesList(List.of(timeseries));
+        setTimeseries(List.of(timeseries));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -170,7 +165,7 @@ public class TimeseriesReferenceServiceTest {
         setName(input.getName());
         setStart(input.getStart());
         setEnd(input.getEnd());
-        setReferencedTimeseriesList(List.of(timeseries));
+        setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(timeseries)));
         setTimeseriesContainer(container);
       }
     };
@@ -212,7 +207,7 @@ public class TimeseriesReferenceServiceTest {
         timeseries.getSymbolicName(),
         timeseries.getField()
       )
-    ).thenReturn(timeseries);
+    ).thenReturn(new ReferencedTimeseriesNodeEntity(timeseries));
     when(timeseriesReferenceDAO.createOrUpdate(toCreate)).thenReturn(created);
     when(timeseriesReferenceDAO.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -229,19 +224,13 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    ReferencedTimeseriesNodeEntity timeseries = new ReferencedTimeseriesNodeEntity(
-      "meas",
-      "dev",
-      "loc",
-      "symName",
-      "field"
-    );
+    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setReferencedTimeseriesList(List.of(timeseries));
+        setTimeseries(List.of(timeseries));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -253,7 +242,7 @@ public class TimeseriesReferenceServiceTest {
         setName(input.getName());
         setStart(input.getStart());
         setEnd(input.getEnd());
-        setReferencedTimeseriesList(List.of(timeseries));
+        setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(timeseries)));
         setTimeseriesContainer(container);
       }
     };
@@ -319,9 +308,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setReferencedTimeseriesList(
-          List.of(new ReferencedTimeseriesNodeEntity("me.as", "dev", "loc", "symName", "field"))
-        );
+        setTimeseries(List.of(new Timeseries("me.as", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -345,9 +332,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setReferencedTimeseriesList(
-          List.of(new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field"))
-        );
+        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -370,9 +355,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setReferencedTimeseriesList(
-          List.of(new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field"))
-        );
+        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(containerShepardId);
       }
     };

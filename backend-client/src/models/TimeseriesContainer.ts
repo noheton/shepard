@@ -67,13 +67,7 @@ export interface TimeseriesContainer {
      * @type {ContainerType}
      * @memberof TimeseriesContainer
      */
-    type?: ContainerType;
-    /**
-     * 
-     * @type {string}
-     * @memberof TimeseriesContainer
-     */
-    readonly database: string;
+    readonly type: ContainerType;
 }
 
 
@@ -88,7 +82,7 @@ export function instanceOfTimeseriesContainer(value: object): value is Timeserie
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('database' in value) || value['database'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
     return true;
 }
 
@@ -108,19 +102,17 @@ export function TimeseriesContainerFromJSONTyped(json: any, ignoreDiscriminator:
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
-        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
-        'database': json['database'],
+        'type': ContainerTypeFromJSON(json['type']),
     };
 }
 
-export function TimeseriesContainerToJSON(value?: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'database'> | null): any {
+export function TimeseriesContainerToJSON(value?: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
-        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

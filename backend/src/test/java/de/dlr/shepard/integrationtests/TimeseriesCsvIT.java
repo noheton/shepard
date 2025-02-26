@@ -7,8 +7,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -97,15 +97,15 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
   @Test
   @Order(2)
   public void createReference() {
-    var ts1 = new ReferencedTimeseriesNodeEntity("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
-    var ts2 = new ReferencedTimeseriesNodeEntity("Different", "Just", "For", "Testing", "Purposes");
+    var ts1 = new Timeseries("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
+    var ts2 = new Timeseries("Different", "Just", "For", "Testing", "Purposes");
     var timeseries = List.of(ts1, ts2);
 
     var toCreate = new TimeseriesReferenceIO();
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(1708067683056000000L);
     toCreate.setEnd(1708068043057000000L);
-    toCreate.setReferencedTimeseriesList(timeseries);
+    toCreate.setTimeseries(timeseries);
     toCreate.setTimeseriesContainerId(container.getId());
     reference = given()
       .spec(referencesRequestSpec)

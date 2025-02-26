@@ -39,7 +39,6 @@ export * from './LabJournalEntry';
 export * from './PermissionType';
 export * from './Permissions';
 export * from './QueryType';
-export * from './ReferencedTimeseriesNodeEntity';
 export * from './RequestMethod';
 export * from './ResponseBody';
 export * from './ResultTriple';

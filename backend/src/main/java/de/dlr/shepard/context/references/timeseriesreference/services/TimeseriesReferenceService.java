@@ -12,6 +12,7 @@ import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
+import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
@@ -110,10 +111,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 
     // sanitize timeseries
     timeseriesReference
-      .getReferencedTimeseriesList()
-      .forEach(referencedTimeseries ->
-        TimeseriesValidator.assertTimeseriesPropertiesAreValid(referencedTimeseries.toTimeseries())
-      );
+      .getTimeseries()
+      .forEach(timeseries -> TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries));
 
     var toCreate = new TimeseriesReference();
     toCreate.setCreatedAt(dateHelper.getDate());
@@ -124,7 +123,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     toCreate.setEnd(timeseriesReference.getEnd());
     toCreate.setTimeseriesContainer(container);
 
-    for (var ts : timeseriesReference.getReferencedTimeseriesList()) {
+    for (var ts : timeseriesReference.getTimeseries()) {
       var found = timeseriesDAO.find(
         ts.getMeasurement(),
         ts.getDevice(),
@@ -135,7 +134,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       if (found != null) {
         toCreate.addTimeseries(found);
       } else {
-        toCreate.addTimeseries(ts);
+        toCreate.addTimeseries(new ReferencedTimeseriesNodeEntity(ts));
       }
     }
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);

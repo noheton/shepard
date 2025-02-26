@@ -615,6 +615,7 @@
         }, {
           "name" : "startTime",
           "in" : "query",
+          "description" : "Start timestamp in nanoseconds, exclusive",
           "required" : false,
           "schema" : {
             "format" : "int64",
@@ -623,6 +624,7 @@
         }, {
           "name" : "endTime",
           "in" : "query",
+          "description" : "End timestamp in nanoseconds, exclusive",
           "required" : false,
           "schema" : {
             "format" : "int64",
@@ -6083,7 +6085,7 @@
         }
       },
       "StructuredDataContainer" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "oid" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type", "oid" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6118,7 +6120,11 @@
             "type" : "string"
           },
           "type" : {
-            "$ref" : "#/components/schemas/ContainerType"
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ContainerType"
+            } ],
+            "readOnly" : true
           },
           "oid" : {
             "type" : "string",
@@ -6363,7 +6369,7 @@
         }
       },
       "SpatialDataContainer" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6398,7 +6404,11 @@
             "type" : "string"
           },
           "type" : {
-            "$ref" : "#/components/schemas/ContainerType"
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ContainerType"
+            } ],
+            "readOnly" : true
           }
         }
       },
@@ -6556,7 +6566,7 @@
         }
       },
       "TimeseriesContainer" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "database" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6591,10 +6601,10 @@
             "type" : "string"
           },
           "type" : {
-            "$ref" : "#/components/schemas/ContainerType"
-          },
-          "database" : {
             "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ContainerType"
+            } ],
             "readOnly" : true
           }
         }
@@ -7038,32 +7048,6 @@
           }
         }
       },
-      "ReferencedTimeseriesNodeEntity" : {
-        "required" : [ "measurement", "device", "location", "symbolicName", "field" ],
-        "type" : "object",
-        "properties" : {
-          "measurement" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "device" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "location" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "symbolicName" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          },
-          "field" : {
-            "pattern" : "\\S",
-            "type" : "string"
-          }
-        }
-      },
       "StructuredDataPayload" : {
         "type" : "object",
         "properties" : {
@@ -7126,7 +7110,7 @@
         }
       },
       "BasicContainer" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7161,7 +7145,11 @@
             "type" : "string"
           },
           "type" : {
-            "$ref" : "#/components/schemas/ContainerType"
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ContainerType"
+            } ],
+            "readOnly" : true
           }
         }
       },
@@ -7170,7 +7158,7 @@
         "type" : "string"
       },
       "FileContainer" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "oid" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "type", "oid" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7205,7 +7193,11 @@
             "type" : "string"
           },
           "type" : {
-            "$ref" : "#/components/schemas/ContainerType"
+            "type" : "string",
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ContainerType"
+            } ],
+            "readOnly" : true
           },
           "oid" : {
             "type" : "string",
@@ -7329,7 +7321,7 @@
         }
       },
       "TimeseriesReference" : {
-        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "start", "end", "referencedTimeseriesList", "timeseriesContainerId" ],
+        "required" : [ "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "name", "start", "end", "timeseries", "timeseriesContainerId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -7380,11 +7372,11 @@
             "format" : "int64",
             "type" : "integer"
           },
-          "referencedTimeseriesList" : {
+          "timeseries" : {
             "minItems" : 1,
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/ReferencedTimeseriesNodeEntity"
+              "$ref" : "#/components/schemas/Timeseries"
             }
           },
           "timeseriesContainerId" : {

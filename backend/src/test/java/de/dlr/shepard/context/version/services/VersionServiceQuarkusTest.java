@@ -24,7 +24,6 @@ import de.dlr.shepard.context.references.structureddata.entities.StructuredDataR
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.version.daos.VersionDAO;
@@ -38,6 +37,7 @@ import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
@@ -176,8 +176,8 @@ public class VersionServiceQuarkusTest {
     TimeseriesReferenceIO referenceIO = new TimeseriesReferenceIO();
     referenceIO.setName(name);
     referenceIO.setTimeseriesContainerId(container.getId());
-    List<ReferencedTimeseriesNodeEntity> timeseries = new ArrayList<ReferencedTimeseriesNodeEntity>();
-    referenceIO.setReferencedTimeseriesList(timeseries);
+    List<Timeseries> timeseries = new ArrayList<Timeseries>();
+    referenceIO.setTimeseries(timeseries);
     return timeseriesReferenceService.createReferenceByShepardId(
       referencingDataObject.getShepardId(),
       referenceIO,

@@ -152,7 +152,9 @@ public class TimeseriesDataPointRepository {
     """;
 
     if (queryParams.getFunction().isPresent()) {
-      queryString += " GROUP BY timestamp";
+      queryString += " GROUP BY timestamp ORDER BY timestamp";
+    } else {
+      queryString += " ORDER BY time";
     }
 
     Query query = entityManager.createNativeQuery(queryString, TimeseriesDataPoint.class);

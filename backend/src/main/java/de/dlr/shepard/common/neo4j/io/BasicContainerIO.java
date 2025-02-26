@@ -14,6 +14,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "BasicContainer")
 public class BasicContainerIO extends BasicEntityIO {
 
+  @Schema(readOnly = true, required = true)
   private ContainerType type;
 
   public BasicContainerIO(BasicContainer container) {

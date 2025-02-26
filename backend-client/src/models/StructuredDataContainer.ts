@@ -67,7 +67,7 @@ export interface StructuredDataContainer {
      * @type {ContainerType}
      * @memberof StructuredDataContainer
      */
-    type?: ContainerType;
+    readonly type: ContainerType;
     /**
      * 
      * @type {string}
@@ -88,6 +88,7 @@ export function instanceOfStructuredDataContainer(value: object): value is Struc
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
     if (!('oid' in value) || value['oid'] === undefined) return false;
     return true;
 }
@@ -108,19 +109,18 @@ export function StructuredDataContainerFromJSONTyped(json: any, ignoreDiscrimina
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
-        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
+        'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
     };
 }
 
-export function StructuredDataContainerToJSON(value?: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'oid'> | null): any {
+export function StructuredDataContainerToJSON(value?: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
-        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

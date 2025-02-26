@@ -13,12 +13,12 @@
  */
 
 import { mapValues } from '../runtime';
-import type { ReferencedTimeseriesNodeEntity } from './ReferencedTimeseriesNodeEntity';
+import type { Timeseries } from './Timeseries';
 import {
-    ReferencedTimeseriesNodeEntityFromJSON,
-    ReferencedTimeseriesNodeEntityFromJSONTyped,
-    ReferencedTimeseriesNodeEntityToJSON,
-} from './ReferencedTimeseriesNodeEntity';
+    TimeseriesFromJSON,
+    TimeseriesFromJSONTyped,
+    TimeseriesToJSON,
+} from './Timeseries';
 
 /**
  * 
@@ -88,10 +88,10 @@ export interface TimeseriesReference {
     end: number;
     /**
      * 
-     * @type {Array<ReferencedTimeseriesNodeEntity>}
+     * @type {Array<Timeseries>}
      * @memberof TimeseriesReference
      */
-    referencedTimeseriesList: Array<ReferencedTimeseriesNodeEntity>;
+    timeseries: Array<Timeseries>;
     /**
      * 
      * @type {number}
@@ -112,7 +112,7 @@ export function instanceOfTimeseriesReference(value: object): value is Timeserie
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('start' in value) || value['start'] === undefined) return false;
     if (!('end' in value) || value['end'] === undefined) return false;
-    if (!('referencedTimeseriesList' in value) || value['referencedTimeseriesList'] === undefined) return false;
+    if (!('timeseries' in value) || value['timeseries'] === undefined) return false;
     if (!('timeseriesContainerId' in value) || value['timeseriesContainerId'] === undefined) return false;
     return true;
 }
@@ -137,7 +137,7 @@ export function TimeseriesReferenceFromJSONTyped(json: any, ignoreDiscriminator:
         'type': json['type'] == null ? undefined : json['type'],
         'start': json['start'],
         'end': json['end'],
-        'referencedTimeseriesList': ((json['referencedTimeseriesList'] as Array<any>).map(ReferencedTimeseriesNodeEntityFromJSON)),
+        'timeseries': ((json['timeseries'] as Array<any>).map(TimeseriesFromJSON)),
         'timeseriesContainerId': json['timeseriesContainerId'],
     };
 }
@@ -151,7 +151,7 @@ export function TimeseriesReferenceToJSON(value?: Omit<TimeseriesReference, 'id'
         'name': value['name'],
         'start': value['start'],
         'end': value['end'],
-        'referencedTimeseriesList': ((value['referencedTimeseriesList'] as Array<any>).map(ReferencedTimeseriesNodeEntityToJSON)),
+        'timeseries': ((value['timeseries'] as Array<any>).map(TimeseriesToJSON)),
         'timeseriesContainerId': value['timeseriesContainerId'],
     };
 }

@@ -67,7 +67,7 @@ export interface SpatialDataContainer {
      * @type {ContainerType}
      * @memberof SpatialDataContainer
      */
-    type?: ContainerType;
+    readonly type: ContainerType;
 }
 
 
@@ -82,6 +82,7 @@ export function instanceOfSpatialDataContainer(value: object): value is SpatialD
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
     return true;
 }
 
@@ -101,18 +102,17 @@ export function SpatialDataContainerFromJSONTyped(json: any, ignoreDiscriminator
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
-        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
+        'type': ContainerTypeFromJSON(json['type']),
     };
 }
 
-export function SpatialDataContainerToJSON(value?: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
+export function SpatialDataContainerToJSON(value?: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
-        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

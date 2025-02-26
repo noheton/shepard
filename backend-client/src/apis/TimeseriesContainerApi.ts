@@ -49,7 +49,7 @@ export interface CreateTimeseriesRequest {
 }
 
 export interface CreateTimeseriesContainerRequest {
-    timeseriesContainer: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'database'>;
+    timeseriesContainer: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'>;
 }
 
 export interface DeleteTimeseriesContainerRequest {

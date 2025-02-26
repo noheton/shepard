@@ -43,7 +43,7 @@ export interface CreateStructuredDataRequest {
 }
 
 export interface CreateStructuredDataContainerRequest {
-    structuredDataContainer: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'oid'>;
+    structuredDataContainer: Omit<StructuredDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'>;
 }
 
 export interface DeleteStructuredDataRequest {

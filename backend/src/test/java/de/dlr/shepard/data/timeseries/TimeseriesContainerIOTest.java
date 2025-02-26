@@ -34,7 +34,6 @@ public class TimeseriesContainerIOTest {
     var converted = new TimeseriesContainerIO(obj);
     assertEquals(date, converted.getCreatedAt());
     assertEquals("bob", converted.getCreatedBy());
-    assertEquals("Database", converted.getDatabase());
     assertEquals(1L, converted.getId());
     assertEquals("name", converted.getName());
     assertEquals(update, converted.getUpdatedAt());

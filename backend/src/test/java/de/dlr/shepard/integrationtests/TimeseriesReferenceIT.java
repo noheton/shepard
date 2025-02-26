@@ -8,7 +8,6 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -111,9 +110,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(nanos - 1000000000L);
     toCreate.setEnd(nanos + 1000000000L * numPoints);
-    toCreate.setReferencedTimeseriesList(
-      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
-    );
+    toCreate.setTimeseries(List.of(timeseriesWithDataPoints.getTimeseries()));
     toCreate.setTimeseriesContainerId(container.getId());
 
     var actual = given()
@@ -134,9 +131,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getStart()).isEqualTo(nanos - 1000000000L);
     assertThat(actual.getEnd()).isEqualTo(nanos + 1000000000L * numPoints);
     assertThat(actual.getName()).isEqualTo("TimeseriesReferenceDummy");
-    assertThat(actual.getReferencedTimeseriesList()).isEqualTo(
-      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
-    );
+    assertThat(actual.getTimeseries()).isEqualTo(List.of(timeseriesWithDataPoints.getTimeseries()));
     assertThat(actual.getType()).isEqualTo("TimeseriesReference");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -197,9 +192,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     otherReferenceToCreate.setName("TimeseriesReferenceDummy");
     otherReferenceToCreate.setStart(nanos - 1000000000L);
     otherReferenceToCreate.setEnd(nanos + 1000000000L * numPoints);
-    otherReferenceToCreate.setReferencedTimeseriesList(
-      List.of(new ReferencedTimeseriesNodeEntity(timeseriesWithDataPoints.getTimeseries()))
-    );
+    otherReferenceToCreate.setTimeseries(List.of(timeseriesWithDataPoints.getTimeseries()));
     otherReferenceToCreate.setTimeseriesContainerId(container.getId());
 
     TimeseriesReferenceIO otherReference = given()

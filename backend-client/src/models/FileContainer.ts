@@ -67,7 +67,7 @@ export interface FileContainer {
      * @type {ContainerType}
      * @memberof FileContainer
      */
-    type?: ContainerType;
+    readonly type: ContainerType;
     /**
      * 
      * @type {string}
@@ -88,6 +88,7 @@ export function instanceOfFileContainer(value: object): value is FileContainer {
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
     if (!('updatedBy' in value) || value['updatedBy'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
     if (!('oid' in value) || value['oid'] === undefined) return false;
     return true;
 }
@@ -108,19 +109,18 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
         'updatedBy': json['updatedBy'],
         'name': json['name'],
-        'type': json['type'] == null ? undefined : ContainerTypeFromJSON(json['type']),
+        'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
     };
 }
 
-export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'oid'> | null): any {
+export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
-        'type': ContainerTypeToJSON(value['type']),
     };
 }
 

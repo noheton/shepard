@@ -29,7 +29,7 @@ import {
 } from '../models/index';
 
 export interface CreateSpatialDataContainerRequest {
-    spatialDataContainer: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
+    spatialDataContainer: Omit<SpatialDataContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'>;
 }
 
 export interface CreateSpatialDataPointsRequest {

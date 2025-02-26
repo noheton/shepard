@@ -40,7 +40,7 @@ export interface CreateFileRequest {
 }
 
 export interface CreateFileContainerRequest {
-    fileContainer: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'oid'>;
+    fileContainer: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'>;
 }
 
 export interface DeleteFileRequest {
