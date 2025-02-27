@@ -36,7 +36,8 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     if (versionUID != null) versionPart = CypherQueryHelper.getVersionPart("v", versionUID);
     else versionPart = CypherQueryHelper.getVersionHeadPart("v");
     String query = String.format(
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
+      getEntityType().getSimpleName(),
       CypherQueryHelper.getShepardIdPart("o", shepardId),
       versionPart
     );
@@ -53,8 +54,10 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
   private List<T> findByShepardIds(List<Long> shepardIds, boolean light) {
     Map<String, Object> paramsMap = new HashMap<>();
     var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
+
     String query = String.format(
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
+      getEntityType().getSimpleName(),
       CypherQueryHelper.getShepardIdsPart("o", shepardIds),
       CypherQueryHelper.getVersionHeadPart("v")
     );
