@@ -31,7 +31,7 @@ public class BasicApiIT extends BaseTestCaseIT {
   }
 
   @Test
-  public void getIndexRoute_userLoggedIn_success() {
+  public void getIndexRoute_notFound() {
     given().spec(requestSpecification).when().get("/").then().statusCode(404);
     given().spec(requestSpecificationWithUser).when().get("/").then().statusCode(404);
   }
