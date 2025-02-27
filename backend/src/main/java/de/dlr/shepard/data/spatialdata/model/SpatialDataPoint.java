@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.spatialdata.model;
 
+import de.dlr.shepard.data.spatialdata.repositories.SpatialDataPointRepository;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -18,14 +19,14 @@ import org.locationtech.jts.geom.Geometry;
 @Setter
 @EqualsAndHashCode(exclude = "id")
 @Entity
-@Table(name = "spatial_data_points")
+@Table(name = SpatialDataPointRepository.SPATIAL_TABLE_NAME)
 public class SpatialDataPoint {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "container_id")
+  @Column(name = SpatialDataPointRepository.SPATIAL_COLUMN_CONTAINER_ID)
   private Long containerId;
 
   /** timestamp in nanoseconds */

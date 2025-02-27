@@ -15,6 +15,14 @@ import org.locationtech.jts.geom.Coordinate;
 public class SpatialDataPointRepository {
 
   private final int INSERT_BATCH_SIZE = 20000;
+  public static final String SPATIAL_TABLE_NAME = "spatial_data_points";
+  public static final String SPATIAL_COLUMN_CONTAINER_ID = "container_id";
+  public static final String SPATIAL_COLUMN_TIME = "time";
+  public static final String SPATIAL_COLUMN_POSITION = "position";
+  public static final String SPATIAL_COLUMN_METADATA = "metadata";
+  public static final String SPATIAL_COLUMN_MEASUREMENTS = "measurements";
+
+  private static final String[] ALL_COLUMNS_STRING = new String[] { "*" };
 
   @PersistenceUnit("spatial")
   EntityManager entityManager;
@@ -22,7 +30,16 @@ public class SpatialDataPointRepository {
   @Timed(value = "shepard.spatial-data.insert")
   public int insert(long containerId, SpatialDataPoint data) {
     var sql = new NativeInsertStatementBuilder()
-      .insert("INSERT INTO spatial_data_points (container_id, time, position, metadata, measurements)")
+      .insert(
+        SPATIAL_TABLE_NAME,
+        new String[] {
+          SPATIAL_COLUMN_CONTAINER_ID,
+          SPATIAL_COLUMN_TIME,
+          SPATIAL_COLUMN_POSITION,
+          SPATIAL_COLUMN_METADATA,
+          SPATIAL_COLUMN_MEASUREMENTS,
+        }
+      )
       .addValues(
         String.format(
           Locale.US,
@@ -48,7 +65,16 @@ public class SpatialDataPointRepository {
   public int insertMultiple(long containerId, SpatialDataPoint[] data) {
     var allResultCount = 0;
     var sql = new NativeInsertStatementBuilder()
-      .insert("INSERT INTO spatial_data_points (container_id, time, position, metadata, measurements)");
+      .insert(
+        SPATIAL_TABLE_NAME,
+        new String[] {
+          SPATIAL_COLUMN_CONTAINER_ID,
+          SPATIAL_COLUMN_TIME,
+          SPATIAL_COLUMN_POSITION,
+          SPATIAL_COLUMN_METADATA,
+          SPATIAL_COLUMN_MEASUREMENTS,
+        }
+      );
 
     for (int i = 0; i < data.length; i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, data.length);
@@ -81,7 +107,9 @@ public class SpatialDataPointRepository {
   @Timed(value = "shepard.spatial-data.delete-by-container")
   public int deleteByContainerId(long containerId) {
     return entityManager
-      .createNativeQuery("DELETE FROM spatial_data_points WHERE container_id=:containerId;")
+      .createNativeQuery(
+        "DELETE FROM %s WHERE %s=:containerId;".formatted(SPATIAL_TABLE_NAME, SPATIAL_COLUMN_CONTAINER_ID)
+      )
       .setParameter("containerId", containerId)
       .executeUpdate();
   }
@@ -90,8 +118,8 @@ public class SpatialDataPointRepository {
   @SuppressWarnings("unchecked")
   public List<SpatialDataPoint> getByContainerId(long containerId) {
     var query = new NativeQueryStringBuilder()
-      .select("SELECT * FROM spatial_data_points")
-      .addWhereCondition("container_id", containerId)
+      .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
+      .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .build();
 
     return entityManager.createNativeQuery(query, SpatialDataPoint.class).getResultList();
@@ -117,10 +145,10 @@ public class SpatialDataPointRepository {
     Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("SELECT * FROM spatial_data_points")
-      .addWhereCondition("container_id", containerId)
-      .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonContainsCondition("metadata", metadataFilter)
+      .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
+      .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
+      .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
+      .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addAABBGeometryCondition()
       .addSkipClause(skip)
       .addLimitClause(limit)
@@ -150,10 +178,10 @@ public class SpatialDataPointRepository {
     Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("SELECT * FROM spatial_data_points")
-      .addWhereCondition("container_id", containerId)
-      .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonContainsCondition("metadata", metadataFilter)
+      .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
+      .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
+      .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
+      .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addBSGeometryCondition()
       .addSkipClause(skip)
       .addLimitClause(limit)
@@ -186,10 +214,10 @@ public class SpatialDataPointRepository {
     Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
-      .select("SELECT * FROM spatial_data_points")
-      .addWhereCondition("container_id", containerId)
-      .addTimeCondition("time", timestampStart, timestampEnd)
-      .addJsonContainsCondition("metadata", metadataFilter)
+      .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
+      .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
+      .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
+      .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addSkipClause(skip)
       .addKNNGeometryCondition()
       .build();

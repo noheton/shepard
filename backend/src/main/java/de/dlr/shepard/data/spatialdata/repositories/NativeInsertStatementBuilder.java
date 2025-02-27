@@ -5,8 +5,8 @@ public class NativeInsertStatementBuilder {
   private StringBuilder sb = new StringBuilder();
   private boolean valuesAlreadyAdded = false;
 
-  public NativeInsertStatementBuilder insert(String insertStatement) {
-    sb.append(insertStatement);
+  public NativeInsertStatementBuilder insert(String tableName, String[] columns) {
+    sb.append("INSERT INTO %s (%s)".formatted(tableName, String.join(", ", columns)));
     return this;
   }
 

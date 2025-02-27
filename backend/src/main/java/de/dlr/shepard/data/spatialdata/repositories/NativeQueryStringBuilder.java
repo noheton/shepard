@@ -8,8 +8,8 @@ public class NativeQueryStringBuilder {
   private StringBuilder query = new StringBuilder();
   private boolean whereClauseAdded = false;
 
-  public NativeQueryStringBuilder select(String selectStatement) {
-    query.append(selectStatement);
+  public NativeQueryStringBuilder select(String tableName, String[] columns) {
+    query.append("SELECT %s FROM %s".formatted(String.join(", ", columns), tableName));
     return this;
   }
 
