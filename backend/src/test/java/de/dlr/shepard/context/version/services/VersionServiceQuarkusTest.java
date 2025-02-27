@@ -244,7 +244,7 @@ public class VersionServiceQuarkusTest {
     DataObject dataObject3 = createDataObject("DataObject3", collection1, null, predecessorIds);
     Version version1 = createVersion("version1", collection1);
     Version HEADVersion = versionService.getVersion(collection1.getVersion().getUid());
-    Collection collection1Version1 = collectionService.getCollectionByShepardId(
+    Collection collection1Version1 = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       collection1.getShepardId(),
       version1.getUid()
     );
@@ -464,12 +464,12 @@ public class VersionServiceQuarkusTest {
       referencedCollection
     );
     Version referencedVersion1 = createVersion("referencedCollectionVersion", referencedCollection);
-    Collection referencedCollectionVersion1 = collectionService.getCollectionByShepardId(
+    Collection referencedCollectionVersion1 = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       referencedCollection.getShepardId(),
       referencedVersion1.getUid()
     );
     assertEquals(0, referencedCollectionVersion1.getIncoming().size());
-    Collection referencedCollectionReloaded = collectionService.getCollectionByShepardId(
+    Collection referencedCollectionReloaded = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       referencedCollection.getShepardId()
     );
     assertEquals(collectionReference.getId(), referencedCollectionReloaded.getIncoming().get(0).getId());
@@ -493,7 +493,7 @@ public class VersionServiceQuarkusTest {
       referencedCollection
     );
     Version referencingVersion1 = createVersion("referencingCollectionVersion", referencingCollection);
-    Collection referencedCollectionReloaded = collectionService.getCollectionByShepardId(
+    Collection referencedCollectionReloaded = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       referencedCollection.getShepardId()
     );
     assertEquals(2, referencedCollectionReloaded.getIncoming().size());

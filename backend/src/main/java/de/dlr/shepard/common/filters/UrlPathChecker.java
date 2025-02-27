@@ -145,7 +145,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.COLLECTIONS)) {
       long id = Long.parseLong(pathElems.get(Constants.COLLECTIONS));
-      collection = collectionService.getCollectionByShepardId(id, null, true);
+      collection = collectionService.getCollection(id);
       String error = checkCollection(collection);
       if (error != null) {
         return builder.append(error).toString();
@@ -310,7 +310,7 @@ public class UrlPathChecker {
       if (pathElems.containsKey(Constants.COLLECTIONS)) {
         // We need the collection including neighbors to get the annotations
         long collectionId = Long.parseLong(pathElems.get(Constants.COLLECTIONS));
-        collection = collectionService.getCollectionByShepardId(collectionId, null, false);
+        collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
       }
       String error = checkSemanticAnnotation(annotation, collection, dataObject, reference);
       if (error != null) {

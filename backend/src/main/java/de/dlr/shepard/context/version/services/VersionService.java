@@ -73,7 +73,7 @@ public class VersionService {
     Version HEADVersion = versionDAO.findHEADVersion(collectionId);
     var user = userDAO.find(username);
     var date = dateHelper.getDate();
-    Collection collection = collectionService.getCollectionByShepardId(collectionId, null);
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId, null);
     Collection collectionCopy = copyCollectionForVersioning(collection, date, user);
 
     Version newVersion = new Version();

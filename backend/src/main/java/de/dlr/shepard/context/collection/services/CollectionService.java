@@ -88,22 +88,46 @@ public class CollectionService {
     return collections;
   }
 
-  public Collection getCollectionByShepardId(long shepardId) {
-    return getCollectionByShepardId(shepardId, null);
+  /**
+   * Fetches a collection including permissions and attributes but without contained data objects and incoming references.
+   * @param shepardId shepardId of the desired collection
+   * @return Collection without data objects or incoming references
+   */
+  public Collection getCollection(long shepardId) {
+    return getCollectionByShepardId(shepardId, null, true);
   }
 
-  public Collection getCollectionByShepardId(long shepardId, UUID versionUID) {
+  /**
+   * Fetches a collection including permissions, attributes, contained data objects and incoming references.
+   * @param shepardId shepardId of the desired collection
+   * @return Collection
+   */
+  public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId) {
+    return getCollectionByShepardId(shepardId, null, false);
+  }
+
+  /**
+   * Fetches a collection including permissions, attributes, contained data objects and incoming references.
+   * @param shepardId shepardId of the desired collection
+   * @param versionUID ID of the version to retrieve
+   * @return Collection
+   */
+  public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId, UUID versionUID) {
     return getCollectionByShepardId(shepardId, versionUID, false);
   }
 
-  public Collection getCollectionByShepardId(long shepardId, UUID versionUID, boolean light) {
+  private Collection getCollectionByShepardId(
+    long shepardId,
+    UUID versionUID,
+    boolean includeDataObjectsAndIncomingReferences
+  ) {
     Collection ret;
     String errorMsg;
     if (versionUID == null) {
-      ret = collectionDAO.findByShepardId(shepardId, light);
+      ret = collectionDAO.findByShepardId(shepardId, includeDataObjectsAndIncomingReferences);
       errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
     } else {
-      ret = collectionDAO.findByShepardId(shepardId, versionUID, light);
+      ret = collectionDAO.findByShepardId(shepardId, versionUID, includeDataObjectsAndIncomingReferences);
       errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {

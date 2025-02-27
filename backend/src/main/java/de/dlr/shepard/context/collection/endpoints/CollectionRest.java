@@ -122,7 +122,10 @@ public class CollectionRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    Collection collection = collectionService.getCollectionByShepardId(collectionId, versionUID);
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
+      collectionId,
+      versionUID
+    );
     return Response.ok(new CollectionIO(collection)).build();
   }
 

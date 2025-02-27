@@ -95,7 +95,9 @@ public class VersionServiceTest extends BaseTestCase {
     Date date = new Date(10L);
     when(versionDAO.findHEADVersion(collectionId)).thenReturn(HEADVersion);
     when(userDAO.find(username)).thenReturn(user);
-    when(collectionService.getCollectionByShepardId(collectionId, null)).thenReturn(collection);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId, null)).thenReturn(
+      collection
+    );
     when(dateHelper.getDate()).thenReturn(date);
     when(versionDAO.createOrUpdate(any())).thenReturn(predecessorVersion);
     service.createVersion(collectionId, versionIO, username);

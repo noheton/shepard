@@ -209,7 +209,7 @@ public class CollectionServiceTest {
     Collection ret = new Collection(1L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
-    var result = service.getCollectionByShepardId(shepardId);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     assertEquals(ret, result);
   }
 
@@ -217,7 +217,7 @@ public class CollectionServiceTest {
   public void getCollectionByShepardIdNoVersionNotFound() {
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    var result = service.getCollectionByShepardId(shepardId, null);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
     assertNull(result);
   }
 
@@ -227,7 +227,7 @@ public class CollectionServiceTest {
     ret.setDeleted(true);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId)).thenReturn(ret);
-    var result = service.getCollectionByShepardId(shepardId, null);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
     assertNull(result);
   }
 
@@ -237,7 +237,7 @@ public class CollectionServiceTest {
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID, false)).thenReturn(ret);
-    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     assertEquals(ret, result);
   }
 
@@ -246,7 +246,7 @@ public class CollectionServiceTest {
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(null);
-    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     assertNull(result);
   }
 
@@ -257,7 +257,7 @@ public class CollectionServiceTest {
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
-    var result = service.getCollectionByShepardId(shepardId, versionUID);
+    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     assertNull(result);
   }
 }

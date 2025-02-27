@@ -57,7 +57,7 @@ public class ExportService {
   }
 
   public InputStream exportCollectionByShepardId(long collectionId, String username) throws IOException {
-    var collection = collectionService.getCollectionByShepardId(collectionId);
+    var collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
     var builder = new ExportBuilder(collection);
     for (var dataObject : collection.getDataObjects()) {

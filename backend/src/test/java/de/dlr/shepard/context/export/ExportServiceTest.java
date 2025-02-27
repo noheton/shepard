@@ -92,7 +92,9 @@ public class ExportServiceTest {
     dataObject.setCollection(collection);
 
     when(userService.getUser(user.getUsername())).thenReturn(user);
-    when(collectionService.getCollectionByShepardId(collection.getShepardId())).thenReturn(collection);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(collection.getShepardId())).thenReturn(
+      collection
+    );
     when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
   }
 
