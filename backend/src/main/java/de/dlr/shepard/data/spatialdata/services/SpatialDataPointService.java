@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.spatialdata.services;
 
-import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
+import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.GeometryBuilder;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AxisAlignedBoundingBox;
@@ -41,7 +41,7 @@ public class SpatialDataPointService {
     spatialDataPointRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
-  public List<SpatialDataPointIO> getSpatialDataPointIOs(long containerId, SpatialDataParamsIO spatialDataParamsIO) {
+  public List<SpatialDataPointIO> getSpatialDataPointIOs(long containerId, SpatialDataQueryParams spatialDataParamsIO) {
     switch (spatialDataParamsIO.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX -> {
         return getByAABoundingBox(
@@ -73,7 +73,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByAABoundingBox(
     long containerId,
     AxisAlignedBoundingBox boundingBox,
-    SpatialDataParamsIO spatialDataParamsIO
+    SpatialDataQueryParams spatialDataParamsIO
   ) {
     final Coordinate bottomLeft = new Coordinate(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ());
     final Coordinate topRight = new Coordinate(boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
@@ -85,6 +85,7 @@ public class SpatialDataPointService {
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getMeasurementsFilters(),
         spatialDataParamsIO.getLimit(),
         spatialDataParamsIO.getSkip()
       )
@@ -94,7 +95,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByBoundingSphere(
     long containerId,
     BoundingSphere boundingSphere,
-    SpatialDataParamsIO spatialDataParamsIO
+    SpatialDataQueryParams spatialDataParamsIO
   ) {
     final Coordinate sphereCenter = new Coordinate(
       boundingSphere.getCenterX(),
@@ -110,6 +111,7 @@ public class SpatialDataPointService {
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getMeasurementsFilters(),
         spatialDataParamsIO.getLimit(),
         spatialDataParamsIO.getSkip()
       )
@@ -119,7 +121,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByKNN(
     long containerId,
     KNearestNeighbor knn,
-    SpatialDataParamsIO spatialDataParamsIO
+    SpatialDataQueryParams spatialDataParamsIO
   ) {
     final Coordinate kCoordinate = new Coordinate(knn.getX(), knn.getY(), knn.getZ());
     return mapSpatialDataPoints(
@@ -130,6 +132,7 @@ public class SpatialDataPointService {
         spatialDataParamsIO.getStartTime(),
         spatialDataParamsIO.getEndTime(),
         spatialDataParamsIO.getMetadata(),
+        spatialDataParamsIO.getMeasurementsFilters(),
         spatialDataParamsIO.getSkip()
       )
     );

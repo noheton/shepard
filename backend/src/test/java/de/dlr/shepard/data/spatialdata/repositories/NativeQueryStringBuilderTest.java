@@ -2,7 +2,11 @@ package de.dlr.shepard.data.spatialdata.repositories;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.dlr.shepard.data.spatialdata.io.FilterCondition;
+import de.dlr.shepard.data.spatialdata.io.Operator;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class NativeQueryStringBuilderTest {
@@ -126,7 +130,7 @@ public class NativeQueryStringBuilderTest {
     var current = new NativeQueryStringBuilder()
       .select("table_name", ALL_COLUMNS_STRING)
       .addWhereCondition("id", 1)
-      .addJsonContainsCondition("meta", null)
+      .addJsonContainsCondition("meta", Collections.emptyMap())
       .addTimeCondition("time", null, null)
       .build();
 
@@ -192,6 +196,24 @@ public class NativeQueryStringBuilderTest {
   }
 
   @Test
+  public void build_addJsonFilterConditions_success() {
+    var current = new NativeQueryStringBuilder()
+      .select("table_name", ALL_COLUMNS_STRING)
+      .addJsonFilterConditions(
+        "measurements",
+        List.of(
+          new FilterCondition("key", Operator.EQUALS, 5),
+          new FilterCondition("key1,subkey1", Operator.LESS_THAN, 20),
+          new FilterCondition("key2,subkey2,subsubkey2", Operator.GREATER_THAN, 10)
+        )
+      )
+      .build();
+
+    var expected =
+      "SELECT * FROM table_name WHERE 1 = 1 AND jsonb_typeof(measurements #> '{key}') = 'number' AND (measurements #>> '{key}')::NUMERIC = 5.0 AND jsonb_typeof(measurements #> '{key1,subkey1}') = 'number' AND (measurements #>> '{key1,subkey1}')::NUMERIC < 20.0 AND jsonb_typeof(measurements #> '{key2,subkey2,subsubkey2}') = 'number' AND (measurements #>> '{key2,subkey2,subsubkey2}')::NUMERIC > 10.0;";
+    assertEquals(expected, current);
+  }
+
   public void build_passEmptySkip_success() {
     var current = new NativeQueryStringBuilder().select("table_name", ALL_COLUMNS_STRING).addSkipClause(null).build();
 

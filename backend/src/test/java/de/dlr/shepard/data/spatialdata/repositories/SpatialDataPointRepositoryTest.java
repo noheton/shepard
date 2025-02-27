@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.dlr.shepard.data.spatialdata.io.FilterCondition;
+import de.dlr.shepard.data.spatialdata.io.Operator;
 import de.dlr.shepard.data.spatialdata.model.GeometryBuilder;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import io.quarkus.logging.Log;
@@ -15,7 +17,9 @@ import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -137,7 +141,8 @@ public class SpatialDataPointRepositoryTest {
       new Coordinate(9999, 9999, 9999),
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       null
     );
@@ -187,7 +192,8 @@ public class SpatialDataPointRepositoryTest {
       new Coordinate(700, 700, 700),
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       null
     );
@@ -242,7 +248,8 @@ public class SpatialDataPointRepositoryTest {
       new Coordinate(900, 900, 900),
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       3,
       null
     );
@@ -295,7 +302,8 @@ public class SpatialDataPointRepositoryTest {
       new Coordinate(800, 800, 800),
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       2
     );
@@ -313,7 +321,8 @@ public class SpatialDataPointRepositoryTest {
       new Coordinate(-10, -10, -10),
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       null
     );
@@ -325,7 +334,17 @@ public class SpatialDataPointRepositoryTest {
   /* Bounding Sphere */
   @Test
   public void getByBoundingSphere_returnsAllData_success() {
-    var data = repository.getByBoundingSphere(containerId, new Coordinate(0, 0, 0), 9999, null, null, null, null, null);
+    var data = repository.getByBoundingSphere(
+      containerId,
+      new Coordinate(0, 0, 0),
+      9999,
+      null,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null,
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -378,7 +397,8 @@ public class SpatialDataPointRepositoryTest {
       100,
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       null
     );
@@ -439,7 +459,8 @@ public class SpatialDataPointRepositoryTest {
       100,
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       3,
       null
     );
@@ -499,7 +520,17 @@ public class SpatialDataPointRepositoryTest {
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5, dataPoint6 }
     );
 
-    var data = repository.getByBoundingSphere(containerId, new Coordinate(4000, 0, 0), 100, null, null, null, null, 2);
+    var data = repository.getByBoundingSphere(
+      containerId,
+      new Coordinate(4000, 0, 0),
+      100,
+      null,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null,
+      2
+    );
 
     assertNotNull(data);
     assertEquals(6, result);
@@ -514,7 +545,8 @@ public class SpatialDataPointRepositoryTest {
       1,
       null,
       null,
-      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
       null,
       null
     );
@@ -526,7 +558,16 @@ public class SpatialDataPointRepositoryTest {
   /* KNN Search */
   @Test
   public void getByKNN_returnsAllData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 9999, null, null, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      9999,
+      null,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() > 100);
@@ -534,7 +575,16 @@ public class SpatialDataPointRepositoryTest {
 
   @Test
   public void getByKNN_returnsSomeData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(4, 4, 4), 3, null, null, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(4, 4, 4),
+      3,
+      null,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(3, data.size());
@@ -553,7 +603,16 @@ public class SpatialDataPointRepositoryTest {
 
   @Test
   public void getByKNN_returnsNoData_success() {
-    var data = repository.getByKNN(containerId, new Coordinate(-1, -1, -1), 0, null, null, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(-1, -1, -1),
+      0,
+      null,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(0, data.size());
@@ -619,6 +678,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       metadataFilter,
+      Collections.emptyList(),
       null,
       null
     );
@@ -636,7 +696,16 @@ public class SpatialDataPointRepositoryTest {
     var dataPoint = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), metadataFilter, null);
     repository.insert(containerId, dataPoint);
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      null,
+      metadataFilter,
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
@@ -665,7 +734,16 @@ public class SpatialDataPointRepositoryTest {
     metadataFilter.put("layer", 7);
     metadataFilter.put("sensors", Map.of("room", "living room", "humidity", 0.6));
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      null,
+      metadataFilter,
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
@@ -694,7 +772,16 @@ public class SpatialDataPointRepositoryTest {
     metadataFilter.put("layer", 7);
     metadataFilter.put("sensors", Map.of("room", "dining room", "humidity", 0.6));
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, null, metadataFilter, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      null,
+      metadataFilter,
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() == 0);
@@ -708,7 +795,16 @@ public class SpatialDataPointRepositoryTest {
     var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
     repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0l, 2l, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      0l,
+      2l,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(1, data.size());
@@ -721,7 +817,16 @@ public class SpatialDataPointRepositoryTest {
     var containerId = generateManagedContainerId();
     repository.insert(containerId, new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null));
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 2l, 4l, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      2l,
+      4l,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(0, data.size());
@@ -735,7 +840,16 @@ public class SpatialDataPointRepositoryTest {
     var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
     repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0l, null, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      0l,
+      null,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(1, data.size());
@@ -750,7 +864,16 @@ public class SpatialDataPointRepositoryTest {
     var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
     repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
 
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, null, 2l, null, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      2l,
+      Collections.emptyMap(),
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertEquals(1, data.size());
@@ -771,7 +894,16 @@ public class SpatialDataPointRepositoryTest {
 
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 7);
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 0L, 2L, metadataFilter, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      0L,
+      2L,
+      metadataFilter,
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
@@ -792,7 +924,16 @@ public class SpatialDataPointRepositoryTest {
 
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 0);
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 1, 10L, 20L, metadataFilter, null);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      10L,
+      20L,
+      metadataFilter,
+      Collections.emptyList(),
+      null
+    );
 
     assertNotNull(data);
     assertTrue(data.size() == 0);
@@ -800,6 +941,76 @@ public class SpatialDataPointRepositoryTest {
 
   @Test
   @Transactional
+  public void getByKNN_filterByMeasurements_returnsOneRecord() {
+    var containerId = generateManagedContainerId();
+    var measurments = new HashMap<String, Object>();
+    var imageData = new HashMap<String, Object>();
+    imageData.put("format", "png");
+    imageData.put("size", 5000);
+    measurments.put("temperature", 7);
+    measurments.put("pressure", 10);
+    measurments.put("image", imageData);
+
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, measurments);
+    imageData.put("size", 3000);
+    measurments.put("image", imageData);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(2, 2, 2), null, measurments);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var measurementsFilter = List.of(
+      new FilterCondition("image,size", Operator.LESS_THAN, 5000),
+      new FilterCondition("image,size", Operator.GREATER_THAN, 2000),
+      new FilterCondition("temperature", Operator.EQUALS, 7)
+    );
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      null,
+      Collections.emptyMap(),
+      measurementsFilter,
+      null
+    );
+
+    assertNotNull(data);
+    assertTrue(data.size() == 1);
+  }
+
+  @Test
+  @Transactional
+  public void getByKNN_filterByMeasurements_returnsNoData() {
+    var containerId = generateManagedContainerId();
+    var measurments = new HashMap<String, Object>();
+    var imageData = new HashMap<String, Object>();
+    imageData.put("format", "png");
+    imageData.put("size", 5000);
+    measurments.put("temperature", 7);
+    measurments.put("pressure", 10);
+    measurments.put("image", imageData);
+
+    var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, measurments);
+    imageData.put("size", 3000);
+    measurments.put("image", imageData);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(2, 2, 2), null, measurments);
+    repository.insertMultiple(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
+
+    var measurementsFilter = List.of(new FilterCondition("temperature", Operator.EQUALS, 10));
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      1,
+      null,
+      null,
+      Collections.emptyMap(),
+      measurementsFilter,
+      null
+    );
+
+    assertNotNull(data);
+    assertTrue(data.isEmpty());
+  }
+
   public void getByKNN_returnsSomeData_withSkip() {
     var containerId = generateManagedContainerId();
     var metadata = new HashMap<String, Object>();
@@ -814,7 +1025,16 @@ public class SpatialDataPointRepositoryTest {
 
     var metadataFilter = new HashMap<String, Object>();
     metadataFilter.put("layer", 16);
-    var data = repository.getByKNN(containerId, new Coordinate(0, 0, 0), 4, 0L, 20L, metadataFilter, 2);
+    var data = repository.getByKNN(
+      containerId,
+      new Coordinate(0, 0, 0),
+      4,
+      0L,
+      20L,
+      metadataFilter,
+      Collections.emptyList(),
+      2
+    );
     System.out.println("Data \n" + data);
     assertNotNull(data);
     assertEquals(2, data.size());

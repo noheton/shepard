@@ -1,6 +1,8 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.data.spatialdata.io.FilterCondition;
+import java.util.List;
 import java.util.Map;
 
 public class NativeQueryStringBuilder {
@@ -37,7 +39,7 @@ public class NativeQueryStringBuilder {
   }
 
   public NativeQueryStringBuilder addJsonContainsCondition(String parameterName, Map<String, Object> filter) {
-    if (filter == null) return this;
+    if (filter.isEmpty()) return this;
     addWhereClauseIfNecessary();
 
     try {
@@ -90,5 +92,27 @@ public class NativeQueryStringBuilder {
     if (whereClauseAdded) return;
     query.append(" WHERE 1 = 1");
     whereClauseAdded = true;
+  }
+
+  public NativeQueryStringBuilder addJsonFilterConditions(
+    String parameterName,
+    List<FilterCondition> measurementsFilter
+  ) {
+    if (measurementsFilter.isEmpty()) return this;
+    addWhereClauseIfNecessary();
+    measurementsFilter.forEach(filterCondition ->
+      query.append(
+        String.format(
+          " AND jsonb_typeof(%s #> '{%s}') = 'number' AND (%s #>> '{%s}')::NUMERIC %s %s",
+          parameterName,
+          filterCondition.getKey(),
+          parameterName,
+          filterCondition.getKey(),
+          filterCondition.getOperator().getOperatorString(),
+          filterCondition.getValue()
+        )
+      )
+    );
+    return this;
   }
 }

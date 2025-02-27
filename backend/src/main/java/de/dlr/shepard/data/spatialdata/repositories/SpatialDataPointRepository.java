@@ -1,6 +1,7 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
 import de.dlr.shepard.common.util.JsonConverter;
+import de.dlr.shepard.data.spatialdata.io.FilterCondition;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.PersistenceUnit;
@@ -141,6 +142,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
+    List<FilterCondition> measurementsFilter,
     Integer limit,
     Integer skip
   ) {
@@ -149,6 +151,7 @@ public class SpatialDataPointRepository {
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
+      .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
       .addAABBGeometryCondition()
       .addSkipClause(skip)
       .addLimitClause(limit)
@@ -174,6 +177,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
+    List<FilterCondition> measurementsFilter,
     Integer limit,
     Integer skip
   ) {
@@ -182,6 +186,7 @@ public class SpatialDataPointRepository {
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
+      .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
       .addBSGeometryCondition()
       .addSkipClause(skip)
       .addLimitClause(limit)
@@ -211,6 +216,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
+    List<FilterCondition> measurementsFilter,
     Integer skip
   ) {
     var query = new NativeQueryStringBuilder()
@@ -218,6 +224,7 @@ public class SpatialDataPointRepository {
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
+      .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
       .addSkipClause(skip)
       .addKNNGeometryCondition()
       .build();

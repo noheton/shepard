@@ -2,13 +2,14 @@ package de.dlr.shepard.data.spatialdata.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
+import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AxisAlignedBoundingBox;
@@ -83,9 +84,10 @@ public class SpatialDataPointServiceTest {
 
     AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
     axisAlignedBoundingBox.set(0.1, 0.2, 0.3, 1.1, 1.2, 1.3);
-    SpatialDataParamsIO spatialDataParamsIO = new SpatialDataParamsIO(
+    SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       axisAlignedBoundingBox,
       metadataFilter,
+      null,
       startTime,
       endTime,
       limit,
@@ -112,6 +114,7 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
+      any(),
       eq(limit),
       eq(null)
     );
@@ -128,9 +131,10 @@ public class SpatialDataPointServiceTest {
     BoundingSphere boundingSphere = new BoundingSphere();
     boundingSphere.set(radius, 1.1, 1.2, 1.3);
 
-    SpatialDataParamsIO spatialDataParamsIO = new SpatialDataParamsIO(
+    SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       boundingSphere,
       metadataFilter,
+      null,
       startTime,
       endTime,
       limit,
@@ -145,6 +149,7 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
+      any(),
       eq(limit),
       eq(null)
     );
@@ -161,9 +166,10 @@ public class SpatialDataPointServiceTest {
     KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
     kNearestNeighbor.set(k, 1.1, 1.2, 1.3);
 
-    SpatialDataParamsIO spatialDataParamsIO = new SpatialDataParamsIO(
+    SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       kNearestNeighbor,
       metadataFilter,
+      null,
       startTime,
       endTime,
       limit,
@@ -178,6 +184,7 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
+      any(),
       eq(null)
     );
   }
@@ -195,9 +202,10 @@ public class SpatialDataPointServiceTest {
     };
     geometryFilter.setType(GeometryFilterType.ORIENTED_BOUNDING_BOX);
 
-    SpatialDataParamsIO spatialDataParamsIO = new SpatialDataParamsIO(
+    SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       geometryFilter,
       metadataFilter,
+      null,
       startTime,
       endTime,
       limit,

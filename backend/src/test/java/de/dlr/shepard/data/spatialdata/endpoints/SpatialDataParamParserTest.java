@@ -164,7 +164,7 @@ class SpatialDataParamParserTest {
       SpatialDataParamParser.parseMetadata(Optional.of(invalidJson));
     });
 
-    assertEquals("Invalid metadata param", exception.getMessage());
+    assertEquals("Invalid metadata filter param", exception.getMessage());
   }
 
   @Test

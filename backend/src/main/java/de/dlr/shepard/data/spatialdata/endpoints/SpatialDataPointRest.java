@@ -4,8 +4,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
-import de.dlr.shepard.data.spatialdata.io.SpatialDataParamsIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
+import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
@@ -154,20 +154,25 @@ public class SpatialDataPointRest {
   @Parameter(
     name = "metadataFilter",
     required = false,
-    description = "This filter should be a stringified list of JSON object for exact match in metadata",
-    examples = {
-      @ExampleObject(
-        name = "metadata filter",
-        value = """
-        {
+    description = """
+    This filter should be a stringified list of JSON object for exact match in metadata. example : ```{
           "track":1,
           "layer":4,
           "key":{
             "subKey": "some data"
           }
-        }"""
-      ),
-    }
+        }```"""
+  )
+  @Parameter(
+    name = "measurementsFilter",
+    required = false,
+    description = """
+    This filter should be a stringified list of JSON FilterConditions. \n
+    FilterCondition has this structure: {'key':<KEY>, 'operator': <OPERATOR>, 'value': <VALUE>}. \n
+    The key is a comma separated path keynames string. \n
+    The operator is one of ['EQUALS', 'GREATER_THAN'. 'LESS_THAN']. \n
+    The value needs to be a number. \n
+    example : ```[{ "key": "temperature,val", "operator": "EQUALS", "value": 20 }]```"""
   )
   @Parameter(
     name = "geometryFilter",
@@ -225,6 +230,7 @@ public class SpatialDataPointRest {
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId,
     @QueryParam("geometryFilter") String geometryFilterParam,
     @QueryParam("metadataFilter") String metadataFilterParam,
+    @QueryParam("measurementsFilter") String measurementsFilterParam,
     @QueryParam("startTime") Long startTime,
     @QueryParam("endTime") Long endTime,
     @QueryParam("limit") Integer limit,
@@ -238,9 +244,14 @@ public class SpatialDataPointRest {
       Optional.ofNullable(metadataFilterParam)
     );
 
-    SpatialDataParamsIO spatialDataParams = new SpatialDataParamsIO(
+    var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(
+      Optional.ofNullable(measurementsFilterParam)
+    );
+
+    SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
       geometryFilter,
       metadata.orElse(Collections.emptyMap()),
+      measurementsFilter.orElse(Collections.emptyList()),
       startTime,
       endTime,
       limit,
