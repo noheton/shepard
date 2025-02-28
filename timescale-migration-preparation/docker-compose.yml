@@ -1,0 +1,13 @@
+services:
+  timescale-migration-preparation:
+    # Build the image from the Dockerfile in the current directory
+    build: .
+
+    volumes:
+      - ./log:/app/log
+
+    env_file:
+      - ./scratchpad/.env
+
+    profiles:
+      - migration-preparation

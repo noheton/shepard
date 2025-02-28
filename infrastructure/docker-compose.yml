@@ -160,6 +160,20 @@ services:
       - influxdata
       - frontend
 
+  timescale-migration-preparation:
+    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:dev
+    volumes:
+      - ./log:/app/log
+    env_file:
+      - .env
+    depends_on:
+      - influxdb
+      - neo4j
+    networks:
+      - shepard
+    profiles:
+      - timeseries-migration
+
 networks:
   shepard:
   mongo:

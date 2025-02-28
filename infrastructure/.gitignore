@@ -19,3 +19,5 @@ public.pem
 
 # SSL certificates
 proxy/ssl/*
+
+log/

@@ -1,0 +1,13 @@
+[project]
+name = "timescale-migration-preparation"
+version = "0.1.0"
+description = "Preparation scripts for TimescaleDB migration"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "influxdb>=5.3.2",
+    "loguru>=0.7.3",
+    "neo4j>=5.27.0",
+    "pandas>=2.2.3",
+    "tqdm>=4.67.1",
+]
