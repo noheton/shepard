@@ -1,6 +1,7 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
 import de.dlr.shepard.data.spatialdata.io.Operator;
@@ -232,11 +233,10 @@ public class NativeQueryStringBuilderTest {
   }
 
   @Test
-  public void build_passNonEmptySkipWith0_success() {
-    var current = new NativeQueryStringBuilder().select("table_name", ALL_COLUMNS_STRING).addSkipClause(0).build();
-
-    var expected = "SELECT * FROM table_name;";
-
-    assertEquals(expected, current);
+  public void build_passNonEmptySkipWith0_throwsException() {
+    Exception exception = assertThrows(Exception.class, () ->
+      new NativeQueryStringBuilder().select("table_name", ALL_COLUMNS_STRING).addSkipClause(0).build()
+    );
+    assertEquals(exception.getMessage(), "Skip parameter must be greater than 0");
   }
 }
