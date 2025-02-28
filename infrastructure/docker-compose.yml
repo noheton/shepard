@@ -172,7 +172,7 @@ services:
     networks:
       - shepard
     profiles:
-      - timeseries-migration
+      - timescale-migration-preparation
 
 networks:
   shepard:

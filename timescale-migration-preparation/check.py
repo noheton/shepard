@@ -12,7 +12,7 @@ def main():
     errors = check_influx_tags()
     if errors:
         logger.warning(
-            "Errors have been detected, migration from influx to timescaleDB can NOT be performed"
+            "Errors have been detected, migration from influx to timescaleDB can NOT be performed until these have been fixed. To do so, run python fix.py"
         )
     else:
         logger.success(

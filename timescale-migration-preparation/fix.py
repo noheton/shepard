@@ -12,7 +12,7 @@ def main():
     errors = check_influx_tags()
     if errors:
         logger.warning(
-            "Errors have been detected, migration from influx to timescaleDB can NOT be performed"
+            "Errors have been detected and a fix is attempted now."
         )
         logger.warning(
             "for each affected influx series invalid tags containing invalid characters [' ', '.', '/'] will be renamed"

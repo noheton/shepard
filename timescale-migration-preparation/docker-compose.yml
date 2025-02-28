@@ -8,6 +8,3 @@ services:
 
     env_file:
       - ./scratchpad/.env
-
-    profiles:
-      - migration-preparation

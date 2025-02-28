@@ -12,11 +12,11 @@ InfluxDB and written with a new tag again. Shepard cannot be available during th
 ## Usage
 
 1. The `docker-compose.yml` file in the `infrastructure` folder contains an entry `timescale-migration-preparation`.
-   It is in a separate profile `timeseries-migration` and thus will only be executed by manual interaction.
+   It is in a separate profile `timescale-migration-preparation` and thus will only be executed by manual interaction.
 
 2. Stop all shepard services (`docker compose down`).
 
-3. run `docker compose --profile timeseries-migration run timescale-migration-preparation` to start the migration container. This will start the migration container, as well as all necessary dependencies (InfluxDB, Neo4j) and open a bash-shell within the container.
+3. run `docker compose --profile timescale-migration-preparation run timescale-migration-preparation` to start the migration container. This will start the migration container, as well as all necessary dependencies (InfluxDB, Neo4j) and open a bash-shell within the container.
 
 4. Wait for all containers having started (around 10s).
 
