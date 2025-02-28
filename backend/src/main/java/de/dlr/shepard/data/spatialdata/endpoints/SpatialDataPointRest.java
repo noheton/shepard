@@ -241,16 +241,10 @@ public class SpatialDataPointRest {
     @QueryParam("offset") Integer offset,
     @QueryParam("skip") Integer skip
   ) {
-    AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(
-      Optional.ofNullable(geometryFilterParam)
-    );
-    Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(
-      Optional.ofNullable(metadataFilterParam)
-    );
+    AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
+    Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
-    var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(
-      Optional.ofNullable(measurementsFilterParam)
-    );
+    var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
 
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
       geometryFilter,

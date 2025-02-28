@@ -15,7 +15,6 @@ import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class SpatialDataParamParserTest {
@@ -32,7 +31,7 @@ class SpatialDataParamParserTest {
         "z": 30
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
     assertNotNull(filter);
     assertEquals(GeometryFilterType.K_NEAREST_NEIGHBOR, filter.getType());
     assertTrue(filter instanceof KNearestNeighbor);
@@ -57,7 +56,7 @@ class SpatialDataParamParserTest {
         "maxZ": 100
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
     assertNotNull(filter);
     assertEquals(GeometryFilterType.AXIS_ALIGNED_BOUNDING_BOX, filter.getType());
     assertTrue(filter instanceof AxisAlignedBoundingBox);
@@ -82,7 +81,7 @@ class SpatialDataParamParserTest {
         "centerZ": 20
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(Optional.of(json));
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
     assertNotNull(filter);
     assertEquals(GeometryFilterType.BOUNDING_SPHERE, filter.getType());
     assertTrue(filter instanceof BoundingSphere);
@@ -98,7 +97,7 @@ class SpatialDataParamParserTest {
     String invalidJson = "{ invalid json }";
 
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      SpatialDataParamParser.parseGeometryFilter(Optional.of(invalidJson));
+      SpatialDataParamParser.parseGeometryFilter(invalidJson);
     });
 
     assertEquals("Invalid geometryFilter param", exception.getMessage());
@@ -118,7 +117,7 @@ class SpatialDataParamParserTest {
       }
       """;
 
-    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(Optional.of(json)).orElse(null);
+    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(json).orElse(null);
     assertNotNull(metadata);
     assertEquals("value1", metadata.get("key1"));
     assertEquals(2, metadata.get("key2"));
@@ -147,7 +146,7 @@ class SpatialDataParamParserTest {
       }
         """;
 
-    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(Optional.of(json)).orElse(null);
+    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(json).orElse(null);
     assertNotNull(metadata);
     @SuppressWarnings("unchecked")
     Map<String, Object> level2 = (Map<String, Object>) ((Map<String, Object>) (metadata.get("level1"))).get("level2");
@@ -161,7 +160,7 @@ class SpatialDataParamParserTest {
     String invalidJson = "{ invalid json }";
 
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      SpatialDataParamParser.parseMetadata(Optional.of(invalidJson));
+      SpatialDataParamParser.parseMetadata(invalidJson);
     });
 
     assertEquals("Invalid metadata filter param", exception.getMessage());
@@ -169,14 +168,14 @@ class SpatialDataParamParserTest {
 
   @Test
   void testParse_metadata_returnsNull() {
-    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(Optional.empty()).orElse(null);
+    Map<String, Object> metadata = SpatialDataParamParser.parseMetadata(null).orElse(null);
     assertNull(metadata);
   }
 
   @Test
   void testParse_geometryFilter_throwsException() {
     RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-      SpatialDataParamParser.parseGeometryFilter(Optional.empty());
+      SpatialDataParamParser.parseGeometryFilter("");
     });
     assertEquals("Invalid geometryFilter param", exception.getMessage());
   }
