@@ -4,9 +4,7 @@ import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
-import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
@@ -14,7 +12,6 @@ import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Data

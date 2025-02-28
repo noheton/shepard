@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.spatialdata.model.geometryFilter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
@@ -22,6 +23,7 @@ public abstract class AbstractGeometryFilter {
 
   protected GeometryFilterType type;
 
+  @JsonIgnore
   public abstract boolean isValid();
 
   public AbstractGeometryFilter(GeometryFilterType type) {

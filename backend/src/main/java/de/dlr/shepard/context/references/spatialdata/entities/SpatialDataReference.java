@@ -1,16 +1,12 @@
 package de.dlr.shepard.context.references.spatialdata.entities;
 
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
-import de.dlr.shepard.data.spatialdata.io.FilterCondition;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
-import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

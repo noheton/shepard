@@ -1,5 +1,7 @@
 package de.dlr.shepard.context.references.spatialdata.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.DateHelper;
@@ -15,6 +17,7 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.InternalServerErrorException;
 import java.util.List;
 import java.util.UUID;
 
@@ -75,13 +78,23 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
         )
       );
     }
+    ObjectMapper objectMapper = new ObjectMapper();
     var toCreate = new SpatialDataReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(spatialDataReference.getName());
-    //    toCreate.setGeometryFilter(spatialDataReference.getGeometryFilter());
-    //    toCreate.setMeasurementsFilter(spatialDataReference.getMeasurementFilters());
+    try {
+      toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReference.getGeometryFilter()));
+    } catch (JsonProcessingException e) {
+      throw new InternalServerErrorException("Failed to parse geometry filter");
+    }
+    try {
+      toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReference.getMeasurementFilters()));
+    } catch (JsonProcessingException e) {
+      throw new InternalServerErrorException("Failed to parse metadata filter");
+    }
+
     toCreate.setStartTime(spatialDataReference.getStartTime());
     toCreate.setEndTime(spatialDataReference.getEndTime());
     toCreate.setLimit(spatialDataReference.getLimit());
