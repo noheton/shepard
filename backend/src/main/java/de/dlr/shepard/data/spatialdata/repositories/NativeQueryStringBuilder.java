@@ -2,6 +2,7 @@ package de.dlr.shepard.data.spatialdata.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +79,8 @@ public class NativeQueryStringBuilder {
   }
 
   public NativeQueryStringBuilder addSkipClause(Integer skip) {
-    if (skip == null || skip <= 0) return this;
+    if (skip == null) return this;
+    if (skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
     addWhereClauseIfNecessary();
     query.append(String.format(" AND id %% %d = 0", skip));
     return this;
