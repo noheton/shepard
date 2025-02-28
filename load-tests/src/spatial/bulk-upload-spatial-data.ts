@@ -13,7 +13,6 @@ export const options: Options = {
       executor: "shared-iterations",
       vus: 1,
       iterations: 1,
-      maxDuration: "490m", // 8h
       exec: "uploadData",
     },
   },
