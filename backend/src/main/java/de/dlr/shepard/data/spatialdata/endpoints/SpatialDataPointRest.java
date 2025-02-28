@@ -219,7 +219,11 @@ public class SpatialDataPointRest {
   @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
   @Parameter(name = "limit", required = false)
   @Parameter(name = "offset", required = false)
-  @Parameter(name = "skip", required = false, description = "Returns every nth data point from the container")
+  @Parameter(
+    name = "skip",
+    required = false,
+    description = "Returns every nth data point from the container. We use the modulo operator on the point ids, therefore an even distribution cannot be guaranteed."
+  )
   @APIResponse(
     description = "OK",
     responseCode = "200",
