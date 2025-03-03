@@ -150,10 +150,10 @@ public class SpatialDataReferenceRest {
   public Response deleteSpatialDataReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataId
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
   ) {
     var result = spatialDataReferenceService.deleteReferenceByShepardId(
-      spatialDataId,
+      spatialDataReferenceId,
       securityContext.getUserPrincipal().getName()
     );
 

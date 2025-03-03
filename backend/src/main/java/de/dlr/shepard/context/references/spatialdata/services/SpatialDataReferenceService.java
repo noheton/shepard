@@ -15,8 +15,10 @@ import de.dlr.shepard.data.spatialdata.daos.SpatialDataContainerDAO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import java.util.List;
 import java.util.UUID;
@@ -58,7 +60,12 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
 
   @Override
   public SpatialDataReference getReferenceByShepardId(long shepardId, UUID versionUID) {
-    return null;
+    SpatialDataReference spatialDataReference = spatialDataReferenceDAO.findByShepardId(shepardId, versionUID);
+    if (spatialDataReference == null || spatialDataReference.isDeleted()) {
+      Log.errorf("SpatialData Reference with id %s is null or deleted", shepardId);
+      return null;
+    }
+    return spatialDataReference;
   }
 
   @Override
@@ -128,6 +135,12 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
 
   @Override
   public boolean deleteReferenceByShepardId(long shepardId, String username) {
-    return false;
+    SpatialDataReference spatialDataReference = spatialDataReferenceDAO.findByShepardId(shepardId);
+    var user = userDAO.find(username);
+    spatialDataReference.setDeleted(true);
+    spatialDataReference.setUpdatedBy(user);
+    spatialDataReference.setUpdatedAt(dateHelper.getDate());
+    spatialDataReferenceDAO.createOrUpdate(spatialDataReference);
+    return true;
   }
 }
