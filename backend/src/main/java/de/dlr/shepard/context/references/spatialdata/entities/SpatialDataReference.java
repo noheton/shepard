@@ -24,13 +24,10 @@ public class SpatialDataReference extends BasicReference {
   private String measurementsFilter;
   private long startTime;
   private long endTime;
-  private Map<String, Object> metadata;
+  private String metadata;
   private Integer limit;
   private Integer offset;
   private Integer skip;
-
-  @Relationship(type = Constants.HAS_PAYLOAD)
-  private List<SpatialDataPointIO> spatialDataPointsList = new ArrayList<>();
 
   @ToString.Exclude
   @Relationship(type = Constants.IS_IN_CONTAINER)

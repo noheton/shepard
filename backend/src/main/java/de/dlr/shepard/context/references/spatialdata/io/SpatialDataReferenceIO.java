@@ -24,6 +24,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   @Schema(required = true)
   private long spatialDataContainerId;
 
+  @NotNull
   @Schema(
     required = true,
     example = """
@@ -70,7 +71,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
     );
     this.startTime = ref.getStartTime();
     this.endTime = ref.getEndTime();
-    this.metadata = ref.getMetadata();
+    this.metadata = SpatialDataParamParser.parseMetadata(ref.getMetadata()).orElse(Collections.emptyMap());
     this.limit = ref.getLimit();
     this.offset = ref.getOffset();
     this.skip = ref.getSkip();

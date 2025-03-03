@@ -2,8 +2,10 @@ package de.dlr.shepard.context.references.spatialdata.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
 import de.dlr.shepard.context.references.spatialdata.services.SpatialDataReferenceService;
+import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -161,35 +164,25 @@ public class SpatialDataReferenceRest {
       ? Response.status(Response.Status.NO_CONTENT).build()
       : Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
   }
-  //  @GET
-  //  @Path("/{" + Constants.SPATIAL_DATA_REFERENCE_ID + "}/" + Constants.PAYLOAD)
-  //  @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
-  //  @Operation(description = "Get spatialData reference payload")
-  //  @APIResponse(
-  //    description = "ok",
-  //    responseCode = "200",
-  //    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataReference.class))
-  //  )
-  //  @APIResponse(description = "not found", responseCode = "404")
-  //  @Parameter(name = Constants.COLLECTION_ID)
-  //  @Parameter(name = Constants.DATA_OBJECT_ID)
-  //  @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
-  ////  @Parameter(name = Constants.FUNCTION)
-  ////  @Parameter(name = Constants.GROUP_BY) //Maybe
-  ////  @Parameter(name = Constants.FILLOPTION) //Maybe
-  //  public Response getSpatialDataPayload(
-  //    @PathParam(Constants.COLLECTION_ID) long collectionId,
-  //    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-  //    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId,
-  ////    @QueryParam(Constants.FUNCTION) AggregateFunction function,
-  ////    @QueryParam(Constants.GROUP_BY) Long groupBy,
-  ////    @QueryParam(Constants.FILLOPTION) FillOption fillOption
-  //  ) {
-  //    List<SpatialDataReference> spatialDataReferences =
-  //      spatialDataReferenceService.getReferencedSpatialDataPointsList(
-  //        spatialDataReferenceId,
-  //        securityContext.getUserPrincipal().getName()
-  //      );
-  //    return Response.ok(spatialDataReferences).build();
-  //  }
+
+  @GET
+  @Path("/{" + Constants.SPATIAL_DATA_REFERENCE_ID + "}/" + Constants.PAYLOAD)
+  @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
+  @Operation(description = "Get spatialData reference payload")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
+  public Response getSpatialDataPayload(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
+  ) {
+    return Response.ok(spatialDataReferenceService.getReferencePayload(spatialDataReferenceId)).build();
+  }
 }

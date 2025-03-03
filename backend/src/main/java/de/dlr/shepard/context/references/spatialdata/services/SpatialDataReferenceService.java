@@ -12,6 +12,7 @@ import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReferen
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.spatialdata.daos.SpatialDataContainerDAO;
+import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
@@ -20,6 +21,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,35 +99,26 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     } catch (JsonProcessingException e) {
       throw new InternalServerErrorException("Failed to parse geometry filter");
     }
-    try {
-      toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReference.getMeasurementFilters()));
-    } catch (JsonProcessingException e) {
-      throw new InternalServerErrorException("Failed to parse metadata filter");
+    if (spatialDataReference.getMeasurementFilters() != null) {
+      try {
+        toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReference.getMeasurementFilters()));
+      } catch (JsonProcessingException e) {
+        throw new InternalServerErrorException("Failed to parse measurement filter");
+      }
     }
-
+    if (spatialDataReference.getMetadata() != null) {
+      try {
+        toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReference.getMetadata()));
+      } catch (JsonProcessingException e) {
+        throw new InternalServerErrorException("Failed to parse metadata filter");
+      }
+    }
     toCreate.setStartTime(spatialDataReference.getStartTime());
     toCreate.setEndTime(spatialDataReference.getEndTime());
     toCreate.setLimit(spatialDataReference.getLimit());
     toCreate.setOffset(spatialDataReference.getOffset());
     toCreate.setSkip(spatialDataReference.getSkip());
     toCreate.setSpatialDataContainer(container);
-
-    SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
-      spatialDataReference.getGeometryFilter(),
-      spatialDataReference.getMetadata(),
-      spatialDataReference.getMeasurementFilters(),
-      spatialDataReference.getStartTime(),
-      spatialDataReference.getEndTime(),
-      spatialDataReference.getLimit(),
-      spatialDataReference.getOffset(),
-      spatialDataReference.getSkip()
-    );
-    List<SpatialDataPointIO> spatialDataPoints = dataPointService.getSpatialDataPointIOs(
-      container.getId(),
-      spatialDataParams
-    );
-
-    toCreate.setSpatialDataPointsList(spatialDataPoints);
 
     SpatialDataReference created = spatialDataReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
@@ -142,5 +136,21 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     spatialDataReference.setUpdatedAt(dateHelper.getDate());
     spatialDataReferenceDAO.createOrUpdate(spatialDataReference);
     return true;
+  }
+
+  public List<SpatialDataPointIO> getReferencePayload(long spatialDataReferenceId) {
+    SpatialDataReference reference = getReferenceByShepardId(spatialDataReferenceId, null);
+
+    SpatialDataQueryParams params = new SpatialDataQueryParams(
+      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()),
+      SpatialDataParamParser.parseMetadata(reference.getMetadata()).orElse(Collections.emptyMap()),
+      SpatialDataParamParser.parseMeasurementsFilter(reference.getMeasurementsFilter()).orElse(Collections.emptyList()),
+      reference.getStartTime(),
+      reference.getEndTime(),
+      reference.getLimit(),
+      reference.getOffset(),
+      reference.getSkip()
+    );
+    return dataPointService.getSpatialDataPointIOs(reference.getSpatialDataContainer().getId(), params);
   }
 }
