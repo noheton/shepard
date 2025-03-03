@@ -57,7 +57,7 @@ export function generateTimeseries(numberOfDataPoints: number): TimeseriesData {
 export function generateDataPoints(numberOfDataPoints: number): TimeseriesDataPoint[] {
   const dataPoints = new Array<TimeseriesDataPoint>(numberOfDataPoints);
   for (let i = 0; i < numberOfDataPoints; i++) {
-    const nanoseconds = new Date().getTime() * 1000 * 1000; // timestamp in nanoseconds
+    const nanoseconds = (new Date().getTime() + i) * 1000 * 1000; // timestamp in nanoseconds
     dataPoints[i] = { timestamp: nanoseconds + i, value: i };
   }
   return dataPoints;

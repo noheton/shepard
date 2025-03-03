@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.repositories;
 
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.hibernate.exception.DataException;
 
 @RequestScoped
 public class TimeseriesDataPointRepository {
@@ -30,7 +32,17 @@ public class TimeseriesDataPointRepository {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
       Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
-      query.executeUpdate();
+
+      try {
+        query.executeUpdate();
+      } catch (DataException ex) {
+        if (ex.getCause().toString().contains("ON CONFLICT DO UPDATE command cannot affect row a second time")) {
+          throw new InvalidBodyException(
+            "You provided the same timestamp value multiple times. Please make sure that there are only unique timestamps in a timeseries payload request!"
+          );
+        }
+        throw ex;
+      }
     }
   }
 
@@ -81,7 +93,15 @@ public class TimeseriesDataPointRepository {
         .mapToObj(index -> "(:timeseriesid" + ",:time" + index + ",:value" + index + ")")
         .collect(Collectors.joining(","))
     );
-    queryString.append(";");
+    // when a unique constraint conflict appears, overwrite the existing value with the new incoming value
+    queryString.append(
+      " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
+      getColumnName(timeseriesEntity.getValueType()) +
+      " = " +
+      "EXCLUDED." +
+      getColumnName(timeseriesEntity.getValueType()) +
+      ";"
+    );
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
