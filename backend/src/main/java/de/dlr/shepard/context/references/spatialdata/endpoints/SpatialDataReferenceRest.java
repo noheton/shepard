@@ -83,30 +83,30 @@ public class SpatialDataReferenceRest {
     return Response.ok(result).build();
   }
 
-  //  @GET
-  //  @Path("/{" + Constants.SPATIAL_DATA_REFERENCE_ID + "}")
-  //  @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
-  //  @Operation(description = "Get spatialData reference")
-  //  @APIResponse(
-  //    description = "ok",
-  //    responseCode = "200",
-  //    content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
-  //  )
-  //  @APIResponse(description = "not found", responseCode = "404")
-  //  @Parameter(name = Constants.COLLECTION_ID)
-  //  @Parameter(name = Constants.DATA_OBJECT_ID)
-  //  @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
-  //  @Parameter(name = Constants.VERSION_UID)
-  //  public Response getSpatialDataReference(
-  //    @PathParam(Constants.COLLECTION_ID) long collectionId,
-  //    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-  //    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId,
-  //    @QueryParam(Constants.VERSION_UID) UUID versionUID
-  //  ) {
-  //    var result = spatialDataReferenceService.getReferenceByShepardId(spatialDataReferenceId, versionUID);
-  //
-  //    return Response.ok(new SpatialDataReferenceIO(result)).build();
-  //  }
+  @GET
+  @Path("/{" + Constants.SPATIAL_DATA_REFERENCE_ID + "}")
+  @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
+  @Operation(description = "Get spatialData reference")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
+  @Parameter(name = Constants.VERSION_UID)
+  public Response getSpatialDataReference(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
+  ) {
+    var result = spatialDataReferenceService.getReferenceByShepardId(spatialDataReferenceId, versionUID);
+
+    return Response.ok(new SpatialDataReferenceIO(result)).build();
+  }
 
   @POST
   @Subscribable
