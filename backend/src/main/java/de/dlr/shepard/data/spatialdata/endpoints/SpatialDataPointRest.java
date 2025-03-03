@@ -13,6 +13,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -248,7 +249,7 @@ public class SpatialDataPointRest {
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
-
+    if (skip != null && skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
       geometryFilter,
       metadata.orElse(Collections.emptyMap()),

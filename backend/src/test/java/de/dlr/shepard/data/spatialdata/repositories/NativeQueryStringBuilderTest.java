@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.spatialdata.repositories;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
 import de.dlr.shepard.data.spatialdata.io.Operator;
@@ -19,7 +18,7 @@ public class NativeQueryStringBuilderTest {
     var builder = new NativeQueryStringBuilder();
     var current = builder.select("table_name", ALL_COLUMNS_STRING).build();
 
-    var expected = "SELECT * FROM table_name;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1;";
 
     assertEquals(expected, current);
   }
@@ -31,7 +30,7 @@ public class NativeQueryStringBuilderTest {
       .addLimitClause(null)
       .build();
 
-    var expected = "SELECT column1, column2 FROM table_name;";
+    var expected = "SELECT column1, column2 FROM table_name WHERE 1 = 1;";
 
     assertEquals(expected, current);
   }
@@ -121,7 +120,7 @@ public class NativeQueryStringBuilderTest {
       .addWhereCondition("id", null)
       .build();
 
-    var expected = "SELECT * FROM table_name;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1;";
 
     assertEquals(expected, current);
   }
@@ -144,7 +143,7 @@ public class NativeQueryStringBuilderTest {
   public void build_passEmptyLimit_success() {
     var current = new NativeQueryStringBuilder().select("table_name", ALL_COLUMNS_STRING).addLimitClause(null).build();
 
-    var expected = "SELECT * FROM table_name;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1;";
 
     assertEquals(expected, current);
   }
@@ -233,10 +232,27 @@ public class NativeQueryStringBuilderTest {
   }
 
   @Test
-  public void build_passNonEmptySkipWith0_throwsException() {
-    Exception exception = assertThrows(Exception.class, () ->
-      new NativeQueryStringBuilder().select("table_name", ALL_COLUMNS_STRING).addSkipClause(0).build()
-    );
-    assertEquals(exception.getMessage(), "Skip parameter must be greater than 0");
+  public void build_orderIsfixed_success() {
+    var current1 = new NativeQueryStringBuilder()
+      .select("table_name", ALL_COLUMNS_STRING)
+      .addTimeCondition("time", 10L, 20L)
+      .addWhereCondition("cond1", 1)
+      .addSkipClause(3)
+      .addWhereCondition("cond2", 2)
+      .build();
+    // Same query with different order of method calls
+    var current2 = new NativeQueryStringBuilder()
+      .select("table_name", ALL_COLUMNS_STRING)
+      .addSkipClause(3)
+      .addTimeCondition("time", 10L, 20L)
+      .addWhereCondition("cond1", 1)
+      .addWhereCondition("cond2", 2)
+      .build();
+
+    var expected =
+      "SELECT * FROM table_name WHERE 1 = 1 AND cond1 = 1 AND cond2 = 2 AND time > 10 AND time < 20 AND id % 3 = 0;";
+
+    assertEquals(expected, current1);
+    assertEquals(expected, current2);
   }
 }
