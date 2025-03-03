@@ -166,13 +166,16 @@ public class SpatialDataPointRest {
   @Parameter(
     name = "measurementsFilter",
     required = false,
+    schema = @Schema(
+      type = SchemaType.STRING,
+      example = "[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]"
+    ),
     description = """
     This filter should be a stringified list of JSON FilterConditions. \n
     FilterCondition has this structure: {'key':<KEY>, 'operator': <OPERATOR>, 'value': <VALUE>}. \n
     The key is a comma separated path keynames string. \n
     The operator is one of ['EQUALS', 'GREATER_THAN'. 'LESS_THAN']. \n
-    The value needs to be a number. \n
-    example : ```[{ "key": "temperature,val", "operator": "EQUALS", "value": 20 }]```"""
+    The value needs to be a number."""
   )
   @Parameter(
     name = "geometryFilter",
