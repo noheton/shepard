@@ -18,7 +18,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -269,16 +268,12 @@ public class SpatialDataPointRest {
     return Response.ok(dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams)).build();
   }
 
-  @PATCH
+  @POST
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
-  @Operation(description = "Adding data points to spatial data container")
+  @Operation(description = "Adds spatial data points to a spatial data container.")
   @Parameter(name = Constants.SPATIAL_DATA_DATABASE_TYPE, required = true)
-  @APIResponse(
-    description = "OK",
-    responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
-  )
+  @APIResponse(description = "OK", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   public Response createSpatialDataPoints(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId,
@@ -288,6 +283,6 @@ public class SpatialDataPointRest {
     ) @Valid List<SpatialDataPointIO> dataPoints
   ) {
     dataPointService.createSpatialDataPoints(containerId, dataPoints);
-    return Response.ok().build();
+    return Response.noContent().build();
   }
 }

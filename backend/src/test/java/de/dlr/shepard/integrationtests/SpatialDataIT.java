@@ -269,9 +269,9 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(containerRequestSpec)
       .body(dataPoints)
       .when()
-      .patch(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
-      .statusCode(200);
+      .statusCode(204);
   }
 
   @Test
