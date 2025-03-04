@@ -37,19 +37,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
     super(ref);
     this.start = ref.getStart();
     this.end = ref.getEnd();
-    this.timeseries = ref
-      .getReferencedTimeseriesList()
-      .stream()
-      .map(entity ->
-        new Timeseries(
-          entity.getMeasurement(),
-          entity.getDevice(),
-          entity.getLocation(),
-          entity.getSymbolicName(),
-          entity.getField()
-        )
-      )
-      .toList();
+    this.timeseries = ref.getReferencedTimeseriesList().stream().map(entity -> entity.toTimeseries()).toList();
     this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
   }
 }
