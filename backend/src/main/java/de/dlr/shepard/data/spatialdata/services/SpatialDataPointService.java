@@ -139,8 +139,7 @@ public class SpatialDataPointService {
         spatialDataQueryParams.getStartTime(),
         spatialDataQueryParams.getEndTime(),
         spatialDataQueryParams.getMetadata(),
-        spatialDataQueryParams.getMeasurementsFilters(),
-        spatialDataQueryParams.getSkip()
+        spatialDataQueryParams.getMeasurementsFilters()
       )
     );
   }

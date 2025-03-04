@@ -7,6 +7,7 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
@@ -246,6 +247,10 @@ public class SpatialDataPointRest {
     @QueryParam("skip") Integer skip
   ) {
     AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
+    if (geometryFilter instanceof KNearestNeighbor) {
+      if (skip != null) throw new BadRequestException("Skip parameter is not accepted with KNN");
+      if (limit != null) throw new BadRequestException("Limit parameter is not accepted with KNN");
+    }
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);

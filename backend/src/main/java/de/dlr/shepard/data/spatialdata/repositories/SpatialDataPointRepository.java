@@ -216,8 +216,7 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    List<FilterCondition> measurementsFilter,
-    Integer skip
+    List<FilterCondition> measurementsFilter
   ) {
     var query = new NativeQueryStringBuilder()
       .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
@@ -225,7 +224,6 @@ public class SpatialDataPointRepository {
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
-      .addSkipClause(skip)
       .addKNNGeometryCondition()
       .build();
 

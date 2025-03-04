@@ -184,8 +184,7 @@ public class SpatialDataPointServiceTest {
       eq(startTime),
       eq(endTime),
       eq(metadataFilter),
-      any(),
-      eq(null)
+      any()
     );
   }
 
