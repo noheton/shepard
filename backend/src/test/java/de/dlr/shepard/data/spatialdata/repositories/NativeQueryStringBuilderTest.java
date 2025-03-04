@@ -159,40 +159,56 @@ public class NativeQueryStringBuilderTest {
 
   @Test
   public void build_addBSGeometryCondition_success() {
-    var current = new NativeQueryStringBuilder()
+    var currentStringBuilder = new NativeQueryStringBuilder()
       .select("table_name", ALL_COLUMNS_STRING)
-      .addBSGeometryCondition()
-      .build();
+      .addBSGeometryCondition(1.0, 1.0, 1.0, 2.0);
+    var current = currentStringBuilder.build();
 
     var expected =
       "SELECT * FROM table_name WHERE 1 = 1 AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius);";
 
     assertEquals(expected, current);
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
+    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("radius"));
   }
 
   @Test
   public void build_addAABBGeometryCondition_success() {
-    var current = new NativeQueryStringBuilder()
+    var currentStringBuilder = new NativeQueryStringBuilder()
       .select("table_name", ALL_COLUMNS_STRING)
-      .addAABBGeometryCondition()
-      .build();
+      .addAABBGeometryCondition(1.0, 1.0, 1.0, 2.0, 2.0, 2.0);
+
+    var current = currentStringBuilder.build();
 
     var expected =
       "SELECT * FROM table_name WHERE 1 = 1 AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));";
 
     assertEquals(expected, current);
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
+    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("x2"));
+    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("y2"));
+    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("z2"));
   }
 
   @Test
   public void build_addKNNGeometryCondition_success() {
-    var current = new NativeQueryStringBuilder()
+    var currentStringBuilder = new NativeQueryStringBuilder()
       .select("table_name", ALL_COLUMNS_STRING)
-      .addKNNGeometryCondition()
-      .build();
+      .addKNNGeometryCondition(1.0, 1.0, 1.0, 5);
+
+    var current = currentStringBuilder.build();
 
     var expected = "SELECT * FROM table_name WHERE 1 = 1 ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;";
 
     assertEquals(expected, current);
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
+    assertEquals(5, currentStringBuilder.getGeometryFilterParameters().get("k"));
   }
 
   @Test

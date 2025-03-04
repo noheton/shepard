@@ -2,6 +2,7 @@ package de.dlr.shepard.data.spatialdata.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,10 +19,15 @@ public class NativeQueryStringBuilder {
   private StringBuilder measurementsFilterConditions = new StringBuilder();
 
   private String geometryFilterCondition = "";
+  private Map<String, Object> geometryFilterParameters = new HashMap<>();
 
   private String limitClause = "";
 
   private String skipClause = "";
+
+  public Map<String, Object> getGeometryFilterParameters() {
+    return geometryFilterParameters;
+  }
 
   public NativeQueryStringBuilder select(String tableName, String[] columns) {
     selectString = String.format("SELECT %s FROM %s".formatted(String.join(", ", columns), tableName));
@@ -63,19 +69,40 @@ public class NativeQueryStringBuilder {
     return this;
   }
 
-  public NativeQueryStringBuilder addKNNGeometryCondition() {
+  public NativeQueryStringBuilder addKNNGeometryCondition(double x1, double y1, double z1, int k) {
     geometryFilterCondition = " ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k";
+    geometryFilterParameters.put("x1", x1);
+    geometryFilterParameters.put("y1", y1);
+    geometryFilterParameters.put("z1", z1);
+    geometryFilterParameters.put("k", k);
     return this;
   }
 
-  public NativeQueryStringBuilder addAABBGeometryCondition() {
+  public NativeQueryStringBuilder addAABBGeometryCondition(
+    double x1,
+    double y1,
+    double z1,
+    double x2,
+    double y2,
+    double z2
+  ) {
     geometryFilterCondition =
       " AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2))";
+    geometryFilterParameters.put("x1", x1);
+    geometryFilterParameters.put("y1", y1);
+    geometryFilterParameters.put("z1", z1);
+    geometryFilterParameters.put("x2", x2);
+    geometryFilterParameters.put("y2", y2);
+    geometryFilterParameters.put("z2", z2);
     return this;
   }
 
-  public NativeQueryStringBuilder addBSGeometryCondition() {
+  public NativeQueryStringBuilder addBSGeometryCondition(double x1, double y1, double z1, double radius) {
     geometryFilterCondition = " AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius)";
+    geometryFilterParameters.put("x1", x1);
+    geometryFilterParameters.put("y1", y1);
+    geometryFilterParameters.put("z1", z1);
+    geometryFilterParameters.put("radius", radius);
     return this;
   }
 
