@@ -26,7 +26,6 @@ public class SpatialDataReference extends BasicReference {
   private long endTime;
   private String metadata;
   private Integer limit;
-  private Integer offset;
   private Integer skip;
 
   @ToString.Exclude

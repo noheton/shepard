@@ -116,7 +116,6 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     toCreate.setStartTime(spatialDataReference.getStartTime());
     toCreate.setEndTime(spatialDataReference.getEndTime());
     toCreate.setLimit(spatialDataReference.getLimit());
-    toCreate.setOffset(spatialDataReference.getOffset());
     toCreate.setSkip(spatialDataReference.getSkip());
     toCreate.setSpatialDataContainer(container);
 
@@ -148,7 +147,6 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
       reference.getStartTime(),
       reference.getEndTime(),
       reference.getLimit(),
-      reference.getOffset(),
       reference.getSkip()
     );
     return dataPointService.getSpatialDataPointIOs(reference.getSpatialDataContainer().getId(), params);

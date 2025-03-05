@@ -58,9 +58,6 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   private Integer limit;
 
   @Schema
-  private Integer offset;
-
-  @Schema
   private Integer skip;
 
   public SpatialDataReferenceIO(SpatialDataReference ref) {
@@ -73,7 +70,6 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
     this.endTime = ref.getEndTime();
     this.metadata = SpatialDataParamParser.parseMetadata(ref.getMetadata()).orElse(Collections.emptyMap());
     this.limit = ref.getLimit();
-    this.offset = ref.getOffset();
     this.skip = ref.getSkip();
     this.spatialDataContainerId = ref.getSpatialDataContainer() != null ? ref.getSpatialDataContainer().getId() : -1;
   }
