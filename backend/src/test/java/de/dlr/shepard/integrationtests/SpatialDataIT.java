@@ -41,6 +41,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   private static RequestSpecification containerRequestSpec;
   private static SpatialDataContainerIO container;
   private static ArrayList<SpatialDataContainerIO> existingContainers = new ArrayList<>();
+  private static List<SpatialDataPointIO> createdDataPoints;
 
   @BeforeAll
   public static void setUp() {
@@ -253,7 +254,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(6)
   public void addSpatialDataPoints_success() {
-    var dataPoints = IntStream.range(0, 10)
+    createdDataPoints = IntStream.range(0, 10)
       .mapToObj(index ->
         new SpatialDataPointIO(
           Long.valueOf(index),
@@ -267,7 +268,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .collect(Collectors.toList());
     given()
       .spec(containerRequestSpec)
-      .body(dataPoints)
+      .body(createdDataPoints)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
@@ -290,7 +291,12 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .extract()
       .as(SpatialDataPointIO[].class);
     // Sphere of radius 49 will include the points [0, 0, 0] [10, 10, 10] and [20, 20, 20]
-    assertEquals(dataPoints.length, 3);
+    SpatialDataPointIO[] expectedDataPoints = {
+      createdDataPoints.get(0),
+      createdDataPoints.get(1),
+      createdDataPoints.get(2),
+    };
+    assertArrayEquals(expectedDataPoints, dataPoints);
   }
 
   @Test
