@@ -63,7 +63,7 @@ public class SpatialDataPointRepository {
   }
 
   @Timed(value = "shepard.spatial-data.insert-many")
-  public int insertMultiple(long containerId, SpatialDataPoint[] data) {
+  public int insert(long containerId, SpatialDataPoint[] data) {
     var allResultCount = 0;
     var sql = new NativeInsertStatementBuilder()
       .insert(
@@ -124,6 +124,31 @@ public class SpatialDataPointRepository {
       .build();
 
     return entityManager.createNativeQuery(query, SpatialDataPoint.class).getResultList();
+  }
+
+  @Timed(value = "shepard.spatial-data.query-by-bounding-box")
+  @SuppressWarnings("unchecked")
+  public List<SpatialDataPoint> get(
+    long containerId,
+    Long timestampStart,
+    Long timestampEnd,
+    Map<String, Object> metadataFilter,
+    List<FilterCondition> measurementsFilter,
+    Integer limit,
+    Integer skip
+  ) {
+    var queryBuilder = new NativeQueryStringBuilder()
+      .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
+      .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
+      .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
+      .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
+      .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
+      .addSkipClause(skip)
+      .addLimitClause(limit);
+
+    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    return query.getResultList();
   }
 
   /**

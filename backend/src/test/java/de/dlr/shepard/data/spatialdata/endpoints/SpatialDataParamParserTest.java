@@ -31,7 +31,7 @@ class SpatialDataParamParserTest {
         "z": 30
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json).get();
     assertNotNull(filter);
     assertEquals(GeometryFilterType.K_NEAREST_NEIGHBOR, filter.getType());
     assertTrue(filter instanceof KNearestNeighbor);
@@ -56,7 +56,7 @@ class SpatialDataParamParserTest {
         "maxZ": 100
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json).get();
     assertNotNull(filter);
     assertEquals(GeometryFilterType.AXIS_ALIGNED_BOUNDING_BOX, filter.getType());
     assertTrue(filter instanceof AxisAlignedBoundingBox);
@@ -81,7 +81,7 @@ class SpatialDataParamParserTest {
         "centerZ": 20
       }""";
 
-    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json);
+    AbstractGeometryFilter filter = SpatialDataParamParser.parseGeometryFilter(json).get();
     assertNotNull(filter);
     assertEquals(GeometryFilterType.BOUNDING_SPHERE, filter.getType());
     assertTrue(filter instanceof BoundingSphere);

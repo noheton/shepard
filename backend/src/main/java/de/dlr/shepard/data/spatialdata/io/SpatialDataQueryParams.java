@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.spatialdata.io;
 
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
-import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -26,10 +25,6 @@ public class SpatialDataQueryParams {
     Integer limit,
     Integer skip
   ) {
-    if (!geometryFilter.isValid()) throw new BadRequestException("Invalid geometryFilter param");
-    if (startTime != null && endTime != null && startTime > endTime) throw new BadRequestException(
-      "startTime should be less than or equals endTime"
-    );
     this.geometryFilter = geometryFilter;
     this.metadata = metadata;
     this.measurementsFilters = measurementsFilters;

@@ -38,13 +38,24 @@ public class SpatialDataPointService {
     spatialDataContainerService.getContainer(containerId);
 
     final List<SpatialDataPoint> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
-    spatialDataPointRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
+    spatialDataPointRepository.insert(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
   public List<SpatialDataPointIO> getSpatialDataPointIOs(
     long containerId,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    if (spatialDataQueryParams.getGeometryFilter() == null) return mapSpatialDataPoints(
+      spatialDataPointRepository.get(
+        containerId,
+        spatialDataQueryParams.getStartTime(),
+        spatialDataQueryParams.getEndTime(),
+        spatialDataQueryParams.getMetadata(),
+        spatialDataQueryParams.getMeasurementsFilters(),
+        spatialDataQueryParams.getLimit(),
+        spatialDataQueryParams.getSkip()
+      )
+    );
     switch (spatialDataQueryParams.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX -> {
         return getByAABoundingBox(
@@ -153,8 +164,8 @@ public class SpatialDataPointService {
           point.getPosition().getCoordinate().getX(),
           point.getPosition().getCoordinate().getY(),
           point.getPosition().getCoordinate().getZ(),
-          point.getMeasurements(),
-          point.getMetadata()
+          point.getMetadata(),
+          point.getMeasurements()
         )
       )
       .collect(Collectors.toList());

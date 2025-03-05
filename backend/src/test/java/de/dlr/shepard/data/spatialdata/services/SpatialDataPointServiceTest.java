@@ -47,7 +47,7 @@ public class SpatialDataPointServiceTest {
 
     spatialDataPointService.createSpatialDataPoints(containerId, dataPoints);
 
-    Mockito.verify(spatialGeometryRepository, Mockito.times(1)).insertMultiple(
+    Mockito.verify(spatialGeometryRepository, Mockito.times(1)).insert(
       Mockito.eq(containerId),
       Mockito.any(SpatialDataPoint[].class)
     );

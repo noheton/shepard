@@ -14,10 +14,12 @@ public final class SpatialDataParamParser {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
-  public static AbstractGeometryFilter parseGeometryFilter(String paramString) {
-    if (paramString == null) return null;
+  public static Optional<AbstractGeometryFilter> parseGeometryFilter(String paramString) {
+    if (paramString == null) return Optional.empty();
     try {
-      return objectMapper.readValue(paramString, AbstractGeometryFilter.class);
+      AbstractGeometryFilter geometryFilter = objectMapper.readValue(paramString, AbstractGeometryFilter.class);
+      if (!geometryFilter.isValid()) throw new BadRequestException("Invalid geometryFilter param");
+      return Optional.of(geometryFilter);
     } catch (JsonProcessingException e) {
       throw new BadRequestException("Invalid geometryFilter param");
     }

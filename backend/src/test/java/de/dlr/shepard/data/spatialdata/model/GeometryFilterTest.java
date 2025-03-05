@@ -23,8 +23,10 @@ public class GeometryFilterTest {
     AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
     axisAlignedBoundingBox.set(1, 2, 3, -1, 5, 6);
     assertFalse(axisAlignedBoundingBox.isValid());
+    axisAlignedBoundingBox = new AxisAlignedBoundingBox();
     axisAlignedBoundingBox.set(1, 2, 3, 4, -1, 6);
     assertFalse(axisAlignedBoundingBox.isValid());
+    axisAlignedBoundingBox = new AxisAlignedBoundingBox();
     axisAlignedBoundingBox.set(1, 2, 3, 4, 5, -1);
     assertFalse(axisAlignedBoundingBox.isValid());
   }
