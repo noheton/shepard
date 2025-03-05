@@ -54,8 +54,6 @@ public class SpatialDataReferenceRest {
   @Context
   private SecurityContext securityContext;
 
-  //SpatialDataReferenceService() {}
-
   @Inject
   public SpatialDataReferenceRest(SpatialDataReferenceService spatialDataReferenceService) {
     this.spatialDataReferenceService = spatialDataReferenceService;
@@ -63,7 +61,7 @@ public class SpatialDataReferenceRest {
 
   @GET
   @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
-  @Operation(description = "Get all spatialData references")
+  @Operation(description = "Get all spatial data references")
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -74,7 +72,7 @@ public class SpatialDataReferenceRest {
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllSpatialDataReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId, //Why is this here?
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
@@ -124,7 +122,7 @@ public class SpatialDataReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createSpatialDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId, //Why is this here?
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
