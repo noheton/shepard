@@ -7,6 +7,7 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import jakarta.enterprise.context.RequestScoped;
@@ -17,7 +18,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -167,13 +167,16 @@ public class SpatialDataPointRest {
   @Parameter(
     name = "measurementsFilter",
     required = false,
+    schema = @Schema(
+      type = SchemaType.STRING,
+      example = "[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]"
+    ),
     description = """
     This filter should be a stringified list of JSON FilterConditions. \n
     FilterCondition has this structure: {'key':<KEY>, 'operator': <OPERATOR>, 'value': <VALUE>}. \n
     The key is a comma separated path keynames string. \n
     The operator is one of ['EQUALS', 'GREATER_THAN'. 'LESS_THAN']. \n
-    The value needs to be a number. \n
-    example : ```[{ "key": "temperature,val", "operator": "EQUALS", "value": 20 }]```"""
+    The value needs to be a number."""
   )
   @Parameter(
     name = "geometryFilter",
@@ -219,7 +222,6 @@ public class SpatialDataPointRest {
   @Parameter(name = "startTime", required = false, description = "Start timestamp in nanoseconds, exclusive")
   @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
   @Parameter(name = "limit", required = false)
-  @Parameter(name = "offset", required = false)
   @Parameter(
     name = "skip",
     required = false,
@@ -239,16 +241,19 @@ public class SpatialDataPointRest {
     @QueryParam("startTime") Long startTime,
     @QueryParam("endTime") Long endTime,
     @QueryParam("limit") Integer limit,
-    @QueryParam("offset") Integer offset,
     @QueryParam("skip") Integer skip
   ) {
     AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
+    if (geometryFilter instanceof KNearestNeighbor) {
+      if (skip != null) throw new BadRequestException("Skip parameter is not accepted with KNN");
+      if (limit != null) throw new BadRequestException("Limit parameter is not accepted with KNN");
+    }
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
     if (geometryFilter == null) throw new BadRequestException("Invalid geometryFilter param");
 
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
-
+    if (skip != null && skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
       geometryFilter,
       metadata.orElse(Collections.emptyMap()),
@@ -256,23 +261,18 @@ public class SpatialDataPointRest {
       startTime,
       endTime,
       limit,
-      offset,
       skip
     );
 
     return Response.ok(dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams)).build();
   }
 
-  @PATCH
+  @POST
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
-  @Operation(description = "Adding data points to spatial data container")
+  @Operation(description = "Adds spatial data points to a spatial data container.")
   @Parameter(name = Constants.SPATIAL_DATA_DATABASE_TYPE, required = true)
-  @APIResponse(
-    description = "OK",
-    responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
-  )
+  @APIResponse(description = "OK", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   public Response createSpatialDataPoints(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId,
@@ -282,6 +282,6 @@ public class SpatialDataPointRest {
     ) @Valid List<SpatialDataPointIO> dataPoints
   ) {
     dataPointService.createSpatialDataPoints(containerId, dataPoints);
-    return Response.ok().build();
+    return Response.noContent().build();
   }
 }

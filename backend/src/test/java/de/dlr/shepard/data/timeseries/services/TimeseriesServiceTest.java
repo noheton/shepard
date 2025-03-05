@@ -6,19 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
-import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response.Status;
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -36,7 +31,6 @@ public class TimeseriesServiceTest {
   private final String userName = "Testuser";
   private final long startDate = InstantHelper.fromGermanDate("01.01.2024").toNano();
   private final long endDate = InstantHelper.now().addHours(1).toNano();
-  private final double doubleEpsilon = 1E-9;
 
   @Test
   @Transactional
@@ -207,9 +201,6 @@ public class TimeseriesServiceTest {
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
-  /*************************
-   * getTimeseriesAvailable
-   *************************/
   @Test
   @Transactional
   public void getTimeseriesAvailable_timeseriesExists_returnsTimeseries() {
@@ -233,10 +224,6 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getTimeseriesAvailable(nonExistingContainerId);
     assertEquals(0, actual.size());
   }
-
-  /**************
-   * getTimeseriesDataIO
-   ****************/
 
   @Test
   @Transactional
@@ -315,789 +302,68 @@ public class TimeseriesServiceTest {
     assertEquals(0, actual.size());
   }
 
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnMax_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(1).toNano(),
-      null,
-      null,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMean_returnMean_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
-      null,
-      null,
-      AggregateFunction.MEAN
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMin_returnMin_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
-      null,
-      null,
-      AggregateFunction.MIN
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getLast_returnLast_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
-      null,
-      null,
-      AggregateFunction.LAST
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getFirst_returnFirst_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
-      null,
-      null,
-      AggregateFunction.FIRST
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getSpread_returnSpread_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(3).toNano(),
-      null,
-      null,
-      AggregateFunction.SPREAD
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(0.2, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMode_returnMode_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.4),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(1).toNano(),
-      null,
-      null,
-      AggregateFunction.MODE
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMedian_returnMedian_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 11.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 13.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 26.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 34.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 47.0)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(8).toNano(),
-      null,
-      null,
-      AggregateFunction.MEDIAN
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(13.0, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getCount_returnCount_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 11.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 13.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 26.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 34.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 47.0)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      null,
-      null,
-      AggregateFunction.COUNT
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals((long) 7, actual.get(0).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getSum_returnSum_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 2.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 3.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 5.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 7.0)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      null,
-      null,
-      AggregateFunction.SUM
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(17.0, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getStddev_returnStddev_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 10.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 12.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 16.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 23.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 21.0),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 16.0)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      null,
-      null,
-      AggregateFunction.STDDEV
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(5.2372293656638, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getSum_returnSum_noFill_noGroupBy_integer() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 2),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 3),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 5),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 7)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      null,
-      null,
-      AggregateFunction.SUM
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals((long) 17, actual.get(0).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getStddev_returnStddev_noFill_noGroupBy_integer() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 10),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 12),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 23),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 23),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 16),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 23),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 21),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 16)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      null,
-      null,
-      AggregateFunction.STDDEV
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(5.2372293656638, ((BigDecimal) actual.get(0).getValue()).doubleValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnsMax_noFill_groupBy_integer() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 21),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 22),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.addSeconds(1).toNano(), 23)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofMinutes(2).toNanos(),
-      null,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(23, actual.get(0).getValue());
-  }
-
-  /*
-   * Test aggregate functions with options of fill and groupBy
-   */
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnsMax_noFill_groupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.2),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.3)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.now().toNano(),
-      Duration.ofMinutes(2).toNanos(),
-      null,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnMax_prevFill_groupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofSeconds(2).toNanos(),
-      FillOption.PREVIOUS,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(6, actual.size());
-    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    assertEquals(22.5, (Double) actual.get(1).getValue(), doubleEpsilon);
-    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    assertEquals(22.3, (Double) actual.get(3).getValue(), doubleEpsilon);
-    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    assertEquals(22.2, (Double) actual.get(5).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
-      null,
-      null,
-      null
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(3, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
-    assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
-    assertEquals(22.2, (Double) actual.get(2).getValue(), doubleEpsilon);
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy_boolean() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointBoolean(true),
-        TimeseriesTestDataGenerator.generateDataPointBoolean(false),
-        TimeseriesTestDataGenerator.generateDataPointBoolean(true)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.now().toNano(),
-      null,
-      null,
-      null
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(3, actual.size());
-    assertEquals(true, actual.get(0).getValue());
-    assertEquals(false, actual.get(1).getValue());
-    assertEquals(true, actual.get(2).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy_string() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointString("Hello"),
-        TimeseriesTestDataGenerator.generateDataPointString("World"),
-        TimeseriesTestDataGenerator.generateDataPointString("!")
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.now().toNano(),
-      null,
-      null,
-      null
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(3, actual.size());
-    assertEquals("Hello", actual.get(0).getValue());
-    assertEquals("World", actual.get(1).getValue());
-    assertEquals("!", actual.get(2).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_noFunc_noFill_noGroupBy_integer() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 1),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 2),
-        TimeseriesTestDataGenerator.generateDataPointInteger(instantHelper.toNano(), 3)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.now().toNano(),
-      null,
-      null,
-      null
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(3, actual.size());
-    assertEquals(1, actual.get(0).getValue());
-    assertEquals(2, actual.get(1).getValue());
-    assertEquals(3, actual.get(2).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnMax_nullFill_groupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofSeconds(2).toNanos(),
-      FillOption.NULL,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(6, actual.size());
-    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    assertEquals(null, actual.get(1).getValue());
-    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    assertEquals(null, actual.get(3).getValue());
-    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    assertEquals(null, actual.get(5).getValue());
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnMax_linearFill_groupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.5),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(4).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofSeconds(2).toNanos(),
-      FillOption.LINEAR,
-      AggregateFunction.MAX
-    );
-    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-
-    assertEquals(6, actual.size());
-    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
-    assertEquals(22.4, (Double) actual.get(1).getValue(), doubleEpsilon);
-    assertEquals(22.3, (Double) actual.get(2).getValue(), doubleEpsilon);
-    assertEquals(22.25, (Double) actual.get(3).getValue(), doubleEpsilon);
-    assertEquals(22.2, (Double) actual.get(4).getValue(), doubleEpsilon);
-    assertEquals(null, actual.get(5).getValue());
-  }
-
-  /*
-   * Aggregate Function Exceptions
+  /**
+   * The intended behavior of the timescaleDb is to silently overwrite non-unique timestamp values with the most recent record.
+   * Meaning that when a record has a timestamp that is already present in the DB, the new record should overwrite the old one.
    */
   @Test
   @Transactional
-  public void getDataPointsByTimeseries_getMax_returnsException_noFill_groupBy_boolean() {
+  public void saveDataPoint_non_unique_returnOverwritten() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-1");
+
+    // setup batch of distinct timeseries data points
+    var timeseriesDataPoint1 = new TimeseriesDataPoint(1708067683056880001L, "value 1");
+    var timeseriesDataPoint2 = new TimeseriesDataPoint(1708067683056880002L, "value 2");
+    var timeseriesDataPoint3 = new TimeseriesDataPoint(1708067683056880003L, "value 3");
+
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointBoolean(true),
-        TimeseriesTestDataGenerator.generateDataPointBoolean(false),
-        TimeseriesTestDataGenerator.generateDataPointBoolean(true)
-      )
+      List.of(timeseriesDataPoint1, timeseriesDataPoint2, timeseriesDataPoint3)
     );
 
     this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
+
+    // create new batch of data points, this checks that overwriting existing timeseries datapoints work
+    var timeseriesDataPoint3New = new TimeseriesDataPoint(1708067683056880003L, "value 3 UPDATED");
+    var timeseriesDataPoint4 = new TimeseriesDataPoint(1708067683056880004L, "value 4");
+    var timeseriesDataPoint5 = new TimeseriesDataPoint(1708067683056880005L, "value 5");
+
+    List<TimeseriesDataPoint> dataPointsContainingNonUnique = new ArrayList<>(
+      List.of(timeseriesDataPoint3New, timeseriesDataPoint4, timeseriesDataPoint5)
+    );
+
+    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPointsContainingNonUnique);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofMinutes(2).toNanos(),
+      1,
+      1708067683056880099L,
       null,
-      AggregateFunction.MAX
-    );
-    // Booleans must not use aggregation
-    assertThrowsExactly(InvalidRequestException.class, () -> {
-      this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-    });
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_getMax_returnsException_noFill_groupBy_string() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointString("Hello"),
-        TimeseriesTestDataGenerator.generateDataPointString("World"),
-        TimeseriesTestDataGenerator.generateDataPointString("!")
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      instantHelper.addSeconds(2).toNano(),
-      Duration.ofMinutes(2).toNanos(),
       null,
-      AggregateFunction.MAX
-    );
-    // Strings must not use aggregation
-    assertThrowsExactly(InvalidRequestException.class, () -> {
-      this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-    });
-  }
-
-  @Test
-  @Transactional
-  public void getDataPointsByTimeseries_returnsException_noFunc_prevFill_groupBy() {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(6).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(9).toNano(), 22.2)
-      )
-    );
-
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
-      Duration.ofSeconds(3).toNanos(),
-      FillOption.PREVIOUS,
       null
     );
-    // Filling/ Grouping without specifying aggregation function is not allowed
-    assertThrowsExactly(InvalidRequestException.class, () -> {
-      this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
-    });
+    var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
+
+    assertEquals(5, actual.size());
+    assertEquals(actual.get(0).getValue(), "value 1");
+    assertEquals(actual.get(1).getValue(), "value 2");
+    assertEquals(actual.get(2).getValue(), "value 3 UPDATED");
+    assertEquals(actual.get(3).getValue(), "value 4");
+    assertEquals(actual.get(4).getValue(), "value 5");
   }
 
   @Test
   @Transactional
-  public void getDataPointsByTimeseries_getMax_returnsException_linearFill_noGroupBy() {
+  public void saveDataPoint_non_unique_batch_returnException() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
-    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
-    InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
-    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
-      List.of(
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.toNano(), 22.1),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(1).toNano(), 22.3),
-        TimeseriesTestDataGenerator.generateDataPointDouble(instantHelper.addSeconds(2).toNano(), 22.2)
-      )
-    );
+    var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-2");
 
-    this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      InstantHelper.fromGermanDate("01.01.2024").toNano(),
-      InstantHelper.fromGermanDate("01.01.2024").addSeconds(5).toNano(),
-      null,
-      FillOption.LINEAR,
-      AggregateFunction.MAX
-    );
-    // Setting fill option, without specifying groupBy/ interval is not allowed
-    assertThrowsExactly(InvalidRequestException.class, () -> {
-      this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
+    // setup batch of non-unique timestamp values - we expect an exception to be thrown
+    var timeseriesDataPoint1 = new TimeseriesDataPoint(1708067683056880001L, "value 1");
+    var timeseriesDataPoint2 = new TimeseriesDataPoint(1708067683056880001L, "value 2");
+
+    List<TimeseriesDataPoint> dataPoints = new ArrayList<>(List.of(timeseriesDataPoint1, timeseriesDataPoint2));
+
+    assertThrowsExactly(InvalidBodyException.class, () -> {
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
     });
   }
 }

@@ -17,7 +17,8 @@ create table timeseries_data_points (
     double_value DOUBLE PRECISION,
     int_value integer,
     string_value TEXT,
-    boolean_value boolean
+    boolean_value boolean,
+    UNIQUE(timeseries_id, time)
 );
 
 alter table if exists timeseries_data_points

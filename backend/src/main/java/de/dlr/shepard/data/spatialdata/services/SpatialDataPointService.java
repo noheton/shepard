@@ -41,24 +41,31 @@ public class SpatialDataPointService {
     spatialDataPointRepository.insertMultiple(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
   }
 
-  public List<SpatialDataPointIO> getSpatialDataPointIOs(long containerId, SpatialDataQueryParams spatialDataParamsIO) {
-    switch (spatialDataParamsIO.getGeometryFilter().getType()) {
+  public List<SpatialDataPointIO> getSpatialDataPointIOs(
+    long containerId,
+    SpatialDataQueryParams spatialDataQueryParams
+  ) {
+    switch (spatialDataQueryParams.getGeometryFilter().getType()) {
       case AXIS_ALIGNED_BOUNDING_BOX -> {
         return getByAABoundingBox(
           containerId,
-          (AxisAlignedBoundingBox) spatialDataParamsIO.getGeometryFilter(),
-          spatialDataParamsIO
+          (AxisAlignedBoundingBox) spatialDataQueryParams.getGeometryFilter(),
+          spatialDataQueryParams
         );
       }
       case BOUNDING_SPHERE -> {
         return getByBoundingSphere(
           containerId,
-          (BoundingSphere) spatialDataParamsIO.getGeometryFilter(),
-          spatialDataParamsIO
+          (BoundingSphere) spatialDataQueryParams.getGeometryFilter(),
+          spatialDataQueryParams
         );
       }
       case K_NEAREST_NEIGHBOR -> {
-        return getByKNN(containerId, (KNearestNeighbor) spatialDataParamsIO.getGeometryFilter(), spatialDataParamsIO);
+        return getByKNN(
+          containerId,
+          (KNearestNeighbor) spatialDataQueryParams.getGeometryFilter(),
+          spatialDataQueryParams
+        );
       }
       case ORIENTED_BOUNDING_BOX -> throw new NotImplementedError("not implemented");
       default -> throw new Error("Unknown geometry filter type");
@@ -73,7 +80,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByAABoundingBox(
     long containerId,
     AxisAlignedBoundingBox boundingBox,
-    SpatialDataQueryParams spatialDataParamsIO
+    SpatialDataQueryParams spatialDataQueryParams
   ) {
     final Coordinate bottomLeft = new Coordinate(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ());
     final Coordinate topRight = new Coordinate(boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
@@ -82,12 +89,12 @@ public class SpatialDataPointService {
         containerId,
         bottomLeft,
         topRight,
-        spatialDataParamsIO.getStartTime(),
-        spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata(),
-        spatialDataParamsIO.getMeasurementsFilters(),
-        spatialDataParamsIO.getLimit(),
-        spatialDataParamsIO.getSkip()
+        spatialDataQueryParams.getStartTime(),
+        spatialDataQueryParams.getEndTime(),
+        spatialDataQueryParams.getMetadata(),
+        spatialDataQueryParams.getMeasurementsFilters(),
+        spatialDataQueryParams.getLimit(),
+        spatialDataQueryParams.getSkip()
       )
     );
   }
@@ -95,7 +102,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByBoundingSphere(
     long containerId,
     BoundingSphere boundingSphere,
-    SpatialDataQueryParams spatialDataParamsIO
+    SpatialDataQueryParams spatialDataQueryParams
   ) {
     final Coordinate sphereCenter = new Coordinate(
       boundingSphere.getCenterX(),
@@ -108,12 +115,12 @@ public class SpatialDataPointService {
         containerId,
         sphereCenter,
         boundingSphere.getRadius(),
-        spatialDataParamsIO.getStartTime(),
-        spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata(),
-        spatialDataParamsIO.getMeasurementsFilters(),
-        spatialDataParamsIO.getLimit(),
-        spatialDataParamsIO.getSkip()
+        spatialDataQueryParams.getStartTime(),
+        spatialDataQueryParams.getEndTime(),
+        spatialDataQueryParams.getMetadata(),
+        spatialDataQueryParams.getMeasurementsFilters(),
+        spatialDataQueryParams.getLimit(),
+        spatialDataQueryParams.getSkip()
       )
     );
   }
@@ -121,7 +128,7 @@ public class SpatialDataPointService {
   private List<SpatialDataPointIO> getByKNN(
     long containerId,
     KNearestNeighbor knn,
-    SpatialDataQueryParams spatialDataParamsIO
+    SpatialDataQueryParams spatialDataQueryParams
   ) {
     final Coordinate kCoordinate = new Coordinate(knn.getX(), knn.getY(), knn.getZ());
     return mapSpatialDataPoints(
@@ -129,11 +136,10 @@ public class SpatialDataPointService {
         containerId,
         kCoordinate,
         knn.getK(),
-        spatialDataParamsIO.getStartTime(),
-        spatialDataParamsIO.getEndTime(),
-        spatialDataParamsIO.getMetadata(),
-        spatialDataParamsIO.getMeasurementsFilters(),
-        spatialDataParamsIO.getSkip()
+        spatialDataQueryParams.getStartTime(),
+        spatialDataQueryParams.getEndTime(),
+        spatialDataQueryParams.getMetadata(),
+        spatialDataQueryParams.getMeasurementsFilters()
       )
     );
   }

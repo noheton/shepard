@@ -15,7 +15,6 @@ public class SpatialDataQueryParams {
   private Long startTime;
   private Long endTime;
   private Integer limit;
-  private Integer offset;
   private Integer skip;
 
   public SpatialDataQueryParams(
@@ -25,7 +24,6 @@ public class SpatialDataQueryParams {
     Long startTime,
     Long endTime,
     Integer limit,
-    Integer offset,
     Integer skip
   ) {
     if (!geometryFilter.isValid()) throw new BadRequestException("Invalid geometryFilter param");
@@ -38,7 +36,6 @@ public class SpatialDataQueryParams {
     this.startTime = startTime;
     this.endTime = endTime;
     this.limit = limit;
-    this.offset = offset;
     this.skip = skip;
   }
 }

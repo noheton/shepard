@@ -18,14 +18,14 @@ export function addSpatialDataPoint(containerId: number, numOfMeasurements: numb
   const dataPoint = generateSingleRandomSpatialDataPoint(numOfMeasurements);
   const spatialDataPayloadURL = spatialDataContainerUri + `/${containerId}/payload`;
   const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
-  return http.patch(spatialURL.toString(), JSON.stringify([dataPoint]), params);
+  return http.post(spatialURL.toString(), JSON.stringify([dataPoint]), params);
 }
 
 export function addManySpatialDataPoints(containerId: number, numberOfPoints: number, numOfMeasurements: number = 100) {
   const dataPoints = generateMultipleSpatialDataPoints(numberOfPoints, numOfMeasurements);
   const spatialDataPayloadURL = spatialDataContainerUri + `/${containerId}/payload`;
   const spatialURL = buildUrlWithQueryParams(spatialDataPayloadURL, null);
-  return http.patch(spatialURL.toString(), JSON.stringify(dataPoints), params);
+  return http.post(spatialURL.toString(), JSON.stringify(dataPoints), params);
 }
 
 export function deleteSpatialDataPointsByContainerId(containerId: number) {

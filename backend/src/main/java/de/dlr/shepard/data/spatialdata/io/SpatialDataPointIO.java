@@ -11,7 +11,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "SpatialDataPoint")
 public class SpatialDataPointIO {
 
-  @Schema(description = "Time in nanoseconds since unix epoch.")
+  @Schema(
+    description = "Time in nanoseconds since unix epoch. If no value is provided, the current server time is used."
+  )
   private Long timestamp;
 
   @NotNull

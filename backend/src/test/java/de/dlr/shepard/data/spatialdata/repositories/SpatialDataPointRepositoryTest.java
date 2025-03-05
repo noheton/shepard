@@ -565,8 +565,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -582,8 +581,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -610,8 +608,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -703,8 +700,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       metadataFilter,
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -741,8 +737,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       metadataFilter,
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -779,8 +774,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       metadataFilter,
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -802,8 +796,7 @@ public class SpatialDataPointRepositoryTest {
       0l,
       2l,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -824,8 +817,7 @@ public class SpatialDataPointRepositoryTest {
       2l,
       4l,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -847,8 +839,7 @@ public class SpatialDataPointRepositoryTest {
       0l,
       null,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -871,8 +862,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       2l,
       Collections.emptyMap(),
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -901,8 +891,7 @@ public class SpatialDataPointRepositoryTest {
       0L,
       2L,
       metadataFilter,
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -931,8 +920,7 @@ public class SpatialDataPointRepositoryTest {
       10L,
       20L,
       metadataFilter,
-      Collections.emptyList(),
-      null
+      Collections.emptyList()
     );
 
     assertNotNull(data);
@@ -969,8 +957,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       Collections.emptyMap(),
-      measurementsFilter,
-      null
+      measurementsFilter
     );
 
     assertNotNull(data);
@@ -1003,8 +990,7 @@ public class SpatialDataPointRepositoryTest {
       null,
       null,
       Collections.emptyMap(),
-      measurementsFilter,
-      null
+      measurementsFilter
     );
 
     assertNotNull(data);
@@ -1032,8 +1018,7 @@ public class SpatialDataPointRepositoryTest {
       0L,
       20L,
       metadataFilter,
-      Collections.emptyList(),
-      2
+      Collections.emptyList()
     );
     System.out.println("Data \n" + data);
     assertNotNull(data);

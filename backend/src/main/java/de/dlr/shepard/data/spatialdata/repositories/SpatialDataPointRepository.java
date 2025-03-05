@@ -146,26 +146,19 @@ public class SpatialDataPointRepository {
     Integer limit,
     Integer skip
   ) {
-    var query = new NativeQueryStringBuilder()
+    var queryBuilder = new NativeQueryStringBuilder()
       .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
-      .addAABBGeometryCondition()
+      .addAABBGeometryCondition(bottomLeft.x, bottomLeft.y, bottomLeft.z, topRight.x, topRight.y, topRight.z)
       .addSkipClause(skip)
-      .addLimitClause(limit)
-      .build();
+      .addLimitClause(limit);
 
-    return entityManager
-      .createNativeQuery(query, SpatialDataPoint.class)
-      .setParameter("x1", bottomLeft.x)
-      .setParameter("y1", bottomLeft.y)
-      .setParameter("z1", bottomLeft.z)
-      .setParameter("x2", topRight.x)
-      .setParameter("y2", topRight.y)
-      .setParameter("z2", topRight.z)
-      .getResultList();
+    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    return query.getResultList();
   }
 
   @SuppressWarnings("unchecked")
@@ -181,24 +174,19 @@ public class SpatialDataPointRepository {
     Integer limit,
     Integer skip
   ) {
-    var query = new NativeQueryStringBuilder()
+    var queryBuilder = new NativeQueryStringBuilder()
       .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
-      .addBSGeometryCondition()
+      .addBSGeometryCondition(coordinate.x, coordinate.y, coordinate.z, radius)
       .addSkipClause(skip)
-      .addLimitClause(limit)
-      .build();
+      .addLimitClause(limit);
 
-    return entityManager
-      .createNativeQuery(query, SpatialDataPoint.class)
-      .setParameter("x1", coordinate.x)
-      .setParameter("y1", coordinate.y)
-      .setParameter("z1", coordinate.z)
-      .setParameter("radius", radius)
-      .getResultList();
+    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    return query.getResultList();
   }
 
   /**
@@ -216,25 +204,18 @@ public class SpatialDataPointRepository {
     Long timestampStart,
     Long timestampEnd,
     Map<String, Object> metadataFilter,
-    List<FilterCondition> measurementsFilter,
-    Integer skip
+    List<FilterCondition> measurementsFilter
   ) {
-    var query = new NativeQueryStringBuilder()
+    var queryBuilder = new NativeQueryStringBuilder()
       .select(SPATIAL_TABLE_NAME, ALL_COLUMNS_STRING)
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .addTimeCondition(SPATIAL_COLUMN_TIME, timestampStart, timestampEnd)
       .addJsonContainsCondition(SPATIAL_COLUMN_METADATA, metadataFilter)
       .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
-      .addSkipClause(skip)
-      .addKNNGeometryCondition()
-      .build();
+      .addKNNGeometryCondition(coordinate.x, coordinate.y, coordinate.z, k);
 
-    return entityManager
-      .createNativeQuery(query, SpatialDataPoint.class)
-      .setParameter("k", k)
-      .setParameter("x1", coordinate.x)
-      .setParameter("y1", coordinate.y)
-      .setParameter("z1", coordinate.z)
-      .getResultList();
+    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    return query.getResultList();
   }
 }
