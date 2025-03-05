@@ -91,7 +91,6 @@ public class SpatialDataPointServiceTest {
       startTime,
       endTime,
       limit,
-      null,
       null
     );
     spatialDataPointService.getSpatialDataPointIOs(containerId, spatialDataParamsIO);
@@ -138,7 +137,6 @@ public class SpatialDataPointServiceTest {
       startTime,
       endTime,
       limit,
-      null,
       null
     );
     spatialDataPointService.getSpatialDataPointIOs(containerId, spatialDataParamsIO);
@@ -173,7 +171,6 @@ public class SpatialDataPointServiceTest {
       startTime,
       endTime,
       limit,
-      null,
       null
     );
     spatialDataPointService.getSpatialDataPointIOs(containerId, spatialDataParamsIO);
@@ -208,7 +205,6 @@ public class SpatialDataPointServiceTest {
       startTime,
       endTime,
       limit,
-      null,
       null
     );
 
