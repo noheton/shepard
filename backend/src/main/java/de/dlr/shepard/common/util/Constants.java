@@ -196,4 +196,7 @@ public class Constants {
   public static final String SPATIAL_DATA_CONTAINERS = "spatialDataContainers";
   public static final String SPATIAL_DATA_CONTAINER_ID = "spatialDataContainerId";
   public static final String SPATIAL_DATA_DATABASE_TYPE = "databaseType";
+  public static final String SPATIAL_DATA_REFERENCES = "spatialDataReferences";
+  public static final String SPATIAL_DATA_REFERENCE = "spatialDataReference";
+  public static final String SPATIAL_DATA_REFERENCE_ID = "spatialDataReferenceId";
 }

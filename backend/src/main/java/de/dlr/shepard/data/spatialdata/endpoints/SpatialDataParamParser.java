@@ -15,7 +15,7 @@ public final class SpatialDataParamParser {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   public static AbstractGeometryFilter parseGeometryFilter(String paramString) {
-    if (paramString == null) throw new BadRequestException("Invalid geometryFilter param");
+    if (paramString == null) return null;
     try {
       return objectMapper.readValue(paramString, AbstractGeometryFilter.class);
     } catch (JsonProcessingException e) {

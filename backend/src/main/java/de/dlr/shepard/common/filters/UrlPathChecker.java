@@ -22,6 +22,7 @@ import de.dlr.shepard.context.references.basicreference.services.BasicReferenceS
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
 import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.spatialdata.services.SpatialDataReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
@@ -56,6 +57,7 @@ public class UrlPathChecker {
   private StructuredDataContainerService structuredDataContainerService;
   private FileReferenceService fileReferenceService;
   private FileContainerService fileContainerService;
+  private SpatialDataReferenceService spatialDataReferenceService;
   private UserService userService;
   private ApiKeyService apiKeyService;
   private SubscriptionService subscriptionService;
@@ -82,6 +84,7 @@ public class UrlPathChecker {
     StructuredDataContainerService structuredDataContainerService,
     FileReferenceService fileReferenceService,
     FileContainerService fileContainerService,
+    SpatialDataReferenceService spatialDataReferenceService,
     UserService userService,
     ApiKeyService apiKeyService,
     SubscriptionService subscriptionService,
@@ -102,6 +105,7 @@ public class UrlPathChecker {
     this.structuredDataContainerService = structuredDataContainerService;
     this.fileReferenceService = fileReferenceService;
     this.fileContainerService = fileContainerService;
+    this.spatialDataReferenceService = spatialDataReferenceService;
     this.userService = userService;
     this.apiKeyService = apiKeyService;
     this.subscriptionService = subscriptionService;
@@ -219,6 +223,15 @@ public class UrlPathChecker {
       long id = Long.parseLong(pathElems.get(Constants.FILE_CONTAINERS));
       var fileContainer = fileContainerService.getContainer(id);
       String error = checkContainer(fileContainer);
+      if (error != null) {
+        return builder.append(error).toString();
+      }
+    }
+
+    if (pathElems.containsKey(Constants.SPATIAL_DATA_REFERENCES)) {
+      long id = Long.parseLong(pathElems.get(Constants.SPATIAL_DATA_REFERENCES));
+      var spatialDataReference = spatialDataReferenceService.getReferenceByShepardId(id, null);
+      String error = checkReference(spatialDataReference, dataObject);
       if (error != null) {
         return builder.append(error).toString();
       }

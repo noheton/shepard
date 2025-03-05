@@ -250,6 +250,8 @@ public class SpatialDataPointRest {
     }
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
+    if (geometryFilter == null) throw new BadRequestException("Invalid geometryFilter param");
+
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
     if (skip != null && skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
