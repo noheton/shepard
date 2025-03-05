@@ -13,56 +13,47 @@ public class GeometryFilterTest {
 
   @Test
   public void isValidAxisAlignedBoundingBoxFilter_valid() {
-    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(1, 2, 3, 4, 5, 6);
+    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox(1, 2, 3, 4, 5, 6);
     assertTrue(axisAlignedBoundingBox.isValid());
   }
 
   @Test
   public void isValidAxisAlignedBoundingBoxFilter_notValid() {
-    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(1, 2, 3, -1, 5, 6);
+    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox(1, 2, 3, -1, 5, 6);
     assertFalse(axisAlignedBoundingBox.isValid());
-    axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(1, 2, 3, 4, -1, 6);
+    axisAlignedBoundingBox = new AxisAlignedBoundingBox(1, 2, 3, 4, -1, 6);
     assertFalse(axisAlignedBoundingBox.isValid());
-    axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(1, 2, 3, 4, 5, -1);
+    axisAlignedBoundingBox = new AxisAlignedBoundingBox(1, 2, 3, 4, 5, -1);
     assertFalse(axisAlignedBoundingBox.isValid());
   }
 
   @Test
   public void isValidBoundingSphereFilter_valid() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(1, 2, 3, 4);
+    BoundingSphere boundingSphere = new BoundingSphere(1, 2, 3, 4);
     assertTrue(boundingSphere.isValid());
   }
 
   @Test
   public void isValidBoundingSphereFilter_notValid() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(-1, 2, 3, 4);
+    BoundingSphere boundingSphere = new BoundingSphere(-1, 2, 3, 4);
     assertFalse(boundingSphere.isValid());
   }
 
   @Test
   public void isValidKNearestNeighborFilter_valid() {
-    KNearestNeighbor nearestNeighbor = new KNearestNeighbor();
-    nearestNeighbor.set(1, 2, 3, 4);
+    KNearestNeighbor nearestNeighbor = new KNearestNeighbor(1, 2, 3, 4);
     assertTrue(nearestNeighbor.isValid());
   }
 
   @Test
   public void isValidKNearestNeighborFilter_notValid() {
-    KNearestNeighbor nearestNeighbor = new KNearestNeighbor();
-    nearestNeighbor.set(-1, 2, 3, 4);
+    KNearestNeighbor nearestNeighbor = new KNearestNeighbor(-1, 2, 3, 4);
     assertFalse(nearestNeighbor.isValid());
   }
 
   @Test
   public void setAxisAlignedBounding_setsValues() {
-    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(1, 2, 3, 4, 5, 6);
+    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox(1, 2, 3, 4, 5, 6);
     assertEquals(axisAlignedBoundingBox.getMinX(), 1);
     assertEquals(axisAlignedBoundingBox.getMinY(), 2);
     assertEquals(axisAlignedBoundingBox.getMinZ(), 3);
@@ -73,8 +64,7 @@ public class GeometryFilterTest {
 
   @Test
   public void setBoundingSphere_setValues() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(1, 2, 3, 4);
+    BoundingSphere boundingSphere = new BoundingSphere(1, 2, 3, 4);
     assertEquals(boundingSphere.getRadius(), 1);
     assertEquals(boundingSphere.getCenterX(), 2);
     assertEquals(boundingSphere.getCenterY(), 3);
@@ -83,8 +73,7 @@ public class GeometryFilterTest {
 
   @Test
   public void setKNN_setValues() {
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(1, 2, 3, 4);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(1, 2, 3, 4);
     assertEquals(kNearestNeighbor.getK(), 1);
     assertEquals(kNearestNeighbor.getX(), 2);
     assertEquals(kNearestNeighbor.getY(), 3);

@@ -19,7 +19,8 @@ public class AxisAlignedBoundingBox extends AbstractGeometryFilter {
     super(GeometryFilterType.AXIS_ALIGNED_BOUNDING_BOX);
   }
 
-  public void set(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+  public AxisAlignedBoundingBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+    super(GeometryFilterType.AXIS_ALIGNED_BOUNDING_BOX);
     this.minX = minX;
     this.minY = minY;
     this.minZ = minZ;

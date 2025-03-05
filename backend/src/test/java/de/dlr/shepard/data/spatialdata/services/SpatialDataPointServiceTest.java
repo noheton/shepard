@@ -82,8 +82,7 @@ public class SpatialDataPointServiceTest {
     Integer limit = 4;
     Map<String, Object> metadataFilter = Map.of("data", "some data");
 
-    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(0.1, 0.2, 0.3, 1.1, 1.2, 1.3);
+    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox(0.1, 0.2, 0.3, 1.1, 1.2, 1.3);
     SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       axisAlignedBoundingBox,
       metadataFilter,
@@ -127,8 +126,7 @@ public class SpatialDataPointServiceTest {
     Map<String, Object> metadataFilter = Map.of("data", "some data");
     double radius = 10;
 
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(radius, 1.1, 1.2, 1.3);
+    BoundingSphere boundingSphere = new BoundingSphere(radius, 1.1, 1.2, 1.3);
 
     SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       boundingSphere,
@@ -161,8 +159,7 @@ public class SpatialDataPointServiceTest {
     Map<String, Object> metadataFilter = Map.of("data", "some data");
     int k = 10;
 
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(k, 1.1, 1.2, 1.3);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(k, 1.1, 1.2, 1.3);
 
     SpatialDataQueryParams spatialDataParamsIO = new SpatialDataQueryParams(
       kNearestNeighbor,

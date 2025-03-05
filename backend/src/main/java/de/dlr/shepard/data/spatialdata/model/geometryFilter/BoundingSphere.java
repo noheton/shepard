@@ -17,7 +17,8 @@ public class BoundingSphere extends AbstractGeometryFilter {
     super(GeometryFilterType.BOUNDING_SPHERE);
   }
 
-  public void set(double radius, double centerX, double centerY, double centerZ) {
+  public BoundingSphere(double radius, double centerX, double centerY, double centerZ) {
+    super(GeometryFilterType.BOUNDING_SPHERE);
     this.radius = radius;
     this.centerX = centerX;
     this.centerY = centerY;

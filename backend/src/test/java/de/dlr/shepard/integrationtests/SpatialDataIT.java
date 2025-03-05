@@ -291,8 +291,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterBoundingSphere_success() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(49, 0, 0, 0);
+    BoundingSphere boundingSphere = new BoundingSphere(49, 0, 0, 0);
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
@@ -315,8 +314,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterAxisAlignedBoundingBox_success() {
-    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox();
-    axisAlignedBoundingBox.set(-1, -1, -1, 49, 49, 49);
+    AxisAlignedBoundingBox axisAlignedBoundingBox = new AxisAlignedBoundingBox(-1, -1, -1, 49, 49, 49);
 
     String geometryFilter = JsonConverter.convertToString(axisAlignedBoundingBox);
     var dataPoints = given()
@@ -333,8 +331,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterKNN_success() {
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(3, 1, 1, 1);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(3, 1, 1, 1);
 
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
 
@@ -352,8 +349,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterKNNWithMetadataFilter_success() {
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(3, 1, 1, 1);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(3, 1, 1, 1);
 
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
     String metadataFilter = JsonConverter.convertToString(Map.of("a_meta_data", "metadata_1"));
@@ -373,8 +369,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterKNNWithMeasurementsFilter_success() {
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(3, 1, 1, 1);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(3, 1, 1, 1);
 
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
     List<FilterCondition> measurementsFilters = List.of(new FilterCondition("a_measurement", Operator.EQUALS, 1));
@@ -395,8 +390,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterKNNWithTimeDuration_success() {
-    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor();
-    kNearestNeighbor.set(50, 1, 1, 1);
+    KNearestNeighbor kNearestNeighbor = new KNearestNeighbor(50, 1, 1, 1);
 
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
     var dataPoints = given()
@@ -415,8 +409,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterBoundingSphereWithLimit_success() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(110, 0, 0, 0);
+    BoundingSphere boundingSphere = new BoundingSphere(110, 0, 0, 0);
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
@@ -434,8 +427,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getSpatialData_geometryFilterKNNWithSkip_success() {
-    BoundingSphere boundingSphere = new BoundingSphere();
-    boundingSphere.set(200, 0, 0, 0);
+    BoundingSphere boundingSphere = new BoundingSphere(200, 0, 0, 0);
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
