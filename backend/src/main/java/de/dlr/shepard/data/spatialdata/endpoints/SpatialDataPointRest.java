@@ -222,7 +222,6 @@ public class SpatialDataPointRest {
   @Parameter(name = "startTime", required = false, description = "Start timestamp in nanoseconds, exclusive")
   @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
   @Parameter(name = "limit", required = false)
-  @Parameter(name = "offset", required = false)
   @Parameter(
     name = "skip",
     required = false,
@@ -242,7 +241,6 @@ public class SpatialDataPointRest {
     @QueryParam("startTime") Long startTime,
     @QueryParam("endTime") Long endTime,
     @QueryParam("limit") Integer limit,
-    @QueryParam("offset") Integer offset,
     @QueryParam("skip") Integer skip
   ) {
     AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
@@ -261,7 +259,6 @@ public class SpatialDataPointRest {
       startTime,
       endTime,
       limit,
-      offset,
       skip
     );
 
