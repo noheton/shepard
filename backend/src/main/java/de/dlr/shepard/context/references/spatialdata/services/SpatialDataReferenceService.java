@@ -19,9 +19,7 @@ import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -141,7 +139,7 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     SpatialDataReference reference = getReferenceByShepardId(spatialDataReferenceId, null);
 
     SpatialDataQueryParams params = new SpatialDataQueryParams(
-      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()),
+      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()).get(),
       SpatialDataParamParser.parseMetadata(reference.getMetadata()).orElse(Collections.emptyMap()),
       SpatialDataParamParser.parseMeasurementsFilter(reference.getMeasurementsFilter()).orElse(Collections.emptyList()),
       reference.getStartTime(),

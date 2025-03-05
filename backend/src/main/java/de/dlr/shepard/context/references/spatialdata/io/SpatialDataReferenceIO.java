@@ -62,7 +62,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
 
   public SpatialDataReferenceIO(SpatialDataReference ref) {
     super(ref);
-    this.geometryFilter = SpatialDataParamParser.parseGeometryFilter(ref.getGeometryFilter());
+    this.geometryFilter = SpatialDataParamParser.parseGeometryFilter(ref.getGeometryFilter()).get();
     this.measurementFilters = SpatialDataParamParser.parseMeasurementsFilter(ref.getMeasurementsFilter()).orElse(
       Collections.emptyList()
     );

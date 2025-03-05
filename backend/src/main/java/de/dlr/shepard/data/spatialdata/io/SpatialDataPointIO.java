@@ -40,14 +40,14 @@ public class SpatialDataPointIO {
     @NotNull Double x,
     @NotNull Double y,
     @NotNull Double z,
-    @NotEmpty Map<String, Object> measurements,
-    Map<String, Object> metadata
+    Map<String, Object> metadata,
+    @NotEmpty Map<String, Object> measurements
   ) {
     this.timestamp = timestamp == null ? Instant.now().toEpochMilli() * 1_000_000 : timestamp;
     this.x = x;
     this.y = y;
     this.z = z;
-    this.measurements = measurements;
     this.metadata = metadata;
+    this.measurements = measurements;
   }
 }

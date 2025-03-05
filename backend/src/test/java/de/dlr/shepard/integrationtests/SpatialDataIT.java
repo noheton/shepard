@@ -261,8 +261,8 @@ public class SpatialDataIT extends BaseTestCaseIT {
           index * 10.0,
           index * 10.0,
           index * 10.0,
-          Map.of("a_measurement", index),
-          Map.of("a_meta_data", "metadata_%s".formatted(index))
+          Map.of("a_meta_data", "metadata_%s".formatted(index)),
+          Map.of("a_measurement", index)
         )
       )
       .collect(Collectors.toList());
@@ -273,6 +273,19 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(204);
+  }
+
+  @Test
+  @Order(7)
+  public void getSpatialData_noFilters_retrievesAllPoints_Success() {
+    var dataPoints = given()
+      .spec(containerRequestSpec)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .then()
+      .extract()
+      .as(SpatialDataPointIO[].class);
+    assertArrayEquals(createdDataPoints.toArray(), dataPoints);
   }
 
   @Test

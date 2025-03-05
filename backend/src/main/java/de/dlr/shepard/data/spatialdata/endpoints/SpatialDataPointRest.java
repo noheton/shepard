@@ -151,36 +151,29 @@ public class SpatialDataPointRest {
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Get spatial data by container id")
-  @Parameter(name = Constants.SPATIAL_DATA_DATABASE_TYPE, required = true)
   @Parameter(
     name = "metadataFilter",
     required = false,
     description = """
-    This filter should be a stringified list of JSON object for exact match in metadata. example : ```{
-          "track":1,
-          "layer":4,
-          "key":{
-            "subKey": "some data"
-          }
-        }```"""
+    This filter should be a stringified list of JSON object for exact match in metadata. \n
+    Example : `{"track": 1, "layer": 4, "key": {"subKey": "some data"}}`
+    """
   )
   @Parameter(
     name = "measurementsFilter",
     required = false,
-    schema = @Schema(
-      type = SchemaType.STRING,
-      example = "[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]"
-    ),
     description = """
     This filter should be a stringified list of JSON FilterConditions. \n
-    FilterCondition has this structure: {'key':<KEY>, 'operator': <OPERATOR>, 'value': <VALUE>}. \n
-    The key is a comma separated path keynames string. \n
-    The operator is one of ['EQUALS', 'GREATER_THAN'. 'LESS_THAN']. \n
-    The value needs to be a number."""
+    FilterCondition has this structure: `{\"key\": <KEY>, \"operator\": <OPERATOR>, \"value\": <VALUE>}`. \n
+    The key is a comma separated list of keys representing the path to the value. \n
+    The operator is one of `EQUALS`, `GREATER_THAN` or `LESS_THAN`. \n
+    The value needs to be a number. \n
+    Example: `[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]`
+    """
   )
   @Parameter(
     name = "geometryFilter",
-    required = true,
+    required = false,
     examples = {
       @ExampleObject(
         name = "K Nearest Neighbor",
@@ -243,10 +236,13 @@ public class SpatialDataPointRest {
     @QueryParam("limit") Integer limit,
     @QueryParam("skip") Integer skip
   ) {
-    AbstractGeometryFilter geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
-    if (geometryFilter instanceof KNearestNeighbor) {
-      if (skip != null) throw new BadRequestException("Skip parameter is not accepted with KNN");
-      if (limit != null) throw new BadRequestException("Limit parameter is not accepted with KNN");
+    Optional<AbstractGeometryFilter> geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
+    if (geometryFilter.isPresent()) {
+      if (!geometryFilter.get().isValid()) throw new BadRequestException("Invalid geometryFilter param");
+      if (geometryFilter.get() instanceof KNearestNeighbor) {
+        if (skip != null) throw new BadRequestException("Skip parameter is not accepted with KNN");
+        if (limit != null) throw new BadRequestException("Limit parameter is not accepted with KNN");
+      }
     }
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
@@ -254,8 +250,12 @@ public class SpatialDataPointRest {
 
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
     if (skip != null && skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
+
+    if (startTime != null && endTime != null && startTime > endTime) throw new BadRequestException(
+      "startTime should be less than or equals endTime"
+    );
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
-      geometryFilter,
+      geometryFilter.orElse(null),
       metadata.orElse(Collections.emptyMap()),
       measurementsFilter.orElse(Collections.emptyList()),
       startTime,
@@ -271,7 +271,6 @@ public class SpatialDataPointRest {
   @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PAYLOAD)
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Adds spatial data points to a spatial data container.")
-  @Parameter(name = Constants.SPATIAL_DATA_DATABASE_TYPE, required = true)
   @APIResponse(description = "OK", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
   public Response createSpatialDataPoints(
