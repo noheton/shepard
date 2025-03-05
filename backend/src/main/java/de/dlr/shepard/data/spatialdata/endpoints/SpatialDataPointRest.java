@@ -156,27 +156,21 @@ public class SpatialDataPointRest {
     name = "metadataFilter",
     required = false,
     description = """
-    This filter should be a stringified list of JSON object for exact match in metadata. example : ```{
-          "track":1,
-          "layer":4,
-          "key":{
-            "subKey": "some data"
-          }
-        }```"""
+    This filter should be a stringified list of JSON object for exact match in metadata. \n
+    Example : `{"track": 1, "layer": 4, "key": {"subKey": "some data"}}`
+    """
   )
   @Parameter(
     name = "measurementsFilter",
     required = false,
-    schema = @Schema(
-      type = SchemaType.STRING,
-      example = "[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]"
-    ),
     description = """
     This filter should be a stringified list of JSON FilterConditions. \n
-    FilterCondition has this structure: {'key':<KEY>, 'operator': <OPERATOR>, 'value': <VALUE>}. \n
-    The key is a comma separated path keynames string. \n
-    The operator is one of ['EQUALS', 'GREATER_THAN'. 'LESS_THAN']. \n
-    The value needs to be a number."""
+    FilterCondition has this structure: `{\"key\": <KEY>, \"operator\": <OPERATOR>, \"value\": <VALUE>}`. \n
+    The key is a comma separated list of keys representing the path to the value. \n
+    The operator is one of `EQUALS`, `GREATER_THAN` or `LESS_THAN`. \n
+    The value needs to be a number. \n
+    Example: `[{\"key\":\"temperature,val\",\"operator\":\"EQUALS\",\"value\":20},{\"key\":\"temperature,val\",\"operator\":\"LESS_THAN\",\"value\":10}]`
+    """
   )
   @Parameter(
     name = "geometryFilter",
