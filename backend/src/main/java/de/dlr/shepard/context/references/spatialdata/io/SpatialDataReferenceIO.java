@@ -24,9 +24,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   @Schema(required = true)
   private long spatialDataContainerId;
 
-  @NotNull
   @Schema(
-    required = true,
     example = """
     {
       "type": "K_NEAREST_NEIGHBOR",
@@ -62,7 +60,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
 
   public SpatialDataReferenceIO(SpatialDataReference ref) {
     super(ref);
-    this.geometryFilter = SpatialDataParamParser.parseGeometryFilter(ref.getGeometryFilter()).get();
+    this.geometryFilter = SpatialDataParamParser.parseGeometryFilter(ref.getGeometryFilter()).orElse(null);
     this.measurementFilters = SpatialDataParamParser.parseMeasurementsFilter(ref.getMeasurementsFilter()).orElse(
       Collections.emptyList()
     );
