@@ -92,10 +92,12 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
     toCreate.setName(spatialDataReference.getName());
-    try {
-      toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReference.getGeometryFilter()));
-    } catch (JsonProcessingException e) {
-      throw new InternalServerErrorException("Failed to parse geometry filter");
+    if (spatialDataReference.getGeometryFilter() != null) {
+      try {
+        toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReference.getGeometryFilter()));
+      } catch (JsonProcessingException e) {
+        throw new InternalServerErrorException("Failed to parse geometry filter");
+      }
     }
     if (spatialDataReference.getMeasurementFilters() != null) {
       try {
@@ -139,7 +141,7 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     SpatialDataReference reference = getReferenceByShepardId(spatialDataReferenceId, null);
 
     SpatialDataQueryParams params = new SpatialDataQueryParams(
-      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()).get(),
+      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()).orElse(null),
       SpatialDataParamParser.parseMetadata(reference.getMetadata()).orElse(Collections.emptyMap()),
       SpatialDataParamParser.parseMeasurementsFilter(reference.getMeasurementsFilter()).orElse(Collections.emptyList()),
       reference.getStartTime(),
