@@ -2,7 +2,6 @@ package de.dlr.shepard.context.references.spatialdata.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
 import de.dlr.shepard.context.references.spatialdata.services.SpatialDataReferenceService;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
@@ -24,6 +23,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -77,10 +77,10 @@ public class SpatialDataReferenceRest {
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     var references = spatialDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
-    var result = new ArrayList<SpatialDataReferenceIO>(references.size());
-    for (var ref : references) {
-      result.add(new SpatialDataReferenceIO(ref));
-    }
+    List<SpatialDataReferenceIO> result = references
+      .stream()
+      .map(SpatialDataReferenceIO::new)
+      .collect(Collectors.toList());
     return Response.ok(result).build();
   }
 
