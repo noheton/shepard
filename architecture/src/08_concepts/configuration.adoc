@@ -52,10 +52,19 @@ public class ExperimentalTimeseriesFeatureToggle {
 
 We can then use this feature toggle in multiple ways:
 
+====== Conditionally Disable Endpoints
+
+Quarkus provides us with a mechanism to conditionally disable endpoints.
+
+To do this, we can use the `@EndpointDisabled` property following this guide: https://quarkus.io/guides/rest#using-a-runtime-property
+
+[CAUTION]
+The `@EndpointDisabled` annotations are not working in native builds.
+
 ====== Conditionally Excluding Beans at Buildtime
 
 Quarkus provides us with a mechanism to conditionally exclude beans at buildtime.
-For example, the endpoints of an experimental feature can be enabled or disabled at build time to be included in dev builds but excluded in release builds.
+For example, the endpoints or services of an experimental feature can be enabled or disabled at build time to be included in dev builds but excluded in release builds.
 
 For example, the `ExperimentalTimeseriesRest` can have a `@IfBuildProperty` annotation like this:
 

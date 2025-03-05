@@ -51,6 +51,7 @@ Additionally, there may be modules for special functionalities like authenticati
 
 See <<building-blocks-level-2>> for the concrete modularization.
 
+[[solution_strategy_rest-endpoints]]
 ==== REST Endpoints
 
 We use link:https://quarkus.io/guides/rest[quarkus-rest] to define REST endpoints.

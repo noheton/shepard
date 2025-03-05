@@ -1,0 +1,154 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-016 Request Validation
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|27.02.2025
+
+|Status|Done
+
+|Context|
+Requests for the shepard API should be validated and respond with the correct error codes when something is wrong.
+
+The current approach for our REST API is described <<solution_strategy_rest-endpoints, here>>.
+
+There are three main aspects to consider here:
+
+.Entity existence and path consistency check
+
+* a request to an unknown route or a route with a non-existing id should return a not found (404)
+* a request to a resource containing inconsistent ids should return a not found (404) (e.g. `/collections/<collectionId>/dataObjects/<dataObjectIdOfDifferentCollection>`)
+
+Until now, this was ensured by the URLPathChecker(Filter).
+It checked the paths and query params of the request and checked the availability and correct matching of the params with existing data.
+This is problematic because of two key aspects:
+
+. performance can get bad when some requests for large amounts of data (big collections) take a while.
+  because of the independence of the filter and the actual request these expensive requests to the databases may be done twice
+. it's hard to understand the current behaviour when looking only at the endpoints, because the filter also contains business logic
+
+.Permission validation
+
+* a request to a resource should only be successful if the resource is Public/PublicReadable or the user has appropriate permissions, otherwise it should return 403
+
+Right now this validation logic is provided by PermissionsUtil and checked by the PermissionsFilter globally for all requests and explicitly by some services.
+This is problematic because of:
+
+. the validation is very loosely coupled to the concrete endpoint, making it hard to a) specify the correct validation and b) understand/find or even change it when needed.
+. changing the path structure of the API or introducing new endpoints requires changes in most of the PermissionsUtil
+. It's easy to forget to validate the permissions, e.g. for reference payloads where the target of the reference should decide if a request is allowed, not the collection holding the reference.
+. the validation is very centralized in one util handling everything, making it hard to understand and change
+
+.Query and path param validation
+
+Additionally, we want the following behaviour which is not yet implemented consistently:
+
+* a request with anything other than a positive integer in an id segment of the path should return a bad request (400)
+* a request with anything other than a positive integer in an query param supposedly containing an id should return a bad request (400)
+
+|Possible Alternatives|
+
+.Entity existence and path consistency check
+
+[cols="1a,2a"]
+
+!===
+!Option!Notes
+
+! Keep URLPathChecker !
+- not a nice option since the current issues remain
+
+! Validate parameters manually in Rest classes !
+- pro
+** looking at the endpoint directly allows devs to see which validations are run and which responses will be returned
+** many methods need the resources required for this validation anyway, this data can then be reused
+- con
+** bloats up all methods in our Rest classes
+
+! Validate existence of resources in services !
+- throw an exception in the service if the resource is not available
+- we need to add all relevant parameters (e.g. collectionId and userName for dataObjects)
+- pro
+** looking at the service method directly allows devs to see which validations are run and which responses will be returned
+** many methods need the resources required for this validation anyway, this data can then be reused
+- con
+** bloats up all methods in our Rest classes
+
+! Implement validator util using neo4j queries to check consistency !
+- the util could for example check if a data object belong to the collection id or a reference, data object and collection belong together
+- it would be invoked in the endpoint itself, e.g. `assertResourcesBelongTogether()`, throwing the appropriate exception if there is an issue
+- the permission check could potentially be included
+- pro:
+** Only few lines of code in our endpoints
+** Simple assertions transparent to devs reading the code
+- con:
+** separate queries running on every endpoint
+** details may be hidden in the queries
+!===
+
+.Permission validation
+[cols="1a,2a"]
+!===
+!Option!Notes
+
+
+! Keep PermissionsFilter !
+- not a nice option since the current issues remain
+
+! Validate permissions manually in Rest classes !
+- we could refactor the existing `PermissionsUtil` to provide easy to use assertions for the permissions
+- pro
+** looking at the endpoint directly allows devs to see which validations are run and which responses will be returned
+- con
+** more code in every endpoint
+** services could be called without appropriate permissions by accident
+
+! Validate permissions in services !
+- We validate the rights of the user in the service
+- we could refactor the existing `PermissionsUtil` to provide easy to use assertions for the permissions
+!===
+
+.Query and path param validation
+[cols="1a,2a"]
+!===
+!Option!Notes
+
+
+! Manually validate inputs !
+- con
+** can lead to a lot of code including inconsistent checks across different endpoints
+
+! Use jakarta bean validation !
+- https://quarkus.io/guides/validation#rest-end-point-validation
+- https://jakarta.ee/learn/docs/jakartaee-tutorial/current/beanvalidation/bean-validation/bean-validation.html
+- pro
+** validation can be added directly to the parameter, making the function body cleaner
+- con
+** we may need to write some custom validators for special cases
+** we already have a lot of annotations, making it easy to forget some
+!===
+
+
+|Decision|
+.Entity existence and path consistency check
+
+We decide to explicitly check existence of resources in our services, throwing exceptions directly if they don't exist (which are automatically mapped to proper HTTP responses somewhere).
+
+.Permission validation
+
+We decide to validate permissions directly in the services using a refactored version of the current `PermissionsUtil`.
+
+.Query and path param validation
+
+We use jakarta bean validation for validation of path params or query params.
+
+
+|Consequences|
+* the documentation <<solution_strategy_rest-endpoints, here>> has to be updated with the new approaches
+* the changes should be properly documented in the release and optionally in the user manual (wiki)
+* the old filters and existing endpoints have to be removed/refactored
+* we should figure out how to nicely structure permissions checks and avoid naming conflicts with the existing PermissionsService
+* we may need to decide how and where to conveniently make the path checking logic reusable (e.g. getting a collection or throwing an exception)
+|===

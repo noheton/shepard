@@ -32,3 +32,7 @@ include::012-lab-journal-feature.adoc[]
 include::013-editor-library.adoc[]
 
 include::014-spatial-database.adoc[]
+
+include::015-dedicated-data-reference-endpoint.adoc[]
+
+include::016-request-validation.adoc[]
