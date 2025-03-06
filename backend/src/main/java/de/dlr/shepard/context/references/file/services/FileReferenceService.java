@@ -1,6 +1,6 @@
 package de.dlr.shepard.context.references.file.services;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
@@ -36,7 +36,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   private VersionService versionService;
   private DateHelper dateHelper;
   private FileService fileService;
-  private PermissionsUtil permissionsUtil;
+  private PermissionsService permissionsService;
 
   FileReferenceService() {}
 
@@ -50,7 +50,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     VersionService versionService,
     DateHelper dateHelper,
     FileService fileService,
-    PermissionsUtil permissionsUtil
+    PermissionsService permissionsService
   ) {
     this.fileReferenceDAO = fileReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
@@ -60,7 +60,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
     this.fileService = fileService;
-    this.permissionsUtil = permissionsUtil;
+    this.permissionsService = permissionsService;
   }
 
   @Override
@@ -158,7 +158,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
     long containerId = reference.getFileContainer().getId();
     if (
-      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this file");
 
     String mongoId = reference.getFileContainer().getMongoId();
@@ -186,7 +186,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     // Throw exception when not isAllowed
     var containerId = reference.getFileContainer().getId();
     if (
-      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this file container");
 
     var result = new ArrayList<NamedInputStream>(files.size());

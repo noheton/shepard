@@ -1,6 +1,6 @@
 package de.dlr.shepard.context.references.timeseriesreference.services;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
@@ -46,7 +46,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   private UserDAO userDAO;
   private VersionService versionService;
   private DateHelper dateHelper;
-  private PermissionsUtil permissionsUtil;
+  private PermissionsService permissionsService;
 
   TimeseriesReferenceService() {}
 
@@ -61,7 +61,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     UserDAO userDAO,
     VersionService versionService,
     DateHelper dateHelper,
-    PermissionsUtil permissionsUtil
+    PermissionsService permissionsService
   ) {
     this.timeseriesReferenceDAO = timeseriesReferenceDAO;
     this.timeseriesService = timeseriesService;
@@ -72,7 +72,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     this.userDAO = userDAO;
     this.versionService = versionService;
     this.dateHelper = dateHelper;
-    this.permissionsUtil = permissionsUtil;
+    this.permissionsService = permissionsService;
   }
 
   @Override
@@ -171,7 +171,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     if (
       reference.getTimeseriesContainer() == null ||
       reference.getTimeseriesContainer().isDeleted() ||
-      !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
+      !permissionsService.isAccessTypeAllowedForUser(
+        reference.getTimeseriesContainer().getId(),
+        AccessType.Read,
+        username
+      )
     ) return reference
       .getReferencedTimeseriesList()
       .stream()
@@ -210,7 +214,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()
     ) throw new InvalidRequestException("The timeseries container in question is not accessible");
     if (
-      !permissionsUtil.isAccessTypeAllowedForUser(reference.getTimeseriesContainer().getId(), AccessType.Read, username)
+      !permissionsService.isAccessTypeAllowedForUser(
+        reference.getTimeseriesContainer().getId(),
+        AccessType.Read,
+        username
+      )
     ) throw new InvalidAuthException("You are not authorized to access this timeseries");
 
     var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();

@@ -3,7 +3,6 @@ package de.dlr.shepard.data.timeseries.endpoints;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.io.RolesIO;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.security.PermissionsUtil;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.filters.Subscribable;
@@ -67,7 +66,6 @@ public class TimeseriesRest {
   private TimeseriesCsvService timeseriesCsvService;
   private TimeseriesContainerService timeseriesContainerService;
   private PermissionsService permissionsService;
-  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
@@ -80,15 +78,13 @@ public class TimeseriesRest {
     TimeseriesCsvService timeseriesCsvService,
     TimeseriesContainerService timeseriesContainerService,
     SecurityContext securityContext,
-    PermissionsService permissionsService,
-    PermissionsUtil permissionsUtil
+    PermissionsService permissionsService
   ) {
     this.timeseriesService = timeseriesService;
     this.timeseriesCsvService = timeseriesCsvService;
     this.timeseriesContainerService = timeseriesContainerService;
     this.securityContext = securityContext;
     this.permissionsService = permissionsService;
-    this.permissionsUtil = permissionsUtil;
   }
 
   @GET
@@ -446,7 +442,10 @@ public class TimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public RolesIO getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var roles = permissionsUtil.getRolesByNeo4jId(timeseriesContainerId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsService.getRolesByNeo4jId(
+      timeseriesContainerId,
+      securityContext.getUserPrincipal().getName()
+    );
     if (roles == null) throw new NotFoundException();
     return roles;
   }

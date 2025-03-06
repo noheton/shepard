@@ -1,6 +1,6 @@
 package de.dlr.shepard.context.references.structureddata.services;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
@@ -36,7 +36,7 @@ public class StructuredDataReferenceService
   private VersionService versionService;
   private DateHelper dateHelper;
   private StructuredDataService structuredDataService;
-  private PermissionsUtil permissionsUtil;
+  private PermissionsService permissionsService;
 
   StructuredDataReferenceService() {}
 
@@ -50,7 +50,7 @@ public class StructuredDataReferenceService
     UserDAO userDAO,
     DateHelper dateHelper,
     StructuredDataService structuredDataService,
-    PermissionsUtil permissionsUtil
+    PermissionsService permissionsService
   ) {
     this.structuredDataReferenceDAO = structuredDataReferenceDAO;
     this.dataObjectDAO = dataObjectDAO;
@@ -60,7 +60,7 @@ public class StructuredDataReferenceService
     this.dateHelper = dateHelper;
     this.versionService = versionService;
     this.structuredDataService = structuredDataService;
-    this.permissionsUtil = permissionsUtil;
+    this.permissionsService = permissionsService;
   }
 
   @Override
@@ -157,7 +157,7 @@ public class StructuredDataReferenceService
     if (
       reference.getStructuredDataContainer() == null ||
       reference.getStructuredDataContainer().isDeleted() ||
-      !permissionsUtil.isAccessTypeAllowedForUser(
+      !permissionsService.isAccessTypeAllowedForUser(
         reference.getStructuredDataContainer().getId(),
         AccessType.Read,
         username
@@ -196,7 +196,7 @@ public class StructuredDataReferenceService
 
     long containerId = reference.getStructuredDataContainer().getId();
     if (
-      !permissionsUtil.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
+      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
     ) throw new InvalidAuthException("You are not authorized to access this structured data");
 
     String mongoId = reference.getStructuredDataContainer().getMongoId();

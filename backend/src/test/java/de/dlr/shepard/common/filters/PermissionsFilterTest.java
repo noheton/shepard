@@ -5,8 +5,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.PermissionGracePeriod;
-import de.dlr.shepard.auth.security.PermissionsUtil;
 import de.dlr.shepard.common.util.AccessType;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
@@ -47,7 +47,7 @@ public class PermissionsFilterTest {
   ContainerRequestContext request;
 
   @InjectMock
-  PermissionsUtil permissionsUtil;
+  PermissionsService permissionsService;
 
   @InjectMock
   PermissionGracePeriod lastSeen;
@@ -76,7 +76,7 @@ public class PermissionsFilterTest {
 
   @Test
   public void filterTest_Read() {
-    when(permissionsUtil.isAllowed(request, AccessType.Read, "principal")).thenReturn(true);
+    when(permissionsService.isAllowed(request, AccessType.Read, "principal")).thenReturn(true);
 
     filter.filter(request);
     verify(request, never()).abortWith(any());
@@ -85,7 +85,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Write() {
     when(request.getMethod()).thenReturn("PUT");
-    when(permissionsUtil.isAllowed(request, AccessType.Write, "principal")).thenReturn(true);
+    when(permissionsService.isAllowed(request, AccessType.Write, "principal")).thenReturn(true);
 
     filter.filter(request);
     verify(request, never()).abortWith(any());
@@ -94,7 +94,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Manage() {
     when(pathSeg.getPath()).thenReturn("permissions");
-    when(permissionsUtil.isAllowed(request, AccessType.Manage, "principal")).thenReturn(true);
+    when(permissionsService.isAllowed(request, AccessType.Manage, "principal")).thenReturn(true);
 
     filter.filter(request);
     verify(request, never()).abortWith(any());
@@ -103,7 +103,7 @@ public class PermissionsFilterTest {
   @Test
   public void filterTest_Invalid() {
     when(request.getMethod()).thenReturn("OPTIONS");
-    when(permissionsUtil.isAllowed(request, AccessType.None, "principal")).thenReturn(false);
+    when(permissionsService.isAllowed(request, AccessType.None, "principal")).thenReturn(false);
 
     filter.filter(request);
     verify(request).abortWith(any());
@@ -111,7 +111,7 @@ public class PermissionsFilterTest {
 
   @Test
   public void filterTest_NotAllowed() {
-    when(permissionsUtil.isAllowed(request, AccessType.Read, "principal")).thenReturn(false);
+    when(permissionsService.isAllowed(request, AccessType.Read, "principal")).thenReturn(false);
 
     filter.filter(request);
     verify(request).abortWith(any());
@@ -138,7 +138,7 @@ public class PermissionsFilterTest {
     when(lastSeen.elementIsKnown("principalGET/shepard/api/projects")).thenReturn(true);
 
     filter.filter(request);
-    verify(permissionsUtil, never()).isAllowed(any(), any(), any());
+    verify(permissionsService, never()).isAllowed(any(), any(), any());
     verify(request, never()).abortWith(any());
   }
 }

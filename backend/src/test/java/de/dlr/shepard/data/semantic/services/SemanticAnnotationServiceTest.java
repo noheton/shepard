@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.common.neo4j.daos.BasicEntityDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.version.daos.VersionableEntityConcreteDAO;
 import de.dlr.shepard.data.semantic.ISemanticRepositoryConnector;
@@ -39,9 +38,6 @@ public class SemanticAnnotationServiceTest {
 
   @InjectMock
   VersionableEntityConcreteDAO concreteDAO;
-
-  @InjectMock
-  BasicEntityDAO abstractEntityDAO;
 
   @InjectMock
   SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;

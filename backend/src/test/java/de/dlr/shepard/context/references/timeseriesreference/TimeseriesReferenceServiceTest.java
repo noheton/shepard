@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
@@ -75,7 +75,7 @@ public class TimeseriesReferenceServiceTest {
   DateHelper dateHelper;
 
   @InjectMock
-  PermissionsUtil permissionsUtil;
+  PermissionsService permissionsService;
 
   @Inject
   TimeseriesReferenceService referenceService;
@@ -414,7 +414,7 @@ public class TimeseriesReferenceServiceTest {
       AggregateFunction.MEAN
     );
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       timeseriesService.getManyTimeseriesWithDataPoints(container.getId(), List.of(ts.toTimeseries()), queryParams)
     ).thenReturn(List.of(timeseriesWithDataPoints));
@@ -448,7 +448,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     List<TimeseriesWithDataPoints> actual = referenceService.getReferencedTimeseriesWithDataPointsList(
       ref.getShepardId(),
       AggregateFunction.MEAN,
@@ -507,7 +507,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
 
     var actual = referenceService.getReferencedTimeseriesWithDataPointsList(
       15L,
@@ -547,7 +547,7 @@ public class TimeseriesReferenceServiceTest {
       AggregateFunction.MEAN
     );
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
         container.getId(),
@@ -586,7 +586,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(
       referenceService.exportReferencedTimeseriesByShepardId(
         ref.getShepardId(),
@@ -619,7 +619,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
     assertThrows(InvalidAuthException.class, () ->
       referenceService.exportReferencedTimeseriesByShepardId(
         15L,
@@ -651,7 +651,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     assertThrows(InvalidRequestException.class, () ->
       referenceService.exportReferencedTimeseriesByShepardId(
         ref.getShepardId(),

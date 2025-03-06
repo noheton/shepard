@@ -1,7 +1,7 @@
 package de.dlr.shepard.common.filters;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.PermissionGracePeriod;
-import de.dlr.shepard.auth.security.PermissionsUtil;
 import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -29,14 +29,14 @@ public class PermissionsFilter implements ContainerRequestFilter {
 
   private PermissionGracePeriod lastSeen;
 
-  private PermissionsUtil permissionsUtil;
+  private PermissionsService permissionsService;
 
   PermissionsFilter() {}
 
   @Inject
-  public PermissionsFilter(PermissionGracePeriod lastSeen, PermissionsUtil permissionsUtil) {
+  public PermissionsFilter(PermissionGracePeriod lastSeen, PermissionsService permissionsService) {
     this.lastSeen = lastSeen;
-    this.permissionsUtil = permissionsUtil;
+    this.permissionsService = permissionsService;
   }
 
   @Override
@@ -54,7 +54,7 @@ public class PermissionsFilter implements ContainerRequestFilter {
       return;
     }
     var accessType = getAccessType(requestContext.getUriInfo().getPathSegments(), requestContext.getMethod());
-    if (permissionsUtil.isAllowed(requestContext, accessType, principal.getName())) {
+    if (permissionsService.isAllowed(requestContext, accessType, principal.getName())) {
       lastSeen.elementSeen(lastSeenKey);
       return;
     }

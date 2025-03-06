@@ -40,6 +40,7 @@ public class PermissionsIO {
   private String[] manager;
 
   public PermissionsIO(Permissions permissions) {
+    // TODO: This could be multiple entities post versioning
     this.entityId = permissions.getEntities().get(0).getNumericId();
     this.permissionType = permissions.getPermissionType();
     this.owner = permissions.getOwner() != null ? permissions.getOwner().getUsername() : null;

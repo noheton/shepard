@@ -3,7 +3,6 @@ package de.dlr.shepard.context.collection.endpoints;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.io.RolesIO;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.security.PermissionsUtil;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -49,7 +48,6 @@ public class CollectionRest {
   private CollectionService collectionService;
   private ExportService exportService;
   private PermissionsService permissionsService;
-  private PermissionsUtil permissionsUtil;
 
   @Context
   private SecurityContext securityContext;
@@ -60,13 +58,11 @@ public class CollectionRest {
   public CollectionRest(
     CollectionService collectionService,
     ExportService exportService,
-    PermissionsService permissionsService,
-    PermissionsUtil permissionsUtil
+    PermissionsService permissionsService
   ) {
     this.collectionService = collectionService;
     this.exportService = exportService;
     this.permissionsService = permissionsService;
-    this.permissionsUtil = permissionsUtil;
   }
 
   @GET
@@ -182,7 +178,8 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    var perms = permissionsService.getPermissionsByCollectionShepardId(collectionId);
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    var perms = permissionsService.getPermissionsByNeo4jId(collectionId);
     PermissionsIO permsIO = null;
     if (perms != null) {
       permsIO = new PermissionsIO(perms);
@@ -209,7 +206,8 @@ public class CollectionRest {
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
-    var perms = permissionsService.updatePermissionsByShepardId(permissions, collectionId);
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, collectionId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
   }
 
@@ -225,7 +223,8 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    var roles = permissionsUtil.getRolesByShepardId(collectionId, securityContext.getUserPrincipal().getName());
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    var roles = permissionsService.getRolesByNeo4jId(collectionId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 

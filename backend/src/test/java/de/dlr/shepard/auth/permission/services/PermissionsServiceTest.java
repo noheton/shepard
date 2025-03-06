@@ -9,10 +9,10 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.users.daos.UserDAO;
-import de.dlr.shepard.auth.users.daos.UserGroupDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
+import de.dlr.shepard.auth.users.services.UserGroupService;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.file.entities.FileContainer;
@@ -26,32 +26,16 @@ import org.mockito.Mock;
 public class PermissionsServiceTest extends BaseTestCase {
 
   @Mock
-  private UserDAO userDAO;
+  private UserService userService;
 
   @Mock
-  private UserGroupDAO userGroupDAO;
+  private UserGroupService userGroupService;
 
   @Mock
   private PermissionsDAO dao;
 
   @InjectMocks
   private PermissionsService service;
-
-  @Test
-  public void createPermissionsTest() {
-    var con = new FileContainer(2L);
-    ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
-    conList.add(con);
-    var perms = new Permissions();
-
-    var created = new Permissions(1L);
-    created.setEntities(conList);
-
-    when(dao.createWithEntityNeo4jId(perms, 2L)).thenReturn(created);
-
-    var actual = service.createPermissionsByNeo4jId(2L);
-    assertEquals(created, actual);
-  }
 
   @Test
   public void getPermissionsByNeo4jIdTest() {
@@ -67,56 +51,12 @@ public class PermissionsServiceTest extends BaseTestCase {
   }
 
   @Test
-  public void getPermissionsByShepardIdTest() {
-    var col = new Collection(2L);
-    col.setShepardId(3L);
-    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
-    var perms = new Permissions(1L);
-    perms.setEntities(colList);
-
-    when(dao.findByEntityShepardId(col.getShepardId())).thenReturn(perms);
-    var actual = service.getPermissionsByShepardId(col.getShepardId());
-    assertEquals(perms, actual);
-  }
-
-  @Test
-  public void getPermissionsByCollectionShepardIdTest() {
-    var col = new Collection(2L);
-    col.setShepardId(3L);
-    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
-    var perms = new Permissions(1L);
-    perms.setEntities(colList);
-
-    when(dao.findByCollectionShepardId(col.getShepardId())).thenReturn(perms);
-    var actual = service.getPermissionsByCollectionShepardId(col.getShepardId());
-    assertEquals(perms, actual);
-  }
-
-  @Test
   public void getPermissionsByNeo4jIdTest_notFound() {
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
 
     var actual = service.getPermissionsByNeo4jId(2L);
     assertNull(actual);
     verify(dao).findByEntityNeo4jId(2L);
-  }
-
-  @Test
-  public void getPermissionsByShepardIdTest_notFound() {
-    when(dao.findByEntityShepardId(2L)).thenReturn(null);
-
-    var actual = service.getPermissionsByShepardId(2L);
-    assertNull(actual);
-    verify(dao).findByEntityShepardId(2L);
-  }
-
-  @Test
-  public void getPermissionsByCollectionShepardIdTest_notFound() {
-    when(dao.findByCollectionShepardId(2L)).thenReturn(null);
-
-    var actual = service.getPermissionsByCollectionShepardId(2L);
-    assertNull(actual);
-    verify(dao).findByCollectionShepardId(2L);
   }
 
   @Test
@@ -159,66 +99,14 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userDAO.find("owner")).thenReturn(owner);
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
-    when(userGroupDAO.findByNeo4jId(12L)).thenReturn(writerGroup);
+    when(userService.getUser("owner")).thenReturn(owner);
+    when(userService.getUser("reader")).thenReturn(reader);
+    when(userService.getUser("writer")).thenReturn(writer);
+    when(userService.getUser("manager")).thenReturn(manager);
+    when(userGroupService.getUserGroup(12L)).thenReturn(writerGroup);
     when(dao.findByEntityNeo4jId(2L)).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
     var actual = service.updatePermissionsByNeo4jId(perms, 2L);
-    assertEquals(updated, actual);
-  }
-
-  @Test
-  public void updatePermissionsByShepardIdTest() {
-    var owner = new User("owner");
-    var reader = new User("reader");
-    var writer = new User("writer");
-    var manager = new User("manager");
-    List<User> writerGroupList = List.of(new User("groupwriter"));
-    UserGroup writerGroup = new UserGroup(12L);
-    writerGroup.setName("writerGroup");
-    writerGroup.setUsers(writerGroupList);
-    List<UserGroup> writerGroupsList = List.of(writerGroup);
-
-    var col = new Collection(2L);
-    col.setShepardId(4L);
-    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
-    colList.add(col);
-    var existing = new Permissions(1L);
-    existing.setEntities(colList);
-
-    var perms = new PermissionsIO() {
-      {
-        setOwner("owner");
-        setReader(new String[] { "reader", "false" });
-        setWriter(new String[] { "writer" });
-        setWriterGroupIds(new long[] { 12L, -1L });
-        setManager(new String[] { "manager" });
-      }
-    };
-
-    var updated = new Permissions() {
-      {
-        setId(1L);
-        setEntities(colList);
-        setOwner(owner);
-        setReader(List.of(reader));
-        setWriter(List.of(writer));
-        setWriterGroups(writerGroupsList);
-        setManager(List.of(manager));
-      }
-    };
-
-    when(userDAO.find("owner")).thenReturn(owner);
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
-    when(userGroupDAO.findByNeo4jId(12L)).thenReturn(writerGroup);
-    when(dao.findByEntityShepardId(col.getShepardId())).thenReturn(existing);
-    when(dao.createOrUpdate(updated)).thenReturn(updated);
-    var actual = service.updatePermissionsByShepardId(perms, col.getShepardId());
     assertEquals(updated, actual);
   }
 
@@ -244,6 +132,7 @@ public class PermissionsServiceTest extends BaseTestCase {
 
     var toCreate = new Permissions() {
       {
+        setEntities(conList);
         setOwner(owner);
         setReader(List.of(reader));
         setWriter(List.of(writer));
@@ -266,70 +155,14 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userDAO.find("owner")).thenReturn(owner);
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
+    when(userService.getUser("owner")).thenReturn(owner);
+    when(userService.getUser("reader")).thenReturn(reader);
+    when(userService.getUser("writer")).thenReturn(writer);
+    when(userService.getUser("manager")).thenReturn(manager);
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
-    when(dao.createWithEntityNeo4jId(toCreate, 2L)).thenReturn(updated);
+    when(dao.createOrUpdate(toCreate)).thenReturn(updated);
 
     var actual = service.updatePermissionsByNeo4jId(perms, 2L);
-    assertEquals(updated, actual);
-  }
-
-  @Test
-  public void updatePermissionsByShepardIdTest_oldIsNull() {
-    var owner = new User("owner");
-    var reader = new User("reader");
-    var writer = new User("writer");
-    var manager = new User("manager");
-
-    var col = new Collection(2L);
-    col.setShepardId(4L);
-    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
-    colList.add(col);
-    var perms = new PermissionsIO() {
-      {
-        setOwner("owner");
-        setReader(new String[] { "reader" });
-        setWriter(new String[] { "writer" });
-        setReaderGroupIds(new long[] {});
-        setManager(new String[] { "manager" });
-      }
-    };
-
-    var toCreate = new Permissions() {
-      {
-        setOwner(owner);
-        setReader(List.of(reader));
-        setWriter(List.of(writer));
-        setReaderGroups(Collections.emptyList());
-        setWriterGroups(Collections.emptyList());
-        setManager(List.of(manager));
-      }
-    };
-
-    var updated = new Permissions() {
-      {
-        setId(1L);
-        setEntities(colList);
-        setOwner(owner);
-        setReader(List.of(reader));
-        setWriter(List.of(writer));
-        setReaderGroups(Collections.emptyList());
-        setWriterGroups(Collections.emptyList());
-        setManager(List.of(manager));
-      }
-    };
-
-    when(userDAO.find("owner")).thenReturn(owner);
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
-    when(dao.findByEntityShepardId(col.getShepardId())).thenReturn(null);
-    when(dao.createWithEntityShepardId(toCreate, col.getShepardId())).thenReturn(updated);
-
-    var actual = service.updatePermissionsByShepardId(perms, col.getShepardId());
     assertEquals(updated, actual);
   }
 
@@ -366,9 +199,9 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
+    when(userService.getUser("reader")).thenReturn(reader);
+    when(userService.getUser("writer")).thenReturn(writer);
+    when(userService.getUser("manager")).thenReturn(manager);
     when(dao.findByEntityNeo4jId(2L)).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
@@ -410,9 +243,9 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userDAO.find("reader")).thenReturn(reader);
-    when(userDAO.find("writer")).thenReturn(writer);
-    when(userDAO.find("manager")).thenReturn(manager);
+    when(userService.getUser("reader")).thenReturn(reader);
+    when(userService.getUser("writer")).thenReturn(writer);
+    when(userService.getUser("manager")).thenReturn(manager);
     when(dao.findByEntityNeo4jId(col.getShepardId())).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 

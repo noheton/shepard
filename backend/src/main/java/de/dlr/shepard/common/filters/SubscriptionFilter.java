@@ -1,6 +1,6 @@
 package de.dlr.shepard.common.filters;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.neo4j.io.HasIdIO;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.subscription.io.EventIO;
@@ -30,7 +30,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
   private ExecutorFactory executorFactory;
 
-  private PermissionsUtil permissionsUtil;
+  private PermissionsService permissionsService;
 
   private SubscriptionService subscriptionService;
 
@@ -38,11 +38,11 @@ public class SubscriptionFilter implements ContainerResponseFilter {
 
   @Inject
   public SubscriptionFilter(
-    PermissionsUtil permissionsUtil,
+    PermissionsService permissionsService,
     SubscriptionService subscriptionService,
     ExecutorFactory executorFactory
   ) {
-    this.permissionsUtil = permissionsUtil;
+    this.permissionsService = permissionsService;
     this.subscriptionService = subscriptionService;
     this.executorFactory = executorFactory;
   }
@@ -73,7 +73,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
       Pattern pattern = Pattern.compile(sub.getSubscribedURL());
       if (
         pattern.matcher(event.getUrl()).matches() &&
-        permissionsUtil.isAllowed(requestContext, AccessType.Read, sub.getCreatedBy().getUsername())
+        permissionsService.isAllowed(requestContext, AccessType.Read, sub.getCreatedBy().getUsername())
       ) {
         EventIO e = new EventIO(event);
         e.setSubscription(new SubscriptionIO(sub));

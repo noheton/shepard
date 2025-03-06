@@ -10,7 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
@@ -68,7 +68,7 @@ public class StructuredDataReferenceServiceTest {
   DateHelper dateHelper;
 
   @InjectMock
-  PermissionsUtil permissionsUtil;
+  PermissionsService permissionsService;
 
   @Inject
   StructuredDataReferenceService service;
@@ -443,7 +443,7 @@ public class StructuredDataReferenceServiceTest {
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
     StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, "json2");
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(payloadB);
     List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
@@ -464,7 +464,7 @@ public class StructuredDataReferenceServiceTest {
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, null);
     StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, null);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
     var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
     assertEquals(List.of(payloadA, payloadB), actual);
     verify(structuredDataService, never()).getPayload(eq(container.getMongoId()), any(String.class));
@@ -483,7 +483,7 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(null);
     var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
@@ -501,7 +501,7 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDataContainer(container);
     ref.setStructuredDatas(List.of(structuredData));
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(null);
     List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
     StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
@@ -520,7 +520,7 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDataContainer(container);
     ref.setStructuredDatas(List.of(structuredData));
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
     StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
     assertEquals(List.of(payload), actual);
@@ -551,7 +551,7 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDatas(List.of(structuredDataA));
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     var actual = service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username);
     assertEquals(payloadA, actual);
@@ -592,7 +592,7 @@ public class StructuredDataReferenceServiceTest {
     StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
     ref.setStructuredDatas(List.of(structuredDataA));
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsUtil.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
     assertThrows(InvalidAuthException.class, () ->
       service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username)
     );

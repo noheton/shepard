@@ -2,112 +2,81 @@ ifndef::imagesdir[:imagesdir: ../../images]
 
 === Authorization
 
-==== Requirements
+==== Requirements & Constraints
 
 - The backend can verify the identity of users
 - Users are uniquely identified in the backend by usernames
 - The backend can easily verify whether a user has permissions to a particular object
 - This check is quick and easy to perform, so there is no noticeable delay
-- Current records can still be used
+- Records created before the introduction of permissions can still be used
+- Permissions may only be configured for "top-level" entities, e.g. collections, containers, userGroups.
+Subordinate entities like data objects inherit their permissions from the superior entity.
+In case of versioning all versions of a collection share the same permissions.
 
-===== Owner
+==== Permissions
 
-- Objects have an unique owner
-- Objects without owners belong to everyone (backward compatibility)
-- Owners can be changed later
-- Owners automatically have all permissions to the object
-- Owners automatically have all permissions on all subordinate objects (inheritance)
-- Newly created objects belong to the creator unless otherwise specified
+The permissions of a top level entity describe who:
 
-===== Permissions
+1. owns the entity (a single user)
+2. may manage the entity (update the permissions) (a list of users)
+3. may edit/write the entity (a list of users or user groups)
+4. may read the entity (a list of users or user groups)
 
-- There are different permissions for readability, writability and managability
-- Permissions can be set only for collections and containers, but apply to all subordinate objects
-- For each object, there is a list of users who are allowed to read/write/manage the object
-- The different permissions build upon each other (read < write < manage)
-- Permissions can be edited by all users with manage permissions
-- Collections and container can be created by all users with access
-- Newly created objects can be read and written by everyone with access
+These permissions build on top of each other.
+That means:
 
-===== Long living access tokens (Api Keys)
+- everybody with write permissions is allowed to read
+- everybody with manage permissions is allowed to write
+- the owner is allowed to perform all operations
 
-- Api Keys are used to authenticate and authorize a client for a specific task
-- Api Keys belong to one user
-- Api Keys can only authorize something as long as the user is allowed to do so
-- If a user no longer exists, his Api Keys are automatically invalidated
+The owner is a single user.
+Entities without owner belong to everyone (backwar compatibility).
 
-===== Payload databases
+In addition, there is a general permission type defined for each entity which can be one of `Public`, `PublicReadable` or `Private`.
 
-- Creation of new data is allowed to any logged in user
-- Integrated databases contain payload containers represented by a `container` object in the data model
-- Users can create payload containers via the root endpoints
-- Containers can be populated with data via the `type/container_id/` URL (e.g. `/files/<id>/`, `/timeseries/<id>/`)
-- Containers can be restricted by the permission system mentioned above
-- A reference contains the specific ID of the uploaded data inside the container
-- Multiple references can point to one and the same data, or narrow it down further
+`Public` means all authenticated users have permissions to read and write.
+`PublicReadable` means all authenticated users can read the entity.
+`Private` means only the users explicitly granted access are allowed to interact with the entity.
 
-==== Implementation
+Newly created objects have the creator set as owner and the permissionType set to `Private`.
 
-===== Users
+==== Available Endpoints
 
-- Users are stored in Neo4j
-- A user also has the following attributes (arrows -> indicate relationships)
-  - owned_by -> List of entities, references and containers (n:1)
-  - readable_by -> List of entities (n:m)
-  - writable_by -> List of entities (n:m)
-  - managable_by -> List of entities (n:m)
-
-===== Endpoints
-
-- A endpoint `/.../<id>/permissions` can be used to manage permissions of an object
-- Allowed methods are `GET` and `PUT`
-- Permissions follow the following format:
+An endpoint `/.../<id>/permissions` can be used to manage permissions of an object.
+Allowed methods are `GET` and `PUT`.
+Permissions follow the following format:
 
 ```json
 {
-   "readableBy": [
-      <usernames>
-   ],
-   "writableBy": [
-      <usernames>
-   ],
-   "managableBy": [
-      <usernames>
-   ],
-   "ownedBy": <username>
+  "owner": "<user-name>",
+  "permissionType": "<Public|PublicReadable|Private>",
+  "reader": [
+    "<user-name>"
+  ],
+  "writer": [
+    "<user-name>"
+  ],
+  "readerGroupIds": [
+    0
+  ],
+  "writerGroupIds": [
+    0
+  ],
+  "manager": [
+    "<user-name>"
+  ]
 }
 ```
 
-===== Api Keys
+An endpoint `/.../<id>/roles` can be used to check which operations the requesting user may perform on the entity.
+It is available for all entities for all authenticated users.
+The response looks like the following and describes which operations the user may perform:
 
-- Api Keys are stored in Neo4j
-- Each time an AccessToken is accessed, it must be checked that the owner of this token also has the corresponding authorization
-- Api Keys have the following attributes
-  - uid: UUID
-  - name: String
-  - created_at: Date
-  - jws: Hex String (Will never be delivered after creation)
-  - belongs_to: User (n:1)
-
-===== Access
-
-- For each access it must be checked whether
-  - the user owns the requested object
-  - the user is authorized for the requested object
-  - the user is authorized to write to the requested payload object (if a payload database is accessed)
-
-// TODO: This image could be remodelled as plantuml diagram
-image::auth/authFlow.png[]
-
-==== Consequences
-
-- Subscriptions belong to a user, whose privileges are used to filter callbacks
-- Simple, concrete requests are allowed or forbidden
-- Callbacks must be checked on a case-by-case basis
-- Results of search queries must be filtered
-
-==== Open Issues
-
-- Groups/Roles (OpenID Connect, internal, ...)
-- Restrict Api Keys to specific entities
-- Api Keys can expire
+```json
+{
+  "owner": "<boolean>",
+  "manager": "<boolean>",
+  "writer": "<boolean>",
+  "reader": "<boolean>"
+}
+```

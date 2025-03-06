@@ -6,7 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.security.PermissionsUtil;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.subscription.entities.Subscription;
@@ -45,7 +45,7 @@ public class SubscriptionFilterTest {
   SubscriptionService service;
 
   @InjectMock
-  PermissionsUtil permissionsUtil;
+  PermissionsService permissionsService;
 
   @InjectMock
   ExecutorFactory executorFactory;
@@ -97,7 +97,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
     verify(executorService).execute(any());
@@ -120,7 +120,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(noId);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
 
     filter.filter(request, response);
     verify(executorService).execute(any());
@@ -167,7 +167,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsUtil.isAllowed(request, AccessType.Read, "bob")).thenReturn(false);
+    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(false);
 
     filter.filter(request, response);
     verify(executorService, never()).execute(any());
