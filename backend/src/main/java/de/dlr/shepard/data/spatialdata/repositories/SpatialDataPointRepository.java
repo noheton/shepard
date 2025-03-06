@@ -147,7 +147,7 @@ public class SpatialDataPointRepository {
       .addLimitClause(limit);
 
     var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
-    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
 
@@ -182,7 +182,7 @@ public class SpatialDataPointRepository {
       .addLimitClause(limit);
 
     var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
-    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
 
@@ -210,7 +210,7 @@ public class SpatialDataPointRepository {
       .addLimitClause(limit);
 
     var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
-    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
 
@@ -240,7 +240,7 @@ public class SpatialDataPointRepository {
       .addKNNGeometryCondition(coordinate.x, coordinate.y, coordinate.z, k);
 
     var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
-    queryBuilder.getGeometryFilterParameters().forEach(query::setParameter);
+    queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
 }

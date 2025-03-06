@@ -19,14 +19,14 @@ public class NativeQueryStringBuilder {
   private StringBuilder measurementsFilterConditions = new StringBuilder();
 
   private String geometryFilterCondition = "";
-  private Map<String, Object> geometryFilterParameters = new HashMap<>();
+  private Map<String, Object> queryParameters = new HashMap<>();
 
   private String limitClause = "";
 
   private String skipClause = "";
 
-  public Map<String, Object> getGeometryFilterParameters() {
-    return geometryFilterParameters;
+  public Map<String, Object> getQueryParameters() {
+    return queryParameters;
   }
 
   public NativeQueryStringBuilder select(String tableName, String[] columns) {
@@ -71,10 +71,10 @@ public class NativeQueryStringBuilder {
 
   public NativeQueryStringBuilder addKNNGeometryCondition(double x1, double y1, double z1, int k) {
     geometryFilterCondition = " ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k";
-    geometryFilterParameters.put("x1", x1);
-    geometryFilterParameters.put("y1", y1);
-    geometryFilterParameters.put("z1", z1);
-    geometryFilterParameters.put("k", k);
+    queryParameters.put("x1", x1);
+    queryParameters.put("y1", y1);
+    queryParameters.put("z1", z1);
+    queryParameters.put("k", k);
     return this;
   }
 
@@ -88,21 +88,21 @@ public class NativeQueryStringBuilder {
   ) {
     geometryFilterCondition =
       " AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2))";
-    geometryFilterParameters.put("x1", x1);
-    geometryFilterParameters.put("y1", y1);
-    geometryFilterParameters.put("z1", z1);
-    geometryFilterParameters.put("x2", x2);
-    geometryFilterParameters.put("y2", y2);
-    geometryFilterParameters.put("z2", z2);
+    queryParameters.put("x1", x1);
+    queryParameters.put("y1", y1);
+    queryParameters.put("z1", z1);
+    queryParameters.put("x2", x2);
+    queryParameters.put("y2", y2);
+    queryParameters.put("z2", z2);
     return this;
   }
 
   public NativeQueryStringBuilder addBSGeometryCondition(double x1, double y1, double z1, double radius) {
     geometryFilterCondition = " AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius)";
-    geometryFilterParameters.put("x1", x1);
-    geometryFilterParameters.put("y1", y1);
-    geometryFilterParameters.put("z1", z1);
-    geometryFilterParameters.put("radius", radius);
+    queryParameters.put("x1", x1);
+    queryParameters.put("y1", y1);
+    queryParameters.put("z1", z1);
+    queryParameters.put("radius", radius);
     return this;
   }
 

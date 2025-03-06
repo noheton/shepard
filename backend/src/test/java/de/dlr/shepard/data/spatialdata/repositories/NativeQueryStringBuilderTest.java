@@ -168,10 +168,10 @@ public class NativeQueryStringBuilderTest {
       "SELECT * FROM table_name WHERE 1 = 1 AND ST_3DDWithin(position, ST_MakePoint(:x1, :y1, :z1), :radius);";
 
     assertEquals(expected, current);
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
-    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("radius"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("z1"));
+    assertEquals(2.0, currentStringBuilder.getQueryParameters().get("radius"));
   }
 
   @Test
@@ -186,12 +186,12 @@ public class NativeQueryStringBuilderTest {
       "SELECT * FROM table_name WHERE 1 = 1 AND position &&& ST_3DMakeBox(ST_MakePoint(:x1, :y1, :z1), ST_MakePoint(:x2, :y2, :z2));";
 
     assertEquals(expected, current);
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
-    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("x2"));
-    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("y2"));
-    assertEquals(2.0, currentStringBuilder.getGeometryFilterParameters().get("z2"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("z1"));
+    assertEquals(2.0, currentStringBuilder.getQueryParameters().get("x2"));
+    assertEquals(2.0, currentStringBuilder.getQueryParameters().get("y2"));
+    assertEquals(2.0, currentStringBuilder.getQueryParameters().get("z2"));
   }
 
   @Test
@@ -205,10 +205,10 @@ public class NativeQueryStringBuilderTest {
     var expected = "SELECT * FROM table_name WHERE 1 = 1 ORDER BY position <<->> ST_MakePoint(:x1, :y1, :z1) LIMIT :k;";
 
     assertEquals(expected, current);
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("x1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("y1"));
-    assertEquals(1.0, currentStringBuilder.getGeometryFilterParameters().get("z1"));
-    assertEquals(5, currentStringBuilder.getGeometryFilterParameters().get("k"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("x1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("y1"));
+    assertEquals(1.0, currentStringBuilder.getQueryParameters().get("z1"));
+    assertEquals(5, currentStringBuilder.getQueryParameters().get("k"));
   }
 
   @Test
