@@ -72,17 +72,17 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
   @Override
   public SpatialDataReference createReferenceByShepardId(
     long dataObjectShepardId,
-    SpatialDataReferenceIO spatialDataReference,
+    SpatialDataReferenceIO spatialDataReferenceIO,
     String username
   ) {
     var user = userDAO.find(username);
     var dataObject = dataObjectDAO.findLightByNeo4jId(dataObjectShepardId);
-    var container = spatialDataContainerDAO.findLightByNeo4jId(spatialDataReference.getSpatialDataContainerId());
+    var container = spatialDataContainerDAO.findLightByNeo4jId(spatialDataReferenceIO.getSpatialDataContainerId());
     if (container == null || container.isDeleted()) {
       throw new InvalidBodyException(
         String.format(
           "The spatialData container with id %d could not be found.",
-          spatialDataReference.getSpatialDataContainerId()
+          spatialDataReferenceIO.getSpatialDataContainerId()
         )
       );
     }
@@ -91,32 +91,32 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
-    toCreate.setName(spatialDataReference.getName());
-    if (spatialDataReference.getGeometryFilter() != null) {
+    toCreate.setName(spatialDataReferenceIO.getName());
+    if (spatialDataReferenceIO.getGeometryFilter() != null) {
       try {
-        toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReference.getGeometryFilter()));
+        toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getGeometryFilter()));
       } catch (JsonProcessingException e) {
         throw new InternalServerErrorException("Failed to parse geometry filter");
       }
     }
-    if (spatialDataReference.getMeasurementFilters() != null) {
+    if (spatialDataReferenceIO.getMeasurementFilters() != null) {
       try {
-        toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReference.getMeasurementFilters()));
+        toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getMeasurementFilters()));
       } catch (JsonProcessingException e) {
         throw new InternalServerErrorException("Failed to parse measurement filter");
       }
     }
-    if (spatialDataReference.getMetadata() != null) {
+    if (spatialDataReferenceIO.getMetadata() != null) {
       try {
-        toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReference.getMetadata()));
+        toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReferenceIO.getMetadata()));
       } catch (JsonProcessingException e) {
         throw new InternalServerErrorException("Failed to parse metadata filter");
       }
     }
-    toCreate.setStartTime(spatialDataReference.getStartTime());
-    toCreate.setEndTime(spatialDataReference.getEndTime());
-    toCreate.setLimit(spatialDataReference.getLimit());
-    toCreate.setSkip(spatialDataReference.getSkip());
+    toCreate.setStartTime(spatialDataReferenceIO.getStartTime());
+    toCreate.setEndTime(spatialDataReferenceIO.getEndTime());
+    toCreate.setLimit(spatialDataReferenceIO.getLimit());
+    toCreate.setSkip(spatialDataReferenceIO.getSkip());
     toCreate.setSpatialDataContainer(container);
 
     SpatialDataReference created = spatialDataReferenceDAO.createOrUpdate(toCreate);

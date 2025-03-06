@@ -16,16 +16,15 @@ public class SpatialDataReferenceDAO extends VersionableEntityDAO<SpatialDataRef
   public List<SpatialDataReference> findByDataObjectShepardId(long dataObjectShepardId) {
     String query =
       String.format(
-        "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d." + Constants.SHEPARD_ID + "=%d ",
-        CypherQueryHelper.getObjectPart("r", "SpatialDataReference", false),
-        dataObjectShepardId
+        "MATCH (d:DataObject {shepardId: %d})-[hr:has_reference]->%s",
+        dataObjectShepardId,
+        CypherQueryHelper.getObjectPart("r", "SpatialDataReference", false)
       ) +
       CypherQueryHelper.getReturnPart("r");
     var queryResult = findByQuery(query, Collections.emptyMap());
 
     List<SpatialDataReference> result = StreamSupport.stream(queryResult.spliterator(), false)
-      .filter(r -> r.getDataObject() != null)
-      .filter(r -> r.getDataObject().getShepardId().equals(dataObjectShepardId))
+      .filter(r -> r.getDataObject() != null && r.getDataObject().getShepardId().equals(dataObjectShepardId))
       .toList();
 
     return result;
