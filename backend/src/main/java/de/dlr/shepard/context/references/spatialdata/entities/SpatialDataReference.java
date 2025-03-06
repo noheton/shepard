@@ -2,9 +2,12 @@ package de.dlr.shepard.context.references.spatialdata.entities;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
+import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -31,4 +34,16 @@ public class SpatialDataReference extends BasicReference {
   @ToString.Exclude
   @Relationship(type = Constants.IS_IN_CONTAINER)
   private SpatialDataContainer spatialDataContainer;
+
+  public SpatialDataQueryParams toSpatialDataQueryParams() {
+    return new SpatialDataQueryParams(
+      SpatialDataParamParser.parseGeometryFilter(geometryFilter).orElse(null),
+      SpatialDataParamParser.parseMetadata(metadata).orElse(Collections.emptyMap()),
+      SpatialDataParamParser.parseMeasurementsFilter(measurementsFilter).orElse(Collections.emptyList()),
+      startTime,
+      endTime,
+      limit,
+      skip
+    );
+  }
 }

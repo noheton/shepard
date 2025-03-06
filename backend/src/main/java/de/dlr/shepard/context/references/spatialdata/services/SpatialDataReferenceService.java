@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.references.IReferenceService;
@@ -96,21 +97,21 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
       try {
         toCreate.setGeometryFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getGeometryFilter()));
       } catch (JsonProcessingException e) {
-        throw new InternalServerErrorException("Failed to parse geometry filter");
+        throw new InvalidRequestException("Failed to parse geometry filter");
       }
     }
     if (spatialDataReferenceIO.getMeasurementFilters() != null) {
       try {
         toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getMeasurementFilters()));
       } catch (JsonProcessingException e) {
-        throw new InternalServerErrorException("Failed to parse measurement filter");
+        throw new InvalidRequestException("Failed to parse measurement filter");
       }
     }
     if (spatialDataReferenceIO.getMetadata() != null) {
       try {
         toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReferenceIO.getMetadata()));
       } catch (JsonProcessingException e) {
-        throw new InternalServerErrorException("Failed to parse metadata filter");
+        throw new InvalidRequestException("Failed to parse metadata filter");
       }
     }
     toCreate.setStartTime(spatialDataReferenceIO.getStartTime());
@@ -119,6 +120,12 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     toCreate.setSkip(spatialDataReferenceIO.getSkip());
     toCreate.setSpatialDataContainer(container);
 
+    List<String> validationErrors = toCreate.toSpatialDataQueryParams().validate();
+    if (!validationErrors.isEmpty()) {
+      throw new InvalidRequestException(
+        "The specified parameters contain the following errors: " + String.join(", ", validationErrors)
+      );
+    }
     SpatialDataReference created = spatialDataReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = spatialDataReferenceDAO.createOrUpdate(created);
@@ -140,15 +147,9 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
   public List<SpatialDataPointIO> getReferencePayload(long spatialDataReferenceId) {
     SpatialDataReference reference = getReferenceByShepardId(spatialDataReferenceId, null);
 
-    SpatialDataQueryParams params = new SpatialDataQueryParams(
-      SpatialDataParamParser.parseGeometryFilter(reference.getGeometryFilter()).orElse(null),
-      SpatialDataParamParser.parseMetadata(reference.getMetadata()).orElse(Collections.emptyMap()),
-      SpatialDataParamParser.parseMeasurementsFilter(reference.getMeasurementsFilter()).orElse(Collections.emptyList()),
-      reference.getStartTime(),
-      reference.getEndTime(),
-      reference.getLimit(),
-      reference.getSkip()
+    return dataPointService.getSpatialDataPointIOs(
+      reference.getSpatialDataContainer().getId(),
+      reference.toSpatialDataQueryParams()
     );
-    return dataPointService.getSpatialDataPointIOs(reference.getSpatialDataContainer().getId(), params);
   }
 }

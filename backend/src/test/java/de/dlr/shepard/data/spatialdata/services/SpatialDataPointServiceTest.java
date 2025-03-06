@@ -155,7 +155,6 @@ public class SpatialDataPointServiceTest {
   public void getSpatialDataPointIOs_knnFilter_callRepository() {
     Long containerId = 1L;
     Long startTime = 2L, endTime = 3L;
-    Integer limit = 4;
     Map<String, Object> metadataFilter = Map.of("data", "some data");
     int k = 10;
 
@@ -167,7 +166,7 @@ public class SpatialDataPointServiceTest {
       null,
       startTime,
       endTime,
-      limit,
+      null,
       null
     );
     spatialDataPointService.getSpatialDataPointIOs(containerId, spatialDataParamsIO);

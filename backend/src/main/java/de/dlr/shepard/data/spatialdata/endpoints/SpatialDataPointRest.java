@@ -242,23 +242,10 @@ public class SpatialDataPointRest {
     @QueryParam("skip") Integer skip
   ) {
     Optional<AbstractGeometryFilter> geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
-    if (geometryFilter.isPresent()) {
-      if (!geometryFilter.get().isValid()) throw new BadRequestException("Invalid geometryFilter param");
-      if (geometryFilter.get() instanceof KNearestNeighbor) {
-        if (skip != null) throw new BadRequestException("Skip parameter is not accepted with KNN");
-        if (limit != null) throw new BadRequestException("Limit parameter is not accepted with KNN");
-      }
-    }
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
 
-    if (geometryFilter == null) throw new BadRequestException("Invalid geometryFilter param");
-
     var measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(measurementsFilterParam);
-    if (skip != null && skip <= 0) throw new BadRequestException("Skip parameter must be greater than 0");
 
-    if (startTime != null && endTime != null && startTime > endTime) throw new BadRequestException(
-      "startTime should be less than or equals endTime"
-    );
     SpatialDataQueryParams spatialDataParams = new SpatialDataQueryParams(
       geometryFilter.orElse(null),
       metadata.orElse(Collections.emptyMap()),
@@ -268,7 +255,6 @@ public class SpatialDataPointRest {
       limit,
       skip
     );
-
     return Response.ok(dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams)).build();
   }
 

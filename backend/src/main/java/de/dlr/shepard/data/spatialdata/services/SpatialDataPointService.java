@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.spatialdata.services;
 
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.GeometryBuilder;
@@ -11,6 +12,7 @@ import de.dlr.shepard.data.spatialdata.repositories.SpatialDataPointRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.stream.Collectors;
 import kotlin.NotImplementedError;
@@ -45,6 +47,10 @@ public class SpatialDataPointService {
     long containerId,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    List<String> validationErrors = spatialDataQueryParams.validate();
+    if (!validationErrors.isEmpty()) {
+      throw new InvalidRequestException("The following errors occurred: " + String.join(", ", validationErrors));
+    }
     if (spatialDataQueryParams.getGeometryFilter() == null) return mapSpatialDataPoints(
       spatialDataPointRepository.get(
         containerId,

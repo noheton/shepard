@@ -1,6 +1,9 @@
 package de.dlr.shepard.data.spatialdata.io;
 
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
+import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
+import jakarta.ws.rs.BadRequestException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
@@ -32,5 +35,25 @@ public class SpatialDataQueryParams {
     this.endTime = endTime;
     this.limit = limit;
     this.skip = skip;
+  }
+
+  /**
+   * @return List of validation errors
+   */
+  public List<String> validate() {
+    List<String> errors = new ArrayList<>();
+
+    if (geometryFilter != null) {
+      if (!geometryFilter.isValid()) errors.add("Invalid geometryFilter param");
+      if (geometryFilter instanceof KNearestNeighbor) {
+        if (skip != null) errors.add("Skip parameter is not accepted with KNN");
+        if (limit != null) errors.add("Limit parameter is not accepted with KNN");
+      }
+    }
+    if (skip != null && skip <= 0) errors.add("Skip parameter must be greater than 0");
+    if (startTime != null && endTime != null && startTime > endTime) errors.add(
+      "startTime should be less than or equals endTime"
+    );
+    return errors;
   }
 }
