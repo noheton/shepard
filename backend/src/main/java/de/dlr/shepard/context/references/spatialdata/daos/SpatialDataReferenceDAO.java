@@ -3,7 +3,6 @@ package de.dlr.shepard.context.references.spatialdata.daos;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
-import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
