@@ -125,7 +125,6 @@ services:
     restart: unless-stopped
     networks:
       - shepard
-      - timescaledata
 
   chronograf:
     image: chronograf:1.9-alpine

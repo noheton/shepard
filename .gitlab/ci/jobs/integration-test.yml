@@ -28,6 +28,8 @@ integration_test:
     POSTGRES_USER: shepard
     POSTGRES_PASSWORD: shepard_secret
 
+    SHEPARD_SPATIAL_DATA_ENABLED: true
+
     # Turn off warnings from deprecated neo4j cypher statements
     QUARKUS_LOG_CATEGORY__ORG_NEO4J_OGM__LEVEL: "OFF"
 

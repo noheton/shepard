@@ -23,6 +23,7 @@ database "Neo4j" as neo4j #DAE8FC
 database "InfluxDB" as influxdb #D5E8D4
 database "TimescaleDB" as timescale #AAEEFF
 database "MongoDB" as mongodb #FFE6CC
+database "PostGIS" as postgis #FFFFA5
 
 stc --> backend
 frontend --> backend
@@ -31,6 +32,7 @@ backend --> neo4j
 backend --> influxdb
 backend --> timescale
 backend --> mongodb
+backend --> postgis
 
 user --> frontend
 user --> backend
@@ -82,6 +84,7 @@ package "deprecated" {
 database "Neo4j" as neo4j #DAE8FC
 database "TimescaleDB" as timescaledb #AAEEFF
 database "MongoDB" as mongodb #FFE6CC
+database "PostGIS" as postgis #FFFFA5
 
 user --> context
 user --> data
@@ -92,6 +95,7 @@ data --> neo4j
 data --> mongodb
 data --> influxdb: extracts data during migration
 data --> timescaledb
+data --> postgis
 
 data -[hidden]> common
 common -[hidden]> auth
@@ -135,6 +139,7 @@ left to right direction
 [Structured Data] as structureddata
 [Files] as files
 [Semantic Repository] as semantic
+[Spatial Data] as spatial
 
 package "deprecated" {
   database "InfluxDB" as influxdb #D5E8D4
@@ -143,6 +148,7 @@ package "deprecated" {
 database "Neo4j" as neo4j #DAE8FC
 database "TimescaleDB" as timescaledb #AAEEFF
 database "MongoDB" as mongodb #FFE6CC
+database "PostGIS" as postgis #FFFFA5
 
 timeseries --> influxdb: extracts data
 
@@ -150,9 +156,11 @@ neo4j <-- timeseries
 neo4j <-- structureddata
 neo4j <-- files
 neo4j <-- semantic
+neo4j <-- spatial
 timeseries --> timescaledb
 structureddata --> mongodb
 files --> mongodb
+spatial --> postgis
 
 timeseries -[hidden]> semantic
 
@@ -179,6 +187,10 @@ Provides all needed code from the endpoint to the database access.
 
 | Semantic
 | Manages semantic repositories.
+
+| Spatial Data
+| Manages spatial data.
+Provides domain objects, business logic, database access and REST endpoints.
 
 |===
 
@@ -437,3 +449,14 @@ It can be repeated as often as needed.
 
 After the migration process is completed successfully, it is safe to delete the influxdb and it's volumes.
 Nevertheless we recommend to create a backup of the whole influxdb or just move the content of the volumes to a save place.
+
+
+[[spatial-data]]
+==== Spatial Data
+
+This module provides functionality to manage spatial data.
+In order to work with spatial data, a `SpatialDataContainer` has to be created.
+This container allows users to upload spatial data points with three dimensions.
+The spatial data is stored in a PostGIS database.
+The module provides REST endpoints to interact with the spatial data.
+Especially the GET endpoints are very useful because they make use of special PostGIS functions like retrieving data near a point or within a bounding box or sphere.

@@ -108,6 +108,8 @@ cp .env.example .env
 - All variables except `OIDC_ROLE` must be set!
 - URLs have to end with a trailing slash
 - The database passwords can be changed arbitrarily at the beginning
+- TimescaleDB and PostGIS are extensions of PostgreSQL.
+  Theoretically they can be stored in the same database but it is recommended to use separate instances.
 
 | Variable                 | Description                                                                                               | Example                                                                                           |
 | ------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -303,6 +305,26 @@ FRONTEND_AUTH_SECRET='Frontend auth secret'
 There is an experimental database to store the timeseries data used as replacement for InfluxDB.
 This database will be experimental until the migration from InfluxDB is completely layed down.
 Running this database requires changes to directory permissions like mentioned in [here](#4-create-necessary-directories)
+
+### Spatial Data
+
+The experimental docker compose file also contains a docker container with PostGIS which is an extension for PostgreSQL.
+In order to make use of this experimental feature, the administrator has to activate it via environment variables or configuration properties.
+
+As environment variable:
+
+```bash
+SHEPARD_SPATIAL_DATA_ENABLED: true
+```
+
+As configuration property:
+
+```bash
+shepard.spatial-data.enabled = true
+```
+
+That enables the REST endpoints for spatial data.
+Otherwise those endpoints return 404 and cannot be used.
 
 ### Run the experimental docker compose file
 

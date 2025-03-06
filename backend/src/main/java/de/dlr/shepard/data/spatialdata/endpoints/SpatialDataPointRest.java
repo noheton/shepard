@@ -10,6 +10,7 @@ import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilt
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
+import io.quarkus.resteasy.reactive.server.EndpointDisabled;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -42,6 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+@EndpointDisabled(name = "shepard.spatial-data.enabled", stringValue = "false")
 @Path(Constants.SPATIAL_DATA_CONTAINERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -64,7 +66,10 @@ public class SpatialDataPointRest {
 
   //#region Container functions
   @GET
-  @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
+  @Tag(
+    name = Constants.SPATIAL_DATA_CONTAINER,
+    description = "Spatial data containers and their endpoints are experimental. The administrator has to activate this feature. Otherwise the endpoints will return 404."
+  )
   @Operation(description = "Get spatial data containers.")
   @APIResponse(
     description = "ok",
