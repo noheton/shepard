@@ -93,7 +93,6 @@ public class TimeseriesDataPointRepository {
         .mapToObj(index -> "(:timeseriesid" + ",:time" + index + ",:value" + index + ")")
         .collect(Collectors.joining(","))
     );
-    // when a unique constraint conflict appears, overwrite the existing value with the new incoming value
     queryString.append(
       " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
       getColumnName(timeseriesEntity.getValueType()) +
