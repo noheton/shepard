@@ -183,6 +183,7 @@ public class TimeseriesRest {
     content = @Content(schema = @Schema(implementation = Timeseries.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(description = "bad request", responseCode = "400")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,

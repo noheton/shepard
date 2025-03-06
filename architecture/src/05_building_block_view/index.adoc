@@ -381,6 +381,19 @@ The schema for both tables is defined by the database migrations in `src/main/ja
 The timeseries table is managed in the code using hibernate entities.
 The data point table is managed directly using custom queries, since we want to make full use of TimescaleDB features and performance.
 
+[timeseries-multiple-values-for-one-timestamp]
+===== Timeseries: Multiple Values for One Timestamp
+
+For every timestamp in a timeseries, there may be only one value.
+Uploading a new value for the same timestamp will overwrite the old one.
+A request with multiple values for one timestamp may either throw a `Bad Request` response or only take the last value.
+This makes sure that all timestamps are unique in a timeseries.
+
+The implementation uses a `UNIQUE` constraint on the database in combination with an `UPSERT` command to insert the data.
+We faced an issue with the exception not being consistently thrown when the same timestamp had several values in one batch.
+As of now, we could not determine why the exception throwing behavior is inconsistent.
+The database exception handling is done by the database itself, which we cannot influence from our application code.
+
 [[migration-from-influx]]
 ===== Migration from InfluxDB
 

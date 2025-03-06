@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
@@ -352,18 +353,34 @@ public class TimeseriesServiceTest {
 
   @Test
   @Transactional
-  public void saveDataPoint_non_unique_batch_returnException() {
+  public void saveDataPoint_non_unique_batch_returnExceptionOrSilentlyOverwrite() {
     var container = timeseriesContainerService.createContainer(containerName, userName);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-2");
 
     // setup batch of non-unique timestamp values - we expect an exception to be thrown
     var timeseriesDataPoint1 = new TimeseriesDataPoint(1708067683056880001L, "value 1");
     var timeseriesDataPoint2 = new TimeseriesDataPoint(1708067683056880001L, "value 2");
-
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(List.of(timeseriesDataPoint1, timeseriesDataPoint2));
 
-    assertThrowsExactly(InvalidBodyException.class, () -> {
+    // These test cases and their behavior here is due to a problem with the UPSERT command in postgres
+    // The issue is further documented in the architectural documentation under 'Building Block View' -> 'Timeseries: Multiple Values for One Timestamp'
+    try {
       this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    });
+      TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
+        1,
+        1908067683056880001L,
+        null,
+        null,
+        null
+      );
+      var retrievedTimeseries =
+        this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
+      assertEquals(1, retrievedTimeseries.size());
+      assertEquals(retrievedTimeseries.get(0).getValue(), "value 2");
+    } catch (InvalidBodyException ex) {
+      assertTrue(true);
+    } catch (Exception ex) {
+      fail("An unexpected exception was thrown.");
+    }
   }
 }

@@ -27,6 +27,13 @@ public class TimeseriesDataPointRepository {
   @PersistenceContext
   EntityManager entityManager;
 
+  /**
+   * Insert a list of timeseries data points into the database.
+   *
+   * @param entities list of timeseries data points
+   * @param timeseriesEntity
+   * @throws InvalidBodyException can be thrown when 'entities' contains the same timestamp more than once (read more in architectural documentation: 'Building Block View' -> 'Timeseries: Multiple Values for One Timestamp')
+   */
   @Timed(value = "shepard.timeseries-data-point.insert")
   public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
