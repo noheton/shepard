@@ -22,8 +22,8 @@ public class SpatialDataReference extends BasicReference {
 
   private String geometryFilter;
   private String measurementsFilter;
-  private long startTime;
-  private long endTime;
+  private Long startTime;
+  private Long endTime;
   private String metadata;
   private Integer limit;
   private Integer skip;

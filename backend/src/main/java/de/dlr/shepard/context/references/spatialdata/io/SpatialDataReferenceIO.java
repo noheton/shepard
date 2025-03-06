@@ -44,10 +44,10 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   private List<FilterCondition> measurementFilters;
 
   @Schema
-  private long startTime;
+  private Long startTime;
 
   @Schema
-  private long endTime;
+  private Long endTime;
 
   @Schema
   private Map<String, Object> metadata;
