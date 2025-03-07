@@ -162,6 +162,12 @@ public class SpatialDataPointRepositoryTest {
   }
 
   @Test
+  public void getWithoutGeometryFilter_returnsSkippedData_success() {
+    var actual = repository.get(testContainerId, null, null, Collections.emptyMap(), Collections.emptyList(), null, 10);
+    assertEquals(10, actual.size());
+  }
+
+  @Test
   public void getWithoutGeometryFilter_returnsFilteredData_success() {
     var expected = List.of(testDataPoints.get(1));
     var actual = repository.get(
@@ -193,46 +199,47 @@ public class SpatialDataPointRepositoryTest {
     );
 
     assertNotNull(data);
-    assertTrue(data.size() > 100);
+    assertTrue(data.size() == numberOfTestPoints);
   }
 
   @Test
   @Transactional
   public void getByBoundingBox_returnsSomeData_success() {
+    var containerId = generateManagedContainerId();
     // Setup
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(666, 666, 666)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(600, 666, 600)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(666, 700, 666)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(700, 700, 700)),
       null,
       null
     );
     var dataPoints = new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 };
-    var result = repository.insert(testContainerId, dataPoints);
+    var result = repository.insert(containerId, dataPoints);
 
     var data = repository.getByBoundingBox(
-      testContainerId,
+      containerId,
       new Coordinate(500, 500, 500),
       new Coordinate(700, 700, 700),
       null,
@@ -252,43 +259,44 @@ public class SpatialDataPointRepositoryTest {
 
   @Test
   @Transactional
-  public void getByBoundingBox_returnsSomeData_withLIMIT_success() {
+  public void getByBoundingBox_returnsSomeData_withLimit_success() {
+    var containerId = generateManagedContainerId();
     // Setup
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(866, 866, 866)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(800, 866, 800)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(866, 900, 866)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(900, 900, 900)),
       null,
       null
     );
     var result = repository.insert(
-      testContainerId,
+      containerId,
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 }
     );
 
     var data = repository.getByBoundingBox(
-      testContainerId,
+      containerId,
       new Coordinate(700, 700, 700),
       new Coordinate(900, 900, 900),
       null,
@@ -307,42 +315,43 @@ public class SpatialDataPointRepositoryTest {
   @Test
   @Transactional
   public void getByBoundingBox_returnsSomeData_withSkip_success() {
+    var containerId = generateManagedContainerId();
     // Setup
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(766, 766, 766)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(700, 766, 700)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(766, 700, 766)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(700, 700, 700)),
       null,
       null
     );
     var result = repository.insert(
-      testContainerId,
+      containerId,
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4 }
     );
 
     var data = repository.getByBoundingBox(
-      testContainerId,
+      containerId,
       new Coordinate(700, 700, 700),
       new Coordinate(800, 800, 800),
       null,
@@ -392,52 +401,53 @@ public class SpatialDataPointRepositoryTest {
     );
 
     assertNotNull(data);
-    assertTrue(data.size() > 100);
+    assertTrue(data.size() == numberOfTestPoints);
   }
 
   @Test
   @Transactional
   public void getByBoundingSphere_returnsSomeData_success() {
+    var containerId = generateManagedContainerId();
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1666, 1666, 1666)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1600, 1666, 1600)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1666, 1700, 1666)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1700, 1700, 1700)),
       null,
       null
     );
     var dataPoint5 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1800, 1800, 1800)),
       null,
       null
     );
     var dataPoints = new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 };
-    var result = repository.insert(testContainerId, dataPoints);
+    var result = repository.insert(containerId, dataPoints);
 
     var data = repository.getByBoundingSphere(
-      testContainerId,
+      containerId,
       new Coordinate(1666, 1666, 1666),
       100,
       null,
@@ -458,48 +468,49 @@ public class SpatialDataPointRepositoryTest {
   @Test
   @Transactional
   public void getByBoundingSphere_returnsData_withLIMIT_success() {
+    var containerId = generateManagedContainerId();
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1666, 1666, 1666)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1600, 1666, 1600)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1666, 1700, 1666)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1700, 1700, 1700)),
       null,
       null
     );
     var dataPoint5 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(1800, 1800, 1800)),
       null,
       null
     );
     var result = repository.insert(
-      testContainerId,
+      containerId,
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5 }
     );
 
     var data = repository.getByBoundingSphere(
-      testContainerId,
+      containerId,
       new Coordinate(1666, 1666, 1666),
       100,
       null,
@@ -518,55 +529,56 @@ public class SpatialDataPointRepositoryTest {
   @Test
   @Transactional
   public void getByBoundingSphere_returnsData_withSkip_success() {
+    var containerId = generateManagedContainerId();
     var dataPoint1 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(3980, 20, 10)),
       null,
       null
     );
     var dataPoint2 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(4020, -15, 5)),
       null,
       null
     );
     var dataPoint3 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(4010, 25, -30)),
       null,
       null
     );
     var dataPoint4 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(3995, -35, 40)),
       null,
       null
     );
     var dataPoint5 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(4000, 10, -50)),
       null,
       null
     );
     var dataPoint6 = new SpatialDataPoint(
-      testContainerId,
+      containerId,
       generateTimestamp(),
       GeometryBuilder.fromCoordinate(new Coordinate(4005, 0, -40)),
       null,
       null
     );
     var result = repository.insert(
-      testContainerId,
+      containerId,
       new SpatialDataPoint[] { dataPoint1, dataPoint2, dataPoint3, dataPoint4, dataPoint5, dataPoint6 }
     );
 
     var data = repository.getByBoundingSphere(
-      testContainerId,
+      containerId,
       new Coordinate(4000, 0, 0),
       100,
       null,
@@ -614,7 +626,7 @@ public class SpatialDataPointRepositoryTest {
     );
 
     assertNotNull(data);
-    assertTrue(data.size() > 100);
+    assertTrue(data.size() == numberOfTestPoints);
   }
 
   @Test
