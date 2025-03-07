@@ -1,10 +1,9 @@
 <script setup lang="ts">
-interface ConfirmationDialogProps {
+interface ConfirmDeleteDialogProps {
   promptText: string;
-  confirmButtonText: string;
 }
 
-defineProps<ConfirmationDialogProps>();
+defineProps<ConfirmDeleteDialogProps>();
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -38,9 +37,7 @@ const confirm = () => {
           Cancel
         </v-btn>
 
-        <v-btn variant="flat" color="error" @click="confirm">
-          {{ confirmButtonText }}
-        </v-btn>
+        <v-btn variant="flat" color="error" @click="confirm">Delete</v-btn>
       </template>
     </v-card>
   </v-dialog>

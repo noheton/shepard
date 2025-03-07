@@ -12,6 +12,7 @@ defineProps<CollectionSidebarHeaderProps>();
 const showContextMenuButton = ref<boolean>(false);
 
 const showEditDialog = ref(false);
+const showDeleteDialog = ref(false);
 </script>
 
 <template>
@@ -71,6 +72,11 @@ const showEditDialog = ref(false);
                     icon: 'mdi-pencil-outline',
                     onClick: () => (showEditDialog = true),
                   },
+                  {
+                    label: 'Delete',
+                    icon: 'mdi-delete-outline',
+                    onClick: () => (showDeleteDialog = true),
+                  },
                 ]"
                 @expansion-state-changed="e => (showContextMenuButton = e)"
               />
@@ -80,6 +86,11 @@ const showEditDialog = ref(false);
               v-model:show-dialog="showEditDialog"
               :collection="collection"
               :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
+            />
+            <DeleteCollectionDialog
+              v-if="showDeleteDialog"
+              v-model:show-dialog="showDeleteDialog"
+              :collection="collection"
             />
           </div>
         </div>

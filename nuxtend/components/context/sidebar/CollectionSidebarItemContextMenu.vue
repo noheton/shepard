@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DataObjectApi } from "@dlr-shepard/backend-client";
+import ConfirmDeleteDialog from "~/components/common/ConfirmDeleteDialog.vue";
 
 const props = defineProps<{
   collectionId: number;
@@ -88,10 +89,9 @@ async function deleteItem() {
     :data-object-name="itemName"
     @data-object-updated="emit('data-object-updated')"
   />
-  <ConfirmationDialog
+  <ConfirmDeleteDialog
     v-model:show-dialog="showDeleteDialog"
     prompt-text="Are you sure you want to delete this item?"
-    confirm-button-text="Delete"
     @confirmed="deleteItem"
   />
 </template>

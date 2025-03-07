@@ -145,10 +145,9 @@ const getUpdatedInfoString = computed(() => {
             style="cursor: pointer"
             @click="showDeleteDialog = true"
           />
-          <ConfirmationDialog
+          <ConfirmDeleteDialog
             v-model:show-dialog="showDeleteDialog"
             prompt-text="Are you sure you want to delete this item?"
-            confirm-button-text="Delete"
             @confirmed="deleteEntry"
           />
         </template>
