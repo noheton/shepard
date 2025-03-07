@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-import type { Collection } from "@dlr-shepard/backend-client";
+import {
+  CollectionApi,
+  type Collection,
+  type ResponseError,
+} from "@dlr-shepard/backend-client";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;
@@ -7,12 +11,29 @@ interface CollectionSidebarHeaderProps {
   isAllowedToEditCollection?: boolean;
   isAllowedToEditPermissions?: boolean;
 }
-defineProps<CollectionSidebarHeaderProps>();
+const props = defineProps<CollectionSidebarHeaderProps>();
 
 const showContextMenuButton = ref<boolean>(false);
-
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
+
+const exportCollection = () => {
+  if (props.collection === undefined) return;
+  const filename = sanitizeFilename(props.collection.name) + ".zip";
+
+  emitSuccess(
+    "Export is being generated. Download will start automatically when it's ready.",
+  );
+
+  createApiInstance(CollectionApi)
+    .exportCollection({ collectionId: props.collection.id })
+    .then(response => {
+      downloadFile(response, filename);
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "exporting collection");
+    });
+};
 </script>
 
 <template>
@@ -71,6 +92,13 @@ const showDeleteDialog = ref(false);
                     label: 'Edit',
                     icon: 'mdi-pencil-outline',
                     onClick: () => (showEditDialog = true),
+                  },
+                  {
+                    label: 'Export',
+                    icon: 'mdi-tray-arrow-down',
+                    onClick: () => {
+                      exportCollection();
+                    },
                   },
                   {
                     label: 'Delete',
