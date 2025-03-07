@@ -2,10 +2,11 @@ package de.dlr.shepard.context.labJournal.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -55,7 +56,7 @@ public class LabJournalTest {
   @Test
   public void createLabJournalEntry_success() {
     LabJournalEntry created = labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 1", userName);
-    LabJournalEntry actual = labJournalEntryService.getLabJournalEntry(created.getId());
+    LabJournalEntry actual = labJournalEntryService.getLabJournalEntry(created.getId(), userName);
     assertEquals(created, actual);
   }
 
@@ -68,14 +69,14 @@ public class LabJournalTest {
       labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 4", userName)
     );
     dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
-    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
+    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject, userName);
     assertEquals(created, actual);
   }
 
   @Test
   public void getLabJournalEntries_nullDataObject_returnsEmptyList() throws InterruptedException {
     List<LabJournalEntry> emptyList = List.of();
-    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(null);
+    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(null, null);
     assertEquals(emptyList, actual);
   }
 
@@ -83,15 +84,16 @@ public class LabJournalTest {
   public void updateLabJournalEntry_success() {
     LabJournalEntry created = labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 1", userName);
     labJournalEntryService.updateLabJournalEntry(created.getId(), "content 2", userName);
-    LabJournalEntry actual = labJournalEntryService.getLabJournalEntry(created.getId());
+    LabJournalEntry actual = labJournalEntryService.getLabJournalEntry(created.getId(), userName);
     assertEquals(actual.getContent(), created.getContent());
   }
 
   @Test
-  public void updateLabJournalEntry_notExistsLabJournalEntry_returnsNull() {
+  public void updateLabJournalEntry_notExistsLabJournalEntry_throwsNotFound() {
     Long largeId = Long.MAX_VALUE;
-    LabJournalEntry actual = labJournalEntryService.updateLabJournalEntry(largeId, "content", userName);
-    assertNull(actual);
+    assertThrowsExactly(InvalidPathException.class, () ->
+      labJournalEntryService.updateLabJournalEntry(largeId, "content", userName)
+    );
   }
 
   @Test
@@ -105,25 +107,7 @@ public class LabJournalTest {
     );
     dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
     labJournalEntryService.deleteLabJournalEntry(toBeDeleted.getId(), userName);
-    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
+    List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject, userName);
     assertFalse(actual.contains(toBeDeleted));
-  }
-
-  @Test
-  public void getCollectionId_labJournalEntryExists_returnsId() {
-    LabJournalEntry labJournalEntry = labJournalEntryService.createLabJournalEntry(
-      dataObject.getId(),
-      "content 1",
-      userName
-    );
-    Long actual = labJournalEntryService.getCollectionId(labJournalEntry.getId());
-    assertEquals(actual, dataObject.getCollection().getId());
-  }
-
-  @Test
-  public void getCollectionId_labJournalEntryNotExists_returnsNull() {
-    Long largeId = Long.MAX_VALUE;
-    Long actual = labJournalEntryService.getCollectionId(largeId);
-    assertNull(actual);
   }
 }

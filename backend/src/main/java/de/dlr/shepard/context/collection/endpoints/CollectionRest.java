@@ -1,8 +1,8 @@
 package de.dlr.shepard.context.collection.endpoints;
 
+import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
-import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -47,7 +47,6 @@ public class CollectionRest {
 
   private CollectionService collectionService;
   private ExportService exportService;
-  private PermissionsService permissionsService;
 
   @Context
   private SecurityContext securityContext;
@@ -55,14 +54,9 @@ public class CollectionRest {
   CollectionRest() {}
 
   @Inject
-  public CollectionRest(
-    CollectionService collectionService,
-    ExportService exportService,
-    PermissionsService permissionsService
-  ) {
+  public CollectionRest(CollectionService collectionService, ExportService exportService) {
     this.collectionService = collectionService;
     this.exportService = exportService;
-    this.permissionsService = permissionsService;
   }
 
   @GET
@@ -178,14 +172,13 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
-    var perms = permissionsService.getPermissionsByNeo4jId(collectionId);
-    PermissionsIO permsIO = null;
-    if (perms != null) {
-      permsIO = new PermissionsIO(perms);
-      permsIO.setEntityId(collectionId);
-    }
-    return permsIO != null ? Response.ok(permsIO).build() : Response.status(Status.NOT_FOUND).build();
+    Permissions permissions = collectionService.getCollectionPermissions(
+      collectionId,
+      securityContext.getUserPrincipal().getName()
+    );
+
+    if (permissions == null) return Response.status(Status.NOT_FOUND).build();
+    return Response.ok(new PermissionsIO(permissions)).build();
   }
 
   @PUT
@@ -204,11 +197,15 @@ public class CollectionRest {
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
-    ) @Valid PermissionsIO permissions
+    ) @Valid PermissionsIO newPermissions
   ) {
-    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
-    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, collectionId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    Permissions updatedPermissions = collectionService.updateCollectionPermissions(
+      newPermissions,
+      collectionId,
+      securityContext.getUserPrincipal().getName()
+    );
+
+    return Response.ok(new PermissionsIO(updatedPermissions)).build();
   }
 
   @GET
@@ -218,14 +215,13 @@ public class CollectionRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = RolesIO.class))
+    content = @Content(schema = @Schema(implementation = Roles.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
-    var roles = permissionsService.getRolesByNeo4jId(collectionId, securityContext.getUserPrincipal().getName());
-    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+    Roles roles = collectionService.getCollectionRoles(collectionId, securityContext.getUserPrincipal().getName());
+    return Response.ok(roles).build();
   }
 
   @POST

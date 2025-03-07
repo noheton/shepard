@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.entities.Permissions;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -18,7 +18,6 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -26,7 +25,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -447,8 +445,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     };
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
 
-    var expected = new RolesIO(false, false, true, true);
-    var actual = permissionsService.getRolesByNeo4jId(123, "bob");
+    var expected = new Roles(false, false, true, true);
+    var actual = permissionsService.getUserRolesOnEntity(123, "bob");
     assertEquals(expected, actual);
   }
 
@@ -456,101 +454,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
   public void getRolesTest_null() {
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(null);
 
-    var expected = new RolesIO(false, true, true, true);
-    var actual = permissionsService.getRolesByNeo4jId(123, "bob");
+    var expected = new Roles(false, true, true, true);
+    var actual = permissionsService.getUserRolesOnEntity(123, "bob");
     assertEquals(expected, actual);
-  }
-
-  @Test
-  @DisplayName("Tests allowed lab journal entries request with no id segment")
-  public void isAllowedTest_labJournals() {
-    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>() {});
-    when(rootSeg.getPath()).thenReturn(Constants.LAB_JOURNAL_ENTRIES);
-    when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg));
-    var actual = permissionsService.isAllowed(request, AccessType.Read, "principal");
-    assertTrue(actual);
-    actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertTrue(actual);
-  }
-
-  @Test
-  @DisplayName("Tests allowed lab journal entries request with id segment")
-  public void isAllowedTest_labJournalEntriesWithIdSegment() {
-    var perms = new Permissions() {
-      {
-        setPermissionType(PermissionType.Private);
-        setOwner(new User("principal"));
-      }
-    };
-    when(permissionsDAO.findByEntityNeo4jId(123L)).thenReturn(perms);
-    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>() {});
-    when(rootSeg.getPath()).thenReturn(Constants.LAB_JOURNAL_ENTRIES);
-    when(idSeg.getPath()).thenReturn("100");
-    when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg, idSeg));
-    when(labJournalEntryService.getCollectionId(100L)).thenReturn(123L);
-    var actual = permissionsService.isAllowed(request, AccessType.Read, "principal");
-    assertTrue(actual);
-    actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertTrue(actual);
-  }
-
-  @Test
-  @DisplayName("Tests not allowed lab journal entries request with id segment")
-  public void isNotAllowedTest_labJournalEntriesWithIdSegment() {
-    var perms = new Permissions() {
-      {
-        setPermissionType(PermissionType.Private);
-        setOwner(new User("some_user"));
-      }
-    };
-    when(permissionsDAO.findByEntityNeo4jId(123L)).thenReturn(perms);
-    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>() {});
-    when(rootSeg.getPath()).thenReturn(Constants.LAB_JOURNAL_ENTRIES);
-    when(idSeg.getPath()).thenReturn("100");
-    when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg, idSeg));
-    when(labJournalEntryService.getCollectionId(100L)).thenReturn(123L);
-    var actual = permissionsService.isAllowed(request, AccessType.Read, "principal");
-    assertFalse(actual);
-    actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertFalse(actual);
-  }
-
-  @Test
-  @DisplayName("Tests allowed lab journal entries request with object id in body")
-  public void isAllowedTest_labJournalEntriesWithObjectId() {
-    var perms = new Permissions() {
-      {
-        setPermissionType(PermissionType.Private);
-        setOwner(new User("principal"));
-      }
-    };
-    when(permissionsDAO.findByEntityNeo4jId(123L)).thenReturn(perms);
-    MultivaluedHashMap<String, String> params = new MultivaluedHashMap<>();
-    params.add(Constants.DATA_OBJECT_ID, "100");
-    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>() {});
-    when(rootSeg.getPath()).thenReturn(Constants.LAB_JOURNAL_ENTRIES);
-    when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg));
-    var actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertTrue(actual);
-  }
-
-  @Test
-  @DisplayName("Tests not allowed lab journal request with object id in body")
-  public void isNotAllowedTest_labJournalEntriesWithObjectId() {
-    var perms = new Permissions() {
-      {
-        setPermissionType(PermissionType.Private);
-        setOwner(new User("some_user"));
-      }
-    };
-    when(permissionsDAO.findByEntityNeo4jId(123L)).thenReturn(perms);
-    MultivaluedHashMap<String, String> params = new MultivaluedHashMap<>();
-    params.add(Constants.DATA_OBJECT_ID, "100");
-    when(uriInfo.getQueryParameters()).thenReturn(params);
-    when(rootSeg.getPath()).thenReturn(Constants.LAB_JOURNAL_ENTRIES);
-    when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg));
-    when(dataObjectService.getCollectionId(100L)).thenReturn(123L);
-    var actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertFalse(actual);
   }
 }

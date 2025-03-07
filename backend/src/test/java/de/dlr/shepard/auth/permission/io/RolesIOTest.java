@@ -7,6 +7,6 @@ public class RolesIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(RolesIO.class).verify();
+    EqualsVerifier.simple().forClass(Roles.class).verify();
   }
 }

@@ -1,7 +1,7 @@
 package de.dlr.shepard.auth.users.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
@@ -177,7 +177,7 @@ public class UserGroupRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-    var perms = permissionsService.getPermissionsByNeo4jId(userGroupId);
+    var perms = permissionsService.getPermissionsOfEntity(userGroupId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
   }
 
@@ -210,12 +210,12 @@ public class UserGroupRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = RolesIO.class))
+    content = @Content(schema = @Schema(implementation = Roles.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-    var roles = permissionsService.getRolesByNeo4jId(userGroupId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsService.getUserRolesOnEntity(userGroupId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

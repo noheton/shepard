@@ -68,7 +68,10 @@ public class LabJournalEntryRest {
   public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
     DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
-    for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(dataObject)) {
+    for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(
+      dataObject,
+      securityContext.getUserPrincipal().getName()
+    )) {
       result.add(new LabJournalEntryIO(labJournalEntry));
     }
     return Response.ok(result).build();
@@ -86,7 +89,10 @@ public class LabJournalEntryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response getLabJournalById(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
-    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
+    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(
+      labJournalEntryId,
+      securityContext.getUserPrincipal().getName()
+    );
     return Response.ok(new LabJournalEntryIO(labJournalEntry)).build();
   }
 
@@ -165,7 +171,10 @@ public class LabJournalEntryRest {
         .build();
     }
 
-    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
+    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(
+      labJournalEntryId,
+      securityContext.getUserPrincipal().getName()
+    );
     String userName = securityContext.getUserPrincipal().getName();
     if (!labJournalEntry.getCreatedBy().getUsername().equals(userName)) return Response.status(
       Status.FORBIDDEN

@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.structureddata.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
@@ -245,7 +245,7 @@ public class StructuredDataRest {
   public Response getStructuredDataPermissions(
     @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
   ) {
-    var perms = permissionsService.getPermissionsByNeo4jId(structuredDataId);
+    var perms = permissionsService.getPermissionsOfEntity(structuredDataId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
   }
 
@@ -278,12 +278,12 @@ public class StructuredDataRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = RolesIO.class))
+    content = @Content(schema = @Schema(implementation = Roles.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response getStructuredDataRoles(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
-    var roles = permissionsService.getRolesByNeo4jId(structuredDataId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsService.getUserRolesOnEntity(structuredDataId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

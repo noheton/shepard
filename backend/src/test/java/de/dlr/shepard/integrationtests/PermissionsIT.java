@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PermissionType;
@@ -144,8 +144,8 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification1)
       .when()
       .get(collectionsURL + "/" + collection1.getId() + "/" + Constants.ROLES)
-      .as(RolesIO.class);
-    var expected = new RolesIO(true, false, false, false);
+      .as(Roles.class);
+    var expected = new Roles(true, false, false, false);
     assertEquals(expected, actual);
   }
 
@@ -183,8 +183,8 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification2)
       .when()
       .get(collectionsURL + "/" + collection1.getId() + "/" + Constants.ROLES)
-      .as(RolesIO.class);
-    var expected = new RolesIO(false, false, false, true);
+      .as(Roles.class);
+    var expected = new Roles(false, false, false, true);
     assertEquals(expected, actual);
   }
 
@@ -230,8 +230,8 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification2)
       .when()
       .get(collectionsURL + "/" + collection1.getId() + "/" + Constants.ROLES)
-      .as(RolesIO.class);
-    var expected = new RolesIO(false, false, true, true);
+      .as(Roles.class);
+    var expected = new Roles(false, false, true, true);
     assertEquals(expected, actual);
   }
 

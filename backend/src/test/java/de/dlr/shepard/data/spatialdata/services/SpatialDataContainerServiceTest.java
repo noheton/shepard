@@ -9,7 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -34,7 +34,7 @@ public class SpatialDataContainerServiceTest {
   SpatialDataPointService spatialDataPointService;
 
   @InjectMock
-  PermissionsDAO permissionsDao;
+  PermissionsService permissionsService;
 
   @InjectMock
   UserDAO userDao;
@@ -48,7 +48,7 @@ public class SpatialDataContainerServiceTest {
     spatialDataContainerService.createContainer("testContainer", userName);
 
     verify(spatialDataContainerDAO, times(1)).createOrUpdate(any());
-    verify(permissionsDao, times(1)).createOrUpdate(any());
+    verify(permissionsService, times(1)).createPermissions(any(), any(), any());
   }
 
   @Test

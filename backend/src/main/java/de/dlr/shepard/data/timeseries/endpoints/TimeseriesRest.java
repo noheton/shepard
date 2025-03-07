@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
@@ -403,7 +403,7 @@ public class TimeseriesRest {
   public PermissionsIO getTimeseriesPermissions(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
   ) {
-    var permissions = permissionsService.getPermissionsByNeo4jId(timeseriesContainerId);
+    var permissions = permissionsService.getPermissionsOfEntity(timeseriesContainerId);
     if (permissions == null) throw new NotFoundException();
     return new PermissionsIO(permissions);
   }
@@ -438,12 +438,12 @@ public class TimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = RolesIO.class))
+    content = @Content(schema = @Schema(implementation = Roles.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public RolesIO getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    var roles = permissionsService.getRolesByNeo4jId(
+  public Roles getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+    var roles = permissionsService.getUserRolesOnEntity(
       timeseriesContainerId,
       securityContext.getUserPrincipal().getName()
     );

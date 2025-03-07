@@ -7,8 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
@@ -34,7 +33,7 @@ public class InfluxTimeseriesContainerServiceTest {
   TimeseriesContainerDAO dao;
 
   @InjectMock
-  PermissionsDAO permissionsDAO;
+  PermissionsService permissionsService;
 
   @InjectMock
   InfluxTimeseriesService timeseriesService;
@@ -125,7 +124,7 @@ public class InfluxTimeseriesContainerServiceTest {
 
     var actual = service.createContainer(input, "bob");
     assertEquals(created, actual);
-    verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    verify(permissionsService).createPermissions(created, user, PermissionType.Private);
   }
 
   @Test

@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.timeseries.services;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
@@ -21,7 +20,7 @@ public class TimeseriesContainerService {
   private TimeseriesContainerDAO timeseriesContainerDAO;
   private UserDAO userDAO;
   private DateHelper dateHelper;
-  private PermissionsDAO permissionsDAO;
+  private PermissionsService permissionsService;
   private TimeseriesService timeseriesService;
 
   TimeseriesContainerService() {}
@@ -31,13 +30,13 @@ public class TimeseriesContainerService {
     TimeseriesContainerDAO timeseriesContainerDAO,
     UserDAO userDAO,
     DateHelper dateHelper,
-    PermissionsDAO permissionsDAO,
+    PermissionsService permissionsService,
     TimeseriesService timeseriesService
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
-    this.permissionsDAO = permissionsDAO;
+    this.permissionsService = permissionsService;
     this.timeseriesService = timeseriesService;
   }
 
@@ -88,7 +87,7 @@ public class TimeseriesContainerService {
     toCreate.setDatabase(null); // This is not needed anymore after the migration to TSDB
     toCreate.setName(name);
     var created = timeseriesContainerDAO.createOrUpdate(toCreate);
-    permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
   }
 

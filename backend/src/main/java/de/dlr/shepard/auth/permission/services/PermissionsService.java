@@ -3,7 +3,7 @@ package de.dlr.shepard.auth.permission.services;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -12,8 +12,6 @@ import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PermissionType;
-import de.dlr.shepard.context.collection.services.DataObjectService;
-import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -31,39 +29,70 @@ public class PermissionsService {
   private PermissionsDAO permissionsDAO;
   private UserService userService;
   private UserGroupService userGroupService;
-  private LabJournalEntryService labJournalEntryService;
-  private DataObjectService dataObjectService;
 
   PermissionsService() {}
 
   @Inject
-  public PermissionsService(
-    PermissionsDAO permissionsDAO,
-    UserService userService,
-    UserGroupService userGroupService,
-    LabJournalEntryService labJournalEntryService,
-    DataObjectService dataObjectService
-  ) {
+  public PermissionsService(PermissionsDAO permissionsDAO, UserService userService, UserGroupService userGroupService) {
     this.permissionsDAO = permissionsDAO;
     this.userService = userService;
     this.userGroupService = userGroupService;
-    this.labJournalEntryService = labJournalEntryService;
-    this.dataObjectService = dataObjectService;
+  }
+
+  /**
+   * @param entity the entity the permissions belong to
+   * @param user the user creating the permissions
+   * @param permissionType the initial permission type
+   * @return the newly created permissions
+   */
+  public Permissions createPermissions(BasicEntity entity, User user, PermissionType permissionType) {
+    return permissionsDAO.createOrUpdate(new Permissions(entity, user, PermissionType.Private));
   }
 
   /**
    * Searches for permissions in Neo4j.
    *
-   * @param id identifies the entity that the permissions object belongs to
+   * @param entityId identifies the entity that the permissions object belongs to
    * @return Permissions with matching entity or null
    */
-  public Permissions getPermissionsByNeo4jId(long id) {
-    var permissions = permissionsDAO.findByEntityNeo4jId(id);
+  public Permissions getPermissionsOfEntity(long entityId) {
+    var permissions = permissionsDAO.findByEntityNeo4jId(entityId);
     if (permissions == null) {
-      Log.errorf("Permissions with entity id %s is null", id);
+      Log.errorf("Permissions with entity id %s is null", entityId);
       return null;
     }
     return permissions;
+  }
+
+  /**
+   * @param entityId identifies the entity on which the user has the roles
+   * @param username the user whose roles are checked
+   * @return an object describing the roles of the user on the entity
+   */
+  public Roles getUserRolesOnEntity(long entityId, String username) {
+    var perms = getPermissionsOfEntity(entityId);
+    return getRoles(perms, username);
+  }
+
+  /**
+   * Check whether a request is allowed or not
+   *
+   * @param entityId   the entity that is to be accessed
+   * @param accessType the access type (read, write, manage)
+   * @param username   the user that wants access
+   * @return whether the access is allowed or not
+   */
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
+
+    if (userRolesOnEntity.isOwner()) return true;
+
+    return switch (accessType) {
+      case Read -> userRolesOnEntity.isReader();
+      case Write -> userRolesOnEntity.isWriter();
+      case Manage -> userRolesOnEntity.isManager();
+      case None -> false;
+    };
   }
 
   /**
@@ -75,7 +104,7 @@ public class PermissionsService {
    */
   public Permissions updatePermissionsByNeo4jId(PermissionsIO permissionsIo, long id) {
     var permissions = convertPermissionsIO(permissionsIo);
-    var old = getPermissionsByNeo4jId(id);
+    var old = getPermissionsOfEntity(id);
     if (old == null) {
       // There is no old permissions object
       permissions.setEntities(List.of(new BasicEntity(id)));
@@ -91,6 +120,10 @@ public class PermissionsService {
     return permissionsDAO.createOrUpdate(old);
   }
 
+  public boolean deletePermissions(Permissions permissions) {
+    return permissionsDAO.deleteByNeo4jId(permissions.getId());
+  }
+
   /**
    * Checks if the request is allowed based on access type and user name. The check is performed by checking the path segments, and request body.
    * @param requestContext
@@ -100,89 +133,46 @@ public class PermissionsService {
   public boolean isAllowed(ContainerRequestContext requestContext, AccessType accessType, String userName) {
     List<PathSegment> pathSegments = requestContext.getUriInfo().getPathSegments();
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
-    // Check initially for lab journal entries requests, then pass it to the generic check
-    if (pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
-      return isAllowedLabJournalEntryRequest(requestContext, accessType, userName, idSegment);
-    }
-    // Allow migration state endpoint for all authenticated users
+
+    // migration state endpoints
     if (pathSegments.get(0).getPath().equals("temp") && pathSegments.get(1).getPath().equals("migrations")) {
       return true;
     }
 
-    // Perform the generic check
+    // Paths with length 1
     if (idSegment == null || idSegment.isBlank()) {
       // No id in path
       return true;
-    } else if (!StringUtils.isNumeric(idSegment)) {
-      // usersearch and containersearch
-      if (
-        pathSegments.get(0).getPath().equals(Constants.SEARCH) &&
-        List.of(Constants.USERS, Constants.CONTAINERS, Constants.COLLECTIONS).contains(pathSegments.get(1).getPath()) &&
-        pathSegments.size() == 2
-      ) return true;
-      // non-numeric id
-      else if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
-        if (pathSegments.size() <= 2 && AccessType.Read.equals(accessType)) return true; // it is allowed to read all users
-        else if (userName.equals(idSegment)) return true; // it is allowed to access yourself
-      }
-      return false;
     }
 
-    var entityId = Long.parseLong(idSegment);
-    return isAccessTypeAllowedForUser(entityId, accessType, userName);
-  }
+    // lab journal entries
+    if (pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
+      // Lab journal permissions are already checked inside LabJournalEntryService
+      return true;
+    }
 
-  /**
-   * Check whether a request is allowed or not
-   *
-   * @param entityId   the entity that is to be accessed
-   * @param accessType the access type (read, write, manage)
-   * @param username   the user that wants access
-   * @return whether the access is allowed or not
-   */
-  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
-    var perms = this.getPermissionsByNeo4jId(entityId);
-    if (perms == null) return true; // No permissions
+    // entity paths
+    if (StringUtils.isNumeric(idSegment)) {
+      var entityId = Long.parseLong(idSegment);
+      return isAccessTypeAllowedForUser(entityId, accessType, userName);
+    }
 
-    if (isOwner(perms, username)) return true; // Is owner
+    // usersearch and containersearch
+    if (
+      pathSegments.get(0).getPath().equals(Constants.SEARCH) &&
+      List.of(Constants.USERS, Constants.CONTAINERS, Constants.COLLECTIONS).contains(pathSegments.get(1).getPath()) &&
+      pathSegments.size() == 2
+    ) {
+      return true;
+    }
 
-    if (AccessType.Manage.equals(accessType)) {
-      return isManager(perms, username);
-    } else if (AccessType.Read.equals(accessType)) {
-      return isReader(perms, username);
-    } else if (AccessType.Write.equals(accessType)) {
-      return isWriter(perms, username);
+    // users
+    if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
+      if (pathSegments.size() <= 2 && AccessType.Read.equals(accessType)) return true; // it is allowed to read all users
+      else if (userName.equals(idSegment)) return true; // it is allowed to access yourself
     }
 
     return false;
-  }
-
-  public RolesIO getRolesByNeo4jId(long id, String username) {
-    var perms = this.getPermissionsByNeo4jId(id);
-    return getRoles(perms, username);
-  }
-
-  private boolean isAllowedLabJournalEntryRequest(
-    ContainerRequestContext requestContext,
-    AccessType accessType,
-    String userName,
-    String idSegment
-  ) {
-    String dataObjectId = requestContext.getUriInfo().getQueryParameters().getFirst(Constants.DATA_OBJECT_ID);
-    // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
-    if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
-      Long collectionId = dataObjectService.getCollectionId(Long.parseLong(dataObjectId));
-      if (collectionId == null) return true;
-      return isAccessTypeAllowedForUser(collectionId, accessType, userName);
-    }
-    if (idSegment == null || idSegment.isBlank()) {
-      return true;
-    }
-    Long labJournalId = Long.parseLong(idSegment);
-    Long collectionId = labJournalEntryService.getCollectionId(labJournalId);
-    if (collectionId == null) return true;
-    // If the labjournalEntry request has labjournalId as path segment [in GET/labJournals/{labjournalId}, PUT/labJournals/{labjournalId}, DELETE/labJournals/{labjournalId} ]
-    return isAccessTypeAllowedForUser(collectionId, accessType, userName);
   }
 
   private Set<String> fetchUserNames(List<UserGroup> userGroups) {
@@ -196,12 +186,12 @@ public class PermissionsService {
     return ret;
   }
 
-  private RolesIO getRoles(Permissions perms, String username) {
+  private Roles getRoles(Permissions perms, String username) {
     if (perms == null) {
       // Legacy entity without permissions
-      return new RolesIO(false, true, true, true);
+      return new Roles(false, true, true, true);
     }
-    var roles = new RolesIO(
+    var roles = new Roles(
       isOwner(perms, username),
       isManager(perms, username),
       isWriter(perms, username),
@@ -233,6 +223,9 @@ public class PermissionsService {
     return pub || writer || writerGroup;
   }
 
+  /**
+   * Fetches all missing data and transforms PermissionsIO to a Permissions object.
+   */
   private Permissions convertPermissionsIO(PermissionsIO permissions) {
     var owner = permissions.getOwner() != null ? userService.getUser(permissions.getOwner()) : null;
     var permissionType = permissions.getPermissionType();

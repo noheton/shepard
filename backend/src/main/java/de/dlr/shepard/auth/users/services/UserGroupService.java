@@ -1,7 +1,6 @@
 package de.dlr.shepard.auth.users.services;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.daos.UserGroupDAO;
 import de.dlr.shepard.auth.users.entities.User;
@@ -20,7 +19,7 @@ public class UserGroupService {
 
   private UserGroupDAO userGroupDAO;
   private UserDAO userDAO;
-  private PermissionsDAO permissionsDAO;
+  private PermissionsService permissionsService;
   private DateHelper dateHelper;
 
   UserGroupService() {}
@@ -29,12 +28,12 @@ public class UserGroupService {
   public UserGroupService(
     UserGroupDAO userGroupDAO,
     UserDAO userDAO,
-    PermissionsDAO permissionsDAO,
+    PermissionsService permissionsService,
     DateHelper dateHelper
   ) {
     this.userGroupDAO = userGroupDAO;
     this.userDAO = userDAO;
-    this.permissionsDAO = permissionsDAO;
+    this.permissionsService = permissionsService;
     this.dateHelper = dateHelper;
   }
 
@@ -54,7 +53,7 @@ public class UserGroupService {
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setUsers(fetchUsers(userGroup.getUsernames()));
     var created = userGroupDAO.createOrUpdate(toCreate);
-    permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
   }
 
@@ -73,8 +72,8 @@ public class UserGroupService {
     var old = userGroupDAO.findByNeo4jId(id);
     if (old == null) return false;
 
-    var permissions = permissionsDAO.findByEntityNeo4jId(id);
-    var permissionsResult = permissions == null || permissionsDAO.deleteByNeo4jId(permissions.getId());
+    var permissions = permissionsService.getPermissionsOfEntity(id);
+    var permissionsResult = permissions == null || permissionsService.deletePermissions(permissions);
     if (!permissionsResult) return false;
 
     return userGroupDAO.deleteByNeo4jId(id);

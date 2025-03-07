@@ -167,6 +167,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.LAB_JOURNAL_ENTRIES)) {
       long id = Long.parseLong(pathElems.get(Constants.LAB_JOURNAL_ENTRIES));
+      // TODO: Remove the method in the lab journal function when removing this code
       LabJournalEntry labJournalEntry = labJournalService.getLabJournalEntry(id);
       String error = checkLabJournalEntry(labJournalEntry);
       if (error != null) {

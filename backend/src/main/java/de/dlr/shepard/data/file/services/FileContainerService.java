@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.file.services;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
@@ -23,7 +22,7 @@ import java.util.List;
 public class FileContainerService implements IContainerService<FileContainer, FileContainerIO> {
 
   private FileContainerDAO fileContainerDAO;
-  private PermissionsDAO permissionsDAO;
+  private PermissionsService permissionsService;
   private UserDAO userDAO;
   private DateHelper dateHelper;
   private FileService fileService;
@@ -33,13 +32,13 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   @Inject
   public FileContainerService(
     FileContainerDAO fileContainerDAO,
-    PermissionsDAO permissionsDAO,
+    PermissionsService permissionsService,
     UserDAO userDAO,
     DateHelper dateHelper,
     FileService fileService
   ) {
     this.fileContainerDAO = fileContainerDAO;
-    this.permissionsDAO = permissionsDAO;
+    this.permissionsService = permissionsService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
     this.fileService = fileService;
@@ -62,7 +61,7 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
     toCreate.setName(fileContainerIO.getName());
 
     var created = fileContainerDAO.createOrUpdate(toCreate);
-    permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
   }
 

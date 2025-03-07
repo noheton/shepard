@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.timeseries.migration.influxtimeseries;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
@@ -23,7 +22,7 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
 
   private TimeseriesContainerDAO timeseriesContainerDAO;
   private InfluxTimeseriesService timeseriesService;
-  private PermissionsDAO permissionsDAO;
+  private PermissionsService permissionsService;
   private UserDAO userDAO;
   private DateHelper dateHelper;
 
@@ -33,13 +32,13 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
   public InfluxTimeseriesContainerService(
     TimeseriesContainerDAO timeseriesContainerDAO,
     InfluxTimeseriesService timeseriesService,
-    PermissionsDAO permissionsDAO,
+    PermissionsService permissionsService,
     UserDAO userDAO,
     DateHelper dateHelper
   ) {
     this.timeseriesContainerDAO = timeseriesContainerDAO;
     this.timeseriesService = timeseriesService;
-    this.permissionsDAO = permissionsDAO;
+    this.permissionsService = permissionsService;
     this.userDAO = userDAO;
     this.dateHelper = dateHelper;
   }
@@ -62,7 +61,7 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
     toCreate.setName(timeseriesContainer.getName());
 
     var created = timeseriesContainerDAO.createOrUpdate(toCreate);
-    permissionsDAO.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
   }
 

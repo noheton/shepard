@@ -1,8 +1,12 @@
 package de.dlr.shepard.context.collection.services;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
@@ -24,7 +28,7 @@ public class CollectionService {
 
   private CollectionDAO collectionDAO;
   private UserDAO userDAO;
-  private PermissionsDAO permissionsDAO;
+  private PermissionsService permissionsService;
   private DateHelper dateHelper;
   private VersionDAO versionDAO;
 
@@ -34,13 +38,13 @@ public class CollectionService {
   public CollectionService(
     CollectionDAO collectionDAO,
     UserDAO userDAO,
-    PermissionsDAO permissionsDAO,
+    PermissionsService permissionsService,
     DateHelper dateHelper,
     VersionDAO versionDAO
   ) {
     this.collectionDAO = collectionDAO;
     this.userDAO = userDAO;
-    this.permissionsDAO = permissionsDAO;
+    this.permissionsService = permissionsService;
     this.dateHelper = dateHelper;
     this.versionDAO = versionDAO;
   }
@@ -70,7 +74,7 @@ public class CollectionService {
     createdCollection.setShepardId(collectionId);
     createdCollection.setVersion(savedNullVersion);
     var updated = collectionDAO.createOrUpdate(createdCollection);
-    permissionsDAO.createOrUpdate(new Permissions(updated, user, PermissionType.Private));
+    permissionsService.createPermissions(updated, user, PermissionType.Private);
 
     return updated;
   }
@@ -171,6 +175,44 @@ public class CollectionService {
     var user = userDAO.find(username);
     var result = collectionDAO.deleteCollectionByShepardId(shepardId, user, date);
     return result;
+  }
+
+  public Roles getCollectionRoles(long collectionId, String username) {
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    return permissionsService.getUserRolesOnEntity(collectionId, username);
+  }
+
+  // TODO: Use assertions in all relevant methods
+  public void assertUserIsAllowedToReadCollection(long collectionId, String username) {
+    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Read, username)) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  public void assertUserIsAllowedToEditCollection(long collectionId, String username) {
+    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Write, username)) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  public void assertUserIsAllowedToManageCollection(long collectionId, String username) {
+    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Manage, username)) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  public Permissions getCollectionPermissions(long collectionId, String username) {
+    assertUserIsAllowedToManageCollection(collectionId, username);
+
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    return permissionsService.getPermissionsOfEntity(collectionId);
+  }
+
+  public Permissions updateCollectionPermissions(PermissionsIO newPermissions, long collectionId, String username) {
+    assertUserIsAllowedToManageCollection(collectionId, username);
+
+    // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
+    return permissionsService.updatePermissionsByNeo4jId(newPermissions, collectionId);
   }
 
   private Collection cutDeleted(Collection collection) {

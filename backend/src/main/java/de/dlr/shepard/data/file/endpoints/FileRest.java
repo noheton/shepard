@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.file.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.RolesIO;
+import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
@@ -269,7 +269,7 @@ public class FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var perms = permissionsService.getPermissionsByNeo4jId(fileContainerId);
+    var perms = permissionsService.getPermissionsOfEntity(fileContainerId);
     return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
   }
 
@@ -302,12 +302,12 @@ public class FileRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = RolesIO.class))
+    content = @Content(schema = @Schema(implementation = Roles.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var roles = permissionsService.getRolesByNeo4jId(fileContainerId, securityContext.getUserPrincipal().getName());
+    var roles = permissionsService.getUserRolesOnEntity(fileContainerId, securityContext.getUserPrincipal().getName());
     return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
   }
 }

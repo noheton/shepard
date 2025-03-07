@@ -8,8 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.daos.UserGroupDAO;
 import de.dlr.shepard.auth.users.entities.User;
@@ -36,7 +36,7 @@ public class UserGroupServiceTest {
   UserDAO userDAO;
 
   @InjectMock
-  PermissionsDAO permissionsDAO;
+  PermissionsService permissionsService;
 
   @InjectMock
   Session session;
@@ -76,7 +76,7 @@ public class UserGroupServiceTest {
     when(userDAO.find("user")).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(userGroupDAO.createOrUpdate(toCreate)).thenReturn(created);
-    when(permissionsDAO.createOrUpdate(any(Permissions.class))).thenReturn(null);
+    when(permissionsService.createPermissions(any(), any(), any())).thenReturn(null);
 
     UserGroup actual = service.createUserGroup(input, "creator");
     assertEquals(created, actual);
@@ -149,8 +149,8 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
-    when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
-    when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(true);
+    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.deletePermissions(permissions)).thenReturn(true);
 
     var result = service.deleteUserGroup(1L);
     assertTrue(result);
@@ -163,7 +163,7 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
-    when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(null);
+    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(null);
 
     var result = service.deleteUserGroup(1L);
     assertTrue(result);
@@ -177,8 +177,8 @@ public class UserGroupServiceTest {
     permissions.setId(2L);
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
-    when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
-    when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(false);
+    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.deletePermissions(permissions)).thenReturn(false);
 
     var result = service.deleteUserGroup(1L);
     assertFalse(result);
@@ -203,8 +203,8 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(false);
-    when(permissionsDAO.findByEntityNeo4jId(1L)).thenReturn(permissions);
-    when(permissionsDAO.deleteByNeo4jId(2L)).thenReturn(true);
+    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.deletePermissions(permissions)).thenReturn(true);
 
     var result = service.deleteUserGroup(1L);
     assertFalse(result);

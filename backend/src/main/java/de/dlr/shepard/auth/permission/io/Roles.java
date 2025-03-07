@@ -9,7 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "Roles")
 @NoArgsConstructor
 @AllArgsConstructor
-public class RolesIO {
+public class Roles {
 
   @Schema(readOnly = true, required = true)
   private boolean owner;

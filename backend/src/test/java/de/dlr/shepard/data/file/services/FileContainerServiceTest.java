@@ -8,8 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
@@ -34,7 +33,7 @@ public class FileContainerServiceTest {
   FileContainerDAO dao;
 
   @InjectMock
-  PermissionsDAO permissionsDAO;
+  PermissionsService permissionsService;
 
   @InjectMock
   FileService fileService;
@@ -125,7 +124,7 @@ public class FileContainerServiceTest {
 
     var actual = service.createContainer(input, "bob");
     assertEquals(created, actual);
-    verify(permissionsDAO).createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    verify(permissionsService).createPermissions(created, user, PermissionType.Private);
   }
 
   @Test

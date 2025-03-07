@@ -162,6 +162,41 @@ public class CollectionIT extends BaseTestCaseIT {
 
   @Test
   @Order(8)
+  public void getCollectionTest_wrongId_notFound() {
+    ErrorResponse response = given()
+      .spec(requestSpecification)
+      .when()
+      .get(collectionsURL + "/99999")
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection does not exist");
+  }
+
+  @Test
+  @Order(9)
+  public void getCollectionTest_privateCollection_forbidden() {
+    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
+
+    RequestSpecification otherUserRequestSpecification = new RequestSpecBuilder()
+      .setContentType(ContentType.JSON)
+      .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
+      .build();
+
+    ErrorResponse response = given()
+      .spec(otherUserRequestSpecification)
+      .when()
+      .get(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  @Order(10)
   public void getCollectionsTest_Successful() {
     CollectionIO[] response = given()
       .spec(requestSpecification)
@@ -176,7 +211,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(9)
+  @Order(11)
   public void putCollectionTest_Successful() {
     collection.setName("CollectionDummyChanged");
 
@@ -199,14 +234,14 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(10)
+  @Order(12)
   public void deleteCollectionTest_Successful() {
     given().spec(requestSpecification).when().delete(collectionsURL + "/" + collection.getId()).then().statusCode(204);
     given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
   }
 
   @Test
-  @Order(11)
+  @Order(13)
   public void getinitialHEADVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       var payload = new CollectionIO();
@@ -239,7 +274,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(12)
+  @Order(14)
   public void createNewVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO newVersion = new VersionIO();
@@ -260,7 +295,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(13)
+  @Order(15)
   public void createSecondVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO newVersion = new VersionIO();
@@ -281,7 +316,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(14)
+  @Order(16)
   public void getAllVersions() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO[] versions = given()
@@ -311,7 +346,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(15)
+  @Order(17)
   public void modifyHEADCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO newVersionizedCollection = new CollectionIO();
@@ -332,7 +367,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(16)
+  @Order(18)
   public void retrieveModifiedHEADCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
@@ -348,7 +383,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(17)
+  @Order(19)
   public void retrieveSecondVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO actual = given()
@@ -364,7 +399,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(18)
+  @Order(20)
   public void retrieveSecondVersionOfCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
@@ -378,35 +413,6 @@ public class CollectionIT extends BaseTestCaseIT {
         .as(CollectionIO.class);
       assertEquals(actual.getName(), VersionizedCollectionName);
     }
-  }
-
-  @Test
-  public void getCollectionTest_wrongId_notFound() {
-    ErrorResponse response = given()
-      .spec(requestSpecification)
-      .when()
-      .get(collectionsURL + "/99999")
-      .then()
-      .statusCode(404)
-      .extract()
-      .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection does not exist");
-  }
-
-  @Test
-  public void getCollectionTest_privateCollection_forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
-    CollectionIO privateCollection = createCollection("private collection", otherUser.getApiKey());
-
-    ErrorResponse response = given()
-      .spec(requestSpecification)
-      .when()
-      .get(collectionsURL + "/" + privateCollection.getId())
-      .then()
-      .statusCode(403)
-      .extract()
-      .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
   }
 
   @Test

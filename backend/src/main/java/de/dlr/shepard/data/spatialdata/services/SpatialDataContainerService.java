@@ -1,7 +1,6 @@
 package de.dlr.shepard.data.spatialdata.services;
 
-import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
@@ -21,7 +20,7 @@ public class SpatialDataContainerService {
   SpatialDataPointService spatialDataPointService;
   SpatialDataContainerDAO containerDao;
   UserDAO userDao;
-  PermissionsDAO permissionsDao;
+  PermissionsService permissionsService;
   DateHelper dateHelper;
 
   @Inject
@@ -29,13 +28,13 @@ public class SpatialDataContainerService {
     SpatialDataPointService spatialDataPointService,
     SpatialDataContainerDAO containerDao,
     UserDAO userDao,
-    PermissionsDAO permissionsDao,
+    PermissionsService permissionsService,
     DateHelper dateHelper
   ) {
     this.spatialDataPointService = spatialDataPointService;
     this.containerDao = containerDao;
     this.userDao = userDao;
-    this.permissionsDao = permissionsDao;
+    this.permissionsService = permissionsService;
     this.dateHelper = dateHelper;
   }
 
@@ -71,7 +70,7 @@ public class SpatialDataContainerService {
     toCreate.setCreatedBy(user);
     toCreate.setName(name);
     var created = containerDao.createOrUpdate(toCreate);
-    permissionsDao.createOrUpdate(new Permissions(created, user, PermissionType.Private));
+    permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
   }
 

@@ -14,6 +14,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
+import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.ArrayList;
@@ -38,6 +39,15 @@ public class PermissionsServiceTest extends BaseTestCase {
   private PermissionsService service;
 
   @Test
+  public void createPermissions_callsDAO() {
+    var entity = new BasicEntity(2L);
+    var user = new User("name");
+    var permissionType = PermissionType.Private;
+    service.createPermissions(entity, user, permissionType);
+    verify(dao).createOrUpdate(new Permissions(entity, user, permissionType));
+  }
+
+  @Test
   public void getPermissionsByNeo4jIdTest() {
     var con = new FileContainer(2L);
     ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
@@ -46,7 +56,7 @@ public class PermissionsServiceTest extends BaseTestCase {
     perms.setEntities(conList);
 
     when(dao.findByEntityNeo4jId(2L)).thenReturn(perms);
-    var actual = service.getPermissionsByNeo4jId(2L);
+    var actual = service.getPermissionsOfEntity(2L);
     assertEquals(perms, actual);
   }
 
@@ -54,7 +64,7 @@ public class PermissionsServiceTest extends BaseTestCase {
   public void getPermissionsByNeo4jIdTest_notFound() {
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
 
-    var actual = service.getPermissionsByNeo4jId(2L);
+    var actual = service.getPermissionsOfEntity(2L);
     assertNull(actual);
     verify(dao).findByEntityNeo4jId(2L);
   }
@@ -251,5 +261,12 @@ public class PermissionsServiceTest extends BaseTestCase {
 
     var actual = service.updatePermissionsByNeo4jId(perms, col.getShepardId());
     assertEquals(updated, actual);
+  }
+
+  @Test
+  public void deletePermissions_callsDAO() {
+    var permissions = new Permissions(2L);
+    service.deletePermissions(permissions);
+    verify(dao).deleteByNeo4jId(2L);
   }
 }
