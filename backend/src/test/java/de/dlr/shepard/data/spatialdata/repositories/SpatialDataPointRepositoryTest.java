@@ -886,7 +886,7 @@ public class SpatialDataPointRepositoryTest {
   public void getByKNN_filterByTimestampStart_returnsOneRecord() {
     var containerId = generateManagedContainerId();
     var dataPoint1 = new SpatialDataPoint(containerId, 1l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
-    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(1, 1, 1), null, null);
+    var dataPoint2 = new SpatialDataPoint(containerId, 10l, GeometryBuilder.fromXYZ(10, 10, 10), null, null);
     repository.insert(containerId, new SpatialDataPoint[] { dataPoint1, dataPoint2 });
 
     var data = repository.getByKNN(
