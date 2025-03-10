@@ -9,7 +9,9 @@ ifndef::imagesdir[:imagesdir: ../../images]
 |Status|Done
 
 |Context|
-We are managing a spatial database that stores shepard spatial point cloud data, where the number of rows can grow to billions. Each row in the table represents a point cloud data entry and is associated with a `container_id`. Query performance is a critical concern due to the large volume of data, and optimizing access patterns is necessary for efficient data retrieval and processing.
+We are managing a spatial database that stores shepard spatial point cloud data, where the number of rows can grow to billions.
+Each row in the table represents a single point cloud data entry (one point with related meta data and measurements) and is associated with a `container_id`.
+Query performance is a critical concern due to the large volume of data, and optimizing access patterns is necessary for efficient data retrieval and processing.
 
 |Possible Alternatives|
 
