@@ -73,10 +73,10 @@ public class SpatialDataReferenceIOTest {
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
     assertEquals(container.getId(), converted.getSpatialDataContainerId());
     assertEquals(geometryFilter, converted.getGeometryFilter());
-    assertEquals(measurementFilter, converted.getMeasurementFilters());
+    assertEquals(measurementFilter, converted.getMeasurementsFilter());
     assertEquals(spatialDataReference.getStartTime(), converted.getStartTime());
     assertEquals(spatialDataReference.getEndTime(), converted.getEndTime());
-    assertEquals(metaData, converted.getMetadata());
+    assertEquals(metaData, converted.getMetadataFilter());
     assertEquals(spatialDataReference.getLimit(), converted.getLimit());
     assertEquals(spatialDataReference.getSkip(), converted.getSkip());
   }
@@ -126,10 +126,10 @@ public class SpatialDataReferenceIOTest {
     assertEquals(spatialDataReference.getName(), converted.getName());
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
     assertEquals(geometryFilter, converted.getGeometryFilter());
-    assertEquals(measurementFilter, converted.getMeasurementFilters());
+    assertEquals(measurementFilter, converted.getMeasurementsFilter());
     assertEquals(spatialDataReference.getStartTime(), converted.getStartTime());
     assertEquals(spatialDataReference.getEndTime(), converted.getEndTime());
-    assertEquals(metaData, converted.getMetadata());
+    assertEquals(metaData, converted.getMetadataFilter());
     assertEquals(spatialDataReference.getLimit(), converted.getLimit());
     assertEquals(spatialDataReference.getSkip(), converted.getSkip());
     assertEquals(-1, converted.getSpatialDataContainerId());
