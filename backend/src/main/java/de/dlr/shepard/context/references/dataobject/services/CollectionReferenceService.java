@@ -3,11 +3,12 @@ package de.dlr.shepard.context.references.dataobject.services;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.CollectionDAO;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.dataobject.daos.CollectionReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
@@ -22,31 +23,23 @@ import java.util.UUID;
 @RequestScoped
 public class CollectionReferenceService implements IReferenceService<CollectionReference, CollectionReferenceIO> {
 
-  private CollectionReferenceDAO collectionReferenceDAO;
-  private DataObjectDAO dataObjectDAO;
-  private CollectionDAO collectionDAO;
-  private VersionService versionService;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-
-  CollectionReferenceService() {}
+  @Inject
+  CollectionReferenceDAO collectionReferenceDAO;
 
   @Inject
-  public CollectionReferenceService(
-    CollectionReferenceDAO collectionReferenceDAO,
-    DataObjectDAO dataObjectDAO,
-    CollectionDAO collectionDAO,
-    VersionService versionService,
-    UserDAO userDAO,
-    DateHelper dateHelper
-  ) {
-    this.collectionReferenceDAO = collectionReferenceDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.collectionDAO = collectionDAO;
-    this.versionService = versionService;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  CollectionService collectionService;
 
   @Override
   public List<CollectionReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
@@ -71,16 +64,17 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     String username
   ) {
     User user = userDAO.find(username);
-    DataObject dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
-    Collection referenced = collectionDAO.findByShepardId(collectionReference.getReferencedCollectionId(), true);
-    if (referenced == null || referenced.isDeleted()) {
-      throw new InvalidBodyException(
-        String.format(
-          "The referenced collection with id %d could not be found.",
-          collectionReference.getReferencedCollectionId()
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectShepardId);
+    Collection referenced = collectionService
+      .getCollectionOptional(collectionReference.getReferencedCollectionId())
+      .orElseThrow(() ->
+        new InvalidBodyException(
+          String.format(
+            "The referenced collection with id %d could not be found.",
+            collectionReference.getReferencedCollectionId()
+          )
         )
       );
-    }
 
     CollectionReference toCreate = new CollectionReference();
     toCreate.setCreatedAt(dateHelper.getDate());
@@ -111,9 +105,20 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
   public Collection getPayloadByShepardId(long collectionReferenceShepardId, UUID versionUID) {
     var reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId, versionUID);
     if (reference.getReferencedCollection() != null) {
-      return collectionDAO.findByNeo4jId(reference.getReferencedCollection().getId());
+      var referencedCollectionOptional = collectionService.getCollectionOptionalWithDataObjectsAndIncomingReferences(
+        reference.getReferencedCollection().getShepardId()
+      );
+      if (referencedCollectionOptional.isPresent()) {
+        return referencedCollectionOptional.get();
+      }
     }
+
     Log.errorf("Collection referenced by collection reference with id %s is deleted", reference.getShepardId());
-    return null;
+    throw new InvalidPathException(
+      String.format(
+        "ID Error - Collection referenced by collection reference with id %s is deleted",
+        reference.getShepardId()
+      )
+    );
   }
 }

@@ -50,7 +50,7 @@ public class LabJournalTest {
     collection = collectionService.createCollection(collectionIO, userName);
     collection.setPermissions(null);
     DataObjectIO dataObjectIO = new DataObjectIO();
-    dataObject = dataObjectService.createDataObjectByCollectionShepardId(collection.getId(), dataObjectIO, userName);
+    dataObject = dataObjectService.createDataObject(collection.getId(), dataObjectIO, userName);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class LabJournalTest {
       labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 3", userName),
       labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 4", userName)
     );
-    dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
+    dataObject = dataObjectService.getDataObject(dataObject.getId());
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject, userName);
     assertEquals(created, actual);
   }
@@ -105,7 +105,7 @@ public class LabJournalTest {
       "content 3",
       userName
     );
-    dataObject = dataObjectService.getDataObjectByShepardId(dataObject.getId());
+    dataObject = dataObjectService.getDataObject(dataObject.getId());
     labJournalEntryService.deleteLabJournalEntry(toBeDeleted.getId(), userName);
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject, userName);
     assertFalse(actual.contains(toBeDeleted));

@@ -4,8 +4,8 @@ import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
@@ -21,28 +21,20 @@ import java.util.UUID;
 @RequestScoped
 public class DataObjectReferenceService implements IReferenceService<DataObjectReference, DataObjectReferenceIO> {
 
-  private DataObjectReferenceDAO dataObjectReferenceDAO;
-  private DataObjectDAO dataObjectDAO;
-  private VersionService versionService;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-
-  DataObjectReferenceService() {}
+  @Inject
+  DataObjectReferenceDAO dataObjectReferenceDAO;
 
   @Inject
-  public DataObjectReferenceService(
-    DataObjectReferenceDAO dataObjectReferenceDAO,
-    DataObjectDAO dataObjectDAO,
-    VersionService versionService,
-    UserDAO userDAO,
-    DateHelper dateHelper
-  ) {
-    this.dataObjectReferenceDAO = dataObjectReferenceDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.versionService = versionService;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  DateHelper dateHelper;
 
   @Override
   public List<DataObjectReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
@@ -67,16 +59,18 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     String username
   ) {
     User user = userDAO.find(username);
-    DataObject dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
-    DataObject referenced = dataObjectDAO.findByShepardId(dataObjectReference.getReferencedDataObjectId(), true);
-    if (referenced == null || referenced.isDeleted()) {
-      throw new InvalidBodyException(
-        String.format(
-          "The referenced dataObject with id %d could not be found.",
-          dataObjectReference.getReferencedDataObjectId()
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectShepardId);
+    DataObject referenced = dataObjectService
+      .getDataObjectOptional(dataObjectReference.getReferencedDataObjectId())
+      .orElseThrow(() ->
+        new InvalidBodyException(
+          String.format(
+            "The referenced dataObject with id %d could not be found.",
+            dataObjectReference.getReferencedDataObjectId()
+          )
         )
       );
-    }
+
     DataObjectReference toCreate = new DataObjectReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
@@ -109,7 +103,7 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
   public DataObject getPayloadByShepardId(long dataObjectReferenceShepardId, UUID versionUID) {
     DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId, versionUID);
     if (reference.getReferencedDataObject() != null) {
-      return dataObjectDAO.findByNeo4jId(reference.getReferencedDataObject().getId());
+      return dataObjectService.getDataObject(reference.getReferencedDataObject().getShepardId());
     }
     Log.errorf("Data Object referenced by Data Object reference with id %s is deleted", reference.getShepardId());
     return null;

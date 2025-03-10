@@ -1,5 +1,6 @@
 ifndef::imagesdir[:imagesdir: ../../images]
 
+[[adr-016]]
 === ADR-016 Request Validation
 
 [%autowidth.stretch]

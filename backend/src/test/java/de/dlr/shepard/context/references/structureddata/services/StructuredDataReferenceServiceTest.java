@@ -18,8 +18,8 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.structureddata.daos.StructuredDataReferenceDAO;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
@@ -53,7 +53,7 @@ public class StructuredDataReferenceServiceTest {
   StructuredDataService structuredDataService;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   StructuredDataContainerDAO structuredDataContainerDAO;
@@ -168,7 +168,7 @@ public class StructuredDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -229,7 +229,7 @@ public class StructuredDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -291,7 +291,7 @@ public class StructuredDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -354,7 +354,7 @@ public class StructuredDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(null);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -381,7 +381,7 @@ public class StructuredDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
@@ -403,7 +403,7 @@ public class StructuredDataReferenceServiceTest {
     };
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(nullContainerId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())

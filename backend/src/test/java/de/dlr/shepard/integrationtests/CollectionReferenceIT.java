@@ -140,6 +140,8 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(CollectionIO.class);
+
+    assertThat(actual).usingRecursiveComparison().ignoringFields("incomingIds").isEqualTo(referenced);
     assertThat(actual.getIncomingIds()).containsExactly(reference.getId());
   }
 

@@ -84,7 +84,7 @@ public class DataObjectServiceQuarkusTest {
   private final String collectionName = "collection_name";
 
   private DataObject createDataObject(DataObjectIO dataObjectToCreate) {
-    return dataObjectService.createDataObjectByCollectionShepardId(collection.getId(), dataObjectToCreate, userName);
+    return dataObjectService.createDataObject(collection.getId(), dataObjectToCreate, userName);
   }
 
   private DataObjectReference createDataObjectReference(
@@ -132,28 +132,22 @@ public class DataObjectServiceQuarkusTest {
       referencingDataObject,
       firstDataObject
     );
-    DataObject firstDataObjectReloaded = dataObjectService.getDataObjectByShepardId(firstDataObject.getShepardId());
+    DataObject firstDataObjectReloaded = dataObjectService.getDataObject(firstDataObject.getShepardId());
     assertEquals(firstDataObjectReloaded.getIncoming().get(0).getId(), referenceToFirstDataObject.getId());
     assertEquals(referencingDataObject.getReferences().get(0).getId(), referenceToFirstDataObject.getId());
     dataObjectReferenceService.deleteReferenceByShepardId(referenceToFirstDataObject.getShepardId(), userName);
-    firstDataObjectReloaded = dataObjectService.getDataObjectByShepardId(firstDataObject.getShepardId());
-    DataObject referencingDataObjectReloaded = dataObjectService.getDataObjectByShepardId(
-      referencingDataObject.getShepardId()
-    );
+    firstDataObjectReloaded = dataObjectService.getDataObject(firstDataObject.getShepardId());
+    DataObject referencingDataObjectReloaded = dataObjectService.getDataObject(referencingDataObject.getShepardId());
     assertEquals(0, firstDataObjectReloaded.getIncoming().size());
     assertEquals(0, referencingDataObjectReloaded.getReferences().size());
-    dataObjectService.deleteDataObjectByShepardId(deletedPredecessor.getShepardId(), userName);
-    firstDataObjectReloaded = dataObjectService.getDataObjectByShepardId(firstDataObject.getShepardId());
+    dataObjectService.deleteDataObject(collection.getShepardId(), deletedPredecessor.getShepardId(), userName);
+    firstDataObjectReloaded = dataObjectService.getDataObject(firstDataObject.getShepardId());
     assertEquals(1, firstDataObjectReloaded.getPredecessors().size());
     assertEquals(survivingPredecessor.getId(), firstDataObjectReloaded.getPredecessors().get(0).getId());
-    dataObjectService.deleteDataObjectByShepardId(firstDataObject.getShepardId(), userName);
-    DataObject survivingPredecessorReloaded = dataObjectService.getDataObjectByShepardId(
-      survivingPredecessor.getShepardId()
-    );
+    dataObjectService.deleteDataObject(collection.getShepardId(), firstDataObject.getShepardId(), userName);
+    DataObject survivingPredecessorReloaded = dataObjectService.getDataObject(survivingPredecessor.getShepardId());
     assertEquals(0, survivingPredecessorReloaded.getSuccessors().size());
-    DataObject parentOfFirsDataObjectReloaded = dataObjectService.getDataObjectByShepardId(
-      parentOfFirstDataObject.getShepardId()
-    );
+    DataObject parentOfFirsDataObjectReloaded = dataObjectService.getDataObject(parentOfFirstDataObject.getShepardId());
     assertEquals(0, parentOfFirsDataObjectReloaded.getChildren().size());
   }
 
@@ -166,10 +160,10 @@ public class DataObjectServiceQuarkusTest {
 
     // Act
     dataObjectIO.setParentId(null);
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertEquals(null, actualDataObject.getParent());
   }
 
@@ -182,10 +176,10 @@ public class DataObjectServiceQuarkusTest {
 
     // Act
     dataObjectIO.setPredecessorIds(null);
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertTrue(actualDataObject.getPredecessors().isEmpty());
   }
 
@@ -202,10 +196,10 @@ public class DataObjectServiceQuarkusTest {
 
     // Act
     dataObjectIO.setParentId(null);
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertEquals(null, actualDataObject.getParent());
   }
 
@@ -222,10 +216,10 @@ public class DataObjectServiceQuarkusTest {
 
     // Act
     dataObjectIO.setPredecessorIds(null);
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertTrue(actualDataObject.getPredecessors().isEmpty());
   }
 
@@ -243,10 +237,10 @@ public class DataObjectServiceQuarkusTest {
     // Act
     dataObjectIO.setPredecessorIds(null);
     dataObjectIO.setParentId(null);
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertEquals(null, actualDataObject.getParent());
     assertTrue(actualDataObject.getPredecessors().isEmpty());
   }
@@ -259,10 +253,10 @@ public class DataObjectServiceQuarkusTest {
 
     // Act
     dataObjectIO.setAttributes(Map.of());
-    dataObjectService.updateDataObjectByShepardId(dataObject.getShepardId(), dataObjectIO, userName);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO, userName);
 
     // Assert
-    DataObject actualDataObject = dataObjectService.getDataObjectByShepardId(dataObject.getShepardId());
+    DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertEquals(Map.of(), actualDataObject.getAttributes());
   }
 }

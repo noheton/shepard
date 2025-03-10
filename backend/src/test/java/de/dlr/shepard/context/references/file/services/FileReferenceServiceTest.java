@@ -16,8 +16,8 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
@@ -47,7 +47,7 @@ public class FileReferenceServiceTest {
   FileService fileService;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   FileContainerDAO fileContainerDAO;
@@ -162,7 +162,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -223,7 +223,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -249,7 +249,7 @@ public class FileReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
@@ -271,7 +271,7 @@ public class FileReferenceServiceTest {
     };
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(fileContainerDAO.findLightByNeo4jId(nullFileContainerId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())

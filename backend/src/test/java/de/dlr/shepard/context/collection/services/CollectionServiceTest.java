@@ -1,7 +1,7 @@
 package de.dlr.shepard.context.collection.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -10,11 +10,11 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.references.basicreference.daos.BasicReferenceDAO;
@@ -37,9 +37,6 @@ public class CollectionServiceTest {
 
   @InjectMock
   VersionDAO versionDAO;
-
-  @InjectMock
-  DataObjectDAO dataObjectDAO;
 
   @InjectMock
   BasicReferenceDAO referenceDAO;
@@ -178,7 +175,7 @@ public class CollectionServiceTest {
       }
     };
 
-    when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
+    when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
     when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
     when(dateHelper.getDate()).thenReturn(updateDate);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
@@ -198,8 +195,9 @@ public class CollectionServiceTest {
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.deleteCollectionByShepardId(collection.getShepardId(), user, date)).thenReturn(true);
+    when(dao.findByShepardId(collection.getShepardId(), false)).thenReturn(collection);
 
-    var result = service.deleteCollectionByShepardId(collection.getShepardId(), user.getUsername());
+    var result = service.deleteCollection(collection.getShepardId(), user.getUsername());
     assertTrue(result);
   }
 
@@ -215,9 +213,11 @@ public class CollectionServiceTest {
   @Test
   public void getCollectionByShepardIdNoVersionNotFound() {
     long shepardId = 2L;
-    when(dao.findByShepardId(shepardId)).thenReturn(null);
-    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
-    assertNull(result);
+    when(dao.findByShepardId(shepardId, false)).thenReturn(null);
+
+    assertThrows(InvalidPathException.class, () -> {
+      service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
+    });
   }
 
   @Test
@@ -226,8 +226,10 @@ public class CollectionServiceTest {
     ret.setDeleted(true);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId)).thenReturn(ret);
-    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
-    assertNull(result);
+
+    assertThrows(InvalidPathException.class, () -> {
+      service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, null);
+    });
   }
 
   @Test
@@ -245,8 +247,10 @@ public class CollectionServiceTest {
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(null);
-    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
-    assertNull(result);
+
+    assertThrows(InvalidPathException.class, () -> {
+      service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
+    });
   }
 
   @Test
@@ -256,7 +260,8 @@ public class CollectionServiceTest {
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
-    var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
-    assertNull(result);
+    assertThrows(InvalidPathException.class, () -> {
+      service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
+    });
   }
 }

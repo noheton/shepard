@@ -10,11 +10,12 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.CollectionDAO;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.dataobject.daos.CollectionReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
@@ -25,6 +26,7 @@ import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +37,10 @@ public class CollectionReferenceServiceTest {
   CollectionReferenceDAO dao;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
-  CollectionDAO collectionDAO;
+  CollectionService collectionService;
 
   @InjectMock
   VersionDAO versionDAO;
@@ -143,8 +145,8 @@ public class CollectionReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(collectionDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(collectionService.getCollectionOptional(referenced.getShepardId())).thenReturn(Optional.of(referenced));
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -206,8 +208,8 @@ public class CollectionReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(collectionDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(null);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(collectionService.getCollectionOptional(referenced.getShepardId())).thenReturn(Optional.empty());
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -270,8 +272,8 @@ public class CollectionReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(collectionDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(collectionService.getCollectionOptional(referenced.getId())).thenReturn(Optional.of(referenced));
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -313,7 +315,9 @@ public class CollectionReferenceServiceTest {
     reference.setShepardId(15L);
     reference.setReferencedCollection(referenced);
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
-    when(collectionDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    when(
+      collectionService.getCollectionOptionalWithDataObjectsAndIncomingReferences(referenced.getShepardId())
+    ).thenReturn(Optional.of(referenced));
     Collection actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertEquals(referenced, actual);
   }
@@ -327,9 +331,8 @@ public class CollectionReferenceServiceTest {
     reference.setShepardId(15L);
 
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
-    when(collectionDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
-    Collection actual = service.getPayloadByShepardId(reference.getShepardId(), null);
+    when(collectionService.getCollectionOptional(referenced.getShepardId())).thenReturn(Optional.of(referenced));
 
-    assertNull(actual);
+    assertThrows(InvalidPathException.class, () -> service.getPayloadByShepardId(reference.getShepardId(), null));
   }
 }

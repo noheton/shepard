@@ -8,7 +8,7 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
@@ -28,40 +28,32 @@ import java.util.UUID;
 @RequestScoped
 public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
 
-  private FileReferenceDAO fileReferenceDAO;
-  private DataObjectDAO dataObjectDAO;
-  private FileContainerDAO containerDAO;
-  private ShepardFileDAO fileDAO;
-  private UserDAO userDAO;
-  private VersionService versionService;
-  private DateHelper dateHelper;
-  private FileService fileService;
-  private PermissionsService permissionsService;
-
-  FileReferenceService() {}
+  @Inject
+  FileReferenceDAO fileReferenceDAO;
 
   @Inject
-  public FileReferenceService(
-    FileReferenceDAO fileReferenceDAO,
-    DataObjectDAO dataObjectDAO,
-    FileContainerDAO containerDAO,
-    ShepardFileDAO fileDAO,
-    UserDAO userDAO,
-    VersionService versionService,
-    DateHelper dateHelper,
-    FileService fileService,
-    PermissionsService permissionsService
-  ) {
-    this.fileReferenceDAO = fileReferenceDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.containerDAO = containerDAO;
-    this.versionService = versionService;
-    this.fileDAO = fileDAO;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.fileService = fileService;
-    this.permissionsService = permissionsService;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  FileContainerDAO containerDAO;
+
+  @Inject
+  ShepardFileDAO fileDAO;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  FileService fileService;
+
+  @Inject
+  PermissionsService permissionsService;
 
   @Override
   public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
@@ -86,7 +78,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
     var container = containerDAO.findLightByNeo4jId(fileReference.getFileContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new FileReference();

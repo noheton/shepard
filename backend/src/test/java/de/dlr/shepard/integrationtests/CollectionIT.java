@@ -12,6 +12,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.version.io.VersionIO;
+import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -166,7 +167,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection does not exist");
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection with id 99999 does not exist");
   }
 
   @Test
@@ -217,6 +218,9 @@ public class CollectionIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(CollectionIO.class);
+
+    Log.warn(collection);
+    Log.warn(actualResponse);
 
     assertThat(actualResponse.getUpdatedAt()).isNotNull();
     assertThat(actualResponse.getUpdatedBy()).isEqualTo(nameOfDefaultUser);

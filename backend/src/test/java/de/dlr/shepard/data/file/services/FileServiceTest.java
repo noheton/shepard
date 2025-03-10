@@ -62,7 +62,7 @@ public class FileServiceTest {
   private UUIDHelper uuidhelper;
 
   @Inject
-  private FileService fileService;
+  FileService fileService;
 
   @InjectMock
   private MongoCollection<Document> collection;

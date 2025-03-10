@@ -7,7 +7,7 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
@@ -37,43 +37,35 @@ import java.util.UUID;
 @RequestScoped
 public class TimeseriesReferenceService implements IReferenceService<TimeseriesReference, TimeseriesReferenceIO> {
 
-  private TimeseriesReferenceDAO timeseriesReferenceDAO;
-  private TimeseriesService timeseriesService;
-  private TimeseriesCsvService timeseriesCsvService;
-  private DataObjectDAO dataObjectDAO;
-  private TimeseriesContainerDAO timeseriesContainerDAO;
-  private ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
-  private UserDAO userDAO;
-  private VersionService versionService;
-  private DateHelper dateHelper;
-  private PermissionsService permissionsService;
-
-  TimeseriesReferenceService() {}
+  @Inject
+  TimeseriesReferenceDAO timeseriesReferenceDAO;
 
   @Inject
-  public TimeseriesReferenceService(
-    TimeseriesReferenceDAO timeseriesReferenceDAO,
-    TimeseriesService timeseriesService,
-    TimeseriesCsvService timeseriesCsvService,
-    DataObjectDAO dataObjectDAO,
-    TimeseriesContainerDAO timeseriesContainerDAO,
-    ReferencedTimeseriesNodeEntityDAO timeseriesDAO,
-    UserDAO userDAO,
-    VersionService versionService,
-    DateHelper dateHelper,
-    PermissionsService permissionsService
-  ) {
-    this.timeseriesReferenceDAO = timeseriesReferenceDAO;
-    this.timeseriesService = timeseriesService;
-    this.timeseriesCsvService = timeseriesCsvService;
-    this.dataObjectDAO = dataObjectDAO;
-    this.timeseriesContainerDAO = timeseriesContainerDAO;
-    this.timeseriesDAO = timeseriesDAO;
-    this.userDAO = userDAO;
-    this.versionService = versionService;
-    this.dateHelper = dateHelper;
-    this.permissionsService = permissionsService;
-  }
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesCsvService timeseriesCsvService;
+
+  @Inject
+  DataObjectService dataObjectService;
+
+  @Inject
+  TimeseriesContainerDAO timeseriesContainerDAO;
+
+  @Inject
+  ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  PermissionsService permissionsService;
 
   @Override
   public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
@@ -98,7 +90,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
     var container = timeseriesContainerDAO.findLightByNeo4jId(timeseriesReference.getTimeseriesContainerId());
     if (container == null || container.isDeleted()) {
       throw new InvalidBodyException(

@@ -2,7 +2,7 @@ package de.dlr.shepard.context.references.uri.services;
 
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.uri.daos.URIReferenceDAO;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
@@ -17,28 +17,20 @@ import java.util.UUID;
 @RequestScoped
 public class URIReferenceService implements IReferenceService<URIReference, URIReferenceIO> {
 
-  private URIReferenceDAO uRIReferenceDAO;
-  private DataObjectDAO dataObjectDAO;
-  private UserDAO userDAO;
-  private VersionService versionService;
-  private DateHelper dateHelper;
-
-  URIReferenceService() {}
+  @Inject
+  URIReferenceDAO uRIReferenceDAO;
 
   @Inject
-  public URIReferenceService(
-    URIReferenceDAO uRIReferenceDAO,
-    DataObjectDAO dataObjectDAO,
-    UserDAO userDAO,
-    VersionService versionService,
-    DateHelper dateHelper
-  ) {
-    this.uRIReferenceDAO = uRIReferenceDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.userDAO = userDAO;
-    this.versionService = versionService;
-    this.dateHelper = dateHelper;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  DateHelper dateHelper;
 
   @Override
   public List<URIReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
@@ -63,7 +55,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
 
     var toCreate = new URIReference();
     toCreate.setCreatedAt(dateHelper.getDate());

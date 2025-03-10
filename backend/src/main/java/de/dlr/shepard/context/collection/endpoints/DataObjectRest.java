@@ -118,7 +118,7 @@ public class DataObjectRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId, versionUID);
+    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId, versionUID);
     return Response.ok(new DataObjectIO(dataObject)).build();
   }
 
@@ -140,7 +140,7 @@ public class DataObjectRest {
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
     ) @Valid DataObjectIO dataObject
   ) {
-    DataObject newDataObject = dataObjectService.createDataObjectByCollectionShepardId(
+    DataObject newDataObject = dataObjectService.createDataObject(
       collectionId,
       dataObject,
       securityContext.getUserPrincipal().getName()
@@ -169,7 +169,8 @@ public class DataObjectRest {
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
     ) @Valid DataObjectIO dataObject
   ) {
-    DataObject updatedDataObject = dataObjectService.updateDataObjectByShepardId(
+    DataObject updatedDataObject = dataObjectService.updateDataObject(
+      collectionId,
       dataObjectId,
       dataObject,
       securityContext.getUserPrincipal().getName()
@@ -193,7 +194,7 @@ public class DataObjectRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
-    return dataObjectService.deleteDataObjectByShepardId(dataObjectId, securityContext.getUserPrincipal().getName())
+    return dataObjectService.deleteDataObject(collectionId, dataObjectId, securityContext.getUserPrincipal().getName())
       ? Response.status(Status.NO_CONTENT).build()
       : Response.status(Status.INTERNAL_SERVER_ERROR).build();
   }

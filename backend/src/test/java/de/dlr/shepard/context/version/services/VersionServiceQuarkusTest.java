@@ -202,7 +202,7 @@ public class VersionServiceQuarkusTest {
     dIO.setName(name);
     dIO.setParentId(parentId);
     dIO.setPredecessorIds(predecessorIds);
-    return dataObjectService.createDataObjectByCollectionShepardId(collection.getShepardId(), dIO, username);
+    return dataObjectService.createDataObject(collection.getShepardId(), dIO, username);
   }
 
   private DataObjectReference createDataObjectReference(
@@ -248,18 +248,9 @@ public class VersionServiceQuarkusTest {
       collection1.getShepardId(),
       version1.getUid()
     );
-    DataObject dataObject1Version1 = dataObjectService.getDataObjectByShepardId(
-      dataObject1.getShepardId(),
-      version1.getUid()
-    );
-    DataObject dataObject2Version1 = dataObjectService.getDataObjectByShepardId(
-      dataObject2.getShepardId(),
-      version1.getUid()
-    );
-    DataObject dataObject3Version1 = dataObjectService.getDataObjectByShepardId(
-      dataObject3.getShepardId(),
-      version1.getUid()
-    );
+    DataObject dataObject1Version1 = dataObjectService.getDataObject(dataObject1.getShepardId(), version1.getUid());
+    DataObject dataObject2Version1 = dataObjectService.getDataObject(dataObject2.getShepardId(), version1.getUid());
+    DataObject dataObject3Version1 = dataObjectService.getDataObject(dataObject3.getShepardId(), version1.getUid());
 
     //unique versions
     assertTrue(hasExactlyOneVersion(collection1.getId()));
@@ -406,14 +397,8 @@ public class VersionServiceQuarkusTest {
       dataObject1ToDataObject2.getShepardId(),
       version1.getUid()
     );
-    DataObject dataObject1Version1 = dataObjectService.getDataObjectByShepardId(
-      dataObject1.getShepardId(),
-      version1.getUid()
-    );
-    DataObject dataObject2Version1 = dataObjectService.getDataObjectByShepardId(
-      dataObject2.getShepardId(),
-      version1.getUid()
-    );
+    DataObject dataObject1Version1 = dataObjectService.getDataObject(dataObject1.getShepardId(), version1.getUid());
+    DataObject dataObject2Version1 = dataObjectService.getDataObject(dataObject2.getShepardId(), version1.getUid());
     assertEquals(dataObject1ToDataObject2Version1.getReferencedDataObject().getId(), dataObject2Version1.getId());
     assertEquals(dataObject1Version1.getReferences().get(0).getId(), dataObject1ToDataObject2Version1.getId());
     assertTrue(hasExactlyOneVersion(collection1.getId()));
@@ -438,7 +423,7 @@ public class VersionServiceQuarkusTest {
       collection2DataObject1
     );
     Version collection2Version1 = createVersion("collection2Version1", collection2);
-    DataObject collection2DataObject1Version1 = dataObjectService.getDataObjectByShepardId(
+    DataObject collection2DataObject1Version1 = dataObjectService.getDataObject(
       collection2DataObject1.getShepardId(),
       collection2Version1.getUid()
     );
@@ -523,12 +508,9 @@ public class VersionServiceQuarkusTest {
         collection1Version1.getUid()
       );
     List<DataObjectReference> incomingDataObjectReferences = dataObjectService
-      .getDataObjectByShepardId(collection2DataObject1.getShepardId())
+      .getDataObject(collection2DataObject1.getShepardId())
       .getIncoming();
-    assertEquals(
-      2,
-      dataObjectService.getDataObjectByShepardId(collection2DataObject1.getShepardId()).getIncoming().size()
-    );
+    assertEquals(2, dataObjectService.getDataObject(collection2DataObject1.getShepardId()).getIncoming().size());
     List<DataObjectReference> expectedIncomingReferences = new ArrayList<>();
     expectedIncomingReferences.add(collection1DataObject1ToCollection2DataObject1);
     expectedIncomingReferences.add(collection1DataObject1ToCollection2DataObject1Version1);

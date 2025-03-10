@@ -11,8 +11,8 @@ import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
@@ -23,6 +23,7 @@ import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,7 @@ public class DataObjectReferenceServiceTest {
   DataObjectReferenceDAO dao;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   UserDAO userDAO;
@@ -141,8 +142,8 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(dataObjectDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObjectOptional(referenced.getShepardId())).thenReturn(Optional.of(referenced));
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -169,8 +170,9 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(dataObjectDAO.findByShepardId(nullDataObjectShepardId, true)).thenReturn(null);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObjectOptional(nullDataObjectShepardId)).thenReturn(Optional.empty());
+
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );
@@ -192,8 +194,8 @@ public class DataObjectReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
-    when(dataObjectDAO.findByShepardId(referenced.getShepardId(), true)).thenReturn(referenced);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
     assertThrows(InvalidBodyException.class, () ->
       service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
     );
@@ -227,7 +229,7 @@ public class DataObjectReferenceServiceTest {
     reference.setShepardId(15L);
     reference.setReferencedDataObject(referenced);
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
-    when(dataObjectDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
     var actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertEquals(referenced, actual);
   }
@@ -240,7 +242,7 @@ public class DataObjectReferenceServiceTest {
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
-    when(dataObjectDAO.findByNeo4jId(referenced.getId())).thenReturn(referenced);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
     DataObject actual = service.getPayloadByShepardId(reference.getShepardId(), null);
     assertNull(actual);
   }

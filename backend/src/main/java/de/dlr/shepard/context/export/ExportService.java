@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.export;
 
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.ShepardException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.context.collection.services.CollectionService;
@@ -21,6 +22,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.List;
 
@@ -56,6 +58,14 @@ public class ExportService {
     this.uriReferenceService = uriReferenceService;
   }
 
+  /**
+   * Exports collection by shepard Id
+   * @param collectionId
+   * @param username
+   * @return InputStream
+   * @throws InvalidPathException if collection with 'collectionId' could not be found
+   * @throws IOException if building the InputStream fails
+   */
   public InputStream exportCollectionByShepardId(long collectionId, String username) throws IOException {
     var collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
@@ -66,8 +76,9 @@ public class ExportService {
     return builder.build();
   }
 
-  private void fetchAndWriteDataObject(ExportBuilder builder, long dataObjectId, String username) throws IOException {
-    var dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
+  private void fetchAndWriteDataObject(ExportBuilder builder, long dataObjectId, String username)
+    throws IOException, InvalidBodyException {
+    var dataObject = dataObjectService.getDataObject(dataObjectId);
     builder.addDataObject(dataObject);
 
     // TODO: Add more types, maybe improve (StrategyPattern?)

@@ -47,7 +47,7 @@ public class LabJournalEntryService {
   public LabJournalEntry createLabJournalEntry(Long dataObjectId, String content, String userName) {
     LabJournalEntry labJournalEntry = new LabJournalEntry();
     User user = userService.getUser(userName);
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
     collectionService.assertUserIsAllowedToEditCollection(dataObject.getCollection().getId(), userName);
 
     labJournalEntry.setContent(content);
@@ -109,7 +109,7 @@ public class LabJournalEntryService {
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
     // TODO: Align this exception with replacement of URLPathChecker
     if (null == labJournalEntry) throw new InvalidPathException();
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(labJournalEntry.getDataObject().getId());
+    DataObject dataObject = dataObjectService.getDataObject(labJournalEntry.getDataObject().getId());
     return dataObject.getCollection().getId();
   }
 }

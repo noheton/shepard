@@ -7,7 +7,8 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.structureddata.daos.StructuredDataReferenceDAO;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
@@ -28,40 +29,32 @@ import java.util.UUID;
 public class StructuredDataReferenceService
   implements IReferenceService<StructuredDataReference, StructuredDataReferenceIO> {
 
-  private StructuredDataReferenceDAO structuredDataReferenceDAO;
-  private DataObjectDAO dataObjectDAO;
-  private StructuredDataContainerDAO containerDAO;
-  private StructuredDataDAO structuredDataDAO;
-  private UserDAO userDAO;
-  private VersionService versionService;
-  private DateHelper dateHelper;
-  private StructuredDataService structuredDataService;
-  private PermissionsService permissionsService;
-
-  StructuredDataReferenceService() {}
+  @Inject
+  StructuredDataReferenceDAO structuredDataReferenceDAO;
 
   @Inject
-  public StructuredDataReferenceService(
-    StructuredDataReferenceDAO structuredDataReferenceDAO,
-    DataObjectDAO dataObjectDAO,
-    StructuredDataContainerDAO containerDAO,
-    VersionService versionService,
-    StructuredDataDAO structuredDataDAO,
-    UserDAO userDAO,
-    DateHelper dateHelper,
-    StructuredDataService structuredDataService,
-    PermissionsService permissionsService
-  ) {
-    this.structuredDataReferenceDAO = structuredDataReferenceDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.containerDAO = containerDAO;
-    this.structuredDataDAO = structuredDataDAO;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.versionService = versionService;
-    this.structuredDataService = structuredDataService;
-    this.permissionsService = permissionsService;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  StructuredDataContainerDAO containerDAO;
+
+  @Inject
+  StructuredDataDAO structuredDataDAO;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  VersionService versionService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  StructuredDataService structuredDataService;
+
+  @Inject
+  PermissionsService permissionsService;
 
   @Override
   public StructuredDataReference createReferenceByShepardId(
@@ -70,7 +63,7 @@ public class StructuredDataReferenceService
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findByShepardId(dataObjectShepardId, true);
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectShepardId);
     var container = containerDAO.findLightByNeo4jId(structuredDataReference.getStructuredDataContainerId());
     if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
     var toCreate = new StructuredDataReference();

@@ -158,7 +158,7 @@ public class UrlPathChecker {
 
     if (pathElems.containsKey(Constants.DATA_OBJECTS)) {
       long id = Long.parseLong(pathElems.get(Constants.DATA_OBJECTS));
-      dataObject = dataObjectService.getDataObjectByShepardId(id);
+      dataObject = dataObjectService.getDataObject(id);
       String error = checkDataObject(dataObject, collection);
       if (error != null) {
         return builder.append(error).toString();
@@ -337,7 +337,7 @@ public class UrlPathChecker {
       String dataObjectId = queryParams.getFirst(Constants.DATA_OBJECT_ID);
       // If the labjournalEntry request has objectId parameter [in GET/labJournals and POST /labJournals]
       if (dataObjectId != null && !dataObjectId.isEmpty() && StringUtils.isNumeric(dataObjectId)) {
-        DataObject labJournalDataObject = dataObjectService.getDataObjectByShepardId(Long.parseLong(dataObjectId));
+        DataObject labJournalDataObject = dataObjectService.getDataObject(Long.parseLong(dataObjectId));
         String error = checkDataObject(labJournalDataObject);
         if (error != null) {
           return builder.append(error).toString();

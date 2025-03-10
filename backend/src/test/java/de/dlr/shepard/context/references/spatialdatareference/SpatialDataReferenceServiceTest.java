@@ -7,14 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.spatialdata.daos.SpatialDataReferenceDAO;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
@@ -22,12 +20,9 @@ import de.dlr.shepard.context.references.spatialdata.services.SpatialDataReferen
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.spatialdata.daos.SpatialDataContainerDAO;
-import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
-import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
-import de.dlr.shepard.data.spatialdata.model.geometryFilter.BoundingSphere;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import io.quarkus.test.InjectMock;
@@ -40,14 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.CoordinateFilter;
-import org.locationtech.jts.geom.CoordinateSequenceComparator;
-import org.locationtech.jts.geom.CoordinateSequenceFilter;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryComponentFilter;
-import org.locationtech.jts.geom.GeometryFilter;
 
 @QuarkusComponentTest
 public class SpatialDataReferenceServiceTest {
@@ -65,7 +52,7 @@ public class SpatialDataReferenceServiceTest {
   DateHelper dateHelper;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   SpatialDataContainerDAO spatialDataContainerDAO;
@@ -169,7 +156,7 @@ public class SpatialDataReferenceServiceTest {
 
     when(userDAO.find(user.getUsername())).thenReturn(user);
 
-    when(dataObjectDAO.findLightByNeo4jId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(spatialDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(spatialDataReferenceDAO.createOrUpdate(toCreate)).thenReturn(created);
     when(spatialDataReferenceDAO.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
@@ -199,7 +186,7 @@ public class SpatialDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByNeo4jId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(spatialDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())
@@ -219,7 +206,7 @@ public class SpatialDataReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findLightByNeo4jId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(spatialDataContainerDAO.findLightByNeo4jId(containerShepardId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())

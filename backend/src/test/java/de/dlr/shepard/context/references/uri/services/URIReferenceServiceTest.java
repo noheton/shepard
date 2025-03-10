@@ -9,8 +9,8 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.uri.daos.URIReferenceDAO;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
@@ -34,7 +34,7 @@ public class URIReferenceServiceTest {
   VersionDAO versionDAO;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   UserDAO userDAO;
@@ -131,7 +131,7 @@ public class URIReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);

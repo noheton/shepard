@@ -15,8 +15,8 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
@@ -60,7 +60,7 @@ public class TimeseriesReferenceServiceTest {
   TimeseriesService timeseriesService;
 
   @InjectMock
-  DataObjectDAO dataObjectDAO;
+  DataObjectService dataObjectService;
 
   @InjectMock
   TimeseriesContainerDAO timeseriesContainerDAO;
@@ -197,7 +197,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
     when(
       timeseriesDAO.find(
@@ -274,7 +274,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     when(
       timeseriesDAO.find(
@@ -313,7 +313,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())
@@ -337,7 +337,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())
@@ -360,7 +360,7 @@ public class TimeseriesReferenceServiceTest {
       }
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectDAO.findByShepardId(dataObject.getShepardId(), true)).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerDAO.findLightByNeo4jId(containerShepardId)).thenReturn(null);
     assertThrows(InvalidBodyException.class, () ->
       referenceService.createReferenceByShepardId(2005L, input, user.getUsername())

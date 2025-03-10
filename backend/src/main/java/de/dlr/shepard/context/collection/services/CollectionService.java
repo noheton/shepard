@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.permission.io.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
@@ -21,33 +22,26 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequestScoped
 public class CollectionService {
 
-  private CollectionDAO collectionDAO;
-  private UserDAO userDAO;
-  private PermissionsService permissionsService;
-  private DateHelper dateHelper;
-  private VersionDAO versionDAO;
-
-  CollectionService() {}
+  @Inject
+  CollectionDAO collectionDAO;
 
   @Inject
-  public CollectionService(
-    CollectionDAO collectionDAO,
-    UserDAO userDAO,
-    PermissionsService permissionsService,
-    DateHelper dateHelper,
-    VersionDAO versionDAO
-  ) {
-    this.collectionDAO = collectionDAO;
-    this.userDAO = userDAO;
-    this.permissionsService = permissionsService;
-    this.dateHelper = dateHelper;
-    this.versionDAO = versionDAO;
-  }
+  UserDAO userDAO;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  VersionDAO versionDAO;
 
   /**
    * Creates a Collection and stores it in Neo4J
@@ -82,7 +76,7 @@ public class CollectionService {
   /**
    * Searches the database for all Collections
    *
-   * @param params   encapsulates possible parameters
+   * @param params encapsulates possible parameters
    * @param username the name of the user
    * @return a list of Collections
    */
@@ -93,21 +87,58 @@ public class CollectionService {
   }
 
   /**
-   * Fetches a collection including permissions and attributes but without contained data objects and incoming references.
-   * @param shepardId shepardId of the desired collection
-   * @return Collection without data objects or incoming references
+   * Retrieves a collection by shepardId.
+   * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
+   *
+   * @param shepardId long
+   * @return Optional<Collection>
+   */
+  public Optional<Collection> getCollectionOptional(long shepardId) {
+    return getCollectionOptional(shepardId, null, true);
+  }
+
+  /**
+   * Retrieves a collection by shepardId.
+   * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
+   *
+   * @param shepardId long
+   * @return Collection
+   * @throws InvalidPathException if no collection could be found by shepardId
    */
   public Collection getCollection(long shepardId) {
-    return getCollectionByShepardId(shepardId, null, true);
+    return getCollection(shepardId, null, true);
+  }
+
+  /**
+   * Retrieves a collection by shepardId and versionUID.
+   * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
+   *
+   * @param shepardId long
+   * @param versionUID UUID
+   * @return Collection
+   * @throws InvalidPathException if no collection (with specified version) could be found by shepardId
+   */
+  public Collection getCollection(long shepardId, UUID versionUID) {
+    return getCollection(shepardId, versionUID, true);
   }
 
   /**
    * Fetches a collection including permissions, attributes, contained data objects and incoming references.
    * @param shepardId shepardId of the desired collection
    * @return Collection
+   * @throws InvalidPathException if no collection could be found by shepardId
    */
   public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId) {
-    return getCollectionByShepardId(shepardId, null, false);
+    return getCollection(shepardId, null, false);
+  }
+
+  /**
+   * Fetches a collection including permissions, attributes, contained data objects and incoming references.
+   * @param shepardId shepardId of the desired collection
+   * @return Collection if available
+   */
+  public Optional<Collection> getCollectionOptionalWithDataObjectsAndIncomingReferences(long shepardId) {
+    return getCollectionOptional(shepardId, null, false);
   }
 
   /**
@@ -115,44 +146,57 @@ public class CollectionService {
    * @param shepardId shepardId of the desired collection
    * @param versionUID ID of the version to retrieve
    * @return Collection
+   * @throws InvalidPathException if no collection could be found by shepardId
    */
   public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId, UUID versionUID) {
-    return getCollectionByShepardId(shepardId, versionUID, false);
+    return getCollection(shepardId, versionUID, false);
   }
 
-  private Collection getCollectionByShepardId(
+  /**
+   * Return collection by shepard Id or shepard id + versionUId.
+   *
+   * @return Collection
+   * @throws InvalidPathException if no collection could be found by shepardId
+   */
+  private Collection getCollection(long shepardId, UUID versionUID, boolean excludeDataObjectsAndIncomingReferences) {
+    return getCollectionOptional(shepardId, versionUID, excludeDataObjectsAndIncomingReferences).orElseThrow(() ->
+      new InvalidPathException(String.format("ID ERROR - Collection with id %s does not exist", shepardId))
+    );
+  }
+
+  private Optional<Collection> getCollectionOptional(
     long shepardId,
     UUID versionUID,
-    boolean includeDataObjectsAndIncomingReferences
+    boolean excludeDataObjectsAndIncomingReferences
   ) {
     Collection ret;
     String errorMsg;
     if (versionUID == null) {
-      ret = collectionDAO.findByShepardId(shepardId, includeDataObjectsAndIncomingReferences);
+      ret = collectionDAO.findByShepardId(shepardId, excludeDataObjectsAndIncomingReferences);
       errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
     } else {
-      ret = collectionDAO.findByShepardId(shepardId, versionUID, includeDataObjectsAndIncomingReferences);
+      ret = collectionDAO.findByShepardId(shepardId, versionUID, excludeDataObjectsAndIncomingReferences);
       errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
       Log.error(errorMsg);
-      return null;
+      return Optional.empty();
     }
     cutDeleted(ret);
-    return ret;
+    return Optional.of(ret);
   }
 
   /**
    * Updates a Collection with new Attributes.
    *
-   * @param shepardId  identifies the Collection
+   * @param shepardId  collection's shepardID
    * @param collection which contains the new Attributes
    * @param username   of the related user
    * @return updated Collection
+   * @throws InvalidPathException if no collection could be found by shepardId
    */
-
   public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection, String username) {
-    Collection old = collectionDAO.findByShepardId(shepardId);
+    Collection old = getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     old.setUpdatedBy(userDAO.find(username));
     old.setUpdatedAt(dateHelper.getDate());
     old.setAttributes(collection.getAttributes());
@@ -164,13 +208,16 @@ public class CollectionService {
   }
 
   /**
-   * Deletes a Collection in Neo4j
+   * Deletes a Collection in Neo4j.
+   * Before a collection is deleted, a check is run to test if collection exists.
    *
    * @param shepardId identifies the Collection
    * @param username  of the related user
    * @return a boolean to determine if Collection was successfully deleted
+   * @throws InvalidPathException if no collection could be found by shepardId
    */
-  public boolean deleteCollectionByShepardId(long shepardId, String username) {
+  public boolean deleteCollection(long shepardId, String username) {
+    getCollection(shepardId, null, false);
     var date = dateHelper.getDate();
     var user = userDAO.find(username);
     var result = collectionDAO.deleteCollectionByShepardId(shepardId, user, date);

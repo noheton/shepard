@@ -155,7 +155,7 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    return collectionService.deleteCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName())
+    return collectionService.deleteCollection(collectionId, securityContext.getUserPrincipal().getName())
       ? Response.status(Status.NO_CONTENT).build()
       : Response.status(Status.INTERNAL_SERVER_ERROR).build();
   }

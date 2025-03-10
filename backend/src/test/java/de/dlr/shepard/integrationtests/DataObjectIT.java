@@ -952,7 +952,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - DataObject does not exist");
+    assertThat(response.getMessage()).startsWith("ID ERROR - DataObject");
   }
 
   @Test

@@ -95,7 +95,7 @@ public class ExportServiceTest {
     when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(collection.getShepardId())).thenReturn(
       collection
     );
-    when(dataObjectService.getDataObjectByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
   }
 
   @Test

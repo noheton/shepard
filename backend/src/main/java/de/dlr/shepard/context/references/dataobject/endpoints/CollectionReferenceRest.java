@@ -180,6 +180,6 @@ public class CollectionReferenceRest {
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
     var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId, versionUID);
-    return payload != null ? Response.ok(new CollectionIO(payload)).build() : Response.status(Status.NOT_FOUND).build();
+    return Response.ok(new CollectionIO(payload)).build();
   }
 }

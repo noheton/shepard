@@ -66,7 +66,7 @@ public class LabJournalEntryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.DATA_OBJECT_ID, required = true)
   public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
-    DataObject dataObject = dataObjectService.getDataObjectByShepardId(dataObjectId);
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
     for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(
       dataObject,

@@ -6,7 +6,7 @@ import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
-import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.spatialdata.daos.SpatialDataReferenceDAO;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
@@ -24,34 +24,26 @@ import java.util.UUID;
 @RequestScoped
 public class SpatialDataReferenceService implements IReferenceService<SpatialDataReference, SpatialDataReferenceIO> {
 
-  private SpatialDataReferenceDAO spatialDataReferenceDAO;
-  private SpatialDataPointService dataPointService;
-  private UserDAO userDAO;
-  private DataObjectDAO dataObjectDAO;
-  private SpatialDataContainerDAO spatialDataContainerDAO;
-  private DateHelper dateHelper;
-  private VersionService versionService;
-
-  SpatialDataReferenceService() {}
+  @Inject
+  SpatialDataReferenceDAO spatialDataReferenceDAO;
 
   @Inject
-  public SpatialDataReferenceService(
-    SpatialDataReferenceDAO spatialDataReferenceDAO,
-    SpatialDataPointService dataPointService,
-    UserDAO userDAO,
-    DataObjectDAO dataObjectDAO,
-    SpatialDataContainerDAO spatialDataContainerDAO,
-    DateHelper dateHelper,
-    VersionService versionService
-  ) {
-    this.spatialDataReferenceDAO = spatialDataReferenceDAO;
-    this.dataPointService = dataPointService;
-    this.userDAO = userDAO;
-    this.dataObjectDAO = dataObjectDAO;
-    this.spatialDataContainerDAO = spatialDataContainerDAO;
-    this.dateHelper = dateHelper;
-    this.versionService = versionService;
-  }
+  SpatialDataPointService dataPointService;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  DataObjectService dataObjectService;
+
+  @Inject
+  SpatialDataContainerDAO spatialDataContainerDAO;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  VersionService versionService;
 
   public List<SpatialDataReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
     var references = spatialDataReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
@@ -75,7 +67,7 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     String username
   ) {
     var user = userDAO.find(username);
-    var dataObject = dataObjectDAO.findLightByNeo4jId(dataObjectShepardId);
+    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
     var container = spatialDataContainerDAO.findLightByNeo4jId(spatialDataReferenceIO.getSpatialDataContainerId());
     if (container == null || container.isDeleted()) {
       throw new InvalidBodyException(
