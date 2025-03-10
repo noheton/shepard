@@ -27,12 +27,15 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   @Schema(
     example = """
     {
-      "type": "K_NEAREST_NEIGHBOR",
-      "k": 5,
-      "x": 10,
-      "y": 20,
-      "z": 30
-      }"""
+      "type": "AXIS_ALIGNED_BOUNDING_BOX",
+      "minX": 0,
+      "minY": 0,
+      "minZ": 0,
+      "maxX": 100,
+      "maxY": 100,
+      "maxZ": 100
+      }
+    """
   )
   private AbstractGeometryFilter geometryFilter;
 
@@ -41,7 +44,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
     [{ "key": "temperature,val", "operator": "EQUALS", "value": 20 }]
     """
   )
-  private List<FilterCondition> measurementFilters;
+  private List<FilterCondition> measurementsFilter;
 
   @Schema
   private Long startTime;
@@ -50,7 +53,7 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   private Long endTime;
 
   @Schema
-  private Map<String, Object> metadata;
+  private Map<String, Object> metadataFilter;
 
   @Schema
   private Integer limit;
@@ -61,12 +64,12 @@ public class SpatialDataReferenceIO extends BasicReferenceIO {
   public SpatialDataReferenceIO(SpatialDataReference ref) {
     super(ref);
     this.geometryFilter = SpatialDataParamParser.parseGeometryFilter(ref.getGeometryFilter()).orElse(null);
-    this.measurementFilters = SpatialDataParamParser.parseMeasurementsFilter(ref.getMeasurementsFilter()).orElse(
+    this.measurementsFilter = SpatialDataParamParser.parseMeasurementsFilter(ref.getMeasurementsFilter()).orElse(
       Collections.emptyList()
     );
     this.startTime = ref.getStartTime();
     this.endTime = ref.getEndTime();
-    this.metadata = SpatialDataParamParser.parseMetadata(ref.getMetadata()).orElse(Collections.emptyMap());
+    this.metadataFilter = SpatialDataParamParser.parseMetadata(ref.getMetadata()).orElse(Collections.emptyMap());
     this.limit = ref.getLimit();
     this.skip = ref.getSkip();
     this.spatialDataContainerId = ref.getSpatialDataContainer() != null ? ref.getSpatialDataContainer().getId() : -1;

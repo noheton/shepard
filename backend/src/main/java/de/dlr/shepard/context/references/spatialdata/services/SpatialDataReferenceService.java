@@ -3,30 +3,22 @@ package de.dlr.shepard.context.references.spatialdata.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.users.daos.UserDAO;
-import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
-import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.spatialdata.daos.SpatialDataReferenceDAO;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.spatialdata.daos.SpatialDataContainerDAO;
-import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
-import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
-import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.InternalServerErrorException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @RequestScoped
@@ -106,16 +98,16 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
         throw new InvalidRequestException("Failed to parse geometry filter");
       }
     }
-    if (spatialDataReferenceIO.getMeasurementFilters() != null) {
+    if (spatialDataReferenceIO.getMeasurementsFilter() != null) {
       try {
-        toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getMeasurementFilters()));
+        toCreate.setMeasurementsFilter(objectMapper.writeValueAsString(spatialDataReferenceIO.getMeasurementsFilter()));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Failed to parse measurement filter");
       }
     }
-    if (spatialDataReferenceIO.getMetadata() != null) {
+    if (spatialDataReferenceIO.getMetadataFilter() != null) {
       try {
-        toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReferenceIO.getMetadata()));
+        toCreate.setMetadata(objectMapper.writeValueAsString(spatialDataReferenceIO.getMetadataFilter()));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Failed to parse metadata filter");
       }
