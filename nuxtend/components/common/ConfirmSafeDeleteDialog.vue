@@ -17,7 +17,7 @@ const emit = defineEmits(["confirmed"]);
 const inputName = ref("");
 
 function namesMatch(): boolean {
-  return inputName.value === props.targetName;
+  return inputName.value.trim() === props.targetName.trim();
 }
 
 onMounted(() => {
@@ -57,7 +57,7 @@ onMounted(() => {
             <v-text-field
               id="delete-confirm-input"
               v-model:model-value="inputName"
-              label="Name*"
+              label="Enter collection name"
               variant="outlined"
               density="compact"
               require
