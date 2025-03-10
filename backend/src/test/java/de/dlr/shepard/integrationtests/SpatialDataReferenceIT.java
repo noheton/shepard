@@ -132,8 +132,8 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
     assertThat(actual.getGeometryFilter()).isNull();
-    assertThat(actual.getMeasurementFilters()).isEqualTo(Collections.emptyList());
-    assertThat(actual.getMetadata()).isEqualTo(Collections.emptyMap());
+    assertThat(actual.getMeasurementsFilter()).isEqualTo(Collections.emptyList());
+    assertThat(actual.getMetadataFilter()).isEqualTo(Collections.emptyMap());
     assertThat(actual.getStartTime()).isNull();
     assertThat(actual.getEndTime()).isNull();
     assertThat(actual.getLimit()).isNull();
