@@ -1,0 +1,51 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-017 Spatial Database Partitioning
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date| 10-03-2025
+|Status|Done
+
+|Context|
+We are managing a spatial database that stores shepard spatial point cloud data, where the number of rows can grow to billions. Each row in the table represents a point cloud data entry and is associated with a `container_id`. Query performance is a critical concern due to the large volume of data, and optimizing access patterns is necessary for efficient data retrieval and processing.
+
+|Possible Alternatives|
+
+1. **Single Table without Partitioning**
+   - Store all data in a single table without partitioning.
+   - Pros: Simplifies schema design and query logic.
+   - Cons: Performance degrades as data grows, making queries slow due to increased index size and table scans.
+2. **Partitioning by Container ID** (Chosen)
+   - Use partitioning on the `container_id` column to distribute data across partitions.
+   - Pros:
+     - Improves query performance by limiting scans to relevant partitions.
+     - Enhances data management and maintenance (e.g., easier archiving, deletion, and backup operations).
+     - Allows parallel processing across partitions for better scalability.
+   - Cons:
+     - Requires additional complexity in partition management.
+     - Potentially higher storage overhead depending on partitioning implementation.
+
+3. **Sharding Across Multiple Databases** (Not possible due to technical limitation in shepard infrastructure)
+   - Distribute data across multiple database instances based on `container_id`.
+   - Pros:
+     - Improves horizontal scalability by spreading the load across multiple servers.
+   - Cons:
+     - Adds complexity in query execution, requiring cross-shard aggregation.
+     - Increases operational overhead for managing multiple database instances.
+
+|Decision|
+
+We have decided to implement **partitioning based on `container_id`** within the same database. To distribute the data efficiently, we use `container_id MOD 100` to assign containers to 100 partitions. This approach strikes a balance between performance, scalability, and manageability while keeping query complexity minimal.
+
+|Consequences|
+- **Positive Impact:**
+  - Queries will be more efficient as they only need to scan relevant partitions.
+  - Maintenance tasks like vacuuming, indexing, and backups will be more manageable.
+  - Supports scalability as the data grows while avoiding the complexities of sharding.
+
+- **Negative Impact:**
+  - Additional partitioning logic must be maintained.
+  - Indexing and query optimization strategies must consider partitioning to avoid performance pitfalls (for complicated queries in the future).
+|===

@@ -5,7 +5,20 @@ CREATE TABLE spatial_data_points (
   position GEOMETRY not null,
   metadata JSONB,
   measurements JSONB
-);
+) PARTITION BY HASH (container_id);
+
+DO $$
+DECLARE
+    i INT;
+BEGIN
+    FOR i IN 0..99 LOOP
+        EXECUTE format('
+            CREATE TABLE spatial_data_points_p%s
+            PARTITION OF spatial_data_points
+            FOR VALUES WITH (MODULUS 100, REMAINDER %s);
+        ', i, i);
+    END LOOP;
+END $$;
 
 CREATE INDEX spatial_data_points_container_id_idx
   ON spatial_data_points(container_id);
