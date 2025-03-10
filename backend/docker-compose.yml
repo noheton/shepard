@@ -60,6 +60,7 @@ services:
     restart: unless-stopped
     volumes:
       - ../infrastructure/docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
+
   postgis:
     image: postgis/postgis:16-3.5
     container_name: postgis
@@ -74,10 +75,10 @@ services:
       - "5433:5432"
     volumes:
       - ../infrastructure/docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
-      - postgis_data:/var/lib/postgresql/data
     networks:
       - shepard
     restart: unless-stopped
+
   influxdb:
     image: influxdb:1.8
     environment:
