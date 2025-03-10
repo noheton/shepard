@@ -18,28 +18,23 @@ import org.junit.jupiter.api.Test;
 @QuarkusIntegrationTest
 public class BasicApiIT extends BaseTestCaseIT {
 
-  private static RequestSpecification requestSpecification;
-  private static RequestSpecification requestSpecificationWithUser;
+  private static RequestSpecification requestSpecificationWithoutUser;
 
   @BeforeAll
   public static void setUp() {
-    requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
-    requestSpecificationWithUser = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    requestSpecificationWithoutUser = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
   }
 
   @Test
   public void getIndexRoute_notFound() {
-    given().spec(requestSpecification).when().get("/").then().statusCode(404);
-    given().spec(requestSpecificationWithUser).when().get("/").then().statusCode(404);
+    given().spec(requestSpecificationWithoutUser).when().get("/").then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get("/").then().statusCode(404);
   }
 
   @Test
   public void getCollections_pathsWithExtraSlashes_success() {
     var responseWithCleanPath = given()
-      .spec(requestSpecificationWithUser)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get("/collections")
       .then()
@@ -47,7 +42,7 @@ public class BasicApiIT extends BaseTestCaseIT {
       .extract()
       .as(CollectionIO[].class);
     var responseWithExtraSlash = given()
-      .spec(requestSpecificationWithUser)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get("/collections/")
       .then()
@@ -60,14 +55,14 @@ public class BasicApiIT extends BaseTestCaseIT {
 
   @Test
   public void getCollections_twoLeadingSlashes_notFound() {
-    given().spec(requestSpecificationWithUser).when().get("//collections").then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get("//collections").then().statusCode(404);
   }
 
   @Test
   // TODO: Fix these issues and reenable the test
   @Disabled
   public void getCollectionTest_invalidId_badRequest() {
-    given().spec(requestSpecificationWithUser).when().get("/collections/-1").then().statusCode(400);
-    given().spec(requestSpecificationWithUser).when().get("/collections/abc").then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).when().get("/collections/-1").then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).when().get("/collections/abc").then().statusCode(400);
   }
 }

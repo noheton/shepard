@@ -12,9 +12,6 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.InstantHelper;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +26,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class TimeseriesIT extends BaseTestCaseIT {
 
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
 
   private static TimeseriesContainerIO container;
   private static TimeseriesWithDataPoints payload;
@@ -39,10 +35,6 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     containerURL = Constants.TIMESERIES_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -53,7 +45,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
     toCreate.setName(containerName);
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -65,7 +57,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getName()).isEqualTo(containerName);
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -75,7 +67,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Order(2)
   public void getAllTimeseriesContainers() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL)
       .then()
@@ -90,7 +82,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Order(3)
   public void getTimeseriesContainer() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId())
       .then()
@@ -104,7 +96,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Test
   public void getTimeseriesContainer_doesNotExist_notFound() {
     ErrorResponse actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/99999")
       .then()
@@ -132,7 +124,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
     payload = new TimeseriesWithDataPoints(timeseries, dataPointsIO);
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -148,7 +140,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Order(5)
   public void getTimeseriesAvailable() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId() + "/" + Constants.AVAILABLE)
       .then()
@@ -165,7 +157,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Order(6)
   public void getTimeseries() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .queryParams(
         Map.of(
@@ -197,7 +189,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void deleteContainer() {
-    given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
-    given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
   }
 }

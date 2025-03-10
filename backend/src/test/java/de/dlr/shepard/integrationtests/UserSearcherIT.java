@@ -9,9 +9,6 @@ import de.dlr.shepard.common.search.io.UserSearchParams;
 import de.dlr.shepard.common.search.io.UserSearchResult;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -23,17 +20,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class UserSearcherIT extends BaseTestCaseIT {
 
   private static String searchURL;
-  private static RequestSpecification requestSpecification;
   private static UserIO userIO1;
   private static UserIO userIO2;
 
   @BeforeAll
   public static void setUp() {
     searchURL = "/" + Constants.SEARCH + "/" + Constants.USERS;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     userIO1 = new UserIO(getNewUser("user1" + System.currentTimeMillis()));
     userIO2 = new UserIO(getNewUser("user2" + System.currentTimeMillis()));
   }
@@ -45,7 +37,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
     var params = new UserSearchParams(query);
     var searchBody = new UserSearchBody(params);
     var result = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -53,7 +45,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(UserSearchResult.class);
-    assertThat(result.getResults()).containsExactly(userIO);
+    assertThat(result.getResults()).containsExactly(new UserIO(defaultUser.getUser()));
     assertThat(result.getSearchParams()).isEqualTo(params);
   }
 
@@ -64,7 +56,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
     var params = new UserSearchParams(query);
     var searchBody = new UserSearchBody(params);
     var result = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -72,7 +64,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
       .statusCode(200)
       .extract()
       .as(UserSearchResult.class);
-    assertThat(result.getResults()).contains(userIO, userIO1, userIO2);
+    assertThat(result.getResults()).contains(new UserIO(defaultUser.getUser()), userIO1, userIO2);
   }
 
   @Test
@@ -82,7 +74,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
     var params = new UserSearchParams(query);
     var searchBody = new UserSearchBody(params);
     var result = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -91,7 +83,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(UserSearchResult.class);
     assertThat(result.getResults()).contains(userIO1);
-    assertThat(result.getResults()).doesNotContain(userIO2, userIO);
+    assertThat(result.getResults()).doesNotContain(userIO2, new UserIO(defaultUser.getUser()));
   }
 
   @Test
@@ -101,7 +93,7 @@ public class UserSearcherIT extends BaseTestCaseIT {
     var params = new UserSearchParams(query);
     var searchBody = new UserSearchBody(params);
     var result = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -110,6 +102,6 @@ public class UserSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(UserSearchResult.class);
     assertThat(result.getResults()).contains(userIO1, userIO2);
-    assertThat(result.getResults()).doesNotContain(userIO);
+    assertThat(result.getResults()).doesNotContain(new UserIO(defaultUser.getUser()));
   }
 }

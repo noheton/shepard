@@ -15,9 +15,6 @@ import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -33,9 +30,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   private static DataObjectIO dataObject;
 
   private static String referencesURL;
-  private static RequestSpecification referencesRequestSpec;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
 
   private static StructuredDataContainerIO container;
   private static StructuredDataReferenceIO reference;
@@ -56,21 +51,13 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.STRUCTURED_DATA_REFERENCES
     );
-    referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     var toCreate = new StructuredDataContainerIO();
     toCreate.setName("StructuredDataContainer");
     container = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -85,7 +72,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       "{\"Hallo\":\"Welt\",\"number\":123,\"list\":[\"a\",\"b\"],\"object\":{\"a\":\"b\"}}"
     );
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -105,7 +92,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
     toCreate.setStructuredDataContainerId(container.getId());
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -117,7 +104,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getName()).isEqualTo("StructuredDataReferenceDummy");
     assertThat(actual.getStructuredDataContainerId()).isEqualTo(container.getId());
@@ -131,7 +118,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getStructuredDataReferences() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -146,7 +133,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @Order(3)
   public void getStructuredDataReference() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -161,7 +148,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getStructuredDataReference_doesNotExist_notFound() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -176,7 +163,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @Order(5)
   public void getStructuredDataReference_isIsCollectionId_notFound() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + collection.getId())
       .then()
@@ -198,7 +185,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
     toCreate.setStructuredDataContainerId(container.getId());
 
     StructuredDataReferenceIO otherRef = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(
@@ -217,7 +204,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .as(StructuredDataReferenceIO.class);
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherRef.getId())
       .then()
@@ -233,7 +220,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @SuppressWarnings("unchecked")
   public void getStructuredDataReferencePayload() throws JsonMappingException, JsonProcessingException {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -259,8 +246,18 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void deleteReferences() {
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

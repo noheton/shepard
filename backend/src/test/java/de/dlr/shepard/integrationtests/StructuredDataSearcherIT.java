@@ -38,7 +38,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class StructuredDataSearcherIT extends BaseTestCaseIT {
 
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
   private static CollectionIO collection;
   private static DataObjectIO rootObject;
   private static DataObjectIO firstChild;
@@ -61,7 +60,6 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   private static StructuredDataReferenceIO reference1;
   private static StructuredDataReferenceIO referenceSuccessor;
   private static String searchURL;
-  private static RequestSpecification searchRequestSpec;
   private static UserWithApiKey user1;
   private static String jws1;
   private static RequestSpecification searchRequestSpec1;
@@ -133,7 +131,6 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     );
     // prepare search API calls
     searchURL = "/search";
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
     jws1 = user1.getApiKey().getJws();
     searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
@@ -159,7 +156,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -191,7 +188,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -225,7 +222,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -258,7 +255,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -290,7 +287,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -327,7 +324,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -360,7 +357,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -392,7 +389,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -424,7 +421,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -456,7 +453,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -489,7 +486,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -522,7 +519,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -561,7 +558,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -607,12 +604,9 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   @Order(15)
   public void testFindViaPredecessorCyclePermissionsReader() {
     String permissionsURL = "/collections/" + collection.getId() + "/permissions";
-    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+
     PermissionsIO permissions = given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
@@ -622,7 +616,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     String[] reader = { user1.getUser().getUsername() };
     permissions.setReader(reader);
     given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -663,12 +657,8 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
     userGroup.setUsernames(new String[] { user2.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     UserGroupIO userGroupCreated = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(userGroup)
       .when()
       .post(userGroupURL)
@@ -678,12 +668,8 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     PermissionsIO permissions = given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
@@ -693,7 +679,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     long[] readerGroupsIds = { userGroupCreated.getId() };
     permissions.setReaderGroupIds(readerGroupsIds);
     given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -745,7 +731,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -759,15 +745,11 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
     var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
-    var dataObjectSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
     dataObjectIO.setParentId(parentID);
     var dataObject = given()
-      .spec(dataObjectSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .post(dataObjectsURL)
@@ -780,15 +762,11 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
 
   private static DataObjectIO createDataObjectWithPredecessors(String name, long collectionId, long[] predecessorsIDs) {
     var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
-    var dataObjectSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
     dataObjectIO.setPredecessorIds(predecessorsIDs);
     var dataObject = given()
-      .spec(dataObjectSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .post(dataObjectsURL)
@@ -801,14 +779,10 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
 
   private static StructuredDataContainerIO createDataContainer(String name) {
     containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     StructuredDataContainerIO containerToCreate = new StructuredDataContainerIO();
     containerToCreate.setName(name);
     return given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(containerToCreate)
       .when()
       .post(containerURL)
@@ -825,7 +799,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   ) {
     containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     return given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(String.format("%s/%d/%s", containerURL, containerID, Constants.PAYLOAD))
@@ -853,12 +827,8 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.STRUCTURED_DATA_REFERENCES
     );
-    RequestSpecification referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     return given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -875,12 +845,8 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       collection.getId(),
       Constants.DATA_OBJECTS
     );
-    RequestSpecification dataObjectRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     given()
-      .spec(dataObjectRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -890,10 +856,6 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   private static void putDataObject(Long dataObjectToChangeID, Long collectionID, DataObjectIO changedDataObject) {
     String putURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     putURL = putURL + "/" + dataObjectToChangeID;
-    RequestSpecification putSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-    given().spec(putSpecification).body(changedDataObject).when().put(putURL).then().statusCode(200);
+    given().spec(requestSpecOfDefaultUser).body(changedDataObject).when().put(putURL).then().statusCode(200);
   }
 }

@@ -6,9 +6,6 @@ import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,22 +15,17 @@ public class GracePeriodIT extends BaseTestCaseIT {
   private static CollectionIO collection;
   private static String collectionsURL;
   private static String permissionsURL;
-  private static RequestSpecification requestSpecification;
 
   @BeforeAll
   public static void setUp() {
     collection = createCollection("PermissionsTestCollection");
     collectionsURL = "/" + Constants.COLLECTIONS;
     permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
   public void retrieve() {
-    given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(200);
+    given().spec(requestSpecOfDefaultUser).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(200);
 
     var permissionsLockingOutUser = new PermissionsIO() {
       {
@@ -44,7 +36,7 @@ public class GracePeriodIT extends BaseTestCaseIT {
     };
 
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissionsLockingOutUser)
       .when()
       .put(permissionsURL)
@@ -53,6 +45,6 @@ public class GracePeriodIT extends BaseTestCaseIT {
       .extract()
       .as(PermissionsIO.class);
 
-    given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(200);
+    given().spec(requestSpecOfDefaultUser).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(200);
   }
 }

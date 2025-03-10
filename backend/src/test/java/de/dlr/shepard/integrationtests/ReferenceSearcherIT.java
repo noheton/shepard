@@ -56,11 +56,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   private static CollectionIO collection;
   private static CollectionIO collection1;
   private static String searchURL;
-  private static RequestSpecification searchRequestSpec;
   private static String dataObjetReferencesURL;
-  private static RequestSpecification dataObjectReferenceRequestSpecification;
-  private static RequestSpecification fileReferenceRequestSpecification;
-  private static RequestSpecification fileContainerRequestSpecification;
   private static RequestSpecification fileRequestSpecification;
   private static BasicReferenceIO referenceIO1;
   private static BasicReferenceIO referenceIO1a;
@@ -72,9 +68,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   private static FileReferenceIO fileReferenceIO;
 
   private static String sDataReferencesURL;
-  private static RequestSpecification sDataReferencesRequestSpec;
   private static String sDataContainerURL;
-  private static RequestSpecification sDataContainerRequestSpec;
   private static StructuredDataContainerIO sDataContainer;
   private static CollectionIO sDataCollection;
   private static DataObjectIO sDataObject;
@@ -83,9 +77,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   private static CollectionIO tSerCollection;
   private static DataObjectIO tSerDataObject;
   private static String tSerReferencesURL;
-  private static RequestSpecification tSerReferencesRequestSpec;
   private static String tSerContainerURL;
-  private static RequestSpecification tSerContainerRequestSpec;
   private static TimeseriesContainerIO tSerContainer;
   private static TimeseriesReferenceIO tSerReference;
   private static TimeseriesWithDataPoints timeseriesWithDataPoints;
@@ -101,12 +93,12 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     dataObjectIO3ToCreate.setCollectionId(collection.getId());
     dataObjectIO3ToCreate.setName("dataObject3");
     dataObjectIO3ToCreate.setPredecessorIds(new long[] { dataObjectIO1.getId() });
-    dataObjectIO3 = createDataObject(dataObjectIO3ToCreate, jws);
+    dataObjectIO3 = createDataObject(dataObjectIO3ToCreate);
     DataObjectIO dataObjectIO4ToCreate = new DataObjectIO();
     dataObjectIO4ToCreate.setCollectionId(collection.getId());
     dataObjectIO4ToCreate.setName("dataObject4");
     dataObjectIO4ToCreate.setPredecessorIds(new long[] { dataObjectIO3.getId() });
-    dataObjectIO4 = createDataObject(dataObjectIO4ToCreate, jws);
+    dataObjectIO4 = createDataObject(dataObjectIO4ToCreate);
     referenced = createDataObject("ReferencedDataObject", collection.getId());
     collection1DataObject = createDataObject("collection1DataObject", collection1.getId());
 
@@ -122,12 +114,8 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       dataObjectIO1.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
-    dataObjectReferenceRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     referenceIO1 = given()
-      .spec(dataObjectReferenceRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate1)
       .when()
       .post(dataObjetReferencesURL)
@@ -141,7 +129,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     toCreate1a.setRelationship("integrationtests");
     toCreate1a.setReferencedDataObjectId(referenced.getId());
     referenceIO1a = given()
-      .spec(dataObjectReferenceRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate1a)
       .when()
       .post(dataObjetReferencesURL)
@@ -150,7 +138,6 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(DataObjectReferenceIO.class);
     searchURL = "/" + Constants.SEARCH;
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
 
     var toCreate4 = new DataObjectReferenceIO();
     toCreate4.setName("DataObjectReferenceDummy4");
@@ -164,12 +151,8 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       dataObjectIO4.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
-    dataObjectReferenceRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     referenceIO4 = given()
-      .spec(dataObjectReferenceRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate4)
       .when()
       .post(dataObjetReferencesURL)
@@ -186,20 +169,12 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       dataObjectIO2.getId(),
       Constants.FILE_REFERENCES
     );
-    fileReferenceRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     fileContainerURL = "/" + Constants.FILE_CONTAINERS;
-    fileContainerRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     var fileContainerToCreate = new FileContainerIO();
     fileContainerToCreate.setName("FileContainer");
     InputStream targetStream = new ByteArrayInputStream("Hello World!".getBytes());
     fileContainerIO = given()
-      .spec(fileContainerRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(fileContainerToCreate)
       .when()
       .post(fileContainerURL)
@@ -209,7 +184,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .as(FileContainerIO.class);
     fileRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.MULTIPART)
-      .addHeader("X-API-KEY", jws)
+      .addHeader("X-API-KEY", defaultUser.getApiKey().getJws())
       .build();
     file = given()
       .spec(fileRequestSpecification)
@@ -225,7 +200,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     fileReferenceToCreate.setFileOids(new String[] { file.getOid() });
     fileReferenceToCreate.setFileContainerId(fileContainerIO.getId());
     fileReferenceIO = given()
-      .spec(fileReferenceRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(fileReferenceToCreate)
       .when()
       .post(fileReferencesURL)
@@ -235,7 +210,6 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .as(FileReferenceIO.class);
 
     searchURL = "/" + Constants.SEARCH;
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
   }
 
   @Test
@@ -262,7 +236,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -300,7 +274,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -333,7 +307,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -368,7 +342,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -402,7 +376,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -436,7 +410,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -463,12 +437,8 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       collection1DataObject.getId(),
       Constants.COLLECTION_REFERENCES
     );
-    RequestSpecification collectionReferenceRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     CollectionReferenceIO createdCollectionReference = given()
-      .spec(collectionReferenceRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -496,7 +466,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -534,7 +504,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -558,19 +528,11 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       sDataObject.getId(),
       Constants.STRUCTURED_DATA_REFERENCES
     );
-    sDataReferencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     sDataContainerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
-    sDataContainerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     StructuredDataContainerIO sDataContainerToCreate = new StructuredDataContainerIO();
     sDataContainerToCreate.setName("StructuredDataContainer");
     sDataContainer = given()
-      .spec(sDataContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(sDataContainerToCreate)
       .when()
       .post(sDataContainerURL)
@@ -585,7 +547,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       "{\"Hallo\":\"Welt\",\"number\":123,\"list\":[\"a\",\"b\"],\"object\":{\"a\":\"b\"}}"
     );
     StructuredData actual = given()
-      .spec(sDataContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(sDataPayload)
       .when()
       .post(String.format("%s/%d/%s", sDataContainerURL, sDataContainer.getId(), Constants.PAYLOAD))
@@ -599,7 +561,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     sDataReferenceToCreate.setStructuredDataOids(new String[] { sDataPayload.getStructuredData().getOid() });
     sDataReferenceToCreate.setStructuredDataContainerId(sDataContainer.getId());
     StructuredDataReferenceIO sDataReference = given()
-      .spec(sDataReferencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(sDataReferenceToCreate)
       .when()
       .post(sDataReferencesURL)
@@ -627,7 +589,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -652,19 +614,11 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       tSerDataObject.getId(),
       Constants.TIMESERIES_REFERENCES
     );
-    tSerReferencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     tSerContainerURL = "/" + Constants.TIMESERIES_CONTAINERS;
-    tSerContainerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     var tSerContainerToCreate = new TimeseriesContainerIO();
     tSerContainerToCreate.setName("TimeseriesContainer");
     tSerContainer = given()
-      .spec(tSerContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(tSerContainerToCreate)
       .when()
       .post(tSerContainerURL)
@@ -686,7 +640,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     );
 
     given()
-      .spec(tSerContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(timeseriesWithDataPoints)
       .when()
       .post(String.format("%s/%d/%s", tSerContainerURL, tSerContainer.getId(), Constants.PAYLOAD))
@@ -700,7 +654,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     tSerReferenceToCreate.setTimeseries(List.of(timeseriesWithDataPoints.getTimeseries()));
     tSerReferenceToCreate.setTimeseriesContainerId(tSerContainer.getId());
     tSerReference = given()
-      .spec(tSerReferencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(tSerReferenceToCreate)
       .when()
       .post(tSerReferencesURL)
@@ -728,7 +682,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -740,19 +694,15 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     assertThat(result.getResultSet()).contains(triple);
   }
 
-  private static DataObjectIO createDataObject(DataObjectIO dataObjectIO, String jws) {
+  private static DataObjectIO createDataObject(DataObjectIO dataObjectIO) {
     var dataObjectsURL = String.format(
       "/%s/%d/%s/",
       Constants.COLLECTIONS,
       dataObjectIO.getCollectionId(),
       Constants.DATA_OBJECTS
     );
-    var dataObjectSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     var createdDataObject = given()
-      .spec(dataObjectSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .post(dataObjectsURL)

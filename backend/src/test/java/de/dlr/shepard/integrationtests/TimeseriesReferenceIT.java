@@ -13,9 +13,6 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,9 +29,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   private static DataObjectIO dataObject;
 
   private static String referencesURL;
-  private static RequestSpecification referencesRequestSpec;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
 
   private static TimeseriesContainerIO container;
   private static TimeseriesReferenceIO reference;
@@ -55,21 +50,13 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.TIMESERIES_REFERENCES
     );
-    referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     containerURL = "/" + Constants.TIMESERIES_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     var toCreate = new TimeseriesContainerIO();
     toCreate.setName("TimeseriesContainer");
     container = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -94,7 +81,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     );
 
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(timeseriesWithDataPoints)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -114,7 +101,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     toCreate.setTimeseriesContainerId(container.getId());
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -126,7 +113,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getStart()).isEqualTo(nanos - 1000000000L);
     assertThat(actual.getEnd()).isEqualTo(nanos + 1000000000L * numPoints);
@@ -141,7 +128,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getTimeseriesReferences() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -156,7 +143,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Order(3)
   public void getTimeseriesReference() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -171,7 +158,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getTimeseriesReference_doesNotExist_notFound() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -196,7 +183,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     otherReferenceToCreate.setTimeseriesContainerId(container.getId());
 
     TimeseriesReferenceIO otherReference = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(otherReferenceToCreate)
       .when()
       .post(
@@ -215,7 +202,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .as(TimeseriesReferenceIO.class);
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherReference.getId())
       .then()
@@ -230,7 +217,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Order(6)
   public void getTimeseriesReferencePayload() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
@@ -244,8 +231,18 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void deleteReferences() {
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

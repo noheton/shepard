@@ -12,9 +12,6 @@ import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,7 +25,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class StructuredDataIT extends BaseTestCaseIT {
 
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
 
   private static StructuredDataContainerIO container;
   private static StructuredDataPayload payload;
@@ -38,10 +34,6 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -51,7 +43,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
     toCreate.setName("StructuredDataContainer");
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -63,7 +55,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getOid()).isNotBlank();
     assertThat(actual.getName()).isEqualTo("StructuredDataContainer");
     assertThat(actual.getUpdatedAt()).isNull();
@@ -74,7 +66,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @Order(2)
   public void getStructuredDataContainers() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL)
       .then()
@@ -89,7 +81,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @Order(3)
   public void getStructuredDataContainer() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId())
       .then()
@@ -110,7 +102,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
     payload = new StructuredDataPayload(structuredData, objectMapper.writeValueAsString(payloadMap));
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -129,7 +121,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @Order(5)
   public void getStructuredDatas() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
       .then()
@@ -145,7 +137,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @SuppressWarnings("unchecked")
   public void getStructuredDataPayload() throws JsonMappingException, JsonProcessingException {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -173,7 +165,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @Order(7)
   public void deleteStructuredData() {
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
         String.format(
@@ -188,7 +180,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .statusCode(204);
 
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -203,7 +195,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .statusCode(404);
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
       .then()
@@ -216,15 +208,15 @@ public class StructuredDataIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void deleteContainer() {
-    given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 
-    given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
   }
 
   @Test
   public void getStructuredDataContainer_doesNotExist_notFound() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/99999")
       .then()

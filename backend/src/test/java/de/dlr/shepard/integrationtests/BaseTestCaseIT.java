@@ -2,9 +2,7 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 
-import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -12,8 +10,8 @@ import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 
 public class BaseTestCaseIT {
@@ -22,10 +20,12 @@ public class BaseTestCaseIT {
   protected static int port = 8083;
   protected static String basePath = "/shepard/api";
 
-  protected static String jws;
-  protected static String username;
-  protected static UUID apiKeyId;
-  protected static UserIO userIO;
+  protected static UserWithApiKey defaultUser;
+  protected static String nameOfDefaultUser;
+  protected static RequestSpecification requestSpecOfDefaultUser;
+
+  protected static UserWithApiKey otherUser;
+  protected static RequestSpecification requestSpecOfOtherUser;
 
   @BeforeAll
   public static void init() {
@@ -33,11 +33,18 @@ public class BaseTestCaseIT {
     RestAssured.port = port;
     RestAssured.basePath = basePath;
 
-    var credentials = new UserWithApiKeyBuilder().withUser().withApiKey().build();
-    jws = credentials.getApiKey().getJws();
-    username = credentials.getUser().getUsername();
-    apiKeyId = credentials.getApiKey().getUid();
-    userIO = new UserIO(credentials.getUser());
+    defaultUser = getNewUserWithApiKey("test_it");
+    nameOfDefaultUser = defaultUser.getUser().getUsername();
+    requestSpecOfDefaultUser = new RequestSpecBuilder()
+      .setContentType(ContentType.JSON)
+      .addHeader("X-API-KEY", defaultUser.getApiKey().getJws())
+      .build();
+
+    otherUser = getNewUserWithApiKey("other_user");
+    requestSpecOfOtherUser = new RequestSpecBuilder()
+      .setContentType(ContentType.JSON)
+      .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
+      .build();
   }
 
   protected static UserWithApiKey getNewUserWithApiKey(String username) {
@@ -49,26 +56,13 @@ public class BaseTestCaseIT {
   }
 
   protected static CollectionIO createCollection(String name) {
-    var collectionSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-    var collection = given()
-      .spec(collectionSpecification)
-      .body(Map.of("name", name))
-      .when()
-      .post("/" + Constants.COLLECTIONS)
-      .then()
-      .statusCode(201)
-      .extract()
-      .as(CollectionIO.class);
-    return collection;
+    return createCollection(name, defaultUser);
   }
 
-  protected static CollectionIO createCollection(String name, ApiKey apiKey) {
+  protected static CollectionIO createCollection(String name, UserWithApiKey user) {
     var collectionSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", apiKey.getJws())
+      .addHeader("X-API-KEY", user.getApiKey().getJws())
       .build();
     var collection = given()
       .spec(collectionSpecification)
@@ -83,30 +77,14 @@ public class BaseTestCaseIT {
   }
 
   protected static DataObjectIO createDataObject(String name, long collectionId) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
-    var dataObjectSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-    DataObjectIO dataObjectIO = new DataObjectIO();
-    dataObjectIO.setName(name);
-    var dataObjectIOToReturn = given()
-      .spec(dataObjectSpecification)
-      .body(dataObjectIO)
-      .when()
-      .post(dataObjectsURL)
-      .then()
-      .statusCode(201)
-      .extract()
-      .as(DataObjectIO.class);
-    return dataObjectIOToReturn;
+    return createDataObject(name, collectionId, defaultUser);
   }
 
-  protected static DataObjectIO createDataObject(String name, long collectionId, ApiKey apiKey) {
+  protected static DataObjectIO createDataObject(String name, long collectionId, UserWithApiKey user) {
     var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     var dataObjectSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", apiKey.getJws())
+      .addHeader("X-API-KEY", user.getApiKey().getJws())
       .build();
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
@@ -146,9 +124,8 @@ public class BaseTestCaseIT {
         setRelationship("self_reference");
       }
     };
-    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var created = given()
-      .spec(specification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectReference)
       .when()
       .post(dataObjectReferenceUrl)

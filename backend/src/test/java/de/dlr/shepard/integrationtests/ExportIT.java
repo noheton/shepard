@@ -7,9 +7,6 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.zip.ZipInputStream;
@@ -26,7 +23,6 @@ public class ExportIT extends BaseTestCaseIT {
   private static String collectionsURL;
   private static CollectionIO collection;
   private static DataObjectIO dataObject;
-  private static RequestSpecification requestSpecification;
 
   @BeforeAll
   public static void setUp() {
@@ -34,17 +30,13 @@ public class ExportIT extends BaseTestCaseIT {
     dataObject = createDataObject("ExportTestDataObject", collection.getId());
 
     collectionsURL = "/" + Constants.COLLECTIONS + "/" + collection.getId() + "/export";
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
   @Order(1)
   public void exportCollection_successful() throws IOException {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL)
       .then()

@@ -9,9 +9,6 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -26,7 +23,6 @@ public class URIReferenceIT extends BaseTestCaseIT {
   private static DataObjectIO dataObject;
 
   private static String referencesURL;
-  private static RequestSpecification requestSpecification;
 
   private static URIReferenceIO reference;
 
@@ -43,10 +39,6 @@ public class URIReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.URI_REFERENCES
     );
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -57,7 +49,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
     toCreate.setUri("http://MyAwesomeUrl.com");
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -69,7 +61,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getName()).isEqualTo("URIReferenceDummy");
     assertThat(actual.getUri()).isEqualTo("http://MyAwesomeUrl.com");
@@ -82,7 +74,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getURIReferenceTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -96,7 +88,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
   @Order(3)
   public void getURIReferencesTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -110,7 +102,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getURIReference_referenceDoesNotExist_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -131,7 +123,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
     toCreate.setUri("http://MyAwesomeUrl.com");
 
     URIReferenceIO otherRef = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(
@@ -150,7 +142,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
       .as(URIReferenceIO.class);
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherRef.getId())
       .then()
@@ -164,8 +156,18 @@ public class URIReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(6)
   public void deleteURIReferenceTest() {
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(requestSpecification).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

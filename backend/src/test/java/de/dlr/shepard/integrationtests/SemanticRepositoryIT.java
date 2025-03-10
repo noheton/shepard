@@ -13,9 +13,6 @@ import de.dlr.shepard.data.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.semantic.io.SemanticRepositoryIO;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -28,7 +25,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class SemanticRepositoryIT extends BaseTestCaseIT {
 
   private static String repositoryURL;
-  private static RequestSpecification requestSpecification;
 
   private static SemanticRepositoryIO repository;
   private static SemanticAnnotationIO collectionAnnotation;
@@ -45,10 +41,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+
     collection = createCollection("SemanticsCollection");
     dataObject = createDataObject("SemanticDataObject", collection.getId());
     dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId(), dataObject.getId());
@@ -81,7 +74,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(repositoryURL)
@@ -93,7 +86,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getType()).isEqualTo(SemanticRepositoryType.SPARQL);
     assertThat(actual.getEndpoint()).isEqualTo(WireMockResource.getWireMockServerURlWithPath("/sparql"));
     assertThat(actual.getName()).isEqualTo("SemanticRepository");
@@ -105,7 +98,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(2)
   public void getSemanticRepositories() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(repositoryURL)
       .then()
@@ -120,7 +113,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(3)
   public void getSemanticRepository() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(repositoryURL + "/" + repository.getId())
       .then()
@@ -135,7 +128,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(4)
   public void getSemanticRepository_doesNotExist_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(repositoryURL + "/99999")
       .then()
@@ -156,7 +149,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setValueRepositoryId(repository.getId());
 
     collectionAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(collectionAnnotationURL)
@@ -183,7 +176,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setValueRepositoryId(repository.getId());
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(dataObjectAnnotationURL)
@@ -211,7 +204,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     toCreate.setValueRepositoryId(repository.getId());
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referenceAnnotationURL)
@@ -233,21 +226,21 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(8)
   public void getSemanticAnnotations() {
     var actualCollectionAnnotations = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(collectionAnnotationURL)
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO[].class);
     var actualDataObjectAnnotations = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(dataObjectAnnotationURL)
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO[].class);
     var actualReferenceAnnotations = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(referenceAnnotationURL)
       .then()
       .statusCode(200)
@@ -263,21 +256,21 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(9)
   public void getSemanticAnnotation() {
     var actualCollectionAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(collectionAnnotationURL + "/" + collectionAnnotation.getId())
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO.class);
     var actualDataObjectAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(dataObjectAnnotationURL + "/" + dataObjectAnnotation.getId())
       .then()
       .statusCode(200)
       .extract()
       .as(SemanticAnnotationIO.class);
     var actualReferenceAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(referenceAnnotationURL + "/" + referenceAnnotation.getId())
       .then()
       .statusCode(200)
@@ -293,21 +286,21 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(10)
   public void getSemanticAnnotation_doesNotExist_notFound() {
     var actualCollectionAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(collectionAnnotationURL + "/99999")
       .then()
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
     var actualDataObjectAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(dataObjectAnnotationURL + "/99999")
       .then()
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
     var actualReferenceAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(referenceAnnotationURL + "/99999")
       .then()
       .statusCode(404)
@@ -323,21 +316,21 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(11)
   public void getSemanticAnnotation_annotationOfSomethingElse_notFound() {
     var actualCollectionAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(collectionAnnotationURL + "/" + dataObjectAnnotation.getId())
       .then()
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
     var actualDataObjectAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(dataObjectAnnotationURL + "/" + collectionAnnotation.getId())
       .then()
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
     var actualReferenceAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(referenceAnnotationURL + "/" + collectionAnnotation.getId())
       .then()
       .statusCode(404)
@@ -359,25 +352,25 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(12)
   public void deleteSemanticAnnotation() {
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(collectionAnnotationURL + "/" + collectionAnnotation.getId())
       .then()
       .statusCode(204);
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(dataObjectAnnotationURL + "/" + dataObjectAnnotation.getId())
       .then()
       .statusCode(204);
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(referenceAnnotationURL + "/" + referenceAnnotation.getId())
       .then()
       .statusCode(204);
     var actualCollectionAnnotations = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(collectionAnnotationURL)
       .then()
       .statusCode(200)
@@ -385,7 +378,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .as(SemanticAnnotationIO[].class);
     assertThat(actualCollectionAnnotations).isEmpty();
     var actualDataObjectAnnotation = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(dataObjectAnnotationURL)
       .then()
       .statusCode(200)
@@ -393,7 +386,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .as(SemanticAnnotationIO[].class);
     assertThat(actualDataObjectAnnotation).isEmpty();
     var actualReferenceAnnotations = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get(referenceAnnotationURL)
       .then()
       .statusCode(200)
@@ -406,7 +399,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Order(13)
   public void getIllegalPath_notFound() {
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .get("/semanticAnnotations/" + referenceAnnotation.getId())
       .then()
       .statusCode(404);
@@ -415,7 +408,12 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
   @Test
   @Order(14)
   public void deleteSemanticRepository() {
-    given().spec(requestSpecification).when().delete(repositoryURL + "/" + repository.getId()).then().statusCode(204);
-    given().spec(requestSpecification).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(repositoryURL + "/" + repository.getId())
+      .then()
+      .statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
   }
 }

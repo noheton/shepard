@@ -8,9 +8,6 @@ import de.dlr.shepard.common.subscription.io.SubscriptionIO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.RequestMethod;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -22,17 +19,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class SubscriptionIT extends BaseTestCaseIT {
 
   private static String subscriptionsURL;
-  private static RequestSpecification requestSpecification;
 
   private static SubscriptionIO subscription;
 
   @BeforeAll
   public static void setUp() {
-    subscriptionsURL = String.format("/%s/%s/%s", Constants.USERS, username, Constants.SUBSCRIPTIONS);
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    subscriptionsURL = String.format("/%s/%s/%s", Constants.USERS, nameOfDefaultUser, Constants.SUBSCRIPTIONS);
   }
 
   @Test
@@ -45,7 +37,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
     toCreate.setSubscribedURL("http://my-subscribed-url.local");
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(subscriptionsURL)
@@ -57,7 +49,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getName()).isEqualTo("SubscriptionDummy");
     assertThat(actual.getCallbackURL()).isEqualTo("http://my-callback-url.local");
     assertThat(actual.getRequestMethod()).isEqualTo(RequestMethod.DELETE);
@@ -68,7 +60,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Order(2)
   public void getSubscriptionTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(subscriptionsURL + "/" + subscription.getId())
       .then()
@@ -82,7 +74,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Order(3)
   public void getSubscriptionTest_doesNotExist_notFound() {
     ErrorResponse actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(subscriptionsURL + "/99999")
       .then()
@@ -95,14 +87,8 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Test
   @Order(4)
   public void getSubscriptionTest_requestingSubscriptionOfOtherUser_forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
-    RequestSpecification otherRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
-      .build();
-
     ErrorResponse actual = given()
-      .spec(otherRequestSpecification)
+      .spec(requestSpecOfOtherUser)
       .when()
       .get(subscriptionsURL + "/" + subscription.getId())
       .then()
@@ -115,14 +101,8 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Test
   @Order(5)
   public void getSubscriptionTest_requestingIdOfOtherUser_notFound() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
-    RequestSpecification otherRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
-      .build();
-
     ErrorResponse actual = given()
-      .spec(otherRequestSpecification)
+      .spec(requestSpecOfOtherUser)
       .when()
       .get(
         String.format(
@@ -144,7 +124,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Order(6)
   public void getSubscriptionsTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(subscriptionsURL)
       .then()
@@ -158,12 +138,17 @@ public class SubscriptionIT extends BaseTestCaseIT {
   @Order(7)
   public void deleteSubscriptionTest() {
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(subscriptionsURL + "/" + subscription.getId())
       .then()
       .statusCode(204);
 
-    given().spec(requestSpecification).when().get(subscriptionsURL + "/" + subscription.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(subscriptionsURL + "/" + subscription.getId())
+      .then()
+      .statusCode(404);
   }
 }

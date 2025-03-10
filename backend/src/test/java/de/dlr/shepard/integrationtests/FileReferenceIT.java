@@ -33,9 +33,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
   private static ShepardFile file;
 
   private static String referencesURL;
-  private static RequestSpecification referencesRequestSpec;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
   private static RequestSpecification fileRequestSpec;
 
   private static FileContainerIO container;
@@ -54,26 +52,18 @@ public class FileReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.FILE_REFERENCES
     );
-    referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     containerURL = "/" + Constants.FILE_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     fileRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.MULTIPART)
-      .addHeader("X-API-KEY", jws)
+      .addHeader("X-API-KEY", defaultUser.getApiKey().getJws())
       .build();
 
     var toCreate = new FileContainerIO();
     toCreate.setName("FileContainer");
     InputStream targetStream = new ByteArrayInputStream("Hello World!".getBytes());
     container = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -101,7 +91,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
     toCreate.setFileContainerId(container.getId());
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -113,7 +103,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getName()).isEqualTo("FileReferenceDummy");
     assertThat(actual.getFileContainerId()).isEqualTo(container.getId());
@@ -127,7 +117,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getFileReferences() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -141,7 +131,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
   @Order(3)
   public void getFileReference() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -156,7 +146,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getFileReference_referenceDoesNotExist_notFound() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -178,7 +168,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
     toCreate.setFileContainerId(container.getId());
 
     FileReferenceIO otherRef = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(
@@ -197,7 +187,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
       .as(FileReferenceIO.class);
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherRef.getId())
       .then()
@@ -212,7 +202,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
   @Order(6)
   public void getFileReferencePayload() throws URISyntaxException, IOException {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(), file.getOid()))
       .then()
@@ -226,8 +216,18 @@ public class FileReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void deleteReferences() {
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

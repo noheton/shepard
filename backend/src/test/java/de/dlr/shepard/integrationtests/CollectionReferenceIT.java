@@ -9,9 +9,6 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -27,7 +24,6 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   private static CollectionIO referenced;
 
   private static String referencesURL;
-  private static RequestSpecification requestSpecification;
 
   private static CollectionReferenceIO reference;
 
@@ -45,10 +41,6 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.COLLECTION_REFERENCES
     );
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -60,7 +52,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
     toCreate.setReferencedCollectionId(referenced.getId());
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -72,7 +64,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getName()).isEqualTo("CollectionReferenceDummy");
     assertThat(actual.getRelationship()).isEqualTo("integrationtests");
@@ -90,14 +82,14 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
     toCreate.setRelationship("integrationtests");
     toCreate.setReferencedCollectionId(-2);
 
-    given().spec(requestSpecification).body(toCreate).when().post(referencesURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).body(toCreate).when().post(referencesURL).then().statusCode(400);
   }
 
   @Test
   @Order(3)
   public void getCollectionReferenceTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -111,7 +103,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getCollectionReferencesTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -125,7 +117,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   @Order(5)
   public void getCollectionReference_referenceDoesNotExist_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -141,7 +133,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   public void getCollectionReferencedTest() {
     var referencedURL = String.format("/%s/%d", Constants.COLLECTIONS, referenced.getId());
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencedURL)
       .then()
@@ -155,7 +147,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   @Order(7)
   public void getCollectionReferencePayloadTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
@@ -178,7 +170,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
     toCreate.setReferencedCollectionId(referenced.getId());
 
     CollectionReferenceIO otherRef = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(
@@ -197,7 +189,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
       .as(CollectionReferenceIO.class);
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherRef.getId())
       .then()
@@ -211,8 +203,18 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(9)
   public void deleteCollectionReferenceTest() {
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(requestSpecification).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

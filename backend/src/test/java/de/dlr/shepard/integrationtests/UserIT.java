@@ -7,9 +7,6 @@ import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -23,22 +20,17 @@ public class UserIT extends BaseTestCaseIT {
   private static UserIO user;
 
   private static String usersURL;
-  private static RequestSpecification requestSpecification;
 
   @BeforeAll
   public static void setUp() {
     usersURL = "/" + Constants.USERS;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
   @Order(1)
   public void getCurrentUserTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(usersURL)
       .then()
@@ -51,7 +43,7 @@ public class UserIT extends BaseTestCaseIT {
     assertThat(actual.getEmail()).isEqualTo("integration@test.org");
     assertThat(actual.getFirstName()).isEqualTo("Integration");
     assertThat(actual.getLastName()).isEqualTo("Test");
-    assertThat(actual.getApiKeyIds()).contains(apiKeyId);
+    assertThat(actual.getApiKeyIds()).contains(defaultUser.getApiKey().getUid());
     assertThat(actual.getSubscriptionIds()).isNotNull();
   }
 
@@ -59,9 +51,9 @@ public class UserIT extends BaseTestCaseIT {
   @Order(2)
   public void getUserTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
-      .get(usersURL + "/" + username)
+      .get(usersURL + "/" + nameOfDefaultUser)
       .then()
       .statusCode(200)
       .extract()
@@ -72,7 +64,7 @@ public class UserIT extends BaseTestCaseIT {
   @Test
   public void getUser_userDoesNotExist_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(usersURL + "/fake-user-id")
       .then()

@@ -31,7 +31,6 @@ public class CollectionIT extends BaseTestCaseIT {
   private static CollectionIO collection;
   private static VersionIO firstVersion;
   private static VersionIO secondVersion;
-  private static RequestSpecification requestSpecification;
   private static String name;
   private static long VersionizedCollectionShepardId;
   private static String VersionizedCollectionName;
@@ -40,10 +39,6 @@ public class CollectionIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     collectionsURL = "/" + Constants.COLLECTIONS;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -55,7 +50,7 @@ public class CollectionIT extends BaseTestCaseIT {
     payload.setDescription("My Description");
     payload.setAttributes(Map.of("a", "1", "b", "2"));
     CollectionIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(collectionsURL)
@@ -69,7 +64,7 @@ public class CollectionIT extends BaseTestCaseIT {
     assertThat(actual.getAttributes()).isEqualTo(Map.of("a", "1", "b", "2"));
     assertThat(actual.getDescription()).isEqualTo("My Description");
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getName()).isEqualTo(name);
     assertThat(actual.getDataObjectIds()).isEmpty();
     assertThat(actual.getUpdatedAt()).isNull();
@@ -90,21 +85,21 @@ public class CollectionIT extends BaseTestCaseIT {
   @Order(3)
   public void postCollectionTest_BadJson() {
     String payload = "{,}";
-    given().spec(requestSpecification).body(payload).when().post(collectionsURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).body(payload).when().post(collectionsURL).then().statusCode(400);
   }
 
   @Test
   @Order(4)
   public void postCollectionTest_BadBody() {
     String payload = "{\"attribute\":\"value\"}";
-    given().spec(requestSpecification).body(payload).when().post(collectionsURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).body(payload).when().post(collectionsURL).then().statusCode(400);
   }
 
   @Test
   @Order(5)
   public void getCollectionTest_Successful() {
     CollectionIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL + "/" + collection.getId())
       .then()
@@ -122,7 +117,7 @@ public class CollectionIT extends BaseTestCaseIT {
     payload.setName(name);
 
     DataObjectIO dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(collectionsURL + "/" + collection.getId() + "/" + Constants.DATA_OBJECTS)
@@ -132,7 +127,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     CollectionIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL + "/" + collection.getId())
       .then()
@@ -148,7 +143,7 @@ public class CollectionIT extends BaseTestCaseIT {
   @Order(7)
   public void getCollectionTest_QueryParamNameSuccessful() {
     CollectionIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("name", collection.getName())
       .when()
       .get(collectionsURL)
@@ -164,7 +159,7 @@ public class CollectionIT extends BaseTestCaseIT {
   @Order(8)
   public void getCollectionTest_wrongId_notFound() {
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL + "/99999")
       .then()
@@ -177,8 +172,6 @@ public class CollectionIT extends BaseTestCaseIT {
   @Test
   @Order(9)
   public void getCollectionTest_privateCollection_forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
-
     RequestSpecification otherUserRequestSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
@@ -199,7 +192,7 @@ public class CollectionIT extends BaseTestCaseIT {
   @Order(10)
   public void getCollectionsTest_Successful() {
     CollectionIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL)
       .then()
@@ -216,7 +209,7 @@ public class CollectionIT extends BaseTestCaseIT {
     collection.setName("CollectionDummyChanged");
 
     CollectionIO actualResponse = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(collection)
       .when()
       .put(collectionsURL + "/" + collection.getId())
@@ -226,7 +219,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .as(CollectionIO.class);
 
     assertThat(actualResponse.getUpdatedAt()).isNotNull();
-    assertThat(actualResponse.getUpdatedBy()).isEqualTo(username);
+    assertThat(actualResponse.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actualResponse)
       .usingRecursiveComparison()
       .ignoringFields("updatedBy", "updatedAt")
@@ -236,8 +229,13 @@ public class CollectionIT extends BaseTestCaseIT {
   @Test
   @Order(12)
   public void deleteCollectionTest_Successful() {
-    given().spec(requestSpecification).when().delete(collectionsURL + "/" + collection.getId()).then().statusCode(204);
-    given().spec(requestSpecification).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
   }
 
   @Test
@@ -249,7 +247,7 @@ public class CollectionIT extends BaseTestCaseIT {
       payload.setName(VersionizedCollectionName);
       payload.setDescription(VersionizedCollectionName);
       CollectionIO actual = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(payload)
         .when()
         .post(collectionsURL)
@@ -259,7 +257,7 @@ public class CollectionIT extends BaseTestCaseIT {
         .as(CollectionIO.class);
       VersionizedCollectionShepardId = actual.getId();
       VersionIO[] versions = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
         .then()
@@ -281,7 +279,7 @@ public class CollectionIT extends BaseTestCaseIT {
       newVersion.setName("first version");
       newVersion.setDescription("first version of versionized collection");
       firstVersion = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(newVersion)
         .when()
         .post(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
@@ -302,7 +300,7 @@ public class CollectionIT extends BaseTestCaseIT {
       newVersion.setName("second version");
       newVersion.setDescription("second version of versionized collection");
       secondVersion = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(newVersion)
         .when()
         .post(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
@@ -320,7 +318,7 @@ public class CollectionIT extends BaseTestCaseIT {
   public void getAllVersions() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO[] versions = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions")
         .then()
@@ -353,7 +351,7 @@ public class CollectionIT extends BaseTestCaseIT {
       newVersionizedCollectionName = "updated versionized collection";
       newVersionizedCollection.setName(newVersionizedCollectionName);
       CollectionIO actual = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(newVersionizedCollection)
         .when()
         .put(collectionsURL + "/" + VersionizedCollectionShepardId)
@@ -371,7 +369,7 @@ public class CollectionIT extends BaseTestCaseIT {
   public void retrieveModifiedHEADCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(collectionsURL + "/" + VersionizedCollectionShepardId)
         .then()
@@ -387,7 +385,7 @@ public class CollectionIT extends BaseTestCaseIT {
   public void retrieveSecondVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO actual = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(collectionsURL + "/" + VersionizedCollectionShepardId + "/versions/" + secondVersion.getUid().toString())
         .then()
@@ -403,7 +401,7 @@ public class CollectionIT extends BaseTestCaseIT {
   public void retrieveSecondVersionOfCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", secondVersion.getUid().toString())
         .when()
         .get(collectionsURL + "/" + VersionizedCollectionShepardId)
@@ -422,7 +420,7 @@ public class CollectionIT extends BaseTestCaseIT {
     collectionIO.setName("Some name");
     collectionIO.setAttributes(Map.of("name", "my data object"));
     CollectionIO collection = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(collectionIO)
       .when()
       .post(collectionsURL)
@@ -434,7 +432,7 @@ public class CollectionIT extends BaseTestCaseIT {
     // Act
     collectionIO.setAttributes(Map.of());
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(collectionIO)
       .when()
       .put(collectionsURL + "/" + collection.getId())
@@ -445,7 +443,7 @@ public class CollectionIT extends BaseTestCaseIT {
 
     // Assert
     CollectionIO updatedCollection = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(collectionsURL + "/" + collection.getId())
       .then()

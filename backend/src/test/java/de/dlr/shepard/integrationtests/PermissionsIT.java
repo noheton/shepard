@@ -30,7 +30,6 @@ public class PermissionsIT extends BaseTestCaseIT {
   private static String collectionsURL;
   private static String permissionsURL;
   private static String userGroupURL;
-  private static RequestSpecification requestSpecification;
   private static RequestSpecification requestSpecification1;
   private static RequestSpecification requestSpecification2;
   private static RequestSpecification requestSpecification3;
@@ -48,10 +47,6 @@ public class PermissionsIT extends BaseTestCaseIT {
     collectionsURL = "/" + Constants.COLLECTIONS;
     collection = createCollection("PermissionsTestCollection");
     permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     user1 = getNewUserWithApiKey("user1");
     user2 = getNewUserWithApiKey("user2");
     user3 = getNewUserWithApiKey("user3");
@@ -71,8 +66,8 @@ public class PermissionsIT extends BaseTestCaseIT {
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws3)
       .build();
-    collection1 = createCollection("PermissionsTestCollection1", user1.getApiKey());
-    collection2 = createCollection("PermissionsTestCollection2", user2.getApiKey());
+    collection1 = createCollection("PermissionsTestCollection1", user1);
+    collection2 = createCollection("PermissionsTestCollection2", user2);
     userGroupURL = "/" + Constants.USERGROUPS;
   }
 
@@ -80,7 +75,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   @Order(1)
   public void getPermissionsTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
@@ -89,7 +84,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .as(PermissionsIO.class);
 
     assertThat(actual.getEntityId()).isEqualTo(collection.getId());
-    assertThat(actual.getOwner()).isEqualTo(username);
+    assertThat(actual.getOwner()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getReader()).isEmpty();
     assertThat(actual.getWriter()).isEmpty();
     assertThat(actual.getManager()).isEmpty();
@@ -100,14 +95,14 @@ public class PermissionsIT extends BaseTestCaseIT {
   public void updatePermissionsTest() {
     var permissions = new PermissionsIO() {
       {
-        setReader(new String[] { username });
-        setWriter(new String[] { username });
-        setManager(new String[] { username, "invalid" });
+        setReader(new String[] { nameOfDefaultUser });
+        setWriter(new String[] { nameOfDefaultUser });
+        setManager(new String[] { nameOfDefaultUser, "invalid" });
       }
     };
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -119,11 +114,11 @@ public class PermissionsIT extends BaseTestCaseIT {
       {
         setEntityId(collection.getId());
         setOwner(null);
-        setReader(new String[] { username });
-        setWriter(new String[] { username });
+        setReader(new String[] { nameOfDefaultUser });
+        setWriter(new String[] { nameOfDefaultUser });
         setReaderGroupIds(new long[] {});
         setWriterGroupIds(new long[] {});
-        setManager(new String[] { username });
+        setManager(new String[] { nameOfDefaultUser });
       }
     };
 

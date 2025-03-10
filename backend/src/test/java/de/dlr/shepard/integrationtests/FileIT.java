@@ -32,20 +32,15 @@ public class FileIT extends BaseTestCaseIT {
 
   private static ShepardFile file;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
   private static RequestSpecification fileRequestSpec;
   private static FileContainerIO container;
 
   @BeforeAll
   public static void setUp() {
     containerURL = "/" + Constants.FILE_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     fileRequestSpec = new RequestSpecBuilder()
       .setContentType(ContentType.MULTIPART)
-      .addHeader("X-API-KEY", jws)
+      .addHeader("X-API-KEY", defaultUser.getApiKey().getJws())
       .build();
   }
 
@@ -56,7 +51,7 @@ public class FileIT extends BaseTestCaseIT {
     toCreate.setName("FileContainer");
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -68,7 +63,7 @@ public class FileIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getOid()).isNotBlank();
     assertThat(actual.getName()).isEqualTo("FileContainer");
     assertThat(actual.getUpdatedAt()).isNull();
@@ -79,7 +74,7 @@ public class FileIT extends BaseTestCaseIT {
   @Order(2)
   public void getFileContainers() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL)
       .then()
@@ -94,7 +89,7 @@ public class FileIT extends BaseTestCaseIT {
   @Order(3)
   public void getFileContainer() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId())
       .then()
@@ -108,7 +103,7 @@ public class FileIT extends BaseTestCaseIT {
   @Test
   public void getFileContainer_doesNotExist_notFound() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/99999")
       .then()
@@ -149,7 +144,7 @@ public class FileIT extends BaseTestCaseIT {
   @Order(5)
   public void getFiles() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
       .then()
@@ -166,7 +161,7 @@ public class FileIT extends BaseTestCaseIT {
     var oldFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());
     var expected = Files.readString(oldFile.toPath());
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
@@ -181,21 +176,21 @@ public class FileIT extends BaseTestCaseIT {
   @Order(7)
   public void deleteFile() {
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
       .statusCode(204);
 
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
       .statusCode(404);
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
       .then()
@@ -208,8 +203,8 @@ public class FileIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void deleteContainer() {
-    given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 
-    given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
   }
 }

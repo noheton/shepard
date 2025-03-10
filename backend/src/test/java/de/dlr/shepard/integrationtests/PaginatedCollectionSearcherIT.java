@@ -10,20 +10,16 @@ import de.dlr.shepard.common.search.io.CollectionSearchResult;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @QuarkusIntegrationTest
 public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
 
-  private static RequestSpecification requestSpecification;
   private static final String searchURL = "/" + Constants.SEARCH + "/" + Constants.COLLECTIONS;
 
   private CollectionSearchResult searchCollections(RequestSpecification spec, CollectionSearchBody body, String url) {
@@ -38,14 +34,6 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
       .as(CollectionSearchResult.class);
   }
 
-  @BeforeAll
-  public static void setup() {
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-  }
-
   @Test
   public void paginatedCollectionSearcher_findCollectionByName_success() {
     // Arrange
@@ -56,7 +44,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionIO collection1 = createCollection(runId + " firstCollection");
 
     // Act
-    CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
+    CollectionSearchResult result = searchCollections(requestSpecOfDefaultUser, searchBody, searchURL);
 
     // Assert
     assertThat(result.getResults()).anyMatch(res -> res.getId().equals(collection1.getId()));
@@ -73,7 +61,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionSearchBody searchBody = new CollectionSearchBody(params);
 
     // Act
-    CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
+    CollectionSearchResult result = searchCollections(requestSpecOfDefaultUser, searchBody, searchURL);
 
     // Assert
     assertThat(result.getResults()).anyMatch(res -> res.getId().equals(collection2.getId()));
@@ -98,7 +86,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
       CollectionIO col = createCollection(runId + "testCollectionSearchWithPaginationSize" + i);
       col.setDescription("I have been updated.");
       given()
-        .spec(requestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(col)
         .when()
         .put("/" + Constants.COLLECTIONS + "/" + col.getId())
@@ -109,7 +97,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     }
 
     // Act
-    CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
+    CollectionSearchResult result = searchCollections(requestSpecOfDefaultUser, searchBody, searchURL);
 
     // Assert
     assertThat(result.getResults().size()).isEqualTo(pageSize);
@@ -145,7 +133,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionIO collectionToUpdate = createdCollections.get(0);
     collectionToUpdate.setDescription("I have been updated.");
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(collectionToUpdate)
       .when()
       .put("/" + Constants.COLLECTIONS + "/" + collectionToUpdate.getId())
@@ -155,7 +143,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
       .as(CollectionIO.class);
 
     // Act
-    CollectionSearchResult result = searchCollections(requestSpecification, searchBody, searchURL);
+    CollectionSearchResult result = searchCollections(requestSpecOfDefaultUser, searchBody, searchURL);
 
     // Assert
     assertThat(result.getResults().size()).isEqualTo(pageSize);
@@ -167,13 +155,8 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
   public void paginatedCollectionSearcher_searchForPrivateCollection_collectionOnlyReturnedForOwner() {
     // Arrange
     UUID runId = UUID.randomUUID();
-    UserWithApiKey otherUser = getNewUserWithApiKey("the-other-one");
-    RequestSpecification requestSpecificationOfOtherUser = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
-      .build();
     given()
-      .spec(requestSpecificationOfOtherUser)
+      .spec(requestSpecOfOtherUser)
       .body(Map.of("name", runId.toString()))
       .when()
       .post("/" + Constants.COLLECTIONS)
@@ -186,12 +169,8 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
     CollectionSearchBody searchBody = new CollectionSearchBody(params);
 
     // Act
-    CollectionSearchResult resultForUserOne = searchCollections(requestSpecification, searchBody, searchURL);
-    CollectionSearchResult resultForOtherUser = searchCollections(
-      requestSpecificationOfOtherUser,
-      searchBody,
-      searchURL
-    );
+    CollectionSearchResult resultForUserOne = searchCollections(requestSpecOfDefaultUser, searchBody, searchURL);
+    CollectionSearchResult resultForOtherUser = searchCollections(requestSpecOfOtherUser, searchBody, searchURL);
 
     // Assert
     assertThat(resultForUserOne.getResults().size()).isEqualTo(0);
@@ -211,7 +190,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
 
     int pageSize = 20;
     int totalCollections = searchCollections(
-      requestSpecification,
+      requestSpecOfDefaultUser,
       searchBody,
       searchURL + "?page=0&size=" + pageSize
     ).getTotalResults();
@@ -220,7 +199,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
 
     // Act
     CollectionSearchResult resultsOfLastPage = searchCollections(
-      requestSpecification,
+      requestSpecOfDefaultUser,
       searchBody,
       searchURL + "?page=" + lastPage + "&size=" + pageSize
     );
@@ -244,12 +223,12 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
 
     // Act
     CollectionSearchResult resultsSortedByNameDescending = searchCollections(
-      requestSpecification,
+      requestSpecOfDefaultUser,
       searchBody,
       searchURL + "?page=0&size=20&orderBy=name&orderDesc=true"
     );
     CollectionSearchResult resultsSortedByNameAscending = searchCollections(
-      requestSpecification,
+      requestSpecOfDefaultUser,
       searchBody,
       searchURL + "?page=0&size=20&orderBy=name&orderDesc=false"
     );

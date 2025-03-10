@@ -14,9 +14,6 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectIOBuilder;
 import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
@@ -32,9 +29,6 @@ public class DataObjectIT extends BaseTestCaseIT {
 
   private static CollectionIO collection;
   private static CollectionIO collectionForOrderByTest;
-  private static RequestSpecification requestSpecification;
-  private static RequestSpecification orderByRequestSpecification;
-  private static RequestSpecification versioningRequestSpecification;
   private static CollectionIO versionizedCollection;
 
   private static String dataObjectsURL;
@@ -78,24 +72,10 @@ public class DataObjectIT extends BaseTestCaseIT {
     );
     versionizedCollectionURL = String.format("/%s/%d", Constants.COLLECTIONS, versionizedCollection.getId());
 
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-
-    orderByRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-
-    versioningRequestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     var aInput = new DataObjectIO();
     aInput.setName("a");
     aDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(aInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -106,7 +86,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     var bInput = new DataObjectIO();
     bInput.setName("b");
     bDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(bInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -117,7 +97,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     var cInput = new DataObjectIO();
     cInput.setName("c");
     cDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(cInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -128,7 +108,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     var dInput = new DataObjectIO();
     dInput.setName("d");
     dDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -139,7 +119,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     var eInput = new DataObjectIO();
     eInput.setName("e");
     eDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(eInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -150,7 +130,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     var fInput = new DataObjectIO();
     fInput.setName("f");
     fDataObject = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(fInput)
       .when()
       .post(orderByDataObjectsURL)
@@ -161,7 +141,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     DataObjectIO firstVersionizedDataObjectInput = new DataObjectIO();
     firstVersionizedDataObjectInput.setName("first versionized DataObject");
     firstVersionizedDataobject = given()
-      .spec(versioningRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(firstVersionizedDataObjectInput)
       .when()
       .post(versioningURL)
@@ -173,7 +153,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     secondVersionizedDataObjectInput.setName("second versionized DataObject");
     secondVersionizedDataObjectInput.setParentId(firstVersionizedDataobject.getId());
     secondVersionizedDataObject = given()
-      .spec(versioningRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(secondVersionizedDataObjectInput)
       .when()
       .post(versioningURL)
@@ -186,7 +166,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     long[] thirdVersionizedDataObjectPredecessorIds = { secondVersionizedDataObject.getId() };
     thirdVersionizedDataObjectInput.setPredecessorIds(thirdVersionizedDataObjectPredecessorIds);
     thirdVersionizedDataObject = given()
-      .spec(versioningRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(thirdVersionizedDataObjectInput)
       .when()
       .post(versioningURL)
@@ -221,7 +201,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     payload.setAttributes(attributes);
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(dataObjectsURL)
@@ -235,7 +215,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(actual.getAttributes()).isEqualTo(attributes);
     assertThat(actual.getDescription()).isEqualTo("My Description");
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getIncomingIds()).isEmpty();
     assertThat(actual.getReferenceIds()).isEmpty();
     assertThat(actual.getChildrenIds()).isEmpty();
@@ -258,7 +238,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     payload.setDescription("My Description");
     payload.setAttributes(attributes);
 
-    given().spec(requestSpecification).body(payload).when().post(dataObjectsURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).body(payload).when().post(dataObjectsURL).then().statusCode(400);
   }
 
   @Test
@@ -269,7 +249,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     payload.setParentId(dataObject.getId());
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(dataObjectsURL)
@@ -287,7 +267,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(actual.getCollectionId()).isEqualTo(collection.getId());
 
     DataObjectIO parent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -307,7 +287,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     payload.setPredecessorIds(new long[] { dataObject.getId() });
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(dataObjectsURL)
@@ -325,7 +305,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(actual.getCollectionId()).isEqualTo(collection.getId());
 
     DataObjectIO predecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -346,7 +326,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     payload.setPredecessorIds(new long[] { child.getId() });
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
       .post(dataObjectsURL)
@@ -364,7 +344,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     assertThat(actual.getCollectionId()).isEqualTo(collection.getId());
 
     DataObjectIO parent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -376,7 +356,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObject = parent;
 
     DataObjectIO predecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + child.getId())
       .then()
@@ -392,7 +372,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(6)
   public void getDataObjectTest_Successful() {
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -407,7 +387,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(7)
   public void getDataObjectTest_ByName() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("name", dataObject.getName())
       .when()
       .get(dataObjectsURL)
@@ -425,7 +405,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(8)
   public void getDataObjectsTest_Successful() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL)
       .then()
@@ -442,7 +422,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(9)
   public void getDataObjectsTest_ByParent() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("parentId", dataObject.getId())
       .when()
       .get(dataObjectsURL)
@@ -460,7 +440,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(10)
   public void getDataObjectsTest_WithoutParent() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("parentId", -1)
       .when()
       .get(dataObjectsURL)
@@ -478,7 +458,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(11)
   public void getDataObjectsTest_ByPredecessor() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("predecessorId", dataObject.getId())
       .when()
       .get(dataObjectsURL)
@@ -496,7 +476,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(12)
   public void getDataObjectsTest_WithoutPredecessor() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("predecessorId", -1)
       .when()
       .get(dataObjectsURL)
@@ -514,7 +494,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(13)
   public void getDataObjectsTest_BySuccessor() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("successorId", successor.getId())
       .when()
       .get(dataObjectsURL)
@@ -532,7 +512,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(14)
   public void getDataObjectsTest_WithoutSuccessor() {
     DataObjectIO[] response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("successorId", -1)
       .when()
       .get(dataObjectsURL)
@@ -552,7 +532,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObject.setName("DataObjectSuccessorChanged");
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObject)
       .when()
       .put(dataObjectsURL + "/" + dataObject.getId())
@@ -562,7 +542,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     assertThat(actual.getUpdatedAt()).isNotNull();
-    assertThat(actual.getUpdatedBy()).isEqualTo(username);
+    assertThat(actual.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual)
       .usingRecursiveComparison()
       .ignoringFields("updatedBy", "updatedAt", "childrenIds")
@@ -582,7 +562,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     successorAndChild.setParentId(successor.getId());
 
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(successorAndChild)
       .when()
       .put(dataObjectsURL + "/" + successorAndChild.getId())
@@ -595,7 +575,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     successorAndChild = actual;
 
     DataObjectIO oldParent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -608,7 +588,7 @@ public class DataObjectIT extends BaseTestCaseIT {
 
     successor.setChildrenIds(new long[] { actual.getId() });
     DataObjectIO newParent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + successor.getId())
       .then()
@@ -624,7 +604,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     child.setName("DataObjectSuccessorChanged");
     child.setPredecessorIds(new long[] { dataObject.getId() });
     DataObjectIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(child)
       .when()
       .put(dataObjectsURL + "/" + child.getId())
@@ -637,7 +617,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     child = actual;
 
     DataObjectIO newPredecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -656,16 +636,26 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   @Order(18)
   public void deleteDataObjectTest_Successful() {
-    given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(204);
-    given().spec(requestSpecification).when().delete(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
-    given().spec(requestSpecification).when().get(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(dataObjectsURL + "/" + dataObject.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(dataObjectsURL + "/" + dataObject.getId()).then().statusCode(404);
   }
 
   @Test
   @Order(19)
   public void getOrderByName() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.name)
       .when()
       .get(orderByDataObjectsURL)
@@ -680,7 +670,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(20)
   public void getOrderByNameDesc() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.name)
       .queryParam("orderDesc", true)
       .when()
@@ -696,7 +686,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(21)
   public void getOrderByCreatedAt() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", false)
       .when()
@@ -712,7 +702,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(22)
   public void getOrderByCreatedFirstPage() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", false)
       .queryParam("page", 0)
@@ -730,7 +720,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(23)
   public void getOrderByCreatedSecondPage() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", false)
       .queryParam("page", 1)
@@ -748,7 +738,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(24)
   public void getOrderByCreatedDescSecondPage() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", true)
       .queryParam("page", 1)
@@ -766,7 +756,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Order(25)
   public void getOrderByCreatedDescFirstPage() {
     DataObjectIO[] response = given()
-      .spec(orderByRequestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", DataObjectAttributes.createdAt)
       .queryParam("orderDesc", true)
       .queryParam("page", 0)
@@ -785,7 +775,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void getHEADVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO[] HEADVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(versionizedCollectionURL + "/versions")
         .then()
@@ -805,7 +795,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       firstVersionInput.setName("first version");
       firstVersionInput.setDescription("first version");
       VersionIO firstVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(firstVersionInput)
         .when()
         .post(versionizedCollectionURL + "/versions")
@@ -826,7 +816,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       String newName = "first versionized DataObject with new name";
       firstVersionizedDataobject.setName(newName);
       DataObjectIO actual = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .body(firstVersionizedDataobject)
         .when()
         .put(versioningURL + "/" + firstVersionizedDataobject.getId())
@@ -843,7 +833,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void differentFirstVersionizedDataObjects() {
     if (VersioningFeatureToggle.isEnabled()) {
       DataObjectIO firstDataObjectFirstVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", firstVersionUID.toString())
         .when()
         .get(versioningURL + "/" + firstVersionizedDataobject.getId())
@@ -852,7 +842,7 @@ public class DataObjectIT extends BaseTestCaseIT {
         .extract()
         .as(DataObjectIO.class);
       DataObjectIO firstDataObjectExpliciteHEADVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", HEADVersionUID.toString())
         .when()
         .get(versioningURL + "/" + firstVersionizedDataobject.getId())
@@ -861,7 +851,7 @@ public class DataObjectIT extends BaseTestCaseIT {
         .extract()
         .as(DataObjectIO.class);
       DataObjectIO firstDataObjectImpliciteHEADVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(versioningURL + "/" + firstVersionizedDataobject.getId())
         .then()
@@ -878,7 +868,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void predecessorsInFirstVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       DataObjectIO thirdDataObjectFirstVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", firstVersionUID.toString())
         .when()
         .get(versioningURL + "/" + thirdVersionizedDataObject.getId())
@@ -898,7 +888,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void parentInFirstVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       DataObjectIO secondDataObjectFirstVersion = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", firstVersionUID.toString())
         .when()
         .get(versioningURL + "/" + secondVersionizedDataObject.getId())
@@ -917,13 +907,13 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void deleteFirstVersionizedDataObject() {
     if (VersioningFeatureToggle.isEnabled()) {
       given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .delete(versioningURL + "/" + firstVersionizedDataobject.getId())
         .then()
         .statusCode(204);
       DataObjectIO[] response = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .when()
         .get(versioningURL)
         .then()
@@ -940,7 +930,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   public void getDataObjectsOfFirstVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       DataObjectIO[] response = given()
-        .spec(versioningRequestSpecification)
+        .spec(requestSpecOfDefaultUser)
         .queryParam("versionUid", firstVersionUID)
         .when()
         .get(versioningURL)
@@ -955,7 +945,7 @@ public class DataObjectIT extends BaseTestCaseIT {
   @Test
   public void getDataObject_wrongId_notFound() {
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/99999")
       .then()
@@ -967,16 +957,11 @@ public class DataObjectIT extends BaseTestCaseIT {
 
   @Test
   public void getDataObject_privateCollection_forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
-    CollectionIO privateCollection = createCollection("private collection", otherUser.getApiKey());
-    DataObjectIO privateDataObject = createDataObject(
-      "private data object",
-      privateCollection.getId(),
-      otherUser.getApiKey()
-    );
+    CollectionIO privateCollection = createCollection("private collection", otherUser);
+    DataObjectIO privateDataObject = createDataObject("private data object", privateCollection.getId(), otherUser);
 
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -1001,7 +986,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     CollectionIO otherCollection = createCollection("private collection");
 
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -1024,7 +1009,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     DataObjectIO parent = new DataObjectIO();
     parent.setName("10001 Parent");
     parent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(parent)
       .when()
       .post(dataObjectsURL)
@@ -1036,7 +1021,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     DataObjectIO predecessor = new DataObjectIO();
     predecessor.setName("10001 predecessor");
     predecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(predecessor)
       .when()
       .post(dataObjectsURL)
@@ -1051,7 +1036,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObject.setPredecessorIds(new long[] { predecessor.getId() });
 
     dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObject)
       .when()
       .post(dataObjectsURL)
@@ -1063,7 +1048,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObject.setPredecessorIds(new long[] {});
 
     dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObject)
       .when()
       .put(dataObjectsURL + "/" + dataObject.getId())
@@ -1073,7 +1058,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -1085,7 +1070,7 @@ public class DataObjectIT extends BaseTestCaseIT {
 
     dataObject.setParentId(null);
     dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObject)
       .when()
       .put(dataObjectsURL + "/" + dataObject.getId())
@@ -1095,7 +1080,7 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
 
     dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()
@@ -1113,7 +1098,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObjectAsParentAndPredecessorCreationPayload.setName("dataObjectWithParentAndPredecessor");
 
     DataObjectIO dataObjectAsParentAndPredecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectAsParentAndPredecessorCreationPayload)
       .when()
       .post(dataObjectsURL)
@@ -1130,7 +1115,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     );
 
     DataObjectIO dataObjectWithParentAndPredecessor = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectWithParentAndPredecessorCreationPayload)
       .when()
       .post(dataObjectsURL)
@@ -1143,7 +1128,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     dataObjectWithParentAndPredecessor.setParentId(null);
 
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectWithParentAndPredecessor)
       .when()
       .put(dataObjectsURL + "/" + dataObjectWithParentAndPredecessor.getId())
@@ -1154,7 +1139,7 @@ public class DataObjectIT extends BaseTestCaseIT {
 
     // Assert
     DataObjectIO updatedParent = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObjectWithParentAndPredecessor.getId())
       .then()
@@ -1170,7 +1155,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     // Arrange
     DataObjectIO dataObjectIO = new DataObjectIOBuilder().setAttributes(Map.of("name", "my data object")).build();
     DataObjectIO dataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .post(dataObjectsURL)
@@ -1182,7 +1167,7 @@ public class DataObjectIT extends BaseTestCaseIT {
     // Act
     dataObjectIO.setAttributes(Map.of());
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .put(dataObjectsURL + "/" + dataObject.getId())
@@ -1193,7 +1178,7 @@ public class DataObjectIT extends BaseTestCaseIT {
 
     // Assert
     DataObjectIO updatedDataObject = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(dataObjectsURL + "/" + dataObject.getId())
       .then()

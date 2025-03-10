@@ -11,9 +11,6 @@ import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -26,7 +23,6 @@ public class BasicReferenceIT extends BaseTestCaseIT {
 
   private static CollectionIO collection;
   private static DataObjectIO dataObject;
-  private static RequestSpecification requestSpecification;
 
   private static String referencesURL;
   private static BasicReferenceIO dataObjectReference;
@@ -48,17 +44,13 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.BASIC_REFERENCES
     );
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
   @Order(1)
   public void getFirstReference_Successful() {
     BasicReferenceIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + dataObjectReference.getId())
       .then()
@@ -67,7 +59,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       .as(BasicReferenceIO.class);
 
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getId()).isEqualTo(dataObjectReference.getId());
     assertThat(actual.getName()).isEqualTo("DataObjectReference");
@@ -82,7 +74,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getReference_doesNotExist_notFound() {
     ErrorResponse actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -104,7 +96,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
     );
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherRef.getId())
       .then()
@@ -119,7 +111,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getSecondReference_Successful() {
     BasicReferenceIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + uriReference.getId())
       .then()
@@ -128,7 +120,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
       .as(BasicReferenceIO.class);
 
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getId()).isEqualTo(uriReference.getId());
     assertThat(actual.getName()).isEqualTo("UriReference");
@@ -143,7 +135,7 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   @Order(5)
   public void getAllReferences_Successful() {
     BasicReferenceIO[] actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -157,10 +149,15 @@ public class BasicReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(6)
   public void deleteReferences_Successful() {
-    given().spec(requestSpecification).when().delete(referencesURL + "/" + uriReference.getId()).then().statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + uriReference.getId())
+      .then()
+      .statusCode(204);
 
     BasicReferenceIO[] actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -170,7 +167,12 @@ public class BasicReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual).containsExactly(dataObjectReference);
 
-    given().spec(requestSpecification).when().get(referencesURL + "/" + uriReference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(referencesURL + "/" + uriReference.getId())
+      .then()
+      .statusCode(404);
   }
 
   private static URIReferenceIO createUriReference(long collectionId, long dataObjectId) {
@@ -192,9 +194,8 @@ public class BasicReferenceIT extends BaseTestCaseIT {
         setUri("http://www.example.com");
       }
     };
-    var specification = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var created = given()
-      .spec(specification)
+      .spec(requestSpecOfDefaultUser)
       .body(uriReference)
       .when()
       .post(uriReferenceUrl)

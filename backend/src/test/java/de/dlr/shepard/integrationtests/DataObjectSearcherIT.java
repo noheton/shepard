@@ -15,9 +15,6 @@ import de.dlr.shepard.common.util.TraversalRules;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,29 +32,20 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
   private static DataObjectIO dataObjectIO4;
   private static String dataObjectsURL;
   private static CollectionIO collection;
-  private static RequestSpecification requestSpecification;
   private static String searchURL;
-  private static RequestSpecification searchRequestSpec;
-  private static UserWithApiKey user1;
-  private static String jws1;
-  private static RequestSpecification searchRequestSpec1;
 
   @BeforeAll
   public static void setUp() {
     collection = createCollection("DataObjectSearcherTestCollection");
     dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+
     searchURL = "/" + Constants.SEARCH;
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
     var payload1 = new DataObjectIO();
     payload1.setName("DataObjectSearchDummy1");
     payload1.setDescription("description1");
     payload1.setAttributes(Map.of("a", "1", "b", "2"));
     dataObjectIO1 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload1)
       .when()
       .post(dataObjectsURL)
@@ -70,7 +58,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     payload2.setDescription("description2");
     payload2.setAttributes(Map.of("abc", "1", "bcd", "233"));
     dataObjectIO2 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload2)
       .when()
       .post(dataObjectsURL)
@@ -80,9 +68,6 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
     dataObjectIO3 = createDataObjectWithParent("DataObjectSearchDummy3", collection.getId(), dataObjectIO1.getId());
     dataObjectIO4 = createDataObjectWithParent("DataObjectSearchDummy4", collection.getId(), dataObjectIO3.getId());
-    user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
-    jws1 = user1.getApiKey().getJws();
-    searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
   }
 
   @Test
@@ -116,7 +101,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -161,7 +146,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -204,7 +189,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -247,7 +232,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -289,7 +274,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -333,7 +318,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -378,7 +363,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -422,7 +407,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -469,7 +454,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -504,7 +489,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -538,7 +523,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec1)
+      .spec(requestSpecOfOtherUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -551,15 +536,12 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
     var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
-    var dataObjectSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
     dataObjectIO.setParentId(parentID);
     var dataObject = given()
-      .spec(dataObjectSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)
       .when()
       .post(dataObjectsURL)

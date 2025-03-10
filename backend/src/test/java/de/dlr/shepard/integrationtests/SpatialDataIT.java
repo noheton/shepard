@@ -18,9 +18,6 @@ import de.dlr.shepard.data.spatialdata.model.geometryFilter.AxisAlignedBoundingB
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.BoundingSphere;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +35,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class SpatialDataIT extends BaseTestCaseIT {
 
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
   private static SpatialDataContainerIO container;
   private static ArrayList<SpatialDataContainerIO> existingContainers = new ArrayList<>();
   private static List<SpatialDataPointIO> createdDataPoints;
@@ -46,10 +42,6 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     containerURL = Constants.SPATIAL_DATA_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     IntStream.range(0, 50).forEach(index -> {
       var containerName = "container_" + index + RandomGenerator.generateString(20);
@@ -57,7 +49,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       toCreate.setName(containerName);
 
       var actual = given()
-        .spec(containerRequestSpec)
+        .spec(requestSpecOfDefaultUser)
         .body(toCreate)
         .when()
         .post(containerURL)
@@ -72,7 +64,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @AfterAll
   public static void tearDown() {
     existingContainers.forEach(container ->
-      given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId())
+      given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId())
     );
   }
 
@@ -84,7 +76,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     toCreate.setName(containerName);
 
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -96,7 +88,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getName()).isEqualTo(containerName);
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
@@ -106,7 +98,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(2)
   public void getAllSpatialDataContainers_success() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL)
       .then()
@@ -121,7 +113,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(2)
   public void getAllSpatialDataContainers_filterByName_success() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("name", container.getName())
       .when()
       .get(containerURL)
@@ -133,7 +125,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     assertThat(actual).contains(container);
 
     actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("name", RandomGenerator.generateString(20))
       .when()
       .get(containerURL)
@@ -149,7 +141,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(2)
   public void getAllSpatialDataContainers_requestPage_success() {
     var allContainers = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL)
       .then()
@@ -157,7 +149,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .extract()
       .as(SpatialDataContainerIO[].class);
     var firstPage = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("page", 0)
       .queryParam("size", 3)
       .when()
@@ -168,7 +160,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .as(SpatialDataContainerIO[].class);
 
     var thirdPage = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("page", 2)
       .queryParam("size", 3)
       .when()
@@ -191,7 +183,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(2)
   public void getAllSpatialDataContainers_orderBy_success() {
     var allContainersDesc = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", "createdAt")
       .queryParam("orderDesc", true)
       .when()
@@ -202,7 +194,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .as(SpatialDataContainerIO[].class);
 
     var allContainersAsc = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("orderBy", "createdAt")
       .queryParam("orderDesc", false)
       .when()
@@ -226,7 +218,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(4)
   public void getSpatialDataContainer_success() {
     var actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/" + container.getId())
       .then()
@@ -241,7 +233,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(5)
   public void getSpatialDataContainer_doesNotExist_notFound() {
     ErrorResponse actual = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(containerURL + "/999999")
       .then()
@@ -267,7 +259,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       )
       .collect(Collectors.toList());
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(createdDataPoints)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -279,7 +271,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Order(7)
   public void getSpatialData_noFilters_retrievesAllPoints_Success() {
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
@@ -295,7 +287,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
       .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -318,7 +310,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     String geometryFilter = JsonConverter.convertToString(axisAlignedBoundingBox);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
       .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -336,7 +328,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
 
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
       .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -354,7 +346,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
     String metadataFilter = JsonConverter.convertToString(Map.of("a_meta_data", "metadata_1"));
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("metadataFilter", metadataFilter)
       .when()
@@ -375,7 +367,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     List<FilterCondition> measurementsFilters = List.of(new FilterCondition("a_measurement", Operator.EQUALS, 1));
     String measurementsFilter = JsonConverter.convertToString(measurementsFilters);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("measurementsFilter", measurementsFilter)
       .when()
@@ -394,7 +386,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     String geometryFilter = JsonConverter.convertToString(kNearestNeighbor);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("startTime", -1)
       .queryParam("endTime", 5)
@@ -413,7 +405,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("limit", 5)
       .when()
@@ -431,7 +423,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
 
     String geometryFilter = JsonConverter.convertToString(boundingSphere);
     var dataPoints = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("skip", 2)
       .when()
@@ -445,7 +437,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void deleteContainer() {
-    given().spec(containerRequestSpec).when().delete(containerURL + "/" + container.getId()).then().statusCode(200);
-    given().spec(containerRequestSpec).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(200);
+    given().spec(requestSpecOfDefaultUser).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
   }
 }

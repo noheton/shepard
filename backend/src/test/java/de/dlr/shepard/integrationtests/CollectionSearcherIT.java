@@ -19,9 +19,6 @@ import de.dlr.shepard.data.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.semantic.io.SemanticRepositoryIO;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,36 +32,26 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class CollectionSearcherIT extends BaseTestCaseIT {
 
   private static String collectionsURL;
-  private static RequestSpecification requestSpecification;
   private static CollectionIO collection1;
   private static CollectionIO collection2;
   private static String searchURL;
-  private static RequestSpecification searchRequestSpec;
-  private static UserWithApiKey user1;
-  private static String jws1;
-  private static RequestSpecification searchRequestSpec1;
 
   private static String repositoryURL;
-  private static RequestSpecification repositoryRequestSpec;
   private static SemanticRepositoryIO repository;
   private static SemanticAnnotationIO annotation;
   private static CollectionIO annotatedCollection;
   private static String annotatedCollectionURL;
-  private static RequestSpecification annotatedCollectionRequestSpec;
 
   @BeforeAll
   public static void setUp() {
     collectionsURL = "/" + Constants.COLLECTIONS;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+
     var payload1 = new CollectionIO();
     payload1.setName("CollectionDummy");
     payload1.setDescription("First Collection");
     payload1.setAttributes(Map.of("a", "1", "b", "2"));
     collection1 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload1)
       .when()
       .post(collectionsURL)
@@ -76,7 +63,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     payload2.setName("secondCollectionDummy");
     payload2.setDescription("Second Collection");
     collection2 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload2)
       .when()
       .post(collectionsURL)
@@ -85,33 +72,21 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(CollectionIO.class);
     searchURL = "/" + Constants.SEARCH;
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
-    user1 = getNewUserWithApiKey("user1" + System.currentTimeMillis());
-    jws1 = user1.getApiKey().getJws();
-    searchRequestSpec1 = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws1).build();
 
     // for search involving SemanticAnnotations
     repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
-    repositoryRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     annotatedCollection = createCollection("SemanticsCollection");
     annotatedCollectionURL = String.format(
       "/%s/%d/semanticAnnotations",
       Constants.COLLECTIONS,
       annotatedCollection.getId()
     );
-    annotatedCollectionRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     var repositoryToCreate = new SemanticRepositoryIO();
     repositoryToCreate.setName("SemanticRepository");
     repositoryToCreate.setType(SemanticRepositoryType.SPARQL);
     repositoryToCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
     repository = given()
-      .spec(repositoryRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(repositoryToCreate)
       .when()
       .post(repositoryURL)
@@ -126,7 +101,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     annotationToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
     annotationToCreate.setValueRepositoryId(repository.getId());
     annotation = given()
-      .spec(annotatedCollectionRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(annotationToCreate)
       .when()
       .post(annotatedCollectionURL)
@@ -165,7 +140,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -209,7 +184,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -244,7 +219,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -286,7 +261,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -329,7 +304,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -372,7 +347,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -416,7 +391,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec1)
+      .spec(requestSpecOfOtherUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -433,22 +408,18 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
   @Order(8)
   public void authorizedCollectionsSearchTest() {
     String permissionsURL = "/collections/" + collection1.getId() + "/permissions";
-    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     PermissionsIO permissions = given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
       .statusCode(200)
       .extract()
       .as(PermissionsIO.class);
-    String[] reader = { user1.getUser().getUsername() };
+    String[] reader = { otherUser.getUser().getUsername() };
     permissions.setReader(reader);
     given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -483,7 +454,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec1)
+      .spec(requestSpecOfOtherUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -503,13 +474,9 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
-    userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    userGroup.setUsernames(new String[] { otherUser.getUser().getUsername() });
     UserGroupIO userGroupCreated = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(userGroup)
       .when()
       .post(userGroupURL)
@@ -519,12 +486,8 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     PermissionsIO permissions = given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
@@ -534,7 +497,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     long[] readerGroupIds = { userGroupCreated.getId() };
     permissions.setReaderGroupIds(readerGroupIds);
     given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -569,7 +532,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec1)
+      .spec(requestSpecOfOtherUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -589,13 +552,9 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     String userGroupURL = "/" + Constants.USERGROUPS;
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
-    userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    RequestSpecification userGroupSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    userGroup.setUsernames(new String[] { otherUser.getUser().getUsername() });
     UserGroupIO userGroupCreated = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(userGroup)
       .when()
       .post(userGroupURL)
@@ -605,12 +564,8 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
       .as(UserGroupIO.class);
 
     String permissionsURL = "/" + Constants.COLLECTIONS + "/" + collection2.getId() + "/" + Constants.PERMISSIONS;
-    RequestSpecification permissionsSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
     PermissionsIO permissions = given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(permissionsURL)
       .then()
@@ -620,7 +575,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     long[] readerGroupIds = { userGroupCreated.getId() };
     permissions.setReaderGroupIds(readerGroupIds);
     given()
-      .spec(permissionsSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(permissions)
       .when()
       .put(permissionsURL)
@@ -647,7 +602,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec1)
+      .spec(requestSpecOfOtherUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -675,7 +630,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -703,7 +658,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)

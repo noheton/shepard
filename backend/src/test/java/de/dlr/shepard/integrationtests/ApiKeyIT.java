@@ -10,7 +10,6 @@ import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -23,16 +22,11 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class ApiKeyIT extends BaseTestCaseIT {
 
   private static String apiKeyURL;
-  private static RequestSpecification requestSpecification;
   private static ApiKeyIO apikey;
 
   @BeforeAll
   public static void setUp() {
-    apiKeyURL = String.format("/%s/%s/%s", Constants.USERS, username, Constants.APIKEYS);
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    apiKeyURL = String.format("/%s/%s/%s", Constants.USERS, nameOfDefaultUser, Constants.APIKEYS);
   }
 
   @Test
@@ -42,7 +36,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
     toCreate.setName("ApiKeyDummy");
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(apiKeyURL)
@@ -61,7 +55,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
 
     assertThat(actual.getUid()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getBelongsTo()).isEqualTo(username);
+    assertThat(actual.getBelongsTo()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getName()).isEqualTo("ApiKeyDummy");
     assertThat(actual.getJwt()).isNotNull();
 
@@ -76,7 +70,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Order(2)
   public void getApiKey_getExistingKey_success() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(apiKeyURL + "/" + apikey.getUid())
       .then()
@@ -90,7 +84,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Order(3)
   public void getApiKey_getNonExistingKey_notFound() {
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(apiKeyURL + "/" + UUID.randomUUID())
       .then()
@@ -103,9 +97,8 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Test
   @Order(4)
   public void getApiKey_getByKeyUuidOfOtherUser_notFound() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(apiKeyURL + "/" + otherUser.getApiKey().getUid())
       .then()
@@ -118,9 +111,8 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Test
   @Order(5)
   public void getApiKey_getKeyOfOtherUser_Forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -141,9 +133,8 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Test
   @Order(6)
   public void getApiKey_getNonExistingKeyOfOtherUser_Forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(
         String.format(
@@ -165,7 +156,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Order(7)
   public void getApiKey_getAllKeys_existingKeyReturned() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(apiKeyURL)
       .then()
@@ -178,22 +169,21 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Test
   @Order(8)
   public void deleteApiKey_deleteExistingKey_success() {
-    given().spec(requestSpecification).when().delete(apiKeyURL + "/" + apikey.getUid()).then().statusCode(204);
-    given().spec(requestSpecification).when().get(apiKeyURL + "/" + apikey.getUid()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().delete(apiKeyURL + "/" + apikey.getUid()).then().statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().get(apiKeyURL + "/" + apikey.getUid()).then().statusCode(404);
   }
 
   @Test
   @Order(9)
   public void deleteApiKey_deleteNonExistingKey_notFound() {
-    given().spec(requestSpecification).when().delete(apiKeyURL + "/" + UUID.randomUUID()).then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().delete(apiKeyURL + "/" + UUID.randomUUID()).then().statusCode(404);
   }
 
   @Test
   @Order(10)
   public void deleteApiKey_deleteKeyOfOtherUser_Forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
         String.format(
@@ -214,9 +204,8 @@ public class ApiKeyIT extends BaseTestCaseIT {
   @Test
   @Order(11)
   public void deleteApiKey_deleteNonexistingKeyOfOtherUser_Forbidden() {
-    UserWithApiKey otherUser = getNewUserWithApiKey("otheruser");
     ErrorResponse response = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
         String.format(

@@ -12,9 +12,6 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -39,7 +36,6 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   private static String c1d1referencesURL;
   private static String c1d2referencesURL;
   private static String c2d1referencesURL;
-  private static RequestSpecification requestSpecification;
 
   private static DataObjectReferenceIO reference11to12;
   private static DataObjectReferenceIO reference12to21;
@@ -78,17 +74,13 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       dataObject21.getId(),
       Constants.DATAOBJECT_REFERENCES
     );
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     var referenceToCreate = new DataObjectReferenceIO();
     referenceToCreate.setName("reference12to21");
     referenceToCreate.setRelationship("integrationtest");
     referenceToCreate.setReferencedDataObjectId(dataObject21.getId());
     reference12to21 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(referenceToCreate)
       .when()
       .post(c1d2referencesURL)
@@ -102,7 +94,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     referenceToCreate.setRelationship("integrationtest");
     referenceToCreate.setReferencedDataObjectId(dataObject12.getId());
     reference21to12 = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(referenceToCreate)
       .when()
       .post(c2d1referencesURL)
@@ -126,7 +118,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     toCreate.setReferencedDataObjectId(dataObject12.getId());
 
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(c1d1referencesURL)
@@ -138,7 +130,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject11.getId());
     assertThat(actual.getName()).isEqualTo("DataObjectReferenceDummy");
     assertThat(actual.getRelationship()).isEqualTo("integrationtests");
@@ -156,14 +148,14 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     toCreate.setRelationship("integrationtests");
     toCreate.setReferencedDataObjectId(-2);
 
-    given().spec(requestSpecification).body(toCreate).when().post(c1d1referencesURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).body(toCreate).when().post(c1d1referencesURL).then().statusCode(400);
   }
 
   @Test
   @Order(3)
   public void getDataObjectReferenceTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(c1d1referencesURL + "/" + reference11to12.getId())
       .then()
@@ -177,7 +169,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getDataObjectReferencesTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(c1d1referencesURL)
       .then()
@@ -191,7 +183,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(5)
   public void getDataObjectReference_referenceDoesNotExist_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(c1d1referencesURL + "/99999")
       .then()
@@ -206,7 +198,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(6)
   public void getDataObjectReference_idBelongsToWrongDataObject_notFound() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(c1d1referencesURL + "/" + reference21to12.getId())
       .then()
@@ -228,7 +220,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       dataObject12.getId()
     );
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencedURL)
       .then()
@@ -244,7 +236,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(8)
   public void getDataObjectReferencePayloadTest() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", c1d1referencesURL, reference11to12.getId(), Constants.PAYLOAD))
       .then()
@@ -266,14 +258,14 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(9)
   public void deleteDataObjectReferenceTest() {
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(c1d1referencesURL + "/" + reference11to12.getId())
       .then()
       .statusCode(204);
 
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(c1d1referencesURL + "/" + reference11to12.getId())
       .then()
@@ -289,7 +281,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     inputVersion.setName("c1v1");
     inputVersion.setDescription("first version of collection 1");
     VersionIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(inputVersion)
       .when()
       .post(versionizeCollection1URL)
@@ -313,7 +305,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       dataObject12.getId()
     );
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencedURL)
       .then()
@@ -335,7 +327,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       dataObject12.getId()
     );
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .queryParam("versionUid", c1v1UID)
       .when()
       .get(referencedURL)
@@ -358,7 +350,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       dataObject21.getId()
     );
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencedURL)
       .then()
@@ -397,7 +389,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     referenceToCreate.setRelationship("integrationtest");
     referenceToCreate.setReferencedDataObjectId(referencedDataObject.getId());
     DataObjectReferenceIO reference = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(referenceToCreate)
       .when()
       .post(referencesURL)
@@ -408,7 +400,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
 
     // Act
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
         String.format(
@@ -424,7 +416,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
 
     // Assert
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()

@@ -9,9 +9,6 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
@@ -24,7 +21,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class LabJournalIT extends BaseTestCaseIT {
 
   private static String labJournalURL;
-  private static RequestSpecification requestSpecification;
   private static CollectionIO collection;
   private static DataObjectIO dataObject;
   private static LabJournalEntryIO labJournal;
@@ -67,10 +63,6 @@ public class LabJournalIT extends BaseTestCaseIT {
     dataObject = createDataObject("TimeseriesReferenceTestDataObject", collection.getId());
 
     labJournalURL = "/" + Constants.LAB_JOURNAL_ENTRIES;
-    requestSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
   }
 
   @Test
@@ -79,7 +71,7 @@ public class LabJournalIT extends BaseTestCaseIT {
     LabJournalEntryIO payload = new LabJournalEntryIO();
     payload.setJournalContent(validJournalEntryHtml);
     LabJournalEntryIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .queryParam("dataObjectId", dataObject.getId())
       .when()
@@ -97,7 +89,7 @@ public class LabJournalIT extends BaseTestCaseIT {
     LabJournalEntryIO payload = new LabJournalEntryIO();
     payload.setJournalContent(invalidJournalEntryHtml);
     given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(payload)
       .queryParam("dataObjectId", dataObject.getId())
       .when()
@@ -110,7 +102,7 @@ public class LabJournalIT extends BaseTestCaseIT {
   @Order(3)
   public void getLabJournal_exists_success() {
     LabJournalEntryIO actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(labJournalURL + "/" + labJournal.getId())
       .then()
@@ -125,7 +117,7 @@ public class LabJournalIT extends BaseTestCaseIT {
   @Order(4)
   public void getLabJournal_doesNotExist_notFound() {
     ErrorResponse actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(labJournalURL + "/99999")
       .then()
@@ -141,14 +133,14 @@ public class LabJournalIT extends BaseTestCaseIT {
   @Disabled
   @Order(5)
   public void getLabJournals_noQueryParam_badRequest() {
-    given().spec(requestSpecification).when().get(labJournalURL).then().statusCode(400);
+    given().spec(requestSpecOfDefaultUser).when().get(labJournalURL).then().statusCode(400);
   }
 
   @Test
   @Order(6)
   public void getLabJournals_dataObjectDoesExist_success() {
     var actual = given()
-      .spec(requestSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(labJournalURL + "?dataObjectId=" + dataObject.getId())
       .then()
@@ -162,12 +154,17 @@ public class LabJournalIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getLabJournals_dataObjectDoesNotExist_notFound() {
-    given().spec(requestSpecification).when().get(labJournalURL + "?dataObjectId=99999").then().statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(labJournalURL + "?dataObjectId=99999").then().statusCode(404);
   }
 
   @Test
   @Order(8)
   public void deleteLabJournal_Success() {
-    given().spec(requestSpecification).when().delete(labJournalURL + "/" + labJournal.getId()).then().statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(labJournalURL + "/" + labJournal.getId())
+      .then()
+      .statusCode(204);
   }
 }

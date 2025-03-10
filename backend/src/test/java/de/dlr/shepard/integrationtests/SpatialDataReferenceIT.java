@@ -8,17 +8,11 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.spatialdata.io.SpatialDataReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
-import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +30,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   private static DataObjectIO dataObject;
 
   private static String referencesURL;
-  private static RequestSpecification referencesRequestSpec;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
-  private static RequestSpecification spatialDataRequestSpec;
 
   private static SpatialDataContainerIO container;
   private static SpatialDataReferenceIO reference;
@@ -58,20 +49,8 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.SPATIAL_DATA_REFERENCES
     );
-    referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     containerURL = "/" + Constants.SPATIAL_DATA_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
-    spatialDataRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     var toCreate = new SpatialDataContainerIO();
     toCreate.setName("SpatialDataContainer");
@@ -86,7 +65,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     }
 
     container = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -96,7 +75,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
       .as(SpatialDataContainerIO.class);
 
     given()
-      .spec(spatialDataRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(spatialDataPoints)
       .when()
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
@@ -112,7 +91,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     toCreate.setSpatialDataContainerId(container.getId());
 
     var actual = given()
-      .spec(spatialDataRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -124,7 +103,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
 
     assertThat(actual.getId()).isNotNull();
     assertThat(actual.getCreatedAt()).isNotNull();
-    assertThat(actual.getCreatedBy()).isEqualTo(username);
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actual.getDataObjectId()).isEqualTo(dataObject.getId());
     assertThat(actual.getName()).isEqualTo("SpatialDataReferenceDummy");
     assertThat(actual.getSpatialDataContainerId()).isEqualTo(container.getId());
@@ -144,7 +123,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   @Order(2)
   public void getSpatialDataReferences() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL)
       .then()
@@ -158,7 +137,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   @Order(3)
   public void getSpatialDataReference() {
     var actual = given()
-      .spec(spatialDataRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + reference.getId())
       .then()
@@ -173,7 +152,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   @Order(4)
   public void getSpatialDataReference_doesNotExist_notFound() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/99999")
       .then()
@@ -194,7 +173,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     otherReferenceToCreate.setSpatialDataContainerId(container.getId());
 
     SpatialDataReferenceIO otherReference = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(otherReferenceToCreate)
       .when()
       .post(
@@ -213,7 +192,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
       .as(SpatialDataReferenceIO.class);
 
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(referencesURL + "/" + otherReference.getId())
       .then()
@@ -228,7 +207,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   @Order(6)
   public void getSpatialDataReferencePayload() {
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
@@ -243,8 +222,18 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void deleteReferences() {
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(204);
-    given().spec(referencesRequestSpec).when().delete(referencesURL + "/" + reference.getId()).then().statusCode(404);
-    given().spec(referencesRequestSpec).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(204);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(referencesURL + "/" + reference.getId())
+      .then()
+      .statusCode(404);
+    given().spec(requestSpecOfDefaultUser).when().get(referencesURL + "/" + reference.getId()).then().statusCode(404);
   }
 }

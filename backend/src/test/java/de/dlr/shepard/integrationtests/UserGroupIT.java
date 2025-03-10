@@ -8,9 +8,6 @@ import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -21,10 +18,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class UserGroupIT extends BaseTestCaseIT {
 
-  private static UserWithApiKey user;
-  private static UserWithApiKey user1;
-  private static String jws;
-  private static RequestSpecification userGroupSpecification;
   private static String userGroupURL;
   private static UserGroupIO userGroupCreated;
   private static UserGroupIO userGroupChanged;
@@ -32,10 +25,6 @@ public class UserGroupIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     userGroupURL = "/" + Constants.USERGROUPS;
-    user = getNewUserWithApiKey("user");
-    user1 = getNewUserWithApiKey("user1");
-    jws = user.getApiKey().getJws();
-    userGroupSpecification = new RequestSpecBuilder().build();
   }
 
   @Test
@@ -43,13 +32,10 @@ public class UserGroupIT extends BaseTestCaseIT {
   public void createUserGroup() {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("userGroup");
-    userGroup.setUsernames(new String[] { user1.getUser().getUsername() });
-    userGroupSpecification = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
+    userGroup.setUsernames(new String[] { otherUser.getUser().getUsername() });
+
     userGroupCreated = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(userGroup)
       .when()
       .post(userGroupURL)
@@ -61,9 +47,9 @@ public class UserGroupIT extends BaseTestCaseIT {
 
     assertThat(userGroupCreated.getId()).isNotNull();
     assertThat(userGroupCreated.getCreatedAt()).isNotNull();
-    assertThat(userGroupCreated.getCreatedBy()).isEqualTo("user");
+    assertThat(userGroupCreated.getCreatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(userGroupCreated.getName()).isEqualTo("userGroup");
-    assertThat(userGroupCreated.getUsernames()).containsExactly("user1");
+    assertThat(userGroupCreated.getUsernames()).containsExactly(otherUser.getUser().getUsername());
     assertThat(userGroupCreated.getUpdatedAt()).isNull();
     assertThat(userGroupCreated.getUpdatedBy()).isNull();
   }
@@ -72,7 +58,7 @@ public class UserGroupIT extends BaseTestCaseIT {
   @Order(2)
   public void getUserGroup() {
     UserGroupIO userGroup = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(userGroupURL + "/" + userGroupCreated.getId())
       .then()
@@ -86,7 +72,7 @@ public class UserGroupIT extends BaseTestCaseIT {
   @Order(3)
   public void getUserGroup_doesNotExist_notFound() {
     ErrorResponse response = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(userGroupURL + "/99999")
       .then()
@@ -101,7 +87,7 @@ public class UserGroupIT extends BaseTestCaseIT {
   @Order(4)
   public void getAllUserGroups() {
     UserGroupIO[] allUserGroups = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(userGroupURL)
       .then()
@@ -116,10 +102,10 @@ public class UserGroupIT extends BaseTestCaseIT {
   public void putUserGroup() {
     UserGroupIO userGroup = new UserGroupIO();
     userGroup.setName("changedUserGroup");
-    userGroup.setUsernames(new String[] { "user" });
+    userGroup.setUsernames(new String[] { nameOfDefaultUser });
     userGroup.setId(userGroupCreated.getId());
     userGroupChanged = given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .body(userGroup)
       .when()
       .put(userGroupURL + "/" + userGroupCreated.getId())
@@ -128,22 +114,22 @@ public class UserGroupIT extends BaseTestCaseIT {
       .extract()
       .as(UserGroupIO.class);
     assertThat(userGroupChanged.getName()).isEqualTo("changedUserGroup");
-    assertThat(userGroupChanged.getUsernames()).containsExactly("user");
+    assertThat(userGroupChanged.getUsernames()).containsExactly(nameOfDefaultUser);
     assertThat(userGroupChanged.getUpdatedAt()).isNotNull();
-    assertThat(userGroupChanged.getUpdatedBy()).isEqualTo("user");
+    assertThat(userGroupChanged.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
   }
 
   @Test
   @Order(6)
   public void deleteUserGroup() {
     given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .delete(userGroupURL + "/" + userGroupCreated.getId())
       .then()
       .statusCode(204);
     given()
-      .spec(userGroupSpecification)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(userGroupURL + "/" + userGroupCreated.getId())
       .then()

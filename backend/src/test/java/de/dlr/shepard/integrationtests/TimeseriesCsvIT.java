@@ -10,9 +10,7 @@ import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesRefere
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,9 +33,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
   private static DataObjectIO dataObject;
 
   private static String referencesURL;
-  private static RequestSpecification referencesRequestSpec;
   private static String containerURL;
-  private static RequestSpecification containerRequestSpec;
 
   private static TimeseriesContainerIO container;
   private static TimeseriesReferenceIO reference;
@@ -55,21 +51,13 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
       dataObject.getId(),
       Constants.TIMESERIES_REFERENCES
     );
-    referencesRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     containerURL = "/" + Constants.TIMESERIES_CONTAINERS;
-    containerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     var toCreate = new TimeseriesContainerIO();
     toCreate.setName("TimeseriesContainer");
     container = given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(containerURL)
@@ -85,7 +73,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
     throws URISyntaxException, NoSuchAlgorithmException, FileNotFoundException, IOException {
     var newFile = new File(getClass().getClassLoader().getResource("timeseries_export.csv").toURI());
     given()
-      .spec(containerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .contentType(ContentType.MULTIPART)
       .multiPart(newFile)
       .when()
@@ -108,7 +96,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
     toCreate.setTimeseries(timeseries);
     toCreate.setTimeseriesContainerId(container.getId());
     reference = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(toCreate)
       .when()
       .post(referencesURL)
@@ -124,7 +112,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
     var oldFile = new File(getClass().getClassLoader().getResource("timeseries_export.csv").toURI());
     var expected = Files.readString(oldFile.toPath());
     var actual = given()
-      .spec(referencesRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .when()
       .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.EXPORT))
       .then()

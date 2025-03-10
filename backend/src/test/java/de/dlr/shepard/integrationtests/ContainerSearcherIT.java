@@ -12,9 +12,6 @@ import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -38,30 +35,13 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
   private static String dataContainerURL;
   private static String searchURL;
 
-  private static RequestSpecification fileContainerRequestSpec;
-  private static RequestSpecification timeseriesContainerRequestSpec;
-  private static RequestSpecification dataContainerRequestSpec;
-  private static RequestSpecification searchRequestSpec;
-
   @BeforeAll
   public static void setUp() {
     fileContainerURL = "/" + Constants.FILE_CONTAINERS;
-    fileContainerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     timeseriesContainerURL = "/" + Constants.TIMESERIES_CONTAINERS;
-    timeseriesContainerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     dataContainerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
-    dataContainerRequestSpec = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws)
-      .build();
 
     fileContainer1 = new FileContainerIO();
     fileContainer1.setName("container1");
@@ -79,7 +59,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
     timeseriesContainer2.setName("timeseriesContainer2");
 
     fileContainer1 = given()
-      .spec(fileContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(fileContainer1)
       .when()
       .post(fileContainerURL)
@@ -88,7 +68,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(FileContainerIO.class);
     fileContainer2 = given()
-      .spec(fileContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(fileContainer2)
       .when()
       .post(fileContainerURL)
@@ -97,7 +77,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(FileContainerIO.class);
     timeseriesContainer1 = given()
-      .spec(timeseriesContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(timeseriesContainer1)
       .when()
       .post(timeseriesContainerURL)
@@ -106,7 +86,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(TimeseriesContainerIO.class);
     timeseriesContainer2 = given()
-      .spec(timeseriesContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(timeseriesContainer2)
       .when()
       .post(timeseriesContainerURL)
@@ -115,7 +95,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(TimeseriesContainerIO.class);
     dataContainer1 = given()
-      .spec(dataContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(dataContainer1)
       .when()
       .post(dataContainerURL)
@@ -124,7 +104,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(StructuredDataContainerIO.class);
     dataContainer2 = given()
-      .spec(dataContainerRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(dataContainer2)
       .when()
       .post(dataContainerURL)
@@ -134,7 +114,6 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
       .as(StructuredDataContainerIO.class);
 
     searchURL = "/" + Constants.SEARCH + "/" + Constants.CONTAINERS;
-    searchRequestSpec = new RequestSpecBuilder().setContentType(ContentType.JSON).addHeader("X-API-KEY", jws).build();
   }
 
   @Test
@@ -144,7 +123,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
     ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.FILE);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -171,7 +150,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
     ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.STRUCTUREDDATA);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
@@ -198,7 +177,7 @@ public class ContainerSearcherIT extends BaseTestCaseIT {
     ContainerSearchParams params = new ContainerSearchParams(query, ContainerType.TIMESERIES);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
     ContainerSearchResult result = given()
-      .spec(searchRequestSpec)
+      .spec(requestSpecOfDefaultUser)
       .body(searchBody)
       .when()
       .post(searchURL)
