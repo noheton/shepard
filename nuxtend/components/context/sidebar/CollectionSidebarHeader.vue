@@ -4,6 +4,7 @@ import {
   type Collection,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
+import type { ContextMenuItem } from "~/components/common/ContextMenu.vue";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;
@@ -12,10 +13,47 @@ interface CollectionSidebarHeaderProps {
   isAllowedToEditPermissions?: boolean;
 }
 const props = defineProps<CollectionSidebarHeaderProps>();
-
 const showContextMenuButton = ref<boolean>(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
+const showEditPermissionsDialog = ref(false);
+
+const contextMenuItems = computed(() => {
+  const items: ContextMenuItem[] = [];
+  if (props.isAllowedToEditCollection) {
+    items.push({
+      label: "Edit",
+      icon: "mdi-pencil-outline",
+      onClick: () => (showEditDialog.value = true),
+    });
+  }
+
+  if (props.isAllowedToEditPermissions) {
+    items.push({
+      label: "Permissions",
+      icon: "mdi-account-outline",
+      onClick: () => (showEditPermissionsDialog.value = true),
+    });
+  }
+
+  items.push({
+    label: "Export",
+    icon: "mdi-tray-arrow-down",
+    onClick: () => {
+      exportCollection();
+    },
+  });
+
+  if (props.isAllowedToEditCollection) {
+    items.push({
+      label: "Delete",
+      icon: "mdi-delete-outline",
+      onClick: () => (showDeleteDialog.value = true),
+    });
+  }
+
+  return items;
+});
 
 const exportCollection = () => {
   if (props.collection === undefined) return;
@@ -75,10 +113,7 @@ const exportCollection = () => {
           </div>
 
           <div
-            v-if="
-              isAllowedToEditCollection &&
-              isAllowedToEditPermissions !== undefined
-            "
+            v-if="contextMenuItems.length > 0"
             style="flex-shrink: 0; margin-left: 10px"
           >
             <DisplayChildrenOnHover
@@ -87,25 +122,7 @@ const exportCollection = () => {
               "
             >
               <ContextMenu
-                :items="[
-                  {
-                    label: 'Edit',
-                    icon: 'mdi-pencil-outline',
-                    onClick: () => (showEditDialog = true),
-                  },
-                  {
-                    label: 'Export',
-                    icon: 'mdi-tray-arrow-down',
-                    onClick: () => {
-                      exportCollection();
-                    },
-                  },
-                  {
-                    label: 'Delete',
-                    icon: 'mdi-delete-outline',
-                    onClick: () => (showDeleteDialog = true),
-                  },
-                ]"
+                :items="contextMenuItems"
                 @expansion-state-changed="e => (showContextMenuButton = e)"
               />
             </DisplayChildrenOnHover>
@@ -119,6 +136,11 @@ const exportCollection = () => {
               v-if="showDeleteDialog"
               v-model:show-dialog="showDeleteDialog"
               :collection="collection"
+            />
+            <EditPermissionsDialog
+              v-if="showEditPermissionsDialog"
+              v-model:show-dialog="showEditPermissionsDialog"
+              :collection-id="collection.id"
             />
           </div>
         </div>

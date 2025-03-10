@@ -1,10 +1,12 @@
 <script setup lang="ts">
+export interface ContextMenuItem {
+  label: string;
+  onClick: () => void;
+  icon: string;
+}
+
 defineProps<{
-  items: {
-    label: string;
-    onClick: () => void;
-    icon: string;
-  }[];
+  items: ContextMenuItem[];
 }>();
 
 const emit = defineEmits<{
