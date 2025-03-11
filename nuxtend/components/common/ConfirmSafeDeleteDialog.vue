@@ -63,6 +63,7 @@ onMounted(() => {
               require
               color="primary"
               hide-details
+              autocomplete="off"
               @keypress="namesMatch"
             />
           </v-col>
