@@ -125,7 +125,8 @@ public class SpatialDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
-      description = "For more examples take a look at the endpoint '/spatialDataContainers/{id}/payload' .",
+      description = "For more examples take a look at [Get spatial data by container id](#/spatialDataContainer/getSpatialDataPoints).",
+
       content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
     ) @Valid SpatialDataReferenceIO spatialDataReference
   ) {
