@@ -126,7 +126,6 @@ public class SpatialDataReferenceRest {
     @RequestBody(
       required = true,
       description = "For more examples take a look at [Get spatial data by container id](#/spatialDataContainer/getSpatialDataPoints).",
-
       content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
     ) @Valid SpatialDataReferenceIO spatialDataReference
   ) {
