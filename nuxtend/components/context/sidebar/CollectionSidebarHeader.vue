@@ -37,7 +37,7 @@ const contextMenuItems = computed(() => {
   }
 
   items.push({
-    label: "Export",
+    label: "Export to RO-Crate",
     icon: "mdi-tray-arrow-down",
     onClick: () => {
       exportCollection();
