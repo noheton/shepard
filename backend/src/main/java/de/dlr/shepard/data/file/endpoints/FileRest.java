@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.file.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;

@@ -1,9 +1,9 @@
 package de.dlr.shepard.auth.permission.services;
 
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;

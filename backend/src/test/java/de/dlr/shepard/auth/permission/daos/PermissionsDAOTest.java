@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;

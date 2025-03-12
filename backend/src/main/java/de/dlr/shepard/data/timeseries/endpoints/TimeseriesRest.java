@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;

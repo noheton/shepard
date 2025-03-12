@@ -1,7 +1,7 @@
 package de.dlr.shepard.common.neo4j;
 
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.IConnector;

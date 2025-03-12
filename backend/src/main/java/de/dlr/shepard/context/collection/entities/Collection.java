@@ -1,6 +1,6 @@
 package de.dlr.shepard.context.collection.entities;
 
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;

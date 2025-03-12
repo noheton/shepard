@@ -1,4 +1,4 @@
-package de.dlr.shepard.auth.permission.entities;
+package de.dlr.shepard.auth.permission.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

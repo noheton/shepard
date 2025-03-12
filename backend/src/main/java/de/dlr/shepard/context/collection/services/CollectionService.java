@@ -1,8 +1,8 @@
 package de.dlr.shepard.context.collection.services;
 
-import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;

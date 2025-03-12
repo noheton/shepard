@@ -3,7 +3,7 @@ package de.dlr.shepard.auth.permission.io;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.context.collection.entities.Collection;

@@ -1,7 +1,7 @@
 package de.dlr.shepard.auth.users.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
-import de.dlr.shepard.auth.permission.io.Roles;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.io.UserGroupIO;

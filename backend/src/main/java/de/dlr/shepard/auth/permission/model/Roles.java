@@ -1,4 +1,4 @@
-package de.dlr.shepard.auth.permission.io;
+package de.dlr.shepard.auth.permission.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,6 +1,6 @@
 package de.dlr.shepard.auth.permission.daos;
 
-import de.dlr.shepard.auth.permission.entities.Permissions;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import jakarta.enterprise.context.RequestScoped;

@@ -1,4 +1,4 @@
-package de.dlr.shepard.auth.permission.entities;
+package de.dlr.shepard.auth.permission.model;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;

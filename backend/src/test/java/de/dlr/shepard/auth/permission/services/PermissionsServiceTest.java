@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
-import de.dlr.shepard.auth.permission.entities.Permissions;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
