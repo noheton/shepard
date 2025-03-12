@@ -28,13 +28,14 @@ const contextMenuItems = computed(() => {
     });
   }
 
-  if (props.isAllowedToEditPermissions) {
-    items.push({
-      label: "Permissions",
-      icon: "mdi-account-outline",
-      onClick: () => (showEditPermissionsDialog.value = true),
-    });
-  }
+  // TODO: Reactivate after Review
+  // if (props.isAllowedToEditPermissions) {
+  //   items.push({
+  //     label: "Permissions",
+  //     icon: "mdi-account-outline",
+  //     onClick: () => (showEditPermissionsDialog.value = true),
+  //   });
+  // }
 
   items.push({
     label: "Export to RO-Crate",
