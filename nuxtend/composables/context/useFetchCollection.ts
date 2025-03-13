@@ -17,6 +17,9 @@ export function useFetchCollection(collectionId: number) {
   const isAllowedToEditPermissions = computed(() => {
     return collectionRoles.value?.owner || collectionRoles.value?.manager;
   });
+  const isOwner = computed(() => {
+    return collectionRoles.value?.owner;
+  });
 
   function fetchCollection(collectionId: number) {
     lastUsedId.value = collectionId;
@@ -49,6 +52,7 @@ export function useFetchCollection(collectionId: number) {
     collection,
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
+    isOwner,
     fetchCollection,
   };
 }
@@ -60,6 +64,7 @@ export const useFetchCollectionOfRouteParams = (
     collection,
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
+    isOwner,
     fetchCollection,
   } = useFetchCollection(routeParams.value.collectionId);
 
@@ -79,6 +84,7 @@ export const useFetchCollectionOfRouteParams = (
     collection,
     isAllowedToEditCollection,
     isAllowedToEditPermissions,
+    isOwner,
     refreshCollection,
   };
 };

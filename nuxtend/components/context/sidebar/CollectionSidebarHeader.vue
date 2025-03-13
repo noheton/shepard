@@ -11,6 +11,7 @@ interface CollectionSidebarHeaderProps {
   collection?: Collection;
   isAllowedToEditCollection?: boolean;
   isAllowedToEditPermissions?: boolean;
+  isOwner?: boolean;
 }
 const props = defineProps<CollectionSidebarHeaderProps>();
 const showContextMenuButton = ref<boolean>(false);
@@ -28,14 +29,13 @@ const contextMenuItems = computed(() => {
     });
   }
 
-  // TODO: Reactivate after Review
-  // if (props.isAllowedToEditPermissions) {
-  //   items.push({
-  //     label: "Permissions",
-  //     icon: "mdi-account-outline",
-  //     onClick: () => (showEditPermissionsDialog.value = true),
-  //   });
-  // }
+  if (props.isAllowedToEditPermissions) {
+    items.push({
+      label: "Permissions",
+      icon: "mdi-account-outline",
+      onClick: () => (showEditPermissionsDialog.value = true),
+    });
+  }
 
   items.push({
     label: "Export to RO-Crate",
@@ -142,6 +142,7 @@ const exportCollection = () => {
               v-if="showEditPermissionsDialog"
               v-model:show-dialog="showEditPermissionsDialog"
               :collection-id="collection.id"
+              :is-owner="isOwner"
             />
           </div>
         </div>

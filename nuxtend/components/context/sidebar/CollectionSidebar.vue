@@ -3,8 +3,12 @@ import { useTreeviewItems } from "./useTreeviewItems";
 
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
-const { collection, isAllowedToEditCollection, isAllowedToEditPermissions } =
-  useFetchCollectionOfRouteParams(routeParams);
+const {
+  collection,
+  isAllowedToEditCollection,
+  isAllowedToEditPermissions,
+  isOwner,
+} = useFetchCollectionOfRouteParams(routeParams);
 const {
   treeviewItems,
   openedTreeviewItems,
@@ -59,6 +63,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
       :collection="collection"
       :is-allowed-to-edit-collection="isAllowedToEditCollection"
       :is-allowed-to-edit-permissions="isAllowedToEditPermissions"
+      :is-owner="isOwner"
     />
     <v-divider opacity="100" class="text-low-emphasis mt-4" thickness="1px" />
 
