@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.Date;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;

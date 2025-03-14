@@ -2,7 +2,7 @@ package de.dlr.shepard.auth.users.entities;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.model.Permissions;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.ArrayList;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;

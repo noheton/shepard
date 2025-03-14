@@ -13,9 +13,9 @@ import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReferen
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;

@@ -26,11 +26,11 @@ import de.dlr.shepard.context.references.spatialdata.services.SpatialDataReferen
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticRepository;
+import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
+import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.file.services.FileContainerService;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.data.semantic.entities.SemanticRepository;
-import de.dlr.shepard.data.semantic.services.SemanticAnnotationService;
-import de.dlr.shepard.data.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import jakarta.enterprise.context.RequestScoped;

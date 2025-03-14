@@ -2,7 +2,7 @@ package de.dlr.shepard.common.neo4j.entities;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

@@ -3,8 +3,8 @@ package de.dlr.shepard.common.neo4j.entities;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 

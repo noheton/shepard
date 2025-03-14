@@ -8,7 +8,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.entities.Collection;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.ArrayList;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;

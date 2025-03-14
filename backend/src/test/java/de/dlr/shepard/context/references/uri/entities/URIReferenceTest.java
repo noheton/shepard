@@ -3,8 +3,8 @@ package de.dlr.shepard.context.references.uri.entities;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
-import de.dlr.shepard.data.semantic.entities.SemanticAnnotation;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 

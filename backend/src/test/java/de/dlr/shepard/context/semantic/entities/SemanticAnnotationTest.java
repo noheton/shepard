@@ -1,21 +1,19 @@
-package de.dlr.shepard.context.references.dataobject.entities;
+package de.dlr.shepard.context.semantic.entities;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.context.collection.entities.DataObject;
-import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.context.version.entities.Version;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
-public class DataObjectReferenceTest extends BaseTestCase {
+public class SemanticAnnotationTest extends BaseTestCase {
 
   @Test
   public void equalsContract() {
     EqualsVerifier.simple()
-      .forClass(DataObjectReference.class)
-      .withPrefabValues(DataObject.class, new DataObject(1L), new DataObject(2L))
-      .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
+      .forClass(SemanticAnnotation.class)
+      .withPrefabValues(BasicEntity.class, new DataObject(1L), new DataObject(2L))
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .verify();
