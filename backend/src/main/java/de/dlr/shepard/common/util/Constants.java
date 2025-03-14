@@ -73,9 +73,10 @@ public class Constants {
 
   public static final String CONTAINERS = "containers";
 
+  public static final String TIMESERIES = "timeseries";
+  public static final String TIMESERIES_ID = "timeseriesId";
   public static final String TIMESERIES_CONTAINER = "timeseriesContainer";
   public static final String TIMESERIES_CONTAINERS = "timeseriesContainers";
-
   public static final String TIMESERIES_CONTAINER_ID = "timeseriesContainerId";
   public static final String TIMESERIES_REFERENCE = "timeseriesReference";
   public static final String TIMESERIES_REFERENCES = "timeseriesReferences";

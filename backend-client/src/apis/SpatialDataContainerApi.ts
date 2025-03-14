@@ -54,13 +54,13 @@ export interface GetSpatialDataContainersRequest {
 }
 
 export interface GetSpatialDataPointsRequest {
-    geometryFilter: string;
     spatialDataContainerId: number;
     metadataFilter?: string;
+    measurementsFilter?: string;
+    geometryFilter?: string;
     startTime?: number;
     endTime?: number;
     limit?: number;
-    offset?: number;
     skip?: number;
 }
 
@@ -118,9 +118,9 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     }
 
     /**
-     * Adding data points to spatial data container
+     * Adds spatial data points to a spatial data container.
      */
-    async createSpatialDataPointsRaw(requestParameters: CreateSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataPoint>>> {
+    async createSpatialDataPointsRaw(requestParameters: CreateSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['spatialDataContainerId'] == null) {
             throw new runtime.RequiredError(
                 'spatialDataContainerId',
@@ -155,21 +155,20 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
         }
         const response = await this.request({
             path: `/spatialDataContainers/{spatialDataContainerId}/payload`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
-            method: 'PATCH',
+            method: 'POST',
             headers: headerParameters,
             query: queryParameters,
             body: requestParameters['spatialDataPoint']!.map(SpatialDataPointToJSON),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SpatialDataPointFromJSON));
+        return new runtime.VoidApiResponse(response);
     }
 
     /**
-     * Adding data points to spatial data container
+     * Adds spatial data points to a spatial data container.
      */
-    async createSpatialDataPoints(requestParameters: CreateSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SpatialDataPoint>> {
-        const response = await this.createSpatialDataPointsRaw(requestParameters, initOverrides);
-        return await response.value();
+    async createSpatialDataPoints(requestParameters: CreateSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.createSpatialDataPointsRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -323,13 +322,6 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
      * Get spatial data by container id
      */
     async getSpatialDataPointsRaw(requestParameters: GetSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataPoint>>> {
-        if (requestParameters['geometryFilter'] == null) {
-            throw new runtime.RequiredError(
-                'geometryFilter',
-                'Required parameter "geometryFilter" was null or undefined when calling getSpatialDataPoints().'
-            );
-        }
-
         if (requestParameters['spatialDataContainerId'] == null) {
             throw new runtime.RequiredError(
                 'spatialDataContainerId',
@@ -341,6 +333,10 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
 
         if (requestParameters['metadataFilter'] != null) {
             queryParameters['metadataFilter'] = requestParameters['metadataFilter'];
+        }
+
+        if (requestParameters['measurementsFilter'] != null) {
+            queryParameters['measurementsFilter'] = requestParameters['measurementsFilter'];
         }
 
         if (requestParameters['geometryFilter'] != null) {
@@ -357,10 +353,6 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
 
         if (requestParameters['limit'] != null) {
             queryParameters['limit'] = requestParameters['limit'];
-        }
-
-        if (requestParameters['offset'] != null) {
-            queryParameters['offset'] = requestParameters['offset'];
         }
 
         if (requestParameters['skip'] != null) {

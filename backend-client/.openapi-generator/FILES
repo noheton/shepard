@@ -16,6 +16,7 @@ src/apis/SearchApi.ts
 src/apis/SemanticAnnotationApi.ts
 src/apis/SemanticRepositoryApi.ts
 src/apis/SpatialDataContainerApi.ts
+src/apis/SpatialDataReferenceApi.ts
 src/apis/StructuredDataContainerApi.ts
 src/apis/StructuredDataReferenceApi.ts
 src/apis/SubscriptionApi.ts
@@ -57,6 +58,7 @@ src/models/Event.ts
 src/models/FileContainer.ts
 src/models/FileReference.ts
 src/models/FillOption.ts
+src/models/FilterCondition.ts
 src/models/GeometryFilterType.ts
 src/models/GetAllApiKeys200ResponseInner.ts
 src/models/HasId.ts
@@ -64,6 +66,7 @@ src/models/HealthCheck.ts
 src/models/HealthResponse.ts
 src/models/InvalidHtmlResponse.ts
 src/models/LabJournalEntry.ts
+src/models/Operator.ts
 src/models/PermissionType.ts
 src/models/Permissions.ts
 src/models/QueryType.ts
@@ -81,6 +84,7 @@ src/models/SemanticRepositoryType.ts
 src/models/ShepardFile.ts
 src/models/SpatialDataContainer.ts
 src/models/SpatialDataPoint.ts
+src/models/SpatialDataReference.ts
 src/models/Status.ts
 src/models/StructuredData.ts
 src/models/StructuredDataContainer.ts
@@ -90,6 +94,7 @@ src/models/Subscription.ts
 src/models/Timeseries.ts
 src/models/TimeseriesContainer.ts
 src/models/TimeseriesDataPoint.ts
+src/models/TimeseriesEntity.ts
 src/models/TimeseriesReference.ts
 src/models/TimeseriesWithDataPoints.ts
 src/models/TraversalRules.ts

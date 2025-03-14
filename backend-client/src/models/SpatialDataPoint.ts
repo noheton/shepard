@@ -20,7 +20,7 @@ import { mapValues } from '../runtime';
  */
 export interface SpatialDataPoint {
     /**
-     * Time in nanoseconds since unix epoch.
+     * Time in nanoseconds since unix epoch. If no value is provided, the current server time is used.
      * @type {number}
      * @memberof SpatialDataPoint
      */

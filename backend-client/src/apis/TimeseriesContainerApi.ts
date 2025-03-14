@@ -22,6 +22,7 @@ import type {
   Roles,
   Timeseries,
   TimeseriesContainer,
+  TimeseriesEntity,
   TimeseriesWithDataPoints,
 } from '../models/index';
 import {
@@ -39,6 +40,8 @@ import {
     TimeseriesToJSON,
     TimeseriesContainerFromJSON,
     TimeseriesContainerToJSON,
+    TimeseriesEntityFromJSON,
+    TimeseriesEntityToJSON,
     TimeseriesWithDataPointsFromJSON,
     TimeseriesWithDataPointsToJSON,
 } from '../models/index';
@@ -101,7 +104,16 @@ export interface GetTimeseriesAvailableRequest {
     timeseriesContainerId: number;
 }
 
+export interface GetTimeseriesByIdRequest {
+    timeseriesContainerId: number;
+    timeseriesId: number;
+}
+
 export interface GetTimeseriesContainerRequest {
+    timeseriesContainerId: number;
+}
+
+export interface GetTimeseriesOfContainerRequest {
     timeseriesContainerId: number;
 }
 
@@ -652,7 +664,8 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get timeseries available
+     * Get timeseries available. Deprecated, use /timeseriesContainers/{containerId}/timeseries instead.
+     * @deprecated
      */
     async getTimeseriesAvailableRaw(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Timeseries>>> {
         if (requestParameters['timeseriesContainerId'] == null) {
@@ -689,10 +702,63 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get timeseries available
+     * Get timeseries available. Deprecated, use /timeseriesContainers/{containerId}/timeseries instead.
+     * @deprecated
      */
     async getTimeseriesAvailable(requestParameters: GetTimeseriesAvailableRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Timeseries>> {
         const response = await this.getTimeseriesAvailableRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get timeseries by id.
+     */
+    async getTimeseriesByIdRaw(requestParameters: GetTimeseriesByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesEntity>>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling getTimeseriesById().'
+            );
+        }
+
+        if (requestParameters['timeseriesId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesId',
+                'Required parameter "timeseriesId" was null or undefined when calling getTimeseriesById().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))).replace(`{${"timeseriesId"}}`, encodeURIComponent(String(requestParameters['timeseriesId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesEntityFromJSON));
+    }
+
+    /**
+     * Get timeseries by id.
+     */
+    async getTimeseriesById(requestParameters: GetTimeseriesByIdRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesEntity>> {
+        const response = await this.getTimeseriesByIdRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -738,6 +804,51 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
      */
     async getTimeseriesContainer(requestParameters: GetTimeseriesContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesContainer> {
         const response = await this.getTimeseriesContainerRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get all available timeseries for that container.
+     */
+    async getTimeseriesOfContainerRaw(requestParameters: GetTimeseriesOfContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesEntity>>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling getTimeseriesOfContainer().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesEntityFromJSON));
+    }
+
+    /**
+     * Get all available timeseries for that container.
+     */
+    async getTimeseriesOfContainer(requestParameters: GetTimeseriesOfContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesEntity>> {
+        const response = await this.getTimeseriesOfContainerRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

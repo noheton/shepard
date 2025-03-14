@@ -11,6 +11,7 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIOMapper;
+import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
@@ -207,10 +208,13 @@ public class TimeseriesRest {
     return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
   }
 
+  @Deprecated(forRemoval = true)
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
   @Tag(name = Constants.TIMESERIES_CONTAINER)
-  @Operation(description = "Get timeseries available")
+  @Operation(
+    description = "Get timeseries available. Deprecated, use /timeseriesContainers/{containerId}/timeseries instead."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -233,6 +237,58 @@ public class TimeseriesRest {
       .toList();
 
     return Response.ok(timeseriesListWithoutId).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get all available timeseries for that container.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "404", description = "Not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesOfContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+    Optional<TimeseriesContainer> containerOptional =
+      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
+
+    if (containerOptional.isEmpty()) {
+      return Response.status(404, "Timeseries container not found").build();
+    }
+
+    var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    var timeseriesList = timeseriesEntityList.stream().map(entity -> new TimeseriesIO(entity)).toList();
+
+    return Response.ok(timeseriesList).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES + "/{" + Constants.TIMESERIES_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries by id.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "404", description = "Not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesById(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId
+  ) {
+    Optional<TimeseriesContainer> containerOptional =
+      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
+
+    if (containerOptional.isEmpty()) {
+      return Response.status(404, "Timeseries container not found").build();
+    }
+
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId);
+
+    return Response.ok(new TimeseriesIO(timeseries)).build();
   }
 
   @GET

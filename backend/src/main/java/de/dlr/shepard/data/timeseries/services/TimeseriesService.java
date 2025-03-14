@@ -50,6 +50,10 @@ public class TimeseriesService {
     return timeseriesRepository.list("containerId", containerId);
   }
 
+  public TimeseriesEntity getTimeseriesById(int id) {
+    return timeseriesRepository.findById(id);
+  }
+
   @Transactional
   public void deleteTimeseriesByContainerId(long containerId) {
     this.timeseriesRepository.deleteByContainerId(containerId);
