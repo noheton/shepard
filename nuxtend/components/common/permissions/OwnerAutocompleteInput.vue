@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { User } from "@dlr-shepard/backend-client";
-import { useCollectionPermissionUserSearch } from "~/composables/context/useCollectionPermissionUserSearch";
+import { useCollectionPermissionUserSearch } from "~/components/common/permissions/useCollectionPermissionUserSearch";
 import AutocompleteInput, {
   type AutoCompleteItem,
-} from "./AutocompleteInput.vue";
+} from "../AutocompleteInput.vue";
 
 defineProps<{ isOwner?: boolean }>();
 
@@ -41,6 +41,8 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   <AutocompleteInput
     v-model:search-string="searchString"
     v-model:search-done="searchDone"
+    label="Owner"
+    density="compact"
     :model-value="ownerModel"
     :is-disabled="!isOwner"
     :is-loading="isLoading"

@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { PermissionType, type User } from "@dlr-shepard/backend-client";
+import {
+  PermissionType,
+  type User,
+  type UserGroup,
+} from "@dlr-shepard/backend-client";
 import { useEditCollectionPermissions } from "./useEditCollectionPermissions";
+import UserAndGroupAutocomplete from "./UserAndGroupAutocomplete.vue";
+import { UserRole } from "./UserRole";
 
 interface EditPermissionsDialogProps {
   collectionId: number;
   isOwner?: boolean;
 }
 
-const _props = defineProps<EditPermissionsDialogProps>();
+const props = defineProps<EditPermissionsDialogProps>();
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -16,12 +22,16 @@ const showDialog = defineModel<boolean>("showDialog", {
 
 const isValid = ref(true);
 
+const selectedAdditionalUserRole = ref<UserRole | undefined>(undefined);
+const selectedAdditionalUser = ref<User | undefined>(undefined);
+const selectedAdditionalGroup = ref<UserGroup | undefined>(undefined);
+
 const { collectionPermissions, owner } = useFetchCollectionPermissions(
-  _props.collectionId,
+  props.collectionId,
 );
 
 const { updatedPermissions, saveChanges } = useEditCollectionPermissions(
-  _props.collectionId,
+  props.collectionId,
   () => (showDialog.value = false),
   isValid,
 );
@@ -39,6 +49,55 @@ const onOwnerChange = (updatedOwner: User) => {
 const onPermissionTypeChange = (updatedPermissionType: PermissionType) => {
   if (updatedPermissions.value)
     updatedPermissions.value.permissionType = updatedPermissionType;
+};
+
+const onAddPermission = () => {
+  if (updatedPermissions.value && selectedAdditionalUserRole.value) {
+    switch (selectedAdditionalUserRole.value) {
+      case UserRole.manager: {
+        if (selectedAdditionalUser.value)
+          updatedPermissions.value.manager.push(
+            selectedAdditionalUser.value.username,
+          );
+        break;
+      }
+      case UserRole.reader: {
+        if (selectedAdditionalUser.value)
+          updatedPermissions.value.reader.push(
+            selectedAdditionalUser.value.username,
+          );
+        if (selectedAdditionalGroup.value)
+          updatedPermissions.value.readerGroupIds = updatedPermissions.value
+            .readerGroupIds
+            ? updatedPermissions.value.readerGroupIds.concat(
+                selectedAdditionalGroup.value.id,
+              )
+            : [selectedAdditionalGroup.value.id];
+
+        break;
+      }
+      case UserRole.writer: {
+        if (selectedAdditionalUser.value)
+          updatedPermissions.value.writer.push(
+            selectedAdditionalUser.value.username,
+          );
+        if (selectedAdditionalGroup.value)
+          updatedPermissions.value.writerGroupIds = updatedPermissions.value
+            .writerGroupIds
+            ? updatedPermissions.value.writerGroupIds.concat(
+                selectedAdditionalGroup.value.id,
+              )
+            : [selectedAdditionalGroup.value.id];
+        break;
+      }
+    }
+    resetAdditionalPermission();
+  }
+};
+const resetAdditionalPermission = () => {
+  selectedAdditionalGroup.value = undefined;
+  selectedAdditionalUser.value = undefined;
+  selectedAdditionalUserRole.value = undefined;
 };
 </script>
 
@@ -72,9 +131,9 @@ const onPermissionTypeChange = (updatedPermissionType: PermissionType) => {
             <v-select
               :model-value="collectionPermissions.permissionType"
               label="Permission Type"
+              density="compact"
               :items="Object.values(PermissionType)"
               variant="outlined"
-              density="comfortable"
               @update:model-value="onPermissionTypeChange"
             />
           </v-col>
@@ -85,6 +144,55 @@ const onPermissionTypeChange = (updatedPermissionType: PermissionType) => {
               :is-owner="isOwner"
               @owner-change="onOwnerChange"
             />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="text-semibold text-textbody1">
+            Additional Permissions
+            <Tooltip>
+              <div>Reader: User can only read contents.</div>
+              <div>Writer: User can read and change contents.</div>
+              <div>Manager: User can give and change permissions.</div>
+              <div>Owner: User has all rights.</div>
+            </Tooltip>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <UserAndGroupAutocomplete
+              @user-group-select="
+                (selectedUserGroup: UserGroup) => {
+                  selectedAdditionalGroup = selectedUserGroup;
+                }
+              "
+              @user-select="
+                (selectedUser: User) => {
+                  selectedAdditionalUser = selectedUser;
+                }
+              "
+            />
+          </v-col>
+          <v-col>
+            <v-select
+              v-model="selectedAdditionalUserRole"
+              :items="Object.values(UserRole)"
+              label="User or group role"
+              variant="outlined"
+              density="compact"
+              color="primary"
+              require
+              hide-details
+            />
+          </v-col>
+          <v-col cols="2">
+            <v-btn
+              prepend-icon="mdi-plus-circle"
+              color="primary"
+              variant="flat"
+              @click="onAddPermission"
+            >
+              ADD
+            </v-btn>
           </v-col>
         </v-row>
       </v-form>

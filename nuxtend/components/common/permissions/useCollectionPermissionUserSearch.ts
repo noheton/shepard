@@ -1,4 +1,5 @@
 import { SearchApi, type User } from "@dlr-shepard/backend-client";
+import { createSearchQueryFromString } from "./createSearchQueryFromString";
 
 export function useCollectionPermissionUserSearch(
   searchString: Ref<string | undefined>,
@@ -27,33 +28,6 @@ export function useCollectionPermissionUserSearch(
     }
     isLoading.value = false;
     onSearchDone();
-  }
-
-  function createSearchQueryFromString(searchText: string): string {
-    return JSON.stringify({
-      OR: [
-        {
-          property: "username",
-          value: searchText ?? "",
-          operator: "contains",
-        },
-        {
-          property: "firstName",
-          value: searchText ?? "",
-          operator: "contains",
-        },
-        {
-          property: "lastName",
-          value: searchText,
-          operator: "contains",
-        },
-        {
-          property: "email",
-          value: searchText,
-          operator: "contains",
-        },
-      ],
-    });
   }
 
   function resetResultList() {

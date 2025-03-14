@@ -9,6 +9,8 @@ export interface AutoCompleteItem {
 const { startSearch } = defineProps<{
   isDisabled?: boolean;
   isLoading?: boolean;
+  label: string;
+  density?: "default" | "comfortable" | "compact";
   itemList: AutoCompleteItem[];
   startSearch: () => void;
 }>();
@@ -53,7 +55,7 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
 
 <template>
   <v-autocomplete
-    label="Owner"
+    :label="label"
     :model-value="autoCompleteModel"
     :items="itemList"
     :loading="isLoading"
@@ -61,10 +63,11 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
     :disabled="isDisabled"
     return-object
     hide-details
-    density="comfortable"
+    :density="density"
     variant="outlined"
     no-data-text="No Search Results"
     color="primary"
+    :custom-filter="() => true"
     @update:search="onSearch"
     @update:model-value="onSelection"
   />
