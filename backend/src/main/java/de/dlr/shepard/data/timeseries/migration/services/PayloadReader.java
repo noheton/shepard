@@ -61,6 +61,7 @@ class PayloadReader implements Callable<Object> {
       throw e;
     } finally {
       migrationService.addWriterPoisonPills();
+      migrationService.addCompressionPoisonPills();
     }
     return "PayloadReader Done!";
   }

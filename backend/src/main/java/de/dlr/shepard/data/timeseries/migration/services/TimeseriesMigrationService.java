@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -46,6 +47,7 @@ public class TimeseriesMigrationService {
 
   private PayloadReader payloadReader;
   private PayloadWriter payloadWriter;
+  private CompressionRunner compressionRunner;
 
   @Inject
   ManagedExecutor executor;
@@ -56,7 +58,9 @@ public class TimeseriesMigrationService {
   int numberOfWriterThreads;
 
   private final BlockingQueue<PayloadWriteTask> payloadWriteQueue;
+  private final BlockingQueue<CompressionTask> compressionTasksQueue;
   private final Queue<PayloadReadTask> payloadReadQueue;
+  private final ReentrantReadWriteLock readWriteLock;
 
   public Queue<PayloadReadTask> getPayloadReadQueue() {
     return payloadReadQueue;
@@ -64,6 +68,14 @@ public class TimeseriesMigrationService {
 
   public int getPayloadReadQueueSize() {
     return payloadReadQueue.size();
+  }
+
+  public BlockingQueue<CompressionTask> getCompressionTasksQueue() {
+    return compressionTasksQueue;
+  }
+
+  public ReentrantReadWriteLock getReadWriteLock() {
+    return readWriteLock;
   }
 
   public BlockingQueue<PayloadWriteTask> getPayloadWriteQueue() {
@@ -82,7 +94,8 @@ public class TimeseriesMigrationService {
     InfluxTimeseriesService influxTimeseriesService,
     TimeseriesDataPointRepository timeseriesDataPointRepository,
     PayloadReader payloadReader,
-    PayloadWriter payloadWriter
+    PayloadWriter payloadWriter,
+    CompressionRunner compressionRunner
   ) {
     this.timeseriesContainerService = timeseriesContainerService;
     this.migrationTaskRepository = migrationTaskRepository;
@@ -92,9 +105,12 @@ public class TimeseriesMigrationService {
     this.timeseriesDataPointRepository = timeseriesDataPointRepository;
     this.payloadReader = payloadReader;
     this.payloadWriter = payloadWriter;
+    this.compressionRunner = compressionRunner;
 
     payloadWriteQueue = new LinkedBlockingQueue<>(numberOfWriterThreads + 1);
+    compressionTasksQueue = new LinkedBlockingQueue<>();
     payloadReadQueue = new ConcurrentLinkedQueue<>();
+    readWriteLock = new ReentrantReadWriteLock();
   }
 
   public List<MigrationTaskEntity> getMigrationTasks(boolean onlyShowErrors) {
@@ -146,12 +162,12 @@ public class TimeseriesMigrationService {
     for (var task : tasks) {
       try {
         migrateTask(task);
+        compressAllDataPoints();
       } catch (Exception ex) {
         Log.errorf("Exception occurred during migration of container %s: %s", task.getContainerId(), ex.getMessage());
         persistError(task, ex.getMessage());
       }
     }
-    compressAllDataPoints();
   }
 
   private void deleteNotFinishedMigrations() {
@@ -403,6 +419,8 @@ public class TimeseriesMigrationService {
       tasks.add(payloadReader);
     }
 
+    tasks.add(compressionRunner);
+
     try {
       Log.infof(
         "Starting migration with %s reader threads and %s writer threads...",
@@ -426,6 +444,24 @@ public class TimeseriesMigrationService {
       for (int i = 0; i < numberOfWriterThreads; i++) {
         getPayloadWriteQueue().put(PayloadWriteTask.poisonPill);
       }
+    } catch (InterruptedException e) {
+      Log.errorf("Payload write queue interrupted.", e.getMessage());
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  void addCompressionPoisonPills() {
+    try {
+      compressionTasksQueue.put(new CompressionTask(true));
+    } catch (InterruptedException e) {
+      Log.errorf("Payload write queue interrupted.", e.getMessage());
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  public void addCompressionTask() {
+    try {
+      compressionTasksQueue.put(new CompressionTask(false));
     } catch (InterruptedException e) {
       Log.errorf("Payload write queue interrupted.", e.getMessage());
       Thread.currentThread().interrupt();

@@ -14,6 +14,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @RequestScoped
 class PayloadWriter implements Callable<Object> {
@@ -33,19 +34,26 @@ class PayloadWriter implements Callable<Object> {
     try {
       var initialQueueSize = migrationService.getPayloadReadQueueSize();
       BlockingQueue<PayloadWriteTask> queue = migrationService.getPayloadWriteQueue();
+      ReentrantReadWriteLock lock = migrationService.getReadWriteLock();
       while (true) {
         PayloadWriteTask task = queue.take();
         if (task.isLastTask) break;
-        Log.infof(
-          "started PayloadWriteTask: %s of %s for container %s with %s points.",
-          task.runningNumber,
-          initialQueueSize,
-          task.container.getId(),
-          task.payload.getPoints().size()
-        );
-        saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
-
-        if (task.taskId % compressionBatchSize == 0) runCompression();
+        try {
+          lock.readLock().lock();
+          Log.infof(
+            "started PayloadWriteTask: %s of %s for container %s with %s points.",
+            task.runningNumber,
+            initialQueueSize,
+            task.container.getId(),
+            task.payload.getPoints().size()
+          );
+          saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
+          if (task.taskId % compressionBatchSize == 0) {
+            migrationService.addCompressionTask();
+          }
+        } finally {
+          lock.readLock().unlock();
+        }
       }
     } catch (InterruptedException e) {
       Log.error(e);
@@ -66,13 +74,5 @@ class PayloadWriter implements Callable<Object> {
       mapToTimeseriesDataPoints(payload.getPoints()),
       mapToValueType(influxTimeseriesDataType)
     );
-  }
-
-  private void runCompression() {
-    try {
-      migrationService.compressAllDataPoints();
-    } catch (Exception e) {
-      Log.warnf("Compression had an error but we still continue with data migration. %s", e.toString());
-    }
   }
 }
