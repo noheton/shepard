@@ -88,8 +88,22 @@ public class CollectionService {
     return collections;
   }
 
-  public Collection getCollectionByShepardIdDepth2(long sheparId, UUID versionUID) {
-    return null;
+  public Collection getCollectionByShepardIdDepth2(long shepardId, UUID versionUID) {
+    Collection ret;
+    String errorMsg;
+    if (versionUID == null) {
+      ret = collectionDAO.findCollectionByShepardIdDepth2(shepardId, null);
+      errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
+    } else {
+      ret = collectionDAO.findCollectionByShepardIdDepth2(shepardId, versionUID);
+      errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
+    }
+    if (ret == null || ret.isDeleted()) {
+      Log.error(errorMsg);
+      return null;
+    }
+    cutDeleted(ret);
+    return ret;
   }
 
   public Collection getCollectionByShepardId(long shepardId, UUID versionUID) {
@@ -99,7 +113,7 @@ public class CollectionService {
       ret = collectionDAO.findByShepardId(shepardId);
       errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
     } else {
-      ret = collectionDAO.findCollectionByShepardIdDepth2(shepardId, versionUID);
+      ret = collectionDAO.findByShepardId(shepardId, versionUID);
       errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {

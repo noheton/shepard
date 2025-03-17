@@ -295,4 +295,22 @@ public class CollectionServiceVersionTest {
     assertEquals(3, collection2Depth2.getIncoming().size());
     assertEquals(username, collection2Depth2.getCreatedBy().getUsername());
   }
+
+  @Test
+  @Transactional
+  public void depth2Test() {
+    //setup
+    Collection collection1 = createCollection("c1");
+    Collection collection2 = createCollection("c2");
+    Version collection1HEADVersion = collection1.getVersion();
+    Version collection2HEADVersion = collection2.getVersion();
+    DataObject dataObject21 = createDataObject("do21", collection2, null, null);
+    CollectionReference do21Toc1 = createCollectionReference("da021Toc1", dataObject21, collection1);
+    Collection collection1Depth2 = collectionDAO.findCollectionByShepardIdDepth2(
+      collection1.getShepardId(),
+      collection1.getVersion().getUid()
+    );
+    Version do21Toc1Version = collection1Depth2.getIncoming().get(0).getVersion();
+    assertEquals(collection2HEADVersion.getUid(), do21Toc1Version.getUid());
+  }
 }

@@ -101,13 +101,14 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
 
   public Collection findCollectionByShepardIdDepth2(long shepardId, UUID versionUID) {
     Map<String, Object> paramsMap = new HashMap<>();
-    String query =
-      "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version)" +
-      " WHERE o.shepardId in [" +
-      shepardId +
-      "] AND v.uid='" +
-      versionUID +
-      "'" +
+    String query = "MATCH (o {deleted: FALSE})-[:has_version]->(v:Version)";
+    if (versionUID != null) {
+      query = query + " WHERE o.shepardId in [" + shepardId + "] AND v.uid='" + versionUID + "'";
+    } else {
+      query = query + " WHERE id(o) = " + shepardId + " ";
+    }
+    query =
+      query +
       " WITH o MATCH path=(o)-[]-(n), path2=(o)-[]-(n2:VersionableEntity)-[:has_version]-(ver) " +
       "WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND (NOT EXISTS {(n)-[:has_version]->(noVer)})" +
       " RETURN o, nodes(path), relationships(path),nodes(path2), relationships(path2)";
