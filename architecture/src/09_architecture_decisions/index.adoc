@@ -36,3 +36,7 @@ include::014-spatial-database.adoc[]
 include::015-dedicated-data-reference-endpoint.adoc[]
 
 include::016-request-validation.adoc[]
+
+include::017-spatial-database-partitioning.adoc[]
+
+include::018-semantic-annotations-on-data.adoc[]

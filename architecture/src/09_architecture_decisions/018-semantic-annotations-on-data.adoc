@@ -1,0 +1,81 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-018 Semantic Annotations on Data
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|14.03.2025
+|Status|Draft
+
+|Context|
+
+Until now it was only possible to add semantic annotations to context elements (collections, data objects, references).
+An example of how to use semantic annotations is described link:https://gitlab.com/dlr-shepard/shepard/-/wikis/Examples/08-Semantics[here].
+
+With issue link:https://gitlab.com/dlr-shepard/shepard/-/issues/131[#131], it should be possible to at least annotate specific timeseries (as in all timeseries data points of a container with the same 5-tuple of measurement, field, symbolicName, device, location).
+It would be great if the concept aligned on in this decision would also support annotating other data stored in shepard.
+
+Currently, the annotations are modelled in Neo4j, with the annoation data in one node, connected to a data object, collection or reference with a relationship.
+
+|Possible Alternatives|
+
+. save the timeseries annotation in postgres
+** major conceptual break
+** cannot be applied to other data to be annotated
+
+. save the timeseries in neo4j instead of postgres
+** major change
+** cannot be applied to other data to be annotated
+** timeseries data would be spread over 2 databases
+** transactions would span over 2 databases
+
+. save the timeseries in neo4j in addition to postgres
+** store the timeseries 5-tuple duplicated in both databases
+** annotations then live in neo4j, the actual data lives in postgres
+** updates would need to make sure both instances of the data stay consistent
+
+. introduce auxiliary node representing annotatable items not represented in Neo4j already
+** e.g. a node `AnnotatableTimeseries` containing a timeseries container id and timeseries id that has relationships `has_annotation` to `SemanticAnnotation` nodes
+** integrates well with the existing semantic annotation concept
+** properly models the 1:n relation between an annotatable item and the annotations
+** The new node could have the following properties:
++
+```json
+{
+  "id": 0, // node id
+  "containerId": 1,
+  "timeseriesId": 3,
+  "annotations": [] // list of annotations
+}
+```
+
+. store semantic annotations separately. the information on the annotated entity/data is then stored in the annotation
+** each annotation would have a type and the relevant information to identify the annotated object
+** example for timeseries:
++
+```json
+{
+  "valueIRI": "...",
+  "IRI": "",
+  "Repository": "",
+  "Repository2": "",
+  "type": "timeseriesAnnotation",
+  "identifier": {
+    "containerId": 1,
+    "timeseriesId": 123
+  }
+}
+
+```
+** we would need to clarify how to model the different identifier requirements
+** the 1:n relationship would not be properly modeled in Neo4j
+** existing annotations would need to be migrated for conceptual consistency
+
+|Decision|
+We decide to go with option number 4 (introduce an auxiliary node `AnnotatableTimeseries`) as it seems to be the most robust and future-proof solution.
+
+|Consequences|
+* we may need to generalize the concept of auxiliary nodes for other data in the future
+
+|===
