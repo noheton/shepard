@@ -3,6 +3,7 @@ package de.dlr.shepard.integrationtests;
 import static io.restassured.RestAssured.given;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
@@ -53,6 +54,10 @@ public class BaseTestCaseIT {
 
   protected static User getNewUser(String username) {
     return new UserWithApiKeyBuilder().withUser(username).build().getUser();
+  }
+
+  protected static UserGroup getNewUserGroup(String name) {
+    return new UserGroupBuilder().withUserGroup(name).build();
   }
 
   protected static CollectionIO createCollection(String name) {

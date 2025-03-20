@@ -4247,6 +4247,38 @@
         }
       }
     },
+    "/search/userGroups" : {
+      "post" : {
+        "tags" : [ "search" ],
+        "description" : "Search user groups",
+        "operationId" : "searchUserGroups",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserSearchBody"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupSearchResult"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
     "/spatialDataContainers" : {
       "get" : {
         "tags" : [ "spatialDataContainer" ],
@@ -6739,6 +6771,17 @@
           }
         }
       },
+      "UserGroupSearchParams" : {
+        "required" : [ "query" ],
+        "type" : "object",
+        "properties" : {
+          "query" : {
+            "pattern" : "\\S",
+            "type" : "string",
+            "example" : "{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"}"
+          }
+        }
+      },
       "ContainerSearchResult" : {
         "required" : [ "results", "totalResults" ],
         "type" : "object",
@@ -7575,6 +7618,20 @@
           "sanitizedHtml" : {
             "type" : "string",
             "readOnly" : true
+          }
+        }
+      },
+      "UserGroupSearchResult" : {
+        "type" : "object",
+        "properties" : {
+          "searchParams" : {
+            "$ref" : "#/components/schemas/UserGroupSearchParams"
+          },
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroup"
+            }
           }
         }
       },

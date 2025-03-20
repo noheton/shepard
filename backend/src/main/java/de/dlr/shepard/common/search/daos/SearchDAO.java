@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.search.daos;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.CypherQueryHelper;
@@ -88,6 +89,14 @@ public class SearchDAO {
     return ret;
   }
 
+  public List<UserGroup> findUserGroups(String selectionQuery, String userGroupVariable) {
+    String query = selectionQuery + emitUserGroupReturnPart(userGroupVariable);
+    Iterable<UserGroup> userGroups = session.query(UserGroup.class, query, Collections.emptyMap());
+    List<UserGroup> ret = new ArrayList<>();
+    userGroups.forEach(ret::add);
+    return ret;
+  }
+
   private String emitTotalCountReturnPart(String containerVariable) {
     return (
       " WITH " +
@@ -140,6 +149,15 @@ public class SearchDAO {
       userVariable,
       userVariable,
       userVariable
+    );
+  }
+
+  private String emitUserGroupReturnPart(String userGroupVariable) {
+    return String.format(
+      " WITH %s MATCH path=(%s:UserGroup)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)",
+      userGroupVariable,
+      userGroupVariable,
+      userGroupVariable
     );
   }
 }

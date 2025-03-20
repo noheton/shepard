@@ -137,6 +137,7 @@ public class Constants {
   public static final String BASICCONTAINER_IN_QUERY = "bc";
   public static final String SPATIALDATACONTAINER_IN_QUERY = "spdc";
   public static final String USER_IN_QUERY = "user";
+  public static final String USERGROUP_IN_QUERY = "userGroup";
 
   // Relationships
   public static final String HAS_DATAOBJECT = "has_dataobject";

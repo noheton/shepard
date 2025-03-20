@@ -74,6 +74,8 @@ export * from './UpdateLabJournalRequest';
 export * from './User';
 export * from './UserGroup';
 export * from './UserGroupAttributes';
+export * from './UserGroupSearchParams';
+export * from './UserGroupSearchResult';
 export * from './UserSearchBody';
 export * from './UserSearchParams';
 export * from './UserSearchResult';

@@ -683,6 +683,14 @@ public class Neo4jQueryBuilderTest {
   }
 
   @Test
+  public void emitUserGroupSelectionQueryTest() {
+    String JSONQuery = "{\"property\": \"name\", \"value\": \"group\", \"operator\": \"contains\"}";
+    String neo4jQuery = Neo4jQueryBuilder.userGroupSelectionQuery(JSONQuery);
+    String expected = "MATCH (userGroup:UserGroup) WHERE (toLower(userGroup.`name`) contains \"group\")";
+    assertEquals(expected, neo4jQuery);
+  }
+
+  @Test
   public void invalidJsonTest() {
     String JSONQuery = "}";
     assertThrows(ShepardParserException.class, () ->

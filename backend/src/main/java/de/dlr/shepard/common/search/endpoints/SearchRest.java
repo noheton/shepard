@@ -6,12 +6,15 @@ import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.UserGroupSearchBody;
+import de.dlr.shepard.common.search.io.UserGroupSearchResult;
 import de.dlr.shepard.common.search.io.UserSearchBody;
 import de.dlr.shepard.common.search.io.UserSearchResult;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.ContainerSearchService;
 import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.search.services.SearchService;
+import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.search.services.UserSearchService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PaginationHelper;
@@ -50,6 +53,7 @@ public class SearchRest {
 
   private SearchService searchService;
   private UserSearchService userSearchService;
+  private UserGroupSearchService userGroupSearchService;
   private ContainerSearchService containerSearchService;
   private CollectionSearchService collectionSearchService;
 
@@ -59,11 +63,13 @@ public class SearchRest {
   public SearchRest(
     SearchService searchService,
     UserSearchService userSearchService,
+    UserGroupSearchService userGroupSearchService,
     ContainerSearchService containerSearchService,
     CollectionSearchService collectionSearchService
   ) {
     this.searchService = searchService;
     this.userSearchService = userSearchService;
+    this.userGroupSearchService = userGroupSearchService;
     this.containerSearchService = containerSearchService;
     this.collectionSearchService = collectionSearchService;
   }
@@ -205,6 +211,27 @@ public class SearchRest {
   ) {
     Log.infof("Search for users with query: %s", userSearchBody.getSearchParams().getQuery());
     UserSearchResult ret = userSearchService.search(userSearchBody);
+    return Response.ok(ret).build();
+  }
+
+  @POST
+  @Path("/" + Constants.USERGROUPS)
+  @Tag(name = Constants.SEARCH)
+  @Operation(description = "Search user groups")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = UserGroupSearchResult.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  public Response searchUserGroups(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = UserSearchBody.class))
+    ) @Valid UserGroupSearchBody userGroupSearchBody
+  ) {
+    Log.infof("Search for usergroups with query: %s", userGroupSearchBody.getSearchParams().getQuery());
+    UserGroupSearchResult ret = userGroupSearchService.search(userGroupSearchBody);
     return Response.ok(ret).build();
   }
 }

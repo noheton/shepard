@@ -1,4 +1,4 @@
-export function createSearchQueryFromString(searchText: string): string {
+export function createUserSearchQueryFromString(searchText: string): string {
   return JSON.stringify({
     OR: [
       {
@@ -20,6 +20,25 @@ export function createSearchQueryFromString(searchText: string): string {
         property: "email",
         value: searchText,
         operator: "contains",
+      },
+    ],
+  });
+}
+
+export function createUserGroupSearchQueryFromString(
+  searchText: string,
+): string {
+  return JSON.stringify({
+    OR: [
+      {
+        property: "name",
+        value: searchText,
+        operator: "contains",
+      },
+      {
+        property: "id",
+        value: Number(searchText),
+        operator: "eq",
       },
     ],
   });

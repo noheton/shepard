@@ -25,7 +25,7 @@ public class UserSearchServiceTest extends BaseTestCase {
   private UserSearchService userSearcher;
 
   @Test
-  public void searchFileContainerTest() {
+  public void searchUserTest() {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     var params = new UserSearchParams(JSONquery);
     var searchBody = new UserSearchBody(params);

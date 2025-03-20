@@ -589,4 +589,18 @@ public class Neo4jQueryBuilder {
     ret = ret + "MATCH (" + Constants.USER_IN_QUERY + ":User)";
     return ret;
   }
+
+  public static String userGroupSelectionQuery(String query) {
+    String ret = "";
+    ret = ret + userGroupMatchPart();
+    ret = ret + " WHERE ";
+    ret = ret + getNeo4jWithNeo4jIdString(query, Constants.USERGROUP_IN_QUERY);
+    return ret;
+  }
+
+  private static String userGroupMatchPart() {
+    String ret = "";
+    ret = ret + "MATCH (" + Constants.USERGROUP_IN_QUERY + ":UserGroup)";
+    return ret;
+  }
 }

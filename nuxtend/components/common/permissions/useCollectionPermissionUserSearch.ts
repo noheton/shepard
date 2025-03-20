@@ -1,5 +1,5 @@
 import { SearchApi, type User } from "@dlr-shepard/backend-client";
-import { createSearchQueryFromString } from "./createSearchQueryFromString";
+import { createUserSearchQueryFromString } from "./createSearchQueryFromString";
 
 export function useCollectionPermissionUserSearch(
   searchString: Ref<string | undefined>,
@@ -13,7 +13,7 @@ export function useCollectionPermissionUserSearch(
 
     isLoading.value = true;
 
-    const searchStringParam = createSearchQueryFromString(query);
+    const searchStringParam = createUserSearchQueryFromString(query);
 
     const searchResponse = await createApiInstance(SearchApi).searchUsers({
       userSearchBody: {

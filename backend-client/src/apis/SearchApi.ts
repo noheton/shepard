@@ -23,6 +23,7 @@ import type {
   ContainerSearchResult,
   ResponseBody,
   SearchBody,
+  UserGroupSearchResult,
   UserSearchBody,
   UserSearchResult,
 } from '../models/index';
@@ -43,6 +44,8 @@ import {
     ResponseBodyToJSON,
     SearchBodyFromJSON,
     SearchBodyToJSON,
+    UserGroupSearchResultFromJSON,
+    UserGroupSearchResultToJSON,
     UserSearchBodyFromJSON,
     UserSearchBodyToJSON,
     UserSearchResultFromJSON,
@@ -67,6 +70,10 @@ export interface SearchContainersRequest {
     size?: number;
     orderBy?: BasicContainerAttributes;
     orderDesc?: boolean;
+}
+
+export interface SearchUserGroupsRequest {
+    userSearchBody: UserSearchBody;
 }
 
 export interface SearchUsersRequest {
@@ -251,6 +258,54 @@ export class SearchApi extends runtime.BaseAPI {
      */
     async searchContainers(requestParameters: SearchContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ContainerSearchResult> {
         const response = await this.searchContainersRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Search user groups
+     */
+    async searchUserGroupsRaw(requestParameters: SearchUserGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserGroupSearchResult>> {
+        if (requestParameters['userSearchBody'] == null) {
+            throw new runtime.RequiredError(
+                'userSearchBody',
+                'Required parameter "userSearchBody" was null or undefined when calling searchUserGroups().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/search/userGroups`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: UserSearchBodyToJSON(requestParameters['userSearchBody']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserGroupSearchResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Search user groups
+     */
+    async searchUserGroups(requestParameters: SearchUserGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserGroupSearchResult> {
+        const response = await this.searchUserGroupsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

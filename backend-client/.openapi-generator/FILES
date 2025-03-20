@@ -103,6 +103,8 @@ src/models/UpdateLabJournalRequest.ts
 src/models/User.ts
 src/models/UserGroup.ts
 src/models/UserGroupAttributes.ts
+src/models/UserGroupSearchParams.ts
+src/models/UserGroupSearchResult.ts
 src/models/UserSearchBody.ts
 src/models/UserSearchParams.ts
 src/models/UserSearchResult.ts

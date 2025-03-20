@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -122,5 +123,16 @@ public class SearchDAOTest extends BaseTestCase {
     when(session.query(User.class, query, Collections.emptyMap())).thenReturn(users);
     var actual = dao.findUsers(selectionQuery, "user");
     assertEquals(users, actual);
+  }
+
+  @Test
+  public void findUserGroupsTest() {
+    var userGroups = List.of(new UserGroup(123));
+    String selectionQuery = "MATCH bla";
+    String query =
+      "MATCH bla WITH userGroup MATCH path=(userGroup:UserGroup)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN userGroup, nodes(path), relationships(path)";
+    when(session.query(UserGroup.class, query, Collections.emptyMap())).thenReturn(userGroups);
+    var actual = dao.findUserGroups(selectionQuery, "userGroup");
+    assertEquals(userGroups, actual);
   }
 }

@@ -1,10 +1,12 @@
 import {
   SearchApi,
-  UserGroupApi,
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
-import { createSearchQueryFromString } from "./createSearchQueryFromString";
+import {
+  createUserGroupSearchQueryFromString,
+  createUserSearchQueryFromString,
+} from "./createSearchQueryFromString";
 
 export type Member = User | UserGroup;
 
@@ -20,29 +22,32 @@ export function useMemberSearch(
 
     isLoading.value = true;
 
-    const searchStringParam = createSearchQueryFromString(query);
+    const userSearchStringParam = createUserSearchQueryFromString(query);
+    const userGroupSearchStringParam =
+      createUserGroupSearchQueryFromString(query);
 
     const userSearchResponse = await createApiInstance(SearchApi).searchUsers({
       userSearchBody: {
         searchParams: {
-          query: searchStringParam,
+          query: userSearchStringParam,
         },
       },
     });
-    const userGroupResponse = isNaN(Number(query))
-      ? undefined
-      : await createApiInstance(UserGroupApi)
-          .getUserGroup({
-            userGroupId: Number(query),
-          })
-          .catch(() => undefined);
-
+    const userGroupSearchResponse = await createApiInstance(
+      SearchApi,
+    ).searchUserGroups({
+      userSearchBody: {
+        searchParams: {
+          query: userGroupSearchStringParam,
+        },
+      },
+    });
     if (userSearchResponse.results) {
       searchResults.value = userSearchResponse.results;
     }
 
-    if (userGroupResponse) {
-      searchResults.value.push(userGroupResponse);
+    if (userGroupSearchResponse.results) {
+      searchResults.value.push(...userGroupSearchResponse.results);
     }
 
     isLoading.value = false;
