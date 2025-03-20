@@ -66,6 +66,9 @@ public abstract class GenericDAO<T> {
   /**
    * Delete an entity
    *
+   * Caution: Regarding the official documentation ids will be reused by neo4j.
+   * @see <a href='https://neo4j.com/docs/ogm-manual/current/reference/#reference:annotating-entities:entity-identifier'>See official documentation for further information on the id issue</a>
+   *
    * @param id The entity to be deleted
    * @return Whether the deletion was successful or not
    */
@@ -87,6 +90,10 @@ public abstract class GenericDAO<T> {
   public T createOrUpdate(T entity) {
     session.save(entity, DEPTH_ENTITY);
     return entity;
+  }
+
+  public void clearSession() {
+    session.clear();
   }
 
   /**

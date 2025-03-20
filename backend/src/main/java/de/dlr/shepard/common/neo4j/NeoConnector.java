@@ -13,6 +13,7 @@ import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReferen
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
@@ -76,25 +77,26 @@ public class NeoConnector implements IConnector {
       try {
         sessionFactory = new SessionFactory(
           configuration,
-          Version.class.getPackageName(),
-          SemanticAnnotation.class.getPackageName(),
-          FileReference.class.getPackageName(),
-          FileContainer.class.getPackageName(),
-          StructuredData.class.getPackageName(),
-          StructuredDataReference.class.getPackageName(),
-          URIReference.class.getPackageName(),
+          AnnotatableTimeseries.class.getPackageName(),
+          ApiKey.class.getPackageName(),
           Collection.class.getPackageName(),
           CollectionReference.class.getPackageName(),
-          LabJournalEntry.class.getPackageName(),
-          Timeseries.class.getPackageName(),
-          User.class.getPackageName(),
-          ApiKey.class.getPackageName(),
-          Permissions.class.getPackageName(),
-          Subscription.class.getPackageName(),
+          FileContainer.class.getPackageName(),
+          FileReference.class.getPackageName(),
           InfluxTimeseries.class.getPackageName(),
-          TimeseriesReference.class.getPackageName(),
+          LabJournalEntry.class.getPackageName(),
+          Permissions.class.getPackageName(),
+          SemanticAnnotation.class.getPackageName(),
           SpatialDataContainer.class.getPackageName(),
-          SpatialDataReference.class.getPackageName()
+          SpatialDataReference.class.getPackageName(),
+          StructuredData.class.getPackageName(),
+          StructuredDataReference.class.getPackageName(),
+          Subscription.class.getPackageName(),
+          Timeseries.class.getPackageName(),
+          TimeseriesReference.class.getPackageName(),
+          URIReference.class.getPackageName(),
+          User.class.getPackageName(),
+          Version.class.getPackageName()
         );
         return true;
       } catch (ConnectionException ex) {
