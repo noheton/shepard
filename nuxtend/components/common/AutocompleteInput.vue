@@ -9,8 +9,8 @@ export interface AutoCompleteItem {
 const { startSearch } = defineProps<{
   isDisabled?: boolean;
   isLoading?: boolean;
-  label: string;
   density?: "default" | "comfortable" | "compact";
+  label: string;
   itemList: AutoCompleteItem[];
   startSearch: () => void;
 }>();

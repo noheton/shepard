@@ -43,6 +43,12 @@ const lightTheme: ThemeDefinition = {
     warning: "#ffc107",
     success: "#28a745",
     white: "#ffffff",
+    "violet-stroke": "#7F5FA6",
+    "violet-background": "#FAF8FD",
+    "orange-stroke": "#FB7E00",
+    "orange-background": "#FFF9F2",
+    "green-stroke": "#1E7D34",
+    "green-background": "#ECFDF3",
   },
 };
 const darkTheme: ThemeDefinition = {
@@ -62,5 +68,11 @@ const darkTheme: ThemeDefinition = {
     warning: "#ffc107",
     success: "#28a745",
     white: "#ffffff",
+    "violet-stroke": "#FAF8FD",
+    "violet-background": "#7F5FA6",
+    "orange-stroke": "#FFF9F2",
+    "orange-background": "#FB7E00",
+    "green-stroke": "#ECFDF3",
+    "green-background": "#1E7D34",
   },
 };

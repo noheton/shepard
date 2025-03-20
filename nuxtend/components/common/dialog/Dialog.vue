@@ -3,6 +3,7 @@ interface DialogProps {
   title: string;
   loading?: boolean;
   submitDisabled: boolean;
+  maxWidth?: number;
 }
 
 defineProps<DialogProps>();
@@ -14,7 +15,7 @@ const emit = defineEmits(["submit"]);
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent max-width="600">
+  <v-dialog v-model="showDialog" persistent :max-width="maxWidth ?? 600">
     <v-card :loading="loading" color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">

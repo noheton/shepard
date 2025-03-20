@@ -6,14 +6,14 @@ import {
 } from "@dlr-shepard/backend-client";
 import { createSearchQueryFromString } from "./createSearchQueryFromString";
 
-export type UserOrGroup = User | UserGroup;
+export type Member = User | UserGroup;
 
-export function useUserAndGroupSearch(
+export function useMemberSearch(
   searchString: Ref<string | undefined>,
   onSearchDone: () => void,
 ) {
   const isLoading = ref<boolean>(false);
-  const searchResults = ref<UserOrGroup[]>([]);
+  const searchResults = ref<Member[]>([]);
 
   async function searchUsersByQuery(query: string) {
     if (isLoading.value === true) return;

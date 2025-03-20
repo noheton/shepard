@@ -5,44 +5,40 @@ import {
   type UserGroup,
 } from "@dlr-shepard/backend-client";
 import type { AutoCompleteItem } from "../AutocompleteInput.vue";
-import {
-  useUserAndGroupSearch,
-  type UserOrGroup,
-} from "./useUserAndGroupSearch";
+import { useMemberSearch, type Member } from "./useMemberSearch";
 
 const emit = defineEmits<{
-  (e: "userSelect", value: User): void;
-  (e: "userGroupSelect", value: UserGroup): void;
+  (e: "memberSelect", value: Member): void;
 }>();
+
+const model = defineModel<Member>();
 
 const searchString = ref<string | undefined>(undefined);
 const searchDone = ref<boolean>(false);
 
-const { searchResults, isLoading, startSearch } = useUserAndGroupSearch(
+const { searchResults, isLoading, startSearch } = useMemberSearch(
   searchString,
   () => {
     searchDone.value = true;
   },
 );
 
-const mapToAutocompleteItem = (userOrGroup: UserOrGroup): AutoCompleteItem => {
-  if (instanceOfUser(userOrGroup))
+const mapToAutocompleteItem = (member: Member): AutoCompleteItem => {
+  if (instanceOfUser(member))
     return {
-      title: `${userOrGroup.firstName} ${userOrGroup.lastName}`,
-      value: userOrGroup as User,
+      title: `${member.firstName} ${member.lastName}`,
+      value: member as User,
     };
   else
     return {
-      title: `${userOrGroup.name} (UsergroupID: ${userOrGroup.id})`,
-      value: userOrGroup as UserGroup,
+      title: `${member.name} (User Group, ID: ${member.id})`,
+      value: member as UserGroup,
     };
 };
 
 const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
-    if (instanceOfUser(selectedItem.value))
-      emit("userSelect", selectedItem.value);
-    else emit("userGroupSelect", selectedItem as UserGroup);
+    emit("memberSelect", selectedItem.value as Member);
   }
 };
 </script>
@@ -50,6 +46,7 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   <AutocompleteInput
     v-model:search-string="searchString"
     v-model:search-done="searchDone"
+    :model-value="model ? mapToAutocompleteItem(model) : undefined"
     label="User or group id"
     density="compact"
     :is-loading="isLoading"

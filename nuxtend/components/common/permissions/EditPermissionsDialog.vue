@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import {
+  instanceOfUser,
+  instanceOfUserGroup,
   PermissionType,
   type User,
-  type UserGroup,
 } from "@dlr-shepard/backend-client";
+import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
 import { useEditCollectionPermissions } from "./useEditCollectionPermissions";
-import UserAndGroupAutocomplete from "./UserAndGroupAutocomplete.vue";
+import type { Member } from "./useMemberSearch";
 import { UserRole } from "./UserRole";
 
 interface EditPermissionsDialogProps {
   collectionId: number;
   isOwner?: boolean;
+}
+
+export interface MemberPermissions {
+  member: Member;
+  roleList: UserRole[];
 }
 
 const props = defineProps<EditPermissionsDialogProps>();
@@ -23,8 +30,10 @@ const showDialog = defineModel<boolean>("showDialog", {
 const isValid = ref(true);
 
 const selectedAdditionalUserRole = ref<UserRole | undefined>(undefined);
-const selectedAdditionalUser = ref<User | undefined>(undefined);
-const selectedAdditionalGroup = ref<UserGroup | undefined>(undefined);
+
+const memberPermissionsList = ref<MemberPermissions[] | undefined>(undefined);
+
+const selectedMember = ref<Member | undefined>(undefined);
 
 const { collectionPermissions, owner } = useFetchCollectionPermissions(
   props.collectionId,
@@ -36,11 +45,18 @@ const { updatedPermissions, saveChanges } = useEditCollectionPermissions(
   isValid,
 );
 
-watch(collectionPermissions, () => {
-  if (collectionPermissions.value) {
-    updatedPermissions.value = collectionPermissions.value;
-  }
-});
+watch(
+  collectionPermissions,
+  async () => {
+    if (collectionPermissions.value) {
+      updatedPermissions.value = collectionPermissions.value;
+      memberPermissionsList.value = await mapPermissions(
+        updatedPermissions.value,
+      );
+    }
+  },
+  { once: true },
+);
 
 const onOwnerChange = (updatedOwner: User) => {
   if (updatedPermissions.value)
@@ -52,52 +68,67 @@ const onPermissionTypeChange = (updatedPermissionType: PermissionType) => {
 };
 
 const onAddPermission = () => {
-  if (updatedPermissions.value && selectedAdditionalUserRole.value) {
-    switch (selectedAdditionalUserRole.value) {
-      case UserRole.manager: {
-        if (selectedAdditionalUser.value)
-          updatedPermissions.value.manager.push(
-            selectedAdditionalUser.value.username,
-          );
-        break;
-      }
-      case UserRole.reader: {
-        if (selectedAdditionalUser.value)
-          updatedPermissions.value.reader.push(
-            selectedAdditionalUser.value.username,
-          );
-        if (selectedAdditionalGroup.value)
-          updatedPermissions.value.readerGroupIds = updatedPermissions.value
-            .readerGroupIds
-            ? updatedPermissions.value.readerGroupIds.concat(
-                selectedAdditionalGroup.value.id,
-              )
-            : [selectedAdditionalGroup.value.id];
+  if (
+    !memberPermissionsList.value ||
+    !selectedAdditionalUserRole.value ||
+    !selectedMember.value
+  )
+    return;
+  const addMemberPermission = (
+    selectedMember: Member | undefined,
+    findMemberCallback: (member: Member) => boolean,
+  ) => {
+    if (
+      !memberPermissionsList.value ||
+      !selectedAdditionalUserRole.value ||
+      !selectedMember
+    )
+      return;
 
-        break;
-      }
-      case UserRole.writer: {
-        if (selectedAdditionalUser.value)
-          updatedPermissions.value.writer.push(
-            selectedAdditionalUser.value.username,
-          );
-        if (selectedAdditionalGroup.value)
-          updatedPermissions.value.writerGroupIds = updatedPermissions.value
-            .writerGroupIds
-            ? updatedPermissions.value.writerGroupIds.concat(
-                selectedAdditionalGroup.value.id,
-              )
-            : [selectedAdditionalGroup.value.id];
-        break;
-      }
+    const memberExists = memberPermissionsList.value.find(member =>
+      findMemberCallback(member.member),
+    );
+    if (memberExists) {
+      const roleExists = memberExists.roleList.some(
+        role => role === selectedAdditionalUserRole.value,
+      );
+      if (!roleExists)
+        memberExists.roleList.push(selectedAdditionalUserRole.value);
+    } else {
+      memberPermissionsList.value.unshift({
+        member: selectedMember,
+        roleList: [selectedAdditionalUserRole.value],
+      });
     }
-    resetAdditionalPermission();
+  };
+  const memberSelected = selectedMember.value;
+  let searchCallback;
+  if (instanceOfUser(memberSelected)) {
+    searchCallback = (member: Member) =>
+      instanceOfUser(member) && member.username === memberSelected.username;
+  } else {
+    searchCallback = (member: Member) =>
+      instanceOfUserGroup(member) && member.id === memberSelected.id;
   }
+
+  addMemberPermission(memberSelected, searchCallback);
+  resetAdditionalPermission();
 };
+
 const resetAdditionalPermission = () => {
-  selectedAdditionalGroup.value = undefined;
-  selectedAdditionalUser.value = undefined;
+  selectedMember.value = undefined;
   selectedAdditionalUserRole.value = undefined;
+};
+
+const onSubmit = () => {
+  if (!memberPermissionsList.value || !updatedPermissions.value) return;
+
+  updatedPermissions.value = {
+    ...updatedPermissions.value,
+    ...mapMemberPermissions(memberPermissionsList.value),
+  };
+
+  saveChanges();
 };
 </script>
 
@@ -105,9 +136,10 @@ const resetAdditionalPermission = () => {
   <Dialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
-    title="Edit Permissions"
+    title="Manage Permissions"
+    :max-width="950"
     :submit-disabled="!isValid"
-    @submit="saveChanges"
+    @submit="onSubmit"
   >
     <template #form>
       <v-form
@@ -146,6 +178,7 @@ const resetAdditionalPermission = () => {
             />
           </v-col>
         </v-row>
+        <v-divider opacity="100" class="text-divider1 mb-4" thickness="1px" />
         <v-row>
           <v-col class="text-semibold text-textbody1">
             Additional Permissions
@@ -159,15 +192,11 @@ const resetAdditionalPermission = () => {
         </v-row>
         <v-row>
           <v-col>
-            <UserAndGroupAutocomplete
-              @user-group-select="
-                (selectedUserGroup: UserGroup) => {
-                  selectedAdditionalGroup = selectedUserGroup;
-                }
-              "
-              @user-select="
-                (selectedUser: User) => {
-                  selectedAdditionalUser = selectedUser;
+            <MemberAutocomplete
+              :model-value="selectedMember"
+              @member-select="
+                (selectedAdditionalMember: Member) => {
+                  selectedMember = selectedAdditionalMember;
                 }
               "
             />
@@ -184,7 +213,7 @@ const resetAdditionalPermission = () => {
               hide-details
             />
           </v-col>
-          <v-col cols="2">
+          <v-col style="max-width: fit-content">
             <v-btn
               prepend-icon="mdi-plus-circle"
               color="primary"
@@ -194,6 +223,17 @@ const resetAdditionalPermission = () => {
               ADD
             </v-btn>
           </v-col>
+        </v-row>
+        <v-row class="pt-3">
+          <v-col class="text-semibold text-textbody1">
+            List of Additional Permissions
+          </v-col>
+        </v-row>
+        <v-row>
+          <MemberPermissionList
+            v-if="memberPermissionsList"
+            v-model:member-permissions="memberPermissionsList"
+          />
         </v-row>
       </v-form>
     </template>
