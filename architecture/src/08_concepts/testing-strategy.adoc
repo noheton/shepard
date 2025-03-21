@@ -59,6 +59,39 @@ A proper way to integrate WireMock into a Quarkus integration test is described 
 WireMock is a strong tool and provides many options to mock complex web services.
 To name only a few possibilities with WireMock, you are able to use https://wiremock.org/docs/response-templating/[response templates], it provides https://wiremock.org/docs/proxying[proxying] to forward specific requests, and it supports multiple protocols like gRPC,GraphQL, HTTPS and JWT.
 
+==== Generic Endpoints Integration Tests
+In order to perform endpoints tests we have implemented `GenericEndpointsIT` which will perform parametrized test on all the provided endpoints.
+This generic test will ensure the validity checks on parameters, perform access control checks, and expected status codes.
+Currently it is testing the below cases:
+
+* Requests with valid path
+* Requests with invalid path
+* Requests with valid body (POST, PUT)
+* Requests with invalid body (POST, PUT)
+* Requests for not found resource
+* Unauthorized access
+* Unauthorized public access (no user)
+
+Test cases can be added to `loadTestCases` method by providing the inputs and expected outputs and codes.
+Every endpoint test case has the following properties:
+```Java
+String url; // The resource path, example: /collections/{collectionId}/roles
+List<String> methods; // http methods to test, example: ["GET", "PUT"]
+Map<String, String> validPathParams; // Valid path parameters that will pass through, example: {"collectionId": "123"}
+Map<String, String> invalidPathParams; // Invalid path parameters that will not pass through, example: {"collectionId": "abc"}
+Map<String, String> notFoundPathParams; // Path parameter to not existing resource, example: {"collectionId": "999999"}
+/*
+ Expected status codes for every method, example:
+ "GET": { "valid": 200, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 },
+ "PUT": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
+*/
+Map<String, Map<String, Integer>> expectedStatusCodes;
+Map<String, Object> requestBody;// Valid request body to be used with PUT and POST methods, example: {"name", "A collection"}
+Map<String, Object> invalidRequestBody;// Invalid request body to be used with PUT and POST methods, example: {"someKey", "some value"}
+```
+
+For reference refer to the sample tests in the resource file `generic_endpoints_test_cases.json`.
+
 ==== Load and Performance Tests
 We are using https://k6.io[grafana k6] for load and performance tests.
 They are in the directory `load-tests` and are written in TypeScript.

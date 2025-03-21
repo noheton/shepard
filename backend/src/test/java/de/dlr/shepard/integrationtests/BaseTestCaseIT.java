@@ -28,6 +28,8 @@ public class BaseTestCaseIT {
   protected static UserWithApiKey otherUser;
   protected static RequestSpecification requestSpecOfOtherUser;
 
+  protected static RequestSpecification requestSpecNoUser;
+
   @BeforeAll
   public static void init() {
     RestAssured.baseURI = host;
@@ -46,6 +48,8 @@ public class BaseTestCaseIT {
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", otherUser.getApiKey().getJws())
       .build();
+
+    requestSpecNoUser = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
   }
 
   protected static UserWithApiKey getNewUserWithApiKey(String username) {
