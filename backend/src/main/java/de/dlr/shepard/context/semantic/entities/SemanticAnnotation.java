@@ -20,9 +20,16 @@ public class SemanticAnnotation implements HasId {
   @GeneratedValue
   private Long id;
 
-  private String name;
+  @Deprecated
+  public String getName() {
+    return String.format("%s::%s", this.getPropertyName(), this.getValueName());
+  }
+
+  private String propertyName;
 
   private String propertyIRI;
+
+  private String valueName;
 
   private String valueIRI;
 
@@ -46,7 +53,7 @@ public class SemanticAnnotation implements HasId {
   @Override
   public int hashCode() {
     final int prime = 31;
-    var result = Objects.hash(id, name, propertyIRI, valueIRI);
+    var result = Objects.hash(id, propertyName, valueName, propertyIRI, valueIRI);
     result = prime * result + HasId.hashcodeHelper(propertyRepository);
     result = prime * result + HasId.hashcodeHelper(valueRepository);
     return result;
@@ -60,7 +67,8 @@ public class SemanticAnnotation implements HasId {
     SemanticAnnotation other = (SemanticAnnotation) obj;
     return (
       Objects.equals(id, other.id) &&
-      Objects.equals(name, other.name) &&
+      Objects.equals(propertyName, other.propertyName) &&
+      Objects.equals(valueName, other.valueName) &&
       Objects.equals(propertyIRI, other.propertyIRI) &&
       Objects.equals(valueIRI, other.valueIRI) &&
       HasId.equalsHelper(propertyRepository, other.propertyRepository) &&

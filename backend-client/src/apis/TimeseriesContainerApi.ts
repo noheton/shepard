@@ -20,6 +20,7 @@ import type {
   FillOption,
   Permissions,
   Roles,
+  SemanticAnnotation,
   Timeseries,
   TimeseriesContainer,
   TimeseriesEntity,
@@ -36,6 +37,8 @@ import {
     PermissionsToJSON,
     RolesFromJSON,
     RolesToJSON,
+    SemanticAnnotationFromJSON,
+    SemanticAnnotationToJSON,
     TimeseriesFromJSON,
     TimeseriesToJSON,
     TimeseriesContainerFromJSON,
@@ -46,6 +49,12 @@ import {
     TimeseriesWithDataPointsToJSON,
 } from '../models/index';
 
+export interface CreateAnnotationForTimeseriesRequest {
+    timeseriesContainerId: number;
+    timeseriesId: number;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'>;
+}
+
 export interface CreateTimeseriesRequest {
     timeseriesContainerId: number;
     timeseriesWithDataPoints: TimeseriesWithDataPoints;
@@ -53,6 +62,12 @@ export interface CreateTimeseriesRequest {
 
 export interface CreateTimeseriesContainerRequest {
     timeseriesContainer: Omit<TimeseriesContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'>;
+}
+
+export interface DeleteAnnotationOfTimeseriesRequest {
+    timeseriesContainerId: number;
+    timeseriesId: number;
+    semanticAnnotationId: number;
 }
 
 export interface DeleteTimeseriesContainerRequest {
@@ -78,12 +93,23 @@ export interface ExportTimeseriesRequest {
     fillOption?: FillOption;
 }
 
+export interface GetAllAnnotationsOfTimeseriesRequest {
+    timeseriesContainerId: number;
+    timeseriesId: number;
+}
+
 export interface GetAllTimeseriesContainersRequest {
     name?: string;
     page?: number;
     size?: number;
     orderBy?: ContainerAttributes;
     orderDesc?: boolean;
+}
+
+export interface GetSemanticAnnotationOfTimeseriesRequest {
+    timeseriesContainerId: number;
+    timeseriesId: number;
+    semanticAnnotationId: number;
 }
 
 export interface GetTimeseriesRequest {
@@ -134,6 +160,68 @@ export interface ImportTimeseriesRequest {
  * 
  */
 export class TimeseriesContainerApi extends runtime.BaseAPI {
+
+    /**
+     * Create new annotation for a timeseries.
+     */
+    async createAnnotationForTimeseriesRaw(requestParameters: CreateAnnotationForTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SemanticAnnotation>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling createAnnotationForTimeseries().'
+            );
+        }
+
+        if (requestParameters['timeseriesId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesId',
+                'Required parameter "timeseriesId" was null or undefined when calling createAnnotationForTimeseries().'
+            );
+        }
+
+        if (requestParameters['semanticAnnotation'] == null) {
+            throw new runtime.RequiredError(
+                'semanticAnnotation',
+                'Required parameter "semanticAnnotation" was null or undefined when calling createAnnotationForTimeseries().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))).replace(`{${"timeseriesId"}}`, encodeURIComponent(String(requestParameters['timeseriesId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: SemanticAnnotationToJSON(requestParameters['semanticAnnotation']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SemanticAnnotationFromJSON(jsonValue));
+    }
+
+    /**
+     * Create new annotation for a timeseries.
+     */
+    async createAnnotationForTimeseries(requestParameters: CreateAnnotationForTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SemanticAnnotation> {
+        const response = await this.createAnnotationForTimeseriesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Upload timeseries to container
@@ -236,6 +324,64 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     async createTimeseriesContainer(requestParameters: CreateTimeseriesContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesContainer> {
         const response = await this.createTimeseriesContainerRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Delete annotation of timeseries.
+     */
+    async deleteAnnotationOfTimeseriesRaw(requestParameters: DeleteAnnotationOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling deleteAnnotationOfTimeseries().'
+            );
+        }
+
+        if (requestParameters['timeseriesId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesId',
+                'Required parameter "timeseriesId" was null or undefined when calling deleteAnnotationOfTimeseries().'
+            );
+        }
+
+        if (requestParameters['semanticAnnotationId'] == null) {
+            throw new runtime.RequiredError(
+                'semanticAnnotationId',
+                'Required parameter "semanticAnnotationId" was null or undefined when calling deleteAnnotationOfTimeseries().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations/{semanticAnnotationId}`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))).replace(`{${"timeseriesId"}}`, encodeURIComponent(String(requestParameters['timeseriesId']))).replace(`{${"semanticAnnotationId"}}`, encodeURIComponent(String(requestParameters['semanticAnnotationId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete annotation of timeseries.
+     */
+    async deleteAnnotationOfTimeseries(requestParameters: DeleteAnnotationOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteAnnotationOfTimeseriesRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -472,6 +618,58 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all semantic annotations of a timeseries.
+     */
+    async getAllAnnotationsOfTimeseriesRaw(requestParameters: GetAllAnnotationsOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SemanticAnnotation>>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling getAllAnnotationsOfTimeseries().'
+            );
+        }
+
+        if (requestParameters['timeseriesId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesId',
+                'Required parameter "timeseriesId" was null or undefined when calling getAllAnnotationsOfTimeseries().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))).replace(`{${"timeseriesId"}}`, encodeURIComponent(String(requestParameters['timeseriesId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SemanticAnnotationFromJSON));
+    }
+
+    /**
+     * Get all semantic annotations of a timeseries.
+     */
+    async getAllAnnotationsOfTimeseries(requestParameters: GetAllAnnotationsOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SemanticAnnotation>> {
+        const response = await this.getAllAnnotationsOfTimeseriesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get all timeseries containers
      */
     async getAllTimeseriesContainersRaw(requestParameters: GetAllTimeseriesContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesContainer>>> {
@@ -526,6 +724,65 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
      */
     async getAllTimeseriesContainers(requestParameters: GetAllTimeseriesContainersRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesContainer>> {
         const response = await this.getAllTimeseriesContainersRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get a specific semantic annotation of a timeseries.
+     */
+    async getSemanticAnnotationOfTimeseriesRaw(requestParameters: GetSemanticAnnotationOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SemanticAnnotation>>> {
+        if (requestParameters['timeseriesContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesContainerId',
+                'Required parameter "timeseriesContainerId" was null or undefined when calling getSemanticAnnotationOfTimeseries().'
+            );
+        }
+
+        if (requestParameters['timeseriesId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesId',
+                'Required parameter "timeseriesId" was null or undefined when calling getSemanticAnnotationOfTimeseries().'
+            );
+        }
+
+        if (requestParameters['semanticAnnotationId'] == null) {
+            throw new runtime.RequiredError(
+                'semanticAnnotationId',
+                'Required parameter "semanticAnnotationId" was null or undefined when calling getSemanticAnnotationOfTimeseries().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations/{semanticAnnotationId}`.replace(`{${"timeseriesContainerId"}}`, encodeURIComponent(String(requestParameters['timeseriesContainerId']))).replace(`{${"timeseriesId"}}`, encodeURIComponent(String(requestParameters['timeseriesId']))).replace(`{${"semanticAnnotationId"}}`, encodeURIComponent(String(requestParameters['semanticAnnotationId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SemanticAnnotationFromJSON));
+    }
+
+    /**
+     * Get a specific semantic annotation of a timeseries.
+     */
+    async getSemanticAnnotationOfTimeseries(requestParameters: GetSemanticAnnotationOfTimeseriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SemanticAnnotation>> {
+        const response = await this.getSemanticAnnotationOfTimeseriesRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

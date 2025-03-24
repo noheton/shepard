@@ -60,19 +60,17 @@ public class SemanticAnnotationService {
 
     SemanticRepository propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
     SemanticRepository valueRepository = getRepository(annotationIO.getValueRepositoryId());
-    String annotationName = buildAnnotationName(
-      propertyRepository,
-      annotationIO.getPropertyIRI(),
-      valueRepository,
-      annotationIO.getValueIRI()
-    );
+    var propertyName = validateTerm(propertyRepository, annotationIO.getPropertyIRI());
+    var valueName = validateTerm(valueRepository, annotationIO.getValueIRI());
 
     SemanticAnnotation toCreate = new SemanticAnnotation();
-    toCreate.setName(annotationName);
     toCreate.setPropertyIRI(annotationIO.getPropertyIRI());
     toCreate.setValueIRI(annotationIO.getValueIRI());
     toCreate.setPropertyRepository(propertyRepository);
     toCreate.setValueRepository(valueRepository);
+    toCreate.setPropertyName(propertyName);
+    toCreate.setValueName(valueName);
+
     SemanticAnnotation created = semanticAnnotationDAO.createOrUpdate(toCreate);
     entity.addAnnotation(created);
     versionableEntityConcreteDAO.createOrUpdate(entity);
@@ -84,19 +82,6 @@ public class SemanticAnnotationService {
     return result;
   }
 
-  public String buildAnnotationName(
-    SemanticRepository propertyRepository,
-    String propertyIri,
-    SemanticRepository valueRepository,
-    String valueIri
-  ) {
-    return String.format(
-      "%s::%s",
-      validateTerm(propertyRepository, propertyIri),
-      validateTerm(valueRepository, valueIri)
-    );
-  }
-
   private SemanticRepository getRepository(long id) {
     var repository = semanticRepositoryDAO.findByNeo4jId(id);
     if (repository == null || repository.isDeleted()) throw new InvalidBodyException("invalid repository");
@@ -104,7 +89,7 @@ public class SemanticAnnotationService {
     return repository;
   }
 
-  private String validateTerm(SemanticRepository repository, String iri) {
+  public String validateTerm(SemanticRepository repository, String iri) {
     var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(), repository.getEndpoint());
     var term = src.getTerm(iri);
     if (term == null || term.isEmpty()) throw new InvalidBodyException("term could not be found");

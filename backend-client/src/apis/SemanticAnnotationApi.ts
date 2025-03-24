@@ -24,20 +24,20 @@ import {
 
 export interface CreateCollectionAnnotationRequest {
     collectionId: number;
-    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'>;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'>;
 }
 
 export interface CreateDataObjectAnnotationRequest {
     collectionId: number;
     dataObjectId: number;
-    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'>;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'>;
 }
 
 export interface CreateReferenceAnnotationRequest {
     collectionId: number;
     dataObjectId: number;
     referenceId: number;
-    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'>;
+    semanticAnnotation: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'>;
 }
 
 export interface DeleteCollectionAnnotationRequest {

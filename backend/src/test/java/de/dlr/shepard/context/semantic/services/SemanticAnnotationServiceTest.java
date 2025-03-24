@@ -125,7 +125,8 @@ public class SemanticAnnotationServiceTest {
     };
     var toCreate = new SemanticAnnotation() {
       {
-        setName("propObject::valObject");
+        setPropertyName("propObject");
+        setValueName("valObject");
         setPropertyIRI("propIri");
         setPropertyRepository(propRepo);
         setValueIRI("valIri");
@@ -135,7 +136,8 @@ public class SemanticAnnotationServiceTest {
     var expected = new SemanticAnnotation() {
       {
         setId(1L);
-        setName("propObject::valObject");
+        setPropertyName("propObject");
+        setValueName("valObject");
         setPropertyIRI("propIri");
         setPropertyRepository(propRepo);
         setValueIRI("valIri");

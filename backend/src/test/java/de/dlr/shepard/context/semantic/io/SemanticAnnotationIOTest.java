@@ -20,7 +20,7 @@ public class SemanticAnnotationIOTest {
     var valueRepository = new SemanticRepository(4L);
 
     var obj = new SemanticAnnotation(1L);
-    obj.setName("MyName");
+    obj.setPropertyName("MyName");
     obj.setPropertyRepository(propertyRepository);
     obj.setValueRepository(valueRepository);
     obj.setPropertyIRI("prop");
@@ -38,7 +38,7 @@ public class SemanticAnnotationIOTest {
   @Test
   public void testConversion_RepositoryNull() {
     var obj = new SemanticAnnotation(1L);
-    obj.setName("MyName");
+    obj.setPropertyName("MyName");
     obj.setPropertyIRI("prop");
     obj.setValueIRI("val");
 
