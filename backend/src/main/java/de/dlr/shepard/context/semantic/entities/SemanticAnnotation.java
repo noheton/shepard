@@ -21,7 +21,9 @@ public class SemanticAnnotation implements HasId {
   private Long id;
 
   @Deprecated
-  private String name;
+  public String getName() {
+    return String.format("%s::%s", this.getPropertyName(), this.getValueName());
+  }
 
   private String propertyName;
 

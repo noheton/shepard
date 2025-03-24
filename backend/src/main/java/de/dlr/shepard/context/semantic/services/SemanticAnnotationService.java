@@ -60,18 +60,10 @@ public class SemanticAnnotationService {
 
     SemanticRepository propertyRepository = getRepository(annotationIO.getPropertyRepositoryId());
     SemanticRepository valueRepository = getRepository(annotationIO.getValueRepositoryId());
-    String annotationName = buildAnnotationName(
-      propertyRepository,
-      annotationIO.getPropertyIRI(),
-      valueRepository,
-      annotationIO.getValueIRI()
-    );
     var propertyName = validateTerm(propertyRepository, annotationIO.getPropertyIRI());
     var valueName = validateTerm(valueRepository, annotationIO.getValueIRI());
-    String name = String.join("::", propertyName, valueName);
 
     SemanticAnnotation toCreate = new SemanticAnnotation();
-    toCreate.setName(annotationName);
     toCreate.setPropertyIRI(annotationIO.getPropertyIRI());
     toCreate.setValueIRI(annotationIO.getValueIRI());
     toCreate.setPropertyRepository(propertyRepository);
@@ -88,19 +80,6 @@ public class SemanticAnnotationService {
   public boolean deleteAnnotationByNeo4jId(long id) {
     var result = semanticAnnotationDAO.deleteByNeo4jId(id);
     return result;
-  }
-
-  public String buildAnnotationName(
-    SemanticRepository propertyRepository,
-    String propertyIri,
-    SemanticRepository valueRepository,
-    String valueIri
-  ) {
-    return String.format(
-      "%s::%s",
-      validateTerm(propertyRepository, propertyIri),
-      validateTerm(valueRepository, valueIri)
-    );
   }
 
   private SemanticRepository getRepository(long id) {

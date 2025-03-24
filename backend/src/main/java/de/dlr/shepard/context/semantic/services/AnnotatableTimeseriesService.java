@@ -35,19 +35,15 @@ public class AnnotatableTimeseriesService {
     var propertyRepository = dao.getSemanticRepositoryById(annotationIO.getPropertyRepositoryId());
     var valueRepository = dao.getSemanticRepositoryById(annotationIO.getValueRepositoryId());
 
-    var annotationName = semanticAnnotationService.buildAnnotationName(
-      propertyRepository,
-      annotationIO.getPropertyIRI(),
-      valueRepository,
-      annotationIO.getValueIRI()
-    );
-
     var annotation = new SemanticAnnotation();
-    annotation.setName(annotationName);
+    var propertyName = semanticAnnotationService.validateTerm(propertyRepository, annotationIO.getPropertyIRI());
+    var valueName = semanticAnnotationService.validateTerm(valueRepository, annotationIO.getValueIRI());
     annotation.setPropertyRepository(propertyRepository);
     annotation.setPropertyIRI(annotationIO.getPropertyIRI());
     annotation.setValueRepository(valueRepository);
     annotation.setValueIRI(annotationIO.getValueIRI());
+    annotation.setPropertyName(propertyName);
+    annotation.setValueName(valueName);
 
     annotatableTimeseries.getAnnotations().add(annotation);
     dao.createOrUpdate(annotatableTimeseries);
