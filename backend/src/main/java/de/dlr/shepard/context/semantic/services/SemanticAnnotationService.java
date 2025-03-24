@@ -66,6 +66,9 @@ public class SemanticAnnotationService {
       valueRepository,
       annotationIO.getValueIRI()
     );
+    var propertyName = validateTerm(propertyRepository, annotationIO.getPropertyIRI());
+    var valueName = validateTerm(valueRepository, annotationIO.getValueIRI());
+    String name = String.join("::", propertyName, valueName);
 
     SemanticAnnotation toCreate = new SemanticAnnotation();
     toCreate.setName(annotationName);
@@ -73,6 +76,9 @@ public class SemanticAnnotationService {
     toCreate.setValueIRI(annotationIO.getValueIRI());
     toCreate.setPropertyRepository(propertyRepository);
     toCreate.setValueRepository(valueRepository);
+    toCreate.setPropertyName(propertyName);
+    toCreate.setValueName(valueName);
+
     SemanticAnnotation created = semanticAnnotationDAO.createOrUpdate(toCreate);
     entity.addAnnotation(created);
     versionableEntityConcreteDAO.createOrUpdate(entity);

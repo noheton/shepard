@@ -19,9 +19,15 @@ public class SemanticAnnotationIO implements HasId {
   @Schema(readOnly = true, required = true)
   private String name;
 
+  @Schema(readOnly = true, required = true)
+  private String propertyName;
+
   @NotBlank
   @Schema(required = true)
   private String propertyIRI;
+
+  @Schema(readOnly = true, required = true)
+  private String valueName;
 
   @NotBlank
   @Schema(required = true)
@@ -42,6 +48,8 @@ public class SemanticAnnotationIO implements HasId {
     this.valueIRI = ref.getValueIRI();
     this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
     this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
+    this.propertyName = ref.getPropertyName();
+    this.valueName = ref.getValueName();
   }
 
   @Override
