@@ -110,7 +110,7 @@ public class SemanticAnnotationService {
     return repository;
   }
 
-  private String validateTerm(SemanticRepository repository, String iri) {
+  public String validateTerm(SemanticRepository repository, String iri) {
     var src = semanticRepositoryConnectorFactory.getRepositoryService(repository.getType(), repository.getEndpoint());
     var term = src.getTerm(iri);
     if (term == null || term.isEmpty()) throw new InvalidBodyException("term could not be found");
