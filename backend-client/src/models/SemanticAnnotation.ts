@@ -29,6 +29,7 @@ export interface SemanticAnnotation {
      * 
      * @type {string}
      * @memberof SemanticAnnotation
+     * @deprecated
      */
     readonly name: string;
     /**
@@ -36,7 +37,19 @@ export interface SemanticAnnotation {
      * @type {string}
      * @memberof SemanticAnnotation
      */
+    readonly propertyName: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SemanticAnnotation
+     */
     propertyIRI: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SemanticAnnotation
+     */
+    readonly valueName: string;
     /**
      * 
      * @type {string}
@@ -63,7 +76,9 @@ export interface SemanticAnnotation {
 export function instanceOfSemanticAnnotation(value: object): value is SemanticAnnotation {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('propertyName' in value) || value['propertyName'] === undefined) return false;
     if (!('propertyIRI' in value) || value['propertyIRI'] === undefined) return false;
+    if (!('valueName' in value) || value['valueName'] === undefined) return false;
     if (!('valueIRI' in value) || value['valueIRI'] === undefined) return false;
     if (!('propertyRepositoryId' in value) || value['propertyRepositoryId'] === undefined) return false;
     if (!('valueRepositoryId' in value) || value['valueRepositoryId'] === undefined) return false;
@@ -82,14 +97,16 @@ export function SemanticAnnotationFromJSONTyped(json: any, ignoreDiscriminator: 
         
         'id': json['id'],
         'name': json['name'],
+        'propertyName': json['propertyName'],
         'propertyIRI': json['propertyIRI'],
+        'valueName': json['valueName'],
         'valueIRI': json['valueIRI'],
         'propertyRepositoryId': json['propertyRepositoryId'],
         'valueRepositoryId': json['valueRepositoryId'],
     };
 }
 
-export function SemanticAnnotationToJSON(value?: Omit<SemanticAnnotation, 'id'|'name'> | null): any {
+export function SemanticAnnotationToJSON(value?: Omit<SemanticAnnotation, 'id'|'name'|'propertyName'|'valueName'> | null): any {
     if (value == null) {
         return value;
     }

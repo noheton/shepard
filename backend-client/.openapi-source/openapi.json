@@ -2562,6 +2562,94 @@
         }
       }
     },
+    "/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations/{semanticAnnotationId}" : {
+      "get" : {
+        "tags" : [ "timeseriesContainer" ],
+        "description" : "Get a specific semantic annotation of a timeseries.",
+        "operationId" : "getSemanticAnnotationOfTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "semanticAnnotationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SemanticAnnotation"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "timeseriesContainer" ],
+        "description" : "Delete annotation of timeseries.",
+        "operationId" : "deleteAnnotationOfTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "semanticAnnotationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "deleted"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
     "/users/{username}/subscriptions/{subscriptionId}" : {
       "get" : {
         "tags" : [ "subscription" ],
@@ -5284,6 +5372,95 @@
         }
       }
     },
+    "/timeseriesContainers/{timeseriesContainerId}/timeseries/{timeseriesId}/semanticAnnotations" : {
+      "get" : {
+        "tags" : [ "timeseriesContainer" ],
+        "description" : "Get all semantic annotations of a timeseries.",
+        "operationId" : "getAllAnnotationsOfTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SemanticAnnotation"
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "timeseriesContainer" ],
+        "description" : "Create new annotation for a timeseries.",
+        "operationId" : "createAnnotationForTimeseries",
+        "parameters" : [ {
+          "name" : "timeseriesContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SemanticAnnotation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "created",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SemanticAnnotation"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
     "/temp/migrations/state" : {
       "get" : {
         "tags" : [ "timeseries migration" ],
@@ -6741,7 +6918,7 @@
         "type" : "string"
       },
       "SemanticAnnotation" : {
-        "required" : [ "id", "name", "propertyIRI", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
+        "required" : [ "id", "name", "propertyName", "propertyIRI", "valueName", "valueIRI", "propertyRepositoryId", "valueRepositoryId" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6751,11 +6928,20 @@
           },
           "name" : {
             "type" : "string",
+            "readOnly" : true,
+            "deprecated" : true
+          },
+          "propertyName" : {
+            "type" : "string",
             "readOnly" : true
           },
           "propertyIRI" : {
             "pattern" : "\\S",
             "type" : "string"
+          },
+          "valueName" : {
+            "type" : "string",
+            "readOnly" : true
           },
           "valueIRI" : {
             "pattern" : "\\S",
