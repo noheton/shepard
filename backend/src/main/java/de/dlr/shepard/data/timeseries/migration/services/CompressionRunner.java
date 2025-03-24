@@ -1,6 +1,5 @@
 package de.dlr.shepard.data.timeseries.migration.services;
 
-import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;

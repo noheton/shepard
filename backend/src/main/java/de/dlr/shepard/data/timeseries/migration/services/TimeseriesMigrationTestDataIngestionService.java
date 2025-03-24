@@ -78,7 +78,7 @@ public class TimeseriesMigrationTestDataIngestionService {
     List<InfluxPoint> points = new ArrayList<>();
 
     IntStream.range(0, payloadSize).forEach(i -> {
-      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 1_000_000)); // one data point per millisecond
+      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 10_000_000)); // one data point per ten milliseconds
     });
     InfluxTimeseriesPayload payload = new InfluxTimeseriesPayload(timeseries, points);
     return payload;

@@ -55,7 +55,7 @@ public class TimeseriesMigrationService {
   @ConfigProperty(name = "shepard.migration-mode.number-of-reader-threads", defaultValue = "1")
   int numberOfReaderThreads;
 
-  @ConfigProperty(name = "shepard.migration-mode.number-of-writer-threads", defaultValue = "2")
+  @ConfigProperty(name = "shepard.migration-mode.number-of-writer-threads", defaultValue = "4")
   int numberOfWriterThreads;
 
   private final BlockingQueue<PayloadWriteTask> payloadWriteQueue;
