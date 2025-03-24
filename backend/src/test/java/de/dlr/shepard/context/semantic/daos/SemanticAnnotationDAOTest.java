@@ -30,7 +30,7 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
   @Test
   public void findAllSemanticAnnotationsTest() {
     var annotation = new SemanticAnnotation(1L);
-    annotation.setName("Test");
+    annotation.setPropertyName("Test");
 
     var query =
       """
@@ -47,7 +47,7 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
   @Test
   public void findAllSemanticAnnotationsByShepardIdTest() {
     var annotation = new SemanticAnnotation(1L);
-    annotation.setName("Test");
+    annotation.setPropertyName("Test");
 
     var query =
       """

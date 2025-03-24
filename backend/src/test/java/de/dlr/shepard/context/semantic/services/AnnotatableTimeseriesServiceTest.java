@@ -62,9 +62,7 @@ public class AnnotatableTimeseriesServiceTest {
 
   @BeforeEach
   public void setupEach() {
-    Mockito.when(
-      semanticAnnotationService.buildAnnotationName(semanticRepository, iri, semanticRepository, iri)
-    ).thenReturn("prop::value");
+    Mockito.doReturn("prop", "value").when(semanticAnnotationService).validateTerm(semanticRepository, iri);
   }
 
   @AfterAll
