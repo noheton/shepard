@@ -20,6 +20,7 @@ public class SemanticAnnotation implements HasId {
   @GeneratedValue
   private Long id;
 
+  @Deprecated
   private String name;
 
   private String propertyName;

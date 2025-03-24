@@ -16,6 +16,7 @@ public class SemanticAnnotationIO implements HasId {
   @Schema(readOnly = true, required = true)
   private Long id;
 
+  @Deprecated
   @Schema(readOnly = true, required = true)
   private String name;
 
