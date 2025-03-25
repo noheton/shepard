@@ -2,7 +2,11 @@ services:
   backend:
     extends:
       file: docker-compose.yml
-      service: frontend
+      service: backend
+    environment:
+      QUARKUS_DATASOURCE_SPATIAL_JDBC_URL: jdbc:postgresql://postgis:5432/${POSTGRES_DB}
+      QUARKUS_DATASOURCE_SPATIAL_USERNAME: ${POSTGRES_SHEPARD_USER}
+      QUARKUS_DATASOURCE_SPATIAL_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
 
   frontend:
     extends:
