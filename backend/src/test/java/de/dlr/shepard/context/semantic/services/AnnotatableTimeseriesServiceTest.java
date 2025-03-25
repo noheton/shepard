@@ -12,6 +12,7 @@ import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 @QuarkusTest
@@ -36,6 +38,9 @@ public class AnnotatableTimeseriesServiceTest {
 
   @InjectMock
   SemanticAnnotationService semanticAnnotationService;
+
+  @InjectMock
+  TimeseriesService timeseriesService;
 
   @Inject
   TimeseriesContainerDAO timeseriesContainerDao;
@@ -58,11 +63,13 @@ public class AnnotatableTimeseriesServiceTest {
     semanticRepository.setEndpoint("https://sparql.hegroup.org/sparql/");
     semanticRepository.setType(SemanticRepositoryType.SPARQL);
     semanticRepositoryDao.createOrUpdate(semanticRepository);
+
+    Mockito.when(timeseriesService.getTimeseriesById(ArgumentMatchers.anyInt())).thenReturn(null);
   }
 
   @BeforeEach
   public void setupEach() {
-    Mockito.doReturn("prop", "value").when(semanticAnnotationService).validateTerm(semanticRepository, iri);
+    Mockito.when(semanticAnnotationService.validateTerm(semanticRepository, iri)).thenReturn("prop", "value");
   }
 
   @AfterAll
@@ -71,7 +78,7 @@ public class AnnotatableTimeseriesServiceTest {
 
   @Test
   public void createAnnotation_NothingExists_AnnotatableTimeseriesAndAnnotationAreCreated() {
-    long timeseriesId = 1;
+    int timeseriesId = 1;
     SemanticAnnotationIO annotationIO = new SemanticAnnotationIO();
     annotationIO.setPropertyRepositoryId(semanticRepository.getId());
     annotationIO.setPropertyIRI(iri);
@@ -89,8 +96,18 @@ public class AnnotatableTimeseriesServiceTest {
   }
 
   @Test
+  public void createAnnotation_TimeseriesIdDoesNotExist_throwNotFoundException() {
+    int nonExistingTimeseriesId = 9999999;
+    Mockito.when(timeseriesService.getTimeseriesById(ArgumentMatchers.anyInt())).thenThrow(NotFoundException.class);
+
+    assertThrows(NotFoundException.class, () ->
+      service.createAnnotation(container.getId(), nonExistingTimeseriesId, null)
+    );
+  }
+
+  @Test
   public void getAnnotations_AnnotatableTimeseriesWithTwoAnnotationsExist_returnsTwoAnnotations() {
-    long timeseriesId = 2;
+    int timeseriesId = 2;
     var firstAnnotation = new SemanticAnnotationIO();
     firstAnnotation.setPropertyRepositoryId(semanticRepository.getId());
     firstAnnotation.setPropertyIRI(iri);
@@ -116,26 +133,25 @@ public class AnnotatableTimeseriesServiceTest {
   }
 
   @Test
-  public void getAnnotations_AnnotatableTimeseriesDoesNotExist_returnsEmptyList() {
-    long nonExistingContainerId = 9999999L;
-    var actual = service.getAnnotations(nonExistingContainerId, 1L);
+  public void getAnnotations_TimeseriesDoesNotExist_throwsNotFoundException() {
+    int nonExistingTimeseriesId = 9999999;
 
-    assertNotNull(actual);
-    assertEquals(0, actual.size());
+    assertThrows(NotFoundException.class, () -> service.getAnnotations(container.getId(), nonExistingTimeseriesId));
   }
 
   @Test
   public void getAnnotationById_AnnotatableTimeseriesDoesExist_returnsAnnotatableTimeseriesWithAnnotation() {
+    var timeseriesId = 4;
     SemanticAnnotationIO annotationIO = new SemanticAnnotationIO();
     annotationIO.setPropertyRepositoryId(semanticRepository.getId());
     annotationIO.setPropertyIRI(iri);
     annotationIO.setValueRepositoryId(semanticRepository.getId());
     annotationIO.setValueIRI(iri);
 
-    var storedEntity = service.createAnnotation(container.getId(), 4L, annotationIO);
+    var storedEntity = service.createAnnotation(container.getId(), timeseriesId, annotationIO);
 
     service.clearSession();
-    var actual = service.getAnnotationById(container.getId(), storedEntity.getId());
+    var actual = service.getAnnotationById(container.getId(), timeseriesId, storedEntity.getId());
 
     assertNotNull(actual);
     assertEquals("prop::value", actual.getName());
@@ -149,24 +165,30 @@ public class AnnotatableTimeseriesServiceTest {
   @Test
   public void getAnnotationById_AnnotationDoesNotExist_throwsNotFoundException() {
     long nonExistingId = 9999999L;
+    var timeseriesId = 5;
 
-    assertThrows(NotFoundException.class, () -> service.getAnnotationById(container.getId(), nonExistingId));
+    assertThrows(NotFoundException.class, () ->
+      service.getAnnotationById(container.getId(), timeseriesId, nonExistingId)
+    );
   }
 
   @Test
   public void delete_AnnotatableTimeseriesDoesExist_entityIsDeleted() {
+    var timeseriesId = 5;
     SemanticAnnotationIO annotationIO = new SemanticAnnotationIO();
     annotationIO.setPropertyRepositoryId(semanticRepository.getId());
     annotationIO.setPropertyIRI(iri);
     annotationIO.setValueRepositoryId(semanticRepository.getId());
     annotationIO.setValueIRI(iri);
 
-    var storedEntity = service.createAnnotation(container.getId(), 5L, annotationIO);
+    var storedEntity = service.createAnnotation(container.getId(), timeseriesId, annotationIO);
 
     service.clearSession();
-    service.deleteAnnotation(storedEntity.getId());
+    service.deleteAnnotation(timeseriesId, storedEntity.getId());
 
     service.clearSession();
-    assertThrows(NotFoundException.class, () -> service.getAnnotationById(container.getId(), storedEntity.getId()));
+    assertThrows(NotFoundException.class, () ->
+      service.getAnnotationById(container.getId(), timeseriesId, storedEntity.getId())
+    );
   }
 }

@@ -22,12 +22,12 @@ public class AnnotatableTimeseries implements HasId {
 
   private long containerId;
 
-  private long timeseriesId;
+  private int timeseriesId;
 
   @Relationship(type = Constants.HAS_ANNOTATION)
   private List<SemanticAnnotation> annotations = new ArrayList<>();
 
-  public AnnotatableTimeseries(long containerId, long timeseriesId, List<SemanticAnnotation> annotations) {
+  public AnnotatableTimeseries(long containerId, int timeseriesId, List<SemanticAnnotation> annotations) {
     this.containerId = containerId;
     this.timeseriesId = timeseriesId;
     this.annotations = annotations;

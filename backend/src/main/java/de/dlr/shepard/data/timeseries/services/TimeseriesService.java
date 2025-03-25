@@ -17,6 +17,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,9 @@ public class TimeseriesService {
   }
 
   public TimeseriesEntity getTimeseriesById(int id) {
-    return timeseriesRepository.findById(id);
+    var timeseries = timeseriesRepository.findById(id);
+    if (timeseries == null) throw new NotFoundException("Timeseries not found.");
+    return timeseries;
   }
 
   @Transactional

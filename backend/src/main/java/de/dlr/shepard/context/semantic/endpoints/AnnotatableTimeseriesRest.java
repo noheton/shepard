@@ -45,8 +45,6 @@ public class AnnotatableTimeseriesRest {
 
   private AnnotatableTimeseriesService annotatableTimeseriesService;
 
-  AnnotatableTimeseriesRest() {}
-
   @Inject
   AnnotatableTimeseriesRest(AnnotatableTimeseriesService annotatableTimeseriesService) {
     this.annotatableTimeseriesService = annotatableTimeseriesService;
@@ -68,7 +66,7 @@ public class AnnotatableTimeseriesRest {
   @Parameter(name = Constants.TIMESERIES_ID)
   public Response getAllAnnotations(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) long timeseriesId
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId
   ) {
     var annotations = annotatableTimeseriesService.getAnnotations(containerId, timeseriesId);
     return Response.ok(annotations.stream().map(SemanticAnnotationIO::new).collect(Collectors.toList())).build();
@@ -92,10 +90,10 @@ public class AnnotatableTimeseriesRest {
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotationById(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) long timeseriesId,
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long annotationId
   ) {
-    var annotation = annotatableTimeseriesService.getAnnotationById(containerId, annotationId);
+    var annotation = annotatableTimeseriesService.getAnnotationById(containerId, timeseriesId, annotationId);
     return Response.ok(new SemanticAnnotationIO(annotation)).build();
   }
 
@@ -113,7 +111,7 @@ public class AnnotatableTimeseriesRest {
   @Transactional
   public Response createAnnotation(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) long timeseriesId,
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
@@ -135,10 +133,10 @@ public class AnnotatableTimeseriesRest {
   @Transactional
   public Response deleteAnnotation(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) long TIMESERIES_ID,
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long annotationId
   ) {
-    annotatableTimeseriesService.deleteAnnotation(annotationId);
+    annotatableTimeseriesService.deleteAnnotation(timeseriesId, annotationId);
     return Response.status(Status.NO_CONTENT).build();
   }
 }

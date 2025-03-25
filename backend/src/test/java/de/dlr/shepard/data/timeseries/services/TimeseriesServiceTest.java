@@ -14,6 +14,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.List;
@@ -216,6 +217,15 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
     assertEquals(1, actual.size());
     assertEquals("temperature", actual.get(0).getMeasurement());
+  }
+
+  @Test
+  public void getTimeseriesById_timeseriesDoesNotExist_throwsNotFoundException() {
+    int nonExistingTimeseriesId = -1;
+
+    assertThrowsExactly(NotFoundException.class, () -> {
+      this.timeseriesService.getTimeseriesById(nonExistingTimeseriesId);
+    });
   }
 
   @Test
