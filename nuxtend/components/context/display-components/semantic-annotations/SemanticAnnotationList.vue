@@ -1,28 +1,23 @@
 <script setup lang="ts">
-import {
-  SemanticAnnotationApi,
-  type ResponseError,
-  type SemanticAnnotation,
+import type {
+  ResponseError,
+  SemanticAnnotation,
 } from "@dlr-shepard/backend-client";
 
-const props = defineProps<{ collectionId: number }>();
-
-const api = createApiInstance(SemanticAnnotationApi);
+const props = defineProps<{ annotated: Annotated }>();
 
 const annotations = ref(new Array<SemanticAnnotation>());
 
-async function fetchSemanticAnnotations(collectionId: number) {
+async function fetchSemanticAnnotations() {
   try {
-    const anns = await api.getAllCollectionAnnotations({
-      collectionId: collectionId,
-    });
+    const anns = await props.annotated.fetchAnnotations();
     annotations.value = annotations.value.concat(anns);
   } catch (e) {
-    handleError(e as ResponseError, "fetching collection roles");
+    handleError(e as ResponseError, "fetching semantic annotations");
   }
 }
 
-onMounted(() => fetchSemanticAnnotations(props.collectionId));
+onMounted(fetchSemanticAnnotations);
 </script>
 
 <template>

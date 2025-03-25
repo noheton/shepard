@@ -87,6 +87,13 @@ const showDescriptionEditDialog = ref(false);
                     />
                   </template>
                 </ExpansionPanelItem>
+                <ExpansionPanelItem title="Semantic Annotations">
+                  <SemanticAnnotationList
+                    :annotated="
+                      new AnnotatedDataObject(collection.id, dataObject.id)
+                    "
+                  />
+                </ExpansionPanelItem>
                 <ExpansionPanelItem
                   title="Attributes"
                   :count="Object.keys(dataObject.attributes ?? {}).length"

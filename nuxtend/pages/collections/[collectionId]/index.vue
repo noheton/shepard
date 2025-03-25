@@ -65,7 +65,9 @@ const showDescriptionEditDialog = ref(false);
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Semantic Annotations">
-                  <SemanticAnnotationList :collection-id="collection.id" />
+                  <SemanticAnnotationList
+                    :annotated="new AnnotatedCollection(collection.id)"
+                  />
                 </ExpansionPanelItem>
 
                 <ExpansionPanelItem
