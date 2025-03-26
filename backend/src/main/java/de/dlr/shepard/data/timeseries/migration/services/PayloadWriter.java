@@ -12,6 +12,9 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -19,7 +22,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @RequestScoped
 class PayloadWriter implements Callable<Object> {
 
-  private static int compressionBatchSize = 10;
   private TimeseriesMigrationService migrationService;
   private TimeseriesService timeseriesService;
 
@@ -48,7 +50,20 @@ class PayloadWriter implements Callable<Object> {
             task.payload.getPoints().size()
           );
           saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
-          if (task.taskId % compressionBatchSize == 0) {
+          long taskStartTimeMilliseconds = task.startTimestamp / 1_000_000;
+          long taskEndTimeMilliseconds = (task.endTimestamp + 1) / 1_000_000;
+
+          LocalDate startDate = Instant.ofEpochMilli(taskStartTimeMilliseconds).atZone(ZoneOffset.UTC).toLocalDate();
+          LocalDate endDate = Instant.ofEpochMilli(taskEndTimeMilliseconds).atZone(ZoneOffset.UTC).toLocalDate();
+
+          // Add compression if the task occurs in between two days
+          if (!startDate.equals(endDate)) {
+            Log.infof(
+              "Adding compression task for after inserting data for container %s, timestamps: %s to %s",
+              task.container.getId(),
+              task.startTimestamp,
+              task.endTimestamp
+            );
             migrationService.addCompressionTask();
           }
         } finally {

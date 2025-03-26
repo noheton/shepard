@@ -9,7 +9,16 @@ public class PayloadWriteTask {
 
   private static int taskIdCounter = 0;
 
-  public static final PayloadWriteTask poisonPill = new PayloadWriteTask(taskIdCounter, null, null, null, null, true);
+  public static final PayloadWriteTask poisonPill = new PayloadWriteTask(
+    taskIdCounter,
+    0,
+    0,
+    null,
+    null,
+    null,
+    null,
+    true
+  );
 
   InfluxTimeseriesPayload payload;
   InfluxTimeseriesDataType dataType;
@@ -19,8 +28,13 @@ public class PayloadWriteTask {
   int runningNumber;
   boolean isLastTask;
 
+  public long startTimestamp;
+  public long endTimestamp;
+
   public PayloadWriteTask(
     int runningNumber,
+    long startTimestamp,
+    long endTimestamp,
     InfluxTimeseriesPayload payload,
     InfluxTimeseriesDataType dataType,
     InfluxTimeseries influxTimeseries,
@@ -28,6 +42,8 @@ public class PayloadWriteTask {
     boolean isLastTask
   ) {
     this.runningNumber = runningNumber;
+    this.startTimestamp = startTimestamp;
+    this.endTimestamp = endTimestamp;
     this.payload = payload;
     this.dataType = dataType;
     this.influxTimeseries = influxTimeseries;
