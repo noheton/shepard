@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { User } from "@dlr-shepard/backend-client";
-import { useCollectionPermissionUserSearch } from "~/components/common/permissions/useCollectionPermissionUserSearch";
+import { useCollectionPermissionUserSearch } from "~/composables/common/permissions/useCollectionPermissionUserSearch";
 import AutocompleteInput, {
   type AutoCompleteItem,
 } from "../AutocompleteInput.vue";
@@ -8,7 +8,7 @@ import AutocompleteInput, {
 defineProps<{ isOwner?: boolean }>();
 
 const emit = defineEmits<{
-  (e: "ownerChange", value: User): void;
+  (e: "ownerChange", value: User | null): void;
 }>();
 
 const owner = defineModel<User>({ required: true });
@@ -33,6 +33,8 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
     owner.value = selectedItem.value as User;
     emit("ownerChange", owner.value);
+  } else {
+    emit("ownerChange", null);
   }
 };
 </script>

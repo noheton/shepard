@@ -5,9 +5,9 @@ import {
   PermissionType,
   type User,
 } from "@dlr-shepard/backend-client";
+import { useEditCollectionPermissions } from "../../../composables/common/permissions/useEditCollectionPermissions";
+import type { Member } from "../../../composables/common/permissions/useMemberSearch";
 import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
-import { useEditCollectionPermissions } from "./useEditCollectionPermissions";
-import type { Member } from "./useMemberSearch";
 import { UserRole } from "./UserRole";
 
 interface EditPermissionsDialogProps {
@@ -28,6 +28,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const isValid = ref(true);
+const isOwnerInputValid = ref(true);
 
 const selectedAdditionalUserRole = ref<UserRole | undefined>(undefined);
 
@@ -58,10 +59,15 @@ watch(
   { once: true },
 );
 
-const onOwnerChange = (updatedOwner: User) => {
-  if (updatedPermissions.value)
-    updatedPermissions.value.owner = updatedOwner.username;
+const onOwnerChange = (updatedOwner: User | null) => {
+  if (!updatedOwner) {
+    isOwnerInputValid.value = false;
+  } else if (updatedPermissions.value) {
+    updatedPermissions.value.owner = updatedOwner?.username;
+    isOwnerInputValid.value = true;
+  }
 };
+
 const onPermissionTypeChange = (updatedPermissionType: PermissionType) => {
   if (updatedPermissions.value)
     updatedPermissions.value.permissionType = updatedPermissionType;
@@ -88,16 +94,31 @@ const onAddPermission = () => {
     const memberExists = memberPermissionsList.value.find(member =>
       findMemberCallback(member.member),
     );
-    if (memberExists) {
-      const roleExists = memberExists.roleList.some(
-        role => role === selectedAdditionalUserRole.value,
-      );
-      if (!roleExists)
-        memberExists.roleList.push(selectedAdditionalUserRole.value);
-    } else {
+    // On adding roles, implied roles are added automatically as well.
+    const rolesToAdd = (() => {
+      switch (selectedAdditionalUserRole.value) {
+        case UserRole.manager: {
+          return [UserRole.manager, UserRole.reader, UserRole.writer];
+        }
+        case UserRole.writer: {
+          return [UserRole.reader, UserRole.writer];
+        }
+        default: {
+          return [selectedAdditionalUserRole.value];
+        }
+      }
+    })();
+    if (!memberExists) {
       memberPermissionsList.value.unshift({
         member: selectedMember,
-        roleList: [selectedAdditionalUserRole.value],
+        roleList: rolesToAdd,
+      });
+    } else {
+      rolesToAdd.forEach(roleToAdd => {
+        const roleExists = memberExists.roleList.some(
+          role => role === roleToAdd,
+        );
+        if (!roleExists) memberExists.roleList.push(roleToAdd);
       });
     }
   };
@@ -110,7 +131,6 @@ const onAddPermission = () => {
     searchCallback = (member: Member) =>
       instanceOfUserGroup(member) && member.id === memberSelected.id;
   }
-
   addMemberPermission(memberSelected, searchCallback);
   resetAdditionalPermission();
 };
@@ -138,7 +158,7 @@ const onSubmit = () => {
     v-model:show-dialog="showDialog"
     title="Manage Permissions"
     :max-width="950"
-    :submit-disabled="!isValid"
+    :submit-disabled="!(isValid && isOwnerInputValid)"
     @submit="onSubmit"
   >
     <template #form>
@@ -178,7 +198,11 @@ const onSubmit = () => {
             />
           </v-col>
         </v-row>
-        <v-divider opacity="100" class="text-divider1 mb-4" thickness="1px" />
+        <v-divider
+          opacity="100"
+          class="text-divider1 mb-6 mt-2"
+          thickness="1px"
+        />
         <v-row>
           <v-col class="text-semibold text-textbody1">
             Additional Permissions
@@ -213,11 +237,12 @@ const onSubmit = () => {
               hide-details
             />
           </v-col>
-          <v-col style="max-width: fit-content">
+          <v-col style="max-width: fit-content" class="d-flex align-center">
             <v-btn
               prepend-icon="mdi-plus-circle"
               color="primary"
               variant="flat"
+              height="40px"
               @click="onAddPermission"
             >
               ADD

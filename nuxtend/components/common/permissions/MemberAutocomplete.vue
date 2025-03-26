@@ -4,8 +4,11 @@ import {
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
+import {
+  useMemberSearch,
+  type Member,
+} from "../../../composables/common/permissions/useMemberSearch";
 import type { AutoCompleteItem } from "../AutocompleteInput.vue";
-import { useMemberSearch, type Member } from "./useMemberSearch";
 
 const emit = defineEmits<{
   (e: "memberSelect", value: Member): void;

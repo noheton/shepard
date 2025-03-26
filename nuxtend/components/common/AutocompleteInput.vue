@@ -20,6 +20,7 @@ const emit = defineEmits<{
 }>();
 
 const autoCompleteModel = defineModel<AutoCompleteItem>();
+
 const searchString = defineModel<string | undefined>("searchString", {
   required: true,
 });
@@ -51,6 +52,21 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
     emit("searchEnded", null);
   }
 };
+
+watch(searchString, (newVal, oldVal) => {
+  if (newVal === "" && autoCompleteModel.value) {
+    emit("searchEnded", autoCompleteModel.value);
+  } else if (newVal !== oldVal) {
+    console.log(`new val: ${newVal} , old val: ${oldVal}`);
+    if (newVal !== autoCompleteModel.value?.title) emit("searchEnded", null);
+  }
+});
+
+watch(autoCompleteModel, newVal => {
+  if (!newVal) {
+    emit("searchEnded", null);
+  }
+});
 </script>
 
 <template>
