@@ -28,6 +28,7 @@ const {
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
+const showAddAnnotationDialog = ref(false);
 </script>
 
 <template>
@@ -88,6 +89,19 @@ const showDescriptionEditDialog = ref(false);
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Semantic Annotations">
+                  <template v-if="isAllowedToEditCollection" #append>
+                    <ExpansionPanelTitleButton
+                      text="Add"
+                      icon="mdi-plus-circle"
+                      @click="() => (showAddAnnotationDialog = true)"
+                    />
+                    <AddAnnotationDialog
+                      v-if="showAddAnnotationDialog"
+                      v-model:show-dialog="showAddAnnotationDialog"
+                      :collection-id="collection.id"
+                      :data-object-id="dataObject.id"
+                    />
+                  </template>
                   <SemanticAnnotationList
                     :annotated="
                       new AnnotatedDataObject(collection.id, dataObject.id)
@@ -135,6 +149,8 @@ const showDescriptionEditDialog = ref(false);
                   :count="relatedEntities.length"
                 >
                   <DataObjectRelationshipsTable
+                    :collection-id="collectionId"
+                    :data-object-id="dataObjectId"
                     :related-entities="relatedEntities"
                   />
                 </ExpansionPanelItem>

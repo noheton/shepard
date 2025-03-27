@@ -1,4 +1,5 @@
 export type RelationshipTableElement = {
+  id: number;
   relationship: string | undefined;
   name: { value: string; path?: string };
   type:

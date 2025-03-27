@@ -10,15 +10,14 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-const { collection, isAllowedToEditCollection } = useFetchCollection(
-  routeParams.value.collectionId,
-);
-const { dataObjectsMap } = useFetchDataObjectMapByCollection(
-  routeParams.value.collectionId,
-);
+const collectionId = routeParams.value.collectionId;
+const { collection, isAllowedToEditCollection } =
+  useFetchCollection(collectionId);
+const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
+const showAddAnnotationDialog = ref(false);
 </script>
 
 <template>
@@ -65,6 +64,18 @@ const showDescriptionEditDialog = ref(false);
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Semantic Annotations">
+                  <template v-if="isAllowedToEditCollection" #append>
+                    <ExpansionPanelTitleButton
+                      text="Add"
+                      icon="mdi-plus-circle"
+                      @click="() => (showAddAnnotationDialog = true)"
+                    />
+                    <AddAnnotationDialog
+                      v-if="showAddAnnotationDialog"
+                      v-model:show-dialog="showAddAnnotationDialog"
+                      :collection-id="collection.id"
+                    />
+                  </template>
                   <SemanticAnnotationList
                     :annotated="new AnnotatedCollection(collection.id)"
                   />

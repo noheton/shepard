@@ -10,6 +10,7 @@ export function mapRelatedEntityToRelationshipTableElement(
   relatedEntity: RelatedEntity,
 ): RelationshipTableElement {
   return {
+    id: relatedEntity.id,
     relationship: mapRelationshipType(relatedEntity),
     name: mapName(relatedEntity),
     type: mapType(relatedEntity),

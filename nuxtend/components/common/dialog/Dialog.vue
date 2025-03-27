@@ -4,9 +4,10 @@ interface DialogProps {
   loading?: boolean;
   submitDisabled: boolean;
   maxWidth?: number;
+  saveButtonText?: string;
 }
 
-defineProps<DialogProps>();
+const props = defineProps<DialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -45,7 +46,7 @@ const emit = defineEmits(["submit"]);
               class="ml-4"
               @click="emit('submit')"
             >
-              Save Changes
+              {{ props.saveButtonText ?? "Save Changes" }}
             </v-btn>
           </v-col>
         </v-row>
