@@ -144,15 +144,15 @@ const onSubmit = async () => {
             >
               <template #activator="{ props }">
                 <v-autocomplete
+                  v-bind="props"
+                  v-model="propertyRepository"
+                  :items="repositories.map(mapToAutocompleteItem)"
                   label="Repository Name or ID..."
                   placeholder="select a repository"
                   no-data-text="No repositories found"
                   color="primary"
                   variant="outlined"
                   density="compact"
-                  v-bind="props"
-                  :model-value="propertyRepository"
-                  :items="repositories.map(mapToAutocompleteItem)"
                 />
               </template>
               <div>
@@ -198,15 +198,15 @@ const onSubmit = async () => {
             >
               <template #activator="{ props }">
                 <v-autocomplete
-                  label="Repository Name or ID..."
+                  v-bind="props"
+                  v-model="valueRepository"
                   :items="repositories.map(mapToAutocompleteItem)"
+                  label="Repository Name or ID..."
                   density="compact"
                   variant="outlined"
                   no-data-text="No repositories found"
                   color="primary"
                   placeholder="select a repository"
-                  v-bind="props"
-                  :model-value="valueRepository"
                 />
               </template>
               <div>
