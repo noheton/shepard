@@ -2,6 +2,7 @@ package de.dlr.shepard.common.neo4j;
 
 import ac.simons.neo4j.migrations.core.Migrations;
 import ac.simons.neo4j.migrations.core.MigrationsConfig;
+import ac.simons.neo4j.migrations.core.MigrationsConfig.VersionSortOrder;
 import ac.simons.neo4j.migrations.core.MigrationsException;
 import io.quarkus.logging.Log;
 import java.nio.file.Paths;
@@ -33,6 +34,7 @@ public class MigrationsRunner {
       .withTransactionMode(MigrationsConfig.TransactionMode.PER_STATEMENT)
       .withPackagesToScan("de.dlr.shepard.common.neo4j.migrations")
       .withLocationsToScan("file://" + locationsToScan)
+      .withVersionSortOrder(VersionSortOrder.SEMANTIC)
       .build();
 
     migrations = new Migrations(config, driver);
