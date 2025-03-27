@@ -144,6 +144,9 @@ const showAddAnnotationDialog = ref(false);
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
                     :data-references="dataReferences"
+                    :is-allowed-to-edit-collection="
+                      isAllowedToEditCollection ?? false
+                    "
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
@@ -154,6 +157,9 @@ const showAddAnnotationDialog = ref(false);
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
                     :related-entities="relatedEntities"
+                    :is-allowed-to-edit-collection="
+                      isAllowedToEditCollection ?? false
+                    "
                   />
                 </ExpansionPanelItem>
               </ExpansionPanels>

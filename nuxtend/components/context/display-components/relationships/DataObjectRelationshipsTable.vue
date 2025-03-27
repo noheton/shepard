@@ -8,6 +8,7 @@ interface DataObjectRelationshipsTable {
   collectionId: number;
   dataObjectId: number;
   relatedEntities: RelatedEntity[];
+  isAllowedToEditCollection: boolean;
 }
 const props = defineProps<DataObjectRelationshipsTable>();
 
@@ -125,7 +126,7 @@ const headers = [
       }"
     >
       <v-btn
-        v-if="value.annotatable"
+        v-if="isAllowedToEditCollection && value.annotatable"
         class="relationship-actions"
         icon="mdi-tag-outline"
         density="compact"

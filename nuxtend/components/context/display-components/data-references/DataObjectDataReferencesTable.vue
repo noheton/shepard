@@ -8,6 +8,7 @@ interface DataObjectDataReferencesTableProps {
   collectionId: number;
   dataObjectId: number;
   dataReferences: Array<DataReference>;
+  isAllowedToEditCollection: boolean;
 }
 const props = defineProps<DataObjectDataReferencesTableProps>();
 
@@ -83,6 +84,7 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
       #[`item.actions`]="{ value }: { value: DataTableElement['actions'] }"
     >
       <v-btn
+        v-if="isAllowedToEditCollection"
         class="data-table-row-actions"
         icon="mdi-tag-outline"
         density="compact"
