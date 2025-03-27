@@ -12,6 +12,7 @@ export const mapDataReferenceToDataTableElement = (
   name: ref.name,
   meta: mapContainerMetaData(ref),
   created: { createdAt: ref.createdAt, createdBy: ref.createdBy },
+  actions: { elementId: ref.id },
 });
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {

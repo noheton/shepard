@@ -1,4 +1,5 @@
 import {
+  instanceOfCollectionReference,
   instanceOfDataObject,
   instanceOfDataObjectReference,
   instanceOfURIReference,
@@ -17,6 +18,10 @@ export function mapRelatedEntityToRelationshipTableElement(
     created: {
       createdAt: relatedEntity.createdAt,
       createdBy: relatedEntity.createdBy,
+    },
+    actions: {
+      elementId: relatedEntity.id,
+      annotatable: isAnnotatable(relatedEntity),
     },
   };
 }
@@ -100,4 +105,12 @@ function mapType(entity: RelatedEntity): RelationshipTableElement["type"] {
     id: entity.referencedCollectionId,
     availability: "available",
   };
+}
+
+function isAnnotatable(entity: RelatedEntity): boolean {
+  return (
+    instanceOfCollectionReference(entity) ||
+    instanceOfDataObjectReference(entity) ||
+    instanceOfURIReference(entity)
+  );
 }

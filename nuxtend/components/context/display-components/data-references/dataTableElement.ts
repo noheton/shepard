@@ -13,4 +13,7 @@ export type DataTableElement = {
     createdBy: string;
     createdAt: Date;
   };
+  actions: {
+    elementId: number;
+  };
 };

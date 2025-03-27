@@ -4,10 +4,20 @@ import type { DataReference } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
 import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
 
-interface DataObjectDataReferencesTable {
+interface DataObjectDataReferencesTableProps {
+  collectionId: number;
+  dataObjectId: number;
   dataReferences: Array<DataReference>;
 }
-const props = defineProps<DataObjectDataReferencesTable>();
+const props = defineProps<DataObjectDataReferencesTableProps>();
+
+const selectedReferenceId = ref<number>(0);
+const showAddAnnotationDialog = ref(false);
+
+function openAddAnnotationDialog(dataTableElementId: number) {
+  selectedReferenceId.value = dataTableElementId;
+  showAddAnnotationDialog.value = true;
+}
 
 const tableItems: Array<DataTableElement> = props.dataReferences.map(
   mapDataReferenceToDataTableElement,
@@ -36,6 +46,10 @@ const headers = [
     sort: (a: DataTableElement["created"], b: DataTableElement["created"]) =>
       a.createdAt.valueOf() - b.createdAt.valueOf(),
   },
+  {
+    title: "",
+    value: "actions",
+  },
 ];
 
 const page = ref<number>(1);
@@ -52,6 +66,7 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     :headers="headers"
     :items="tableItems"
     :items-per-page="itemsPerPage"
+    hover
   >
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
       <DataObjectDataMetaCell :meta="value" />
@@ -64,11 +79,30 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
         :created-by="value.createdBy"
       />
     </template>
+    <template
+      #[`item.actions`]="{ value }: { value: DataTableElement['actions'] }"
+    >
+      <v-btn
+        class="data-table-row-actions"
+        icon="mdi-tag-outline"
+        density="compact"
+        variant="flat"
+        @click="() => openAddAnnotationDialog(value.elementId)"
+      />
+    </template>
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />
       <v-pagination v-model="page" :length="pageCount" />
     </template>
   </DataTable>
+
+  <AddAnnotationDialog
+    v-if="showAddAnnotationDialog"
+    v-model:show-dialog="showAddAnnotationDialog"
+    :collection-id="props.collectionId"
+    :data-object-id="props.dataObjectId"
+    :reference-id="selectedReferenceId"
+  />
 </template>
 
 <style scoped lang="scss">
@@ -76,5 +110,13 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));
   }
+}
+
+tr .data-table-row-actions {
+  visibility: hidden;
+}
+
+tr:hover .data-table-row-actions {
+  visibility: visible;
 }
 </style>

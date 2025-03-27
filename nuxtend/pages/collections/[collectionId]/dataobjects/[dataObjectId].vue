@@ -141,6 +141,8 @@ const showAddAnnotationDialog = ref(false);
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Data" :count="dataReferences.length">
                   <DataObjectDataReferencesTable
+                    :collection-id="collectionId"
+                    :data-object-id="dataObjectId"
                     :data-references="dataReferences"
                   />
                 </ExpansionPanelItem>

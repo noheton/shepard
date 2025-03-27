@@ -11,6 +11,10 @@ export type RelationshipTableElement = {
     createdAt: Date;
     createdBy: string;
   };
+  actions: {
+    elementId: number;
+    annotatable: boolean;
+  };
 };
 
 type LinkType = { type: "Link" };

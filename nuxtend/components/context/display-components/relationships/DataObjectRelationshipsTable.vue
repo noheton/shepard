@@ -11,34 +11,22 @@ interface DataObjectRelationshipsTable {
 }
 const props = defineProps<DataObjectRelationshipsTable>();
 
-const selectedDataObjectId = ref<number | undefined>(props.dataObjectId);
 const selectedReferenceId = ref<number | undefined>(0);
 const showAddAnnotationDialog = ref(false);
 
 function openAddAnnotationDialog(relationshipElementId: number) {
-  // before we can open the dialog, we have to check the relationship type
   const relationShipElement = getRelationshipElementById(relationshipElementId);
   if (!relationShipElement) return;
 
   switch (relationShipElement.type.type) {
-    case "Data Object":
-      selectedDataObjectId.value = relationShipElement.id;
-      selectedReferenceId.value = undefined;
-      break;
     case "Link":
-      selectedDataObjectId.value = props.dataObjectId;
-      selectedReferenceId.value = relationShipElement.id;
-      break;
     case "Collection Reference":
-      selectedDataObjectId.value = props.dataObjectId;
-      selectedReferenceId.value = relationShipElement.id;
-      break;
     case "Data Object Reference":
-      selectedDataObjectId.value = props.dataObjectId;
       selectedReferenceId.value = relationShipElement.id;
       break;
+    default:
+      throw new Error("Unsupported relationship type");
   }
-
   showAddAnnotationDialog.value = true;
 }
 
@@ -84,14 +72,20 @@ const headers = [
   },
   {
     title: "",
-    value: "id",
+    value: "actions",
   },
 ];
 </script>
 
 <template>
   <EmptyListIcon v-if="tableItems.length === 0" label="No relationships yet" />
-  <DataTable v-else items-per-page="-1" :items="tableItems" :headers="headers">
+  <DataTable
+    v-else
+    items-per-page="-1"
+    :items="tableItems"
+    :headers="headers"
+    hover
+  >
     <template
       #[`item.relationship`]="{
         value,
@@ -124,13 +118,19 @@ const headers = [
       />
     </template>
     <template
-      #[`item.id`]="{ value }: { value: RelationshipTableElement['id'] }"
+      #[`item.actions`]="{
+        value,
+      }: {
+        value: RelationshipTableElement['actions'];
+      }"
     >
       <v-btn
+        v-if="value.annotatable"
+        class="relationship-actions"
         icon="mdi-tag-outline"
         density="compact"
         variant="flat"
-        @click="() => openAddAnnotationDialog(value)"
+        @click="() => openAddAnnotationDialog(value.elementId)"
       />
     </template>
     <template #bottom>
@@ -142,7 +142,7 @@ const headers = [
     v-if="showAddAnnotationDialog"
     v-model:show-dialog="showAddAnnotationDialog"
     :collection-id="props.collectionId"
-    :data-object-id="selectedDataObjectId"
+    :data-object-id="props.dataObjectId"
     :reference-id="selectedReferenceId"
   />
 </template>
@@ -160,5 +160,13 @@ const headers = [
     border-bottom: thin solid
       rgba(var(--v-border-color), var(--v-border-opacity));
   }
+}
+
+tr .relationship-actions {
+  visibility: hidden;
+}
+
+tr:hover .relationship-actions {
+  visibility: visible;
 }
 </style>
