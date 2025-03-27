@@ -312,5 +312,7 @@ public class CollectionServiceVersionTest {
     );
     Version do21Toc1Version = collection1Depth2.getIncoming().get(0).getVersion();
     assertEquals(collection2HEADVersion.getUid(), do21Toc1Version.getUid());
+    CollectionIO c1IO = new CollectionIO(collection1Depth2);
+    assertEquals(c1IO.getIncomingReferences()[0].versionUID, do21Toc1Version.getUid());
   }
 }
