@@ -6,6 +6,8 @@ const itemsPerPage = 20;
 
 const { serverItems, pageCount, loading, searchResultHint } =
   useSearchContainers(itemsPerPage);
+
+const showCreateDialog = ref(false);
 </script>
 
 <template>
@@ -27,8 +29,22 @@ const { serverItems, pageCount, loading, searchResultHint } =
             </Tooltip>
           </div>
         </v-col>
-        <v-col cols="12" class="pb-4">
+        <v-col cols="auto" class="pb-4">
           <ContainerSearchField :search-result-hint="searchResultHint" />
+        </v-col>
+        <v-spacer />
+        <v-col cols="auto" class="pb-4" justify-self="end">
+          <v-btn
+            class="bg-primary text-canvas"
+            variant="flat"
+            :style="{ marginTop: '3px' }"
+            @click="showCreateDialog = true"
+          >
+            <template #prepend>
+              <v-icon icon="mdi-plus-circle" color="canvas" />
+            </template>
+            Create new container
+          </v-btn>
         </v-col>
         <v-col cols="12" class="pt-4 pb-1">
           <ContainerTypeSelect />
@@ -43,5 +59,10 @@ const { serverItems, pageCount, loading, searchResultHint } =
         </v-col>
       </v-row>
     </v-container>
+    <CreateContainerDialog
+      v-if="showCreateDialog"
+      v-model:show-dialog="showCreateDialog"
+      @container-created="id => $router.push(containersPath + id)"
+    />
   </div>
 </template>
