@@ -84,6 +84,7 @@ const onSubmit = async () => {
       `Successfully added semantic annotation "${annotation?.name}".`,
     );
     emit("annotationAdded", annotation);
+    handleAnnotationListUpdate();
   } catch (error) {
     handleError(error as ResponseError, "creating semantic annotation");
   }

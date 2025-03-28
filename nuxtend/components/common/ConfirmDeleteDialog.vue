@@ -1,9 +1,11 @@
 <script setup lang="ts">
 interface ConfirmDeleteDialogProps {
-  promptText: string;
+  promptText?: string;
 }
 
-defineProps<ConfirmDeleteDialogProps>();
+const props = withDefaults(defineProps<ConfirmDeleteDialogProps>(), {
+  promptText: "Are you sure you want to delete this item?",
+});
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -29,7 +31,7 @@ const confirm = () => {
     <v-card class="pa-0 bg-canvas">
       <v-card-text>
         <div class="text-h4 text-textbody1">
-          {{ promptText }}
+          {{ props.promptText }}
         </div>
       </v-card-text>
       <template #actions>

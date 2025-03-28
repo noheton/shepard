@@ -21,3 +21,14 @@ export const onDataObjectUpdated = (listener: () => void) => {
   const stopListening = dataObjectBus.on(listener);
   onUnmounted(stopListening);
 };
+
+const annotationBus = useEventBus("annotations-changed");
+
+export const handleAnnotationListUpdate = () => {
+  annotationBus.emit("annotations-changed");
+};
+
+export const onAnnotationsUpdated = (listener: () => void) => {
+  const stopListening = annotationBus.on(listener);
+  onUnmounted(stopListening);
+};

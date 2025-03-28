@@ -10,25 +10,25 @@ const annotations = ref(new Array<SemanticAnnotation>());
 
 async function fetchSemanticAnnotations() {
   try {
-    const anns = await props.annotated.fetchAnnotations();
-    annotations.value = annotations.value.concat(anns);
+    annotations.value = await props.annotated.fetchAnnotations();
+    console.log("fetch annotations");
   } catch (e) {
     handleError(e as ResponseError, "fetching semantic annotations");
   }
 }
 
-onMounted(fetchSemanticAnnotations);
+fetchSemanticAnnotations();
+
+onAnnotationsUpdated(fetchSemanticAnnotations);
 </script>
 
 <template>
   <ul>
     <SemanticAnnotationChip
       v-for="annotation in annotations"
-      :key="annotation.propertyName"
-      :property="annotation.propertyName"
-      :property-iri="annotation.propertyIRI"
-      :value="annotation.valueName"
-      :value-iri="annotation.valueIRI"
+      :key="annotation.id"
+      :annotated-type="annotated"
+      :annotation="annotation"
     />
   </ul>
 </template>
