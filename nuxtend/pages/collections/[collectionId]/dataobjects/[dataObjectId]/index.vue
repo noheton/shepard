@@ -3,7 +3,7 @@ import EditDataObjectDescriptionDialog from "~/components/context/data-object/ed
 import {
   collectionsPath,
   dataObjectsPathFragment,
-} from "../../../../utils/constants";
+} from "../../../../../utils/constants";
 
 definePageMeta({ layout: "collection" });
 
@@ -12,6 +12,9 @@ const { routeParams } = useCollectionRouteParams();
 // We cast this because this page will only be invoked with a data object id.
 const { collectionId, dataObjectId } =
   routeParams.value as CollectionRouteParams & { dataObjectId: number };
+
+console.log("routeParams");
+console.log(routeParams);
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);

@@ -17,6 +17,7 @@ export function useCollectionRouteParams() {
   const routeParams = ref<CollectionRouteParams>({
     collectionId: initialParams.collectionId ?? NaN,
     dataObjectId: initialParams.dataObjectId,
+    timeseriesReferenceId: initialParams.timeseriesReferenceId,
   });
 
   watch(

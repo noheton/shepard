@@ -3,6 +3,7 @@ import type { RouteParamsGeneric } from "vue-router";
 export interface CollectionRouteParams {
   collectionId: number;
   dataObjectId?: number;
+  timeseriesReferenceId?: number;
 }
 
 export const isCollectionRouteParams = (
@@ -24,6 +25,7 @@ export function parseCollectionRouteParams(
   return {
     collectionId: parseCollectionId(routeParams),
     dataObjectId: parseDataObjectId(routeParams),
+    timeseriesReferenceId: parseTimeseriesReferenceId(routeParams),
   };
 }
 
@@ -48,6 +50,18 @@ function parseDataObjectId(
     typeof routeParams.dataObjectId === "string"
   ) {
     return parseInt(routeParams.dataObjectId);
+  }
+  return undefined;
+}
+
+function parseTimeseriesReferenceId(
+  routeParams: RouteParamsGeneric,
+): number | undefined {
+  if (
+    routeParams.timeseriesReferenceId &&
+    typeof routeParams.timeseriesReferenceId === "string"
+  ) {
+    return parseInt(routeParams.timeseriesReferenceId);
   }
   return undefined;
 }
