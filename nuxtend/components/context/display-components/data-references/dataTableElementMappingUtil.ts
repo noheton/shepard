@@ -12,7 +12,7 @@ export const mapDataReferenceToDataTableElement = (
   name: ref.name,
   meta: mapContainerMetaData(ref),
   created: { createdAt: ref.createdAt, createdBy: ref.createdBy },
-  actions: { elementId: ref.id },
+  actions: { elementId: ref.id, showDetails: buildShowDetailsArgs(ref) },
 });
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
@@ -57,3 +57,17 @@ const mapNameAndAvailability = (
     referencedContainerName: meta.referencedContainerName,
   };
 };
+
+function buildShowDetailsArgs(ref: DataReference): {
+  enabled: boolean;
+  pathFragment: string;
+} {
+  const refType = mapRefType(ref);
+  if (refType === "TimeSeries") {
+    return { enabled: true, pathFragment: timeseriesReferencePathFragment };
+  }
+  return {
+    enabled: false,
+    pathFragment: "",
+  };
+}

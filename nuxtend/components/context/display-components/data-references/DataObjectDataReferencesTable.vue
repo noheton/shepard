@@ -11,6 +11,7 @@ interface DataObjectDataReferencesTableProps {
   isAllowedToEditCollection: boolean;
 }
 const props = defineProps<DataObjectDataReferencesTableProps>();
+const router = useRouter();
 
 const selectedReferenceId = ref<number>(0);
 const showAddAnnotationDialog = ref(false);
@@ -18,6 +19,17 @@ const showAddAnnotationDialog = ref(false);
 function openAddAnnotationDialog(dataTableElementId: number) {
   selectedReferenceId.value = dataTableElementId;
   showAddAnnotationDialog.value = true;
+}
+
+function showDetails(pathFragment: string, id: number) {
+  const route =
+    collectionsPath +
+    props.collectionId +
+    dataObjectsPathFragment +
+    props.dataObjectId +
+    pathFragment +
+    id;
+  router.push(route);
 }
 
 const tableItems: Array<DataTableElement> = props.dataReferences.map(
@@ -83,14 +95,24 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     <template
       #[`item.actions`]="{ value }: { value: DataTableElement['actions'] }"
     >
-      <v-btn
-        v-if="isAllowedToEditCollection"
-        class="data-table-row-actions"
-        icon="mdi-tag-outline"
-        density="compact"
-        variant="flat"
-        @click="() => openAddAnnotationDialog(value.elementId)"
-      />
+      <div class="data-table-row-actions d-flex ga-2">
+        <v-btn
+          v-if="value.showDetails.enabled"
+          icon="mdi-eye-outline"
+          density="compact"
+          variant="flat"
+          @click="
+            () => showDetails(value.showDetails.pathFragment, value.elementId)
+          "
+        />
+        <v-btn
+          v-if="isAllowedToEditCollection"
+          icon="mdi-tag-outline"
+          density="compact"
+          variant="flat"
+          @click="() => openAddAnnotationDialog(value.elementId)"
+        />
+      </div>
     </template>
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />

@@ -15,5 +15,9 @@ export type DataTableElement = {
   };
   actions: {
     elementId: number;
+    showDetails: {
+      enabled: boolean;
+      pathFragment: string;
+    };
   };
 };
