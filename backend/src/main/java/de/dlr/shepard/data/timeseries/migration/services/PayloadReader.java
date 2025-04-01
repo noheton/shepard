@@ -1,14 +1,12 @@
 package de.dlr.shepard.data.timeseries.migration.services;
 
-import java.util.concurrent.Callable;
-
-import org.influxdb.InfluxDBException;
-
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesPayload;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.concurrent.Callable;
+import org.influxdb.InfluxDBException;
 
 @RequestScoped
 class PayloadReader implements Callable<Object> {
@@ -65,8 +63,7 @@ class PayloadReader implements Callable<Object> {
       throw e;
     } finally {
       // To ensure adding them once!
-      if (migrationService.getPayloadReadQueue().isEmpty())
-        migrationService.addWriterPoisonPills();
+      if (migrationService.getPayloadReadQueue().isEmpty()) migrationService.addWriterPoisonPills();
       migrationService.addCompressionPoisonPills();
     }
     return "PayloadReader Done!";
