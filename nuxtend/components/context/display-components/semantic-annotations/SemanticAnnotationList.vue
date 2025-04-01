@@ -6,7 +6,7 @@ import type {
 
 const props = defineProps<{ annotated: Annotated }>();
 
-const annotations = ref(new Array<SemanticAnnotation>());
+const annotations = ref<SemanticAnnotation[]>([]);
 
 async function fetchSemanticAnnotations() {
   try {
