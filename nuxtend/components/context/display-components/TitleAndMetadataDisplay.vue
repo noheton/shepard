@@ -9,7 +9,7 @@ interface TitleAndMetadataDisplayProps {
     updatedAt: Date | null;
     updatedBy: string | null;
     type?: string;
-    container?: { title: string; id: number; to: string };
+    container?: { title: string; id: number; path: string };
   };
   onDelete?: () => void;
   onDownload?: (name: string) => void;
@@ -58,7 +58,7 @@ const updatedAt = props.entity.updatedAt
         <div>
           <strong>Container:</strong>
           <span>
-            <a :href="entity.container.to" target="_blank">
+            <a :href="entity.container.path" target="_blank">
               {{ entity.container.title }}
             </a>
             (ID: {{ entity.container.id }})

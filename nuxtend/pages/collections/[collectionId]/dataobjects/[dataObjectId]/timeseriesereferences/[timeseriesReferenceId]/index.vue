@@ -68,7 +68,7 @@ const selectedItems = ref<Timeseries[]>([]);
 const showDeleteDialog = ref<boolean>(false);
 
 const plotSelectedTimeseries = () => {
-  console.log("Plotting:", selectedItems.value);
+  // TODO: Implement in https://gitlab.com/dlr-shepard/shepard/-/work_items/561
 };
 
 const downloadTimeseries = (filename: string) => {
@@ -87,22 +87,20 @@ const downloadTimeseries = (filename: string) => {
 };
 
 async function deleteTimeseriesReference() {
-  const deletionSuccessful = await createApiInstance(TimeseriesReferenceApi)
+  await createApiInstance(TimeseriesReferenceApi)
     .deleteTimeseriesReference({
       collectionId,
       dataObjectId,
       timeseriesReferenceId,
     })
-    .then(() => true)
+    .then(() => {
+      emitSuccess(
+        `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
+      );
+    })
     .catch(e => {
       handleError(e as ResponseError, "deleting timeseries reference");
     });
-
-  if (!deletionSuccessful) return;
-
-  emitSuccess(
-    `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
-  );
 }
 
 const onDelete = () => {
@@ -163,7 +161,7 @@ const onDownload = (name: string) => {
           />
         </v-col>
         <v-col cols="12">
-          <v-container fluid class="pa-0" max-width="1000px">
+          <v-container fluid class="pa-0">
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="{
@@ -173,7 +171,7 @@ const onDownload = (name: string) => {
                   container: {
                     title: timeseriesContainer.name,
                     id: timeseriesContainer.id,
-                    to: containersPath + timeseriesContainer.id,
+                    path: containersPath + timeseriesContainer.id,
                   },
                 }"
                 id-label="ID"
@@ -186,13 +184,13 @@ const onDownload = (name: string) => {
                 <div class="pa-4">
                   Interval:
                   {{
-                    toDateTimeStringWithSeconds(
+                    toDateTimeStringWithMilliSeconds(
                       parseDateFromNanos(timeseriesReference.start),
                     )
                   }}
                   -
                   {{
-                    toDateTimeStringWithSeconds(
+                    toDateTimeStringWithMilliSeconds(
                       parseDateFromNanos(timeseriesReference.end),
                     )
                   }}
