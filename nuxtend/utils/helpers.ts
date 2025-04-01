@@ -38,8 +38,8 @@ export function toShortDateTimeString(date: Date | undefined | null) {
   if (date) return date.toLocaleString("en-GB", dateTimeFormat);
 }
 
-// Returns date string in format: dd.mm.yyyy, hh:MM:ss
-export function toDateTimeStringWithSeconds(date: Date) {
+// Returns date string in format: dd.mm.yyyy, hh:MM:ss:SSSS
+export function toDateTimeStringWithMilliSeconds(date: Date) {
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();

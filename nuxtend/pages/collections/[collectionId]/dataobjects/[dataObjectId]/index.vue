@@ -13,9 +13,6 @@ const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId } =
   routeParams.value as CollectionRouteParams & { dataObjectId: number };
 
-console.log("routeParams");
-console.log(routeParams);
-
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);

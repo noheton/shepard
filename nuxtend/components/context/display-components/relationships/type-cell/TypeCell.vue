@@ -2,7 +2,7 @@
 import type { RelationshipTableElement } from "../relationshipTableElement";
 
 defineProps<{
-  value: RelationshipTableElement["type"];
+  value: RelationshipTableElement["information"]["type"];
 }>();
 </script>
 

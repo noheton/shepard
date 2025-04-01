@@ -32,9 +32,3 @@ onAnnotationsUpdated(fetchSemanticAnnotations);
     />
   </ul>
 </template>
-
-<style lang="scss" scoped>
-ul > li {
-  margin-right: 1em;
-}
-</style>

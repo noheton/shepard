@@ -106,7 +106,7 @@ const onSubmit = async () => {
     <template #form>
       <v-form>
         <v-row>
-          <v-col class="pb-0">Property</v-col>
+          <v-col class="pb-0 pt-8">Property</v-col>
         </v-row>
         <v-row>
           <v-col class="pb-0">

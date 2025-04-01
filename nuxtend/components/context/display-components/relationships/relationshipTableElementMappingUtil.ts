@@ -14,7 +14,10 @@ export function mapRelatedEntityToRelationshipTableElement(
     id: relatedEntity.id,
     relationship: mapRelationshipType(relatedEntity),
     name: mapName(relatedEntity),
-    type: mapType(relatedEntity),
+    information: {
+      referenceId: relatedEntity.id,
+      type: mapType(relatedEntity),
+    },
     created: {
       createdAt: relatedEntity.createdAt,
       createdBy: relatedEntity.createdBy,
@@ -65,7 +68,9 @@ function mapName(entity: RelatedEntity): RelationshipTableElement["name"] {
   };
 }
 
-function mapType(entity: RelatedEntity): RelationshipTableElement["type"] {
+function mapType(
+  entity: RelatedEntity,
+): RelationshipTableElement["information"]["type"] {
   if (instanceOfURIReference(entity)) {
     return { type: `Link` };
   }
