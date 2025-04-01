@@ -1,7 +1,7 @@
 export const UserRole = {
   manager: "Manager",
-  reader: "Reader",
   writer: "Writer",
+  reader: "Reader",
 };
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
