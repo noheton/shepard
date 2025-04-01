@@ -20,7 +20,6 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.context.collection.io.CollectionIO;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -89,7 +88,6 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = SearchBody.class))
     ) @Valid SearchBody body
   ) {
-    Log.infof("Search for %s with query: %s", body.getSearchParams().getQueryType(), body.getSearchParams().getQuery());
     ResponseBody ret = searchService.search(body, securityContext.getUserPrincipal().getName());
     return Response.ok(ret).build();
   }
@@ -119,14 +117,6 @@ public class SearchRest {
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicCollectionAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
-    Log.infof(
-      "Search for page %d and size %d of collections ordering by %s with query: %s",
-      page,
-      size,
-      orderBy,
-      collectionSearchBody.getSearchParams().getQuery()
-    );
-
     PaginatedCollectionList paginatedCollectionList = collectionSearchService.search(
       collectionSearchBody.getSearchParams().getQuery(),
       securityContext.getUserPrincipal().getName(),
@@ -169,15 +159,6 @@ public class SearchRest {
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
-    Log.infof(
-      "Search for page %d and size %d of containers of type %s ordering by %s with query: %s",
-      page,
-      size,
-      containerSearchBody.getSearchParams().getQueryType(),
-      orderBy,
-      containerSearchBody.getSearchParams().getQuery()
-    );
-
     PaginationHelper pagination = null;
     if (page != null && size != null) pagination = new PaginationHelper(page, size);
     SortingHelper sortingHelper = new SortingHelper(
@@ -209,7 +190,6 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = UserSearchBody.class))
     ) @Valid UserSearchBody userSearchBody
   ) {
-    Log.infof("Search for users with query: %s", userSearchBody.getSearchParams().getQuery());
     UserSearchResult ret = userSearchService.search(userSearchBody);
     return Response.ok(ret).build();
   }
@@ -230,7 +210,6 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = UserSearchBody.class))
     ) @Valid UserGroupSearchBody userGroupSearchBody
   ) {
-    Log.infof("Search for usergroups with query: %s", userGroupSearchBody.getSearchParams().getQuery());
     UserGroupSearchResult ret = userGroupSearchService.search(userGroupSearchBody);
     return Response.ok(ret).build();
   }
