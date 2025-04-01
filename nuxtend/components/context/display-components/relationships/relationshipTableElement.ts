@@ -2,11 +2,14 @@ export type RelationshipTableElement = {
   id: number;
   relationship: string | undefined;
   name: { value: string; path?: string };
-  type:
-    | LinkType
-    | DataObjectType
-    | DataObjectReferenceType
-    | CollectionReferenceType;
+  information: {
+    type:
+      | LinkType
+      | DataObjectType
+      | DataObjectReferenceType
+      | CollectionReferenceType;
+    referenceId: number;
+  };
   created: {
     createdAt: Date;
     createdBy: string;

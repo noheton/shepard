@@ -19,7 +19,7 @@ function openAddAnnotationDialog(relationshipElementId: number) {
   const relationShipElement = getRelationshipElementById(relationshipElementId);
   if (!relationShipElement) return;
 
-  switch (relationShipElement.type.type) {
+  switch (relationShipElement.information.type.type) {
     case "Link":
     case "Collection Reference":
     case "Data Object Reference":
@@ -56,11 +56,11 @@ const headers = [
     ) => a.value.localeCompare(b.value),
   },
   {
-    title: "Type",
-    value: "type",
+    title: "Information",
+    value: "information",
     sort: (
-      a: RelationshipTableElement["type"],
-      b: RelationshipTableElement["type"],
+      a: RelationshipTableElement["information"]["type"],
+      b: RelationshipTableElement["information"]["type"],
     ) => a.type.localeCompare(b.type),
   },
   {
@@ -102,9 +102,18 @@ const headers = [
       <NuxtLink :to="value.path">{{ value.value }}</NuxtLink>
     </template>
     <template
-      #[`item.type`]="{ value }: { value: RelationshipTableElement['type'] }"
+      #[`item.information`]="{
+        value,
+      }: {
+        value: RelationshipTableElement['information'];
+      }"
     >
-      <TypeCell :value="value" />
+      <TypeCell :value="value.type" />
+      <SemanticAnnotationList
+        :annotated="
+          new AnnotatedReference(collectionId, dataObjectId, value.referenceId)
+        "
+      />
     </template>
     <template
       #[`item.created`]="{
