@@ -38,6 +38,19 @@ export function toShortDateTimeString(date: Date | undefined | null) {
   if (date) return date.toLocaleString("en-GB", dateTimeFormat);
 }
 
+// returns time string in format: hh:MM:ss.sss
+export function toShortTimeStringWithMilliseconds(date: Date) {
+  return (
+    date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }) +
+    "." +
+    date.getMilliseconds().toString().padStart(3, "0")
+  );
+}
+
 // Returns date string in format: dd.mm.yyyy, hh:MM:ss:SSSS
 export function toDateTimeStringWithMilliSeconds(date: Date) {
   const dd = String(date.getDate()).padStart(2, "0");

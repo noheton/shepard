@@ -66,9 +66,10 @@ const headers = ref([
 
 const selectedItems = ref<Timeseries[]>([]);
 const showDeleteDialog = ref<boolean>(false);
+const showTimeseriesReferenceDialog = ref<boolean>(false);
 
 const plotSelectedTimeseries = () => {
-  // TODO: Implement in https://gitlab.com/dlr-shepard/shepard/-/work_items/561
+  showTimeseriesReferenceDialog.value = true;
 };
 
 const downloadTimeseries = (filename: string) => {
@@ -115,11 +116,6 @@ const onDownload = (name: string) => {
 <template>
   <div style="max-width: 1000px">
     <v-container fluid class="pa-0 fill-height" max-width="1000px">
-      <ConfirmDeleteDialog
-        v-model:show-dialog="showDeleteDialog"
-        prompt-text="Are you sure you want to delete this item?"
-        @confirmed="deleteTimeseriesReference"
-      />
       <v-row
         v-if="
           !!timeseriesReference &&
@@ -248,6 +244,19 @@ const onDownload = (name: string) => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <ConfirmDeleteDialog
+      v-model:show-dialog="showDeleteDialog"
+      prompt-text="Are you sure you want to delete this item?"
+      @confirmed="deleteTimeseriesReference"
+    />
+    <ShowTimeseriesReferenceDialog
+      v-if="showTimeseriesReferenceDialog"
+      v-model:show-dialog="showTimeseriesReferenceDialog"
+      :collection-id="collectionId"
+      :data-object-id="dataObjectId"
+      :timeseries-reference-id="timeseriesReferenceId"
+      :timeseries="selectedItems"
+    />
   </div>
 </template>
 
