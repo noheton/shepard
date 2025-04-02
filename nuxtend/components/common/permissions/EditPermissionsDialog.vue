@@ -98,10 +98,10 @@ const onAddPermission = () => {
     const rolesToAdd = (() => {
       switch (selectedAdditionalUserRole.value) {
         case UserRole.manager: {
-          return [UserRole.manager, UserRole.reader, UserRole.writer];
+          return [UserRole.manager, UserRole.writer, UserRole.reader];
         }
         case UserRole.writer: {
-          return [UserRole.reader, UserRole.writer];
+          return [UserRole.writer, UserRole.reader];
         }
         default: {
           return [selectedAdditionalUserRole.value];

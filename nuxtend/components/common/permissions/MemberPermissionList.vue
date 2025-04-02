@@ -78,6 +78,15 @@ function deleteUserPermissions(deletedMember: MemberPermissions) {
   );
 }
 function deleteRole(role: UserRole, entry: MemberPermissions) {
+  // On deleting roles, implied roles are deleted automatically as well.
+  if (role === UserRole.reader) {
+    deleteRole(UserRole.manager, entry);
+    deleteRole(UserRole.writer, entry);
+  }
+  if (role === UserRole.writer) {
+    deleteRole(UserRole.manager, entry);
+  }
+
   if (entry.roleList.length === 1 && entry.roleList[0] === role) {
     deleteUserPermissions(entry);
     return;
