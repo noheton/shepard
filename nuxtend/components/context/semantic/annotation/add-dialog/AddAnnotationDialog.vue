@@ -90,6 +90,11 @@ const onSubmit = async () => {
   }
   processing.value = false;
 };
+
+const showPropertyIRITooltip = ref(true);
+const showPropertyRepoNameTooltip = ref(true);
+const showValueIRITooltip = ref(true);
+const showValueRepoNameTooltip = ref(true);
 </script>
 
 <template>
@@ -117,6 +122,7 @@ const onSubmit = async () => {
               :open-on-focus="false"
               max-width="500"
               content-class="text-body-3"
+              :class="`${showPropertyIRITooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props }">
                 <NameInput
@@ -124,6 +130,8 @@ const onSubmit = async () => {
                   label="IRI"
                   autofocus
                   v-bind="props"
+                  @focus="showPropertyIRITooltip = false"
+                  @blur="showPropertyIRITooltip = true"
                 />
               </template>
               <div>
@@ -142,6 +150,7 @@ const onSubmit = async () => {
               :open-on-focus="false"
               max-width="500"
               content-class="text-body-3"
+              :class="`${showPropertyRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props }">
                 <v-autocomplete
@@ -154,6 +163,8 @@ const onSubmit = async () => {
                   color="primary"
                   variant="outlined"
                   density="compact"
+                  @focus="showPropertyRepoNameTooltip = false"
+                  @blur="showPropertyRepoNameTooltip = true"
                 />
               </template>
               <div>
@@ -176,9 +187,16 @@ const onSubmit = async () => {
               :open-on-focus="false"
               max-width="500"
               content-class="text-body-3"
+              :class="`${showValueIRITooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props }">
-                <NameInput v-model:name="valueIri" label="IRI" v-bind="props" />
+                <NameInput
+                  v-model:name="valueIri"
+                  label="IRI"
+                  v-bind="props"
+                  @focus="showValueIRITooltip = false"
+                  @blur="showValueIRITooltip = true"
+                />
               </template>
               <div>
                 Please paste term IRI. Refer to your ontology server to get the
@@ -196,6 +214,7 @@ const onSubmit = async () => {
               :open-on-focus="false"
               max-width="500"
               content-class="text-body-3"
+              :class="`${showValueRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props }">
                 <v-autocomplete
@@ -208,6 +227,8 @@ const onSubmit = async () => {
                   no-data-text="No repositories found"
                   color="primary"
                   placeholder="select a repository"
+                  @focus="showValueRepoNameTooltip = false"
+                  @blur="showValueRepoNameTooltip = true"
                 />
               </template>
               <div>
@@ -222,3 +243,9 @@ const onSubmit = async () => {
     </template>
   </Dialog>
 </template>
+
+<style lang="css" scoped>
+.v-tooltip.hideOnClick :deep(.v-overlay__content) {
+  visibility: hidden;
+}
+</style>
