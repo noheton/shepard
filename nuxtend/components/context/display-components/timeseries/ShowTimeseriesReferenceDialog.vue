@@ -46,15 +46,32 @@ const chartOptions: ChartOptions<"line"> = {
       ticks: {
         callback: (tickValue, _index, _ticks) => {
           if (typeof tickValue == "number")
-            return toShortTimeStringWithMilliseconds(
-              parseDateFromNanos(tickValue),
-            );
+            return toDateTimeString(tickValue, dateTimeOptions);
           return tickValue;
         },
       },
       type: "linear",
     },
   },
+};
+
+const chartColors: string[] = [
+  "#7ECA8F",
+  "#FCA54D",
+  "#B799DB",
+  "#E56874",
+  "#4097CC",
+  "#FFD145",
+  "#8C8C8C",
+];
+
+const dateTimeOptions: Intl.DateTimeFormatOptions = {
+  year: "2-digit",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
 };
 
 watch(timeseriesWithDataPoints, () => {
@@ -75,16 +92,6 @@ watch(timeseriesWithDataPoints, () => {
     datasets: mapToDatasets(filteredTimeseries),
   };
 });
-
-const chartColors: string[] = [
-  "#7ECA8F",
-  "#FCA54D",
-  "#B799DB",
-  "#E56874",
-  "#4097CC",
-  "#FFD145",
-  "#8C8C8C",
-];
 
 function getColor(index: number): string {
   return chartColors[index % chartColors.length] ?? "#8C8C8C";
@@ -143,7 +150,10 @@ function downloadChartAsImage() {
           </ul>
         </div>
         <div class="text-subtitle-1 pb-4">Graph</div>
-        <div class="pa-4" style="background-color: #f5f7f9">
+        <div
+          class="pa-4"
+          style="background-color: rgb(var(--v-theme-divider2))"
+        >
           <LineChart
             v-if="isLoading"
             id="timeseries-payload-chart"
@@ -157,15 +167,17 @@ function downloadChartAsImage() {
             variant="flat"
             color="primary"
             prepend-icon="mdi-tray-arrow-down"
+            text="Download as PNG"
             @click="downloadChartAsImage"
-          >
-            Download as PNG
-          </v-btn>
+          />
         </div>
         <div class="d-flex justify-end">
-          <v-btn variant="flat" color="treeview" @click="showDialog = false">
-            Close
-          </v-btn>
+          <v-btn
+            variant="flat"
+            color="treeview"
+            text="Close"
+            @click="showDialog = false"
+          />
         </div>
       </template>
     </v-card>
