@@ -67,8 +67,13 @@ async function saveChanges() {
     <template #form>
       <v-form ref="form" v-model="isValid">
         <v-row>
-          <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-1">Container Properties</div>
+          <v-col class="pt-9">
+            <ContainerTypeInput v-model:container-type="containerType" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-divider />
           </v-col>
         </v-row>
         <v-row>
@@ -78,16 +83,11 @@ async function saveChanges() {
         </v-row>
         <v-row>
           <v-col>
-            <ContainerTypeInput v-model:container-type="containerType" />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
             <PermissionTypeInput v-model:permission-type="permissionType" />
           </v-col>
         </v-row>
         <v-row>
-          <v-col class="pt-0">
+          <v-col class="pt-1">
             <MandatoryFieldHint />
           </v-col>
         </v-row>

@@ -62,7 +62,7 @@ const showCreateDialog = ref(false);
     <CreateContainerDialog
       v-if="showCreateDialog"
       v-model:show-dialog="showCreateDialog"
-      @container-created="id => $router.push(containersPath + id)"
+      @container-created="id => $router.push(containersPath)"
     />
   </div>
 </template>
