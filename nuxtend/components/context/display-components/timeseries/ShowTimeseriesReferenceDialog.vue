@@ -105,7 +105,9 @@ function mapToDatasets(
 }
 
 function downloadChartAsImage() {
-  const chart = document.getElementById("chart") as HTMLCanvasElement;
+  const chart = document.getElementById(
+    "timeseries-payload-chart",
+  ) as HTMLCanvasElement;
   if (chart) {
     const link = document.createElement("a");
     link.download = "chart";
