@@ -11,7 +11,6 @@ const annotations = ref<SemanticAnnotation[]>([]);
 async function fetchSemanticAnnotations() {
   try {
     annotations.value = await props.annotated.fetchAnnotations();
-    console.log("fetch annotations");
   } catch (e) {
     handleError(e as ResponseError, "fetching semantic annotations");
   }

@@ -81,7 +81,7 @@ const onSubmit = async () => {
     const annotation = await addSemanticAnnotation(args);
     showDialog.value = false;
     emitSuccess(
-      `Successfully added semantic annotation "${annotation?.name}".`,
+      `Successfully added semantic annotation "${formatSemanticAnnotation(annotation.propertyName, annotation.valueName)}".`,
     );
     emit("annotationAdded", annotation);
     handleAnnotationListUpdate();

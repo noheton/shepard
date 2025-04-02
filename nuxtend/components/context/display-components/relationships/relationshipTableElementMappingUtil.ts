@@ -17,6 +17,7 @@ export function mapRelatedEntityToRelationshipTableElement(
     information: {
       referenceId: relatedEntity.id,
       type: mapType(relatedEntity),
+      annotatable: isAnnotatable(relatedEntity),
     },
     created: {
       createdAt: relatedEntity.createdAt,

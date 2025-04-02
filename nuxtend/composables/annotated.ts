@@ -1,11 +1,5 @@
 import {
   SemanticAnnotationApi,
-  type DeleteCollectionAnnotationRequest,
-  type DeleteDataObjectAnnotationRequest,
-  type DeleteReferenceAnnotationRequest,
-  type GetAllCollectionAnnotationsRequest,
-  type GetAllDataObjectAnnotationsRequest,
-  type GetAllReferenceAnnotationsRequest,
   type SemanticAnnotation,
 } from "@dlr-shepard/backend-client";
 
@@ -26,23 +20,16 @@ export class AnnotatedCollection implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    const cid = this.collectionId;
-
-    return api().getAllCollectionAnnotations(
-      new (class implements GetAllCollectionAnnotationsRequest {
-        collectionId = cid;
-      })(),
-    );
+    return api().getAllCollectionAnnotations({
+      collectionId: this.collectionId,
+    });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    const cid = this.collectionId;
-    return api().deleteCollectionAnnotation(
-      new (class implements DeleteCollectionAnnotationRequest {
-        collectionId = cid;
-        semanticAnnotationId = annotationId;
-      })(),
-    );
+    return api().deleteCollectionAnnotation({
+      collectionId: this.collectionId,
+      semanticAnnotationId: annotationId,
+    });
   }
 }
 
@@ -56,27 +43,18 @@ export class AnnotatedDataObject implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    const cid = this.collectionId;
-    const did = this.dataObjectId;
-
-    return api().getAllDataObjectAnnotations(
-      new (class implements GetAllDataObjectAnnotationsRequest {
-        collectionId = cid;
-        dataObjectId = did;
-      })(),
-    );
+    return api().getAllDataObjectAnnotations({
+      collectionId: this.collectionId,
+      dataObjectId: this.dataObjectId,
+    });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    const cid = this.collectionId;
-    const did = this.dataObjectId;
-    return api().deleteDataObjectAnnotation(
-      new (class implements DeleteDataObjectAnnotationRequest {
-        collectionId = cid;
-        dataObjectId = did;
-        semanticAnnotationId = annotationId;
-      })(),
-    );
+    return api().deleteDataObjectAnnotation({
+      collectionId: this.collectionId,
+      dataObjectId: this.dataObjectId,
+      semanticAnnotationId: annotationId,
+    });
   }
 }
 
@@ -92,30 +70,19 @@ export class AnnotatedReference implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    const cid = this.collectionId;
-    const did = this.dataObjectId;
-    const rid = this.referenceId;
-
-    return api().getAllReferenceAnnotations(
-      new (class implements GetAllReferenceAnnotationsRequest {
-        collectionId = cid;
-        dataObjectId = did;
-        referenceId = rid;
-      })(),
-    );
+    return api().getAllReferenceAnnotations({
+      collectionId: this.collectionId,
+      dataObjectId: this.dataObjectId,
+      referenceId: this.referenceId,
+    });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    const cid = this.collectionId;
-    const did = this.dataObjectId;
-    const rid = this.referenceId;
-    return api().deleteReferenceAnnotation(
-      new (class implements DeleteReferenceAnnotationRequest {
-        collectionId = cid;
-        dataObjectId = did;
-        referenceId = rid;
-        semanticAnnotationId = annotationId;
-      })(),
-    );
+    return api().deleteReferenceAnnotation({
+      collectionId: this.collectionId,
+      dataObjectId: this.dataObjectId,
+      referenceId: this.referenceId,
+      semanticAnnotationId: annotationId,
+    });
   }
 }

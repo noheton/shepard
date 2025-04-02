@@ -9,6 +9,7 @@ export type RelationshipTableElement = {
       | DataObjectReferenceType
       | CollectionReferenceType;
     referenceId: number;
+    annotatable: boolean;
   };
   created: {
     createdAt: Date;

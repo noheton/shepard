@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import type { SemanticAnnotation } from "@dlr-shepard/backend-client";
 
-interface SemanticAnnotationChipProps {
-  annotation: SemanticAnnotation;
-  annotatedType: Annotated;
-}
-const props = defineProps<SemanticAnnotationChipProps>();
+defineProps<{ annotation: SemanticAnnotation; annotatedType: Annotated }>();
 const showDeleteDialog = ref(false);
 </script>
 
@@ -17,27 +13,21 @@ const showDeleteDialog = ref(false);
       rounded="lg"
       class="semantic-key"
     >
-      <a target="_blank" :href="props.annotation.propertyIRI">
-        {{ props.annotation.propertyName }}
+      <a target="_blank" :href="annotation.propertyIRI">
+        {{ annotation.propertyName }}
       </a>
     </v-chip>
     <v-chip color="primary" variant="flat" rounded="lg" class="semantic-value">
-      <a target="_blank" :href="props.annotation.valueIRI">
-        {{ props.annotation.valueName }}
+      <a target="_blank" :href="annotation.valueIRI">
+        {{ annotation.valueName }}
       </a>
       <template #close>
-        <v-icon
-          icon="mdi-close-circle"
-          @click.stop="
-            () => {
-              showDeleteDialog = true;
-            }
-          "
-        />
+        <v-icon icon="mdi-close-circle" @click.stop="showDeleteDialog = true" />
       </template>
     </v-chip>
   </li>
   <DeleteSemanticAnnotationDialog
+    v-if="showDeleteDialog"
     v-model:show-dialog="showDeleteDialog"
     :annotated-element="annotatedType"
     :to-delete="annotation"
@@ -46,7 +36,7 @@ const showDeleteDialog = ref(false);
 
 <style lang="scss" scoped>
 li {
-  display: inline-block;
+  display: inline-flex;
   margin-right: 16px;
   margin-bottom: 8px;
 }

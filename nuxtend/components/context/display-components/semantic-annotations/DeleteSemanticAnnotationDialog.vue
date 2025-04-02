@@ -19,7 +19,7 @@ async function deleteSemanticAnnotation() {
     await props.annotatedElement.deleteAnnotation(props.toDelete.id);
     showDialog.value = false;
     emitSuccess(
-      `Successfully deleted semantic annotation "${props.toDelete.propertyName}::${props.toDelete.valueName}"`,
+      `Successfully deleted semantic annotation "${formatSemanticAnnotation(props.toDelete.propertyName, props.toDelete.valueName)}."`,
     );
     handleAnnotationListUpdate();
   } catch (error) {

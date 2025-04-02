@@ -110,6 +110,7 @@ const headers = [
     >
       <TypeCell :value="value.type" />
       <SemanticAnnotationList
+        v-if="value.annotatable"
         :annotated="
           new AnnotatedReference(collectionId, dataObjectId, value.referenceId)
         "

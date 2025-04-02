@@ -90,6 +90,13 @@ export function removeQueryParam(key: string) {
   history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
 }
 
+export function formatSemanticAnnotation(
+  propertyName: string,
+  valueName: string,
+) {
+  return [propertyName, valueName].join("::");
+}
+
 export interface PermissionOption {
   value: PermissionType;
   text: string;
