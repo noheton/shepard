@@ -465,7 +465,10 @@ public class TimeseriesMigrationService {
   public void addCompressionTask() {
     try {
       // Do not add a task if the queue id not empty
-      if (!compressionTasksQueue.isEmpty()) return;
+      if (!compressionTasksQueue.isEmpty()) {
+        Log.info("Did not add a duplicate compression task");
+        return;
+      }
       compressionTasksQueue.put(new CompressionTask(false));
     } catch (InterruptedException e) {
       Log.errorf("Compression task queue interrupted.", e.getMessage());

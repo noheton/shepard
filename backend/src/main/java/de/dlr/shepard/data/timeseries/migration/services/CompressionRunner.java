@@ -25,6 +25,7 @@ public class CompressionRunner implements Callable<Object> {
       while (true) {
         CompressionTask task = queue.take();
         try {
+          Log.info("Compression task waiting for write lock");
           lock.writeLock().lock();
           if (task.isLastTask) break;
           migrationService.compressAllDataPoints();
