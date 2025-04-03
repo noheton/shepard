@@ -111,7 +111,7 @@ public class TimeseriesMigrationService {
     payloadWriteQueue = new LinkedBlockingQueue<>(numberOfWriterThreads + 1);
     compressionTasksQueue = new LinkedBlockingQueue<>();
     payloadReadQueue = new ConcurrentLinkedQueue<>();
-    readWriteLock = new ReentrantReadWriteLock();
+    readWriteLock = new ReentrantReadWriteLock(true);
   }
 
   public List<MigrationTaskEntity> getMigrationTasks(boolean onlyShowErrors) {
