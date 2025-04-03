@@ -69,7 +69,6 @@ class PayloadWriter implements Callable<Object> {
           }
         } finally {
           lock.readLock().unlock();
-          Thread.sleep(50);
         }
       }
     } catch (InterruptedException e) {

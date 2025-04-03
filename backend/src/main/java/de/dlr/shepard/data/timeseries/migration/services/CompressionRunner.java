@@ -30,7 +30,6 @@ public class CompressionRunner implements Callable<Object> {
           migrationService.compressAllDataPoints();
         } finally {
           lock.writeLock().unlock();
-          Thread.sleep(50);
         }
       }
     } catch (InterruptedException e) {

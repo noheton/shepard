@@ -23,9 +23,16 @@ class PayloadReader implements Callable<Object> {
 
   @Override
   public Object call() {
+    boolean overallLastTask = false;
     try {
       while (true) {
-        PayloadReadTask payloadReadTask = migrationService.getPayloadReadQueue().poll();
+        var queue = migrationService.getPayloadReadQueue();
+        PayloadReadTask payloadReadTask;
+        synchronized (queue) { // Taking the element and looking up if there is no further element must be done atomically
+          payloadReadTask = queue.poll();
+          overallLastTask = queue.isEmpty();
+        }
+
         if (payloadReadTask.isLastTask) break;
         Log.infof(
           "started PayloadReadTask: %s, from %s to %s",
@@ -63,7 +70,7 @@ class PayloadReader implements Callable<Object> {
       throw e;
     } finally {
       // To ensure adding them once!
-      if (migrationService.getPayloadReadQueue().isEmpty()) migrationService.addWriterPoisonPills();
+      if (overallLastTask) migrationService.addWriterPoisonPills();
       migrationService.addCompressionPoisonPills();
     }
     return "PayloadReader Done!";
