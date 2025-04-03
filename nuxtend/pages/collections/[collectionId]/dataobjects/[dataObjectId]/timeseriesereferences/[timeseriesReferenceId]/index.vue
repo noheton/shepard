@@ -14,6 +14,10 @@ useHead({
   title: "Timeseries Reference  | shepard",
 });
 
+interface TimeseriesDataTableItem extends Timeseries {
+  isSelected: boolean;
+}
+
 const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId, timeseriesReferenceId } =
   routeParams.value as CollectionRouteParams & {
@@ -31,6 +35,33 @@ const { timeseriesReference } = useFetchTimeseriesReference(
 );
 
 const timeseriesContainer = ref<TimeseriesContainer | undefined>(undefined);
+const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
+const numberOfSelectedItems = ref<number>(0);
+const showDeleteDialog = ref<boolean>(false);
+const showTimeseriesReferenceDialog = ref<boolean>(false);
+const headers = ref([
+  {
+    title: "Select",
+    key: "isSelected",
+    sortable: true,
+    sort: (a: boolean, b: boolean) => Number(b) - Number(a),
+  },
+  { title: "Measurement", key: "measurement", sortable: true },
+  { title: "Device", key: "device", sortable: true },
+  { title: "Location", key: "location", sortable: true },
+  { title: "Symbolic Name", key: "symbolicName", sortable: true },
+  { title: "Field", key: "field", sortable: true },
+]);
+
+watch(timeseriesReference, () => {
+  if (timeseriesReference.value) {
+    timeseriesDataTableItems.value = timeseriesReference.value?.timeseries.map(
+      timeseries => {
+        return { ...timeseries, isSelected: false };
+      },
+    );
+  }
+});
 
 // Could't find better solution other than watch
 watch(
@@ -51,22 +82,9 @@ watch(
   },
 );
 
-const headers = ref([
-  {
-    title: "Select",
-    key: "checkbox",
-    sortable: true,
-  },
-  { title: "Measurement", key: "measurement", sortable: true },
-  { title: "Device", key: "device", sortable: true },
-  { title: "Location", key: "location", sortable: true },
-  { title: "Symbolic Name", key: "symbolicName", sortable: true },
-  { title: "Field", key: "field", sortable: true },
-]);
-
-const selectedItems = ref<Timeseries[]>([]);
-const showDeleteDialog = ref<boolean>(false);
-const showTimeseriesReferenceDialog = ref<boolean>(false);
+const getSelectedTimeseries = () => {
+  return timeseriesDataTableItems.value.filter(item => item.isSelected);
+};
 
 const plotSelectedTimeseries = () => {
   showTimeseriesReferenceDialog.value = true;
@@ -110,6 +128,10 @@ const onDelete = () => {
 
 const onDownload = (name: string) => {
   downloadTimeseries(name);
+};
+
+const onSelectedItemChanged = () => {
+  numberOfSelectedItems.value = getSelectedTimeseries().length;
 };
 </script>
 
@@ -194,7 +216,7 @@ const onDownload = (name: string) => {
               </v-col>
               <v-col class="text-right" cols="auto">
                 <div class="pa-4">
-                  Selected items: {{ selectedItems.length }} / 7
+                  Selected items: {{ numberOfSelectedItems }} / 7
                 </div>
               </v-col>
               <v-col class="text-right" cols="auto">
@@ -204,7 +226,7 @@ const onDownload = (name: string) => {
                   color="primary"
                   prepend-icon="mdi-chart-line"
                   :disabled="
-                    selectedItems.length === 0 || selectedItems.length > 7
+                    numberOfSelectedItems === 0 || numberOfSelectedItems > 7
                   "
                   @click="plotSelectedTimeseries"
                 >
@@ -220,18 +242,16 @@ const onDownload = (name: string) => {
                 class: 'text-textbody1',
               }"
               :headers="headers"
-              :items="timeseriesReference.timeseries"
+              :items="timeseriesDataTableItems"
               item-value="measurement"
             >
-              <template #[`item.checkbox`]="{ item }">
+              <template #[`item.isSelected`]="{ item }">
                 <v-checkbox
-                  v-model="selectedItems"
-                  :value="item"
+                  v-model="item.isSelected"
                   density="compact"
                   hide-details
-                  :disabled="
-                    selectedItems.length >= 7 && !selectedItems.includes(item)
-                  "
+                  :disabled="numberOfSelectedItems >= 7"
+                  @update:model-value="() => onSelectedItemChanged()"
                 />
               </template>
               <template #bottom>
@@ -255,7 +275,7 @@ const onDownload = (name: string) => {
       :collection-id="collectionId"
       :data-object-id="dataObjectId"
       :timeseries-reference-id="timeseriesReferenceId"
-      :timeseries="selectedItems"
+      :timeseries="getSelectedTimeseries()"
     />
   </div>
 </template>
