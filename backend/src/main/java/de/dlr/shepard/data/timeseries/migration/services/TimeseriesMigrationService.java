@@ -407,6 +407,7 @@ public class TimeseriesMigrationService {
     Log.infof("Finished preparing read queue of %s read tasks.", payloadReadQueue.size());
     // Ensure tasks queue is empty
     payloadWriteQueue.clear();
+    compressionTasksQueue.clear();
 
     List<Callable<Object>> tasks = new ArrayList<>();
 
