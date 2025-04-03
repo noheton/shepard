@@ -49,6 +49,7 @@ class PayloadWriter implements Callable<Object> {
             task.container.getId(),
             task.payload.getPoints().size()
           );
+
           saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
           long taskStartTimeMilliseconds = task.startTimestamp / 1_000_000;
           long taskEndTimeMilliseconds = (task.endTimestamp + 1) / 1_000_000;
@@ -68,6 +69,7 @@ class PayloadWriter implements Callable<Object> {
           }
         } finally {
           lock.readLock().unlock();
+          Thread.sleep(50);
         }
       }
     } catch (InterruptedException e) {

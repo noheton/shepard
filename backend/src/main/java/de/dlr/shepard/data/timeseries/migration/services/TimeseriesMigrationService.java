@@ -453,18 +453,22 @@ public class TimeseriesMigrationService {
 
   void addCompressionPoisonPills() {
     try {
+      // clear compression queue before sending the last task
+      compressionTasksQueue.clear();
       compressionTasksQueue.put(new CompressionTask(true));
     } catch (InterruptedException e) {
-      Log.errorf("Payload write queue interrupted.", e.getMessage());
+      Log.errorf("Compression task queue interrupted.", e.getMessage());
       Thread.currentThread().interrupt();
     }
   }
 
   public void addCompressionTask() {
     try {
+      // Do not add a task if the queue id not empty
+      if (!compressionTasksQueue.isEmpty()) return;
       compressionTasksQueue.put(new CompressionTask(false));
     } catch (InterruptedException e) {
-      Log.errorf("Payload write queue interrupted.", e.getMessage());
+      Log.errorf("Compression task queue interrupted.", e.getMessage());
       Thread.currentThread().interrupt();
     }
   }
