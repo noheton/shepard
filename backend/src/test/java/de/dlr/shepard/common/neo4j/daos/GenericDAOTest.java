@@ -225,21 +225,16 @@ public class GenericDAOTest extends BaseTestCase {
     assertEquals(expected, actual);
   }
 
+  //new test
   @Test
-  public void deleteHasChildRelationTest() {
-    long fromId = 1;
-    long toId = 2;
-    dao.deleteHasChildRelation(fromId, toId);
-    String expected = "MATCH (a:TestObject {shepardId: 1})-[r:has_child]->(b:TestObject {shepardId: 2}) DELETE r;";
-    verify(session).query(eq(expected), any());
-  }
-
-  @Test
-  public void deleteHasSuccessorRelationTest() {
-    long fromId = 1;
-    long toId = 2;
-    dao.deleteHasSuccessorRelation(fromId, toId);
-    String expected = "MATCH (a:TestObject {shepardId: 1})-[r:has_successor]->(b:TestObject {shepardId: 2}) DELETE r;";
+  public void deleteRelationTest() {
+    long fromId = 1L;
+    long toId = 2L;
+    String fromType = "fromType";
+    String toType = "toType";
+    String relationName = "relationName";
+    dao.deleteRelation(fromId, toId, fromType, toType, relationName);
+    String expected = "MATCH (a:fromType {shepardId: 1})-[r:relationName]->(b:toType {shepardId: 2}) DELETE r;";
     verify(session).query(eq(expected), any());
   }
 }

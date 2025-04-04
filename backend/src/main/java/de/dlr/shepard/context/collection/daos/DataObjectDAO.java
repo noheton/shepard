@@ -102,6 +102,32 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * Deletes the has_successor relation between the predecessor and the successor dataobjects in neo4j
+   */
+  public void deleteHasSuccessorRelation(long predecessorShepardId, long successorShepardId) {
+    deleteRelation(
+      predecessorShepardId,
+      successorShepardId,
+      getEntityType().getSimpleName(),
+      getEntityType().getSimpleName(),
+      Constants.HAS_SUCCESSOR
+    );
+  }
+
+  /**
+   * Deletes the has_child relation between the parent and the child in neo4j
+   */
+  public void deleteHasChildRelation(long parentShepardId, long childShepardId) {
+    deleteRelation(
+      parentShepardId,
+      childShepardId,
+      getEntityType().getSimpleName(),
+      getEntityType().getSimpleName(),
+      Constants.HAS_CHILD
+    );
+  }
+
+  /**
    * Searches the database for DataObjects.
    *
    * @param collectionShepardId  identifies the Collection
