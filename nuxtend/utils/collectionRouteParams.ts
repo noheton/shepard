@@ -4,6 +4,7 @@ export interface CollectionRouteParams {
   collectionId: number;
   dataObjectId?: number;
   timeseriesReferenceId?: number;
+  fileReferenceId?: number;
 }
 
 export const isCollectionRouteParams = (
@@ -26,6 +27,7 @@ export function parseCollectionRouteParams(
     collectionId: parseCollectionId(routeParams),
     dataObjectId: parseDataObjectId(routeParams),
     timeseriesReferenceId: parseTimeseriesReferenceId(routeParams),
+    fileReferenceId: parseFileReferenceId(routeParams),
   };
 }
 
@@ -62,6 +64,18 @@ function parseTimeseriesReferenceId(
     typeof routeParams.timeseriesReferenceId === "string"
   ) {
     return parseInt(routeParams.timeseriesReferenceId);
+  }
+  return undefined;
+}
+
+function parseFileReferenceId(
+  routeParams: RouteParamsGeneric,
+): number | undefined {
+  if (
+    routeParams.fileReferenceId &&
+    typeof routeParams.fileReferenceId === "string"
+  ) {
+    return parseInt(routeParams.fileReferenceId);
   }
   return undefined;
 }

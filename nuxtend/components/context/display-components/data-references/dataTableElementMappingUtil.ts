@@ -66,6 +66,9 @@ function buildShowDetailsArgs(ref: DataReference): {
   if (refType === "TimeSeries") {
     return { enabled: true, pathFragment: timeseriesReferencePathFragment };
   }
+  if (refType === "File") {
+    return { enabled: true, pathFragment: fileReferencesPathFragment };
+  }
   return {
     enabled: false,
     pathFragment: "",

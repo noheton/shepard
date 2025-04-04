@@ -28,31 +28,37 @@ function isJsonString(str: string) {
   return true;
 }
 
-async function parseResponseError(error: ResponseError): Promise<ErrorType> {
-  const result = await error.response.body?.getReader().read();
-  if (result?.value) {
-    const errorString = new TextDecoder().decode(result.value);
-    let errorObject: ErrorType;
-    if (isJsonString(errorString) && isErrorType(JSON.parse(errorString))) {
-      errorObject = JSON.parse(errorString);
-    } else {
-      errorObject = {
-        status: error.response.status,
-        exception: error.response.statusText,
-        message: "",
-      };
+function isResponseError(error: unknown): error is ResponseError {
+  return error !== null && typeof error === "object" && "response" in error;
+}
+
+async function parseResponseError(error: unknown): Promise<ErrorType> {
+  if (isResponseError(error)) {
+    const result = await error.response.body?.getReader().read();
+    if (result?.value) {
+      const errorString = new TextDecoder().decode(result.value);
+      let errorObject: ErrorType;
+      if (isJsonString(errorString) && isErrorType(JSON.parse(errorString))) {
+        errorObject = JSON.parse(errorString);
+      } else {
+        errorObject = {
+          status: error.response.status,
+          exception: error.response.statusText,
+          message: "",
+        };
+      }
+      return errorObject;
     }
-    return errorObject;
   }
   return {
     status: 400,
-    exception: "",
-    message: "",
+    exception: "Invalid request",
+    message: JSON.stringify(error),
   };
 }
 
-export function handleError(e: ResponseError, situation: string) {
-  parseResponseError(e as ResponseError).then(parsedError => {
+export function handleError(e: unknown, situation: string) {
+  parseResponseError(e).then(parsedError => {
     log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
     errorBus.emit({
       situation: situation,
@@ -61,8 +67,8 @@ export function handleError(e: ResponseError, situation: string) {
   });
 }
 
-export function logError(e: ResponseError, situation: string) {
-  parseResponseError(e as ResponseError).then(parsedError => {
+export function logError(e: unknown, situation: string) {
+  parseResponseError(e).then(parsedError => {
     log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
   });
 }
