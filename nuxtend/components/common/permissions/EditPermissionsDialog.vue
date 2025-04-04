@@ -36,6 +36,8 @@ const memberPermissionsList = ref<MemberPermissions[] | undefined>(undefined);
 
 const selectedMember = ref<Member | undefined>(undefined);
 
+const filteredRoles = ref<UserRole[]>([]);
+
 const { collectionPermissions, owner } = useFetchCollectionPermissions(
   props.collectionId,
 );
@@ -150,6 +152,14 @@ const onSubmit = () => {
 
   saveChanges();
 };
+
+watch(selectedMember, newMember => {
+  if (newMember && !instanceOfUser(newMember))
+    filteredRoles.value = Object.values(UserRole).filter(
+      role => role !== "Manager",
+    );
+  else filteredRoles.value = Object.values(UserRole);
+});
 </script>
 
 <template>
@@ -228,7 +238,7 @@ const onSubmit = () => {
           <v-col>
             <v-select
               v-model="selectedAdditionalUserRole"
-              :items="Object.values(UserRole)"
+              :items="filteredRoles"
               label="User or group role"
               variant="outlined"
               density="compact"
